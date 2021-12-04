@@ -1,23 +1,36 @@
 <template>
 	<div @selectstart.prevent class="my-editor-wrap">
+		<!-- 行号 -->
 		<div :style="{top: top + 'px'}" class="my-editor-nums">
 			<div :class="{'my-editor-num-active': cursorPos.line==num+startLine-1}" :key="num" class="my-editor-num" v-for="num in maxLine">
 				<span v-if="num+startLine-1<=htmls.length">{{num+startLine-1}}</span>
 			</div>
 		</div>
 		<div class="my-editor-content-wrap">
-			<div
-				@mousedown="onScrollerMdown"
-				@mousemove="onScrollerMmove"
-				@mouseup="onScrollerMup"
-				@wheel.prevent="onWheel"
-				class="my-editor-content-scroller"
-				ref="scroller"
-			>
+			<!-- 可滚动区域 -->
+			<div @mousedown="onScrollerMdown" @wheel.prevent="onWheel" class="my-editor-content-scroller" ref="scroller">
+				<!-- 内如区域 -->
 				<div :style="{top: top + 'px', minWidth: _contentMinWidth}" @selectend.prevent="onSelectend" class="my-editor-content" ref="content">
-					<div :key="line.num" @mouseup="onLineMup(line.num, $event)" class="my-editor-line" v-for="line in renderHtmls">
-						<div class="my-editor-code">{{line.html}}</div>
+					<div :key="line.num" class="my-editor-line" v-for="line in renderHtmls">
+						<!-- my-editor-bg-color为选中的背景颜色 -->
+						<div
+							:class="{'my-editor-bg-color': selectedRange && line.num > selectedRange.start.line && line.num < selectedRange.end.line}"
+							class="my-editor-code"
+						>{{line.html}}</div>
+						<!-- 选中时的首行背景 -->
+						<div
+							:style="{left: selectedRange.start.left + 'px', width: selectedRange.start.width + 'px'}"
+							class="my-editor-line-bg my-editor-bg-color"
+							v-if="selectedRange && line.num == selectedRange.start.line"
+						></div>
+						<!-- 选中时的末行背景 -->
+						<div
+							:style="{left: selectedRange.end.left + 'px', width: selectedRange.end.width + 'px'}"
+							class="my-editor-line-bg my-editor-bg-color"
+							v-if="selectedRange && line.num == selectedRange.end.line && selectedRange.end.line > selectedRange.start.line"
+						></div>
 					</div>
+					<!-- 模拟光标 -->
 					<div
 						:style="{height: _lineHeight, top: _cursorRealPos.top, left: _cursorRealPos.left, visibility: _cursorVisible}"
 						class="my-editor-cursor"
@@ -25,12 +38,15 @@
 					></div>
 				</div>
 			</div>
+			<!-- 水平滚动条 -->
 			<div @scroll="onHscroll" class="my-editor-h-scroller-wrap" ref="hScroller">
 				<div :style="{width: _hScrollWidth}" class="my-editor-h-scroller"></div>
 			</div>
+			<!-- 垂直滚动条 -->
 			<div @scroll="onVscroll" class="my-editor-v-scroller-wrap" ref="vScroller">
 				<div :style="{height: _vScrollHeight}" class="my-editor-v-scroller"></div>
 			</div>
+			<!-- 输入框 -->
 			<textarea
 				:style="{top: _textAreaPos.top, left: _textAreaPos.left}"
 				@blur="onBlur"
@@ -78,6 +94,7 @@ export default {
             scrollTop: 0,
             maxLine: 0,
             scrollerArea: {},
+            selectedRange: null,
             maxWidthObj: {
                 line: 1,
                 width: 0
@@ -101,9 +118,9 @@ export default {
             return this.maxWidthObj.width > this.scrollerArea.width ? this.maxWidthObj.width + 'px' : '100%';
         },
         _cursorRealPos() {
-            var left = this.getStrWidth(this.htmls[this.cursorPos.line - 1].text, 0, this.cursorPos.column);
-            var top = (this.cursorPos.line - this.startLine) * this.charObj.charHight;
-            var relTop = this.cursorPos.line * this.charObj.charHight;
+            let left = this.getStrWidth(this.htmls[this.cursorPos.line - 1].text, 0, this.cursorPos.column);
+            let top = (this.cursorPos.line - this.startLine) * this.charObj.charHight;
+            let relTop = this.cursorPos.line * this.charObj.charHight;
             // 强制滚动使光标处于可见区域
             if (this.forceCursorView) {
                 if (relTop > this.scrollTop + this.scrollerArea.height - this.charObj.charHight) {
@@ -121,9 +138,9 @@ export default {
             };
         },
         _textAreaPos() {
-            var cursorRealPos = this._cursorRealPos;
-            var left = this.$util.getNum(cursorRealPos.left);
-            var top = this.$util.getNum(cursorRealPos.top) + this.top;
+            let cursorRealPos = this._cursorRealPos;
+            let left = this.$util.getNum(cursorRealPos.left);
+            let top = this.$util.getNum(cursorRealPos.top) + this.top;
             left -= this.scrollLeft;
             left = left < this.charObj.charWidth ? this.charObj.charWidth : left;
             left = left > this.scrollerArea.width - this.charObj.charWidth ? this.scrollerArea.width - this.charObj.charWidth : left;
@@ -149,6 +166,7 @@ export default {
         this.charObj = this.$util.getCharWidth(this.$scroller);
         this.render();
         this.focus();
+        this.initEvent();
     },
     methods: {
         showCursor() {
@@ -157,7 +175,7 @@ export default {
             }
             this.cursorPos.show = true;
             this.cursorPos.visible = true;
-            var _timer = () => {
+            let _timer = () => {
                 clearTimeout(this.curserTimer);
                 this.curserTimer = setTimeout(() => {
                     this.cursorPos.visible = !this.cursorPos.visible;
@@ -194,14 +212,42 @@ export default {
             });
         },
         renderSelectedBg() {
-
+            if (!this.selectedRange) {
+                return;
+            }
+            let start = this.selectedRange.start;
+            let end = this.selectedRange.end;
+            let same = this.$util.comparePos(start, end);
+            if (same > 0) {
+                let tmp = start;
+                start = end;
+                end = tmp;
+            } else if (!same) {
+                this.clearRnage();
+                return;
+            }
+            let text = this.htmls[start.line - 1].text;
+            start.left = this.getStrWidth(text, 0, start.column);
+            if (start.line == end.line) {
+                start.width = this.getStrWidth(text, start.column, end.column);
+            } else {
+                start.width = this.getStrWidth(text, start.column);
+                end.left = 0;
+                text = this.htmls[end.line - 1].text;
+                end.width = this.getStrWidth(text, 0, end.column);
+            }
+            this.selectedRange.start = start;
+            this.selectedRange.end = end;
+        },
+        clearRnage() {
+            this.selectedRange = null;
         },
         // 插入内容
         insertContent(text) {
-            var nowLineText = this.htmls[this.cursorPos.line - 1].text;
-            var nowColume = this.cursorPos.column;
-            var newLine = this.cursorPos.line;
-            var newColume = nowColume;
+            let nowLineText = this.htmls[this.cursorPos.line - 1].text;
+            let nowColume = this.cursorPos.column;
+            let newLine = this.cursorPos.line;
+            let newColume = nowColume;
             text = text.split('\n');
             text = text.map((item) => {
                 return {
@@ -223,7 +269,7 @@ export default {
                 text[0] = this.htmls[this.cursorPos.line - 1];
             }
             text.map((item, index) => {
-                var width = this.getStrWidth(item.text);
+                let width = this.getStrWidth(item.text);
                 // 增加2像素，给光标预留位置
                 width += 2;
                 item.width = width;
@@ -244,9 +290,6 @@ export default {
         deleteContent(keyCode) {
 
         },
-        clearRnage() {
-
-        },
         // 设置鼠标位置
         setCursorPos(line, column) {
             this.cursorPos.line = line;
@@ -256,7 +299,7 @@ export default {
         },
         // 获取最大宽度
         setMaxWidth() {
-            var maxWidthObj = { line: 1, width: 0 };
+            let maxWidthObj = { line: 1, width: 0 };
             this.htmls.map((item, index) => {
                 if (item.width > maxWidthObj.width) {
                     maxWidthObj = {
@@ -271,12 +314,15 @@ export default {
             return this.$util.getStrWidth(str, this.charObj.charWidth, this.charObj.fullAngleCharWidth, start, end);
         },
         getColumnByWidth(text, offsetX) {
-            var halfCharWidth = this.charObj.charWidth / 2;
-            var left = 0, right = text.length;
+            let halfCharWidth = this.charObj.charWidth / 2;
+            let halfFullCharWidth = this.charObj.fullAngleCharWidth / 2;
+            let left = 0, right = text.length;
+            let mid, width, w;
             while (left < right) {
-                var mid = (left + right) / 2;
-                var width = this.getStrWidth(text, 0, mid);
-                if (Math.abs(width - offsetX) < halfCharWidth) {
+                mid = Math.floor((left + right) / 2);
+                width = this.getStrWidth(text, 0, mid);
+                w = text[mid - 1].match(this.$util.fullAngleReg) ? halfFullCharWidth : halfCharWidth;
+                if (Math.abs(width - offsetX) < w) {
                     left = mid;
                     break;
                 } else if (width > offsetX) {
@@ -287,38 +333,68 @@ export default {
             }
             return left;
         },
-        // 点击代码行
-        onLineMup(num, e) {
-            var text = this.htmls[num - 1].text;
-            var column = this.getColumnByWidth(text, e.offsetX);
-            this.setCursorPos(num, left);
-            this.focus();
-            this.lineClicked = true;
+        // 根据鼠标事件对象获取行列坐标
+        getPosByEvent(e) {
+            let $scroller = this.$(this.$scroller);
+            let offset = $scroller.offset();
+            let column = 0;
+            let clientX = e.clientX < 0 ? 0 : e.clientX;
+            let clientY = e.clientY < 0 ? 0 : e.clientY;
+            let line = Math.ceil((clientY + this.scrollTop - offset.top) / this.charObj.charHight) || 1;
+            if (line > this.htmls.length) {
+                line = this.htmls.length;
+                column = this.htmls[line - 1].text.length;
+            } else {
+                column = this.getColumnByWidth(this.htmls[line - 1].text, clientX + this.scrollLeft - offset.left);
+            }
+            return {
+                line: line,
+                column: column
+            }
+        },
+        initEvent() {
+            this.$(document).on('mousemove', (e) => {
+                this.onScrollerMmove(e);
+            });
+            this.$(document).on('mouseup', (e) => {
+                this.onScrollerMup(e);
+            });
         },
         // 鼠标按下事件
         onScrollerMdown(e) {
+            let pos = this.getPosByEvent(e);
+            this.setCursorPos(pos.line, pos.column);
+            this.focus();
+            this.clearRnage();
             this.mouseStartObj = {
                 time: Date.now(),
-                x: e.pageX,
-                y: e.pageY,
+                start: pos
             }
         },
         // 鼠标移动事件
-        onScrollerMmove() {
-            if (this.mouseStartObj && Date.now() - this.mouseStartObj.time >= 300) {
-                console.log('selectmove')
+        onScrollerMmove(e) {
+            if (this.mouseStartObj && Date.now() - this.mouseStartObj.time > 100) {
+                this.selectedRange = {
+                    start: this.mouseStartObj.start,
+                    end: this.getPosByEvent(e)
+                }
+                this.renderSelectedBg();
             }
         },
         // 鼠标抬起事件
         onScrollerMup(e) {
             // 按下到抬起的间隔大于100ms，属于选中结束事件
-            if (this.mouseStartObj && Date.now() - this.mouseStartObj.time >= 300) {
-                console.log('selectend')
-            } else if (!this.lineClicked) { // 点击事件
-                this.setCursorPos(this.htmls.length, this.htmls[this.htmls.length - 1].text.length);
-                this.focus();
+            if (this.mouseStartObj && Date.now() - this.mouseStartObj.time > 100) {
+                let end = this.getPosByEvent(e);
+                this.selectedRange = {
+                    start: this.mouseStartObj.start,
+                    end: end
+                }
+                this.renderSelectedBg();
+                this.setCursorPos(end.line, end.column);
+            } else {
+                this.clearRnage();
             }
-            this.lineClicked = false;
             this.mouseStartObj = null;
         },
         // 左右滚动事件
@@ -349,7 +425,7 @@ export default {
         // 中文输入结束
         onCompositionend() {
             if (this.compositionstart) {
-                var text = this.$textarea.value || '';
+                let text = this.$textarea.value || '';
                 if (text) {
                     this.insertContent(text);
                     this.$textarea.value = '';
@@ -363,7 +439,7 @@ export default {
         // 输入事件
         onInput() {
             if (!this.compositionstart) {
-                var text = this.$textarea.value || '';
+                let text = this.$textarea.value || '';
                 if (text) {
                     this.insertContent(text);
                     this.$textarea.value = '';
@@ -372,10 +448,10 @@ export default {
         },
         // 复制事件
         onCopy(e) {
-            var mime = window.clipboardData ? "Text" : "text/plain";
-            var clipboardData = e.clipboardData || window.clipboardData;
+            let mime = window.clipboardData ? "Text" : "text/plain";
+            let clipboardData = e.clipboardData || window.clipboardData;
             if (this.selectedRange) {
-                var text = this.getRangeText(this.selectedRange.start, this.selectedRange.end);
+                let text = this.getRangeText(this.selectedRange.start, this.selectedRange.end);
                 clipboardData.setData(mime, text);
                 //返回false阻止默认复制，否则setData无效
                 return false;
@@ -383,9 +459,9 @@ export default {
         },
         // 粘贴事件
         onPaste(e) {
-            var mime = window.clipboardData ? "Text" : "text/plain";
-            var clipboardData = e.clipboardData || window.clipboardData;
-            var copyText = '';
+            let mime = window.clipboardData ? "Text" : "text/plain";
+            let clipboardData = e.clipboardData || window.clipboardData;
+            let copyText = '';
             copyText = clipboardData.getData(mime);
             this.insertContent(copyText);
         },
@@ -430,16 +506,16 @@ export default {
                         break;
                     case 38: //up arrow
                         if (this.cursorPos.line > 1) {
-                            var text = this.htmls[this.cursorPos.line - 1].text;
-                            var width = this.getStrWidth(text, 0, this.cursorPos.column);
+                            let text = this.htmls[this.cursorPos.line - 1].text;
+                            let width = this.getStrWidth(text, 0, this.cursorPos.column);
                             text = this.htmls[this.cursorPos.line - 2].text;
-                            var column = this.getColumnByWidth(text, width);
+                            let column = this.getColumnByWidth(text, width);
                             this.setCursorPos(this.cursorPos.line - 1, column);
                         }
                         this.clearRnage();
                         break;
                     case 39: //right arrow
-                        var text = this.htmls[this.cursorPos.line - 1].text;
+                        let text = this.htmls[this.cursorPos.line - 1].text;
                         if (this.cursorPos.column < text.length) {
                             this.setCursorPos(this.cursorPos.line, this.cursorPos.column + 1);
                         } else if (this.cursorPos.line < this.htmls.length) {
@@ -449,10 +525,10 @@ export default {
                         break;
                     case 40: //down arrow
                         if (this.cursorPos.line < this.htmls.length) {
-                            var text = this.htmls[this.cursorPos.line - 1].text;
-                            var width = this.getStrWidth(text, 0, this.cursorPos.column);
+                            let text = this.htmls[this.cursorPos.line - 1].text;
+                            let width = this.getStrWidth(text, 0, this.cursorPos.column);
                             text = this.htmls[this.cursorPos.line].text;
-                            var column = this.getColumnByWidth(text, width);
+                            let column = this.getColumnByWidth(text, width);
                             this.setCursorPos(this.cursorPos.line + 1, column);
                         }
                         this.clearRnage();

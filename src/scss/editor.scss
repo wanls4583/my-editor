@@ -99,7 +99,19 @@ body {
         }
     }
 
+    &-line-bg {
+        position: absolute;
+        top: 0;
+        height: 100%;
+    }
+
+    &-bg-color {
+        background-color: #49483e;
+    }
+
     &-code {
+        position: relative;
+        z-index: 1;
         display: inline-block;
         height: 100%;
         white-space: pre;
