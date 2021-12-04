@@ -1,0 +1,177 @@
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    width: 100;
+    height: 100%;
+}
+
+#app {
+    width: 100;
+    height: 100%;
+}
+
+.my-editor {
+    &-wrap {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background-color: #272822;
+        color: #f8f8f2;
+        font-style: normal;
+        font-variant-ligatures: normal;
+        font-variant-caps: normal;
+        font-variant-numeric: normal;
+        font-variant-east-asian: normal;
+        font-weight: normal;
+        font-stretch: normal;
+        font-size: 13px;
+        line-height: 1.5em;
+        font-family: Monaco, Menlo, "Ubuntu Mono", Consolas, source-code-pro, monospace;
+        -webkit-tap-highlight-color: rgab(0, 0, 0, 0);
+    }
+
+    &-nums {
+        position: relative;
+        float: left;
+    }
+
+    &-num {
+        padding: 0 20px;
+        color: #999999;
+
+        &-active {
+            background-color: #3e3d32;
+        }
+    }
+
+    &-content {
+        position: relative;
+        float: left;
+        height: 1000000px;
+        padding-right: 2px;
+
+        &-wrap {
+            position: relative;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        &-scroller {
+            position: relative;
+            height: 100%;
+            overflow: hidden;
+            margin-right: 17px;
+        }
+    }
+
+    &-line {
+        position: relative;
+        z-index: 1;
+        height: 19px;
+        line-height: 19px;
+        white-space: nowrap;
+
+        &.active::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            z-index: -1;
+            width: 100%;
+            height: 1px;
+            background-color: #3e3d32;
+        }
+
+        &.active::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            z-index: -1;
+            width: 100%;
+            height: 1px;
+            background-color: #3e3d32;
+        }
+    }
+
+    &-code {
+        display: inline-block;
+        height: 100%;
+        white-space: pre;
+    }
+
+    &-cursor {
+        position: absolute;
+        left: 0;
+        z-index: 2;
+        width: 1px;
+        background-color: #fff;
+    }
+
+    &-textarea {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: -1;
+        width: 1px;
+        height: 19px;
+        padding: 0;
+        border-style: none;
+        outline: none;
+        opacity: 0;
+    }
+
+    &-v-scroller-wrap {
+        position: absolute;
+        z-index: 1;
+        top: 0;
+        bottom: 17px;
+        right: 0;
+        width: 17px;
+        overflow: auto;
+    }
+
+    &-h-scroller-wrap {
+        position: absolute;
+        z-index: 1;
+        bottom: 0;
+        left: 0;
+        right: 17px;
+        height: 17px;
+        overflow: auto;
+    }
+
+    &-v-scroller {
+        width: 100%;
+    }
+
+    &-h-scroller {
+        height: 100%;
+    }
+
+    &-h-scroller-wrap::-webkit-scrollbar,
+    &-v-scroller-wrap::-webkit-scrollbar {
+        border-radius: 4px;
+        background-color: rgb(76, 77, 72);
+        box-shadow: 0 0 20px rgba(0, 0, 0, .2);
+    }
+
+    &-v-scroller-wrap::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    &-h-scroller-wrap::-webkit-scrollbar {
+        height: 8px;
+    }
+
+    &-h-scroller-wrap::-webkit-scrollbar-thumb,
+    &-v-scroller-wrap::-webkit-scrollbar-thumb {
+        border-radius: 4px;
+        background-color: rgb(115, 116, 112);
+    }
+}
