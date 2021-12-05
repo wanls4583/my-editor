@@ -82,6 +82,7 @@ export default {
             htmls: [{
                 text: '',
                 html: '',
+                hilighted: false,
                 width: 0
             }],
             nums: [1],
@@ -180,10 +181,12 @@ export default {
         this.initEvent();
     },
     methods: {
+        // 初始化默认数据
         initData() {
             this.tabSize = 4;
             this.space = this.$util.space(this.tabSize);
         },
+        // 初始化文档事件
         initEvent() {
             this.$(document).on('mousemove', (e) => {
                 this.onScrollerMmove(e);
@@ -192,6 +195,7 @@ export default {
                 this.onScrollerMup(e);
             });
         },
+        // 显示光标
         showCursor() {
             if (this.cursorPos.show) {
                 return;
@@ -207,15 +211,18 @@ export default {
             }
             _timer();
         },
+        // 隐藏光标
         hideCursor() {
             clearTimeout(this.curserTimer);
             this.cursorPos.show = false;
         },
+        // 聚焦
         focus() {
             setTimeout(() => {
                 this.$textarea.focus();
             }, 300);
         },
+        // 渲染
         render() {
             this.renderLine();
             this.$nextTick(() => {
@@ -225,18 +232,26 @@ export default {
                 }
             });
         },
+        // 渲染代码
         renderLine() {
             this.renderHtmls = this.htmls.slice(this.startLine - 1, this.startLine - 1 + this.maxLine);
             this.renderHtmls = this.renderHtmls.map((item, index) => {
+                let selected = false;
+                let num = this.startLine + index;
+                if (this.selectedRange && num > this.selectedRange.start.line && num < this.selectedRange.end.line) {
+                    selected = true;
+                }
                 return {
                     html: item.html,
-                    num: this.startLine + index
+                    num: num,
+                    selected: selected
                 }
             });
             this.nums = this.renderHtmls.map((item) => {
                 return item.num
             });
         },
+        // 渲染选中背景
         renderSelectedBg() {
             if (!this.selectedRange) {
                 return;
@@ -269,6 +284,7 @@ export default {
             this.selectedRange.start = start;
             this.selectedRange.end = end;
         },
+        // 清除选中背景
         clearRnage() {
             this.selectedRange = null;
             this.renderHtmls.map((item) => {
@@ -277,6 +293,10 @@ export default {
         },
         // 插入内容
         insertContent(text) {
+            // 如果有选中区域，需要先删除选中区域
+            if (this.selectedRange) {
+                this.deleteContent();
+            }
             let nowLineText = this.htmls[this.cursorPos.line - 1].text;
             let nowColume = this.cursorPos.column;
             let newLine = this.cursorPos.line;
@@ -286,7 +306,9 @@ export default {
             text = text.map((item) => {
                 return {
                     text: item,
-                    html: item
+                    html: item,
+                    width: 0,
+                    hilighted: false
                 }
             });
             if (text.length > 1) { // 插入多行
@@ -322,7 +344,46 @@ export default {
         },
         // 删除内容
         deleteContent(keyCode) {
-
+            let start = null;
+            let startObj = this.htmls[this.cursorPos.line - 1];
+            let text = startObj.text;
+            if (this.selectedRange) { // 删除选中区域
+                let end = this.selectedRange.end;
+                let endObj = this.htmls[end.line - 1];
+                start = this.selectedRange.start;
+                startObj = this.htmls[start.line - 1];
+                text = startObj.text;
+                if (start.line == end.line) { // 单行选中
+                    text = text.slice(0, start.column) + text.slice(end.column);
+                    startObj.text = text;
+                } else { // 多行选中
+                    text = text.slice(0, start.column);
+                    startObj.text = text;
+                    text = endObj.text;
+                    text = text.slice(end.column);
+                    startObj.text += text;
+                    this.htmls.splice(start.line, end.line - start.line);
+                }
+                this.setCursorPos(start.line, startObj.text.length);
+            } else if (this.$util.keyCode.delete == keyCode) { // 向后删除一个字符
+                text = text.slice(0, this.cursorPos.column) + text.slice(this.cursorPos.column + 1);
+                startObj.text = text;
+            } else if (this.cursorPos.column > 0) { // 向前删除一个字符
+                text = text.slice(0, this.cursorPos.column - 1) + text.slice(this.cursorPos.column);
+                startObj.text = text;
+                this.setCursorPos(this.cursorPos.line, this.cursorPos.column - 1);
+            }
+            startObj.html = startObj.text;
+            startObj.width = this.getStrWidth(startObj.text);
+            startObj.hilighted = false;
+            if (startObj.width > this.maxWidthObj.width) {
+                this.maxWidthObj = {
+                    line: start.line,
+                    width: startObj.width
+                }
+            }
+            this.clearRnage();
+            this.render();
         },
         // 设置鼠标位置
         setCursorPos(line, column) {
@@ -385,6 +446,23 @@ export default {
                 line: line,
                 column: column
             }
+        },
+        // 获取选中范围内的文本
+        getRangeText(start, end) {
+            var text = this.htmls[start.line - 1].text;
+            if (start.line != end.line) {
+                let arr = [];
+                text = text.slice(start.column);
+                arr = this.htmls.slice(start.line, end.line - 1);
+                arr = arr.map((item) => {
+                    return item.text;
+                });
+                text += arr.length ? '\n' + arr.join('\n') : '';
+                text += '\n' + this.htmls[end.line - 1].text.slice(0, end.column);
+            } else {
+                text = text.slice(start.column, end.column);
+            }
+            return text;
         },
         // 鼠标按下事件
         onScrollerMdown(e) {
@@ -545,8 +623,6 @@ export default {
             if (this.selectedRange) {
                 let text = this.getRangeText(this.selectedRange.start, this.selectedRange.end);
                 clipboardData.setData(mime, text);
-                //返回false阻止默认复制，否则setData无效
-                return false;
             }
         },
         // 粘贴事件
@@ -575,7 +651,7 @@ export default {
                         column: 0
                     },
                     end: {
-                        line: maxLength,
+                        line: this.htmls.length,
                         column: this.htmls[this.htmls.length - 1].text.length
                     }
                 }
