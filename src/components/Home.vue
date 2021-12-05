@@ -125,6 +125,8 @@ export default {
             if (this.forceCursorView) {
                 if (relTop > this.scrollTop + this.scrollerArea.height - this.charObj.charHight) {
                     this.$vScroller.scrollTop = relTop + this.charObj.charHight - this.scrollerArea.height;
+                } else if (top < 0 || top == 0 && this.top < 0) {
+                    this.$vScroller.scrollTop = (this.cursorPos.line - 1) * this.charObj.charHight;
                 }
                 if (left > this.scrollerArea.width + this.scrollLeft - this.charObj.fullAngleCharWidth) {
                     this.$hScroller.scrollLeft = left + this.charObj.fullAngleCharWidth - this.scrollerArea.width;
@@ -166,9 +168,22 @@ export default {
         this.charObj = this.$util.getCharWidth(this.$scroller);
         this.render();
         this.focus();
+        this.initData();
         this.initEvent();
     },
     methods: {
+        initData() {
+            this.tabSize = 4;
+            this.space = this.$util.space(this.tabSize);
+        },
+        initEvent() {
+            this.$(document).on('mousemove', (e) => {
+                this.onScrollerMmove(e);
+            });
+            this.$(document).on('mouseup', (e) => {
+                this.onScrollerMup(e);
+            });
+        },
         showCursor() {
             if (this.cursorPos.show) {
                 return;
@@ -218,6 +233,7 @@ export default {
             let start = this.selectedRange.start;
             let end = this.selectedRange.end;
             let same = this.$util.comparePos(start, end);
+            this.setCursorPos(end.line, end.column);
             if (same > 0) {
                 let tmp = start;
                 start = end;
@@ -248,7 +264,8 @@ export default {
             let nowColume = this.cursorPos.column;
             let newLine = this.cursorPos.line;
             let newColume = nowColume;
-            text = text.split('\n');
+            text = text.replace(/\t/g, this.space);
+            text = text.split(/\r\n|\n/);
             text = text.map((item) => {
                 return {
                     text: item,
@@ -321,12 +338,12 @@ export default {
             while (left < right) {
                 mid = Math.floor((left + right) / 2);
                 width = this.getStrWidth(text, 0, mid);
-                w = text[mid - 1].match(this.$util.fullAngleReg) ? halfFullCharWidth : halfCharWidth;
-                if (Math.abs(width - offsetX) < w) {
+                w = text[mid - 1] && text[mid - 1].match(this.$util.fullAngleReg) ? halfFullCharWidth : halfCharWidth;
+                if (!mid || Math.abs(width - offsetX) < w) {
                     left = mid;
                     break;
                 } else if (width > offsetX) {
-                    right = mid - 1;
+                    right = mid;
                 } else {
                     left = mid + 1;
                 }
@@ -352,14 +369,6 @@ export default {
                 column: column
             }
         },
-        initEvent() {
-            this.$(document).on('mousemove', (e) => {
-                this.onScrollerMmove(e);
-            });
-            this.$(document).on('mouseup', (e) => {
-                this.onScrollerMup(e);
-            });
-        },
         // 鼠标按下事件
         onScrollerMdown(e) {
             let pos = this.getPosByEvent(e);
@@ -373,12 +382,76 @@ export default {
         },
         // 鼠标移动事件
         onScrollerMmove(e) {
+            let that = this;
             if (this.mouseStartObj && Date.now() - this.mouseStartObj.time > 100) {
+                var offset = this.$(this.$scroller).offset();
                 this.selectedRange = {
-                    start: this.mouseStartObj.start,
+                    start: Object.assign({}, this.mouseStartObj.start),
                     end: this.getPosByEvent(e)
                 }
                 this.renderSelectedBg();
+                cancelAnimationFrame(this.selectMoveTimer);
+                if (e.clientY > offset.top + this.scrollerArea.height) { //鼠标超出底部区域
+                    _move('down', e.clientY - offset.top - this.scrollerArea.height);
+                } else if (e.clientY < offset.top) { //鼠标超出顶部区域
+                    _move('up', offset.top - e.clientY);
+                } else if (e.clientX < offset.left) { //鼠标超出左边区域
+                    _move('left', offset.left - e.clientX);
+                } else if (e.clientX > offset.left + this.scrollerArea.width) { //鼠标超出右边区域
+                    _move('right', e.clientX - offset.left - this.scrollerArea.width);
+                }
+            }
+            function _move(autoDirect, speed) {
+                let originLine = that.cursorPos.line;
+                let originColumn = that.cursorPos.column;
+                let count = 0; // 累计滚动距离
+                _run(autoDirect, speed);
+
+                function _run(autoDirect, speed) {
+                    let line = originLine;
+                    let column = originColumn;
+                    switch (autoDirect) {
+                        case 'up':
+                            count += speed;
+                            line = Math.floor(count / that.charObj.charHight);
+                            line = originLine - line;
+                            break;
+                        case 'down':
+                            count += speed;
+                            line = Math.floor(count / that.charObj.charHight);
+                            line = originLine + line;
+                            break;
+                        case 'left':
+                            count += speed;
+                            column = Math.floor(count / that.charObj.charWidth);
+                            column = originColumn - column;
+                            break;
+                        case 'right':
+                            count += speed;
+                            column = Math.floor(count / that.charObj.charWidth);
+                            column = originColumn + column;
+                            break;
+                    }
+                    line = line < 1 ? 1 : (line > that.htmls.length ? that.htmls.length : line);
+                    column = column < 0 ? 0 : (column > that.htmls[originLine - 1].text.length ? that.htmls[originLine - 1].text.length : column);
+                    that.setCursorPos(line, column);
+                    that.selectedRange = {
+                        start: Object.assign(that.mouseStartObj.start),
+                        end: {
+                            line: line,
+                            column: column
+                        }
+                    }
+                    that.selectedRange.start = that.mouseStartObj.start;
+                    that.selectedRange.end = {
+                        line: line,
+                        column: column
+                    }
+                    that.renderSelectedBg();
+                    that.selectMoveTimer = requestAnimationFrame(() => {
+                        _run(autoDirect, speed)
+                    });
+                }
             }
         },
         // 鼠标抬起事件
@@ -395,6 +468,8 @@ export default {
             } else {
                 this.clearRnage();
             }
+            // 停止滚动选中
+            cancelAnimationFrame(this.selectMoveTimer);
             this.mouseStartObj = null;
         },
         // 左右滚动事件
