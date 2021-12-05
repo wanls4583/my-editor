@@ -36,11 +36,11 @@
 				</div>
 			</div>
 			<!-- 水平滚动条 -->
-			<div @scroll="onHscroll" class="my-editor-h-scroller-wrap" ref="hScroller">
+			<div @mousedown.stop @mouseup.stop @scroll="onHscroll" class="my-editor-h-scroller-wrap" ref="hScroller">
 				<div :style="{width: _hScrollWidth}" class="my-editor-h-scroller"></div>
 			</div>
 			<!-- 垂直滚动条 -->
-			<div @scroll="onVscroll" class="my-editor-v-scroller-wrap" ref="vScroller">
+			<div @mousedown.stop @mouseup.stop @scroll="onVscroll" class="my-editor-v-scroller-wrap" ref="vScroller">
 				<div :style="{height: _vScrollHeight}" class="my-editor-v-scroller"></div>
 			</div>
 			<!-- 输入框 -->
@@ -252,14 +252,14 @@ export default {
             });
         },
         // 渲染选中背景
-        renderSelectedBg() {
+        renderSelectedBg(forceCursorView) {
             if (!this.selectedRange) {
                 return;
             }
             let start = this.selectedRange.start;
             let end = this.selectedRange.end;
             let same = this.$util.comparePos(start, end);
-            this.setCursorPos(end.line, end.column);
+            this.setCursorPos(end.line, end.column, forceCursorView);
             if (same > 0) {
                 let tmp = start;
                 start = end;
@@ -386,11 +386,11 @@ export default {
             this.render();
         },
         // 设置鼠标位置
-        setCursorPos(line, column) {
+        setCursorPos(line, column, forceCursorView) {
             this.cursorPos.line = line;
             this.cursorPos.column = column;
             this.cursorPos.visible = true;
-            this.forceCursorView = true;
+            this.forceCursorView = forceCursorView === undefined ? true : forceCursorView;
         },
         // 获取最大宽度
         setMaxWidth() {
@@ -655,7 +655,7 @@ export default {
                         column: this.htmls[this.htmls.length - 1].text.length
                     }
                 }
-                this.renderSelectedBg();
+                this.renderSelectedBg(false);
             } else if (e.ctrlKey && (e.keyCode == 90 || e.keyCode == 122)) { //ctrl+z，撤销
                 e.preventDefault();
                 this.clearRnage();
