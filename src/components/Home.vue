@@ -26,6 +26,7 @@
 							class="my-editor-line-bg my-editor-bg-color"
 							v-if="_endBgLineVisible(line.num)"
 						></div>
+						<span :style="{left: _tabLineLeft(tab)}" class="my-editor-tab-line" v-for="tab in line.tabNum"></span>
 					</div>
 					<!-- 模拟光标 -->
 					<div
@@ -163,6 +164,11 @@ export default {
             return (num) => {
                 return this.selectedRange && num == this.selectedRange.end.line && this.selectedRange.end.line > this.selectedRange.start.line
             }
+        },
+        _tabLineLeft() {
+            return (tab) => {
+                return (tab - 1) * this.tabSize * this.charObj.charWidth + 'px';
+            }
         }
     },
     created() {
@@ -253,13 +259,16 @@ export default {
 
             function _getObj(item, num) {
                 let selected = false;
+                let tabNum = /^\s+/.exec(item.text);
+                tabNum = tabNum && Math.floor(tabNum[0].length / 4) || 0;
                 if (that.selectedRange && num > that.selectedRange.start.line && num < that.selectedRange.end.line) {
                     selected = true;
                 }
                 return {
                     html: item.html,
                     num: num,
-                    selected: selected
+                    tabNum: tabNum,
+                    selected: selected,
                 }
             }
         },

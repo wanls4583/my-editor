@@ -104,11 +104,21 @@ body {
     &-line-bg {
         position: absolute;
         top: 0;
+        z-index: 0;
         height: 100%;
     }
 
     &-bg-color {
         background-color: #49483e;
+    }
+
+    &-tab-line {
+        position: absolute;
+        top: 0;
+        z-index: 2;
+        width: 0px;
+        height: 100%;
+        border-left: 1px solid #3e3d32;
     }
 
     &-code {
