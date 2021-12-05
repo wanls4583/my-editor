@@ -233,12 +233,27 @@ export default {
             });
         },
         // 渲染代码
-        renderLine() {
+        renderLine(line) {
+            let that = this;
+            // 只更新一行
+            if (line) {
+                let obj = this.renderHtmls[line - this.startLine];
+                obj.html = this.htmls[line - 1].html;
+                Object.assign(obj, _getObj(obj, line));
+                return;
+            }
             this.renderHtmls = this.htmls.slice(this.startLine - 1, this.startLine - 1 + this.maxLine);
             this.renderHtmls = this.renderHtmls.map((item, index) => {
-                let selected = false;
                 let num = this.startLine + index;
-                if (this.selectedRange && num > this.selectedRange.start.line && num < this.selectedRange.end.line) {
+                return _getObj(item, num);
+            });
+            this.nums = this.renderHtmls.map((item) => {
+                return item.num
+            });
+
+            function _getObj(item, num) {
+                let selected = false;
+                if (that.selectedRange && num > that.selectedRange.start.line && num < that.selectedRange.end.line) {
                     selected = true;
                 }
                 return {
@@ -246,10 +261,7 @@ export default {
                     num: num,
                     selected: selected
                 }
-            });
-            this.nums = this.renderHtmls.map((item) => {
-                return item.num
-            });
+            }
         },
         // 渲染选中背景
         renderSelectedBg(forceCursorView) {
@@ -337,7 +349,7 @@ export default {
                 }
             });
             newLine += text.length - 1;
-            this.render();
+            text.length > 1 ? this.render() : this.renderLine(this.cursorPos.line);
             this.$nextTick(() => {
                 this.setCursorPos(newLine, newColume);
             });
@@ -347,6 +359,7 @@ export default {
             let start = null;
             let startObj = this.htmls[this.cursorPos.line - 1];
             let text = startObj.text;
+            let ifOneLine = false; // 是否只需更新一行
             if (this.selectedRange) { // 删除选中区域
                 let end = this.selectedRange.end;
                 let endObj = this.htmls[end.line - 1];
@@ -356,6 +369,7 @@ export default {
                 if (start.line == end.line) { // 单行选中
                     text = text.slice(0, start.column) + text.slice(end.column);
                     startObj.text = text;
+                    ifOneLine = true;
                 } else { // 多行选中
                     text = text.slice(0, start.column);
                     startObj.text = text;
@@ -366,12 +380,25 @@ export default {
                 }
                 this.setCursorPos(start.line, startObj.text.length);
             } else if (this.$util.keyCode.delete == keyCode) { // 向后删除一个字符
-                text = text.slice(0, this.cursorPos.column) + text.slice(this.cursorPos.column + 1);
+                if (this.cursorPos.column == text.length && this.cursorPos.line < this.htmls.length) { // 光标处于行尾
+                    text = startObj.text + this.htmls[this.cursorPos.line].text;
+                    this.htmls.splice(this.cursorPos.line, 1);
+                } else {
+                    text = text.slice(0, this.cursorPos.column) + text.slice(this.cursorPos.column + 1);
+                    ifOneLine = true;
+                }
                 startObj.text = text;
             } else if (this.cursorPos.column > 0) { // 向前删除一个字符
-                text = text.slice(0, this.cursorPos.column - 1) + text.slice(this.cursorPos.column);
+                if (this.cursorPos.column == 0 && this.cursorPos.line > 1) { // 光标处于行首
+                    text = this.htmls[this.cursorPos.line - 2].text + text;
+                    this.htmls.splice(this.cursorPos.line - 1, 1);
+                    this.setCursorPos(this.cursorPos.line - 1, text.length);
+                } else {
+                    text = text.slice(0, this.cursorPos.column - 1) + text.slice(this.cursorPos.column);
+                    this.setCursorPos(this.cursorPos.line, this.cursorPos.column - 1);
+                    ifOneLine = true;
+                }
                 startObj.text = text;
-                this.setCursorPos(this.cursorPos.line, this.cursorPos.column - 1);
             }
             startObj.html = startObj.text;
             startObj.width = this.getStrWidth(startObj.text);
@@ -383,7 +410,7 @@ export default {
                 }
             }
             this.clearRnage();
-            this.render();
+            ifOneLine ? this.renderLine(this.cursorPos.line) : this.render();
         },
         // 设置鼠标位置
         setCursorPos(line, column, forceCursorView) {
