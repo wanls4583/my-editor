@@ -315,14 +315,15 @@ export default {
             });
         },
         // 插入内容
-        insertContent(text) {
+        insertContent(text, stopPushHistory) {
             // 如果有选中区域，需要先删除选中区域
             if (this.selectedRange) {
                 this.deleteContent();
             }
             let nowLineText = this.htmls[this.cursorPos.line - 1].text;
             let nowColume = this.cursorPos.column;
-            let newLine = this.cursorPos.line;
+            let nowLine = this.cursorPos.line;
+            let newLine = nowLine;
             let newColume = nowColume;
             text = text.replace(/\t/g, this.space);
             text = text.split(/\r\n|\n/);
@@ -364,19 +365,38 @@ export default {
             this.$nextTick(() => {
                 this.setCursorPos(newLine, newColume);
             });
+            let historyObj = {
+                type: this.$util.command.INSERT,
+                start: {
+                    line: nowLine,
+                    column: nowColume
+                },
+                end: {
+                    line: newLine,
+                    column: newColume
+                }
+            }
+            if (!stopPushHistory) { // 新增历史记录
+                this.pushHistory(historyObj);
+            } else { // 更新历史记录
+                this.updateHistory(this.history.index, historyObj);
+            }
         },
         // 删除内容
-        deleteContent(keyCode) {
+        deleteContent(keyCode, stopPushHistory) {
             let start = null;
             let startObj = this.htmls[this.cursorPos.line - 1];
             let text = startObj.text;
             let ifOneLine = false; // 是否只需更新一行
+            let originPos = this.$util.deepAssign({}, this.cursorPos);
+            let deleteText = '';
             if (this.selectedRange) { // 删除选中区域
                 let end = this.selectedRange.end;
                 let endObj = this.htmls[end.line - 1];
                 start = this.selectedRange.start;
                 startObj = this.htmls[start.line - 1];
                 text = startObj.text;
+                deleteText = this.getRangeText(this.selectedRange.start, this.selectedRange.end);
                 if (start.line == end.line) { // 单行选中
                     text = text.slice(0, start.column) + text.slice(end.column);
                     startObj.text = text;
@@ -390,11 +410,13 @@ export default {
                     this.htmls.splice(start.line, end.line - start.line);
                 }
                 this.setCursorPos(start.line, startObj.text.length);
-            } else if (this.$util.keyCode.delete == keyCode) { // 向后删除一个字符
+            } else if (this.$util.keyCode.DELETE == keyCode) { // 向后删除一个字符
                 if (this.cursorPos.column == text.length && this.cursorPos.line < this.htmls.length) { // 光标处于行尾
                     text = startObj.text + this.htmls[this.cursorPos.line].text;
                     this.htmls.splice(this.cursorPos.line, 1);
+                    deleteText = '\n';
                 } else {
+                    deleteText = text[this.cursorPos.column];
                     text = text.slice(0, this.cursorPos.column) + text.slice(this.cursorPos.column + 1);
                     ifOneLine = true;
                 }
@@ -404,7 +426,9 @@ export default {
                     text = this.htmls[this.cursorPos.line - 2].text + text;
                     this.htmls.splice(this.cursorPos.line - 2, 1);
                     this.setCursorPos(this.cursorPos.line - 1, text.length);
+                    deleteText = '\n'
                 } else {
+                    deleteText = text[this.cursorPos.column - 1];
                     text = text.slice(0, this.cursorPos.column - 1) + text.slice(this.cursorPos.column);
                     this.setCursorPos(this.cursorPos.line, this.cursorPos.column - 1);
                     ifOneLine = true;
@@ -422,6 +446,56 @@ export default {
             }
             this.clearRnage();
             ifOneLine ? this.renderLine(this.cursorPos.line) : this.render();
+            let historyObj = {
+                type: this.$util.command.DELETE,
+                keyCode: keyCode,
+                cursorPos: this.$util.deepAssign({}, this.cursorPos),
+                text: deleteText
+            };
+            if (!stopPushHistory) { // 新增历史记录
+                deleteText && this.pushHistory(historyObj);
+            } else { // 更新历史记录
+                this.updateHistory(this.history.index, historyObj);
+            }
+        },
+        // 撤销操作
+        undo() {
+            if (this.history.index > 0) {
+                let command = this.history[this.history.index - 1];
+                this.doCommand(command);
+                this.history.index--;
+            }
+        },
+        // 重做操作
+        redo() {
+            if (this.history.index < this.history.length) {
+                let command = this.history[this.history.index];
+                this.history.index++;
+                this.doCommand(command);
+            }
+        },
+        doCommand(command) {
+            switch (command.type) {
+                case this.$util.command.INSERT:
+                    this.selectedRange = {
+                        start: command.start,
+                        end: command.end
+                    }
+                    this.deleteContent(this.$util.keyCode.BACKSPACE, true);
+                    break;
+                case this.$util.command.DELETE:
+                    this.setCursorPos(command.cursorPos.line, command.cursorPos.column);
+                    this.insertContent(command.text, true);
+                    break;
+            }
+        },
+        pushHistory(obj) {
+            this.history = this.history.slice(0, this.history.index);
+            this.history.push(obj);
+            this.history.index = this.history.length;
+        },
+        updateHistory(index, obj) {
+            this.history[index - 1] = obj;
         },
         // 设置鼠标位置
         setCursorPos(line, column, forceCursorView) {
@@ -700,11 +774,13 @@ export default {
                     case 90: //ctrl+z，撤销
                     case 122:
                         e.preventDefault();
-                        this.clearRnage();
+                        this.undo();
+                        break;
                     case 89: //ctrl+y，重做
                     case 121:
                         e.preventDefault();
-                        this.clearRnage();
+                        this.redo();
+                        break;
                 }
             } else {
                 switch (e.keyCode) {
@@ -749,11 +825,11 @@ export default {
                         }
                         this.clearRnage();
                         break;
-                    case this.$util.keyCode.delete: //delete
-                        this.deleteContent(this.$util.keyCode.delete);
+                    case this.$util.keyCode.DELETE: //delete
+                        this.deleteContent(this.$util.keyCode.DELETE);
                         break;
-                    case this.$util.keyCode.backspace: //backspace
-                        this.deleteContent(this.$util.keyCode.backspace);
+                    case this.$util.keyCode.BACKSPACE: //backspace
+                        this.deleteContent(this.$util.keyCode.BACKSPACE);
                         break;
                 }
             }
