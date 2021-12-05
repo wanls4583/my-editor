@@ -13,21 +13,18 @@
 				<div :style="{top: top + 'px', minWidth: _contentMinWidth}" @selectend.prevent="onSelectend" class="my-editor-content" ref="content">
 					<div :class="{active: cursorPos.line == line.num}" :key="line.num" class="my-editor-line" v-for="line in renderHtmls">
 						<!-- my-editor-bg-color为选中的背景颜色 -->
-						<div
-							:class="{'my-editor-bg-color': selectedRange && line.num > selectedRange.start.line && line.num < selectedRange.end.line}"
-							class="my-editor-code"
-						>{{line.html}}</div>
+						<div :class="{'my-editor-bg-color': line.selected}" class="my-editor-code">{{line.html}}</div>
 						<!-- 选中时的首行背景 -->
 						<div
 							:style="{left: selectedRange.start.left + 'px', width: selectedRange.start.width + 'px'}"
 							class="my-editor-line-bg my-editor-bg-color"
-							v-if="selectedRange && line.num == selectedRange.start.line"
+							v-if="_startBgLineVisible(line.num)"
 						></div>
 						<!-- 选中时的末行背景 -->
 						<div
 							:style="{left: selectedRange.end.left + 'px', width: selectedRange.end.width + 'px'}"
 							class="my-editor-line-bg my-editor-bg-color"
-							v-if="selectedRange && line.num == selectedRange.end.line && selectedRange.end.line > selectedRange.start.line"
+							v-if="_endBgLineVisible(line.num)"
 						></div>
 					</div>
 					<!-- 模拟光标 -->
@@ -155,6 +152,16 @@ export default {
                 top: top + 'px',
                 left: left + 'px'
             }
+        },
+        _startBgLineVisible() {
+            return (num) => {
+                return this.selectedRange && num == this.selectedRange.start.line
+            }
+        },
+        _endBgLineVisible() {
+            return (num) => {
+                return this.selectedRange && num == this.selectedRange.end.line && this.selectedRange.end.line > this.selectedRange.start.line
+            }
         }
     },
     created() {
@@ -255,12 +262,18 @@ export default {
                 end.left = 0;
                 text = this.htmls[end.line - 1].text;
                 end.width = this.getStrWidth(text, 0, end.column);
+                this.renderHtmls.map((item) => {
+                    item.selected = item.num > start.line && item.num < end.line;
+                });
             }
             this.selectedRange.start = start;
             this.selectedRange.end = end;
         },
         clearRnage() {
             this.selectedRange = null;
+            this.renderHtmls.map((item) => {
+                item.selected = false;
+            });
         },
         // 插入内容
         insertContent(text) {
