@@ -315,7 +315,7 @@ export default {
             });
         },
         // 插入内容
-        insertContent(text, stopPushHistory) {
+        insertContent(text, isDoCommand) {
             // 如果有选中区域，需要先删除选中区域
             if (this.selectedRange) {
                 this.deleteContent();
@@ -366,7 +366,7 @@ export default {
                 this.setCursorPos(newLine, newColume);
             });
             let historyObj = {
-                type: this.$util.command.INSERT,
+                type: this.$util.command.DELETE,
                 start: {
                     line: nowLine,
                     column: nowColume
@@ -376,14 +376,14 @@ export default {
                     column: newColume
                 }
             }
-            if (!stopPushHistory) { // 新增历史记录
+            if (!isDoCommand) { // 新增历史记录
                 this.pushHistory(historyObj);
-            } else { // 更新历史记录
+            } else { // 撤销或重做操作后，更新历史记录
                 this.updateHistory(this.history.index, historyObj);
             }
         },
         // 删除内容
-        deleteContent(keyCode, stopPushHistory) {
+        deleteContent(keyCode, isDoCommand) {
             let start = null;
             let startObj = this.htmls[this.cursorPos.line - 1];
             let text = startObj.text;
@@ -438,23 +438,30 @@ export default {
             startObj.html = startObj.text;
             startObj.width = this.getStrWidth(startObj.text);
             startObj.hilighted = false;
-            if (startObj.width > this.maxWidthObj.width) {
+            // 更新最大文本宽度
+            if (startObj.width >= this.maxWidthObj.width) {
                 this.maxWidthObj = {
                     line: this.cursorPos.line,
                     width: startObj.width
                 }
+            } else if (
+                this.cursorPos.line == this.maxWidthObj.line ||
+                this.selectedRange && this.maxWidthObj.line >= this.selectedRange.start.line &&
+                this.maxWidthObj.line <= this.selectedRange.end.line) {
+                this.setMaxWidth();
             }
             this.clearRnage();
             ifOneLine ? this.renderLine(this.cursorPos.line) : this.render();
             let historyObj = {
-                type: this.$util.command.DELETE,
+                type: this.$util.command.INSERT,
                 keyCode: keyCode,
                 cursorPos: this.$util.deepAssign({}, this.cursorPos),
+                preCursorPos: originPos,
                 text: deleteText
             };
-            if (!stopPushHistory) { // 新增历史记录
+            if (!isDoCommand) { // 新增历史记录
                 deleteText && this.pushHistory(historyObj);
-            } else { // 更新历史记录
+            } else { // 撤销或重做操作后，更新历史记录
                 this.updateHistory(this.history.index, historyObj);
             }
         },
@@ -474,28 +481,53 @@ export default {
                 this.doCommand(command);
             }
         },
+        // 操作命令
         doCommand(command) {
             switch (command.type) {
-                case this.$util.command.INSERT:
+                case this.$util.command.DELETE:
                     this.selectedRange = {
                         start: command.start,
                         end: command.end
                     }
                     this.deleteContent(this.$util.keyCode.BACKSPACE, true);
                     break;
-                case this.$util.command.DELETE:
+                case this.$util.command.INSERT:
                     this.setCursorPos(command.cursorPos.line, command.cursorPos.column);
                     this.insertContent(command.text, true);
                     break;
             }
         },
-        pushHistory(obj) {
+        // 添加历史记录
+        pushHistory(command) {
+            var lastCommand = this.history[this.history.index - 1];
             this.history = this.history.slice(0, this.history.index);
-            this.history.push(obj);
+            // 两次操作可以合并
+            if (lastCommand && lastCommand.type == command.type && Date.now() - this.pushHistoryTime < 2000) {
+                if (
+                    lastCommand.type == this.$util.command.DELETE &&
+                    command.end.line == command.start.line &&
+                    this.$util.comparePos(lastCommand.end, command.start) == 0) {
+                    lastCommand.end = command.end;
+                } else if (
+                    lastCommand.type == this.$util.command.INSERT &&
+                    command.preCursorPos.line == command.cursorPos.line &&
+                    (
+                        this.$util.comparePos(lastCommand.cursorPos, command.preCursorPos == 0) ||
+                        this.$util.comparePos(lastCommand.cursorPos, command.cursorPos == 0)
+                    )) {
+                    lastCommand.text = command.text + lastCommand.text;
+                } else {
+                    this.history.push(command);
+                }
+            } else {
+                this.history.push(command);
+            }
             this.history.index = this.history.length;
+            this.pushHistoryTime = Date.now();
         },
-        updateHistory(index, obj) {
-            this.history[index - 1] = obj;
+        // 更新历史记录
+        updateHistory(index, command) {
+            this.history[index - 1] = command;
         },
         // 设置鼠标位置
         setCursorPos(line, column, forceCursorView) {
