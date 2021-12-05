@@ -2,8 +2,8 @@
 	<div @selectstart.prevent class="my-editor-wrap">
 		<!-- 行号 -->
 		<div :style="{top: top + 'px'}" class="my-editor-nums">
-			<div :class="{'my-editor-num-active': cursorPos.line==num+startLine-1}" :key="num" class="my-editor-num" v-for="num in maxLine">
-				<span v-if="num+startLine-1<=htmls.length">{{num+startLine-1}}</span>
+			<div :class="{'my-editor-num-active': cursorPos.line==num}" :key="num" class="my-editor-num" v-for="num in nums">
+				<span>{{num}}</span>
 			</div>
 		</div>
 		<div class="my-editor-content-wrap">
@@ -11,7 +11,7 @@
 			<div @mousedown="onScrollerMdown" @wheel.prevent="onWheel" class="my-editor-content-scroller" ref="scroller">
 				<!-- 内如区域 -->
 				<div :style="{top: top + 'px', minWidth: _contentMinWidth}" @selectend.prevent="onSelectend" class="my-editor-content" ref="content">
-					<div :key="line.num" class="my-editor-line" v-for="line in renderHtmls">
+					<div :class="{active: cursorPos.line == line.num}" :key="line.num" class="my-editor-line" v-for="line in renderHtmls">
 						<!-- my-editor-bg-color为选中的背景颜色 -->
 						<div
 							:class="{'my-editor-bg-color': selectedRange && line.num > selectedRange.start.line && line.num < selectedRange.end.line}"
@@ -87,6 +87,7 @@ export default {
                 html: '',
                 width: 0
             }],
+            nums: [1],
             renderHtmls: [],
             startLine: 1,
             top: 0,
@@ -224,6 +225,9 @@ export default {
                     html: item.html,
                     num: this.startLine + index
                 }
+            });
+            this.nums = this.renderHtmls.map((item) => {
+                return item.num
             });
         },
         renderSelectedBg() {
