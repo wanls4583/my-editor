@@ -245,6 +245,7 @@ export default {
             if (line) {
                 let obj = this.renderHtmls[line - this.startLine];
                 obj.html = this.htmls[line - 1].html;
+                obj.text = this.htmls[line - 1].text;
                 Object.assign(obj, _getObj(obj, line));
                 return;
             }
@@ -397,10 +398,10 @@ export default {
                     ifOneLine = true;
                 }
                 startObj.text = text;
-            } else if (this.cursorPos.column > 0) { // 向前删除一个字符
+            } else { // 向前删除一个字符
                 if (this.cursorPos.column == 0 && this.cursorPos.line > 1) { // 光标处于行首
                     text = this.htmls[this.cursorPos.line - 2].text + text;
-                    this.htmls.splice(this.cursorPos.line - 1, 1);
+                    this.htmls.splice(this.cursorPos.line - 2, 1);
                     this.setCursorPos(this.cursorPos.line - 1, text.length);
                 } else {
                     text = text.slice(0, this.cursorPos.column - 1) + text.slice(this.cursorPos.column);
@@ -414,7 +415,7 @@ export default {
             startObj.hilighted = false;
             if (startObj.width > this.maxWidthObj.width) {
                 this.maxWidthObj = {
-                    line: start.line,
+                    line: this.cursorPos.line,
                     width: startObj.width
                 }
             }
@@ -679,7 +680,10 @@ export default {
         },
         // 键盘按下事件
         onKeyDown(e) {
-            if (e.ctrlKey && e.keyCode == 65) { //ctrl+a,全选
+            if (e.keyCode == 9) { //tab键
+                e.preventDefault();
+                this.insertContent(this.space);
+            } else if (e.ctrlKey && e.keyCode == 65) { //ctrl+a,全选
                 e.preventDefault();
                 this.selectedRange = {
                     start: {
