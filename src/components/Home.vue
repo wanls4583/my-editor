@@ -187,10 +187,11 @@ export default {
         this.initEvent();
     },
     methods: {
-        // 初始化默认数据
+        // 初始化数据
         initData() {
             this.tabSize = 4;
             this.space = this.$util.space(this.tabSize);
+            this.history = []; // 操作历史
         },
         // 初始化文档事件
         initEvent() {
@@ -680,30 +681,37 @@ export default {
         },
         // 键盘按下事件
         onKeyDown(e) {
-            if (e.keyCode == 9) { //tab键
-                e.preventDefault();
-                this.insertContent(this.space);
-            } else if (e.ctrlKey && e.keyCode == 65) { //ctrl+a,全选
-                e.preventDefault();
-                this.selectedRange = {
-                    start: {
-                        line: 1,
-                        column: 0
-                    },
-                    end: {
-                        line: this.htmls.length,
-                        column: this.htmls[this.htmls.length - 1].text.length
-                    }
+            if (e.ctrlKey) {
+                switch (e.keyCode) {
+                    case 65://ctrl+a,全选
+                        e.preventDefault();
+                        this.selectedRange = {
+                            start: {
+                                line: 1,
+                                column: 0
+                            },
+                            end: {
+                                line: this.htmls.length,
+                                column: this.htmls[this.htmls.length - 1].text.length
+                            }
+                        }
+                        this.renderSelectedBg(false);
+                        break;
+                    case 90: //ctrl+z，撤销
+                    case 122:
+                        e.preventDefault();
+                        this.clearRnage();
+                    case 89: //ctrl+y，重做
+                    case 121:
+                        e.preventDefault();
+                        this.clearRnage();
                 }
-                this.renderSelectedBg(false);
-            } else if (e.ctrlKey && (e.keyCode == 90 || e.keyCode == 122)) { //ctrl+z，撤销
-                e.preventDefault();
-                this.clearRnage();
-            } else if (e.ctrlKey && (e.keyCode == 89 || e.keyCode == 121)) { //ctrl+y，重做
-                e.preventDefault();
-                this.clearRnage();
             } else {
                 switch (e.keyCode) {
+                    case 9: //tab键
+                        e.preventDefault();
+                        this.insertContent(this.space);
+                        break;
                     case 37: //left arrow
                         if (this.cursorPos.column > 0) {
                             this.setCursorPos(this.cursorPos.line, this.cursorPos.column - 1);
