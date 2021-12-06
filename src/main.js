@@ -4,6 +4,7 @@ import router from './router'
 import Util from './common/util';
 import $ from 'jquery';
 import './scss/editor.scss'
+import './scss/highlight/js.scss';
 
 Vue.config.productionTip = false
 Vue.prototype.$util = Util;

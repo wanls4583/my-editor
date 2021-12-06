@@ -1,0 +1,92 @@
+/*关键字*/
+.key {
+    color: #f92672;
+}
+
+/*类型*/
+.type {
+    color: #66d9ef;
+}
+
+.function {
+    color: #66d9ef;
+}
+
+.class {
+    color: #66d9ef;
+}
+
+/*函数执行*/
+.exec-function {
+    color: #66d9ef;
+}
+
+/*new对象*/
+/* .new-class {
+    color: #66d9ef;
+} */
+/*本地对象*/
+.local-var {
+    color: #66d9ef;
+}
+
+/*函数名称*/
+.function-name {
+    color: #a6e22e;
+}
+
+/*类名称*/
+.class-name {
+    color: #a6e22e;
+}
+
+/*函数参数*/
+.function-arg {
+    color: #fd971f;
+}
+
+.this {
+    color: #fd971f;
+}
+
+.tag {
+    color: #f92672;
+}
+
+.tag-attr {
+    color: #a6e22e;
+}
+
+/*内置函数*/
+.lib-function {
+    color: #66d9ef;
+}
+
+/*内置变量*/
+.lib-var {
+    color: #66d9ef;
+}
+
+/*操作符号*/
+.oprator {
+    color: #f92672;
+}
+
+/*注释*/
+.comment,
+.pair-comment {
+    color: #75715e;
+}
+
+/*字符串*/
+.string,
+.pair-string,
+.single-quotation-string,
+.double-quotation-string {
+    color: #e6db74;
+}
+
+/*数字*/
+.number {
+    color: #ae81ff;
+}

@@ -13,7 +13,7 @@
 				<div :style="{top: top + 'px', minWidth: _contentMinWidth}" @selectend.prevent="onSelectend" class="my-editor-content" ref="content">
 					<div :class="{active: cursorPos.line == line.num}" :key="line.num" class="my-editor-line" v-for="line in renderHtmls">
 						<!-- my-editor-bg-color为选中的背景颜色 -->
-						<div :class="{'my-editor-bg-color': line.selected}" class="my-editor-code">{{line.html}}</div>
+						<div :class="{'my-editor-bg-color': line.selected}" class="my-editor-code" v-html="line.html"></div>
 						<!-- 选中时的首行背景 -->
 						<div
 							:style="{left: selectedRange.start.left + 'px', width: selectedRange.start.width + 'px'}"
@@ -63,6 +63,7 @@
 </template>
 
 <script>
+import Highlight from '@/highlight/core/highlight';
 export default {
     name: 'Home',
     data() {
@@ -83,8 +84,12 @@ export default {
             htmls: [{
                 text: '',
                 html: '',
-                hilighted: false,
-                width: 0
+                width: 0,
+                highlight: {
+                    done: false,
+                    rendered: false,
+                    tokens: []
+                }
             }],
             nums: [1],
             renderHtmls: [],
@@ -181,6 +186,7 @@ export default {
         this.$hScroller = this.$refs.hScroller;
         this.maxLine = Math.ceil(this.$scroller.clientHeight / this.charObj.charHight) + 1;
         this.charObj = this.$util.getCharWidth(this.$scroller);
+        this.highlighter = new Highlight(this);
         this.render();
         this.focus();
         this.initData();
@@ -242,6 +248,7 @@ export default {
         // 渲染代码
         renderLine(line) {
             let that = this;
+            this.highlighter.run();
             // 只更新一行
             if (line) {
                 let obj = this.renderHtmls[line - this.startLine];
@@ -332,7 +339,11 @@ export default {
                     text: item,
                     html: item,
                     width: 0,
-                    hilighted: false
+                    highlight: {
+                        done: false,
+                        rendered: false,
+                        tokens: []
+                    }
                 }
             });
             if (text.length > 1) { // 插入多行
@@ -344,9 +355,9 @@ export default {
                 this.htmls = this.htmls.slice(0, this.cursorPos.line - 1).concat(text).concat(this.htmls.slice(this.cursorPos.line));
             } else { // 插入一行
                 newColume += text[0].text.length;
-                this.htmls[this.cursorPos.line - 1].text = nowLineText.slice(0, nowColume) + text[0].text + nowLineText.slice(this.cursorPos.column);
-                this.htmls[this.cursorPos.line - 1].html = this.htmls[this.cursorPos.line - 1].text;
-                text[0] = this.htmls[this.cursorPos.line - 1];
+                text[0].text = nowLineText.slice(0, nowColume) + text[0].text + nowLineText.slice(this.cursorPos.column);
+                text[0].html = text[0].text;
+                this.htmls.splice(this.cursorPos.line - 1, 1, text[0]);
             }
             text.map((item, index) => {
                 let width = this.getStrWidth(item.text);
@@ -411,10 +422,12 @@ export default {
                 }
                 this.setCursorPos(start.line, startObj.text.length);
             } else if (this.$util.keyCode.DELETE == keyCode) { // 向后删除一个字符
-                if (this.cursorPos.column == text.length && this.cursorPos.line < this.htmls.length) { // 光标处于行尾
-                    text = startObj.text + this.htmls[this.cursorPos.line].text;
-                    this.htmls.splice(this.cursorPos.line, 1);
-                    deleteText = '\n';
+                if (this.cursorPos.column == text.length) { // 光标处于行尾
+                    if (this.cursorPos.line < this.htmls.length) {
+                        text = startObj.text + this.htmls[this.cursorPos.line].text;
+                        this.htmls.splice(this.cursorPos.line, 1);
+                        deleteText = '\n';
+                    }
                 } else {
                     deleteText = text[this.cursorPos.column];
                     text = text.slice(0, this.cursorPos.column) + text.slice(this.cursorPos.column + 1);
@@ -422,11 +435,13 @@ export default {
                 }
                 startObj.text = text;
             } else { // 向前删除一个字符
-                if (this.cursorPos.column == 0 && this.cursorPos.line > 1) { // 光标处于行首
-                    text = this.htmls[this.cursorPos.line - 2].text + text;
-                    this.htmls.splice(this.cursorPos.line - 2, 1);
-                    this.setCursorPos(this.cursorPos.line - 1, text.length);
-                    deleteText = '\n'
+                if (this.cursorPos.column == 0) { // 光标处于行首
+                    if (this.cursorPos.line > 1) {
+                        text = this.htmls[this.cursorPos.line - 2].text + text;
+                        this.htmls.splice(this.cursorPos.line - 2, 1);
+                        this.setCursorPos(this.cursorPos.line - 1, text.length);
+                        deleteText = '\n'
+                    }
                 } else {
                     deleteText = text[this.cursorPos.column - 1];
                     text = text.slice(0, this.cursorPos.column - 1) + text.slice(this.cursorPos.column);
@@ -437,7 +452,11 @@ export default {
             }
             startObj.html = startObj.text;
             startObj.width = this.getStrWidth(startObj.text);
-            startObj.hilighted = false;
+            startObj.highlight = {
+                done: false,
+                rendered: false,
+                tokens: []
+            }
             // 更新最大文本宽度
             if (startObj.width >= this.maxWidthObj.width) {
                 this.maxWidthObj = {
