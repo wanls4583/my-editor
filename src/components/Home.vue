@@ -516,6 +516,7 @@ export default {
                         this.$util.comparePos(lastCommand.cursorPos, command.cursorPos == 0)
                     )) {
                     lastCommand.text = command.text + lastCommand.text;
+                    lastCommand.cursorPos = command.cursorPos;
                 } else {
                     this.history.push(command);
                 }
