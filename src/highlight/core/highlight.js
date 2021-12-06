@@ -68,20 +68,20 @@ class Highlight {
             i = 0,
             preEnd = 0;
         tokens.sort((a, b) => {
-            return b.level == a.level ? a.start - b.start : b.level - a.level
+            return a.start - b.start;
         });
         while (i < tokens.length) {
             nowToken = tokens[i];
-            result.push(nowToken);
-            // 去除重叠的无效token
-            while (i + 1 < tokens.length && nowToken.level >= tokens[i + 1].level && nowToken.end > tokens[i + 1].start) {
-                i++;
+            if (result.length && result[result.length - 1].end > nowToken.start) {
+                if (nowToken.level > result[result.length - 1].level) {
+                    result.pop();
+                    result.push(nowToken);
+                }
+            } else {
+                result.push(nowToken);
             }
             i++;
         }
-        result.sort((a, b) => {
-            return a.start - b.start;
-        });
         result.map((token) => {
             html += Util.htmlTrans(text.substring(preEnd, token.start));
             html += `<span class="${token.token}">${Util.htmlTrans(text.substring(token.start, token.end))}</span>`;
