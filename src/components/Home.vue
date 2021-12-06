@@ -372,7 +372,7 @@ export default {
                 }
             });
             newLine += text.length - 1;
-            text.length > 1 ? this.render() : this.renderLine(this.cursorPos.line);
+            this.render();
             this.$nextTick(() => {
                 this.setCursorPos(newLine, newColume);
             });
@@ -470,7 +470,7 @@ export default {
                 this.setMaxWidth();
             }
             this.clearRnage();
-            ifOneLine ? this.renderLine(this.cursorPos.line) : this.render();
+            this.render();
             let historyObj = {
                 type: this.$util.command.INSERT,
                 keyCode: keyCode,
