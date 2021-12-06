@@ -399,13 +399,14 @@ export default {
             let startObj = this.htmls[this.cursorPos.line - 1];
             let text = startObj.text;
             let ifOneLine = false; // 是否只需更新一行
-            let originPos = this.$util.deepAssign({}, this.cursorPos);
+            let originPos = { line: this.cursorPos.line, column: this.cursorPos.column };
             let deleteText = '';
             if (this.selectedRange) { // 删除选中区域
                 let end = this.selectedRange.end;
                 let endObj = this.htmls[end.line - 1];
                 start = this.selectedRange.start;
                 startObj = this.htmls[start.line - 1];
+                originPos = { line: end.line, column: end.column };
                 text = startObj.text;
                 deleteText = this.getRangeText(this.selectedRange.start, this.selectedRange.end);
                 if (start.line == end.line) { // 单行选中
@@ -420,7 +421,7 @@ export default {
                     startObj.text += text;
                     this.htmls.splice(start.line, end.line - start.line);
                 }
-                this.setCursorPos(start.line, startObj.text.length);
+                this.setCursorPos(start.line, start.column);
             } else if (this.$util.keyCode.DELETE == keyCode) { // 向后删除一个字符
                 if (this.cursorPos.column == text.length) { // 光标处于行尾
                     if (this.cursorPos.line < this.htmls.length) {
