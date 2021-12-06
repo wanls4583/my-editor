@@ -86,9 +86,9 @@ export default {
                 html: '',
                 width: 0,
                 highlight: {
-                    done: false,
-                    rendered: false,
-                    tokens: []
+                    pairTokens: null,
+                    tokens: null,
+                    rendered: false
                 }
             }],
             nums: [1],
@@ -340,9 +340,9 @@ export default {
                     html: item,
                     width: 0,
                     highlight: {
-                        done: false,
-                        rendered: false,
-                        tokens: []
+                        pairTokens: null,
+                        tokens: null,
+                        rendered: false
                     }
                 }
             });
@@ -454,9 +454,9 @@ export default {
             startObj.html = startObj.text;
             startObj.width = this.getStrWidth(startObj.text);
             startObj.highlight = {
-                done: false,
-                rendered: false,
-                tokens: []
+                pairTokens: null,
+                tokens: null,
+                rendered: false
             }
             // 更新最大文本宽度
             if (startObj.width >= this.maxWidthObj.width) {

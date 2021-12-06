@@ -4,10 +4,21 @@ import {
 } from '../javascript/rules';
 
 import Util from '../../common/util';
+import PairWorker from './worker';
 
 class Highlight {
     constructor(editor) {
         this.editor = editor;
+        this.worker = Util.createWorker(PairWorker);
+        this.worker.onmessage = (e) => {
+            let result = e.data;
+            result.map((item) => {
+                let lineObj = this.editor.htmls[item.index];
+                lineObj.tokens = lineObj.done ? lineObj.tokens : item.tokens;
+                lineObj.pairTokens = item.pairTokens;
+            });
+            console.log(result);
+        }
     }
 
     run() {
@@ -17,6 +28,7 @@ class Highlight {
         this.endLine = this.endLine > this.editor.htmls.length ? this.editor.htmls.length : this.endLine;
         clearTimeout(this.timer);
         this._run();
+        this._pairRun();
     }
 
     _run() {
@@ -28,7 +40,7 @@ class Highlight {
         while (count < 500 && this.nowLine <= this.endLine) {
             lineObj = this.editor.htmls[this.nowLine - 1];
             tokens = [];
-            if (!lineObj.highlight.done) {
+            if (!lineObj.highlight.tokens) {
                 text = lineObj.text;
                 text && rules.map((rule) => {
                     while (result = rule.reg.exec(lineObj.text)) {
@@ -43,7 +55,6 @@ class Highlight {
                     rule.reg.lastIndex = 0;
                 });
                 lineObj.highlight.tokens = tokens;
-                lineObj.highlight.done = true;
             } else {
                 tokens = lineObj.highlight.tokens;
             }
@@ -59,6 +70,24 @@ class Highlight {
                 this._run();
             }, 500);
         }
+    }
+
+    _pairRun() {
+        var texts = [];
+        for (var i = 0; i < this.editor.htmls.length; i++) {
+            if (!this.editor.htmls[i].pairTokens) {
+                texts.push({
+                    index: i,
+                    text: this.editor.htmls[i].text
+                });
+            }
+        }
+        this.worker.postMessage({
+            type: 'run',
+            texts: texts,
+            rules: rules,
+            pairRules: pairRules
+        });
     }
 
     buildHtml(tokens, text) {
