@@ -2,7 +2,7 @@
 	<div @selectstart.prevent class="my-editor-wrap">
 		<!-- 行号 -->
 		<div :style="{top: top + 'px'}" class="my-editor-nums">
-			<div :class="{'my-editor-num-active': cursorPos.line==num}" :key="num" class="my-editor-num" v-for="num in nums">
+			<div :class="['my-editor-num-active' ? cursorPos.line==num : '']" :key="num" class="my-editor-num" v-for="num in nums">
 				<span>{{num}}</span>
 			</div>
 		</div>
@@ -13,7 +13,7 @@
 				<div :style="{top: top + 'px', minWidth: _contentMinWidth}" @selectend.prevent="onSelectend" class="my-editor-content" ref="content">
 					<div :class="{active: cursorPos.line == line.num}" :key="line.num" class="my-editor-line" v-for="line in renderHtmls">
 						<!-- my-editor-bg-color为选中的背景颜色 -->
-						<div :class="{'my-editor-bg-color': line.selected}" class="my-editor-code" v-html="line.html"></div>
+						<div :class="[line.selected ? 'my-editor-bg-color' : '',_startToken(line.num)]" class="my-editor-code" v-html="_html(line)"></div>
 						<!-- 选中时的首行背景 -->
 						<div
 							:style="{left: selectedRange.start.left + 'px', width: selectedRange.start.width + 'px'}"
@@ -82,6 +82,7 @@ export default {
                 visible: true,
             },
             htmls: [{
+                uuid: Number.MIN_SAFE_INTEGER,
                 text: '',
                 html: '',
                 width: 0,
@@ -94,6 +95,7 @@ export default {
             nums: [1],
             renderHtmls: [],
             startLine: 1,
+            startToEndToken: null,
             top: 0,
             scrollLeft: 0,
             scrollTop: 0,
@@ -174,6 +176,19 @@ export default {
             return (tab) => {
                 return (tab - 1) * this.tabSize * this.charObj.charWidth + 'px';
             }
+        },
+        _startToken() {
+            return (line) => {
+                if (this.startToEndToken && this.startToEndToken.line < line) {
+                    return this.startToEndToken.token;
+                }
+                return '';
+            }
+        },
+        _html() {
+            return (lineObj) => {
+                return this._startToken(lineObj.num) ? lineObj.text : lineObj.html;
+            }
         }
     },
     created() {
@@ -187,10 +202,10 @@ export default {
         this.maxLine = Math.ceil(this.$scroller.clientHeight / this.charObj.charHight) + 1;
         this.charObj = this.$util.getCharWidth(this.$scroller);
         this.highlighter = new Highlight(this);
-        this.render();
-        this.focus();
         this.initData();
         this.initEvent();
+        this.render();
+        this.focus();
     },
     methods: {
         // 初始化数据
@@ -198,6 +213,9 @@ export default {
             this.tabSize = 4;
             this.space = this.$util.space(this.tabSize);
             this.history = []; // 操作历史
+            this.uuid = Number.MIN_SAFE_INTEGER + 1;
+            this.uuidMap = new Map(); // htmls的唯一标识对象
+            this.renderedUuidMap = new Map(); // renderHtmls的唯一标识对象
         },
         // 初始化文档事件
         initEvent() {
@@ -254,13 +272,18 @@ export default {
                 let obj = this.renderHtmls[line - this.startLine];
                 obj.html = this.htmls[line - 1].html;
                 obj.text = this.htmls[line - 1].text;
+                obj.uuid = this.htmls[line - 1].uuid;
                 Object.assign(obj, _getObj(obj, line));
+                this.renderedUuidMap.set(uuid, obj);
                 return;
             }
             this.renderHtmls = this.htmls.slice(this.startLine - 1, this.startLine - 1 + this.maxLine);
             this.renderHtmls = this.renderHtmls.map((item, index) => {
                 let num = this.startLine + index;
-                return _getObj(item, num);
+                let uuid = item.uuid;
+                item = _getObj(item, num);
+                this.renderedUuidMap.set(uuid, item);
+                return item;
             });
             this.nums = this.renderHtmls.map((item) => {
                 return item.num
@@ -275,6 +298,7 @@ export default {
                 }
                 return {
                     html: item.html,
+                    text: item.text,
                     num: num,
                     tabNum: tabNum,
                     selected: selected,
@@ -332,6 +356,7 @@ export default {
             let nowLine = this.cursorPos.line;
             let newLine = nowLine;
             let newColume = nowColume;
+            this.removePairRun(nowLine);
             text = text.replace(/\t/g, this.space);
             text = text.split(/\r\n|\n/);
             text = text.map((item) => {
@@ -371,6 +396,7 @@ export default {
                     }
                 }
             });
+            this.addPairRun(nowLine, text.length);
             newLine += text.length - 1;
             this.render();
             this.$nextTick(() => {
@@ -409,6 +435,7 @@ export default {
                 originPos = { line: end.line, column: end.column };
                 text = startObj.text;
                 deleteText = this.getRangeText(this.selectedRange.start, this.selectedRange.end);
+                this.removePairRun(start.line, end.line - start.line + 1);
                 if (start.line == end.line) { // 单行选中
                     text = text.slice(0, start.column) + text.slice(end.column);
                     startObj.text = text;
@@ -423,8 +450,10 @@ export default {
                 }
                 this.setCursorPos(start.line, start.column);
             } else if (this.$util.keyCode.DELETE == keyCode) { // 向后删除一个字符
+                this.removePairRun(this.cursorPos.line);
                 if (this.cursorPos.column == text.length) { // 光标处于行尾
                     if (this.cursorPos.line < this.htmls.length) {
+                        this.removePairRun(this.cursorPos.line + 1);
                         text = startObj.text + this.htmls[this.cursorPos.line].text;
                         this.htmls.splice(this.cursorPos.line, 1);
                         deleteText = '\n';
@@ -436,12 +465,14 @@ export default {
                 }
                 startObj.text = text;
             } else { // 向前删除一个字符
+                this.removePairRun(this.cursorPos.line);
                 if (this.cursorPos.column == 0) { // 光标处于行首
                     if (this.cursorPos.line > 1) {
+                        this.removePairRun(this.cursorPos.line - 1);
                         text = this.htmls[this.cursorPos.line - 2].text + text;
                         this.htmls.splice(this.cursorPos.line - 2, 1);
                         this.setCursorPos(this.cursorPos.line - 1, text.length);
-                        deleteText = '\n'
+                        deleteText = '\n';
                     }
                 } else {
                     deleteText = text[this.cursorPos.column - 1];
@@ -472,6 +503,7 @@ export default {
             }
             this.clearRnage();
             this.render();
+            this.addPairRun(this.cursorPos.line, 1);
             let historyObj = {
                 type: this.$util.command.INSERT,
                 keyCode: keyCode,
@@ -484,6 +516,21 @@ export default {
             } else { // 撤销或重做操作后，更新历史记录
                 this.updateHistory(this.history.index, historyObj);
             }
+        },
+        addPairRun(line, length) {
+            let texts = this.htmls.slice(line - 1, line - 1 + length);
+            texts = texts.map((item) => {
+                item.uuid = this.uuid++;
+                this.uuidMap.set(item.uuid, item);
+            });
+            this.highlighter.pairRun(line, length);
+        },
+        removePairRun(line, length) {
+            length = length || 1;
+            for (let i = line; i < line + length; i++) {
+                this.uuidMap.delete(this.htmls[i - 1].uuid);
+            }
+            this.highlighter.removePairRun(line, length);
         },
         // 撤销操作
         undo() {

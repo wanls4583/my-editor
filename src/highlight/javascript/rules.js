@@ -85,16 +85,32 @@ export const pairRules = [
     },
     //字符串''
     {
-        startReg: /'/g,
+        startReg: /'[\s\S]*\\/g,
         endReg: /'/g,
         token: 'single-quotation-string',
+        check: function (startToken, endToken, texts) { // 中间部分的检测函数
+            for (let i = 1; i < texts.length - 1; i++) {
+                if (texts[i][texts[i].length - 1] != '\\') {
+                    return false;
+                }
+            }
+            return true;
+        },
         level: 3
     },
     //字符串"""
     {
-        startReg: /"/g,
+        startReg: /'[\s\S]*\\/g,
         endReg: /"/g,
         token: 'double-quotation-string',
+        check: function (startToken, endToken, texts) { // 中间部分的检测函数
+            for (let i = 1; i < texts.length - 1; i++) {
+                if (texts[i][texts[i].length - 1] != '\\') {
+                    return false;
+                }
+            }
+            return true;
+        },
         level: 3
     }
 ]

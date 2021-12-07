@@ -10,18 +10,19 @@ export default function () {
         PAIR_END: 1,
         FOLD_OPEN: 1,
         FOLD_CLOSE: -1,
-        OP_ADD: 1,
-        OP_DEL: -1,
-        OP_REPLACE: 0,
-        SENIOR_LEVEL: 999999
     }
-    
+
+    let dataList = [];
+    let removeList = [];
+
     self.onmessage = function (e) {
-        var data = e.data;
+        let data = e.data;
         if (data.type == 'run') {
+            dataList.push(data);
+            data.index = dataList.length - 1;
             run(data);
-        } else {
-            clearTimeout(run.timer);
+        } else if (data.type == 'remove') {
+            removeList.push(data);
         }
     }
 
@@ -42,11 +43,13 @@ export default function () {
         function _run() {
             var count = 0;
             let results = [];
-            let start = index;
-            while (index < texts.length && count < 1000) {
+            while (index < texts.length && count < 10000) {
                 let lineObj = texts[index];
                 let tokens = [];
                 let pairTokens = [];
+                if (!_checkValid(lineObj.uuid)) {
+                    break;
+                }
                 lineObj.text && rules.map((rule) => {
                     while (result = rule.reg.exec(lineObj.text)) {
                         tokens.push({
@@ -86,8 +89,14 @@ export default function () {
                     rule.startReg.lastIndex = 0;
                     rule.endReg.lastIndex = 0;
                 });
+                tokens.sort((a, b) => {
+                    return a.start - b.start;
+                });
+                pairTokens.sort((a, b) => {
+                    return a.start - b.start;
+                });
                 results.push({
-                    index: lineObj.index,
+                    uuid: lineObj.uuid,
                     tokens: tokens,
                     pairTokens: pairTokens
                 });
@@ -95,10 +104,24 @@ export default function () {
             }
             self.postMessage(results);
             if (index < texts.length) {
-                run.timer = setTimeout(() => {
+                option.timer = setTimeout(() => {
                     _run();
-                });
+                }, 0);
+            } else {
+                dataList.splice(option.index, 1);
             }
+        }
+
+        // 检查uuid对应的行对象是否已被删除或被替换
+        function _checkValid(uuid) {
+            for (let i = 0; i < removeList.length; i++) {
+                if (removeList[i].uuid == uuid) {
+                    index += removeList[i].length;
+                    removeList.splice(i, 1);
+                    return false;
+                }
+            }
+            return true;
         }
     }
 }
