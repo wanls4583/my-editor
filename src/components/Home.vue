@@ -13,7 +13,7 @@
 				<div :style="{top: top + 'px', minWidth: _contentMinWidth}" @selectend.prevent="onSelectend" class="my-editor-content" ref="content">
 					<div :class="{active: cursorPos.line == line.num}" :key="line.num" class="my-editor-line" v-for="line in renderHtmls">
 						<!-- my-editor-bg-color为选中的背景颜色 -->
-						<div :class="[line.selected ? 'my-editor-bg-color' : '',_startToken(line.num)]" class="my-editor-code" v-html="_html(line)"></div>
+						<div :class="[line.selected ? 'my-editor-bg-color' : '',_startToken(line.num)]" class="my-editor-code" v-html="line.html"></div>
 						<!-- 选中时的首行背景 -->
 						<div
 							:style="{left: selectedRange.start.left + 'px', width: selectedRange.start.width + 'px'}"
@@ -86,8 +86,10 @@ export default {
                 text: '',
                 html: '',
                 width: 0,
+                token: '',
                 highlight: {
                     pairTokens: null,
+                    validPairTokens: null,
                     tokens: null,
                     rendered: false
                 }
@@ -183,11 +185,6 @@ export default {
                     return this.startToEndToken.token;
                 }
                 return '';
-            }
-        },
-        _html() {
-            return (lineObj) => {
-                return this._startToken(lineObj.num) ? lineObj.text : lineObj.html;
             }
         }
     },
@@ -366,6 +363,7 @@ export default {
                     width: 0,
                     highlight: {
                         pairTokens: null,
+                        validPairTokens: null,
                         tokens: null,
                         rendered: false
                     }
@@ -486,6 +484,7 @@ export default {
             startObj.width = this.getStrWidth(startObj.text);
             startObj.highlight = {
                 pairTokens: null,
+                validPairTokens: null,
                 tokens: null,
                 rendered: false
             }

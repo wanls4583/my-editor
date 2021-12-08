@@ -10,8 +10,8 @@ class Util {
     static getNum(value) {
         value = String(value);
         value = value.replace(/[^0123456789\.]/g, '');
-        var reg = /^\d+(\.\d*)?$/;
-        var r = reg.exec(value);
+        var regex = /^\d+(\.\d*)?$/;
+        var r = regex.exec(value);
         var num = r && r[0] || '';
         if (num) {
             num = Number(r[0]);

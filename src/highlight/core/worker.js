@@ -45,14 +45,14 @@ export default function () {
             let results = [];
             while (index < texts.length && count < 10000) {
                 let lineObj = texts[index];
-                let tokens = [];
+                let excludeTokens = [];
                 let pairTokens = [];
                 if (!_checkValid(lineObj.uuid)) {
                     break;
                 }
                 lineObj.text && rules.map((rule) => {
-                    while (result = rule.reg.exec(lineObj.text)) {
-                        tokens.push({
+                    while (result = rule.regex.exec(lineObj.text)) {
+                        excludeTokens.push({
                             token: rule.token,
                             value: result[0],
                             level: rule.level,
@@ -60,11 +60,11 @@ export default function () {
                             end: result.index + result[0].length
                         });
                     }
-                    rule.reg.lastIndex = 0;
+                    rule.regex.lastIndex = 0;
                 });
                 lineObj.text && pairRules.map((rule) => {
-                    var isSame = rule.startReg.source === rule.endReg.source;
-                    while (result = rule.startReg.exec(lineObj.text)) {
+                    var isSame = rule.startRegex.source === rule.endRegex.source;
+                    while (result = rule.startRegex.exec(lineObj.text)) {
                         pairTokens.push({
                             token: rule.token,
                             value: result[0],
@@ -75,7 +75,7 @@ export default function () {
                         });
                     }
                     if (!isSame) {
-                        while (result = rule.endReg.exec(lineObj.text)) {
+                        while (result = rule.endRegex.exec(lineObj.text)) {
                             pairTokens.push({
                                 token: rule.token,
                                 value: result[0],
@@ -86,10 +86,10 @@ export default function () {
                             });
                         }
                     }
-                    rule.startReg.lastIndex = 0;
-                    rule.endReg.lastIndex = 0;
+                    rule.startRegex.lastIndex = 0;
+                    rule.endRegex.lastIndex = 0;
                 });
-                tokens.sort((a, b) => {
+                excludeTokens.sort((a, b) => {
                     return a.start - b.start;
                 });
                 pairTokens.sort((a, b) => {
@@ -97,7 +97,7 @@ export default function () {
                 });
                 results.push({
                     uuid: lineObj.uuid,
-                    tokens: tokens,
+                    excludeTokens: excludeTokens,
                     pairTokens: pairTokens
                 });
                 index++;
