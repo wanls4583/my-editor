@@ -51,7 +51,7 @@ export const rules = [{
     token: 'function',
     level: 2
 }, {
-    reg: /\/\/[\s\S]*$|\/\*[\s\S]*\*\//g,
+    reg: /\/\/[\s\S]*$|\/\*[\s\S]*\*\/|\/\*[\s\S]*$/g,
     token: 'comment',
     level: 3
 }, {

@@ -41,7 +41,7 @@ class Highlight {
                     // 前面最接近的已处理过的开始节点
                     if (highlight.validPairTokens.length) {
                         let startToken = highlight.validPairTokens[highlight.validPairTokens.length - 1];
-                        if (!startToken.startToken) {
+                        if (!startToken.startToken && startToken.type != Util.constData.PAIR_END) {
                             this._startToken = startToken;
                             this.startLine = startToken.line;
                             let pairTokens = highlight.pairTokens;

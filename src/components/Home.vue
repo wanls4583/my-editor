@@ -502,8 +502,8 @@ export default {
                 this.setMaxWidth();
             }
             this.clearRnage();
-            this.render();
             this.addPairRun(this.cursorPos.line, 1);
+            this.render();
             let historyObj = {
                 type: this.$util.command.INSERT,
                 keyCode: keyCode,
