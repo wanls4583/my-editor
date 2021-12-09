@@ -1,5 +1,5 @@
 <template>
-	<div @selectstart.prevent class="my-editor-wrap">
+	<div :style="{'padding-bottom': _statusHeight}" @selectstart.prevent class="my-editor-wrap">
 		<!-- 行号 -->
 		<div :style="{top: _numTop}" class="my-editor-nums">
 			<!-- 占位行号，避免行号宽度滚动时变化 -->
@@ -8,7 +8,7 @@
 				<span>{{num}}</span>
 			</div>
 		</div>
-		<div class="my-editor-content-wrap">
+		<div :style="{'box-shadow': _leftShadow}" class="my-editor-content-wrap">
 			<!-- 可滚动区域 -->
 			<div @mousedown="onScrollerMdown" @wheel.prevent="onWheel" class="my-editor-content-scroller" ref="scroller">
 				<!-- 内如区域 -->
@@ -61,13 +61,18 @@
 				ref="textarea"
 			></textarea>
 		</div>
+		<status-bar :column="cursorPos.column+1" :height="statusHeight" :language="language" :line="cursorPos.line" :tabSize="tabSize"></status-bar>
 	</div>
 </template>
 
 <script>
 import Highlight from '@/highlight/core/highlight';
+import StatusBar from './StatusBar';
 export default {
     name: 'Home',
+    components: {
+        StatusBar
+    },
     data() {
         return {
             charObj: {
@@ -83,6 +88,9 @@ export default {
                 show: false,
                 visible: true,
             },
+            language: 'JavaScript',
+            statusHeight: 23,
+            tabSize: 4,
             nums: [1],
             renderHtmls: [],
             startLine: 1,
@@ -95,7 +103,7 @@ export default {
             scrollerArea: {},
             selectedRange: null,
             maxWidthObj: {
-                line: 1,
+                uuid: null,
                 width: 0
             }
         }
@@ -104,11 +112,17 @@ export default {
         _numTop() {
             return this.top - this.charObj.charHight + 'px';
         },
+        _leftShadow() {
+            return this.scrollLeft ? '17px 0 16px -16px rgba(0, 0, 0, 0.4) inset' : 'none';
+        },
         _top() {
             return this.top + 'px';
         },
         _lineHeight() {
             return this.charObj.charHight + 'px';
+        },
+        _statusHeight() {
+            return this.statusHeight + 'px';
         },
         _cursorVisible() {
             return this.cursorPos.visible ? 'visible' : 'hidden';
@@ -204,7 +218,6 @@ export default {
     methods: {
         // 初始化数据
         initData() {
-            this.tabSize = 4;
             this.space = this.$util.space(this.tabSize);
             this.history = []; // 操作历史
             this.uuid = Number.MIN_SAFE_INTEGER + 1;

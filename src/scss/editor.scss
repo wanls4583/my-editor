@@ -18,6 +18,7 @@ body {
 .my-editor {
 
     &-wrap {
+        position: relative;
         width: 100%;
         height: 100%;
         overflow: hidden;
@@ -198,5 +199,31 @@ body {
     &-v-scroller-wrap::-webkit-scrollbar-thumb {
         border-radius: 4px;
         background-color: rgb(115, 116, 112);
+    }
+
+    &-status-bar {
+        position: absolute;
+        bottom: 0;
+        z-index: 99;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 20px;
+        background-color: rgb(171, 177, 186);
+        color: #333333;
+        font-size: 12px;
+    }
+
+    &-status-left {
+        span {
+            margin-right: 50px;
+        }
+    }
+
+    &-status-right {
+        span {
+            margin-left: 50px;
+        }
     }
 }
