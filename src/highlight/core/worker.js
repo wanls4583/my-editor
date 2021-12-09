@@ -37,7 +37,7 @@ export default function (onceData) {
         let rules = option.rules;
         let index = 0;
         let pairTokensMap = {};
-        let max = option.max || 10000;
+        let max = option.max || 50000;
         pairRules.map((item) => {
             pairTokensMap[item.token] = true;
         });
@@ -47,9 +47,10 @@ export default function (onceData) {
         return _run();
 
         function _run() {
-            var count = 0;
-            let results = [];
-            let result = null;
+            let count = 0,
+                results = [],
+                result = null,
+                startTime = Date.now();
             while (index < texts.length && count < max) {
                 let lineObj = texts[index];
                 let excludeTokens = [];
@@ -108,6 +109,7 @@ export default function (onceData) {
                     pairTokens: pairTokens
                 });
                 index++;
+                count++;
             }
             if (onceData) { // 主线程直接调用
                 return results;
@@ -121,6 +123,7 @@ export default function (onceData) {
                     dataList.splice(option.index, 1);
                 }
             }
+            // console.log(`worker run cost:${Date.now() - startTime}ms`);//120ms
         }
 
         // 检查uuid对应的行对象是否已被删除或被替换

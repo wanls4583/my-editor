@@ -358,6 +358,7 @@ export default {
             if (this.selectedRange) {
                 this.deleteContent();
             }
+            let startTime = Date.now();
             let nowLineText = this.htmls[this.cursorPos.line - 1].text;
             let nowColume = this.cursorPos.column;
             let nowLine = this.cursorPos.line;
@@ -392,24 +393,13 @@ export default {
                 text[0].html = text[0].text;
                 this.htmls.splice(this.cursorPos.line - 1, 1, text[0]);
             }
-            text.map((item, index) => {
-                let width = this.getStrWidth(item.text);
-                // 增加2像素，给光标预留位置
-                width += 2;
-                item.width = width;
-                if (width > this.maxWidthObj.width) {
-                    this.maxWidthObj = {
-                        line: this.cursorPos.line + index,
-                        width: width
-                    }
-                }
-            });
             newLine += text.length - 1;
             this.maxLine = this.htmls.length;
             this.addPairRun(nowLine, text.length);
             this.render();
             this.$nextTick(() => {
                 this.setCursorPos(newLine, newColume);
+                this.setLineWidth(text);
             });
             let historyObj = {
                 type: this.$util.command.DELETE,
@@ -427,6 +417,7 @@ export default {
             } else { // 撤销或重做操作后，更新历史记录
                 this.updateHistory(this.history.index, historyObj);
             }
+            console.log(`insertContent cost${Date.now() - startTime}ms`);
         },
         // 删除内容
         deleteContent(keyCode, isDoCommand) {
@@ -436,6 +427,7 @@ export default {
             let ifOneLine = false; // 是否只需更新一行
             let originPos = { line: this.cursorPos.line, column: this.cursorPos.column };
             let deleteText = '';
+            let rangeUuid = [];
             if (this.selectedRange) { // 删除选中区域
                 let end = this.selectedRange.end;
                 let endObj = this.htmls[end.line - 1];
@@ -444,6 +436,9 @@ export default {
                 originPos = { line: end.line, column: end.column };
                 text = startObj.text;
                 deleteText = this.getRangeText(this.selectedRange.start, this.selectedRange.end);
+                rangeUuid = this.htmls.slice(start.line - 1, end.line).map((item) => {
+                    return item.uuid;
+                });
                 this.removePairRun(start.line, end.line - start.line + 1);
                 if (start.line == end.line) { // 单行选中
                     text = text.slice(0, start.column) + text.slice(end.column);
@@ -499,22 +494,19 @@ export default {
                 tokens: null,
                 rendered: false
             }
-            // 更新最大文本宽度
-            if (startObj.width >= this.maxWidthObj.width) {
-                this.maxWidthObj = {
-                    line: this.cursorPos.line,
-                    width: startObj.width
-                }
-            } else if (
-                this.cursorPos.line == this.maxWidthObj.line ||
-                this.selectedRange && this.maxWidthObj.line >= this.selectedRange.start.line &&
-                this.maxWidthObj.line <= this.selectedRange.end.line) {
-                this.setMaxWidth();
-            }
             this.maxLine = this.htmls.length;
             this.clearRnage();
             this.addPairRun(this.cursorPos.line, 1);
             this.render();
+            // 更新最大文本宽度
+            if (startObj.width >= this.maxWidthObj.width) {
+                this.maxWidthObj = {
+                    uuid: startObj.uuid,
+                    width: startObj.width
+                }
+            } else if (rangeUuid.indexOf(this.maxWidthObj.uuid) > -1) {
+                this.setMaxWidth();
+            }
             let historyObj = {
                 type: this.$util.command.INSERT,
                 keyCode: keyCode,
@@ -627,6 +619,38 @@ export default {
                 }
             });
             this.maxWidthObj = maxWidthObj;
+        },
+        setLineWidth(texts) {
+            let index = 0,
+                that = this;
+
+            _setLineWidth();
+
+            function _setLineWidth() {
+                let count = 0;
+                while (count < 10000 && index < texts.length) {
+                    let lineObj = that.htmls[index];
+                    if (that.uuidMap.has(lineObj.uuid)) {
+                        let width = that.getStrWidth(lineObj.text);
+                        // 增加2像素，给光标预留位置
+                        width += 2;
+                        lineObj.width = width;
+                        if (width > that.maxWidthObj.width) {
+                            that.maxWidthObj = {
+                                uuid: lineObj.uuid,
+                                width: width
+                            }
+                        }
+                    }
+                    index++;
+                    count++;
+                }
+                if (index < texts.length) {
+                    that.setLineWidth.timer = requestAnimationFrame(function () {
+                        _setLineWidth();
+                    });
+                }
+            }
         },
         // 获取文本在浏览器中的宽度
         getStrWidth(str, start, end) {

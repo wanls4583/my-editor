@@ -13,9 +13,6 @@ class Highlight {
         this.nowPairLine = 1;
         this.pairTokensMap = {};
         this.pairRules = []; // 传入worker的数据不能克隆函数
-        this.pairRules.map((item) => {
-            delete item.check;
-        });
         pairRules.map((item) => {
             this.pairTokensMap[item.token] = item;
             item = Object.assign({}, item);
@@ -52,8 +49,9 @@ class Highlight {
     }
 
     pairRun(line, length) {
-        this.nowPairLine = this.nowPairLine > line ? line : this.nowPairLine;
+        let startTime = Date.now();
         let texts = this.editor.htmls.slice(line - 1, line - 1 + length);
+        this.nowPairLine = this.nowPairLine > line ? line : this.nowPairLine;
         texts = texts.map((item) => {
             return {
                 uuid: item.uuid,
@@ -63,18 +61,25 @@ class Highlight {
         // 先主动处理部分数据，防止高亮部分闪烁
         this.startParsePair({
             data: PairWorker({
-                texts: texts.slice(0, this.maxVisibleLines),
+                texts: texts.slice(0, this.editor.maxVisibleLines),
                 rules: rules,
                 pairRules: this.pairRules
-            })
+            }),
+            max: this.editor.maxVisibleLines,
+            once: texts.length > this.editor.maxVisibleLines
         });
-        // 余下的交由子线程处理
-        texts.length > this.maxVisibleLines && this.worker.postMessage({
-            type: 'run',
-            texts: texts.slice(this.maxVisibleLines),
-            rules: rules,
-            pairRules: this.pairRules
-        });
+        if (texts.length > this.editor.maxVisibleLines) {
+            let startTime = Date.now();
+            let data = {
+                type: 'run',
+                texts: texts.slice(this.editor.maxVisibleLines),
+                rules: rules,
+                pairRules: this.pairRules
+            };
+            // 余下的交由子线程处理
+            this.worker.postMessage(data);
+            console.log(`copy worker data cost:${Date.now() - startTime}ms`);
+        }
     }
 
     removePairRun(line, length) {
@@ -90,7 +95,8 @@ class Highlight {
         let text = '',
             tokens = null,
             result = null,
-            lineObj = null;
+            lineObj = null,
+            startTime = Date.now();
         while (this.nowLine <= this.endLine) {
             lineObj = this.editor.htmls[this.nowLine - 1];
             tokens = [];
@@ -121,14 +127,21 @@ class Highlight {
             }
             this.nowLine++;
         }
+        // console.log(`parse cost:${Date.now() - startTime}ms`);
     }
 
+    /**
+     * 
+     * @param {Object} option [once:只执行一次parsePair,max:最大执行次数] 
+     */
     parsePair() {
         let that = this,
             lineObj = null,
             count = 0,
-            length = this.editor.htmls.length;
-        while (count < 10000 && this.nowPairLine <= length) {
+            max = 5000,
+            length = this.editor.htmls.length,
+            startTime = Date.now();
+        while (count < max && this.nowPairLine <= length) {
             lineObj = this.editor.htmls[this.nowPairLine - 1];
             lineObj.highlight.validPairTokens = [];
             if (!lineObj.highlight.pairTokens) {
@@ -212,32 +225,34 @@ class Highlight {
             this.nowPairLine++;
             count++;
         }
+        // console.log(`parsePair cost:${Date.now() - startTime}ms`);//6ms
         if (this.nowPairLine < length) {
-            clearTimeout(this.parsePair.timer);
-            this.parsePair.timer = setTimeout(() => {
+            cancelAnimationFrame(this.parsePair.timer);
+            this.parsePair.timer = requestAnimationFrame(() => {
                 this.parsePair();
-            }, 100);
-            if (this.nowPairLine > this.editor.startLine) {
-                this.editor.startToEndToken = this.startToken && this._startToken;
-            }
-        } else {
+            });
+        }
+        if (this.nowPairLine > this.editor.startLine) {
             this.editor.startToEndToken = this.startToken && this._startToken;
         }
 
         function _getNextStartToken(excludeTokens, pairTokens) {
-            if (!pairTokens.length) {
-                return null;
-            }
-            var pairToken = pairTokens.shift();
-            if (pairToken.type == Util.constData.PAIR_END) {
-                return _getNextStartToken(excludeTokens, pairTokens);
-            }
-            for (let i = 0; i < excludeTokens.length; i++) {
-                if (excludeTokens[i].start < pairToken.start && excludeTokens[i].end > pairToken.start) {
-                    return _getNextStartToken(excludeTokens, pairTokens);
+            while (pairTokens.length) {
+                let pairToken = pairTokens.shift(),
+                    pass = true;
+                if (pairToken.type == Util.constData.PAIR_END) {
+                    continue;
+                }
+                for (let i = 0; i < excludeTokens.length; i++) {
+                    if (excludeTokens[i].start < pairToken.start && excludeTokens[i].end > pairToken.start) {
+                        pass = false;
+                        break;
+                    }
+                }
+                if (pass) {
+                    return pairToken;
                 }
             }
-            return pairToken;
         }
 
         function _checkStartToken(_startToken, nowPairLine) {
