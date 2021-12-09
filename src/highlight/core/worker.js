@@ -27,7 +27,7 @@ export default function (onceData) {
             data.index = dataList.length - 1;
             run(data);
         } else if (data.type == 'remove') {
-            removeList.push(data);
+            dataList.length && removeList.push(data);
         }
     };
 
@@ -121,6 +121,7 @@ export default function (onceData) {
                     }, 0);
                 } else {
                     dataList.splice(option.index, 1);
+                    !dataList.length && (removeList = []);
                 }
             }
             // console.log(`worker run cost:${Date.now() - startTime}ms`);//120ms
