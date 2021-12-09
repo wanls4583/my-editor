@@ -10,7 +10,7 @@ class Highlight {
     constructor(editor) {
         this.editor = editor;
         this.worker = Util.createWorker(PairWorker);
-        this.parsePairLine = 1;
+        this.nowPairLine = 1;
         this.pairTokensMap = {};
         this.pairRules = []; // 传入worker的数据不能克隆函数
         this.pairRules.map((item) => {
@@ -23,45 +23,36 @@ class Highlight {
             this.pairRules.push(item);
         });
         this.worker.onmessage = (e) => {
-            let result = e.data;
-            result.map((item) => {
-                let lineObj = this.editor.uuidMap.get(item.uuid);
-                if (lineObj) {
-                    lineObj.highlight.excludeTokens = item.excludeTokens;
-                    lineObj.highlight.pairTokens = lineObj.highlight.pairTokens || item.pairTokens;
-                }
-            });
-            this.startToken = null; // 原始开始节点
-            this._startToken = null; // 处理过的开始节点
-            // 寻找前面最接近的已处理过的开始行
-            if (this.parsePairLine > 1) {
-                for (let i = this.parsePairLine - 1; i >= 1; i--) {
-                    let highlight = this.editor.htmls[i - 1].highlight;
-                    if (highlight.validPairTokens.length) {
-                        let _startToken = highlight.validPairTokens[highlight.validPairTokens.length - 1];
-                        if (!_startToken.startToken && _startToken.type != Util.constData.PAIR_END) {
-                            this._startToken = _startToken;
-                            this.startToken = this._startToken.originToken;
-                        }
-                        this.parsePairLine = i + 1;
-                        break;
-                    }
-                }
-            }
-            this.parsePair();
+            this.startParsePair(e);
         }
+    }
+
+    // 子线程处理完部分数据，可以开始分析多行匹配
+    startParsePair(e) {
+        let result = e.data;
+        result.map((item) => {
+            let lineObj = this.editor.uuidMap.get(item.uuid);
+            if (lineObj) {
+                lineObj.highlight.excludeTokens = item.excludeTokens;
+                lineObj.highlight.pairTokens = lineObj.highlight.pairTokens || item.pairTokens;
+            }
+        });
+        this.startToken = null; // 原始开始节点
+        this._startToken = null; // 处理过的开始节点
+        this.nowPairLine = this.getStartPairLine();
+        this.parsePair();
     }
 
     run() {
         this.nowLine = this.editor.startLine;
-        this.endLine = this.editor.startLine + this.editor.maxVisibleLine;
+        this.endLine = this.editor.startLine + this.editor.maxVisibleLines;
         this.endLine = this.endLine > this.editor.htmls.length ? this.editor.htmls.length : this.endLine;
         clearTimeout(this.parse.timer);
         this.parse();
     }
 
     pairRun(line, length) {
-        this.parsePairLine = this.parsePairLine > line ? line : this.parsePairLine;
+        this.nowPairLine = this.nowPairLine > line ? line : this.nowPairLine;
         let texts = this.editor.htmls.slice(line - 1, line - 1 + length);
         texts = texts.map((item) => {
             return {
@@ -69,16 +60,25 @@ class Highlight {
                 text: item.text
             }
         });
-        this.worker.postMessage({
+        // 先主动处理部分数据，防止高亮部分闪烁
+        this.startParsePair({
+            data: PairWorker({
+                texts: texts.slice(0, this.maxVisibleLines),
+                rules: rules,
+                pairRules: this.pairRules
+            })
+        });
+        // 余下的交由子线程处理
+        texts.length > this.maxVisibleLines && this.worker.postMessage({
             type: 'run',
-            texts: texts,
+            texts: texts.slice(this.maxVisibleLines),
             rules: rules,
             pairRules: this.pairRules
         });
     }
 
     removePairRun(line, length) {
-        this.parsePairLine = this.parsePairLine > line ? line : this.parsePairLine;
+        this.nowPairLine = this.nowPairLine > line ? line : this.nowPairLine;
         this.worker.postMessage({
             type: 'remove',
             uuid: this.editor.htmls[line - 1].uuid,
@@ -128,8 +128,8 @@ class Highlight {
             lineObj = null,
             count = 0,
             length = this.editor.htmls.length;
-        while (count < 10000 && this.parsePairLine <= length) {
-            lineObj = this.editor.htmls[this.parsePairLine - 1];
+        while (count < 10000 && this.nowPairLine <= length) {
+            lineObj = this.editor.htmls[this.nowPairLine - 1];
             lineObj.highlight.validPairTokens = [];
             if (!lineObj.highlight.pairTokens) {
                 break;
@@ -141,9 +141,9 @@ class Highlight {
             });
             // 已有开始节点，则该行可能被其包裹，或者为结束行
             if (this.startToken) {
-                if (_checkStartToken(this._startToken, this.parsePairLine)) {
+                if (_checkStartToken(this._startToken, this.nowPairLine)) {
                     lineObj.token = this.startToken.token;
-                    this.buildHtml(this.parsePairLine);
+                    this.buildHtml(this.nowPairLine);
                 } else {
                     this.startToken = null;
                     this._startToken = null;
@@ -152,7 +152,7 @@ class Highlight {
             // 前面没有开始节点，则去除该行的旧token
             if (lineObj.token && !this.startToken) {
                 lineObj.token = '';
-                this.buildHtml(this.parsePairLine);
+                this.buildHtml(this.nowPairLine);
             }
             while (pairTokens.length) {
                 let endToken = null;
@@ -163,17 +163,17 @@ class Highlight {
                         // 需要防止/*test*/*这种情况
                         !(
                             this.preEndToken &&
-                            this.preEndToken.line == this.parsePairLine &&
+                            this.preEndToken.line == this.nowPairLine &&
                             this.preEndToken.end > this.startToken.start
                         )
                     ) {
                         this._startToken = Object.assign({}, this.startToken);
-                        this._startToken.line = this.parsePairLine;
+                        this._startToken.line = this.nowPairLine;
                         this._startToken.end = Number.MAX_VALUE;
                         this._startToken.originToken = this.startToken;
                         lineObj.highlight.validPairTokens.push(this._startToken);
                         lineObj.token = '';
-                        this.buildHtml(this.parsePairLine);
+                        this.buildHtml(this.nowPairLine);
                     }
                 }
                 if (!pairTokens.length) {
@@ -185,17 +185,17 @@ class Highlight {
                     endToken.token == this.startToken.token &&
                     endToken.type + this.startToken.type === 0 &&
                     // 排除/*/这种情况
-                    !(this.parsePairLine == this._startToken.line && endToken.start < this.startToken.end)
+                    !(this.nowPairLine == this._startToken.line && endToken.start < this.startToken.end)
                 ) {
                     let _endToken = Object.assign({}, endToken);
-                    _endToken.line = this.parsePairLine;
+                    _endToken.line = this.nowPairLine;
                     _endToken.start = 0;
                     _endToken.originToken = endToken;
                     _endToken.startToken = this._startToken;
                     lineObj.token = '';
                     lineObj.highlight.validPairTokens.push(_endToken);
                     // 开始和结束节点在同一行
-                    if (this._startToken.line == this.parsePairLine) {
+                    if (this._startToken.line == this.nowPairLine) {
                         this._startToken.end = _endToken.end;
                         _endToken.start = this._startToken.start;
                     }
@@ -203,21 +203,21 @@ class Highlight {
                     // 渲染开始行
                     this.buildHtml(this._startToken.line);
                     // 渲染结束行
-                    this._startToken.line != this.parsePairLine && this.buildHtml(this.parsePairLine);
+                    this._startToken.line != this.nowPairLine && this.buildHtml(this.nowPairLine);
                     this.startToken = null;
                     this._startToken = null;
                     this.preEndToken = endToken;
                 }
             }
-            this.parsePairLine++;
+            this.nowPairLine++;
             count++;
         }
-        if (this.parsePairLine < length) {
+        if (this.nowPairLine < length) {
             clearTimeout(this.parsePair.timer);
             this.parsePair.timer = setTimeout(() => {
                 this.parsePair();
             }, 100);
-            if (this.parsePairLine > this.editor.startLine) {
+            if (this.nowPairLine > this.editor.startLine) {
                 this.editor.startToEndToken = this.startToken && this._startToken;
             }
         } else {
@@ -240,31 +240,50 @@ class Highlight {
             return pairToken;
         }
 
-        function _checkStartToken(_startToken, parsePairLine) {
+        function _checkStartToken(_startToken, nowPairLine) {
             // 开始节点和结束节点同一行或规则里没有自定义检测函数
-            if (_startToken.line == parsePairLine || !that.pairTokensMap[_startToken.token].check) {
+            if (_startToken.line == nowPairLine || !that.pairTokensMap[_startToken.token].check) {
                 return true;
             }
-            let nowLine = that.editor.htmls[parsePairLine - 1].text;
-            let preLine = that.editor.htmls[parsePairLine - 2];
+            let nowLine = that.editor.htmls[nowPairLine - 1].text;
+            let preLine = that.editor.htmls[nowPairLine - 2];
             preLine = preLine && preLine.text;
             // 自定义检测函数
             return that.pairTokensMap[_startToken.token].check(preLine, nowLine);
         }
     }
 
-    buildHtml(line) {
-        if (line < this.editor.startLine || line > this.editor.startLine + this.editor.maxVisibleLine) {
-            // token或validPairTokens有变化，下次滚动到该行时需要重新渲染
-            this.editor.htmls[line - 1].highlight.rendered = false;
-            return;
+    // 寻找前面最接近的已处理过的开始行
+    getStartPairLine() {
+        if (this.nowPairLine > 1) {
+            for (let i = this.nowPairLine - 1; i >= 1; i--) {
+                let highlight = this.editor.htmls[i - 1].highlight;
+                if (highlight.validPairTokens.length) {
+                    let _startToken = highlight.validPairTokens[highlight.validPairTokens.length - 1];
+                    if (!_startToken.startToken && _startToken.type != Util.constData.PAIR_END) {
+                        this._startToken = _startToken;
+                        this.startToken = this._startToken.originToken;
+                    }
+                    this.nowPairLine = i + 1;
+                    break;
+                }
+            }
         }
+        return this.nowPairLine;
+    }
+
+    buildHtml(line) {
         let lineObj = this.editor.htmls[line - 1],
             tokens = lineObj.highlight.tokens,
             result = [],
             text = lineObj.text,
             html = '',
             preEnd = 0;
+        if (!tokens || line < this.editor.startLine || line > this.editor.startLine + this.editor.maxVisibleLines) {
+            // token或validPairTokens有变化，下次滚动到该行时需要重新渲染
+            this.editor.htmls[line - 1].highlight.rendered = false;
+            return;
+        }
         // 被多行匹配包裹
         if (lineObj.token) {
             html = `<span class="${lineObj.token}">${Util.htmlTrans(lineObj.text)}</span>`;

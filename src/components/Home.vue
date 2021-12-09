@@ -90,7 +90,7 @@ export default {
             top: 0,
             scrollLeft: 0,
             scrollTop: 0,
-            maxVisibleLine: 1,
+            maxVisibleLines: 1,
             maxLine: 1,
             scrollerArea: {},
             selectedRange: null,
@@ -195,7 +195,7 @@ export default {
         this.$textarea = this.$refs.textarea;
         this.$vScroller = this.$refs.vScroller;
         this.$hScroller = this.$refs.hScroller;
-        this.maxVisibleLine = Math.ceil(this.$scroller.clientHeight / this.charObj.charHight) + 1;
+        this.maxVisibleLines = Math.ceil(this.$scroller.clientHeight / this.charObj.charHight) + 1;
         this.charObj = this.$util.getCharWidth(this.$scroller);
         this.highlighter = new Highlight(this);
         this.render();
@@ -284,7 +284,7 @@ export default {
                 this.renderedUuidMap.set(uuid, obj);
                 return;
             }
-            this.renderHtmls = this.htmls.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLine);
+            this.renderHtmls = this.htmls.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines);
             this.renderHtmls = this.renderHtmls.map((item, index) => {
                 let num = this.startLine + index;
                 let uuid = item.uuid;

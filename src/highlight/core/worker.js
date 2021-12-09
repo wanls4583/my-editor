@@ -3,7 +3,7 @@
  * @Date: 2021-12-06 22:38:07
  * @Description: 
  */
-export default function () {
+export default function (onceData) {
     const constData = {
         PAIR_START: -1,
         PAIR_START_END: 0,
@@ -15,6 +15,11 @@ export default function () {
     let dataList = [];
     let removeList = [];
 
+    // 主线程直接调用
+    if (onceData) {
+        return run(onceData);
+    }
+
     self.onmessage = function (e) {
         let data = e.data;
         if (data.type == 'run') {
@@ -24,7 +29,7 @@ export default function () {
         } else if (data.type == 'remove') {
             removeList.push(data);
         }
-    }
+    };
 
     function run(option) {
         let texts = option.texts;
@@ -32,18 +37,20 @@ export default function () {
         let rules = option.rules;
         let index = 0;
         let pairTokensMap = {};
+        let max = option.max || 10000;
         pairRules.map((item) => {
             pairTokensMap[item.token] = true;
         });
         rules = rules.filter((item) => {
             return item.level == pairRules[0].level && !pairTokensMap[item.token];
         });
-        _run();
+        return _run();
 
         function _run() {
             var count = 0;
             let results = [];
-            while (index < texts.length && count < 10000) {
+            let result = null;
+            while (index < texts.length && count < max) {
                 let lineObj = texts[index];
                 let excludeTokens = [];
                 let pairTokens = [];
@@ -102,13 +109,17 @@ export default function () {
                 });
                 index++;
             }
-            self.postMessage(results);
-            if (index < texts.length) {
-                option.timer = setTimeout(() => {
-                    _run();
-                }, 0);
-            } else {
-                dataList.splice(option.index, 1);
+            if (onceData) { // 主线程直接调用
+                return results;
+            } else { // 子线程调用
+                self.postMessage(results);
+                if (index < texts.length) {
+                    option.timer = setTimeout(() => {
+                        _run();
+                    }, 0);
+                } else {
+                    dataList.splice(option.index, 1);
+                }
             }
         }
 
