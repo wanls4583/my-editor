@@ -122,7 +122,7 @@ export default {
             return this.charObj.charHight + 'px';
         },
         _statusHeight() {
-            return this.statusHeight + 'px';
+            return this.statusHeight + 4 + 'px';
         },
         _cursorVisible() {
             return this.cursorPos.visible ? 'visible' : 'hidden';
