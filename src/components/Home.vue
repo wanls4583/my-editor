@@ -396,10 +396,10 @@ export default {
             newLine += text.length - 1;
             this.maxLine = this.htmls.length;
             this.addPairRun(nowLine, text.length);
+            this.setLineWidth(text);
             this.render();
             this.$nextTick(() => {
                 this.setCursorPos(newLine, newColume);
-                this.setLineWidth(text);
             });
             let historyObj = {
                 type: this.$util.command.DELETE,
@@ -417,7 +417,7 @@ export default {
             } else { // 撤销或重做操作后，更新历史记录
                 this.updateHistory(this.history.index, historyObj);
             }
-            console.log(`insertContent cost${Date.now() - startTime}ms`);
+            // console.log(`insertContent cost${Date.now() - startTime}ms`);
         },
         // 删除内容
         deleteContent(keyCode, isDoCommand) {
@@ -629,7 +629,7 @@ export default {
             function _setLineWidth() {
                 let count = 0;
                 while (count < 10000 && index < texts.length) {
-                    let lineObj = that.htmls[index];
+                    let lineObj = texts[index];
                     if (that.uuidMap.has(lineObj.uuid)) {
                         let width = that.getStrWidth(lineObj.text);
                         // 增加2像素，给光标预留位置

@@ -49,7 +49,6 @@ class Highlight {
     }
 
     pairRun(line, length) {
-        let startTime = Date.now();
         let texts = this.editor.htmls.slice(line - 1, line - 1 + length);
         this.nowPairLine = this.nowPairLine > line ? line : this.nowPairLine;
         texts = texts.map((item) => {
@@ -78,7 +77,7 @@ class Highlight {
             };
             // 余下的交由子线程处理
             this.worker.postMessage(data);
-            console.log(`copy worker data cost:${Date.now() - startTime}ms`);
+            // console.log(`copy worker data cost:${Date.now() - startTime}ms`);
         }
     }
 
@@ -92,11 +91,11 @@ class Highlight {
     }
 
     parse() {
+        let startTime = Date.now();
         let text = '',
             tokens = null,
             result = null,
-            lineObj = null,
-            startTime = Date.now();
+            lineObj = null;
         while (this.nowLine <= this.endLine) {
             lineObj = this.editor.htmls[this.nowLine - 1];
             tokens = [];
@@ -135,12 +134,12 @@ class Highlight {
      * @param {Object} option [once:只执行一次parsePair,max:最大执行次数] 
      */
     parsePair() {
+        let startTime = Date.now();
         let that = this,
             lineObj = null,
             count = 0,
             max = 5000,
-            length = this.editor.htmls.length,
-            startTime = Date.now();
+            length = this.editor.htmls.length;
         while (count < max && this.nowPairLine <= length) {
             lineObj = this.editor.htmls[this.nowPairLine - 1];
             lineObj.highlight.validPairTokens = [];
