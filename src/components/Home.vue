@@ -1,7 +1,9 @@
 <template>
 	<div @selectstart.prevent class="my-editor-wrap">
 		<!-- 行号 -->
-		<div :style="{top: top + 'px'}" class="my-editor-nums">
+		<div :style="{top: _numTop}" class="my-editor-nums">
+			<!-- 占位行号，避免行号宽度滚动时变化 -->
+			<div class="my-editor-num" style="visibility:hidden">{{maxLine}}</div>
 			<div :class="['my-editor-num-active' ? cursorPos.line==num : '']" :key="num" class="my-editor-num" v-for="num in nums">
 				<span>{{num}}</span>
 			</div>
@@ -10,7 +12,7 @@
 			<!-- 可滚动区域 -->
 			<div @mousedown="onScrollerMdown" @wheel.prevent="onWheel" class="my-editor-content-scroller" ref="scroller">
 				<!-- 内如区域 -->
-				<div :style="{top: top + 'px', minWidth: _contentMinWidth}" @selectend.prevent="onSelectend" class="my-editor-content" ref="content">
+				<div :style="{top: _top, minWidth: _contentMinWidth}" @selectend.prevent="onSelectend" class="my-editor-content" ref="content">
 					<div :class="{active: cursorPos.line == line.num}" :key="line.num" class="my-editor-line" v-for="line in renderHtmls">
 						<!-- my-editor-bg-color为选中的背景颜色 -->
 						<div :class="[line.selected ? 'my-editor-bg-color' : '',_startToken(line.num)]" class="my-editor-code" v-html="line.html"></div>
@@ -99,6 +101,12 @@ export default {
         }
     },
     computed: {
+        _numTop() {
+            return this.top - this.charObj.charHight + 'px';
+        },
+        _top() {
+            return this.top + 'px';
+        },
         _lineHeight() {
             return this.charObj.charHight + 'px';
         },
