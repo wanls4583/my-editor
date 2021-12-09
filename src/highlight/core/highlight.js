@@ -20,35 +20,23 @@ class Highlight {
             this.pairRules.push(item);
         });
         this.worker.onmessage = (e) => {
-            this.startParsePair(e);
+            this.startHighlightPairToken(e);
         }
     }
 
-    // 子线程处理完部分数据，可以开始分析多行匹配
-    startParsePair(e) {
-        let result = e.data;
-        result.map((item) => {
-            let lineObj = this.editor.uuidMap.get(item.uuid);
-            if (lineObj) {
-                lineObj.highlight.excludeTokens = item.excludeTokens;
-                lineObj.highlight.pairTokens = lineObj.highlight.pairTokens || item.pairTokens;
-            }
-        });
-        this.startToken = null; // 原始开始节点
-        this._startToken = null; // 处理过的开始节点
-        this.nowPairLine = this.getStartPairLine();
-        this.parsePair();
-    }
-
-    run() {
+    addTask() {
         this.nowLine = this.editor.startLine;
         this.endLine = this.editor.startLine + this.editor.maxVisibleLines;
         this.endLine = this.endLine > this.editor.htmls.length ? this.editor.htmls.length : this.endLine;
-        clearTimeout(this.parse.timer);
-        this.parse();
+        this.highlightToken();
     }
 
-    pairRun(line, length) {
+    /**
+     * 添加多行匹配任务
+     * @param {Number} line 开始行
+     * @param {Number} length 数量
+     */
+    addPairTask(line, length) {
         let texts = this.editor.htmls.slice(line - 1, line - 1 + length);
         this.nowPairLine = this.nowPairLine > line ? line : this.nowPairLine;
         texts = texts.map((item) => {
@@ -58,7 +46,7 @@ class Highlight {
             }
         });
         // 先主动处理部分数据，防止高亮部分闪烁
-        this.startParsePair({
+        this.startHighlightPairToken({
             data: PairWorker({
                 texts: texts.slice(0, this.editor.maxVisibleLines),
                 rules: rules,
@@ -81,7 +69,12 @@ class Highlight {
         }
     }
 
-    removePairRun(line, length) {
+    /**
+     * 删除多行匹配任务
+     * @param {Number} line 开始行
+     * @param {Number} length 数量
+     */
+    removePairTask(line, length) {
         this.nowPairLine = this.nowPairLine > line ? line : this.nowPairLine;
         this.worker.postMessage({
             type: 'remove',
@@ -90,7 +83,10 @@ class Highlight {
         });
     }
 
-    parse() {
+    /**
+     * 高亮单行匹配
+     */
+    highlightToken() {
         let startTime = Date.now();
         let text = '',
             tokens = null,
@@ -126,14 +122,30 @@ class Highlight {
             }
             this.nowLine++;
         }
-        // console.log(`parse cost:${Date.now() - startTime}ms`);
+        // console.log(`highlightToken cost:${Date.now() - startTime}ms`);
+    }
+
+    // 子线程处理完部分数据，可以开始高亮多行匹配
+    startHighlightPairToken(e) {
+        let result = e.data;
+        result.map((item) => {
+            let lineObj = this.editor.uuidMap.get(item.uuid);
+            if (lineObj) {
+                lineObj.highlight.excludeTokens = item.excludeTokens;
+                lineObj.highlight.pairTokens = lineObj.highlight.pairTokens || item.pairTokens;
+            }
+        });
+        this.startToken = null; // 原始开始节点
+        this._startToken = null; // 处理过的开始节点
+        this.nowPairLine = this.getStartPairLine();
+        this.highlightPairToken();
     }
 
     /**
-     * 
+     * 高亮多行匹配
      * @param {Object} option [once:只执行一次parsePair,max:最大执行次数] 
      */
-    parsePair() {
+    highlightPairToken() {
         let startTime = Date.now();
         let that = this,
             lineObj = null,
@@ -224,11 +236,11 @@ class Highlight {
             this.nowPairLine++;
             count++;
         }
-        // console.log(`parsePair cost:${Date.now() - startTime}ms`);//6ms
+        // console.log(`highlightPairToken cost:${Date.now() - startTime}ms`);//6ms
         if (this.nowPairLine < length) {
-            cancelAnimationFrame(this.parsePair.timer);
-            this.parsePair.timer = requestAnimationFrame(() => {
-                this.parsePair();
+            cancelAnimationFrame(this.highlightPairToken.timer);
+            this.highlightPairToken.timer = requestAnimationFrame(() => {
+                this.highlightPairToken();
             });
         }
         if (this.nowPairLine > this.editor.startLine) {

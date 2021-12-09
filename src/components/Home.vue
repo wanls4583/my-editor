@@ -273,7 +273,7 @@ export default {
         // 渲染代码
         renderLine(line) {
             let that = this;
-            this.highlighter.run();
+            this.highlighter.addTask();
             // 只更新一行
             if (line) {
                 let obj = this.renderHtmls[line - this.startLine];
@@ -364,7 +364,7 @@ export default {
             let nowLine = this.cursorPos.line;
             let newLine = nowLine;
             let newColume = nowColume;
-            this.removePairRun(nowLine);
+            this.removePairTask(nowLine);
             text = text.replace(/\t/g, this.space);
             text = text.split(/\r\n|\n/);
             text = text.map((item) => {
@@ -395,7 +395,7 @@ export default {
             }
             newLine += text.length - 1;
             this.maxLine = this.htmls.length;
-            this.addPairRun(nowLine, text.length);
+            this.addPairTask(nowLine, text.length);
             this.setLineWidth(text);
             this.render();
             this.$nextTick(() => {
@@ -436,7 +436,7 @@ export default {
                 originPos = { line: end.line, column: end.column };
                 text = startObj.text;
                 deleteText = this.getRangeText(this.selectedRange.start, this.selectedRange.end);
-                this.removePairRun(start.line, end.line - start.line + 1);
+                this.removePairTask(start.line, end.line - start.line + 1);
                 if (start.line == 1 && end.line == this.maxLine) { //全选删除
                     rangeUuid = [this.maxWidthObj.uuid];
                 } else {
@@ -458,10 +458,10 @@ export default {
                 }
                 this.setCursorPos(start.line, start.column);
             } else if (this.$util.keyCode.DELETE == keyCode) { // 向后删除一个字符
-                this.removePairRun(this.cursorPos.line);
+                this.removePairTask(this.cursorPos.line);
                 if (this.cursorPos.column == text.length) { // 光标处于行尾
                     if (this.cursorPos.line < this.htmls.length) {
-                        this.removePairRun(this.cursorPos.line + 1);
+                        this.removePairTask(this.cursorPos.line + 1);
                         text = startObj.text + this.htmls[this.cursorPos.line].text;
                         this.htmls.splice(this.cursorPos.line, 1);
                         deleteText = '\n';
@@ -473,10 +473,10 @@ export default {
                 }
                 startObj.text = text;
             } else { // 向前删除一个字符
-                this.removePairRun(this.cursorPos.line);
+                this.removePairTask(this.cursorPos.line);
                 if (this.cursorPos.column == 0) { // 光标处于行首
                     if (this.cursorPos.line > 1) {
-                        this.removePairRun(this.cursorPos.line - 1);
+                        this.removePairTask(this.cursorPos.line - 1);
                         text = this.htmls[this.cursorPos.line - 2].text + text;
                         this.htmls.splice(this.cursorPos.line - 2, 1);
                         this.setCursorPos(this.cursorPos.line - 1, text.length);
@@ -500,7 +500,7 @@ export default {
             }
             this.maxLine = this.htmls.length;
             this.clearRnage();
-            this.addPairRun(this.cursorPos.line, 1);
+            this.addPairTask(this.cursorPos.line, 1);
             this.render();
             // 更新最大文本宽度
             if (startObj.width >= this.maxWidthObj.width) {
@@ -524,20 +524,20 @@ export default {
                 this.updateHistory(this.history.index, historyObj);
             }
         },
-        addPairRun(line, length) {
+        addPairTask(line, length) {
             let texts = this.htmls.slice(line - 1, line - 1 + length);
             texts = texts.map((item) => {
                 item.uuid = this.uuid++;
                 this.uuidMap.set(item.uuid, item);
             });
-            this.highlighter.pairRun(line, length);
+            this.highlighter.addPairTask(line, length);
         },
-        removePairRun(line, length) {
+        removePairTask(line, length) {
             length = length || 1;
             for (let i = line; i < line + length; i++) {
                 this.uuidMap.delete(this.htmls[i - 1].uuid);
             }
-            this.highlighter.removePairRun(line, length);
+            this.highlighter.removePairTask(line, length);
         },
         // 撤销操作
         undo() {
