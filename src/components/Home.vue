@@ -436,10 +436,14 @@ export default {
                 originPos = { line: end.line, column: end.column };
                 text = startObj.text;
                 deleteText = this.getRangeText(this.selectedRange.start, this.selectedRange.end);
-                rangeUuid = this.htmls.slice(start.line - 1, end.line).map((item) => {
-                    return item.uuid;
-                });
                 this.removePairRun(start.line, end.line - start.line + 1);
+                if (start.line == 1 && end.line == this.maxLine) { //全选删除
+                    rangeUuid = [this.maxWidthObj.uuid];
+                } else {
+                    rangeUuid = this.htmls.slice(start.line - 1, end.line).map((item) => {
+                        return item.uuid;
+                    });
+                }
                 if (start.line == end.line) { // 单行选中
                     text = text.slice(0, start.column) + text.slice(end.column);
                     startObj.text = text;
