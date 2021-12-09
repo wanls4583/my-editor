@@ -54,7 +54,7 @@ class Highlight {
 
     run() {
         this.nowLine = this.editor.startLine;
-        this.endLine = this.editor.startLine + this.editor.maxLine;
+        this.endLine = this.editor.startLine + this.editor.maxVisibleLine;
         this.endLine = this.endLine > this.editor.htmls.length ? this.editor.htmls.length : this.endLine;
         clearTimeout(this.parse.timer);
         this.parse();
@@ -254,7 +254,7 @@ class Highlight {
     }
 
     buildHtml(line) {
-        if (line < this.editor.startLine || line > this.editor.startLine + this.editor.maxLine) {
+        if (line < this.editor.startLine || line > this.editor.startLine + this.editor.maxVisibleLine) {
             // token或validPairTokens有变化，下次滚动到该行时需要重新渲染
             this.editor.htmls[line - 1].highlight.rendered = false;
             return;
@@ -301,7 +301,6 @@ class Highlight {
         lineObj.highlight.rendered = true;
         lineObj = this.editor.renderedUuidMap.get(lineObj.uuid);
         lineObj && (lineObj.html = html);
-        console.log(html)
         return html;
     }
 }

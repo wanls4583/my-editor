@@ -81,19 +81,6 @@ export default {
                 show: false,
                 visible: true,
             },
-            htmls: [{
-                uuid: Number.MIN_SAFE_INTEGER,
-                text: '',
-                html: '',
-                width: 0,
-                token: '',
-                highlight: {
-                    pairTokens: null,
-                    validPairTokens: null,
-                    tokens: null,
-                    rendered: false
-                }
-            }],
             nums: [1],
             renderHtmls: [],
             startLine: 1,
@@ -101,7 +88,8 @@ export default {
             top: 0,
             scrollLeft: 0,
             scrollTop: 0,
-            maxLine: 0,
+            maxVisibleLine: 1,
+            maxLine: 1,
             scrollerArea: {},
             selectedRange: null,
             maxWidthObj: {
@@ -118,7 +106,7 @@ export default {
             return this.cursorPos.visible ? 'visible' : 'hidden';
         },
         _vScrollHeight() {
-            return this.htmls.length * this.charObj.charHight + 'px';
+            return this.maxLine * this.charObj.charHight + 'px';
         },
         _hScrollWidth() {
             return this.maxWidthObj.width ? this.maxWidthObj.width + 'px' : 'auto';
@@ -127,7 +115,7 @@ export default {
             return this.maxWidthObj.width > this.scrollerArea.width ? this.maxWidthObj.width + 'px' : '100%';
         },
         _cursorRealPos() {
-            let left = this.getStrWidth(this.htmls[this.cursorPos.line - 1].text, 0, this.cursorPos.column);
+            let left = this.getStrWidthByLine(this.cursorPos.line, 0, this.cursorPos.column);
             let top = (this.cursorPos.line - this.startLine) * this.charObj.charHight;
             let relTop = this.cursorPos.line * this.charObj.charHight;
             // 强制滚动使光标处于可见区域
@@ -189,6 +177,9 @@ export default {
         }
     },
     created() {
+        window.test = this;
+        this.initData();
+        this.initEvent();
     },
     mounted() {
         this.$scroller = this.$refs.scroller;
@@ -196,11 +187,9 @@ export default {
         this.$textarea = this.$refs.textarea;
         this.$vScroller = this.$refs.vScroller;
         this.$hScroller = this.$refs.hScroller;
-        this.maxLine = Math.ceil(this.$scroller.clientHeight / this.charObj.charHight) + 1;
+        this.maxVisibleLine = Math.ceil(this.$scroller.clientHeight / this.charObj.charHight) + 1;
         this.charObj = this.$util.getCharWidth(this.$scroller);
         this.highlighter = new Highlight(this);
-        this.initData();
-        this.initEvent();
         this.render();
         this.focus();
     },
@@ -213,6 +202,19 @@ export default {
             this.uuid = Number.MIN_SAFE_INTEGER + 1;
             this.uuidMap = new Map(); // htmls的唯一标识对象
             this.renderedUuidMap = new Map(); // renderHtmls的唯一标识对象
+            this.htmls = [{
+                uuid: Number.MIN_SAFE_INTEGER,
+                text: '',
+                html: '',
+                width: 0,
+                token: '',
+                highlight: {
+                    pairTokens: null,
+                    validPairTokens: null,
+                    tokens: null,
+                    rendered: false
+                }
+            }];
         },
         // 初始化文档事件
         initEvent() {
@@ -274,7 +276,7 @@ export default {
                 this.renderedUuidMap.set(uuid, obj);
                 return;
             }
-            this.renderHtmls = this.htmls.slice(this.startLine - 1, this.startLine - 1 + this.maxLine);
+            this.renderHtmls = this.htmls.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLine);
             this.renderHtmls = this.renderHtmls.map((item, index) => {
                 let num = this.startLine + index;
                 let uuid = item.uuid;
@@ -394,8 +396,9 @@ export default {
                     }
                 }
             });
-            this.addPairRun(nowLine, text.length);
             newLine += text.length - 1;
+            this.maxLine = this.htmls.length;
+            this.addPairRun(nowLine, text.length);
             this.render();
             this.$nextTick(() => {
                 this.setCursorPos(newLine, newColume);
@@ -500,6 +503,7 @@ export default {
                 this.maxWidthObj.line <= this.selectedRange.end.line) {
                 this.setMaxWidth();
             }
+            this.maxLine = this.htmls.length;
             this.clearRnage();
             this.addPairRun(this.cursorPos.line, 1);
             this.render();
@@ -616,9 +620,15 @@ export default {
             });
             this.maxWidthObj = maxWidthObj;
         },
+        // 获取文本在浏览器中的宽度
         getStrWidth(str, start, end) {
             return this.$util.getStrWidth(str, this.charObj.charWidth, this.charObj.fullAngleCharWidth, start, end);
         },
+        // 获取行对应的文本在浏览器中的宽度
+        getStrWidthByLine(line, start, end) {
+            return this.getStrWidth(this.htmls[line - 1].text, start, end);
+        },
+        // 根据文本宽度计算当前列号
         getColumnByWidth(text, offsetX) {
             let halfCharWidth = this.charObj.charWidth / 2;
             let halfFullCharWidth = this.charObj.fullAngleCharWidth / 2;
