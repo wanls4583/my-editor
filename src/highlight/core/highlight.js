@@ -11,10 +11,12 @@ class Highlight {
         this.editor = editor;
         this.worker = Util.createWorker(PairWorker);
         this.nowPairLine = 1;
-        this.pairTokensMap = {};
+        this.tokenUuid = 0;
+        this.pairTokenUuidMap = {};
         this.pairRules = []; // 传入worker的数据不能克隆函数
         pairRules.map((item) => {
-            this.pairTokensMap[item.token] = item;
+            item.uuid = this.tokenUuid++;
+            this.pairTokenUuidMap[item.uuid] = item;
             item = Object.assign({}, item);
             delete item.check;
             this.pairRules.push(item);
@@ -100,6 +102,7 @@ class Highlight {
                 text && rules.map((rule) => {
                     while (result = rule.regex.exec(lineObj.text)) {
                         tokens.push({
+                            uuid: rule.uuid,
                             token: rule.token,
                             value: result[0],
                             level: rule.level,
@@ -137,6 +140,7 @@ class Highlight {
         });
         this.startToken = null; // 原始开始节点
         this._startToken = null; // 处理过的开始节点
+        this._preEndToken = null;
         this.nowPairLine = this.getStartPairLine();
         this.highlightPairToken();
     }
@@ -161,7 +165,7 @@ class Highlight {
             let pairTokens = lineObj.highlight.pairTokens.concat([]);
             // 不同类型的和多行匹配相同优先级的单行tokens
             let excludeTokens = lineObj.highlight.excludeTokens.filter((item) => {
-                return item.level === pairRules[0].level && !this.pairTokensMap[item.token];
+                return item.level === pairRules[0].level && !this.pairTokenUuidMap[item.uuid];
             });
             // 已有开始节点，则该行可能被其包裹，或者为结束行
             if (this.startToken) {
@@ -186,11 +190,12 @@ class Highlight {
                     if (this.startToken &&
                         // 需要防止/*test*/*这种情况
                         !(
-                            this.preEndToken &&
-                            this.preEndToken.line == this.nowPairLine &&
-                            this.preEndToken.end > this.startToken.start
+                            this._preEndToken &&
+                            this._preEndToken.line == this.nowPairLine &&
+                            this._preEndToken.end > this.startToken.start
                         )
                     ) {
+                        this._preEndToken = null;
                         this._startToken = Object.assign({}, this.startToken);
                         this._startToken.line = this.nowPairLine;
                         this._startToken.end = Number.MAX_VALUE;
@@ -198,6 +203,9 @@ class Highlight {
                         lineObj.highlight.validPairTokens.push(this._startToken);
                         lineObj.token = '';
                         this.buildHtml(this.nowPairLine);
+                    } else {
+                        this.startToken = null;
+                        break;
                     }
                 }
                 if (!pairTokens.length) {
@@ -206,7 +214,7 @@ class Highlight {
                 endToken = pairTokens.shift();
                 // 匹配成功
                 if (
-                    endToken.token == this.startToken.token &&
+                    endToken.uuid == this.startToken.uuid &&
                     endToken.type + this.startToken.type === 0 &&
                     // 排除/*/这种情况
                     !(this.nowPairLine == this._startToken.line && endToken.start < this.startToken.end)
@@ -230,7 +238,7 @@ class Highlight {
                     this._startToken.line != this.nowPairLine && this.buildHtml(this.nowPairLine);
                     this.startToken = null;
                     this._startToken = null;
-                    this.preEndToken = endToken;
+                    this._preEndToken = _endToken;
                 }
             }
             this.nowPairLine++;
@@ -268,14 +276,14 @@ class Highlight {
 
         function _checkStartToken(_startToken, nowPairLine) {
             // 开始节点和结束节点同一行或规则里没有自定义检测函数
-            if (_startToken.line == nowPairLine || !that.pairTokensMap[_startToken.token].check) {
+            if (_startToken.line == nowPairLine || !that.pairTokenUuidMap[_startToken.uuid].check) {
                 return true;
             }
             let nowLine = that.editor.htmls[nowPairLine - 1].text;
             let preLine = that.editor.htmls[nowPairLine - 2];
             preLine = preLine && preLine.text;
             // 自定义检测函数
-            return that.pairTokensMap[_startToken.token].check(preLine, nowLine);
+            return that.pairTokenUuidMap[_startToken.uuid].check(preLine, nowLine);
         }
     }
 

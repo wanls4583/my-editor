@@ -61,6 +61,7 @@ export default function (onceData) {
                 lineObj.text && rules.map((rule) => {
                     while (result = rule.regex.exec(lineObj.text)) {
                         excludeTokens.push({
+                            uuid: rule.uuid,
                             token: rule.token,
                             value: result[0],
                             level: rule.level,
@@ -74,6 +75,7 @@ export default function (onceData) {
                     var isSame = rule.startRegex.source === rule.endRegex.source;
                     while (result = rule.startRegex.exec(lineObj.text)) {
                         pairTokens.push({
+                            uuid: rule.uuid,
                             token: rule.token,
                             value: result[0],
                             level: rule.level,
@@ -85,6 +87,7 @@ export default function (onceData) {
                     if (!isSame) {
                         while (result = rule.endRegex.exec(lineObj.text)) {
                             pairTokens.push({
+                                uuid: rule.uuid,
                                 token: rule.token,
                                 value: result[0],
                                 level: rule.level,
