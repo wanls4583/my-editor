@@ -35,20 +35,28 @@ export default function (onceData) {
         let texts = option.texts;
         let rules = option.rules;
         let pairRules = [];
+        let excludeRules = [];
+        let childrenPairRules = [];
         let index = 0;
-        let pairTokensMap = new Map();
         let max = option.max || 50000;
-        let minLevel = Infinity;
         pairRules = rules.filter((item) => {
             return item.startRegex && item.endRegex;
         });
+        excludeRules = _getExclueRules(rules, pairRules);
         pairRules.map((item) => {
-            minLevel = minLevel > item.level ? item.level : minLevel;
-            item.token && pairTokensMap.set(item.token, true);
+            if (item.children && item.children.length) {
+                let _pairRules = [];
+                item.children.map((_item) => {
+                    if (_item.startRegex && _item.endRegex) {
+                        _pairRules.push(_item);
+                    }
+                });
+                childrenPairRules = childrenPairRules.concat(_pairRules);
+                excludeRules = _getExclueRules(item.children, _pairRules).concat(excludeRules);
+            }
         });
-        rules = rules.filter((item) => {
-            return item.level >= minLevel && !item.startRegex && !pairTokensMap.has(item.token);
-        });
+        pairRules = pairRules.concat(childrenPairRules);
+
         return _run();
 
         function _run() {
@@ -58,14 +66,16 @@ export default function (onceData) {
                 startTime = Date.now();
             while (index < texts.length && count < max) {
                 let lineObj = texts[index];
-                let excludeTokens = [];
+                let excludeTokens = {};
                 let pairTokens = [];
                 if (!_checkValid(lineObj.uuid)) {
                     break;
                 }
-                lineObj.text && rules.map((rule) => {
+                lineObj.text && excludeRules.map((rule) => {
                     while (result = rule.regex.exec(lineObj.text)) {
-                        excludeTokens.push({
+                        let key = rule.parentUuid || 'default';
+                        excludeTokens[key] = excludeTokens[key] || [];
+                        excludeTokens[key].push({
                             uuid: rule.uuid,
                             value: result[0],
                             level: rule.level,
@@ -102,8 +112,10 @@ export default function (onceData) {
                     rule.startRegex.lastIndex = 0;
                     rule.endRegex.lastIndex = 0;
                 });
-                excludeTokens.sort((a, b) => {
-                    return a.start - b.start;
+                Object.values(excludeTokens).map((item) => {
+                    item.sort((a, b) => {
+                        return a.start - b.start;
+                    });
                 });
                 pairTokens.sort((a, b) => {
                     return a.start - b.start;
@@ -130,6 +142,19 @@ export default function (onceData) {
                 }
             }
             // console.log(`worker run cost:${Date.now() - startTime}ms`);//120ms
+        }
+
+        function _getExclueRules(rules, pairRules) {
+            let pairTokensMap = new Map();
+            let minLevel = Infinity;
+            pairRules.map((item) => {
+                minLevel = minLevel > item.level ? item.level : minLevel;
+                item.token && pairTokensMap.set(item.token, true);
+            });
+            rules = rules.filter((item) => {
+                return item.level >= minLevel && !item.startRegex && !pairTokensMap.has(item.token);
+            });
+            return rules;
         }
 
         // 检查uuid对应的行对象是否已被删除或被替换

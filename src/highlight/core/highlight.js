@@ -5,7 +5,6 @@ import PairWorker from './worker';
 
 class Highlight {
     constructor(editor) {
-        console.log(rules)
         this.editor = editor;
         this.worker = Util.createWorker(PairWorker);
         this.rules = rules;
@@ -21,30 +20,35 @@ class Highlight {
     }
 
     initRules() {
-        let childrenRules = [];
         this.rules.map((item) => {
             item.uuid = this.ruleUuid++;
             this.ruleUuidMap[item.uuid] = item;
             item.children && item.map((_item) => {
                 _item.uuid = this.ruleUuid++;
-                _item.parent = item;
-                childrenRules.push(_item);
+                _item.parentUuid = item.uuid;
+                if (_item.regex && !_item.startRegex) {
+                    this.singleRules.push(_item);
+                }
             });
-            item = Object.assign({}, item);
-            delete item.children;
-            delete item.check;
-            typeof item.token == 'function' && delete item.token;
-            this.copyRules.push(item);
-        });
-        childrenRules.map((item) => {
+            if (item.regex && !item.startRegex) {
+                this.singleRules.push(item);
+            }
             item = Object.assign({}, item);
             delete item.check;
             typeof item.token == 'function' && delete item.token;
             this.copyRules.push(item);
         });
-        this.rules = this.rules.concat(childrenRules);
-        this.singleRules = this.rules.filter((item) => {
-            return item.regex && !item.startRegex;
+        this.copyRules.map((item) => {
+            if (item.children) {
+                let children = [];
+                item.children.map((_item) => {
+                    _item = Object.assign({}, _item);
+                    delete _item.check;
+                    typeof _item.token == 'function' && delete _item.token;
+                    children.push(_item);
+                });
+                item.children = children;
+            }
         });
     }
 
@@ -116,12 +120,14 @@ class Highlight {
             lineObj = null;
         while (this.nowLine <= this.endLine) {
             lineObj = this.editor.htmls[this.nowLine - 1];
-            tokens = [];
+            tokens = {};
             if (!lineObj.highlight.tokens) {
                 text = lineObj.text;
                 text && this.singleRules.map((rule) => {
                     while (result = rule.regex.exec(lineObj.text)) {
-                        tokens.push({
+                        let key = rule.parentUuid || 'default';
+                        tokens[key] = tokens[key] || [];
+                        tokens[key].push({
                             uuid: rule.uuid,
                             value: result[0],
                             level: rule.level,
@@ -132,8 +138,10 @@ class Highlight {
                     rule.regex.lastIndex = 0;
                 });
                 lineObj.highlight.tokens = tokens;
-                tokens.sort((a, b) => {
-                    return a.start - b.start;
+                Object.values(tokens).map((tokens) => {
+                    tokens.sort((a, b) => {
+                        return a.start - b.start;
+                    });
                 });
             } else {
                 tokens = lineObj.highlight.tokens;
@@ -170,8 +178,7 @@ class Highlight {
      */
     highlightPairToken() {
         let startTime = Date.now();
-        let that = this,
-            lineObj = null,
+        let lineObj = null,
             count = 0,
             max = 5000,
             length = this.editor.htmls.length;
@@ -186,7 +193,7 @@ class Highlight {
             let excludeTokens = lineObj.highlight.excludeTokens;
             // 已有开始节点，则该行可能被其包裹，或者为结束行
             if (this.startToken) {
-                if (_checkStartToken(this._startToken, this.nowPairLine)) {
+                if (this.ifPackageBySartToken(this._startToken, this.nowPairLine)) {
                     lineObj.ruleUuid = this.startToken.uuid;
                     this.buildHtml(this.nowPairLine);
                 } else {
@@ -199,46 +206,47 @@ class Highlight {
                 lineObj.ruleUuid = '';
                 this.buildHtml(this.nowPairLine);
             }
+            lineObj.parentRuleUuid = this.parentToken && this.parentToken.uuid;
             while (pairTokens.length) {
                 let endToken = null;
                 // 获取开始节点
                 if (!this.startToken) {
-                    this.startToken = _getNextStartToken(excludeTokens, pairTokens);
-                    if (this.startToken &&
-                        // 需要防止/*test*/*这种情况
-                        !(
-                            this._preEndToken &&
-                            this._preEndToken.line == this.nowPairLine &&
-                            this._preEndToken.end > this.startToken.start
-                        )
-                    ) {
-                        this._preEndToken = null;
-                        this._startToken = Object.assign({}, this.startToken);
-                        this._startToken.line = this.nowPairLine;
-                        this._startToken.end = Number.MAX_VALUE;
-                        this._startToken.originToken = this.startToken;
-                        lineObj.highlight.validPairTokens.push(this._startToken);
-                        lineObj.ruleUuid = '';
-                        this.buildHtml(this.nowPairLine);
-                    } else {
-                        this.startToken = null;
-                        continue;
+                    this.startToken = this.getNextStartToken(excludeTokens, pairTokens);
+                    if (this.startToken) {
+                        if (this.parentToken && this.parentToken.uuid == this.startToken.uuid) { // 找到的是父节点的结束节点
+                            endToken = this.startToken;
+                            this.startToken = this.parentToken;
+                            this._startToken = this._parentToken;
+                        } else {
+                            let rule = this.ruleUuidMap[this.startToken.uuid];
+                            this._preEndToken = null;
+                            this._startToken = Object.assign({}, this.startToken);
+                            this._startToken.line = this.nowPairLine;
+                            this._startToken.end = rule.children && rule.children.length ? this._startToken.end : Number.MAX_VALUE;
+                            this._startToken.originToken = this.startToken;
+                            lineObj.highlight.validPairTokens.push(this._startToken);
+                            lineObj.ruleUuid = '';
+                            this.buildHtml(this.nowPairLine);
+                            // 该节点是否有子节点
+                            if (!this.parentToken && rule.children && rule.children.length) {
+                                this.parentToken = this.startToken;
+                                this._parentToken = this._startToken;
+                                this.startToken = null;
+                                this._startToken = null;
+                                continue;
+                            }
+                        }
                     }
                 }
                 if (!pairTokens.length) {
                     break;
                 }
-                endToken = pairTokens.shift();
-                // 匹配成功
-                if (
-                    endToken.uuid == this.startToken.uuid &&
-                    endToken.type + this.startToken.type === 0 &&
-                    // 排除/*/这种情况
-                    !(this.nowPairLine == this._startToken.line && endToken.start < this.startToken.end)
-                ) {
+                endToken = endToken || pairTokens.shift();
+                if (this.ifPair(this.startToken, endToken, this._startToken.line, this.nowPairLine)) {
+                    let rule = this.ruleUuidMap[endToken.uuid];
                     let _endToken = Object.assign({}, endToken);
                     _endToken.line = this.nowPairLine;
-                    _endToken.start = 0;
+                    _endToken.start = rule.children && rule.children.length ? 0 : _endToken.start;
                     _endToken.originToken = endToken;
                     _endToken.startToken = this._startToken;
                     lineObj.ruleUuid = '';
@@ -271,37 +279,66 @@ class Highlight {
         if (this.nowPairLine > this.editor.startLine) {
             this.editor.startToEndToken = this.startToken && this._startToken;
         }
+    }
 
-        function _getNextStartToken(excludeTokens, pairTokens) {
-            while (pairTokens.length) {
-                let pairToken = pairTokens.shift(),
-                    pass = true;
-                if (pairToken.type == Util.constData.PAIR_END) {
-                    continue;
-                }
-                for (let i = 0; i < excludeTokens.length; i++) {
-                    if (excludeTokens[i].start < pairToken.start && excludeTokens[i].end > pairToken.start) {
-                        pass = false;
-                        break;
-                    }
-                }
-                if (pass) {
-                    return pairToken;
+    // 开始节点和结束节点是否匹配
+    ifPair(startToken, endToken, startLine, endLine) {
+        if (
+            endToken.uuid == startToken.uuid &&
+            endToken.type + startToken.type === 0 &&
+            // 排除/*/这种情况
+            !(startLine == endLine && endToken.start < this.startToken.end)
+        ) {
+            return true;
+        }
+    }
+
+    // 获取下一个开始节点
+    getNextStartToken(excludeTokens, pairTokens) {
+        while (pairTokens.length) {
+            let pairToken = pairTokens.shift(),
+                _excludeTokens = excludeTokens[pairToken.parentUuid || 'default'] || [],
+                pass = true;
+            // 父节点匹配到结束节点，当前子节点结束匹配
+            if (this.parentToken && this.ifPair(this.parentToken, pairToken, this._preEndToken.line, this.nowPairLine)) {
+                return pairToken;
+            }
+            if (pairToken.type == Util.constData.PAIR_END) {
+                continue;
+            }
+            // 需要防止/*test*/*这种情况
+            if (
+                this._preEndToken &&
+                this._preEndToken.line == this.nowPairLine &&
+                this._preEndToken.end > pairToken.start
+            ) {
+                continue;
+            }
+            // 是否与单行匹配冲突
+            for (let i = 0; i < _excludeTokens.length; i++) {
+                let token = _excludeTokens[i];
+                if (token.start < pairToken.start && token.end > pairToken.start) {
+                    pass = false;
+                    break;
                 }
             }
-        }
-
-        function _checkStartToken(_startToken, nowPairLine) {
-            // 开始节点和结束节点同一行或规则里没有自定义检测函数
-            if (_startToken.line == nowPairLine || !that.ruleUuidMap[_startToken.uuid].check) {
-                return true;
+            if (pass) {
+                return pairToken;
             }
-            let nowLine = that.editor.htmls[nowPairLine - 1].text;
-            let preLine = that.editor.htmls[nowPairLine - 2];
-            preLine = preLine && preLine.text;
-            // 自定义检测函数
-            return that.ruleUuidMap[_startToken.uuid].check(preLine, nowLine);
         }
+    }
+
+    // 检查开始节点是否能影响到中间区域，列如'test\后面必须要有\才能影响到下一行也是字符串
+    ifPackageBySartToken(_startToken, nowPairLine) {
+        // 开始节点和结束节点同一行或规则里没有自定义检测函数
+        if (_startToken.line == nowPairLine || !this.ruleUuidMap[_startToken.uuid].check) {
+            return true;
+        }
+        let nowLine = this.editor.htmls[nowPairLine - 1].text;
+        let preLine = this.editor.htmls[nowPairLine - 2];
+        preLine = preLine && preLine.text;
+        // 自定义检测函数
+        return this.ruleUuidMap[_startToken.uuid].check(preLine, nowLine);
     }
 
     // 寻找前面最接近的已处理过的开始行
@@ -335,6 +372,7 @@ class Highlight {
             this.editor.htmls[line - 1].highlight.rendered = false;
             return;
         }
+        tokens = tokens[lineObj.parentRuleUuid ? lineObj.parentRuleUuid : 'default'] || [];
         // 被多行匹配包裹
         if (lineObj.ruleUuid) {
             let token = this.ruleUuidMap[lineObj.ruleUuid].token;
