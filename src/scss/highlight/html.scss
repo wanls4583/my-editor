@@ -1,0 +1,28 @@
+.start-tag,
+.end-tag {
+    color: #f92672;
+}
+
+.start-tag-arrow {
+
+    &-l,
+    &r {
+        color: #ffffff;
+    }
+}
+
+.end-tag-arrow {
+
+    &-l,
+    &r {
+        color: #ffffff;
+    }
+}
+
+.attr-name {
+    color: #a6e22e;
+}
+
+.attr-value {
+    color: #e6db74;
+}

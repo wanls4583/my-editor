@@ -36,7 +36,7 @@ export default function (onceData) {
         let rules = option.rules;
         let pairRules = [];
         let index = 0;
-        let pairTokensMap = {};
+        let pairTokensMap = new Map();
         let max = option.max || 50000;
         let minLevel = Infinity;
         pairRules = rules.filter((item) => {
@@ -44,10 +44,10 @@ export default function (onceData) {
         });
         pairRules.map((item) => {
             minLevel = minLevel > item.level ? item.level : minLevel;
-            pairTokensMap[item.token] = true;
+            pairTokensMap.set(item.token, true);
         });
         rules = rules.filter((item) => {
-            return item.level >= minLevel && !pairTokensMap[item.token];
+            return item.level >= minLevel && !pairTokensMap.has(item.token);
         });
         return _run();
 

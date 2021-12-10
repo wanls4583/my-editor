@@ -4,7 +4,7 @@
 		<div :style="{top: _numTop}" class="my-editor-nums">
 			<!-- 占位行号，避免行号宽度滚动时变化 -->
 			<div class="my-editor-num" style="visibility:hidden">{{maxLine}}</div>
-			<div :class="['my-editor-num-active' ? cursorPos.line==num : '']" :key="num" class="my-editor-num" v-for="num in nums">
+			<div :class="{'my-editor-num-active': cursorPos.line==num}" :key="num" class="my-editor-num" v-for="num in nums">
 				<span>{{num}}</span>
 			</div>
 		</div>

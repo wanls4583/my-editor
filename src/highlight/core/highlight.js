@@ -1,4 +1,4 @@
-import rules from '../javascript/rules';
+import rules from '../html/rules';
 import Util from '../../common/util';
 import PairWorker from './worker';
 
@@ -316,7 +316,7 @@ class Highlight {
         }
         // 被多行匹配包裹
         if (lineObj.token) {
-            html = typeof lineObj.token === 'function' ? lineObj.token(lineObj.text) : `<span class="${lineObj.token}">${Util.htmlTrans(lineObj.text)}</span>`;
+            html = typeof lineObj.token === 'function' ? lineObj.token(null, lineObj.text) : `<span class="${lineObj.token}">${Util.htmlTrans(lineObj.text)}</span>`;
         } else {
             // 需要处理多行匹配的首尾节点
             if (lineObj.highlight.validPairTokens) {
@@ -342,7 +342,7 @@ class Highlight {
             result.map((token) => {
                 let str = text.substring(token.start, token.end);
                 html += Util.htmlTrans(text.substring(preEnd, token.start));
-                html += typeof token.token === 'function' ? token.token(str) : `<span class="${token.token}">${Util.htmlTrans(str)}</span>`;
+                html += typeof token.token === 'function' ? token.token(Object.assign({}, token), str) : `<span class="${token.token}">${Util.htmlTrans(str)}</span>`;
                 preEnd = token.end;
             });
             html += Util.htmlTrans(text.slice(preEnd));
