@@ -1,29 +1,51 @@
-import rules from '../html/rules';
+import rules from '../javascript/rules';
+// import rules from '../html/rules';
 import Util from '../../common/util';
 import PairWorker from './worker';
 
 class Highlight {
     constructor(editor) {
+        console.log(rules)
         this.editor = editor;
         this.worker = Util.createWorker(PairWorker);
+        this.rules = rules;
         this.nowPairLine = 1;
-        this.tokenUuid = 0;
-        this.tokenUuidMap = {};
+        this.ruleUuid = 0;
+        this.ruleUuidMap = {};
         this.singleRules = [];
         this.copyRules = []; // 传入worker的数据不能克隆函数
-        rules.map((item) => {
-            item.uuid = this.tokenUuid++;
-            this.tokenUuidMap[item.uuid] = item;
-            item = Object.assign({}, item);
-            delete item.check;
-            this.copyRules.push(item);
-        });
-        this.singleRules = rules.filter((item) => {
-            return item.regex && !item.startRegex;
-        });
+        this.initRules();
         this.worker.onmessage = (e) => {
             this.startHighlightPairToken(e);
         }
+    }
+
+    initRules() {
+        let childrenRules = [];
+        this.rules.map((item) => {
+            item.uuid = this.ruleUuid++;
+            this.ruleUuidMap[item.uuid] = item;
+            item.children && item.map((_item) => {
+                _item.uuid = this.ruleUuid++;
+                _item.parent = item;
+                childrenRules.push(_item);
+            });
+            item = Object.assign({}, item);
+            delete item.children;
+            delete item.check;
+            typeof item.token == 'function' && delete item.token;
+            this.copyRules.push(item);
+        });
+        childrenRules.map((item) => {
+            item = Object.assign({}, item);
+            delete item.check;
+            typeof item.token == 'function' && delete item.token;
+            this.copyRules.push(item);
+        });
+        this.rules = this.rules.concat(childrenRules);
+        this.singleRules = this.rules.filter((item) => {
+            return item.regex && !item.startRegex;
+        });
     }
 
     addTask() {
@@ -101,7 +123,6 @@ class Highlight {
                     while (result = rule.regex.exec(lineObj.text)) {
                         tokens.push({
                             uuid: rule.uuid,
-                            token: rule.token,
                             value: result[0],
                             level: rule.level,
                             start: result.index,
@@ -166,7 +187,7 @@ class Highlight {
             // 已有开始节点，则该行可能被其包裹，或者为结束行
             if (this.startToken) {
                 if (_checkStartToken(this._startToken, this.nowPairLine)) {
-                    lineObj.token = this.startToken.token;
+                    lineObj.ruleUuid = this.startToken.uuid;
                     this.buildHtml(this.nowPairLine);
                 } else {
                     this.startToken = null;
@@ -174,8 +195,8 @@ class Highlight {
                 }
             }
             // 前面没有开始节点，则去除该行的旧token
-            if (lineObj.token && !this.startToken) {
-                lineObj.token = '';
+            if (lineObj.ruleUuid && !this.startToken) {
+                lineObj.ruleUuid = '';
                 this.buildHtml(this.nowPairLine);
             }
             while (pairTokens.length) {
@@ -197,7 +218,7 @@ class Highlight {
                         this._startToken.end = Number.MAX_VALUE;
                         this._startToken.originToken = this.startToken;
                         lineObj.highlight.validPairTokens.push(this._startToken);
-                        lineObj.token = '';
+                        lineObj.ruleUuid = '';
                         this.buildHtml(this.nowPairLine);
                     } else {
                         this.startToken = null;
@@ -220,7 +241,7 @@ class Highlight {
                     _endToken.start = 0;
                     _endToken.originToken = endToken;
                     _endToken.startToken = this._startToken;
-                    lineObj.token = '';
+                    lineObj.ruleUuid = '';
                     lineObj.highlight.validPairTokens.push(_endToken);
                     // 开始和结束节点在同一行
                     if (this._startToken.line == this.nowPairLine) {
@@ -272,14 +293,14 @@ class Highlight {
 
         function _checkStartToken(_startToken, nowPairLine) {
             // 开始节点和结束节点同一行或规则里没有自定义检测函数
-            if (_startToken.line == nowPairLine || !that.tokenUuidMap[_startToken.uuid].check) {
+            if (_startToken.line == nowPairLine || !that.ruleUuidMap[_startToken.uuid].check) {
                 return true;
             }
             let nowLine = that.editor.htmls[nowPairLine - 1].text;
             let preLine = that.editor.htmls[nowPairLine - 2];
             preLine = preLine && preLine.text;
             // 自定义检测函数
-            return that.tokenUuidMap[_startToken.uuid].check(preLine, nowLine);
+            return that.ruleUuidMap[_startToken.uuid].check(preLine, nowLine);
         }
     }
 
@@ -315,8 +336,9 @@ class Highlight {
             return;
         }
         // 被多行匹配包裹
-        if (lineObj.token) {
-            html = typeof lineObj.token === 'function' ? lineObj.token(null, lineObj.text) : `<span class="${lineObj.token}">${Util.htmlTrans(lineObj.text)}</span>`;
+        if (lineObj.ruleUuid) {
+            let token = this.ruleUuidMap[lineObj.ruleUuid].token;
+            html = typeof token === 'function' ? token(null, lineObj.text) : `<span class="${token}">${Util.htmlTrans(lineObj.text)}</span>`;
         } else {
             // 需要处理多行匹配的首尾节点
             if (lineObj.highlight.validPairTokens) {
@@ -341,8 +363,9 @@ class Highlight {
             }
             result.map((token) => {
                 let str = text.substring(token.start, token.end);
+                let tokenStr = this.ruleUuidMap[token.uuid].token;
                 html += Util.htmlTrans(text.substring(preEnd, token.start));
-                html += typeof token.token === 'function' ? token.token(Object.assign({}, token), str) : `<span class="${token.token}">${Util.htmlTrans(str)}</span>`;
+                html += typeof tokenStr === 'function' ? tokenStr(Object.assign({}, token), str) : `<span class="${tokenStr}">${Util.htmlTrans(str)}</span>`;
                 preEnd = token.end;
             });
             html += Util.htmlTrans(text.slice(preEnd));

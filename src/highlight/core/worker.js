@@ -44,10 +44,10 @@ export default function (onceData) {
         });
         pairRules.map((item) => {
             minLevel = minLevel > item.level ? item.level : minLevel;
-            pairTokensMap.set(item.token, true);
+            item.token && pairTokensMap.set(item.token, true);
         });
         rules = rules.filter((item) => {
-            return item.level >= minLevel && !pairTokensMap.has(item.token);
+            return item.level >= minLevel && !item.startRegex && !pairTokensMap.has(item.token);
         });
         return _run();
 
@@ -67,7 +67,6 @@ export default function (onceData) {
                     while (result = rule.regex.exec(lineObj.text)) {
                         excludeTokens.push({
                             uuid: rule.uuid,
-                            token: rule.token,
                             value: result[0],
                             level: rule.level,
                             start: result.index,
@@ -81,7 +80,6 @@ export default function (onceData) {
                     while (result = rule.startRegex.exec(lineObj.text)) {
                         pairTokens.push({
                             uuid: rule.uuid,
-                            token: rule.token,
                             value: result[0],
                             level: rule.level,
                             start: result.index,
@@ -93,7 +91,6 @@ export default function (onceData) {
                         while (result = rule.endRegex.exec(lineObj.text)) {
                             pairTokens.push({
                                 uuid: rule.uuid,
-                                token: rule.token,
                                 value: result[0],
                                 level: rule.level,
                                 start: result.index,
