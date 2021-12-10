@@ -1,8 +1,4 @@
-import {
-    rules,
-    pairRules
-} from '../javascript/rules';
-
+import rules from '../javascript/rules';
 import Util from '../../common/util';
 import PairWorker from './worker';
 
@@ -12,14 +8,18 @@ class Highlight {
         this.worker = Util.createWorker(PairWorker);
         this.nowPairLine = 1;
         this.tokenUuid = 0;
-        this.pairTokenUuidMap = {};
-        this.pairRules = []; // 传入worker的数据不能克隆函数
-        pairRules.map((item) => {
+        this.tokenUuidMap = {};
+        this.singleRules = [];
+        this.copyRules = []; // 传入worker的数据不能克隆函数
+        rules.map((item) => {
             item.uuid = this.tokenUuid++;
-            this.pairTokenUuidMap[item.uuid] = item;
+            this.tokenUuidMap[item.uuid] = item;
             item = Object.assign({}, item);
             delete item.check;
-            this.pairRules.push(item);
+            this.copyRules.push(item);
+        });
+        this.singleRules = rules.filter((item) => {
+            return item.regex && !item.startRegex;
         });
         this.worker.onmessage = (e) => {
             this.startHighlightPairToken(e);
@@ -51,8 +51,7 @@ class Highlight {
         this.startHighlightPairToken({
             data: PairWorker({
                 texts: texts.slice(0, this.editor.maxVisibleLines),
-                rules: rules,
-                pairRules: this.pairRules
+                rules: this.copyRules
             }),
             max: this.editor.maxVisibleLines,
             once: texts.length > this.editor.maxVisibleLines
@@ -62,8 +61,7 @@ class Highlight {
             let data = {
                 type: 'run',
                 texts: texts.slice(this.editor.maxVisibleLines),
-                rules: rules,
-                pairRules: this.pairRules
+                rules: this.copyRules
             };
             // 余下的交由子线程处理
             this.worker.postMessage(data);
@@ -99,7 +97,7 @@ class Highlight {
             tokens = [];
             if (!lineObj.highlight.tokens) {
                 text = lineObj.text;
-                text && rules.map((rule) => {
+                text && this.singleRules.map((rule) => {
                     while (result = rule.regex.exec(lineObj.text)) {
                         tokens.push({
                             uuid: rule.uuid,
@@ -164,9 +162,7 @@ class Highlight {
             }
             let pairTokens = lineObj.highlight.pairTokens.concat([]);
             // 不同类型的和多行匹配相同优先级的单行tokens
-            let excludeTokens = lineObj.highlight.excludeTokens.filter((item) => {
-                return item.level === pairRules[0].level && !this.pairTokenUuidMap[item.uuid];
-            });
+            let excludeTokens = lineObj.highlight.excludeTokens;
             // 已有开始节点，则该行可能被其包裹，或者为结束行
             if (this.startToken) {
                 if (_checkStartToken(this._startToken, this.nowPairLine)) {
@@ -205,7 +201,7 @@ class Highlight {
                         this.buildHtml(this.nowPairLine);
                     } else {
                         this.startToken = null;
-                        break;
+                        continue;
                     }
                 }
                 if (!pairTokens.length) {
@@ -276,14 +272,14 @@ class Highlight {
 
         function _checkStartToken(_startToken, nowPairLine) {
             // 开始节点和结束节点同一行或规则里没有自定义检测函数
-            if (_startToken.line == nowPairLine || !that.pairTokenUuidMap[_startToken.uuid].check) {
+            if (_startToken.line == nowPairLine || !that.tokenUuidMap[_startToken.uuid].check) {
                 return true;
             }
             let nowLine = that.editor.htmls[nowPairLine - 1].text;
             let preLine = that.editor.htmls[nowPairLine - 2];
             preLine = preLine && preLine.text;
             // 自定义检测函数
-            return that.pairTokenUuidMap[_startToken.uuid].check(preLine, nowLine);
+            return that.tokenUuidMap[_startToken.uuid].check(preLine, nowLine);
         }
     }
 
@@ -320,7 +316,7 @@ class Highlight {
         }
         // 被多行匹配包裹
         if (lineObj.token) {
-            html = `<span class="${lineObj.token}">${Util.htmlTrans(lineObj.text)}</span>`;
+            html = typeof lineObj.token === 'function' ? lineObj.token(lineObj.text) : `<span class="${lineObj.token}">${Util.htmlTrans(lineObj.text)}</span>`;
         } else {
             // 需要处理多行匹配的首尾节点
             if (lineObj.highlight.validPairTokens) {
@@ -344,8 +340,9 @@ class Highlight {
                 i++;
             }
             result.map((token) => {
+                let str = text.substring(token.start, token.end);
                 html += Util.htmlTrans(text.substring(preEnd, token.start));
-                html += `<span class="${token.token}">${Util.htmlTrans(text.substring(token.start, token.end))}</span>`;
+                html += typeof token.token === 'function' ? token.token(str) : `<span class="${token.token}">${Util.htmlTrans(str)}</span>`;
                 preEnd = token.end;
             });
             html += Util.htmlTrans(text.slice(preEnd));

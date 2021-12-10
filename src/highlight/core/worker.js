@@ -33,16 +33,21 @@ export default function (onceData) {
 
     function run(option) {
         let texts = option.texts;
-        let pairRules = option.pairRules;
         let rules = option.rules;
+        let pairRules = [];
         let index = 0;
         let pairTokensMap = {};
         let max = option.max || 50000;
+        let minLevel = Infinity;
+        pairRules = rules.filter((item) => {
+            return item.startRegex && item.endRegex;
+        });
         pairRules.map((item) => {
+            minLevel = minLevel > item.level ? item.level : minLevel;
             pairTokensMap[item.token] = true;
         });
         rules = rules.filter((item) => {
-            return item.level == pairRules[0].level && !pairTokensMap[item.token];
+            return item.level >= minLevel && !pairTokensMap[item.token];
         });
         return _run();
 
