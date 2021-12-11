@@ -68,7 +68,8 @@ export default {
             regex: /"[^"]*"/g,
             token: 'double-quotation-string',
             level: 3
-        }, //多行注释
+        },
+        //多行注释
         {
             startRegex: /\/\*/g,
             endRegex: /\*\//g,
@@ -83,20 +84,20 @@ export default {
         //字符串''
         {
             startRegex: /'/g,
-            endRegex: /'/g,
+            endRegex: /'|[^\\]$/g,
             token: 'single-quotation-string',
-            check: function (preLine, nowLine) { // 中间部分的检测函数
-                return preLine[preLine.length - 1] == '\\';
-            }
+            // check: function (preLine, nowLine) { // 中间部分的检测函数
+            //     return preLine[preLine.length - 1] == '\\';
+            // }
         },
         //字符串"""
         {
             startRegex: /"/g,
-            endRegex: /"/g,
+            endRegex: /"|[^\\]$/g,
             token: 'double-quotation-string',
-            check: function (preLine, nowLine) { // 中间部分的检测函数
-                return preLine[preLine.length - 1] == '\\';
-            }
+            // check: function (preLine, nowLine) { // 中间部分的检测函数
+            //     return preLine[preLine.length - 1] == '\\';
+            // }
         }
     ]
 }

@@ -1,5 +1,5 @@
-// import rules from '../javascript/rules';
-import rules from '../html/rules';
+import rules from '../javascript/rules';
+// import rules from '../html/rules';
 import Util from '../../common/util';
 import PairWorker from './worker';
 
@@ -198,28 +198,22 @@ class Highlight {
             length = this.editor.htmls.length;
         while (count < max && this.nowPairLine <= length) {
             lineObj = this.editor.htmls[this.nowPairLine - 1];
-            lineObj.highlight.validPairTokens = [];
             if (!lineObj.highlight.pairTokens) {
+                if (lineObj.highlight.validPairTokens.length) {
+                    lineObj.highlight.validPairTokens = [];
+                    this.buildHtml(this.nowPairLine);
+                }
                 break;
             }
             let pairTokens = lineObj.highlight.pairTokens.concat([]);
             // 不同类型的和多行匹配相同优先级的单行tokens
             let excludeTokens = lineObj.highlight.excludeTokens;
-            // 已有开始节点，则该行可能被其包裹，或者为结束行
+            lineObj.highlight.validPairTokens = [];
+            // 已有开始节点，则该行可能被其包裹
             if (this.startToken) {
-                if (this.ifPackageBySartToken(this._startToken, this.nowPairLine)) {
-                    lineObj.ruleUuid = this.startToken.uuid;
-                    this.buildHtml(this.nowPairLine);
-                } else {
-                    this.startToken = null;
-                    this._startToken = null;
-                }
+                lineObj.ruleUuid = this.startToken.uuid;
             }
-            // 前面没有开始节点，则去除该行的旧token
-            if (lineObj.ruleUuid && !this.startToken) {
-                lineObj.ruleUuid = '';
-                this.buildHtml(this.nowPairLine);
-            }
+            this.buildHtml(this.nowPairLine);
             lineObj.parentRuleUuid = this.parentToken && this.parentToken.uuid;
             while (pairTokens.length) {
                 let endToken = null;
@@ -327,19 +321,6 @@ class Highlight {
         return false;
     }
 
-    // 检查开始节点是否能影响到中间区域，列如'test\后面必须要有\才能影响到下一行也是字符串
-    ifPackageBySartToken(_startToken, nowPairLine) {
-        // 开始节点和结束节点同一行或规则里没有自定义检测函数
-        if (_startToken.line == nowPairLine || !this.ruleUuidMap[_startToken.uuid].check) {
-            return true;
-        }
-        let nowLine = this.editor.htmls[nowPairLine - 1].text;
-        let preLine = this.editor.htmls[nowPairLine - 2];
-        preLine = preLine && preLine.text;
-        // 自定义检测函数
-        return this.ruleUuidMap[_startToken.uuid].check(preLine, nowLine);
-    }
-
     // 获取下一个开始节点
     getNextStartToken(excludeTokens, pairTokens) {
         while (pairTokens.length) {
@@ -396,7 +377,7 @@ class Highlight {
                         this._startToken = _startToken;
                         this.startToken = this._startToken.originToken;
                         this._parentToken = _startToken.parentToken;
-                        this.parentToken = this._parentToken.originToken;
+                        this._parentToken && (this.parentToken = this._parentToken.originToken);
                     }
                     this.nowPairLine = i + 1;
                     break;
