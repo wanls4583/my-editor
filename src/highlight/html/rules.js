@@ -13,39 +13,41 @@ const attrRules = [{
 }, {
     startRegex: /(?<=\=\s*?)"/g,
     endRegex: /"/g,
-    token: 'attr-value',
-    level: 1
+    token: 'attr-value'
 }, {
     startRegex: /(?<=\=\s*?)'/g,
     endRegex: /'/g,
-    token: 'attr-value',
-    level: 1
+    token: 'attr-value'
 }];
 
-export default [{
-    regex: /\<\/\w+\s*?\>/g, //</div></span>...
-    token: function (token, text) {
-        return `<span class="end-tag-arrow-l">&lt;/</span>` +
-            `<span class="end-tag">${text.slice(2, -1)}</span>` +
-            `<span class="end-tag-arrow-r">&gt;</span>`;
-    },
-    level: 0
-}, {
-    startRegex: /\<\w+\b|\<\!DOCTYPE\b/g,
-    endRegex: /\>/g,
-    token: function (token, text) {
-        if (!token.startToken) {
-            return `<span class="start-tag-arrow-l">&lt;</span>` +
-                `<span class="start-tag">${text.slice(1)}</span>`;
-        } else {
-            return `<span class="start-tag-arrow-r">&gt;</span>`;
+export default {
+    pairLevel: 1,
+    rules: [{
+        regex: /\<\/\w+\s*?\>/g, //</div></span>...
+        token: function (token, text) {
+            return `<span class="end-tag-arrow-l">&lt;/</span>` +
+                `<span class="end-tag">${text.slice(2, -1)}</span>` +
+                `<span class="end-tag-arrow-r">&gt;</span>`;
+        },
+        level: 0
+    }, {
+        startRegex: /\<\w+\b|\<\!DOCTYPE\b/g,
+        endRegex: /\>/g,
+        token: function (token, text) {
+            if (!token.startToken) {
+                return `<span class="start-tag-arrow-l">&lt;</span>` +
+                    `<span class="start-tag">${text.slice(1)}</span>`;
+            } else {
+                return `<span class="start-tag-arrow-r">&gt;</span>`;
+            }
+        },
+        childRule: {
+            pairLevel: 1,
+            rules: attrRules
         }
-    },
-    level: 1,
-    children: attrRules
-}, {
-    startRegex: /\<\!\-\-/g,
-    endRegex: /\-\-\>/g,
-    token: 'comment-tag',
-    level: 1
-}]
+    }, {
+        startRegex: /\<\!\-\-/g,
+        endRegex: /\-\-\>/g,
+        token: 'comment-tag'
+    }]
+}

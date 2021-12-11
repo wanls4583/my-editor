@@ -45,15 +45,15 @@ export default function (onceData) {
         });
         excludeRules = _getExclueRules(rules, pairRules);
         pairRules.map((item) => {
-            if (item.children && item.children.length) {
+            if (item.childRule && item.childRule.length) {
                 let _pairRules = [];
-                item.children.map((_item) => {
+                item.childRule.map((_item) => {
                     if (_item.startRegex && _item.endRegex) {
                         _pairRules.push(_item);
                     }
                 });
                 childrenPairRules = childrenPairRules.concat(_pairRules);
-                excludeRules = _getExclueRules(item.children, _pairRules).concat(excludeRules);
+                excludeRules = _getExclueRules(item.childRule, _pairRules).concat(excludeRules);
             }
         });
         pairRules = pairRules.concat(childrenPairRules);
