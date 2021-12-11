@@ -192,29 +192,29 @@ class Highlight {
      */
     highlightPairToken() {
         let startTime = Date.now();
-        let lineObj = null,
-            count = 0,
-            max = 5000,
-            length = this.editor.htmls.length;
+        let count = 0;
+        let max = 5000;
+        let length = this.editor.htmls.length;
         while (count < max && this.nowPairLine <= length) {
-            lineObj = this.editor.htmls[this.nowPairLine - 1];
-            if (!lineObj.highlight.pairTokens) {
-                if (lineObj.highlight.validPairTokens.length) {
-                    lineObj.highlight.validPairTokens = [];
-                    this.buildHtml(this.nowPairLine);
-                }
+            let lineObj = this.editor.htmls[this.nowPairLine - 1];
+            let originValidToken = lineObj.highlight.validPairTokens || [];
+            let pairTokens = lineObj.highlight.pairTokens;
+            let excludeTokens = lineObj.highlight.excludeTokens; // 不同类型的和多行匹配相同优先级的单行tokens
+            lineObj.highlight.validPairTokens = [];
+            if (!pairTokens) {
+                originValidToken.length && this.buildHtml(this.nowPairLine);
                 break;
             }
-            let pairTokens = lineObj.highlight.pairTokens.concat([]);
-            // 不同类型的和多行匹配相同优先级的单行tokens
-            let excludeTokens = lineObj.highlight.excludeTokens;
-            lineObj.highlight.validPairTokens = [];
             // 已有开始节点，则该行可能被其包裹
             if (this.startToken) {
                 lineObj.ruleUuid = this.startToken.uuid;
+                this.buildHtml(this.nowPairLine);
+            } else if (lineObj.ruleUuid || originValidToken.length) {
+                lineObj.ruleUuid = '';
+                this.buildHtml(this.nowPairLine);
             }
-            this.buildHtml(this.nowPairLine);
             lineObj.parentRuleUuid = this.parentToken && this.parentToken.uuid;
+            pairTokens = pairTokens.concat([]);
             while (pairTokens.length) {
                 let endToken = null;
                 // 获取开始节点
@@ -389,9 +389,9 @@ class Highlight {
 
     // 获取单行可能有效的token
     getSingleLineToken(validPairTokens, tokens) {
-        let resultTokens = [],
-            defaultTokens = tokens[Util.constData.DEFAULT],
-            preEnd = 0;
+        let resultTokens = [];
+        let defaultTokens = tokens[Util.constData.DEFAULT];
+        let preEnd = 0;
         validPairTokens = validPairTokens.filter((item) => {
             return this.ifHasChildRule(item.uuid);
         });
@@ -433,12 +433,12 @@ class Highlight {
     }
 
     buildHtml(line) {
-        let lineObj = this.editor.htmls[line - 1],
-            tokens = lineObj.highlight.tokens,
-            result = [],
-            text = lineObj.text,
-            html = '',
-            preEnd = 0;
+        let lineObj = this.editor.htmls[line - 1];
+        let tokens = lineObj.highlight.tokens;
+        let result = [];
+        let text = lineObj.text;
+        let html = '';
+        let preEnd = 0;
         if (!tokens && !lineObj.ruleUuid ||
             line < this.editor.startLine ||
             line > this.editor.startLine + this.editor.maxVisibleLines) {
