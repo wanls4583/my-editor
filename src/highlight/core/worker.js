@@ -81,8 +81,11 @@ export default function (onceData) {
             if (!_checkValid(lineObj.uuid)) {
                 break;
             }
-            lineObj.text && excludeRules.map((rule) => {
-                while (result = rule.regex.exec(lineObj.text)) {
+            if (!lineObj.text) {
+                continue;
+            }
+            excludeRules.map((rule) => {
+                while ((result = rule.regex.exec(lineObj.text)) && result[0].length) {
                     let key = rule.parentUuid || constData.DEFAULT;
                     excludeTokens[key] = excludeTokens[key] || [];
                     excludeTokens[key].push({
@@ -92,12 +95,15 @@ export default function (onceData) {
                         start: result.index,
                         end: result.index + result[0].length
                     });
+                    if (!rule.global) {
+                        break;
+                    }
                 }
                 rule.regex.lastIndex = 0;
             });
-            lineObj.text && pairRules.map((rule) => {
+            pairRules.map((rule) => {
                 var isSame = rule.startRegex.source === rule.endRegex.source;
-                while (result = rule.startRegex.exec(lineObj.text)) {
+                while ((result = rule.startRegex.exec(lineObj.text)) && result[0].length) {
                     pairTokens.push({
                         uuid: rule.uuid,
                         value: result[0],
@@ -106,9 +112,12 @@ export default function (onceData) {
                         end: result.index + result[0].length,
                         type: isSame ? constData.PAIR_START_END : constData.PAIR_START
                     });
+                    if (!rule.global) {
+                        break;
+                    }
                 }
                 if (!isSame) {
-                    while (result = rule.endRegex.exec(lineObj.text)) {
+                    while ((result = rule.endRegex.exec(lineObj.text)) && result[0].length) {
                         pairTokens.push({
                             uuid: rule.uuid,
                             value: result[0],
@@ -117,6 +126,9 @@ export default function (onceData) {
                             end: result.index + result[0].length,
                             type: isSame ? constData.PAIR_START_END : constData.PAIR_END
                         });
+                        if (!rule.global) {
+                            break;
+                        }
                     }
                 }
                 rule.startRegex.lastIndex = 0;

@@ -85,19 +85,13 @@ export default {
         {
             startRegex: /'/g,
             endRegex: /'|[^\\]$/g,
-            token: 'single-quotation-string',
-            // check: function (preLine, nowLine) { // 中间部分的检测函数
-            //     return preLine[preLine.length - 1] == '\\';
-            // }
+            token: 'single-quotation-string'
         },
         //字符串"""
         {
             startRegex: /"/g,
             endRegex: /"|[^\\]$/g,
-            token: 'double-quotation-string',
-            // check: function (preLine, nowLine) { // 中间部分的检测函数
-            //     return preLine[preLine.length - 1] == '\\';
-            // }
+            token: 'double-quotation-string'
         }
     ]
 }

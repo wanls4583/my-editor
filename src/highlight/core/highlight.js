@@ -136,7 +136,7 @@ class Highlight {
             if (!lineObj.highlight.tokens) {
                 text = lineObj.text;
                 text && this.singleRules.map((rule) => {
-                    while (result = rule.regex.exec(lineObj.text)) {
+                    while ((result = rule.regex.exec(lineObj.text)) && result[0].length) {
                         let key = rule.parentUuid || Util.constData.DEFAULT;
                         tokens[key] = tokens[key] || [];
                         tokens[key].push({
@@ -146,6 +146,9 @@ class Highlight {
                             start: result.index,
                             end: result.index + result[0].length
                         });
+                        if (!rule.global) {
+                            break;
+                        }
                     }
                     rule.regex.lastIndex = 0;
                 });
