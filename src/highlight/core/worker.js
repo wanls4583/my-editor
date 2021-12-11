@@ -69,6 +69,7 @@ export default function (onceData) {
                 let lineObj = texts[index];
                 let excludeTokens = {};
                 let pairTokens = [];
+                excludeTokens[constData.DEFAULT] = [];
                 if (!_checkValid(lineObj.uuid)) {
                     break;
                 }

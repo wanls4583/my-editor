@@ -312,11 +312,15 @@ class Highlight {
     getNextStartToken(excludeTokens, pairTokens) {
         while (pairTokens.length) {
             let pairToken = pairTokens.shift(),
-                _excludeTokens = excludeTokens[pairToken.parentUuid || Util.constData.DEFAULT] || [],
+                rule = this.ruleUuidMap[pairToken.uuid],
                 pass = true;
-            // 父节点匹配到结束节点，当前子节点结束匹配
-            if (this.parentToken && this.ifPair(this.parentToken, pairToken, this._parentToken.line, this.nowPairLine)) {
-                return pairToken;
+            if (this.parentToken) {
+                // 父节点匹配到结束节点，当前子节点结束匹配
+                if (this.ifPair(this.parentToken, pairToken, this._parentToken.line, this.nowPairLine)) {
+                    return pairToken;
+                }
+            } else if (rule.parentUuid) { // 属于子节点
+                continue;
             }
             if (pairToken.type == Util.constData.PAIR_END) {
                 continue;
@@ -329,9 +333,14 @@ class Highlight {
             ) {
                 continue;
             }
+            if (this.parentToken) {
+                excludeTokens = excludeTokens[this.parentToken.uuid] || [];
+            } else {
+                excludeTokens = excludeTokens[Util.constData.DEFAULT];
+            }
             // 是否与单行匹配冲突
-            for (let i = 0; i < _excludeTokens.length; i++) {
-                let token = _excludeTokens[i];
+            for (let i = 0; i < excludeTokens.length; i++) {
+                let token = excludeTokens[i];
                 if (token.start < pairToken.start && token.end > pairToken.start) {
                     pass = false;
                     break;
