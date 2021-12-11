@@ -17,20 +17,29 @@ export default [{
 }, {
     startRegex: /\<\w+\b/g,
     endRegex: /\>/g,
-    level: 0,
+    token: function (token, text) {
+        console.log(token, text);
+        if (!token.startToken) {
+            return `<span class="start-tag-arrow-l">&lt;</span>` +
+                `<span class="start-tag">${text.slice(1)}</span>`;
+        } else {
+            return `<span class="start-tag-arrow-r">&gt;</span>`;
+        }
+    },
+    level: 1,
     children: [{
-        regex: /\b[^'"=]\b/g,
+        regex: /\b[^'"=\s\>\<]+\b/g,
         token: 'attr-name',
         level: 0
     }, {
-        startRegex: /=\s*?"/g,
+        startRegex: /(?<=\=\s*?)"/g,
         endRegex: /"/g,
         token: 'attr-value',
-        level: 0
+        level: 1
     }, {
-        startRegex: /=\s*?'/g,
+        startRegex: /(?<=\=\s*?)'/g,
         endRegex: /'/g,
         token: 'attr-value',
-        level: 0
+        level: 1
     }]
 }]

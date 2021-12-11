@@ -151,9 +151,6 @@ Util.constData = {
     PAIR_END: 1,
     FOLD_OPEN: 1,
     FOLD_CLOSE: -1,
-    OP_ADD: 1,
-    OP_DEL: -1,
-    OP_REPLACE: 0,
-    SENIOR_LEVEL: 999999
+    DEFAULT: 'default'
 }
 export default Util;

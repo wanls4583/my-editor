@@ -10,6 +10,7 @@ export default function (onceData) {
         PAIR_END: 1,
         FOLD_OPEN: 1,
         FOLD_CLOSE: -1,
+        DEFAULT: 'default'
     }
 
     let dataList = [];
@@ -73,7 +74,7 @@ export default function (onceData) {
                 }
                 lineObj.text && excludeRules.map((rule) => {
                     while (result = rule.regex.exec(lineObj.text)) {
-                        let key = rule.parentUuid || 'default';
+                        let key = rule.parentUuid || constData.DEFAULT;
                         excludeTokens[key] = excludeTokens[key] || [];
                         excludeTokens[key].push({
                             uuid: rule.uuid,
