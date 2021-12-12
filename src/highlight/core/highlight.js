@@ -130,7 +130,7 @@ class Highlight {
             if (!lineObj.highlight.tokens) {
                 text = lineObj.text;
                 text && this.singleRules.map((rule) => {
-                    while ((result = rule.regex.exec(lineObj.text)) && result[0].length) {
+                    while (result = rule.regex.exec(lineObj.text)) {
                         let key = rule.parentUuid || Util.constData.DEFAULT;
                         tokens[key] = tokens[key] || [];
                         tokens[key].push({
@@ -140,7 +140,7 @@ class Highlight {
                             start: result.index,
                             end: result.index + result[0].length
                         });
-                        if (!rule.regex.global) {
+                        if (!result[0].length || !rule.regex.global) {
                             break;
                         }
                     }
@@ -199,6 +199,7 @@ class Highlight {
             let pairTokens = lineObj.highlight.pairTokens;
             let excludeTokens = lineObj.highlight.excludeTokens; // 不同类型的和多行匹配相同优先级的单行tokens
             lineObj.highlight.validPairTokens = [];
+            lineObj.parentRuleUuid = this.parentTokens.length && this.parentTokens.peek().uuid || null;
             if (!pairTokens) {
                 originValidToken.length && this.buildHtml(this.nowPairLine);
                 this.nowPairLine++;
@@ -213,7 +214,6 @@ class Highlight {
                 lineObj.ruleUuid = '';
                 this.buildHtml(this.nowPairLine);
             }
-            lineObj.parentRuleUuid = this.parentTokens.length && this.parentTokens.peek().uuid || null;
             pairTokens = pairTokens.concat([]);
             while (pairTokens.length) {
                 let endToken = null;

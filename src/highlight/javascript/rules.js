@@ -84,13 +84,13 @@ export default {
         //字符串''
         {
             start: /'/g,
-            next: /'|[^\\]$/g,
+            next: /'|[^\\]$|^$/g,
             token: 'single-quotation-string'
         },
         //字符串"""
         {
             start: /"/g,
-            next: /"|[^\\]$/g,
+            next: /"|[^\\]$|^$/g,
             token: 'double-quotation-string'
         }
     ]
