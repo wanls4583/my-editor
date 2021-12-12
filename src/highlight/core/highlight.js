@@ -195,24 +195,18 @@ class Highlight {
         let length = this.editor.htmls.length;
         while (count < max && this.nowPairLine <= length) {
             let lineObj = this.editor.htmls[this.nowPairLine - 1];
-            let originValidToken = lineObj.highlight.validPairTokens || [];
             let pairTokens = lineObj.highlight.pairTokens;
-            let excludeTokens = lineObj.highlight.excludeTokens; // 不同类型的和多行匹配相同优先级的单行tokens
+            let excludeTokens = lineObj.highlight.excludeTokens; // 和多行匹配相同优先级不同类型的单行tokens
             lineObj.highlight.validPairTokens = [];
+            // 记录父节点，用于渲染相应的单行tokens
             lineObj.parentRuleUuid = this.parentTokens.length && this.parentTokens.peek().uuid || null;
+            // 已有开始节点，则该行可能被其包裹
+            lineObj.ruleUuid = this.startToken && this.startToken.uuid || '';
+            this.buildHtml(this.nowPairLine);
             if (!pairTokens) {
-                originValidToken.length && this.buildHtml(this.nowPairLine);
                 this.nowPairLine++;
                 count++;
                 continue;
-            }
-            // 已有开始节点，则该行可能被其包裹
-            if (this.startToken) {
-                lineObj.ruleUuid = this.startToken.uuid;
-                this.buildHtml(this.nowPairLine);
-            } else if (lineObj.ruleUuid || originValidToken.length) {
-                lineObj.ruleUuid = '';
-                this.buildHtml(this.nowPairLine);
             }
             pairTokens = pairTokens.concat([]);
             while (pairTokens.length) {
