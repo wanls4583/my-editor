@@ -3,7 +3,7 @@
  * @Date: 2021-12-10 09:31:38
  * @Description: 
  */
-import rules from '../javascript/rules';
+import JsRules from '../javascript/rules';
 import Util from '@/common/util';
 
 const attrRules = [{
@@ -34,14 +34,17 @@ export default {
         start: /\<\w+\b|\<\!DOCTYPE\b/g,
         next: /\>/g,
         token: function (token, text) {
-            if (!token.startToken) {
-                return `<span class="start-tag-arrow-l">&lt;</span>` +
-                    `<span class="start-tag">${text.slice(1)}</span>`;
-            } else {
-                return `<span class="start-tag-arrow-r">&gt;</span>`;
+            if (token) {
+                if (!token.startToken) {
+                    return `<span class="start-tag-arrow-l">&lt;</span>` +
+                        `<span class="start-tag">${text.slice(1)}</span>`;
+                } else {
+                    return `<span class="start-tag-arrow-r">&gt;</span>`;
+                }
             }
         },
         childRule: {
+            pairLevel: 1,
             rules: attrRules.map((item) => {
                 return Object.assign({}, item);
             })
@@ -52,11 +55,13 @@ export default {
         start: /\<script\b/g,
         next: /\>/g,
         token: function (token, text) {
-            if (!token.startToken) {
-                return `<span class="start-tag-arrow-l">&lt;</span>` +
-                    `<span class="start-tag">script</span>`;
-            } else {
-                return `<span class="start-tag-arrow-r">&gt;</span>`;
+            if (token) {
+                if (!token.startToken) {
+                    return `<span class="start-tag-arrow-l">&lt;</span>` +
+                        `<span class="start-tag">script</span>`;
+                } else {
+                    return `<span class="start-tag-arrow-r">&gt;</span>`;
+                }
             }
         },
         childRule: {
@@ -66,12 +71,15 @@ export default {
             })
         }
     }, {
+        level: 4,
         start: 'script',
         next: /\<\/script\s*?\>/,
-        childRule: {
-            pairLevel: 1,
-            rules: attrRules
-        }
+        token: function (token, text) {
+            return `<span class="end-tag-arrow-l">&lt;/</span>` +
+                `<span class="end-tag">${text.slice(2, -1)}</span>` +
+                `<span class="end-tag-arrow-r">&gt;</span>`;
+        },
+        childRule: JsRules
     }, {
         start: /\<\!\-\-/g,
         next: /\-\-\>/g,
