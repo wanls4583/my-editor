@@ -82,6 +82,8 @@ export default function (onceData) {
                 break;
             }
             if (!lineObj.text) {
+                index++;
+                count++;
                 continue;
             }
             excludeRules.map((rule) => {
@@ -95,7 +97,7 @@ export default function (onceData) {
                         start: result.index,
                         end: result.index + result[0].length
                     });
-                    if (!rule.global) {
+                    if (!rule.regex.global) {
                         break;
                     }
                 }
@@ -112,7 +114,7 @@ export default function (onceData) {
                         end: result.index + result[0].length,
                         type: isSame ? constData.PAIR_START_END : constData.PAIR_START
                     });
-                    if (!rule.global) {
+                    if (!rule.startRegex.global) {
                         break;
                     }
                 }
@@ -126,7 +128,7 @@ export default function (onceData) {
                             end: result.index + result[0].length,
                             type: isSame ? constData.PAIR_START_END : constData.PAIR_END
                         });
-                        if (!rule.global) {
+                        if (!rule.endRegex.global) {
                             break;
                         }
                     }
