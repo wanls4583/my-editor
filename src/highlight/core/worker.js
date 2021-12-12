@@ -48,23 +48,7 @@ export default function (onceData) {
         excludeRules = [];
         childrenPairRules = [];
         index = 0;
-        pairRules = rules.filter((item) => {
-            return item.startRegex && item.endRegex;
-        });
-        excludeRules = _getExclueRules(rules, pairRules);
-        pairRules.map((item) => {
-            if (item.childRule && item.childRule.length) {
-                let _pairRules = [];
-                item.childRule.map((_item) => {
-                    if (_item.startRegex && _item.endRegex) {
-                        _pairRules.push(_item);
-                    }
-                });
-                childrenPairRules = childrenPairRules.concat(_pairRules);
-                excludeRules = _getExclueRules(item.childRule, _pairRules).concat(excludeRules);
-            }
-        });
-        pairRules = pairRules.concat(childrenPairRules);
+        _getPairRules(rules);
         return _run();
     }
 
@@ -104,22 +88,25 @@ export default function (onceData) {
                 rule.regex.lastIndex = 0;
             });
             pairRules.map((rule) => {
-                var isSame = rule.startRegex.source === rule.endRegex.source;
-                while ((result = rule.startRegex.exec(lineObj.text)) && result[0].length) {
-                    pairTokens.push({
-                        uuid: rule.uuid,
-                        value: result[0],
-                        level: rule.level,
-                        start: result.index,
-                        end: result.index + result[0].length,
-                        type: isSame ? constData.PAIR_START_END : constData.PAIR_START
-                    });
-                    if (!rule.startRegex.global) {
-                        break;
+                var isSame = rule.start.source === rule.next.source;
+                if (rule.start instanceof RegExp) {
+                    while ((result = rule.start.exec(lineObj.text)) && result[0].length) {
+                        pairTokens.push({
+                            uuid: rule.uuid,
+                            value: result[0],
+                            level: rule.level,
+                            start: result.index,
+                            end: result.index + result[0].length,
+                            type: isSame ? constData.PAIR_START_END : constData.PAIR_START
+                        });
+                        if (!rule.start.global) {
+                            break;
+                        }
                     }
+                    rule.start.lastIndex = 0;
                 }
                 if (!isSame) {
-                    while ((result = rule.endRegex.exec(lineObj.text)) && result[0].length) {
+                    while ((result = rule.next.exec(lineObj.text)) && result[0].length) {
                         pairTokens.push({
                             uuid: rule.uuid,
                             value: result[0],
@@ -128,20 +115,25 @@ export default function (onceData) {
                             end: result.index + result[0].length,
                             type: isSame ? constData.PAIR_START_END : constData.PAIR_END
                         });
-                        if (!rule.endRegex.global) {
+                        if (!rule.next.global) {
                             break;
                         }
                     }
+                    rule.next.lastIndex = 0;
                 }
-                rule.startRegex.lastIndex = 0;
-                rule.endRegex.lastIndex = 0;
             });
             Object.values(excludeTokens).map((item) => {
                 item.sort((a, b) => {
+                    if (a.start - b.start == 0) {
+                        return b.level - a.level;
+                    }
                     return a.start - b.start;
                 });
             });
             pairTokens.sort((a, b) => {
+                if (a.start - b.start == 0) {
+                    return b.level - a.level;
+                }
                 return a.start - b.start;
             });
             results.push({
@@ -168,6 +160,20 @@ export default function (onceData) {
         // console.log(`worker run cost:${Date.now() - startTime}ms`);//120ms
     }
 
+    function _getPairRules(rules) {
+        let _pairRules = [];
+        rules.map((item) => {
+            if (item.start) {
+                _pairRules.push(item);
+                pairRules.push(item);
+                if (item.childRule && item.childRule.rules) {
+                    _getPairRules(item.childRule.rules);
+                }
+            }
+        });
+        _getExclueRules(rules, _pairRules);
+    }
+
     function _getExclueRules(rules, pairRules) {
         let pairTokensMap = new Map();
         let minLevel = Infinity;
@@ -176,9 +182,9 @@ export default function (onceData) {
             item.token && pairTokensMap.set(item.token, true);
         });
         rules = rules.filter((item) => {
-            return item.level >= minLevel && !item.startRegex && !pairTokensMap.has(item.token);
+            return item.level >= minLevel && !item.start && !pairTokensMap.has(item.token);
         });
-        return rules;
+        excludeRules = excludeRules.concat(rules);
     }
 
     // 检查uuid对应的行对象是否已被删除或被替换

@@ -9,7 +9,7 @@ class Highlight {
         this.worker = Util.createWorker(PairWorker);
         this.rulesObj = rules;
         this.nowPairLine = 1;
-        this.ruleUuid = 0;
+        this.ruleUuid = 1;
         this.ruleUuidMap = {};
         this.singleRules = [];
         this.copyRules = []; // 传入worker的数据不能克隆函数
@@ -31,21 +31,22 @@ class Highlight {
         item.uuid = this.ruleUuid++;
         item.parentUuid = parentUuid;
         this.ruleUuidMap[item.uuid] = item;
-        if (item.regex && !item.startRegex) {
+        if (item.regex && !item.start) {
             this.singleRules.push(item);
         } else { //多行匹配的优先级需要一致
-            item.level = pairLevel;
+            item.level = item.level || pairLevel;
         };
         if (item.childRule && item.childRule.rules) {
             item.childRule.rules.map((_item) => {
-                this.setRuleUuid(_item, item.pairLevel, item.uuid);
+                this.setRuleUuid(_item, item.childRule.pairLevel, item.uuid);
             });
         }
         item = Object.assign({}, item);
         delete item.check;
-        delete item.childRule;
         typeof item.token == 'function' && delete item.token;
-        this.copyRules.push(item);
+        if (!parentUuid) {
+            this.copyRules.push(item);
+        }
     }
 
     addTask() {
@@ -140,6 +141,9 @@ class Highlight {
                 lineObj.highlight.tokens = tokens;
                 Object.values(tokens).map((tokens) => {
                     tokens.sort((a, b) => {
+                        if (a.start - b.start == 0) {
+                            return b.level - a.level;
+                        }
                         return a.start - b.start;
                     });
                 });
@@ -235,6 +239,17 @@ class Highlight {
                     break;
                 }
                 endToken = endToken || pairTokens.shift();
+                if (this.parentTokens.length) {
+                    let parentToken = this.parentTokens.peek();
+                    // 父节点的优先级要大于子节点，且endtoken能和父节点匹配，当前的开始节点结束匹配
+                    if (parentToken.level > this.startToken.level &&
+                        this.ifPair(parentToken, endToken, parentToken.line, this.nowPairLine)) {
+                        if (this.startToken.line == this.nowPairLine) {
+                            this.startToken._end = endToken.start;
+                        }
+                        this.startToken = this.parentTokens.pop();
+                    }
+                }
                 if (this.ifPair(this.startToken, endToken, this.startToken.line, this.nowPairLine)) {
                     let rule = this.ruleUuidMap[endToken.uuid];
                     endToken.line = this.nowPairLine;
@@ -300,9 +315,13 @@ class Highlight {
                 rule = this.ruleUuidMap[pairToken.uuid],
                 pass = true;
             if (this.parentTokens.length) {
+                let parentToken = this.parentTokens.peek();
                 // 父节点匹配到结束节点，当前子节点结束匹配
-                if (this.ifPair(this.parentTokens.peek(), pairToken, this.parentTokens.peek().line, this.nowPairLine)) {
+                if (this.ifPair(parentToken, pairToken, parentToken.line, this.nowPairLine)) {
                     return pairToken;
+                }
+                if (parentToken.line == this.nowPairLine && parentToken.end > pairToken.start) {
+                    continue;
                 }
             } else if (rule.parentUuid) { // 属于子节点
                 continue;
@@ -452,6 +471,9 @@ class Highlight {
                     return item;
                 }));
                 tokens.sort((a, b) => {
+                    if (a.start - b.start == 0) {
+                        return b.level - a.level;
+                    }
                     return a.start - b.start;
                 });
             } else if (lineObj.parentRuleUuid) {

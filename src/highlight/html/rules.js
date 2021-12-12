@@ -11,12 +11,12 @@ const attrRules = [{
     token: 'attr-name',
     level: 0
 }, {
-    startRegex: /(?<=\=\s*?)"/g,
-    endRegex: /"/g,
+    start: /(?<=\=\s*?)"/g,
+    next: /"/g,
     token: 'attr-value'
 }, {
-    startRegex: /(?<=\=\s*?)'/g,
-    endRegex: /'/g,
+    start: /(?<=\=\s*?)'/g,
+    next: /'/g,
     token: 'attr-value'
 }];
 
@@ -31,8 +31,8 @@ export default {
         },
         level: 0
     }, {
-        startRegex: /\<\w+\b|\<\!DOCTYPE\b/g,
-        endRegex: /\>/g,
+        start: /\<\w+\b|\<\!DOCTYPE\b/g,
+        next: /\>/g,
         token: function (token, text) {
             if (!token.startToken) {
                 return `<span class="start-tag-arrow-l">&lt;</span>` +
@@ -42,12 +42,39 @@ export default {
             }
         },
         childRule: {
+            rules: attrRules.map((item) => {
+                return Object.assign({}, item);
+            })
+        }
+    }, {
+        level: 2,
+        name: 'script',
+        start: /\<script\b/g,
+        next: /\>/g,
+        token: function (token, text) {
+            if (!token.startToken) {
+                return `<span class="start-tag-arrow-l">&lt;</span>` +
+                    `<span class="start-tag">script</span>`;
+            } else {
+                return `<span class="start-tag-arrow-r">&gt;</span>`;
+            }
+        },
+        childRule: {
+            pairLevel: 2,
+            rules: attrRules.map((item) => {
+                return Object.assign({}, item);
+            })
+        }
+    }, {
+        start: 'script',
+        next: /\<\/script\s*?\>/,
+        childRule: {
             pairLevel: 1,
             rules: attrRules
         }
     }, {
-        startRegex: /\<\!\-\-/g,
-        endRegex: /\-\-\>/g,
+        start: /\<\!\-\-/g,
+        next: /\-\-\>/g,
         token: 'comment-tag'
     }]
 }

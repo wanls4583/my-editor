@@ -71,26 +71,26 @@ export default {
         },
         //多行注释
         {
-            startRegex: /\/\*/g,
-            endRegex: /\*\//g,
+            start: /\/\*/g,
+            next: /\*\//g,
             token: 'pair-comment'
         },
         //字符串``
         {
-            startRegex: /`/g,
-            endRegex: /`/g,
+            start: /`/g,
+            next: /`/g,
             token: 'pair-string'
         },
         //字符串''
         {
-            startRegex: /'/g,
-            endRegex: /'|[^\\]$/g,
+            start: /'/g,
+            next: /'|[^\\]$/g,
             token: 'single-quotation-string'
         },
         //字符串"""
         {
-            startRegex: /"/g,
-            endRegex: /"|[^\\]$/g,
+            start: /"/g,
+            next: /"|[^\\]$/g,
             token: 'double-quotation-string'
         }
     ]
