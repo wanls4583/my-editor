@@ -1,5 +1,5 @@
-import rules from '../javascript/rules';
-// import rules from '../html/rules';
+// import rules from '../javascript/rules';
+import rules from '../html/rules';
 import Util from '../../common/util';
 import PairWorker from './worker';
 
@@ -22,45 +22,30 @@ class Highlight {
     initRules() {
         let pairLevel = this.rulesObj.pairLevel || 1;
         this.rulesObj.rules.map((item) => {
-            // 每个规则生成一个唯一标识
-            item.uuid = this.ruleUuid++;
-            this.ruleUuidMap[item.uuid] = item;
-            if (item.childRule && item.childRule.rules) {
-                let pairLevel = item.childRule.pairLevel || 1;
-                item.childRule.rules.map((_item) => {
-                    _item.uuid = this.ruleUuid++;
-                    // 父规则的标识
-                    _item.parentUuid = item.uuid;
-                    this.ruleUuidMap[_item.uuid] = _item;
-                    if (_item.regex && !_item.startRegex) {
-                        this.singleRules.push(_item);
-                    } else { //多行匹配的优先级需要一致
-                        _item.level = pairLevel;
-                    }
-                });
-            }
-            if (item.regex && !item.startRegex) {
-                this.singleRules.push(item);
-            } else { //多行匹配的优先级需要一致
-                item.level = pairLevel;
-            }
-            item = Object.assign({}, item);
-            delete item.check;
-            typeof item.token == 'function' && delete item.token;
-            this.copyRules.push(item);
+            this.setRuleUuid(item, pairLevel);
         });
-        this.copyRules.map((item) => {
-            if (item.childRule && item.childRule.rules) {
-                let childRule = [];
-                item.childRule.rules.map((_item) => {
-                    _item = Object.assign({}, _item);
-                    delete _item.check;
-                    typeof _item.token == 'function' && delete _item.token;
-                    childRule.push(_item);
-                });
-                item.childRule = childRule;
-            }
-        });
+    }
+
+    setRuleUuid(item, pairLevel, parentUuid) {
+        // 每个规则生成一个唯一标识
+        item.uuid = this.ruleUuid++;
+        item.parentUuid = parentUuid;
+        this.ruleUuidMap[item.uuid] = item;
+        if (item.regex && !item.startRegex) {
+            this.singleRules.push(item);
+        } else { //多行匹配的优先级需要一致
+            item.level = pairLevel;
+        };
+        if (item.childRule && item.childRule.rules) {
+            item.childRule.rules.map((_item) => {
+                this.setRuleUuid(_item, item.pairLevel, item.uuid);
+            });
+        }
+        item = Object.assign({}, item);
+        delete item.check;
+        delete item.childRule;
+        typeof item.token == 'function' && delete item.token;
+        this.copyRules.push(item);
     }
 
     addTask() {
@@ -415,14 +400,16 @@ class Highlight {
             } else { // 结束节点
                 rule = this.ruleUuidMap[pairToken.uuid];
                 nowTokens = rule.parentUuid ? (tokens[rule.parentUuid] || []) : defaultTokens;
-                if (validPairTokens.length) {
-                    resultTokens = resultTokens.concat(nowTokens.filter((item) => {
-                        return item.start >= pairToken.end && item.end <= validPairTokens[0].start;
-                    }));
-                } else {
-                    resultTokens = resultTokens.concat(nowTokens.filter((item) => {
-                        return item.start >= pairToken.end;
-                    }));
+                if (nowTokens.length) {
+                    if (validPairTokens.length) {
+                        resultTokens = resultTokens.concat(nowTokens.filter((item) => {
+                            return item.start >= pairToken.end && item.end <= validPairTokens[0].start;
+                        }));
+                    } else {
+                        resultTokens = resultTokens.concat(nowTokens.filter((item) => {
+                            return item.start >= pairToken.end;
+                        }));
+                    }
                 }
             }
         }
