@@ -65,11 +65,6 @@ export default function (onceData) {
             if (!_checkValid(lineObj.uuid)) {
                 break;
             }
-            if (!lineObj.text) {
-                index++;
-                count++;
-                continue;
-            }
             excludeRules.map((rule) => {
                 while (result = rule.regex.exec(lineObj.text)) {
                     let key = rule.parentUuid || constData.DEFAULT;

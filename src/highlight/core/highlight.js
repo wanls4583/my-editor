@@ -1,5 +1,5 @@
-// import rules from '../javascript/rules';
-import rules from '../html/rules';
+import rules from '../javascript/rules';
+// import rules from '../html/rules';
 import Util from '../../common/util';
 import PairWorker from './worker';
 
