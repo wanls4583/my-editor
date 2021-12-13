@@ -489,10 +489,11 @@ export default {
                 this.removePairTask(this.cursorPos.line);
                 if (this.cursorPos.column == 0) { // 光标处于行首
                     if (this.cursorPos.line > 1) {
+                        let column = this.htmls[this.cursorPos.line - 2].text.length;
                         this.removePairTask(this.cursorPos.line - 1);
                         text = this.htmls[this.cursorPos.line - 2].text + text;
                         this.htmls.splice(this.cursorPos.line - 2, 1);
-                        this.setCursorPos(this.cursorPos.line - 1, text.length);
+                        this.setCursorPos(this.cursorPos.line - 1, column);
                         deleteText = '\n';
                     }
                 } else {
