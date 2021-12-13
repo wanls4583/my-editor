@@ -1,5 +1,5 @@
-import rules from '../javascript/rules';
-// import rules from '../html/rules';
+// import rules from '../javascript/rules';
+import rules from '../html/rules';
 import Util from '../../common/util';
 import PairWorker from './worker';
 
@@ -273,19 +273,6 @@ class Highlight {
                     this.startToken.line != endToken.line && this.buildHtml(endToken.line);
                     this.startToken = null;
                     this.preEndToken = endToken;
-                    // 多行匹配后面紧跟的字节点<script type="text/javascript">子节点</script>
-                    if (rule.name && this.startNameMap[rule.name]) {
-                        rule = this.startNameMap[rule.name];
-                        this.parentTokens.push({
-                            uuid: rule.uuid,
-                            value: '',
-                            level: rule.level,
-                            line: this.nowPairLine,
-                            start: endToken.end,
-                            end: endToken.end,
-                            type: Util.constData.PAIR_START
-                        });
-                    }
                 }
             }
             this.nowPairLine++;
@@ -327,10 +314,23 @@ class Highlight {
     // 获取下一个开始节点
     getNextStartToken(excludeTokens, pairTokens) {
         while (pairTokens.length) {
-            let pairToken = pairTokens.shift(),
-                rule = this.ruleUuidMap[pairToken.uuid],
-                pass = true;
-            if (this.parentTokens.length) {
+            let pass = true;
+            let pairToken = pairTokens.shift();
+            let rule = this.ruleUuidMap[pairToken.uuid];
+            let endRule = this.preEndToken && this.ruleUuidMap[this.preEndToken.uuid];
+            // 多行匹配后面紧跟的字节点<script type="text/javascript">子节点</script>
+            if (this.preEndToken && endRule.name && this.startNameMap[endRule.name]) {
+                rule = this.startNameMap[endRule.name];
+                return {
+                    uuid: rule.uuid,
+                    value: '',
+                    level: rule.level,
+                    line: this.nowPairLine,
+                    start: this.preEndToken.end,
+                    end: this.preEndToken.end,
+                    type: Util.constData.PAIR_START
+                };
+            } else if (this.parentTokens.length) {
                 let parentToken = this.parentTokens.peek();
                 // 父节点匹配到结束节点，当前子节点结束匹配
                 if (this.ifPair(parentToken, pairToken, parentToken.line, this.nowPairLine)) {
@@ -492,9 +492,10 @@ class Highlight {
         if (lineObj.ruleUuid) {
             let token = this.ruleUuidMap[lineObj.ruleUuid].token;
             if (typeof token === 'function') {
-                html = token(null, lineObj.text);
+                html = token(null, lineObj.text) || '';
+            } else {
+                html = `<span class="${token}">${Util.htmlTrans(lineObj.text)}</span>`;
             }
-            html = html || `<span class="${token}">${Util.htmlTrans(lineObj.text)}</span>`;
         } else {
             let validPairTokens = lineObj.highlight.validPairTokens;
             // 需要处理多行匹配的首尾节点

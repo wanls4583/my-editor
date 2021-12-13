@@ -25,6 +25,7 @@ export default {
     rules: [{
         regex: /\<\/\w+\s*?\>/g, //</div></span>...
         token: function (token, text) {
+            console.log(token, text);
             return `<span class="end-tag-arrow-l">&lt;/</span>` +
                 `<span class="end-tag">${text.slice(2, -1)}</span>` +
                 `<span class="end-tag-arrow-r">&gt;</span>`;
@@ -75,9 +76,12 @@ export default {
         start: 'script',
         next: /\<\/script\s*?\>/,
         token: function (token, text) {
-            return `<span class="end-tag-arrow-l">&lt;/</span>` +
-                `<span class="end-tag">${text.slice(2, -1)}</span>` +
-                `<span class="end-tag-arrow-r">&gt;</span>`;
+            if (token && token.startToken) {
+                return `<span class="end-tag-arrow-l">&lt;/</span>` +
+                    `<span class="end-tag">${text.slice(2, -1)}</span>` +
+                    `<span class="end-tag-arrow-r">&gt;</span>`;
+            }
+            return '';
         },
         childRule: JsRules
     }, {
