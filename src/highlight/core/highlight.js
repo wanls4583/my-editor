@@ -17,7 +17,10 @@ class Highlight {
         this.copyRules = []; // 传入worker的数据不能克隆函数
         this.initRules();
         this.worker.onmessage = (e) => {
-            this.startHighlightPairToken(e);
+            clearTimeout(this.worker.timer);
+            this.worker.timer = setTimeout(() => {
+                this.startHighlightPairToken(e);
+            });
         }
     }
 
@@ -84,8 +87,7 @@ class Highlight {
                 texts: texts.slice(0, this.editor.maxVisibleLines),
                 rules: this.copyRules
             }),
-            max: this.editor.maxVisibleLines,
-            once: texts.length > this.editor.maxVisibleLines
+            max: this.editor.maxVisibleLines
         });
         if (texts.length > this.editor.maxVisibleLines) {
             let startTime = Date.now();
@@ -181,17 +183,17 @@ class Highlight {
         this.parentTokens = [];
         this.preEndToken = null;
         this.nowPairLine = this.getStartPairLine();
-        this.highlightPairToken();
+        this.highlightPairToken(e);
     }
 
     /**
      * 高亮多行匹配
-     * @param {Object} option [once:只执行一次parsePair,max:最大执行次数] 
+     * @param {Object} option [max:最大执行次数] 
      */
-    highlightPairToken() {
+    highlightPairToken(option) {
         let startTime = Date.now();
         let count = 0;
-        let max = 5000;
+        let max = option && option.max || 5000;
         let length = this.editor.htmls.length;
         while (count < max && this.nowPairLine <= length) {
             let lineObj = this.editor.htmls[this.nowPairLine - 1];
@@ -278,12 +280,12 @@ class Highlight {
             this.nowPairLine++;
             count++;
         }
-        // console.log(`highlightPairToken cost:${Date.now() - startTime}ms`);//6ms
+        // console.log(`highlightPairToken cost:${Date.now() - startTime}ms`); //6ms
         if (this.nowPairLine < length) {
-            cancelAnimationFrame(this.highlightPairToken.timer);
-            this.highlightPairToken.timer = requestAnimationFrame(() => {
+            clearTimeout(this.highlightPairToken.timer);
+            this.highlightPairToken.timer = setTimeout(() => {
                 this.highlightPairToken();
-            });
+            }, 50);
         }
         if (this.nowPairLine > this.editor.startLine) {
             this.editor.startToEndToken = this.startToken;
@@ -485,7 +487,7 @@ class Highlight {
             line < this.editor.startLine ||
             line > this.editor.startLine + this.editor.maxVisibleLines) {
             // token或validPairTokens有变化，下次滚动到该行时需要重新渲染
-            this.editor.htmls[line - 1].highlight.rendered = false;
+            lineObj.highlight.rendered = false;
             return;
         }
         // 被多行匹配包裹
