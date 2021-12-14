@@ -17,8 +17,7 @@ class Highlight {
         this.copyRules = []; // 传入worker的数据不能克隆函数
         this.initRules();
         this.worker.onmessage = (e) => {
-            clearTimeout(this.worker.timer);
-            this.worker.timer = setTimeout(() => {
+            requestAnimationFrame(() => {
                 this.startHighlightPairToken(e);
             });
         }

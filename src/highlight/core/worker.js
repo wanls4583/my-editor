@@ -36,7 +36,7 @@ export default function (onceData) {
     function run(option) {
         let texts = option.texts;
         let rules = option.rules;
-        let max = option.max || 50000;
+        let max = option.max || 1000;
         let pairRules = [];
         let excludeRules = [];
         let index = 0;
@@ -59,75 +59,105 @@ export default function (onceData) {
                 }
                 excludeRules.map((rule) => {
                     let key = rule.parentUuid || constData.DEFAULT;
+                    let token = null;
+                    let tokens = [];
                     excludeTokens[key] = excludeTokens[key] || [];
-                    if (resultMap.has(rule.source)) {
-                        excludeTokens[key].push(Object.assign({}, resultMap.get(rule.source)));
+                    if (resultMap.has(rule.regex.source)) {
+                        tokens = resultMap.get(rule.regex.source);
+                        tokens.map((token) => {
+                            token = Object.assign({}, token);
+                            token.uuid = rule.uuid;
+                            token.token = rule.token;
+                            token.level = rule.level;
+                            excludeTokens[key].push(token);
+                        });
                     } else {
                         while (result = rule.regex.exec(lineObj.text)) {
-                            let token = {
+                            token = {
                                 uuid: rule.uuid,
                                 token: rule.token,
-                                value: result[0],
                                 level: rule.level,
+                                value: result[0],
                                 start: result.index,
                                 end: result.index + result[0].length
                             };
+                            tokens.push(token);
                             excludeTokens[key].push(token);
-                            resultMap.set(rule.source, token);
                             if (!result[0].length || !rule.regex.global) {
                                 break;
                             }
                         }
+                        resultMap.set(rule.regex.source, tokens);
                         rule.regex.lastIndex = 0;
                     }
                 });
                 pairRules.map((rule) => {
-                    var isSame = rule.start.source === rule.next.source;
+                    let isSame = rule.start.source === rule.next.source;
                     if (rule.start instanceof RegExp) {
+                        let pairToken = null;
+                        let tokens = [];
                         if (resultMap.has(rule.start.source)) {
-                            let pairToken = Object.assign({}, resultMap.get(rule.start.source));
-                            pairToken.type = isSame ? constData.PAIR_START_END : constData.PAIR_START;
-                            pairTokens.push(pairToken);
+                            tokens = resultMap.get(rule.start.source);
+                            tokens.map((pairToken) => {
+                                pairToken = Object.assign({}, pairToken);
+                                pairToken.uuid = rule.uuid;
+                                pairToken.token = rule.token;
+                                pairToken.level = rule.level;
+                                pairToken.type = isSame ? constData.PAIR_START_END : constData.PAIR_START;
+                                pairTokens.push(pairToken);
+                            });
                         } else {
                             while (result = rule.start.exec(lineObj.text)) {
-                                let pairToken = {
+                                pairToken = {
                                     uuid: rule.uuid,
                                     token: rule.token,
-                                    value: result[0],
                                     level: rule.level,
+                                    value: result[0],
                                     start: result.index,
                                     end: result.index + result[0].length,
                                     type: isSame ? constData.PAIR_START_END : constData.PAIR_START
                                 };
+                                tokens.push(pairToken);
                                 pairTokens.push(pairToken);
                                 if (!result[0].length || !rule.start.global) {
                                     break;
                                 }
                             }
+                            resultMap.set(rule.start.source, tokens);
                             rule.start.lastIndex = 0;
                         }
                     }
                     if (!isSame && rule.next instanceof RegExp) {
+                        let pairToken = null;
+                        let tokens = [];
                         if (resultMap.has(rule.next.source)) {
-                            let pairToken = Object.assign({}, resultMap.get(rule.next.source));
-                            pairToken.type = isSame ? constData.PAIR_START_END : constData.PAIR_END;
-                            pairTokens.push(pairToken);
+                            tokens = resultMap.get(rule.next.source);
+                            tokens.map((pairToken) => {
+                                pairToken = Object.assign({}, pairToken);
+                                pairToken.uuid = rule.uuid;
+                                pairToken.token = rule.token;
+                                pairToken.level = rule.level;
+                                pairToken.type = isSame ? constData.PAIR_START_END : constData.PAIR_END;
+                                pairTokens.push(pairToken);
+                            });
                         } else {
                             while (result = rule.next.exec(lineObj.text)) {
-                                let pairToken = {
+                                pairToken = {
                                     uuid: rule.uuid,
                                     token: rule.token,
-                                    value: result[0],
                                     level: rule.level,
+                                    value: result[0],
                                     start: result.index,
                                     end: result.index + result[0].length,
                                     type: isSame ? constData.PAIR_START_END : constData.PAIR_END
                                 };
+                                tokens.push(pairToken);
                                 pairTokens.push(pairToken);
                                 if (!result[0].length || !rule.next.global) {
                                     break;
                                 }
                             }
+                            resultMap.set(rule.next.source, tokens);
                             rule.next.lastIndex = 0;
                         }
                     }
