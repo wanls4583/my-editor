@@ -235,11 +235,11 @@ export default {
             this.space = this.$util.space(this.tabSize);
             this.history = []; // 操作历史
             this.ruleUuid = 1;
-            this.uuid = Number.MIN_SAFE_INTEGER + 1;
+            this.uuid = Number.MIN_SAFE_INTEGER;
             this.uuidMap = new Map(); // htmls的唯一标识对象
             this.renderedUuidMap = new Map(); // renderHtmls的唯一标识对象
             this.htmls = [{
-                uuid: Number.MIN_SAFE_INTEGER,
+                uuid: this.uuid++,
                 text: '',
                 html: '',
                 width: 0,
@@ -250,6 +250,7 @@ export default {
                     rendered: false
                 }
             }];
+            this.uuidMap.set(this.htmls[0].uuid, this.htmls[0]);
             this.$worker = this.$util.createWorker(highlighter);
             this.initRules();
         },
@@ -270,10 +271,14 @@ export default {
                 data = data.data;
                 switch (type) {
                     case 'buildHtml':
-                        data.lineObjs.map((lineObj) => {
-                            this.buildHtml(lineObj);
-                        });
+                        let lineObj = this.uuidMap.get(data.lineObj.uuid);
+                        lineObj.ruleUuid = data.lineObj.ruleUuid;
+                        lineObj.parentRuleUuid = data.lineObj.parentRuleUuid;
+                        lineObj.highlight.validPairTokens = data.lineObj.highlight.validPairTokens;
+                        this.buildHtml(lineObj);
                         break;
+                    case 'startToEndToken':
+                        this.startToEndToken = data;
                 }
             }
         },
@@ -406,6 +411,10 @@ export default {
         // 渲染
         render() {
             this.highlighter.highlightToken(this.startLine);
+            this.$worker.postMessage({
+                type: 'highlightPairToken',
+                data: this.startLine
+            });
             this.renderLine();
             this.$nextTick(() => {
                 this.scrollerArea = {
@@ -806,12 +815,13 @@ export default {
             let halfCharWidth = this.charObj.charWidth / 2;
             let halfFullCharWidth = this.charObj.fullAngleCharWidth / 2;
             let left = 0, right = text.length;
-            let mid, width, w;
+            let mid, width, w1, w2;
             while (left < right) {
                 mid = Math.floor((left + right) / 2);
                 width = this.getStrWidth(text, 0, mid);
-                w = text[mid - 1] && text[mid - 1].match(this.$util.fullAngleReg) ? halfFullCharWidth : halfCharWidth;
-                if (!mid || Math.abs(width - offsetX) < w) {
+                w1 = text[mid - 1] && text[mid - 1].match(this.$util.fullAngleReg) ? halfFullCharWidth : halfCharWidth;
+                w2 = text[mid] && text[mid].match(this.$util.fullAngleReg) ? halfFullCharWidth : halfCharWidth;
+                if (width >= offsetX && width - offsetX < w1 || offsetX >= width && offsetX - width < w2) {
                     left = mid;
                     break;
                 } else if (width > offsetX) {
@@ -871,7 +881,7 @@ export default {
                 rule = this.ruleUuidMap[pairToken.uuid];
                 if (!pairToken.startToken) { // 第一个节点为开始节点
                     nowTokens = rule.parentUuid ? (tokens[rule.parentUuid] || []) : defaultTokens;
-                } else if (this.ifHasChildRule(rule.uuid)) {
+                } else if (this.highlighter.ifHasChildRule(rule.uuid)) {
                     nowTokens = tokens[rule.uuid] || [];
                 }
                 resultTokens = nowTokens.filter((item) => {
