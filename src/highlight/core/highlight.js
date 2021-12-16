@@ -403,14 +403,16 @@ export default function () {
 
     // 子线程处理完部分数据，可以开始高亮多行匹配
     Highlight.prototype.startHighlightPairToken = function (startLine) {
+        let nowLine = startLine;
+        let endLine = startLine + this.maxVisibleLines;
         this.startLine = startLine;
         this.startToken = null; // 原始开始节点
         this.parentTokens = [];
         this.preEndToken = null;
-        this.nowPairLine = this.getStartPairLine();
-        this.highlightPairToken();
-        let nowLine = startLine;
-        let endLine = startLine + this.maxVisibleLines;
+        if (this.nowPairLine <= this.htmls.length) {
+            this.nowPairLine = this.getStartPairLine();
+            this.highlightPairToken();
+        }
         nowLine = nowLine < 1 ? 1 : nowLine;
         endLine = endLine > this.htmls.length ? this.htmls.length : endLine;
         while (nowLine <= endLine) {
@@ -449,10 +451,14 @@ export default function () {
             pairTokens = pairTokens.concat([]);
             while (pairTokens.length) {
                 let endToken = null;
+                let originToken = null;
                 // 获取开始节点
                 if (!this.startToken) {
                     this.startToken = this.getNextStartToken(excludeTokens, pairTokens);
                     if (this.startToken) {
+                        originToken = this.startToken;
+                        this.startToken = Object.assign({}, this.startToken);
+                        this.startToken.originToken = originToken;
                         if (this.parentTokens.length && this.parentTokens.peek().uuid == this.startToken.uuid) { // 找到的是父节点的结束节点
                             endToken = this.startToken;
                             this.startToken = this.parentTokens.pop();
@@ -491,6 +497,9 @@ export default function () {
                 }
                 if (this.ifPair(this.startToken, endToken, this.startToken.line, this.nowPairLine)) {
                     let rule = this.ruleUuidMap[endToken.uuid];
+                    originToken = endToken;
+                    endToken = Object.assign({}, endToken);
+                    endToken.originToken = originToken;
                     endToken.line = this.nowPairLine;
                     endToken._start = this.ifHasChildRule(rule.uuid) ? endToken.start : 0;
                     endToken._end = endToken.end;
@@ -627,7 +636,7 @@ export default function () {
                     let rule = this.ruleUuidMap[pairToken.uuid];
                     this.parentTokens = (pairToken.parentTokens || []).concat([]);
                     if (!pairToken.startToken && pairToken.type != ENUM.PAIR_END) {
-                        this.startToken = pairToken;
+                        this.startToken = Object.assign({}, pairToken.originToken);
                         // 该节点是否有子节点
                         if (this.ifHasChildRule(this.startToken.uuid)) {
                             this.parentTokens.push(this.startToken);
