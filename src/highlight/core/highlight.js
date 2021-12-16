@@ -644,7 +644,8 @@ export default function () {
                     let rule = this.ruleUuidMap[pairToken.uuid];
                     this.parentTokens = (pairToken.parentTokens || []).concat([]);
                     if (!pairToken.startToken && pairToken.type != ENUM.PAIR_END) {
-                        this.startToken = Object.assign({}, pairToken.originToken);
+                        this.startToken = pairToken;
+                        this.startToken.endToken = null;
                         // 该节点是否有子节点
                         if (this.ifHasChildRule(this.startToken.uuid)) {
                             this.parentTokens.push(this.startToken);
