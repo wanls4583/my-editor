@@ -29,9 +29,7 @@ export default function () {
             token: '',
             highlight: {
                 pairTokens: null,
-                validPairTokens: null,
-                tokens: null,
-                rendered: false
+                validPairTokens: null
             }
         }];
         self.onmessage = (e) => {
@@ -130,9 +128,7 @@ export default function () {
                 text: item,
                 highlight: {
                     pairTokens: null,
-                    validPairTokens: null,
-                    tokens: null,
-                    rendered: false
+                    validPairTokens: null
                 }
             }
         });
@@ -147,6 +143,7 @@ export default function () {
             text[0].html = text[0].text;
             this.htmls.splice(cursorPos.line - 1, 1, text[0]);
         }
+        this.nowPairLine = this.nowPairLine > cursorPos.line ? cursorPos.line : this.nowPairLine;
     }
 
     // 删除内容
@@ -159,10 +156,6 @@ export default function () {
             let endObj = this.htmls[end.line - 1];
             start = selectedRange.start;
             startObj = this.htmls[start.line - 1];
-            originPos = {
-                line: end.line,
-                column: end.column
-            };
             text = startObj.text;
             if (start.line == 1 && end.line == this.maxLine) { //全选删除
                 rangeUuid = [this.maxWidthObj.uuid];
@@ -197,7 +190,6 @@ export default function () {
         } else { // 向前删除一个字符
             if (cursorPos.column == 0) { // 光标处于行首
                 if (cursorPos.line > 1) {
-                    let column = this.htmls[cursorPos.line - 2].text.length;
                     text = this.htmls[cursorPos.line - 2].text + text;
                     this.htmls.splice(cursorPos.line - 2, 1);
                 }
@@ -209,9 +201,12 @@ export default function () {
         }
         startObj.highlight = {
             pairTokens: null,
-            validPairTokens: null,
-            tokens: null,
-            rendered: false
+            validPairTokens: null
+        }
+        if (selectedRange) {
+            this.nowPairLine = this.nowPairLine > start.line ? start.line : this.nowPairLine;
+        } else {
+            this.nowPairLine = this.nowPairLine > cursorPos.line - 1 ? cursorPos.line - 1 : this.nowPairLine;
         }
     }
 
@@ -219,13 +214,13 @@ export default function () {
      * 高亮单行匹配
      */
     Highlight.prototype.highlightToken = function (startLine) {
-        let tokens = null;
+        let tokens = {};
         let lineObj = null;
         let nowLine = startLine;
         let endLine = startLine + this.maxVisibleLines;
-        let waitToBuildLines = [];
         nowLine = nowLine < 1 ? 1 : nowLine;
         endLine = endLine > this.htmls.length ? this.htmls.length : endLine;
+        tokens[ENUM.DEFAULT] = [];
         this.startLine = startLine;
         while (nowLine <= endLine) {
             lineObj = this.htmls[nowLine - 1];
@@ -237,11 +232,10 @@ export default function () {
             }
             // 这里不需要加tokens.length的判断条件，可能只是validPairTokens有变化，需要更新
             if (!lineObj.highlight.rendered) {
-                waitToBuildLines.push(nowLine);
+                this.buildHtml(nowLine);
             }
             nowLine++;
         }
-        waitToBuildLines.length && this.buildHtml(waitToBuildLines);
     }
 
     Highlight.prototype.getLineTokens = function (text) {
@@ -276,28 +270,20 @@ export default function () {
         return tokens;
     }
 
-    Highlight.prototype.buildHtml = function (waitToBuildLines) {
-        let lineObjs = [];
-        waitToBuildLines = typeof waitToBuildLines == 'number' ? [waitToBuildLines] : waitToBuildLines;
-        waitToBuildLines.map((line) => {
-            let lineObj = this.htmls[line - 1];
-            let tokens = lineObj.highlight.tokens;
-            if (!tokens && !lineObj.ruleUuid ||
-                line < this.startLine ||
-                line > this.startLine + this.maxVisibleLines) {
-                // token或validPairTokens有变化，下次滚动到该行时需要重新渲染
-                lineObj.highlight.rendered = false;
-                return;
-            }
-            this.main && this.main.buildHtml(lineObj);
+    Highlight.prototype.buildHtml = function (line) {
+        let lineObj = this.htmls[line - 1];
+        // 子线程
+        if (line < this.startLine || line > this.startLine + this.maxVisibleLines) {
+            return;
+        }
+        if (this.main) { // 主线程
+            this.main.buildHtml(lineObj);
             lineObj.highlight.rendered = true;
-            lineObjs.push(lineObj);
-        });
-        if (lineObjs.length && !this.main) {
+        } else { // 子线程
             self.postMessage({
                 type: 'buildHtml',
                 data: {
-                    lineObjs: lineObjs
+                    lineObjs: lineObj
                 }
             });
         }
