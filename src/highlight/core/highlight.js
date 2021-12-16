@@ -18,6 +18,12 @@ export default function () {
         BACKSPACE: 8
     }
 
+    Array.prototype.peek = function () {
+        if (this.length) {
+            return this[this.length - 1];
+        }
+    }
+
     function Highlight() {
         this.uuid = Number.MIN_SAFE_INTEGER;
         this.uuidMap = new Map(); // htmls的唯一标识对象
@@ -210,14 +216,15 @@ export default function () {
      * 高亮单行匹配
      */
     Highlight.prototype.highlightToken = function (startLine) {
-        let tokens = {};
+        let tokens = null;
         let lineObj = null;
         let nowLine = startLine;
         let endLine = startLine + this.maxVisibleLines;
         nowLine = nowLine < 1 ? 1 : nowLine;
         endLine = endLine > this.htmls.length ? this.htmls.length : endLine;
-        tokens[ENUM.DEFAULT] = [];
         while (nowLine <= endLine) {
+            tokens = {};
+            tokens[ENUM.DEFAULT] = [];
             lineObj = this.htmls[nowLine - 1];
             if (!lineObj.highlight.tokens) {
                 lineObj.text && (tokens = this.getLineTokens(lineObj.text));
@@ -422,6 +429,7 @@ export default function () {
                     type: 'buildHtml',
                     data: lineObj
                 });
+                lineObj.highlight.rendered = true;
             }
             nowLine++;
         }

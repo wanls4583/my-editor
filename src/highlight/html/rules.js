@@ -4,7 +4,6 @@
  * @Description: 
  */
 import JsRules from '../javascript/rules';
-import Util from '@/common/util';
 
 const attrRules = [{
     regex: /\b[^'"=\s\>\<]+\b/g,
