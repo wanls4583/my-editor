@@ -428,8 +428,7 @@ export default function () {
     // 高亮多行匹配
     Highlight.prototype.highlightPairToken = function () {
         let count = 0;
-        let length = this.startLine + this.maxVisibleLines;
-        length = length > this.htmls.length ? this.htmls.length : length;
+        let length = this.htmls.length;
         while (count < 5000 && this.nowPairLine <= length) {
             let lineObj = this.htmls[this.nowPairLine - 1];
             let pairTokens = null;
