@@ -244,7 +244,6 @@ export default {
                 html: '',
                 width: 0,
                 highlight: {
-                    pairTokens: null,
                     validPairTokens: null,
                     tokens: null,
                     rendered: false
@@ -271,10 +270,10 @@ export default {
                 data = data.data;
                 switch (type) {
                     case 'buildHtml':
-                        let lineObj = this.uuidMap.get(data.lineObj.uuid);
-                        lineObj.ruleUuid = data.lineObj.ruleUuid;
-                        lineObj.parentRuleUuid = data.lineObj.parentRuleUuid;
-                        lineObj.highlight.validPairTokens = data.lineObj.highlight.validPairTokens;
+                        let lineObj = this.uuidMap.get(data.uuid);
+                        lineObj.ruleUuid = data.ruleUuid;
+                        lineObj.parentRuleUuid = data.parentRuleUuid;
+                        lineObj.highlight.validPairTokens = data.highlight.validPairTokens;
                         this.buildHtml(lineObj);
                         break;
                     case 'startToEndToken':
@@ -531,7 +530,6 @@ export default {
                     html: this.$util.htmlTrans(item),
                     width: 0,
                     highlight: {
-                        pairTokens: null,
                         validPairTokens: null,
                         tokens: null,
                         rendered: false
@@ -655,7 +653,6 @@ export default {
             startObj.html = this.$util.htmlTrans(startObj.text);
             startObj.width = this.getStrWidth(startObj.text);
             startObj.highlight = {
-                pairTokens: null,
                 validPairTokens: null,
                 tokens: null,
                 rendered: false

@@ -222,12 +222,10 @@ export default function () {
             if (!lineObj.highlight.tokens) {
                 lineObj.text && (tokens = this.getLineTokens(lineObj.text));
                 lineObj.highlight.tokens = tokens;
-            } else {
-                tokens = lineObj.highlight.tokens;
             }
-            // 这里不需要加tokens.length的判断条件，可能只是validPairTokens有变化，需要更新
             if (!lineObj.highlight.rendered) {
-                this.buildHtml(nowLine);
+                this.main.buildHtml(lineObj);
+                lineObj.highlight.rendered = true;
             }
             nowLine++;
         }
@@ -411,6 +409,20 @@ export default function () {
         this.preEndToken = null;
         this.nowPairLine = this.getStartPairLine();
         this.highlightPairToken();
+        let nowLine = startLine;
+        let endLine = startLine + this.maxVisibleLines;
+        nowLine = nowLine < 1 ? 1 : nowLine;
+        endLine = endLine > this.htmls.length ? this.htmls.length : endLine;
+        while (nowLine <= endLine) {
+            let lineObj = this.htmls[nowLine - 1];
+            if (!lineObj.highlight.rendered) {
+                self.postMessage({
+                    type: 'buildHtml',
+                    data: lineObj
+                });
+            }
+            nowLine++;
+        }
     }
 
     // 高亮多行匹配
@@ -430,12 +442,12 @@ export default function () {
             pairTokens = lineObj.highlight.pairTokens;
             excludeTokens = lineObj.highlight.excludeTokens;
             lineObj.highlight.validPairTokens = [];
+            lineObj.highlight.rendered = false;
             // 记录父节点，用于渲染相应的单行tokens
             lineObj.parentRuleUuid = this.parentTokens.length && this.parentTokens.peek().uuid || null;
             // 已有开始节点，则该行可能被其包裹
             lineObj.ruleUuid = this.startToken && this.startToken.uuid || '';
             pairTokens = pairTokens.concat([]);
-            this.buildHtml(this.nowPairLine);
             while (pairTokens.length) {
                 let endToken = null;
                 // 获取开始节点
@@ -454,7 +466,6 @@ export default function () {
                             this.startToken.parentTokens = this.parentTokens.concat([]);
                             lineObj.highlight.validPairTokens.push(this.startToken);
                             lineObj.ruleUuid = '';
-                            this.buildHtml(this.nowPairLine);
                             // 该节点是否有子节点
                             if (this.ifHasChildRule(rule.uuid)) {
                                 this.parentTokens.push(this.startToken);
@@ -495,9 +506,9 @@ export default function () {
                     }
                     this.startToken.endToken = endToken;
                     // 渲染开始行
-                    this.buildHtml(this.startToken.line);
+                    this.htmls[this.startToken.line - 1].highlight.rendered = false;
                     // 渲染结束行
-                    this.startToken.line != endToken.line && this.buildHtml(endToken.line);
+                    this.startToken.line != endToken.line && (this.htmls[endToken.line - 1].highlight.rendered = false);
                     this.startToken = null;
                     this.preEndToken = endToken;
                 }
@@ -644,25 +655,6 @@ export default function () {
             }
         }
         return this.nowPairLine;
-    }
-
-    Highlight.prototype.buildHtml = function (line) {
-        let lineObj = this.htmls[line - 1];
-        // 子线程
-        if (line < this.startLine || line > this.startLine + this.maxVisibleLines) {
-            return;
-        }
-        if (this.main) { // 主线程
-            this.main.buildHtml(lineObj);
-            lineObj.highlight.rendered = true;
-        } else { // 子线程
-            self.postMessage({
-                type: 'buildHtml',
-                data: {
-                    lineObj: lineObj
-                }
-            });
-        }
     }
 
     return new Highlight();
