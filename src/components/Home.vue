@@ -270,11 +270,15 @@ export default {
                 data = data.data;
                 switch (type) {
                     case 'buildHtml':
-                        let lineObj = this.uuidMap.get(data.uuid);
-                        lineObj.ruleUuid = data.ruleUuid;
-                        lineObj.parentRuleUuid = data.parentRuleUuid;
-                        lineObj.highlight.validPairTokens = data.highlight.validPairTokens;
-                        this.buildHtml(lineObj);
+                        data.lineObjs.map((item) => {
+                            let lineObj = this.uuidMap.get(item.uuid);
+                            lineObj.ruleUuid = item.ruleUuid;
+                            lineObj.parentRuleUuid = item.parentRuleUuid;
+                            lineObj.highlight.validPairTokens = item.highlight.validPairTokens;
+                            this.buildHtml(lineObj);
+                        });
+                        this.startToEndToken = data.startToEndToken;
+                        this.highlighter.nowPairLine = data.nowPairLine;
                         break;
                     case 'startToEndToken':
                         this.startToEndToken = data;
@@ -410,6 +414,7 @@ export default {
         // 渲染
         render() {
             this.highlighter.highlightToken(this.startLine);
+            this.highlighter.startHighlightPairToken(this.startLine, this.maxVisibleLines);
             this.$worker.postMessage({
                 type: 'highlightPairToken',
                 data: this.startLine
@@ -551,6 +556,9 @@ export default {
                 text[0].html = this.$util.htmlTrans(text[0].text);
                 this.htmls.splice(this.cursorPos.line - 1, 1, text[0]);
             }
+            // 重新计算多行匹配的开始行
+            this.highlighter.nowPairLine = this.highlighter.nowPairLine > nowLine - 1 ? nowLine - 1 : this.highlighter.nowPairLine;
+            this.highlighter.nowPairLine = this.highlighter.nowPairLine || 1;
             newLine += text.length - 1;
             this.maxLine = this.htmls.length;
             this.setLineWidth(text);
@@ -657,6 +665,9 @@ export default {
                 tokens: null,
                 rendered: false
             }
+            // 重新计算多行匹配的开始行
+            this.highlighter.nowPairLine = this.highlighter.nowPairLine > this.cursorPos.line - 1 ? this.cursorPos.line - 1 : this.highlighter.nowPairLine;
+            this.highlighter.nowPairLine = this.highlighter.nowPairLine || 1;
             this.maxLine = this.htmls.length;
             this.clearRnage();
             this.render();
