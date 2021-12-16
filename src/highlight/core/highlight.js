@@ -439,7 +439,7 @@ export default function () {
     Highlight.prototype.highlightPairToken = function () {
         let count = 0;
         let length = this.htmls.length;
-        while (count < 5000 && this.nowPairLine <= length) {
+        while (count < 10000 && this.nowPairLine <= length) {
             let lineObj = this.htmls[this.nowPairLine - 1];
             let pairTokens = null;
             let excludeTokens = null; // 和多行匹配相同优先级不同类型的单行tokens
@@ -536,7 +536,7 @@ export default function () {
             clearTimeout(this.highlightPairToken.timer);
             this.highlightPairToken.timer = setTimeout(() => {
                 this.highlightPairToken();
-            }, 50);
+            }, 0);
         } else {
             self.postMessage({
                 type: 'startToEndToken',
