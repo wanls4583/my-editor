@@ -275,13 +275,11 @@ export default {
                             lineObj.ruleUuid = item.ruleUuid;
                             lineObj.parentRuleUuid = item.parentRuleUuid;
                             lineObj.highlight.validPairTokens = item.highlight.validPairTokens;
-                            this.buildHtml(lineObj);
+                            this.renderedUuidMap.has(lineObj.uuid) && this.buildHtml(lineObj);
                         });
                         this.startToEndToken = data.startToEndToken;
                         this.highlighter.nowPairLine = data.nowPairLine;
                         break;
-                    case 'startToEndToken':
-                        this.startToEndToken = data;
                 }
             }
         },
@@ -887,7 +885,7 @@ export default {
             if (validPairTokens.length) {
                 pairToken = validPairTokens[0];
                 rule = this.ruleUuidMap[pairToken.uuid];
-                if (!pairToken.startToken) { // 第一个节点为开始节点
+                if (pairToken.type == this.$util.constData.PAIR_START) { // 第一个节点为开始节点
                     nowTokens = rule.parentUuid ? (tokens[rule.parentUuid] || []) : defaultTokens;
                 } else if (this.highlighter.ifHasChildRule(rule.uuid)) {
                     nowTokens = tokens[rule.uuid] || [];
@@ -900,7 +898,7 @@ export default {
             }
             while (validPairTokens.length) {
                 pairToken = validPairTokens.shift();
-                if (!pairToken.startToken) { // 开始节点
+                if (pairToken.type == this.$util.constData.PAIR_START) { // 开始节点
                     nowTokens = tokens[pairToken.uuid] || [];
                     if (nowTokens.length) {
                         if (validPairTokens.length) { // 下一个节点可能是结束节点，也可能是当前节点的子节点

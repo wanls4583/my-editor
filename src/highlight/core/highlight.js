@@ -385,24 +385,47 @@ export default function () {
 
     // 通知主线程当前渲染区域的变化
     Highlight.prototype.notify = function () {
-        let lineObjs = [];
         let nowLine = this.startLine;
         let endLine = this.startLine + this.maxVisibleLines;
-        nowLine = nowLine < 1 ? 1 : nowLine;
-        endLine = endLine > this.htmls.length ? this.htmls.length : endLine;
-        while (nowLine <= endLine) {
-            let lineObj = this.htmls[nowLine - 1];
-            if (!lineObj.highlight.rendered && lineObj.highlight.validPairTokens) {
-                lineObj.highlight.validPairTokens.length && lineObjs.push(lineObj);
-                lineObj.highlight.rendered = true;
-            }
-            nowLine++;
-        }
         if (this.main) {
-            lineObjs.map((lineObj) => {
+            endLine = endLine > this.htmls.length ? this.htmls.length : endLine;
+            while (nowLine <= endLine) {
+                let lineObj = this.htmls[nowLine - 1];
                 this.main.buildHtml(lineObj);
-            });
+                nowLine++;
+            }
         } else {
+            let lineObjs = [];
+            nowLine = this.startPairLine;
+            endLine = this.endPairLine;
+            endLine = endLine > this.htmls.length ? this.htmls.length : endLine;
+            while (nowLine <= endLine) {
+                let lineObj = this.htmls[nowLine - 1];
+                if (!lineObj.highlight.rendered && lineObj.highlight.validPairTokens) {
+                    lineObj.highlight.validPairTokens.length && lineObjs.push(lineObj);
+                    lineObj.highlight.rendered = true;
+                }
+                nowLine++;
+            }
+            lineObjs = lineObjs.map((item) => {
+                let validPairTokens = item.highlight.validPairTokens;
+                validPairTokens = validPairTokens.map((item) => {
+                    item = Object.assign({}, item);
+                    delete item.originToken;
+                    delete item.parentTokens;
+                    delete item.startToken;
+                    delete item.endToken;
+                    return item;
+                });
+                return {
+                    uuid: item.uuid,
+                    parentRuleUuid: item.parentRuleUuid,
+                    ruleUuid: item.ruleUuid,
+                    highlight: {
+                        validPairTokens: validPairTokens
+                    }
+                }
+            });
             self.postMessage({
                 type: 'buildHtml',
                 data: {
@@ -419,6 +442,7 @@ export default function () {
         let that = this;
         let count = 0;
         let length = this.htmls.length;
+        this.startPairLine = this.nowPairLine;
         max = max || 5000;
         while (count < max && this.nowPairLine <= length) {
             let lineObj = this.htmls[this.nowPairLine - 1];
@@ -521,6 +545,7 @@ export default function () {
             this.nowPairLine++;
             count++;
         }
+        this.endPairLine = this.nowPairLine;
         if (this.main) {
             if (this.nowPairLine > length) {
                 this.main.startToEndToken = this.startToken;
