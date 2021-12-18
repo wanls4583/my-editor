@@ -503,6 +503,19 @@ export default function () {
                     this.startToken.line != endToken.line && (this.htmls[endToken.line - 1].highlight.rendered = false);
                     this.startToken = null;
                     this.preEndToken = endToken;
+                    // 多行匹配后面紧跟的字节点<script type="text/javascript">子节点</script>
+                    if (rule && rule.name && this.startNameMap[rule.name]) {
+                        rule = this.startNameMap[rule.name];
+                        this.parentTokens.push({
+                            uuid: rule.uuid,
+                            value: '',
+                            level: rule.level,
+                            line: this.nowPairLine,
+                            start: this.preEndToken.end,
+                            end: this.preEndToken.end,
+                            type: ENUM.PAIR_START
+                        });
+                    }
                 }
             }
             this.nowPairLine++;
@@ -569,20 +582,6 @@ export default function () {
 
     // 获取下一个开始节点
     Highlight.prototype.getNextStartToken = function () {
-        let endRule = this.preEndToken && this.ruleUuidMap[this.preEndToken.uuid];
-        // 多行匹配后面紧跟的字节点<script type="text/javascript">子节点</script>
-        if (endRule && endRule.name && this.startNameMap[endRule.name]) {
-            let rule = this.startNameMap[endRule.name];
-            return {
-                uuid: rule.uuid,
-                value: '',
-                level: rule.level,
-                line: this.nowPairLine,
-                start: this.preEndToken.end,
-                end: this.preEndToken.end,
-                type: ENUM.PAIR_START
-            };
-        }
         while (this.pairTokens.length) {
             let pairToken = this.pairTokens.shift();
             let rule = this.ruleUuidMap[pairToken.uuid];

@@ -13,7 +13,7 @@ export default {
             token: 'oprator',
             level: 0
         }, {
-            regex: /\b\d+\b|\b0[xX][a-zA-Z0-9]*?\b|\bundefined\b|\bnull\b|\btrue\b|\false\b/g,
+            regex: /\b\d+\b|\b0[xX][a-zA-Z0-9]*?\b|\bundefined\b|\bnull\b|\btrue\b|\bfalse\b/g,
             token: 'number',
             level: 0
         }, {
