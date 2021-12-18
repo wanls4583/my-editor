@@ -454,6 +454,7 @@ export default function () {
                             // 该节点是否有子节点
                             if (this.ifHasChildRule(rule.uuid)) {
                                 this.parentTokens.push(this.startToken);
+                                this.pairTokens = _getPairTokens(lineObj, this.startToken.end);
                                 this.startToken = null;
                                 continue;
                             }
@@ -526,10 +527,10 @@ export default function () {
 
         function _getPairTokens(lineObj, lastIndex) {
             let parentRule = that.parentTokens.length && that.parentTokens.peek().uuid;
-            parentRule = parentRule && that.ruleUuidMapp[parentRule];
+            parentRule = parentRule && that.ruleUuidMap[parentRule];
             if (parentRule) {
                 if (!lineObj.highlight.pairTokens[parentRule.uuid]) {
-                    lineObj.highlight.pairTokens[parentRule.uuid] = that.getPairTokens(lineObj.text, [parentRule].concat(parentRule.pairRules), lastIndex);
+                    lineObj.highlight.pairTokens[parentRule.uuid] = that.getPairTokens(lineObj.text, [parentRule].concat(parentRule.childRule.pairRules), lastIndex);
                 }
                 that.pairTokens = lineObj.highlight.pairTokens[parentRule.uuid];
             } else {
