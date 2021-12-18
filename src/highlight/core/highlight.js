@@ -392,8 +392,8 @@ export default function () {
         endLine = endLine > this.htmls.length ? this.htmls.length : endLine;
         while (nowLine <= endLine) {
             let lineObj = this.htmls[nowLine - 1];
-            if (!lineObj.highlight.rendered) {
-                lineObjs.push(lineObj);
+            if (!lineObj.highlight.rendered && lineObj.highlight.validPairTokens) {
+                lineObj.highlight.validPairTokens.length && lineObjs.push(lineObj);
                 lineObj.highlight.rendered = true;
             }
             nowLine++;
