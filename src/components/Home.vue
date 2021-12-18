@@ -66,8 +66,8 @@
 </template>
 
 <script>
-// import rulesObj from '@/highlight/javascript/rules';
-import rulesObj from '@/highlight/html/rules';
+import rulesObj from '@/highlight/javascript/rules';
+// import rulesObj from '@/highlight/html/rules';
 import highlighter from '@/highlight/core/highlight';
 import StatusBar from './StatusBar';
 export default {

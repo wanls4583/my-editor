@@ -72,18 +72,22 @@ export default function () {
 
     Highlight.prototype.initRules = function () {
         let that = this;
-        this.pairRules = [];
-        this.singleRules = [];
-        this.excludeRules = [];
         this.ruleNameMap = {};
         this.startNameMap = {};
         this.ruleUuidMap = {};
+        this.singleRules = [];
+        this.rulesObj.singleRules = [];
+        this.rulesObj.pairRules = [];
         this.rulesObj.rules.map((item) => {
-            _initRules(item);
+            _initRules(item, this.rulesObj.singleRules, this.rulesObj.pairRules);
         });
-        _getExclueRules(this.rulesObj.rules);
+        this.rulesObj.pairRules.map((rule) => {
+            rule.excludeRules = this.rulesObj.singleRules.filter((item) => {
+                return item.level >= rule.level && item.token != rule.token;
+            });
+        });
 
-        function _initRules(item) {
+        function _initRules(item, singleRules, pairRules) {
             that.ruleUuidMap[item.uuid] = item;
             if (typeof item.name == 'string') {
                 that.ruleNameMap[item.name] = item;
@@ -93,31 +97,24 @@ export default function () {
             }
             if (item.regex && !item.start) {
                 that.singleRules.push(item);
+                singleRules.push(item);
             } else {
-                that.pairRules.push(item);
+                pairRules.push(item);
             };
             if (item.childRule && item.childRule.rules) {
+                singleRules = [];
+                pairRules = [];
+                item.childRule.singleRules = singleRules;
+                item.childRule.pairRules = pairRules;
                 item.childRule.rules.map((_item) => {
-                    _initRules(_item);
+                    _initRules(_item, singleRules, pairRules);
                 });
-                _getExclueRules(item.childRule.rules);
+                pairRules.map((rule) => {
+                    rule.excludeRules = singleRules.filter((item) => {
+                        return item.level >= rule.level && item.token != rule.token;
+                    });
+                });
             }
-        }
-
-        function _getExclueRules(rules) {
-            let pairTokensMap = new Map();
-            let minLevel = Infinity;
-            let pairRules = rules.filter((item) => {
-                return item.start && item.next;
-            });
-            pairRules.map((item) => {
-                minLevel = minLevel > item.level ? item.level : minLevel;
-                item.token && pairTokensMap.set(item.token, true);
-            });
-            rules = rules.filter((item) => {
-                return item.level >= minLevel && !item.start && !pairTokensMap.has(item.token);
-            });
-            that.excludeRules = that.excludeRules.concat(rules);
         }
     }
 
@@ -279,134 +276,93 @@ export default function () {
      * 获取多行匹配的token
      * @param {String} text 
      */
-    Highlight.prototype.getPairTokens = function (text) {
-        let excludeTokens = {};
+    Highlight.prototype.getPairTokens = function (text, pairRules, lastIndex) {
         let pairTokens = [];
         let resultMap = new Map(); //缓存相同的正则
         let result = null;
-        excludeTokens[ENUM.DEFAULT] = [];
-        this.excludeRules.map((rule) => {
-            let key = rule.parentUuid || ENUM.DEFAULT;
-            let token = null;
+        pairRules.map((rule) => {
+            let tokens = null;
+            if (rule.start instanceof RegExp) {
+                let excludeTokens = [];
+                let type = ENUM.PAIR_START;
+                let preExcludeEnd = null;
+                tokens = _exec(rule, rule.start, type);
+                // 去除无效token--start
+                rule.excludeRules.map((rule) => {
+                    let tokens = _exec(rule, rule.regex, 'del');
+                    excludeTokens = excludeTokens.concat(tokens);
+                });
+                excludeTokens = excludeTokens.concat(tokens);
+                excludeTokens.sort((a, b) => {
+                    return a.start - b.start;
+                });
+                excludeTokens.map((item) => {
+                    if (item.type == 'del') {
+                        preExcludeEnd = preExcludeEnd ? (item.end > preExcludeEnd ? item.end : preExcludeEnd) : item.end;
+                    } else if (preExcludeEnd > item.start) {
+                        item.type = 'del';
+                    }
+                });
+                tokens = excludeTokens.filter((item) => {
+                    return item.type != 'del';
+                });
+                // 去除无token--end
+                pairTokens = pairTokens.concat(tokens);
+            }
+            if (rule.next instanceof RegExp) {
+                let type = ENUM.PAIR_END;
+                tokens = _exec(rule, rule.next, type);
+                pairTokens = pairTokens.concat(tokens);
+            }
+        });
+        pairTokens.sort((a, b) => {
+            return a.start - b.start;
+        });
+        return pairTokens;
+
+        function _exec(roleObj, rule, type) {
             let tokens = [];
-            excludeTokens[key] = excludeTokens[key] || [];
-            if (resultMap.has(rule.regex.source)) {
-                tokens = resultMap.get(rule.regex.source);
-                tokens.map((token) => {
-                    token = Object.assign({}, token);
-                    token.uuid = rule.uuid;
-                    token.token = rule.token;
-                    token.level = rule.level;
-                    excludeTokens[key].push(token);
+            let pairToken = null;
+            rule.lastIndex = lastIndex || 0;
+            if (resultMap.has(rule.source)) {
+                let _tokens = resultMap.get(rule.source);
+                _tokens.map((pairToken) => {
+                    pairToken = _copyToken(pairToken, roleObj, type);
+                    tokens.push(pairToken);
                 });
             } else {
-                while (result = rule.regex.exec(text)) {
-                    token = {
-                        uuid: rule.uuid,
-                        token: rule.token,
-                        level: rule.level,
-                        value: result[0],
-                        start: result.index,
-                        end: result.index + result[0].length
-                    };
-                    tokens.push(token);
-                    excludeTokens[key].push(token);
-                    if (!result[0].length || !rule.regex.global) {
+                while (result = rule.exec(text)) {
+                    pairToken = _createToken(roleObj, result, type);
+                    tokens.push(pairToken);
+                    if (!result[0].length || !rule.global) {
                         break;
                     }
                 }
-                resultMap.set(rule.regex.source, tokens);
-                rule.regex.lastIndex = 0;
+                resultMap.set(rule.source, tokens);
+                rule.lastIndex = 0;
             }
-        });
-        this.pairRules.map((rule) => {
-            let isSame = rule.start.source === rule.next.source;
-            if (rule.start instanceof RegExp) {
-                let pairToken = null;
-                let tokens = [];
-                if (resultMap.has(rule.start.source)) {
-                    tokens = resultMap.get(rule.start.source);
-                    tokens.map((pairToken) => {
-                        pairToken = Object.assign({}, pairToken);
-                        pairToken.uuid = rule.uuid;
-                        pairToken.token = rule.token;
-                        pairToken.level = rule.level;
-                        pairToken.type = isSame ? ENUM.PAIR_START_END : ENUM.PAIR_START;
-                        pairTokens.push(pairToken);
-                    });
-                } else {
-                    while (result = rule.start.exec(text)) {
-                        pairToken = {
-                            uuid: rule.uuid,
-                            token: rule.token,
-                            level: rule.level,
-                            value: result[0],
-                            start: result.index,
-                            end: result.index + result[0].length,
-                            type: isSame ? ENUM.PAIR_START_END : ENUM.PAIR_START
-                        };
-                        tokens.push(pairToken);
-                        pairTokens.push(pairToken);
-                        if (!result[0].length || !rule.start.global) {
-                            break;
-                        }
-                    }
-                    resultMap.set(rule.start.source, tokens);
-                    rule.start.lastIndex = 0;
-                }
-            }
-            if (!isSame && rule.next instanceof RegExp) {
-                let pairToken = null;
-                let tokens = [];
-                if (resultMap.has(rule.next.source)) {
-                    tokens = resultMap.get(rule.next.source);
-                    tokens.map((pairToken) => {
-                        pairToken = Object.assign({}, pairToken);
-                        pairToken.uuid = rule.uuid;
-                        pairToken.token = rule.token;
-                        pairToken.level = rule.level;
-                        pairToken.type = isSame ? ENUM.PAIR_START_END : ENUM.PAIR_END;
-                        pairTokens.push(pairToken);
-                    });
-                } else {
-                    while (result = rule.next.exec(text)) {
-                        pairToken = {
-                            uuid: rule.uuid,
-                            token: rule.token,
-                            level: rule.level,
-                            value: result[0],
-                            start: result.index,
-                            end: result.index + result[0].length,
-                            type: isSame ? ENUM.PAIR_START_END : ENUM.PAIR_END
-                        };
-                        tokens.push(pairToken);
-                        pairTokens.push(pairToken);
-                        if (!result[0].length || !rule.next.global) {
-                            break;
-                        }
-                    }
-                    resultMap.set(rule.next.source, tokens);
-                    rule.next.lastIndex = 0;
-                }
-            }
-        });
-        Object.values(excludeTokens).map((item) => {
-            item.sort((a, b) => {
-                if (a.start - b.start == 0) {
-                    return b.level - a.level;
-                }
-                return a.start - b.start;
-            });
-        });
-        pairTokens.sort((a, b) => {
-            if (a.start - b.start == 0) {
-                return b.level - a.level;
-            }
-            return a.start - b.start;
-        });
-        return {
-            excludeTokens: excludeTokens,
-            pairTokens: pairTokens
+            return tokens;
+        }
+
+        function _createToken(rule, result, type) {
+            return {
+                uuid: rule.uuid,
+                token: rule.token,
+                level: rule.level,
+                value: result[0],
+                start: result.index,
+                end: result.index + result[0].length,
+                type: type
+            };
+        }
+
+        function _copyToken(pairToken, rule, type) {
+            pairToken = Object.assign({}, pairToken);
+            pairToken.uuid = rule.uuid;
+            pairToken.token = rule.token;
+            pairToken.level = rule.level;
+            pairToken.type = type;
+            return pairToken;
         }
     }
 
@@ -457,33 +413,27 @@ export default function () {
 
     // 高亮多行匹配
     Highlight.prototype.highlightPairToken = function (max) {
+        let that = this;
         let count = 0;
         let length = this.htmls.length;
         max = max || 5000;
         while (count < max && this.nowPairLine <= length) {
             let lineObj = this.htmls[this.nowPairLine - 1];
-            let pairTokens = null;
-            let excludeTokens = null; // 和多行匹配相同优先级不同类型的单行tokens
-            if (!lineObj.highlight.pairTokens) {
-                let obj = this.getPairTokens(lineObj.text);
-                lineObj.highlight.pairTokens = obj.pairTokens;
-                lineObj.highlight.excludeTokens = obj.excludeTokens;
-            }
-            pairTokens = lineObj.highlight.pairTokens;
-            excludeTokens = lineObj.highlight.excludeTokens;
+            this.pairTokens = [];
             lineObj.highlight.validPairTokens = [];
             lineObj.highlight.rendered = false;
+            lineObj.highlight.pairTokens = lineObj.highlight.pairTokens || {};
             // 记录父节点，用于渲染相应的单行tokens
             lineObj.parentRuleUuid = this.parentTokens.length && this.parentTokens.peek().uuid || null;
             // 已有开始节点，则该行可能被其包裹
             lineObj.ruleUuid = this.startToken && this.startToken.uuid || '';
-            pairTokens = pairTokens.concat([]);
-            while (pairTokens.length) {
+            this.pairTokens = _getPairTokens(lineObj);
+            while (this.pairTokens.length) {
                 let endToken = null;
                 let originToken = null;
                 // 获取开始节点
                 if (!this.startToken) {
-                    this.startToken = this.getNextStartToken(excludeTokens, pairTokens);
+                    this.startToken = this.getNextStartToken();
                     if (this.startToken) {
                         originToken = this.startToken;
                         this.startToken = Object.assign({}, this.startToken);
@@ -491,6 +441,7 @@ export default function () {
                         if (this.parentTokens.length && this.parentTokens.peek().uuid == this.startToken.uuid) { // 找到的是父节点的结束节点
                             endToken = this.startToken;
                             this.startToken = this.parentTokens.pop();
+                            this.pairTokens = _getPairTokens(lineObj, endToken.end);
                         } else {
                             let rule = this.ruleUuidMap[this.startToken.uuid];
                             this.preEndToken = null;
@@ -509,10 +460,10 @@ export default function () {
                         }
                     }
                 }
-                if (!pairTokens.length && !endToken) {
+                if (!this.pairTokens.length && !endToken) {
                     break;
                 }
-                endToken = endToken || pairTokens.shift();
+                endToken = endToken || this.pairTokens.shift();
                 if (this.parentTokens.length) {
                     let parentToken = this.parentTokens.peek();
                     // 父节点的优先级要大于子节点，且endtoken能和父节点匹配，当前的开始节点结束匹配
@@ -572,6 +523,23 @@ export default function () {
         }
         // 更新渲染区域
         this.notify();
+
+        function _getPairTokens(lineObj, lastIndex) {
+            let parentRule = that.parentTokens.length && that.parentTokens.peek().uuid;
+            parentRule = parentRule && that.ruleUuidMapp[parentRule];
+            if (parentRule) {
+                if (!lineObj.highlight.pairTokens[parentRule.uuid]) {
+                    lineObj.highlight.pairTokens[parentRule.uuid] = that.getPairTokens(lineObj.text, [parentRule].concat(parentRule.pairRules), lastIndex);
+                }
+                that.pairTokens = lineObj.highlight.pairTokens[parentRule.uuid];
+            } else {
+                if (!lineObj.highlight.pairTokens[ENUM.DEFAULT]) {
+                    lineObj.highlight.pairTokens[ENUM.DEFAULT] = that.getPairTokens(lineObj.text, that.rulesObj.pairRules, lastIndex);
+                }
+                that.pairTokens = lineObj.highlight.pairTokens[ENUM.DEFAULT];
+            }
+            return that.pairTokens.concat([]);
+        }
     }
 
     // 开始节点和结束节点是否匹配
@@ -596,10 +564,9 @@ export default function () {
     }
 
     // 获取下一个开始节点
-    Highlight.prototype.getNextStartToken = function (excludeTokens, pairTokens) {
-        while (pairTokens.length) {
-            let pass = true;
-            let pairToken = pairTokens.shift();
+    Highlight.prototype.getNextStartToken = function () {
+        while (this.pairTokens.length) {
+            let pairToken = this.pairTokens.shift();
             let rule = this.ruleUuidMap[pairToken.uuid];
             let endRule = this.preEndToken && this.ruleUuidMap[this.preEndToken.uuid];
             // 多行匹配后面紧跟的字节点<script type="text/javascript">子节点</script>
@@ -638,28 +605,7 @@ export default function () {
             ) {
                 continue;
             }
-            let nowExcludeTokens = [];
-            if (this.parentTokens.length) {
-                nowExcludeTokens = excludeTokens[this.parentTokens.peek().uuid] || [];
-            } else {
-                nowExcludeTokens = excludeTokens[ENUM.DEFAULT];
-            }
-            if (this.preEndToken && this.preEndToken.line == this.nowPairLine) {
-                nowExcludeTokens = nowExcludeTokens.filter((item) => {
-                    return item.start >= this.preEndToken.end;
-                });
-            }
-            // 是否与单行匹配冲突
-            for (let i = 0; i < nowExcludeTokens.length; i++) {
-                let token = nowExcludeTokens[i];
-                if (token.start < pairToken.start && token.end > pairToken.start) {
-                    pass = false;
-                    break;
-                }
-            }
-            if (pass) {
-                return pairToken;
-            }
+            return pairToken;
         }
     }
 
