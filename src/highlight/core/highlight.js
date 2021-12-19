@@ -396,8 +396,8 @@ export default function () {
             }
         } else {
             let lineObjs = [];
-            nowLine = this.startPairLine;
-            endLine = this.endPairLine;
+            // nowLine = this.startPairLine;
+            // endLine = this.endPairLine;
             endLine = endLine > this.htmls.length ? this.htmls.length : endLine;
             while (nowLine <= endLine) {
                 let lineObj = this.htmls[nowLine - 1];
@@ -459,7 +459,7 @@ export default function () {
             // 已有开始节点，则该行可能被其包裹
             lineObj.ruleUuid = this.startToken && this.startToken.uuid || '';
             this.pairTokens = _getPairTokens(lineObj);
-            while (this.pairTokens.length) {
+            while (this.tokenIndex < this.pairTokens.length) {
                 let endToken = null;
                 // 获取开始节点
                 if (!this.startToken) {
@@ -489,10 +489,10 @@ export default function () {
                         }
                     }
                 }
-                if (!this.pairTokens.length && !endToken) {
+                if (this.tokenIndex >= this.pairTokens.length && !endToken) {
                     break;
                 }
-                endToken = endToken || this.pairTokens.shift();
+                endToken = endToken || this.pairTokens[this.tokenIndex++];
                 if (this.parentTokens.length) {
                     let parentToken = this.parentTokens.peek();
                     // 父节点的优先级要大于子节点，且endtoken能和父节点匹配，当前的开始节点结束匹配
@@ -579,6 +579,7 @@ export default function () {
                 }
                 that.pairTokens = lineObj.highlight.pairTokens[ENUM.DEFAULT];
             }
+            that.tokenIndex = 0;
             return that.pairTokens.concat([]);
         }
     }
@@ -606,8 +607,8 @@ export default function () {
 
     // 获取下一个开始节点
     Highlight.prototype.getNextStartToken = function () {
-        while (this.pairTokens.length) {
-            let pairToken = this.pairTokens.shift();
+        while (this.tokenIndex < this.pairTokens.length) {
+            let pairToken = this.pairTokens[this.tokenIndex++];
             let rule = this.ruleUuidMap[pairToken.uuid];
             if (this.parentTokens.length) {
                 let parentToken = this.parentTokens.peek();
