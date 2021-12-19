@@ -402,7 +402,7 @@ export default function () {
             while (nowLine <= endLine) {
                 let lineObj = this.htmls[nowLine - 1];
                 if (!lineObj.highlight.rendered && lineObj.highlight.validPairTokens) {
-                    lineObj.highlight.validPairTokens.length && lineObjs.push(lineObj);
+                    lineObjs.push(lineObj);
                     lineObj.highlight.rendered = true;
                 }
                 nowLine++;
@@ -410,12 +410,14 @@ export default function () {
             lineObjs = lineObjs.map((item) => {
                 let validPairTokens = item.highlight.validPairTokens;
                 validPairTokens = validPairTokens.map((item) => {
-                    item = Object.assign({}, item);
-                    delete item.originToken;
-                    delete item.parentTokens;
-                    delete item.startToken;
-                    delete item.endToken;
-                    return item;
+                    return {
+                        uuid: item.uuid,
+                        line: item.line,
+                        type: item.type,
+                        level: item.level,
+                        _start: item._start,
+                        _end: item._end
+                    }
                 });
                 return {
                     uuid: item.uuid,
