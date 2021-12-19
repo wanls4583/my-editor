@@ -270,7 +270,6 @@ export default {
                 data = data.data;
                 switch (type) {
                     case 'buildHtml':
-                        console.log(data)
                         data.lineObjs.map((item) => {
                             let lineObj = this.uuidMap.get(item.uuid);
                             lineObj.ruleUuid = item.ruleUuid;
@@ -409,7 +408,6 @@ export default {
             lineObj && (lineObj.html = html);
             lineObj = this.renderedUuidMap.get(uuid);
             lineObj && (lineObj.html = html);
-            console.log(html);
         },
         // 渲染
         render() {
