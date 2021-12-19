@@ -416,7 +416,12 @@ export default function () {
                         type: item.type,
                         level: item.level,
                         _start: item._start,
-                        _end: item._end
+                        _end: item._end,
+                        parentTokens: item.parentTokens && item.parentTokens.map((item) => {
+                            item = Object.assign({}, item);
+                            delete item.endToken;
+                            return item;
+                        })
                     }
                 });
                 return {
@@ -653,7 +658,7 @@ export default function () {
                     let pairToken = highlight.validPairTokens[highlight.validPairTokens.length - 1];
                     let rule = this.ruleUuidMap[pairToken.uuid];
                     this.parentTokens = (pairToken.parentTokens || []).concat([]);
-                    if (!pairToken.startToken && pairToken.type != ENUM.PAIR_END) {
+                    if (pairToken.type == ENUM.PAIR_START) {
                         this.startToken = pairToken;
                         this.startToken.endToken = null;
                         // 该节点是否有子节点
