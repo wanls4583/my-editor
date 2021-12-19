@@ -410,19 +410,16 @@ export default function () {
             lineObjs = lineObjs.map((item) => {
                 let validPairTokens = item.highlight.validPairTokens;
                 validPairTokens = validPairTokens.map((item) => {
-                    return {
-                        uuid: item.uuid,
-                        line: item.line,
-                        type: item.type,
-                        level: item.level,
-                        _start: item._start,
-                        _end: item._end,
-                        parentTokens: item.parentTokens && item.parentTokens.map((item) => {
-                            item = Object.assign({}, item);
-                            delete item.endToken;
-                            return item;
-                        })
-                    }
+                    item = Object.assign({}, item);
+                    delete item.startToken;
+                    delete item.endToken;
+                    item.parentTokens = item.parentTokens && item.parentTokens.map((item) => {
+                        item = Object.assign({}, item);
+                        delete item.endToken;
+                        delete item.parentTokens;
+                        return item;
+                    });
+                    return item;
                 });
                 return {
                     uuid: item.uuid,
@@ -464,14 +461,11 @@ export default function () {
             this.pairTokens = _getPairTokens(lineObj);
             while (this.pairTokens.length) {
                 let endToken = null;
-                let originToken = null;
                 // 获取开始节点
                 if (!this.startToken) {
                     this.startToken = this.getNextStartToken();
                     if (this.startToken) {
-                        originToken = this.startToken;
                         this.startToken = Object.assign({}, this.startToken);
-                        this.startToken.originToken = originToken;
                         if (this.parentTokens.length && this.parentTokens.peek().uuid == this.startToken.uuid) { // 找到的是父节点的结束节点
                             endToken = this.startToken;
                             this.startToken = this.parentTokens.pop();
@@ -512,9 +506,7 @@ export default function () {
                 }
                 if (this.ifPair(this.startToken, endToken, this.startToken.line, this.nowPairLine)) {
                     let rule = this.ruleUuidMap[endToken.uuid];
-                    originToken = endToken;
                     endToken = Object.assign({}, endToken);
-                    endToken.originToken = originToken;
                     endToken.line = this.nowPairLine;
                     endToken._start = this.ifHasChildRule(rule.uuid) ? endToken.start : 0;
                     endToken._end = endToken.end;
