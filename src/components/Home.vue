@@ -431,6 +431,7 @@ export default {
             // 只更新一行
             if (line) {
                 let obj = this.renderHtmls[line - this.startLine];
+                this.renderedUuidMap.delete(obj.uuid);
                 obj.html = this.htmls[line - 1].html;
                 obj.text = this.htmls[line - 1].text;
                 obj.uuid = this.htmls[line - 1].uuid;
@@ -438,6 +439,7 @@ export default {
                 this.renderedUuidMap.set(uuid, obj);
                 return;
             }
+            this.renderedUuidMap.clear();
             this.renderHtmls = this.htmls.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines);
             this.renderHtmls = this.renderHtmls.map((item, index) => {
                 let num = this.startLine + index;
@@ -608,8 +610,11 @@ export default {
                 deleteText = this.getRangeText(this.selectedRange.start, this.selectedRange.end);
                 if (start.line == 1 && end.line == this.maxLine) { //全选删除
                     rangeUuid = [this.maxWidthObj.uuid];
+                    this.uuidMap.clear();
+                    this.uuidMap.set(startObj.uuid, startObj);
                 } else {
                     rangeUuid = this.htmls.slice(start.line - 1, end.line).map((item) => {
+                        this.uuidMap.delete(item.uuid);
                         return item.uuid;
                     });
                 }
@@ -629,6 +634,7 @@ export default {
             } else if (this.$util.keyCode.DELETE == keyCode) { // 向后删除一个字符
                 if (this.cursorPos.column == text.length) { // 光标处于行尾
                     if (this.cursorPos.line < this.htmls.length) {
+                        this.uuidMap.delete(this.htmls[this.cursorPos.line].uuid);
                         text = startObj.text + this.htmls[this.cursorPos.line].text;
                         this.htmls.splice(this.cursorPos.line, 1);
                         deleteText = '\n';
@@ -643,6 +649,7 @@ export default {
                 if (this.cursorPos.column == 0) { // 光标处于行首
                     if (this.cursorPos.line > 1) {
                         let column = this.htmls[this.cursorPos.line - 2].text.length;
+                        this.uuidMap.delete(this.htmls[this.cursorPos.line - 2].uuid);
                         text = this.htmls[this.cursorPos.line - 2].text + text;
                         this.htmls.splice(this.cursorPos.line - 2, 1);
                         this.setCursorPos(this.cursorPos.line - 1, column);
