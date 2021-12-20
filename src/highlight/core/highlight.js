@@ -111,7 +111,7 @@ export default function () {
                 });
                 pairRules.map((rule) => {
                     rule.excludeRules = singleRules.filter((item) => {
-                        return item.level >= rule.level && item.token != rule.token;
+                        return item.level >= rule.level;
                     });
                 });
             }
@@ -292,21 +292,24 @@ export default function () {
                     let tokens = _exec(rule, rule.regex, 'del');
                     excludeTokens = excludeTokens.concat(tokens);
                 });
-                excludeTokens = excludeTokens.concat(tokens);
-                excludeTokens.sort((a, b) => {
-                    return a.start - b.start;
-                });
-                excludeTokens.map((item) => {
-                    if (item.type == 'del') {
-                        preExcludeEnd = preExcludeEnd ? (item.end > preExcludeEnd ? item.end : preExcludeEnd) : item.end;
-                    } else if (preExcludeEnd > item.start) {
-                        item.type = 'del';
-                    }
-                });
-                tokens = excludeTokens.filter((item) => {
-                    return item.type != 'del';
-                });
-                // 去除无token--end
+                if (excludeTokens.length) {
+                    excludeTokens = excludeTokens.concat(tokens);
+                    excludeTokens.sort((a, b) => {
+                        if (a.start == b.start) {
+                            return b.level - a.level;
+                        }
+                        return a.start - b.start;
+                    });
+                    tokens = [];
+                    excludeTokens.map((item) => {
+                        if (item.type == 'del') {
+                            preExcludeEnd = preExcludeEnd ? (item.end > preExcludeEnd ? item.end : preExcludeEnd) : item.end;
+                        } else if (preExcludeEnd <= item.start) {
+                            tokens.push(item);
+                        }
+                    });
+                }
+                // 去除无效token--end
                 pairTokens = pairTokens.concat(tokens);
             }
             if (rule.next instanceof RegExp) {
@@ -447,7 +450,8 @@ export default function () {
         let count = 0;
         let length = this.htmls.length;
         this.startPairLine = this.nowPairLine;
-        max = max || 5000;
+        let time = Date.now();
+        max = max || 10000;
         while (count < max && this.nowPairLine <= length) {
             let lineObj = this.htmls[this.nowPairLine - 1];
             this.pairTokens = [];
@@ -544,6 +548,7 @@ export default function () {
             this.nowPairLine++;
             count++;
         }
+        // console.log(`worker cost ${Date.now() - time}ms`);
         this.endPairLine = this.nowPairLine;
         if (this.main) {
             if (this.nowPairLine > length) {

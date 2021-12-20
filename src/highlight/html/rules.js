@@ -11,6 +11,14 @@ const attrRules = [{
     token: 'attr-name',
     level: 0
 }, {
+    regex: /(?<=\=\s*?)"[^"]*?"/g,
+    token: 'attr-value',
+    level: 1
+}, {
+    regex: /(?<=\=\s*?)'[^']*?'/g,
+    token: 'attr-value',
+    level: 1
+}, {
     start: /(?<=\=\s*?)"/g,
     next: /"/g,
     token: 'attr-value'
