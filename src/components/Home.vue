@@ -277,8 +277,6 @@ export default {
                             lineObj.highlight.validPairTokens = item.highlight.validPairTokens;
                             this.renderedUuidMap.has(lineObj.uuid) && lineObj.highlight.tokens && this.buildHtml(lineObj);
                         });
-                        this.startToEndToken = data.startToEndToken;
-                        this.highlighter.nowPairLine = data.nowPairLine;
                         break;
                 }
             }
@@ -556,9 +554,6 @@ export default {
                 text[0].html = this.$util.htmlTrans(text[0].text);
                 this.htmls.splice(this.cursorPos.line - 1, 1, text[0]);
             }
-            // 重新计算多行匹配的开始行
-            this.highlighter.nowPairLine = this.highlighter.nowPairLine > nowLine - 1 ? nowLine - 1 : this.highlighter.nowPairLine;
-            this.highlighter.nowPairLine = this.highlighter.nowPairLine || 1;
             newLine += text.length - 1;
             this.maxLine = this.htmls.length;
             this.setLineWidth(text);
@@ -670,9 +665,6 @@ export default {
                 tokens: null,
                 rendered: false
             }
-            // 重新计算多行匹配的开始行
-            this.highlighter.nowPairLine = this.highlighter.nowPairLine > this.cursorPos.line - 1 ? this.cursorPos.line - 1 : this.highlighter.nowPairLine;
-            this.highlighter.nowPairLine = this.highlighter.nowPairLine || 1;
             this.maxLine = this.htmls.length;
             this.clearRnage();
             this.render();

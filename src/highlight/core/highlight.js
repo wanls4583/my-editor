@@ -158,8 +158,11 @@ export default function () {
             text = startObj.text;
             if (start.line == 1 && end.line == this.maxLine) { //全选删除
                 rangeUuid = [this.maxWidthObj.uuid];
+                this.uuidMap.clear();
+                this.uuidMap.set(startObj.uuid, startObj);
             } else {
                 rangeUuid = this.htmls.slice(start.line - 1, end.line).map((item) => {
+                    this.uuidMap.delete(item.uuid);
                     return item.uuid;
                 });
             }
@@ -179,6 +182,7 @@ export default function () {
             if (cursorPos.column == text.length) { // 光标处于行尾
                 if (cursorPos.line < this.htmls.length) {
                     text = startObj.text + this.htmls[cursorPos.line].text;
+                    this.uuidMap.delete(this.htmls[cursorPos.line].uuid);
                     this.htmls.splice(cursorPos.line, 1);
                 }
             } else {
@@ -190,6 +194,7 @@ export default function () {
             if (cursorPos.column == 0) { // 光标处于行首
                 if (cursorPos.line > 1) {
                     text = this.htmls[cursorPos.line - 2].text + text;
+                    this.uuidMap.delete(this.htmls[cursorPos.line - 2].uuid);
                     this.htmls.splice(cursorPos.line - 2, 1);
                 }
             } else {
@@ -373,16 +378,26 @@ export default function () {
     }
 
     // 子线程处理完部分数据，可以开始高亮多行匹配
-    Highlight.prototype.startHighlightPairToken = function (startLine, max) {
+    Highlight.prototype.startHighlightPairToken = function (startLine) {
         this.startLine = startLine;
         this.startToken = null; // 原始开始节点
         this.parentTokens = [];
         this.preEndToken = null;
-        if (this.nowPairLine <= this.htmls.length) {
+        if (this.main) {
+            let nowPairLine = startLine;
+            let endLine = startLine + this.maxVisibleLines;
+            endLine = endLine > this.htmls.length ? this.htmls.length : endLine;
+            // 预先高亮只针对未处理的行
+            while (nowPairLine <= endLine && this.htmls[nowPairLine - 1].highlight.validPairTokens) {
+                nowPairLine++;
+            }
+            if (nowPairLine <= endLine) {
+                this.nowPairLine = this.getStartPairLine();
+                this.highlightPairToken();
+            }
+        } else if (this.nowPairLine <= this.htmls.length) {
             this.nowPairLine = this.getStartPairLine();
-            this.highlightPairToken(max);
-        } else {
-            this.notify();
+            this.highlightPairToken();
         }
     }
 
@@ -390,8 +405,8 @@ export default function () {
     Highlight.prototype.notify = function () {
         let nowLine = this.startLine;
         let endLine = this.startLine + this.maxVisibleLines;
+        endLine = endLine > this.htmls.length ? this.htmls.length : endLine;
         if (this.main) {
-            endLine = endLine > this.htmls.length ? this.htmls.length : endLine;
             while (nowLine <= endLine) {
                 let lineObj = this.htmls[nowLine - 1];
                 this.main.buildHtml(lineObj);
@@ -399,9 +414,6 @@ export default function () {
             }
         } else {
             let lineObjs = [];
-            // nowLine = this.startPairLine;
-            // endLine = this.endPairLine;
-            endLine = endLine > this.htmls.length ? this.htmls.length : endLine;
             while (nowLine <= endLine) {
                 let lineObj = this.htmls[nowLine - 1];
                 if (!lineObj.highlight.rendered && lineObj.highlight.validPairTokens) {
@@ -445,14 +457,14 @@ export default function () {
     }
 
     // 高亮多行匹配
-    Highlight.prototype.highlightPairToken = function (max) {
+    Highlight.prototype.highlightPairToken = function () {
         let that = this;
         let count = 0;
-        let length = this.htmls.length;
+        let length = this.main ? this.startLine + this.maxVisibleLines : this.htmls.length;
+        length = length > this.htmls.length ? this.htmls.length : length;
         this.startPairLine = this.nowPairLine;
-        let time = Date.now();
-        max = max || 10000;
-        while (count < max && this.nowPairLine <= length) {
+        // let time = Date.now();
+        while (count < 20000 && this.nowPairLine <= length) {
             let lineObj = this.htmls[this.nowPairLine - 1];
             this.pairTokens = [];
             lineObj.highlight.validPairTokens = [];
@@ -550,22 +562,11 @@ export default function () {
         }
         // console.log(`worker cost ${Date.now() - time}ms`);
         this.endPairLine = this.nowPairLine;
-        if (this.main) {
-            if (this.nowPairLine > length) {
-                this.main.startToEndToken = this.startToken;
-            } else {
-                this.main.startToEndToken = null;
-            }
-        } else {
-            if (this.nowPairLine > length) {
-                this.startToEndToken = this.startToken;
-            } else {
-                this.startToEndToken = null;
-                clearTimeout(this.highlightPairToken.timer);
-                this.highlightPairToken.timer = setTimeout(() => {
-                    this.highlightPairToken();
-                }, 0);
-            }
+        if (!this.main && this.nowPairLine <= length) {
+            clearTimeout(this.highlightPairToken.timer);
+            this.highlightPairToken.timer = setTimeout(() => {
+                this.highlightPairToken();
+            }, 0);
         }
         // 更新渲染区域
         this.notify();
@@ -645,12 +646,15 @@ export default function () {
 
     // 寻找前面最接近的已处理过的开始行
     Highlight.prototype.getStartPairLine = function () {
+        if (this.main) {
+            this.nowPairLine = this.startLine;
+        }
         if (this.nowPairLine > 1) {
             for (let i = this.nowPairLine - 1; i >= 1; i--) {
                 let highlight = this.htmls[i - 1].highlight;
-                // 子线程数据还未传递到主线程，此时主线程调用失败
+                // 子线程数据还未传递到主线程，此时主线程默认从startLine-1行出开始处理
                 if (!highlight.validPairTokens) {
-                    return this.htmls.length;
+                    return i;
                 }
                 if (highlight.validPairTokens.length) {
                     let pairToken = highlight.validPairTokens[highlight.validPairTokens.length - 1];
