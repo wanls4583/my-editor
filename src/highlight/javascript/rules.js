@@ -1,97 +1,81 @@
+const letter = `[a-zA-Z]+?`;
+const char = `[a-zA-Z0-9]+?`;
+const variable = `[\\$_a-zA-Z][\\$_a-zA-Z0-9]*?`
 export default {
     pairLevel: 3,
     rules: [{
-            regex: /\bwindow\b|\bdocument\b/g,
-            token: 'local-var',
-            level: 0
+            regex: /\bwindow\b|\bdocument\b/,
+            token: 'js-local-var'
         }, {
-            regex: /\bthis\b|\bself\b/g,
-            token: 'this',
-            level: 0
+            regex: /\bthis\b|\bself\b/,
+            token: 'js-this'
         }, {
-            regex: /\+|\-|\*|\/|\=|\!|>|<|\&|\||\?/g,
-            token: 'oprator',
-            level: 0
+            regex: /\+|\-|\*|\/|\=|\!|>|<|\&|\||\?/,
+            token: 'js-oprator'
         }, {
-            regex: /\b\d+\b|\b0[xX][a-zA-Z0-9]*?\b|\bundefined\b|\bnull\b|\btrue\b|\bfalse\b/g,
-            token: 'number',
-            level: 0
+            regex: new RegExp(`\\b\\d+\\b|\\b0[xX][a-zA-Z0-9]*?\\b|\\bundefined\\b|\\bnull\\b|\\btrue\\b|\\bfalse\\b`),
+            token: 'js-number'
         }, {
-            regex: /\bvar\b/g,
-            token: 'type',
-            level: 0
+            regex: /\bvar\b/,
+            token: 'js-type'
         }, {
-            regex: /([\$_a-zA-Z][\$_a-zA-Z0-9]*?)(?=\()/g, //ie. test(),.test()
-            token: 'exec-function',
-            level: 0
+            regex: new RegExp(`(${variable})(?=\\()`), //ie. test(),.test()
+            token: 'js-function-exec'
         }, {
-            regex: /(?<=\s*?class\s*?)[\$_a-zA-Z][\$_a-zA-Z0-9]*?(?=\s*?\{)/g, //ie. calss Test{}
-            token: 'class-name',
-            level: 0
+            regex: new RegExp(`(?<=\\s*?class\\s*?)${variable}(?=\\s*?\\{)`), //ie. calss Test{}
+            token: 'js-class-name'
         }, {
-            regex: /([\$_a-zA-Z][\$_a-zA-Z0-9]*?)\s*?(?=\([^\)]*?\)\s*?\{)/g, //ie. test(){}
-            token: 'function-name',
+            regex: new RegExp(`(${variable})\\s*?(?=\\([^\\)]*?\\)\\s*?\\{)`), //ie. test(){}
+            token: 'js-function-name',
             level: 1
         }, {
-            regex: /(?<=function\s*)[\$_a-zA-Z][\$_a-zA-Z0-9]*?/g, //ie. function test
-            token: 'function-name',
+            regex: new RegExp(`(?<=\\bfunction\\s+?)${variable}`), //ie. function test
+            token: 'js-function-name',
             level: 1
         }, {
-            regex: /(?<=\s*?new\s*?)[\$_a-zA-Z][\$_a-zA-Z0-9]*?(?=\s*?\()/g, //ie. new Test()
-            token: 'new-class',
+            regex: new RegExp(`(?<=\\bnew\\s+?)${variable}(?=\\s*?\\()`), //ie. new Test()
+            token: 'js-new-class',
             level: 1
         }, {
-            regex: /\bconst\b|\bcontinue\b|\bbreak\b|\bswitch\b|\bcase\b|\bdo\b|\belse\b|\bfor\b|\bif\b|\bnew\b|\breturn\b|\bfrom\b|\btypeof|\beach\b|\bin\b|\bimport\b|\bexport\b|\bdefault\b/g,
-            token: 'key',
+            regex: /\bconst\b|\bcontinue\b|\bbreak\b|\bswitch\b|\bcase\b|\bdo\b|\belse\b|\bfor\b|\bif\b|\bnew\b|\breturn\b|\bfrom\b|\btypeof|\beach\b|\bin\b|\bimport\b|\bexport\b|\bdefault\b/,
+            token: 'js-key',
             level: 2
         }, {
-            regex: /\b(class)\b/g, //class {}
-            token: 'class',
+            regex: /\bclass\b/, //class {}
+            token: 'js-class',
             level: 2
         }, {
-            regex: /\bfunction\b/g,
-            token: 'function',
+            regex: /\bfunction\b/,
+            token: 'js-function',
             level: 2
         }, {
-            regex: /\/\/[\s\S]*$/g,
-            token: 'comment',
-            level: 3
-        }, {
-            regex: /`[^`]*`/g,
-            token: 'pair-string',
-            level: 3
-        }, {
-            regex: /'[^']*'/g,
-            token: 'single-quotation-string',
-            level: 3
-        }, {
-            regex: /"[^"]*"/g,
-            token: 'double-quotation-string',
+            regex: /\/\/[\s\S]*$/,
+            token: 'js-comment',
             level: 3
         },
         //多行注释
         {
-            start: /\/\*/g,
-            next: /\*\//g,
-            token: 'pair-comment'
+            start: /\/\*/,
+            next: /\*\//,
+            token: 'js-comment'
         },
         //字符串``
         {
-            start: /`/g,
-            next: /`/g,
-            token: 'pair-string'
+            start: /`/,
+            next: /`/,
+            token: 'js-string'
         },
         //字符串''
         {
-            start: /'/g,
-            next: /'|[^\\]$|^$/g,
-            token: 'single-quotation-string'
+            start: /'/,
+            next: /'|[^\\]$|^$/,
+            token: 'js-string'
         },
         //字符串"""
         {
-            start: /"/g,
-            next: /"|[^\\]$|^$/g,
-            token: 'double-quotation-string'
+            start: /"/,
+            next: /"|[^\\]$|^$/,
+            token: 'js-string'
         }
     ]
 }

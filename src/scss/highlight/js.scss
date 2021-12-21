@@ -1,84 +1,80 @@
 /*关键字*/
-.key {
+.js-key {
     color: #f92672;
 }
 
 /*类型*/
-.type {
+.js-type {
     color: #66d9ef;
 }
 
-.function {
+.js-function {
     color: #66d9ef;
 }
 
-.class {
+.js-class {
     color: #66d9ef;
 }
 
 /*函数执行*/
-.exec-function {
+.js-function-exec {
     color: #66d9ef;
 }
 
 /*new对象*/
-/* .new-class {
+/* .js-new-class {
     color: #66d9ef;
 } */
 /*本地对象*/
-.local-var {
+.js-local-var {
     color: #66d9ef;
 }
 
 /*函数名称*/
-.function-name {
+.js-function-name {
     color: #a6e22e;
 }
 
 /*类名称*/
-.class-name {
+.js-class-name {
     color: #a6e22e;
 }
 
 /*函数参数*/
-.function-arg {
+.js-function-arg {
     color: #fd971f;
 }
 
-.this {
+.js-this {
     color: #fd971f;
 }
 
 /*内置函数*/
-.lib-function {
+.js-function-lib {
     color: #66d9ef;
 }
 
 /*内置变量*/
-.lib-var {
+.js-lib-var {
     color: #66d9ef;
 }
 
 /*操作符号*/
-.oprator {
+.js-oprator {
     color: #f92672;
 }
 
 /*注释*/
-.comment,
-.pair-comment {
+.js-comment {
     color: #75715e;
 }
 
 /*字符串*/
-.string,
-.pair-string,
-.single-quotation-string,
-.double-quotation-string {
+.js-string {
     color: #e6db74;
 }
 
 /*数字*/
-.number {
+.js-number {
     color: #ae81ff;
 }
