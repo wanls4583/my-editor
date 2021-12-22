@@ -92,7 +92,7 @@ export default class {
         let startLine = this.startLine;
         let endLine = this.startLine + this.maxVisibleLines;
         endLine = endLine > this.maxLine ? this.maxLine : endLine;
-        while (this.context.htmls[startLine - 1].tokens) {
+        while (startLine <= endLine && this.context.htmls[startLine - 1].tokens) {
             startLine++;
         }
         this.tokenizeLines(startLine, endLine);
@@ -134,20 +134,19 @@ export default class {
         let tokens = [];
         let match = null;
         let rule = null;
-        let result = null;
         let lastIndex = 0;
         let preEnd = 0;
-        let newStates = [];
         let preStates = line > 1 && this.context.htmls[line - 2].states || [];
         let states = preStates.slice(0);
         let lineObj = this.context.htmls[line - 1];
         let regex = this.getRegex(states.peek());
         while (match = regex.exec(lineObj.text)) {
+            let result = null;
+            let token = null;
             for (let uuid in match.groups) {
                 if (match.groups[uuid] == undefined) {
                     continue;
                 }
-                let token = null;
                 result = match.groups[uuid];
                 uuid = uuid.slice(1);
                 rule = this.ruleUidMap[uuid];
@@ -173,7 +172,7 @@ export default class {
                                     token = tokens.pop();
                                     value = token.value + value;
                                 }
-                                token.value = value;
+                                token.value = value + result;
                             } else { //跨行匹配
                                 tokens.pop()
                                 token.value = lineObj.text.slice(0, match.index + result.length);
@@ -181,15 +180,11 @@ export default class {
                         }
                     } else { //多行token始
                         states.push(uuid);
-                        newStates.push(uuid);
-                        if (!rule.childRule) { //无子节点
-                            token.value = lineObj.text.slice(match.index);
-                        }
                     }
                 }
                 token.type = typeof rule.token == 'function' ? rule.token(token.value) : rule.token;
                 tokens.push(token);
-                preEnd = match.index + token.value.length;
+                preEnd = match.index + result.length;
                 break;
             }
             if (!match[0]) { //考虑/^$/的情况
@@ -206,6 +201,8 @@ export default class {
                 value: lineObj.text,
                 type: typeof rule.token == 'function' ? rule.token(lineObj.text) : rule.token
             });
+        } else if (states.length && preStates.indexOf(states.peek()) == -1) { //最后一个token未匹配到尾节点
+            tokens.peek().value += lineObj.text.slice(preEnd);
         } else if (preEnd < lineObj.text.length) { //普通文本
             tokens.push({
                 value: lineObj.text.slice(preEnd),
@@ -215,7 +212,7 @@ export default class {
         regex.lastIndex = 0;
         return {
             tokens: tokens,
-            states: newStates
+            states: states
         };
     }
     getRegex(uuid) {

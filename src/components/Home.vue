@@ -194,8 +194,8 @@ export default {
         },
     },
     created() {
-        window.test = this;
-        window.htmls = context.htmls;
+        window.editor = this;
+        window.context = context;
         this.initData();
         this.initEvent();
     },
@@ -321,14 +321,13 @@ export default {
                 return;
             }
             this.renderedUidMap.clear();
-            this.renderHtmls = context.htmls.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines);
-            this.renderHtmls = this.renderHtmls.map((item, index) => {
+            this.renderHtmls = context.htmls.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines).map((item, index) => {
                 let num = this.startLine + index;
                 let uuid = item.uuid;
                 item = _getObj(item, num);
                 this.renderedUidMap.set(uuid, item);
                 return item;
-            });
+            });;
             this.nums = this.renderHtmls.map((item) => {
                 return item.num
             });
