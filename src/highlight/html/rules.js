@@ -9,9 +9,12 @@ const attrRules = [{
     token: 'xml-tag-name',
     level: 1
 }, {
+    regex: /(?<=\=)[^\<\>\s\'\"]+\b/g,
+    token: 'xml-attr-value',
+    level: 1
+}, {
     regex: /\b[^'"=\s\>\<]+\b/g,
-    token: 'xml-attr-name',
-    level: 0
+    token: 'xml-attr-name'
 }, {
     start: /(?<=\=\s*?)"/g,
     next: /"/g,
