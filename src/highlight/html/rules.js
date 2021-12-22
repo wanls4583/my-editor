@@ -4,12 +4,29 @@
  * @Description: 
  */
 import JsRules from '../javascript/rules';
+
+const styleRules = [{
+    regex: /(?<=(?:\;|'|")\s*?)[^\<\>\:\;'"]+/,
+    token: 'html-style-name'
+}, {
+    regex: /(?<=\:\s*?)[^\<\>\:\;'"]+/,
+    token: 'html-style-value'
+}, {
+    regex: /(?<=\:(?:\s*?\w+?\s*?){0,})\d+/,
+    token: 'html-style-number',
+    level: 1,
+}, {
+    regex: /(?<=\:\s*?\d+)px\b/,
+    token: 'html-style-px',
+    level: 1
+}];
+
 const attrRules = [{
     regex: /(?<=\<\/?)\w+\b/g,
     token: 'xml-tag-name',
     level: 1
 }, {
-    regex: /(?<=\=)[^\<\>\s\'\"]+\b/g,
+    regex: /(?<=\=)\s*?[^\<\>\s\'\"]+\b/g,
     token: 'xml-attr-value',
     level: 1
 }, {
@@ -23,10 +40,29 @@ const attrRules = [{
     start: /(?<=\=\s*?)'/g,
     next: /'/g,
     token: 'xml-attr-value'
+}, {
+    start: /(?<=style\s*?\=\s*?)'/g,
+    next: /'/g,
+    token: 'xml-attr-value',
+    level: 2,
+    childRule: {
+        rules: styleRules.map((item) => {
+            return Object.assign({}, item);
+        })
+    }
+}, {
+    start: /(?<=style\s*?\=\s*?)"/g,
+    next: /"/g,
+    token: 'xml-attr-value',
+    level: 2,
+    childRule: {
+        rules: styleRules.map((item) => {
+            return Object.assign({}, item);
+        })
+    }
 }];
 
 export default {
-    pairLevel: 1,
     rules: [{
         start: /\<\/?(?=\w+\b)/g,
         next: /\>/g,
@@ -42,7 +78,6 @@ export default {
             }
         },
         childRule: {
-            pairLevel: 1,
             rules: attrRules.map((item) => {
                 return Object.assign({}, item);
             })

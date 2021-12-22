@@ -37,7 +37,7 @@ export default class {
         this.rules.sort((a, b) => {
             return b.level - a.level;
         });
-        this.setCombRegex(this.rules);
+        this.setCombRegex(this.rules, []);
     }
     setRuleUuid(item, pairLevel, parentUuid) {
         // 每个规则生成一个唯一标识
@@ -50,7 +50,7 @@ export default class {
         }
         if (item.childRule && item.childRule.rules) {
             item.childRule.rules.map((_item) => {
-                this.setRuleUuid(_item, item.childRule.pairLevel, item.uuid);
+                this.setRuleUuid(_item, item.childRule.pairLevel || 1, item.uuid);
             });
             item.childRule = item.childRule.rules;
             item.childRule.sort((a, b) => {
@@ -59,11 +59,11 @@ export default class {
         }
     }
     // 组合同一层级的正则表达式
-    setCombRegex(rules, parentRule) {
+    setCombRegex(rules, parentRules) {
         let source = [];
         rules.map((item) => {
             if (item.childRule) {
-                this.setCombRegex(item.childRule, item);
+                this.setCombRegex(item.childRule, [item].concat(parentRules));
             }
             if (item.regex) {
                 source.push(`?<_${item.uuid}>${item.regex.source}`);
@@ -71,13 +71,9 @@ export default class {
                 source.push(`?<_${item.uuid}>${item.start.source}`);
             }
         });
-        if (parentRule) {
-            if (parentRule.level > rules[0].level) {
-                source.unshift(`?<_${parentRule.uuid}>${parentRule.next.source}`);
-            } else {
-                source.push(`?<_${parentRule.uuid}>${parentRule.next.source}`);
-            }
-        }
+        parentRules.map((parentRule) => {
+            source.unshift(`?<_${parentRule.uuid}>${parentRule.next.source}`);
+        });
         rules.regex = new RegExp(`(${source.join(')|(')})`, 'g');
     }
     onInsertContent(line) {
