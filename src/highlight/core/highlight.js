@@ -3,8 +3,8 @@
  * @Date: 2021-12-15 11:39:41
  * @Description: 
  */
-// import rules from '@/highlight/javascript/rules';
-import rules from '@/highlight/html/rules';
+import rules from '@/highlight/javascript/rules';
+// import rules from '@/highlight/html/rules';
 import Util from '@/common/util';
 export default class {
     constructor(editor, context) {
@@ -28,7 +28,7 @@ export default class {
     }
     initRules() {
         let pairLevel = this.rules.pairLevel || 1;
-        this.ruleUuid = 1;
+        this.ruleId = 1;
         this.ruleUidMap = {};
         this.rules.rules.map((item) => {
             this.setRuleUuid(item, pairLevel);
@@ -41,16 +41,16 @@ export default class {
     }
     setRuleUuid(item, pairLevel, parentUuid) {
         // 每个规则生成一个唯一标识
-        item.uuid = this.ruleUuid++;
+        item.ruleId = this.ruleId++;
         item.parentUuid = parentUuid;
-        this.ruleUidMap[item.uuid] = item;
+        this.ruleUidMap[item.ruleId] = item;
         item.level = item.level || 0;
         if (item.start && item.next) {
             item.level = item.level || pairLevel;
         }
         if (item.childRule && item.childRule.rules) {
             item.childRule.rules.map((_item) => {
-                this.setRuleUuid(_item, item.childRule.pairLevel || 1, item.uuid);
+                this.setRuleUuid(_item, item.childRule.pairLevel || 1, item.ruleId);
             });
             item.childRule = item.childRule.rules;
             item.childRule.sort((a, b) => {
@@ -66,13 +66,13 @@ export default class {
                 this.setCombRegex(item.childRule, [item].concat(parentRules));
             }
             if (item.regex) {
-                source.push(`?<_${item.uuid}>${item.regex.source}`);
+                source.push(`?<_${item.ruleId}>${item.regex.source}`);
             } else if (item.start instanceof RegExp) {
-                source.push(`?<_${item.uuid}>${item.start.source}`);
+                source.push(`?<_${item.ruleId}>${item.start.source}`);
             }
         });
         parentRules.map((parentRule) => {
-            source.unshift(`?<_${parentRule.uuid}>${parentRule.next.source}`);
+            source.unshift(`?<_${parentRule.ruleId}>${parentRule.next.source}`);
         });
         rules.regex = new RegExp(`(${source.join(')|(')})`, 'g');
     }
@@ -103,15 +103,15 @@ export default class {
                 let data = this.tokenizeLine(startLine);
                 lineObj.tokens = data.tokens;
                 lineObj.html = data.tokens.map((item) => {
-                    let rule = this.ruleUidMap[item.uuid];
-                    if (typeof rule.value === 'function') {
+                    let rule = this.ruleUidMap[item.ruleId];
+                    if (rule && typeof rule.value === 'function') {
                         return rule.value(item.value);
                     } else {
                         return `<span class="${item.type}">${Util.htmlTrans(item.value)}</span>`;
                     }
                 }).join('');
-                if (this.renderedUidMap.has(lineObj.uuid)) {
-                    this.renderedUidMap.get(lineObj.uuid).html = lineObj.html;
+                if (this.renderedUidMap.has(lineObj.lineId)) {
+                    this.renderedUidMap.get(lineObj.lineId).html = lineObj.html;
                 }
                 if (lineObj.states + '' != data.states + '') {
                     lineObj.states = data.states;
@@ -146,15 +146,15 @@ export default class {
             let result = null;
             let token = null;
             let flag = '';
-            for (let uuid in match.groups) {
-                if (match.groups[uuid] == undefined) {
+            for (let ruleId in match.groups) {
+                if (match.groups[ruleId] == undefined) {
                     continue;
                 }
-                result = match.groups[uuid];
-                uuid = uuid.slice(1);
-                rule = this.ruleUidMap[uuid];
+                result = match.groups[ruleId];
+                ruleId = ruleId.slice(1);
+                rule = this.ruleUidMap[ruleId];
                 token = {
-                    uuid: rule.uuid,
+                    ruleId: rule.ruleId,
                     value: result
                 };
                 if (preEnd < match.index) { //普通文本
@@ -165,7 +165,7 @@ export default class {
                 }
                 if (rule.next) { //多行token被匹配
                     let state = states.peek();
-                    if (state == uuid) { //多行token尾
+                    if (state == ruleId) { //多行token尾
                         states.pop();
                         if (!rule.childRule) { //无子节点
                             if (preStates.indexOf(state) == -1) { //在同一行匹配
@@ -184,7 +184,7 @@ export default class {
                         }
                         flag = 'end';
                     } else { //多行token始
-                        states.push(uuid);
+                        states.push(ruleId);
                         flag = 'start';
                     }
                 }
@@ -221,14 +221,14 @@ export default class {
             states: states
         };
     }
-    getRegex(uuid) {
+    getRegex(ruleId) {
         let regex = null;
-        if (uuid) {
-            let rule = this.ruleUidMap[uuid];
+        if (ruleId) {
+            let rule = this.ruleUidMap[ruleId];
             if (rule.childRule) {
                 regex = rule.childRule.regex;
             } else {
-                regex = new RegExp(`(?<_${rule.uuid}>${rule.next.source})`, 'g');
+                regex = new RegExp(`(?<_${rule.ruleId}>${rule.next.source})`, 'g');
             }
         } else {
             regex = this.rules.regex;

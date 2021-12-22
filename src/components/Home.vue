@@ -106,7 +106,7 @@ export default {
             scrollerArea: {},
             selectedRange: null,
             maxWidthObj: {
-                uuid: null,
+                lineId: null,
                 width: 0
             }
         }
@@ -216,18 +216,18 @@ export default {
             this.space = this.$util.space(this.tabSize);
             this.history = []; // 操作历史
             this.ruleUuid = 1;
-            this.uuid = Number.MIN_SAFE_INTEGER;
+            this.lineId = Number.MIN_SAFE_INTEGER;
             this.uuidMap = new Map(); // htmls的唯一标识对象
             this.renderedUidMap = new Map(); // renderHtmls的唯一标识对象
             context.htmls = [{
-                uuid: this.uuid++,
+                lineId: this.lineId++,
                 text: '',
                 html: '',
                 width: 0,
                 tokens: null,
                 states: null
             }];
-            this.uuidMap.set(context.htmls[0].uuid, context.htmls[0]);
+            this.uuidMap.set(context.htmls[0].lineId, context.htmls[0]);
             this.highlighter = new Highlight(this, context);
         },
         // 初始化文档事件
@@ -252,15 +252,15 @@ export default {
         },
         setRuleUuid(item, pairLevel, parentUuid) {
             // 每个规则生成一个唯一标识
-            item.uuid = this.ruleUuid++;
+            item.lineId = this.ruleUuid++;
             item.parentUuid = parentUuid;
-            this.ruleUuidMap[item.uuid] = item;
+            this.ruleUuidMap[item.lineId] = item;
             if (item.start && item.next) {
                 item.level = item.level || pairLevel;
             }
             if (item.childRule && item.childRule.rules) {
                 item.childRule.rules.map((_item) => {
-                    this.setRuleUuid(_item, item.childRule.pairLevel, item.uuid);
+                    this.setRuleUuid(_item, item.childRule.pairLevel, item.lineId);
                 });
             }
             item = Object.assign({}, item);
@@ -312,20 +312,20 @@ export default {
             // 只更新一行
             if (line) {
                 let obj = this.renderHtmls[line - this.startLine];
-                this.renderedUidMap.delete(obj.uuid);
+                this.renderedUidMap.delete(obj.lineId);
                 obj.html = context.htmls[line - 1].html;
                 obj.text = context.htmls[line - 1].text;
-                obj.uuid = context.htmls[line - 1].uuid;
+                obj.lineId = context.htmls[line - 1].lineId;
                 Object.assign(obj, _getObj(obj, line));
-                this.renderedUidMap.set(uuid, obj);
+                this.renderedUidMap.set(lineId, obj);
                 return;
             }
             this.renderedUidMap.clear();
             this.renderHtmls = context.htmls.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines).map((item, index) => {
                 let num = this.startLine + index;
-                let uuid = item.uuid;
+                let lineId = item.lineId;
                 item = _getObj(item, num);
-                this.renderedUidMap.set(uuid, item);
+                this.renderedUidMap.set(lineId, item);
                 return item;
             });;
             this.nums = this.renderHtmls.map((item) => {
@@ -402,14 +402,14 @@ export default {
             text = text.split(/\r\n|\n/);
             text = text.map((item) => {
                 item = {
-                    uuid: this.uuid++,
+                    lineId: this.lineId++,
                     text: item,
                     html: this.$util.htmlTrans(item),
                     width: 0,
                     tokens: null,
                     states: null
                 };
-                this.uuidMap.set(item.uuid, item);
+                this.uuidMap.set(item.lineId, item);
                 return item;
             });
             if (text.length > 1) { // 插入多行
@@ -468,13 +468,13 @@ export default {
                 text = startObj.text;
                 deleteText = this.getRangeText(this.selectedRange.start, this.selectedRange.end);
                 if (start.line == 1 && end.line == this.maxLine) { //全选删除
-                    rangeUuid = [this.maxWidthObj.uuid];
+                    rangeUuid = [this.maxWidthObj.lineId];
                     this.uuidMap.clear();
-                    this.uuidMap.set(startObj.uuid, startObj);
+                    this.uuidMap.set(startObj.lineId, startObj);
                 } else {
                     rangeUuid = context.htmls.slice(start.line - 1, end.line).map((item) => {
-                        this.uuidMap.delete(item.uuid);
-                        return item.uuid;
+                        this.uuidMap.delete(item.lineId);
+                        return item.lineId;
                     });
                 }
                 if (start.line == end.line) { // 单行选中
@@ -493,7 +493,7 @@ export default {
             } else if (this.$util.keyCode.DELETE == keyCode) { // 向后删除一个字符
                 if (this.cursorPos.column == text.length) { // 光标处于行尾
                     if (this.cursorPos.line < context.htmls.length) {
-                        this.uuidMap.delete(context.htmls[this.cursorPos.line].uuid);
+                        this.uuidMap.delete(context.htmls[this.cursorPos.line].lineId);
                         text = startObj.text + context.htmls[this.cursorPos.line].text;
                         context.htmls.splice(this.cursorPos.line, 1);
                         deleteText = '\n';
@@ -508,7 +508,7 @@ export default {
                 if (this.cursorPos.column == 0) { // 光标处于行首
                     if (this.cursorPos.line > 1) {
                         let column = context.htmls[this.cursorPos.line - 2].text.length;
-                        this.uuidMap.delete(context.htmls[this.cursorPos.line - 2].uuid);
+                        this.uuidMap.delete(context.htmls[this.cursorPos.line - 2].lineId);
                         text = context.htmls[this.cursorPos.line - 2].text + text;
                         context.htmls.splice(this.cursorPos.line - 2, 1);
                         this.setCursorPos(this.cursorPos.line - 1, column);
@@ -533,10 +533,10 @@ export default {
             // 更新最大文本宽度
             if (startObj.width >= this.maxWidthObj.width) {
                 this.maxWidthObj = {
-                    uuid: startObj.uuid,
+                    lineId: startObj.lineId,
                     width: startObj.width
                 }
-            } else if (rangeUuid.indexOf(this.maxWidthObj.uuid) > -1) {
+            } else if (rangeUuid.indexOf(this.maxWidthObj.lineId) > -1) {
                 this.setMaxWidth();
             }
             let historyObj = {
@@ -647,14 +647,14 @@ export default {
                 let count = 0;
                 while (count < 10000 && index < texts.length) {
                     let lineObj = texts[index];
-                    if (that.uuidMap.has(lineObj.uuid)) {
+                    if (that.uuidMap.has(lineObj.lineId)) {
                         let width = that.getStrWidth(lineObj.text);
                         // 增加2像素，给光标预留位置
                         width += 2;
                         lineObj.width = width;
                         if (width > that.maxWidthObj.width) {
                             that.maxWidthObj = {
-                                uuid: lineObj.uuid,
+                                lineId: lineObj.lineId,
                                 width: width
                             }
                         }
