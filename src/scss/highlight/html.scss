@@ -1,32 +1,22 @@
-.start-tag,
-.end-tag {
+.xml-tag-name {
     color: #f92672;
 }
 
-.start-tag-arrow {
-
-    &-l,
-    &r {
-        color: #ffffff;
-    }
+.xml-tag-open,
+.xml-end-tag-open,
+.xml-tag-close {
+    color: #ffffff;
 }
 
-.end-tag-arrow {
 
-    &-l,
-    &r {
-        color: #ffffff;
-    }
-}
-
-.attr-name {
+.xml-attr-name {
     color: #a6e22e;
 }
 
-.attr-value {
+.xml-attr-value {
     color: #e6db74;
 }
 
-.comment-tag {
+.xml-comment {
     color: #75715e;
 }

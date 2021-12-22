@@ -3,7 +3,8 @@
  * @Date: 2021-12-15 11:39:41
  * @Description: 
  */
-import rules from '@/highlight/javascript/rules';
+// import rules from '@/highlight/javascript/rules';
+import rules from '@/highlight/html/rules';
 import Util from '@/common/util';
 export default class {
     constructor(editor, context) {
@@ -143,6 +144,7 @@ export default class {
         while (match = regex.exec(lineObj.text)) {
             let result = null;
             let token = null;
+            let flag = '';
             for (let uuid in match.groups) {
                 if (match.groups[uuid] == undefined) {
                     continue;
@@ -178,11 +180,13 @@ export default class {
                                 token.value = lineObj.text.slice(0, match.index + result.length);
                             }
                         }
+                        flag = 'end';
                     } else { //多行token始
                         states.push(uuid);
+                        flag = 'start';
                     }
                 }
-                token.type = typeof rule.token == 'function' ? rule.token(token.value) : rule.token;
+                token.type = typeof rule.token == 'function' ? rule.token(token.value, flag) : rule.token;
                 tokens.push(token);
                 preEnd = match.index + result.length;
                 break;

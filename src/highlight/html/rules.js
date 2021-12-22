@@ -4,51 +4,38 @@
  * @Description: 
  */
 import JsRules from '../javascript/rules';
-import Util from '@/common/util';
-
 const attrRules = [{
+    regex: /(?<=\<\/?)\w+\b/g,
+    token: 'xml-tag-name',
+    level: 1
+}, {
     regex: /\b[^'"=\s\>\<]+\b/g,
-    token: 'attr-name',
+    token: 'xml-attr-name',
     level: 0
-}, {
-    regex: /(?<=\=\s*?)"[^"]*?"/g,
-    token: 'attr-value',
-    level: 1
-}, {
-    regex: /(?<=\=\s*?)'[^']*?'/g,
-    token: 'attr-value',
-    level: 1
 }, {
     start: /(?<=\=\s*?)"/g,
     next: /"/g,
-    token: 'attr-value'
+    token: 'xml-attr-value'
 }, {
     start: /(?<=\=\s*?)'/g,
     next: /'/g,
-    token: 'attr-value'
+    token: 'xml-attr-value'
 }];
 
 export default {
     pairLevel: 1,
     rules: [{
-        regex: /\<\/\w+\s*?\>/g, //</div></span>...
-        token: function (token, text) {
-            return `<span class="end-tag-arrow-l">&lt;/</span>` +
-                `<span class="end-tag">${text.slice(2, -1)}</span>` +
-                `<span class="end-tag-arrow-r">&gt;</span>`;
-        },
-        level: 0
-    }, {
-        start: /\<\w+\b|\<\!DOCTYPE\b/g,
+        start: /\<\/?(?=\w+\b)/g,
         next: /\>/g,
-        token: function (token, text) {
-            if (token) {
-                if (token.type == Util.constData.PAIR_START) {
-                    return `<span class="start-tag-arrow-l">&lt;</span>` +
-                        `<span class="start-tag">${text.slice(1)}</span>`;
+        token: function (value, state) {
+            if (state == 'start') {
+                if (value[1] == '/') {
+                    return 'xml-end-tag-open';
                 } else {
-                    return `<span class="start-tag-arrow-r">&gt;</span>`;
+                    return 'xml-tag-open';
                 }
+            } else {
+                return 'xml-tag-close';
             }
         },
         childRule: {
@@ -58,42 +45,8 @@ export default {
             })
         }
     }, {
-        level: 2,
-        name: 'script',
-        start: /\<script\b/g,
-        next: /\>/g,
-        token: function (token, text) {
-            if (token) {
-                if (token.type == Util.constData.PAIR_START) {
-                    return `<span class="start-tag-arrow-l">&lt;</span>` +
-                        `<span class="start-tag">script</span>`;
-                } else {
-                    return `<span class="start-tag-arrow-r">&gt;</span>`;
-                }
-            }
-        },
-        childRule: {
-            pairLevel: 2,
-            rules: attrRules.map((item) => {
-                return Object.assign({}, item);
-            })
-        }
-    }, {
-        level: 4,
-        start: 'script',
-        next: /\<\/script\s*?\>/,
-        token: function (token, text) {
-            if (token && token.type == Util.constData.PAIR_END) {
-                return `<span class="end-tag-arrow-l">&lt;/</span>` +
-                    `<span class="end-tag">${text.slice(2, -1)}</span>` +
-                    `<span class="end-tag-arrow-r">&gt;</span>`;
-            }
-            return '';
-        },
-        childRule: JsRules
-    }, {
         start: /\<\!\-\-/g,
         next: /\-\-\>/g,
-        token: 'comment-tag'
+        token: 'xml-comment'
     }]
 }
