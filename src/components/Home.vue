@@ -15,7 +15,7 @@
 				<div :style="{top: _top, minWidth: _contentMinWidth}" @selectend.prevent="onSelectend" class="my-editor-content" ref="content">
 					<div :class="{active: cursorPos.line == line.num}" :key="line.num" class="my-editor-line" v-for="line in renderHtmls">
 						<!-- my-editor-bg-color为选中的背景颜色 -->
-						<div :class="[line.selected ? 'my-editor-bg-color' : '',_startToken(line.num)]" class="my-editor-code" v-html="line.html"></div>
+						<div :class="[line.selected ? 'my-editor-bg-color' : '']" class="my-editor-code" v-html="line.html"></div>
 						<!-- 选中时的首行背景 -->
 						<div
 							:style="{left: selectedRange.start.left + 'px', width: selectedRange.start.width + 'px'}"
@@ -68,6 +68,9 @@
 <script>
 import Highlight from '@/highlight/core/highlight';
 import StatusBar from './StatusBar';
+const context = {
+    htmls: []
+}
 export default {
     name: 'Home',
     components: {
@@ -189,17 +192,10 @@ export default {
                 return (tab - 1) * this.tabSize * this.charObj.charWidth + 'px';
             }
         },
-        _startToken() {
-            return (line) => {
-                if (this.startToEndToken && this.startToEndToken.line < line) {
-                    return this.startToEndToken.token;
-                }
-                return '';
-            }
-        }
     },
     created() {
         window.test = this;
+        window.htmls = context.htmls;
         this.initData();
         this.initEvent();
     },
@@ -222,16 +218,17 @@ export default {
             this.ruleUuid = 1;
             this.uuid = Number.MIN_SAFE_INTEGER;
             this.uuidMap = new Map(); // htmls的唯一标识对象
-            this.renderedUuidMap = new Map(); // renderHtmls的唯一标识对象
-            this.htmls = [{
+            this.renderedUidMap = new Map(); // renderHtmls的唯一标识对象
+            context.htmls = [{
                 uuid: this.uuid++,
                 text: '',
                 html: '',
                 width: 0,
-                tokens: null
+                tokens: null,
+                states: null
             }];
-            this.uuidMap.set(this.htmls[0].uuid, this.htmls[0]);
-            this.highlighter = new Highlight(this);
+            this.uuidMap.set(context.htmls[0].uuid, context.htmls[0]);
+            this.highlighter = new Highlight(this, context);
         },
         // 初始化文档事件
         initEvent() {
@@ -315,21 +312,21 @@ export default {
             // 只更新一行
             if (line) {
                 let obj = this.renderHtmls[line - this.startLine];
-                this.renderedUuidMap.delete(obj.uuid);
-                obj.html = this.htmls[line - 1].html;
-                obj.text = this.htmls[line - 1].text;
-                obj.uuid = this.htmls[line - 1].uuid;
+                this.renderedUidMap.delete(obj.uuid);
+                obj.html = context.htmls[line - 1].html;
+                obj.text = context.htmls[line - 1].text;
+                obj.uuid = context.htmls[line - 1].uuid;
                 Object.assign(obj, _getObj(obj, line));
-                this.renderedUuidMap.set(uuid, obj);
+                this.renderedUidMap.set(uuid, obj);
                 return;
             }
-            this.renderedUuidMap.clear();
-            this.renderHtmls = this.htmls.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines);
+            this.renderedUidMap.clear();
+            this.renderHtmls = context.htmls.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines);
             this.renderHtmls = this.renderHtmls.map((item, index) => {
                 let num = this.startLine + index;
                 let uuid = item.uuid;
                 item = _getObj(item, num);
-                this.renderedUuidMap.set(uuid, item);
+                this.renderedUidMap.set(uuid, item);
                 return item;
             });
             this.nums = this.renderHtmls.map((item) => {
@@ -345,7 +342,6 @@ export default {
                 }
                 return {
                     html: item.html,
-                    text: item.text,
                     num: num,
                     tabNum: tabNum,
                     selected: selected,
@@ -369,14 +365,14 @@ export default {
                 this.clearRnage();
                 return;
             }
-            let text = this.htmls[start.line - 1].text;
+            let text = context.htmls[start.line - 1].text;
             start.left = this.getStrWidth(text, 0, start.column);
             if (start.line == end.line) {
                 start.width = this.getStrWidth(text, start.column, end.column);
             } else {
                 start.width = this.getStrWidth(text, start.column);
                 end.left = 0;
-                text = this.htmls[end.line - 1].text;
+                text = context.htmls[end.line - 1].text;
                 end.width = this.getStrWidth(text, 0, end.column);
                 this.renderHtmls.map((item) => {
                     item.selected = item.num > start.line && item.num < end.line;
@@ -398,7 +394,7 @@ export default {
             if (this.selectedRange) {
                 this.deleteContent();
             }
-            let nowLineText = this.htmls[this.cursorPos.line - 1].text;
+            let nowLineText = context.htmls[this.cursorPos.line - 1].text;
             let nowColume = this.cursorPos.column;
             let nowLine = this.cursorPos.line;
             let newLine = nowLine;
@@ -411,7 +407,8 @@ export default {
                     text: item,
                     html: this.$util.htmlTrans(item),
                     width: 0,
-                    tokens: null
+                    tokens: null,
+                    states: null
                 };
                 this.uuidMap.set(item.uuid, item);
                 return item;
@@ -422,15 +419,16 @@ export default {
                 text[0].html = this.$util.htmlTrans(text[0].text);
                 text[text.length - 1].text = text[text.length - 1].text + nowLineText.slice(nowColume);
                 text[text.length - 1].html = this.$util.htmlTrans(text[text.length - 1].text);
-                this.htmls = this.htmls.slice(0, this.cursorPos.line - 1).concat(text).concat(this.htmls.slice(this.cursorPos.line));
+                context.htmls = context.htmls.slice(0, this.cursorPos.line - 1).concat(text).concat(context.htmls.slice(this.cursorPos.line));
             } else { // 插入一行
                 newColume += text[0].text.length;
                 text[0].text = nowLineText.slice(0, nowColume) + text[0].text + nowLineText.slice(this.cursorPos.column);
                 text[0].html = this.$util.htmlTrans(text[0].text);
-                this.htmls.splice(this.cursorPos.line - 1, 1, text[0]);
+                context.htmls.splice(this.cursorPos.line - 1, 1, text[0]);
             }
             newLine += text.length - 1;
-            this.maxLine = this.htmls.length;
+            this.maxLine = context.htmls.length;
+            this.highlighter.onInsertContent(nowLine);
             this.setLineWidth(text);
             this.render();
             this.$nextTick(() => {
@@ -456,7 +454,7 @@ export default {
         // 删除内容
         deleteContent(keyCode, isDoCommand) {
             let start = null;
-            let startObj = this.htmls[this.cursorPos.line - 1];
+            let startObj = context.htmls[this.cursorPos.line - 1];
             let text = startObj.text;
             let ifOneLine = false; // 是否只需更新一行
             let originPos = { line: this.cursorPos.line, column: this.cursorPos.column };
@@ -464,9 +462,9 @@ export default {
             let rangeUuid = [];
             if (this.selectedRange) { // 删除选中区域
                 let end = this.selectedRange.end;
-                let endObj = this.htmls[end.line - 1];
+                let endObj = context.htmls[end.line - 1];
                 start = this.selectedRange.start;
-                startObj = this.htmls[start.line - 1];
+                startObj = context.htmls[start.line - 1];
                 originPos = { line: end.line, column: end.column };
                 text = startObj.text;
                 deleteText = this.getRangeText(this.selectedRange.start, this.selectedRange.end);
@@ -475,7 +473,7 @@ export default {
                     this.uuidMap.clear();
                     this.uuidMap.set(startObj.uuid, startObj);
                 } else {
-                    rangeUuid = this.htmls.slice(start.line - 1, end.line).map((item) => {
+                    rangeUuid = context.htmls.slice(start.line - 1, end.line).map((item) => {
                         this.uuidMap.delete(item.uuid);
                         return item.uuid;
                     });
@@ -490,15 +488,15 @@ export default {
                     text = endObj.text;
                     text = text.slice(end.column);
                     startObj.text += text;
-                    this.htmls.splice(start.line, end.line - start.line);
+                    context.htmls.splice(start.line, end.line - start.line);
                 }
                 this.setCursorPos(start.line, start.column);
             } else if (this.$util.keyCode.DELETE == keyCode) { // 向后删除一个字符
                 if (this.cursorPos.column == text.length) { // 光标处于行尾
-                    if (this.cursorPos.line < this.htmls.length) {
-                        this.uuidMap.delete(this.htmls[this.cursorPos.line].uuid);
-                        text = startObj.text + this.htmls[this.cursorPos.line].text;
-                        this.htmls.splice(this.cursorPos.line, 1);
+                    if (this.cursorPos.line < context.htmls.length) {
+                        this.uuidMap.delete(context.htmls[this.cursorPos.line].uuid);
+                        text = startObj.text + context.htmls[this.cursorPos.line].text;
+                        context.htmls.splice(this.cursorPos.line, 1);
                         deleteText = '\n';
                     }
                 } else {
@@ -510,10 +508,10 @@ export default {
             } else { // 向前删除一个字符
                 if (this.cursorPos.column == 0) { // 光标处于行首
                     if (this.cursorPos.line > 1) {
-                        let column = this.htmls[this.cursorPos.line - 2].text.length;
-                        this.uuidMap.delete(this.htmls[this.cursorPos.line - 2].uuid);
-                        text = this.htmls[this.cursorPos.line - 2].text + text;
-                        this.htmls.splice(this.cursorPos.line - 2, 1);
+                        let column = context.htmls[this.cursorPos.line - 2].text.length;
+                        this.uuidMap.delete(context.htmls[this.cursorPos.line - 2].uuid);
+                        text = context.htmls[this.cursorPos.line - 2].text + text;
+                        context.htmls.splice(this.cursorPos.line - 2, 1);
                         this.setCursorPos(this.cursorPos.line - 1, column);
                         deleteText = '\n';
                     }
@@ -528,7 +526,9 @@ export default {
             startObj.html = this.$util.htmlTrans(startObj.text);
             startObj.width = this.getStrWidth(startObj.text);
             startObj.tokens = null;
-            this.maxLine = this.htmls.length;
+            startObj.states = null;
+            this.maxLine = context.htmls.length;
+            this.highlighter.onDeleteContent(this.cursorPos.line);
             this.clearRnage();
             this.render();
             // 更新最大文本宽度
@@ -628,7 +628,7 @@ export default {
         // 获取最大宽度
         setMaxWidth() {
             let maxWidthObj = { line: 1, width: 0 };
-            this.htmls.map((item, index) => {
+            context.htmls.map((item, index) => {
                 if (item.width > maxWidthObj.width) {
                     maxWidthObj = {
                         line: index + 1,
@@ -676,7 +676,7 @@ export default {
         },
         // 获取行对应的文本在浏览器中的宽度
         getStrWidthByLine(line, start, end) {
-            return this.getStrWidth(this.htmls[line - 1].text, start, end);
+            return this.getStrWidth(context.htmls[line - 1].text, start, end);
         },
         // 根据文本宽度计算当前列号
         getColumnByWidth(text, offsetX) {
@@ -708,11 +708,11 @@ export default {
             let clientX = e.clientX < 0 ? 0 : e.clientX;
             let clientY = e.clientY < 0 ? 0 : e.clientY;
             let line = Math.ceil((clientY + this.scrollTop - offset.top) / this.charObj.charHight) || 1;
-            if (line > this.htmls.length) {
-                line = this.htmls.length;
-                column = this.htmls[line - 1].text.length;
+            if (line > context.htmls.length) {
+                line = context.htmls.length;
+                column = context.htmls[line - 1].text.length;
             } else {
-                column = this.getColumnByWidth(this.htmls[line - 1].text, clientX + this.scrollLeft - offset.left);
+                column = this.getColumnByWidth(context.htmls[line - 1].text, clientX + this.scrollLeft - offset.left);
             }
             return {
                 line: line,
@@ -721,16 +721,16 @@ export default {
         },
         // 获取选中范围内的文本
         getRangeText(start, end) {
-            var text = this.htmls[start.line - 1].text;
+            var text = context.htmls[start.line - 1].text;
             if (start.line != end.line) {
                 let arr = [];
                 text = text.slice(start.column);
-                arr = this.htmls.slice(start.line, end.line - 1);
+                arr = context.htmls.slice(start.line, end.line - 1);
                 arr = arr.map((item) => {
                     return item.text;
                 });
                 text += arr.length ? '\n' + arr.join('\n') : '';
-                text += '\n' + this.htmls[end.line - 1].text.slice(0, end.column);
+                text += '\n' + context.htmls[end.line - 1].text.slice(0, end.column);
             } else {
                 text = text.slice(start.column, end.column);
             }
@@ -799,8 +799,8 @@ export default {
                             column = originColumn + column;
                             break;
                     }
-                    line = line < 1 ? 1 : (line > that.htmls.length ? that.htmls.length : line);
-                    column = column < 0 ? 0 : (column > that.htmls[originLine - 1].text.length ? that.htmls[originLine - 1].text.length : column);
+                    line = line < 1 ? 1 : (line > context.htmls.length ? context.htmls.length : line);
+                    column = column < 0 ? 0 : (column > context.htmls[originLine - 1].text.length ? context.htmls[originLine - 1].text.length : column);
                     that.setCursorPos(line, column);
                     that.selectedRange = {
                         start: Object.assign(that.mouseStartObj.start),
@@ -852,6 +852,7 @@ export default {
             this.startLine++;
             this.top = -this.scrollTop % this.charObj.charHight;
             this.forceCursorView = false;
+            this.highlighter.onScroll();
             this.render();
         },
         // 滚动滚轮
@@ -925,8 +926,8 @@ export default {
                                 column: 0
                             },
                             end: {
-                                line: this.htmls.length,
-                                column: this.htmls[this.htmls.length - 1].text.length
+                                line: context.htmls.length,
+                                column: context.htmls[context.htmls.length - 1].text.length
                             }
                         }
                         this.renderSelectedBg(false);
@@ -952,34 +953,34 @@ export default {
                         if (this.cursorPos.column > 0) {
                             this.setCursorPos(this.cursorPos.line, this.cursorPos.column - 1);
                         } else if (this.cursorPos.line > 1) {
-                            this.setCursorPos(this.cursorPos.line - 1, this.htmls[this.cursorPos.line - 2].text.length);
+                            this.setCursorPos(this.cursorPos.line - 1, context.htmls[this.cursorPos.line - 2].text.length);
                         }
                         this.clearRnage();
                         break;
                     case 38: //up arrow
                         if (this.cursorPos.line > 1) {
-                            let text = this.htmls[this.cursorPos.line - 1].text;
+                            let text = context.htmls[this.cursorPos.line - 1].text;
                             let width = this.getStrWidth(text, 0, this.cursorPos.column);
-                            text = this.htmls[this.cursorPos.line - 2].text;
+                            text = context.htmls[this.cursorPos.line - 2].text;
                             let column = this.getColumnByWidth(text, width);
                             this.setCursorPos(this.cursorPos.line - 1, column);
                         }
                         this.clearRnage();
                         break;
                     case 39: //right arrow
-                        let text = this.htmls[this.cursorPos.line - 1].text;
+                        let text = context.htmls[this.cursorPos.line - 1].text;
                         if (this.cursorPos.column < text.length) {
                             this.setCursorPos(this.cursorPos.line, this.cursorPos.column + 1);
-                        } else if (this.cursorPos.line < this.htmls.length) {
+                        } else if (this.cursorPos.line < context.htmls.length) {
                             this.setCursorPos(this.cursorPos.line + 1, 0);
                         }
                         this.clearRnage();
                         break;
                     case 40: //down arrow
-                        if (this.cursorPos.line < this.htmls.length) {
-                            let text = this.htmls[this.cursorPos.line - 1].text;
+                        if (this.cursorPos.line < context.htmls.length) {
+                            let text = context.htmls[this.cursorPos.line - 1].text;
                             let width = this.getStrWidth(text, 0, this.cursorPos.column);
-                            text = this.htmls[this.cursorPos.line].text;
+                            text = context.htmls[this.cursorPos.line].text;
                             let column = this.getColumnByWidth(text, width);
                             this.setCursorPos(this.cursorPos.line + 1, column);
                         }

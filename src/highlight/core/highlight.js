@@ -4,20 +4,22 @@
  * @Description: 
  */
 import rules from '@/highlight/javascript/rules';
+import Util from '@/common/util';
 export default class {
-    constructor(editor) {
+    constructor(editor, context) {
         this.editor = editor;
+        this.context = context;
         this.rules = rules;
         this.initProperties(editor);
         this.initRules();
     }
-    initProperties(context) {
-        let properties = ['htmls', 'startLine', 'maxVisibleLines', 'maxLine'];
+    initProperties(editor) {
+        let properties = ['startLine', 'maxVisibleLines', 'maxLine', 'renderedUidMap'];
         let result = {};
         properties.map((property) => {
             result[property] = {
                 get: function () {
-                    return context[property];
+                    return editor[property];
                 }
             }
         });
@@ -77,13 +79,51 @@ export default class {
         }
         rules.regex = new RegExp(`(${source.join(')|(')})`, 'g');
     }
-    tokenizeLines(startLine, endLine) {
-        this.tokenizeLines.time = Date.now();
-        while (startLine <= endLine && Date.now() - this.tokenizeLines.time <= 20) {
-            this.htmls[startLine - 1].tokens = this.htmls[startLine - 1].tokens || this.tokenizeLine(startLine);
+    onInsertContent(line) {
+        this.tokenizeLines(line);
+    }
+    onDeleteContent(line) {
+        this.tokenizeLines(line);
+    }
+    onScroll() {
+        this.tokenizeVisibleLins();
+    }
+    tokenizeVisibleLins() {
+        let startLine = this.startLine;
+        let endLine = this.startLine + this.maxVisibleLines;
+        endLine = endLine > this.maxLine ? this.maxLine : endLine;
+        while (this.context.htmls[startLine - 1].tokens) {
             startLine++;
         }
-        clearTimeout(this.tokenizeLines.timer);
+        this.tokenizeLines(startLine, endLine);
+    }
+    tokenizeLines(startLine, endLine) {
+        this.tokenizeLines.time = Date.now();
+        endLine = endLine || this.maxLine;
+        while (startLine <= endLine && Date.now() - this.tokenizeLines.time <= 20) {
+            let lineObj = this.context.htmls[startLine - 1];
+            if (!lineObj.tokens) {
+                let data = this.tokenizeLine(startLine);
+                lineObj.tokens = data.tokens;
+                lineObj.html = data.tokens.map((item) => {
+                    return `<span class="${item.type}">${Util.htmlTrans(item.value)}</span>`;
+                }).join('');
+                if (this.renderedUidMap.has(lineObj.uuid)) {
+                    this.renderedUidMap.get(lineObj.uuid).html = lineObj.html;
+                }
+                if (lineObj.states + '' != data.states + '') {
+                    lineObj.states = data.states;
+                    lineObj = this.context.htmls[startLine];
+                    if (lineObj) {
+                        lineObj.tokens = null;
+                    }
+                }
+            } else {
+                startLine = endLine + 1;
+                break;
+            }
+            startLine++;
+        }
         if (startLine <= endLine) {
             this.tokenizeLines.timer = setTimeout(() => {
                 this.tokenizeLines(startLine, endLine);
@@ -96,42 +136,60 @@ export default class {
         let rule = null;
         let result = null;
         let lastIndex = 0;
-        let lineObj = this.htmls[line - 1];
-        let regex = this.getRegex(this.tokenizeState);
+        let preEnd = 0;
+        let newStates = [];
+        let preStates = line > 1 && this.context.htmls[line - 2].states || [];
+        let states = preStates.slice(0);
+        let lineObj = this.context.htmls[line - 1];
+        let regex = this.getRegex(states.peek());
         while (match = regex.exec(lineObj.text)) {
             for (let uuid in match.groups) {
                 if (match.groups[uuid] == undefined) {
                     continue;
                 }
+                let token = null;
                 result = match.groups[uuid];
                 uuid = uuid.slice(1);
                 rule = this.ruleUidMap[uuid];
-                tokens.push({
-                    start: match.index,
-                    end: match.index + result.length,
-                    value: result,
-                    type: typeof rule.token == 'function' ? rule.token(result) : rule.token
-                });
-                if (rule.next) { //多行token被匹配
-                    let state = {};
-                    state.type = 'start';
-                    state.uuid = uuid;
-                    if (this.tokenizeState && this.tokenizeState.type == 'start') {
-                        if (this.tokenizeState.uuid == uuid) { //多行token匹配成功
-                            if (this.ruleUidMap[this.tokenizeState.uuid].parentUuid) {
-                                state.uuid = this.ruleUidMap[this.tokenizeState.uuid].parentUuid;
-                            } else {
-                                state.type = 'end';
-                            }
-                        } else { //子节点中的多行token匹配开始
-                            state.type = 'start';
-                            state.uuid = uuid;
-                        }
-                    } else { //新的多行token匹配
-                        state.type = 'start';
-                    }
-                    this.tokenizeState = state; //记录当前状态
+                token = {
+                    value: result
+                };
+                if (preEnd < match.index) { //普通文本
+                    tokens.push({
+                        value: lineObj.text.slice(preEnd, match.index),
+                        type: 'plain'
+                    });
                 }
+                if (rule.next) { //多行token被匹配
+                    let state = states.peek();
+                    if (state == uuid) { //多行token尾
+                        states.pop();
+                        if (!rule.childRule) { //无子节点
+                            if (preStates.indexOf(state) == -1) { //在同一行匹配
+                                let value = '';
+                                token = tokens.pop();
+                                value = token.value;
+                                if (token.type == 'plain') {
+                                    token = tokens.pop();
+                                    value = token.value + value;
+                                }
+                                token.value = value;
+                            } else { //跨行匹配
+                                tokens.pop()
+                                token.value = lineObj.text.slice(0, match.index + result.length);
+                            }
+                        }
+                    } else { //多行token始
+                        states.push(uuid);
+                        newStates.push(uuid);
+                        if (!rule.childRule) { //无子节点
+                            token.value = lineObj.text.slice(match.index);
+                        }
+                    }
+                }
+                token.type = typeof rule.token == 'function' ? rule.token(token.value) : rule.token;
+                tokens.push(token);
+                preEnd = match.index + token.value.length;
                 break;
             }
             if (!match[0]) { //考虑/^$/的情况
@@ -139,36 +197,35 @@ export default class {
             }
             lastIndex = regex.lastIndex;
             regex.lastIndex = 0;
-            regex = this.getRegex(this.tokenizeState);
+            regex = this.getRegex(states.peek());
             regex.lastIndex = lastIndex;
         }
-        // 整行被多行token包裹
-        if (!tokens.length && this.tokenizeState && this.tokenizeState.type == 'start') {
-            rule = this.ruleUidMap[this.tokenizeState.uuid];
-            tokens.push({
-                start: 0,
-                end: lineObj.text.length,
+        if (!tokens.length && states.length) { // 整行被多行token包裹
+            rule = this.ruleUidMap[states.peek()];
+            !rule.childRule && tokens.push({
                 value: lineObj.text,
-                type: typeof rule.token == 'function' ? rule.token(result) : rule.token
+                type: typeof rule.token == 'function' ? rule.token(lineObj.text) : rule.token
+            });
+        } else if (preEnd < lineObj.text.length) { //普通文本
+            tokens.push({
+                value: lineObj.text.slice(preEnd),
+                type: 'plain'
             });
         }
         regex.lastIndex = 0;
-        return tokens;
+        return {
+            tokens: tokens,
+            states: newStates
+        };
     }
-    getRegex(tokenizeState) {
+    getRegex(uuid) {
         let regex = null;
-        if (tokenizeState && tokenizeState.uuid) {
-            let rule = this.ruleUidMap[tokenizeState.uuid];
-            if (tokenizeState.type == 'start') {
-                if (rule.childRule) {
-                    regex = rule.childRule.regex;
-                } else {
-                    regex = new RegExp(`(?<_${rule.uuid}>${rule.next.source})`, 'g');
-                }
-            } else if (rule.parentUuid) {
-                regex = this.ruleUidMap[rule.parentUuid].childRule.regex;
+        if (uuid) {
+            let rule = this.ruleUidMap[uuid];
+            if (rule.childRule) {
+                regex = rule.childRule.regex;
             } else {
-                regex = this.rules.regex;
+                regex = new RegExp(`(?<_${rule.uuid}>${rule.next.source})`, 'g');
             }
         } else {
             regex = this.rules.regex;
