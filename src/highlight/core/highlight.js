@@ -103,7 +103,12 @@ export default class {
                 let data = this.tokenizeLine(startLine);
                 lineObj.tokens = data.tokens;
                 lineObj.html = data.tokens.map((item) => {
-                    return `<span class="${item.type}">${Util.htmlTrans(item.value)}</span>`;
+                    let rule = this.ruleUidMap[item.uuid];
+                    if (typeof rule.value === 'function') {
+                        return rule.value(item.value);
+                    } else {
+                        return `<span class="${item.type}">${Util.htmlTrans(item.value)}</span>`;
+                    }
                 }).join('');
                 if (this.renderedUidMap.has(lineObj.uuid)) {
                     this.renderedUidMap.get(lineObj.uuid).html = lineObj.html;
@@ -149,6 +154,7 @@ export default class {
                 uuid = uuid.slice(1);
                 rule = this.ruleUidMap[uuid];
                 token = {
+                    uuid: rule.uuid,
                     value: result
                 };
                 if (preEnd < match.index) { //普通文本
