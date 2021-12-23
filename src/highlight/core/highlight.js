@@ -11,6 +11,7 @@ export default class {
         this.editor = editor;
         this.context = context;
         this.rules = rules;
+        this.currentLine = 1;
         this.initProperties(editor);
         this.initRules();
     }
@@ -69,6 +70,7 @@ export default class {
                 source.push(`?<_${item.ruleId}>${item.regex.source}`);
             } else if (item.start instanceof RegExp) {
                 source.push(`?<_${item.ruleId}>${item.start.source}`);
+                item.nextRegex = new RegExp(`(?<_${item.ruleId}>${item.next.source})`, 'g');
             }
         });
         parentRules.map((parentRule) => {
@@ -77,10 +79,14 @@ export default class {
         rules.regex = new RegExp(`(${source.join(')|(')})`, 'g');
     }
     onInsertContent(line) {
-        this.tokenizeLines(line);
+        if (line <= this.currentLine) {
+            this.tokenizeLines(line);
+        }
     }
     onDeleteContent(line) {
-        this.tokenizeLines(line);
+        if (line <= this.currentLine) {
+            this.tokenizeLines(line);
+        }
     }
     onScroll() {
         this.tokenizeVisibleLins();
@@ -88,16 +94,19 @@ export default class {
     tokenizeVisibleLins() {
         let startLine = this.startLine;
         let endLine = this.startLine + this.maxVisibleLines;
+        let currentLine = this.currentLine;
         endLine = endLine > this.maxLine ? this.maxLine : endLine;
         while (startLine <= endLine && this.context.htmls[startLine - 1].tokens) {
             startLine++;
         }
         this.tokenizeLines(startLine, endLine);
+        this.currentLine = currentLine;
     }
     tokenizeLines(startLine, endLine) {
-        this.tokenizeLines.time = Date.now();
+        let processedLines = 0;
+        let processedTime = Date.now();
         endLine = endLine || this.maxLine;
-        while (startLine <= endLine && Date.now() - this.tokenizeLines.time <= 20) {
+        while (startLine <= endLine) {
             let lineObj = this.context.htmls[startLine - 1];
             if (!lineObj.tokens) {
                 let data = this.tokenizeLine(startLine);
@@ -120,12 +129,16 @@ export default class {
                         lineObj.tokens = null;
                     }
                 }
-            } else {
-                startLine = endLine + 1;
-                break;
+                processedLines++;
+                // 避免卡顿
+                if (processedLines % 10 == 0 && Date.now() - processedTime >= 20) {
+                    startLine++;
+                    break;
+                }
             }
             startLine++;
         }
+        this.currentLine = startLine;
         if (startLine <= endLine) {
             this.tokenizeLines.timer = setTimeout(() => {
                 this.tokenizeLines(startLine, endLine);
@@ -228,7 +241,7 @@ export default class {
             if (rule.childRule) {
                 regex = rule.childRule.regex;
             } else {
-                regex = new RegExp(`(?<_${rule.ruleId}>${rule.next.source})`, 'g');
+                regex = rule.nextRegex;
             }
         } else {
             regex = this.rules.regex;
