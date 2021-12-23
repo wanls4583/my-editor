@@ -33,6 +33,7 @@ export default class {
         this.ruleIdMap = {};
         this.ruleNameMap = {};
         this.ruleStartMap = {};
+        this.ruleNextMap = {};
         this.rules.rules.map((item) => {
             this.setRuleUuid(item, pairLevel);
         });
@@ -51,7 +52,8 @@ export default class {
         typeof item.name === 'string' && (this.ruleNameMap[item.name] = item);
         if (item.start && item.next) {
             item.level = item.level || pairLevel;
-            typeof item.start === 'string' && (this.ruleStartMap[item.start] = item);
+            typeof item.start === 'string' && (this.ruleStartMap[item.start] = item); //命名start
+            typeof item.next === 'string' && (this.ruleNextMap[item.next] = item); //命名next
         }
         if (item.childRule && item.childRule.rules) {
             item.childRule.rules.map((_item) => {
@@ -68,17 +70,30 @@ export default class {
         let source = [];
         rules.map((item) => {
             if (item.childRule) {
-                this.setCombRegex(item.childRule, [item].concat(parentRules));
+                this.setCombRegex(item.childRule, parentRules.concat(item));
             }
             if (item.regex) {
                 source.push(`?<_${item.ruleId}>${item.regex.source}`);
             } else if (item.start instanceof RegExp) {
                 source.push(`?<_${item.ruleId}>${item.start.source}`);
+            }
+            if (item.next instanceof RegExp) {
                 item.nextRegex = new RegExp(`(?<_${item.ruleId}>${item.next.source})`, 'g');
             }
         });
-        parentRules.map((parentRule) => {
-            source.unshift(`?<_${parentRule.ruleId}>${parentRule.next.source}`);
+        parentRules.reverse().map((parentRule) => {
+            if (typeof parentRule.next === 'string') { //命名next
+                let rule = this.ruleNameMap[parentRule.next];
+                while (typeof rule.start === 'string') {
+                    rule = this.ruleNameMap[rule.start];
+                }
+                if (rule.start instanceof RegExp) {
+                    parentRule.nextRegex = new RegExp(`(?<_${rule.ruleId}>${rule.start.source})`, 'g');
+                    source.unshift(`?<_${rule.ruleId}>${rule.start.source}`);
+                }
+            } else {
+                source.unshift(`?<_${parentRule.ruleId}>${parentRule.next.source}`);
+            }
         });
         rules.regex = new RegExp(`(${source.join(')|(')})`, 'g');
     }
@@ -254,11 +269,17 @@ export default class {
         let rule = null;
         let preRule = this.ruleIdMap[preRuleId];
         if (preRule && typeof preRule.name === 'string' &&
-            states.indexOf(preRuleId) == -1 && this.ruleStartMap[preRule.name]) {
+            states.indexOf(preRuleId) == -1 && this.ruleStartMap[preRule.name]) { //以preRule的完整匹配开始节点
             rule = this.ruleStartMap[preRule.name];
             states.push(rule.ruleId);
-            return rule.childRule ? rule.childRule.regex : rule.nextRegex;
-        } else if (ruleId) {
+            ruleId = rule.ruleId;
+        }
+        if (preRule && typeof preRule.name === 'string' &&
+            states.indexOf(preRuleId) == -1 && this.ruleNextMap[preRule.name]) { //以preRule的完整匹配为结束节点
+            states.pop();
+            ruleId = states.peek();
+        }
+        if (ruleId) {
             rule = this.ruleIdMap[ruleId];
             if (rule.childRule) {
                 regex = rule.childRule.regex;

@@ -83,36 +83,47 @@ export default {
             })
         }
     }, {
-        name: 'script',
+        name: 'script-start',
         start: /\<(?=script\b)/g,
         next: /\>/g,
         level: 2,
-        token: function (value, state) {
-            if (state == 'start') {
-                if (value[1] == '/') {
-                    return 'xml-end-tag-open';
-                } else {
-                    return 'xml-tag-open';
-                }
-            } else {
-                return 'xml-tag-close';
-            }
-        },
+        token: tagToken,
         childRule: {
             rules: attrRules.map((item) => {
                 return Object.assign({}, item);
             })
         }
     }, {
-        start: 'script',
-        next: /\<\/script\>/,
-        value: function (value) {
-            return `<span class="xml-end-tag-open">&lt;/</span><span class="xml-tag-name">script</span><span>&gt;</span>`;
-        },
+        name: 'script-end',
+        start: /\<\/(?=script\>)/g,
+        next: /\>/g,
+        token: tagToken,
+        childRule: {
+            rules: [{
+                regex: /(?<=\<\/?)\w+\b/g,
+                token: 'xml-tag-name',
+                level: 1
+            }]
+        }
+    }, {
+        start: 'script-start',
+        next: 'script-end',
         childRule: JsRules
     }, {
         start: /\<\!\-\-/g,
         next: /\-\-\>/g,
         token: 'xml-comment'
     }]
+}
+
+function tagToken(value, state) {
+    if (state == 'start') {
+        if (value[1] == '/') {
+            return 'xml-end-tag-open';
+        } else {
+            return 'xml-tag-open';
+        }
+    } else {
+        return 'xml-tag-close';
+    }
 }
