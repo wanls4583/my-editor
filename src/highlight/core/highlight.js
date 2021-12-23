@@ -16,7 +16,7 @@ export default class {
         this.initRules();
     }
     initProperties(editor) {
-        let properties = ['startLine', 'maxVisibleLines', 'maxLine', 'renderedUidMap'];
+        let properties = ['startLine', 'maxVisibleLines', 'maxLine', 'renderedIdMap'];
         let result = {};
         properties.map((property) => {
             result[property] = {
@@ -119,8 +119,8 @@ export default class {
                         return `<span class="${item.type}">${Util.htmlTrans(item.value)}</span>`;
                     }
                 }).join('');
-                if (this.renderedUidMap.has(lineObj.lineId)) {
-                    this.renderedUidMap.get(lineObj.lineId).html = lineObj.html;
+                if (this.renderedIdMap.has(lineObj.lineId)) {
+                    this.renderedIdMap.get(lineObj.lineId).html = lineObj.html;
                 }
                 if (lineObj.states + '' != data.states + '') {
                     lineObj.states = data.states;

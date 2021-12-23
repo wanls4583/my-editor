@@ -215,10 +215,9 @@ export default {
         initData() {
             this.space = this.$util.space(this.tabSize);
             this.history = []; // 操作历史
-            this.ruleUuid = 1;
             this.lineId = Number.MIN_SAFE_INTEGER;
-            this.uuidMap = new Map(); // htmls的唯一标识对象
-            this.renderedUidMap = new Map(); // renderHtmls的唯一标识对象
+            this.lineIdMap = new Map(); // htmls的唯一标识对象
+            this.renderedIdMap = new Map(); // renderHtmls的唯一标识对象
             context.htmls = [{
                 lineId: this.lineId++,
                 text: '',
@@ -227,7 +226,7 @@ export default {
                 tokens: null,
                 states: null
             }];
-            this.uuidMap.set(context.htmls[0].lineId, context.htmls[0]);
+            this.lineIdMap.set(context.htmls[0].lineId, context.htmls[0]);
             this.highlighter = new Highlight(this, context);
         },
         // 初始化文档事件
@@ -238,36 +237,6 @@ export default {
             this.$(document).on('mouseup', (e) => {
                 this.onScrollerMup(e);
             });
-        },
-        initRules() {
-            let pairLevel = rulesObj.pairLevel || 1;
-            this.rulesObjCopy = {
-                pairLevel: pairLevel,
-                rules: []
-            }
-            this.ruleUuidMap = {};
-            rulesObj.rules.map((item) => {
-                this.setRuleUuid(item, pairLevel);
-            });
-        },
-        setRuleUuid(item, pairLevel, parentUuid) {
-            // 每个规则生成一个唯一标识
-            item.lineId = this.ruleUuid++;
-            item.parentUuid = parentUuid;
-            this.ruleUuidMap[item.lineId] = item;
-            if (item.start && item.next) {
-                item.level = item.level || pairLevel;
-            }
-            if (item.childRule && item.childRule.rules) {
-                item.childRule.rules.map((_item) => {
-                    this.setRuleUuid(_item, item.childRule.pairLevel, item.lineId);
-                });
-            }
-            item = Object.assign({}, item);
-            typeof item.token == 'function' && delete item.token;
-            if (!parentUuid) {
-                this.rulesObjCopy.rules.push(item);
-            }
         },
         // 显示光标
         showCursor() {
@@ -312,20 +281,20 @@ export default {
             // 只更新一行
             if (line) {
                 let obj = this.renderHtmls[line - this.startLine];
-                this.renderedUidMap.delete(obj.lineId);
+                this.renderedIdMap.delete(obj.lineId);
                 obj.html = context.htmls[line - 1].html;
                 obj.text = context.htmls[line - 1].text;
                 obj.lineId = context.htmls[line - 1].lineId;
                 Object.assign(obj, _getObj(obj, line));
-                this.renderedUidMap.set(lineId, obj);
+                this.renderedIdMap.set(lineId, obj);
                 return;
             }
-            this.renderedUidMap.clear();
+            this.renderedIdMap.clear();
             this.renderHtmls = context.htmls.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines).map((item, index) => {
                 let num = this.startLine + index;
                 let lineId = item.lineId;
                 item = _getObj(item, num);
-                this.renderedUidMap.set(lineId, item);
+                this.renderedIdMap.set(lineId, item);
                 return item;
             });;
             this.nums = this.renderHtmls.map((item) => {
@@ -409,7 +378,7 @@ export default {
                     tokens: null,
                     states: null
                 };
-                this.uuidMap.set(item.lineId, item);
+                this.lineIdMap.set(item.lineId, item);
                 return item;
             });
             if (text.length > 1) { // 插入多行
@@ -469,11 +438,11 @@ export default {
                 deleteText = this.getRangeText(this.selectedRange.start, this.selectedRange.end);
                 if (start.line == 1 && end.line == this.maxLine) { //全选删除
                     rangeUuid = [this.maxWidthObj.lineId];
-                    this.uuidMap.clear();
-                    this.uuidMap.set(startObj.lineId, startObj);
+                    this.lineIdMap.clear();
+                    this.lineIdMap.set(startObj.lineId, startObj);
                 } else {
                     rangeUuid = context.htmls.slice(start.line - 1, end.line).map((item) => {
-                        this.uuidMap.delete(item.lineId);
+                        this.lineIdMap.delete(item.lineId);
                         return item.lineId;
                     });
                 }
@@ -493,7 +462,7 @@ export default {
             } else if (this.$util.keyCode.DELETE == keyCode) { // 向后删除一个字符
                 if (this.cursorPos.column == text.length) { // 光标处于行尾
                     if (this.cursorPos.line < context.htmls.length) {
-                        this.uuidMap.delete(context.htmls[this.cursorPos.line].lineId);
+                        this.lineIdMap.delete(context.htmls[this.cursorPos.line].lineId);
                         text = startObj.text + context.htmls[this.cursorPos.line].text;
                         context.htmls.splice(this.cursorPos.line, 1);
                         deleteText = '\n';
@@ -508,7 +477,7 @@ export default {
                 if (this.cursorPos.column == 0) { // 光标处于行首
                     if (this.cursorPos.line > 1) {
                         let column = context.htmls[this.cursorPos.line - 2].text.length;
-                        this.uuidMap.delete(context.htmls[this.cursorPos.line - 2].lineId);
+                        this.lineIdMap.delete(context.htmls[this.cursorPos.line - 2].lineId);
                         text = context.htmls[this.cursorPos.line - 2].text + text;
                         context.htmls.splice(this.cursorPos.line - 2, 1);
                         this.setCursorPos(this.cursorPos.line - 1, column);
@@ -647,7 +616,7 @@ export default {
                 let count = 0;
                 while (count < 10000 && index < texts.length) {
                     let lineObj = texts[index];
-                    if (that.uuidMap.has(lineObj.lineId)) {
+                    if (that.lineIdMap.has(lineObj.lineId)) {
                         let width = that.getStrWidth(lineObj.text);
                         // 增加2像素，给光标预留位置
                         width += 2;
