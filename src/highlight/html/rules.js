@@ -83,6 +83,34 @@ export default {
             })
         }
     }, {
+        name: 'script',
+        start: /\<(?=script\b)/g,
+        next: /\>/g,
+        level: 2,
+        token: function (value, state) {
+            if (state == 'start') {
+                if (value[1] == '/') {
+                    return 'xml-end-tag-open';
+                } else {
+                    return 'xml-tag-open';
+                }
+            } else {
+                return 'xml-tag-close';
+            }
+        },
+        childRule: {
+            rules: attrRules.map((item) => {
+                return Object.assign({}, item);
+            })
+        }
+    }, {
+        start: 'script',
+        next: /\<\/script\>/,
+        value: function (value) {
+            return `<span class="xml-end-tag-open">&lt;/</span><span class="xml-tag-name">script</span><span>&gt;</span>`;
+        },
+        childRule: JsRules
+    }, {
         start: /\<\!\-\-/g,
         next: /\-\-\>/g,
         token: 'xml-comment'
