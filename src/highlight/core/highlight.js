@@ -262,11 +262,13 @@ export default class {
                     });
                 }
                 if (rule.next) { //多行token被匹配
-                    let state = states.peek();
-                    if (state == ruleId) { //多行token尾
+                    if (states.indexOf(ruleId) > -1) { //多行token尾
+                        while (states.peek() != ruleId) {
+                            states.pop();
+                        }
                         states.pop();
                         if (!rule.childRule) { //无子节点
-                            if (preStates.indexOf(state) == -1) { //在同一行匹配
+                            if (preStates.indexOf(ruleId) == -1) { //在同一行匹配
                                 let value = '';
                                 token = tokens.pop();
                                 value = token.value;
