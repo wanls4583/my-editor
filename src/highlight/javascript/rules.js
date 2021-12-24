@@ -13,7 +13,7 @@ export default {
             regex: /\+|\-|\*|\/|\=|\!|>|<|\&|\||\?/,
             token: 'js-oprator'
         }, {
-            regex: new RegExp(`\\b\\d+\\b|\\b0[xX][a-zA-Z0-9]*?\\b|\\bundefined\\b|\\bnull\\b|\\btrue\\b|\\bfalse\\b`),
+            regex: new RegExp(`\\b\\d+\\b|\\b0[xX][a-zA-Z0-9]*?\\b|\\bundefined\\b|\\bnull\\b|\\btrue\\b|\\bfalse\\b|\\bNaN\\b`),
             token: 'js-number'
         }, {
             regex: /\bvar\b/,
