@@ -3,8 +3,9 @@
  * @Date: 2021-12-10 09:31:38
  * @Description: 
  */
-import Util from '../../common/util';
-import JsRules from '../javascript/rules';
+import jsRules from '../javascript/rules';
+import cssRules from '../css/rules';
+import Util from '@/common/util';
 
 const styleRules = [{
     regex: /(?<=(?:\;|'|")\s*?)[^\<\>\:\;'"]+/,
@@ -23,35 +24,35 @@ const styleRules = [{
 }];
 
 const attrRules = [{
-    regex: /(?<=\<\/?)\w+\b/g,
+    regex: /(?<=\<\/?)\w+\b/,
     token: 'xml-tag-name',
     level: 1
 }, {
-    regex: /(?<=\=)\s*?[^\<\>\s\'\"]+\b/g,
+    regex: /(?<=\=)\s*?[^\<\>\s\'\"]+\b/,
     token: 'xml-attr-value',
     level: 1
 }, {
-    regex: /\b[^'"=\s\>\<]+\b/g,
+    regex: /\b[^'"=\s\>\<]+\b/,
     token: 'xml-attr-name'
 }, {
-    start: /(?<=\=\s*?)"/g,
-    next: /"/g,
+    start: /(?<=\=\s*?)"/,
+    next: /"/,
     token: 'xml-attr-value'
 }, {
-    start: /(?<=\=\s*?)'/g,
-    next: /'/g,
+    start: /(?<=\=\s*?)'/,
+    next: /'/,
     token: 'xml-attr-value'
 }, {
-    start: /(?<=style\s*?\=\s*?)'/g,
-    next: /'/g,
+    start: /(?<=style\s*?\=\s*?)'/,
+    next: /'/,
     token: 'xml-attr-value',
     level: 2,
     childRule: {
         rules: Util.deepAssign([], styleRules)
     }
 }, {
-    start: /(?<=style\s*?\=\s*?)"/g,
-    next: /"/g,
+    start: /(?<=style\s*?\=\s*?)"/,
+    next: /"/,
     token: 'xml-attr-value',
     level: 2,
     childRule: {
@@ -61,8 +62,8 @@ const attrRules = [{
 
 export default {
     rules: [{
-        start: /\<\/?(?=\w+\b)/g,
-        next: /\>/g,
+        start: /\<\/?(?=\w+\b)/,
+        next: /\>/,
         token: function (value, state) {
             if (state == 'start') {
                 if (value[1] == '/') {
@@ -79,9 +80,13 @@ export default {
             rules: Util.deepAssign([], attrRules)
         }
     }, {
+        start: /\<\!\-\-/,
+        next: /\-\-\>/,
+        token: 'xml-comment'
+    }, {
         name: 'script-start',
-        start: /\<(?=script\b)/g,
-        next: /\>/g,
+        start: /\<(?=script\b)/,
+        next: /\>/,
         level: 2,
         token: tagToken,
         childFirst: true,
@@ -90,12 +95,12 @@ export default {
         }
     }, {
         name: 'script-end',
-        start: /\<\/(?=script\>)/g,
-        next: /\>/g,
+        start: /\<\/(?=script\>)/,
+        next: /\>/,
         token: tagToken,
         childRule: {
             rules: [{
-                regex: /(?<=\<\/?)\w+\b/g,
+                regex: /(?<=\<\/?)\w+\b/,
                 token: 'xml-tag-name',
                 level: 1
             }]
@@ -103,11 +108,33 @@ export default {
     }, {
         start: 'script-start',
         next: 'script-end',
-        childRule: Util.deepAssign({}, JsRules)
+        childRule: jsRules
     }, {
-        start: /\<\!\-\-/g,
-        next: /\-\-\>/g,
-        token: 'xml-comment'
+        name: 'style-start',
+        start: /\<(?=style\b)/,
+        next: /\>/,
+        level: 2,
+        token: tagToken,
+        childFirst: true,
+        childRule: {
+            rules: Util.deepAssign([], attrRules)
+        }
+    }, {
+        name: 'style-end',
+        start: /\<\/(?=style\s*?\>)/,
+        next: /\>/,
+        token: tagToken,
+        childRule: {
+            rules: [{
+                regex: /(?<=\<\/?)\w+\b/,
+                token: 'xml-tag-name',
+                level: 1
+            }]
+        }
+    }, {
+        start: 'style-start',
+        next: 'style-end',
+        childRule: Util.deepAssign([], cssRules)
     }]
 }
 

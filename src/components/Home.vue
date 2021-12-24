@@ -91,7 +91,7 @@ export default {
                 show: false,
                 visible: true,
             },
-            language: 'JavaScript',
+            language: 'HTML',
             statusHeight: 23,
             tabSize: 4,
             nums: [1],
@@ -200,8 +200,9 @@ export default {
                 lineObj.states = null;
                 lineObj.html = '';
             });
+            this.render();
             this.highlighter.initLanguage(newVal);
-            this.highlighter.tokenizeVisibleLins();
+            this.highlighter.onScroll();
         },
         tabSize: function (newVal) {
 

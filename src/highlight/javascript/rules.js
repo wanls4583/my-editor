@@ -1,5 +1,3 @@
-const letter = `[a-zA-Z]+?`;
-const char = `[a-zA-Z0-9]+?`;
 const variable = `[\\$_a-zA-Z][\\$_a-zA-Z0-9]*?`
 export default {
     pairLevel: 3,

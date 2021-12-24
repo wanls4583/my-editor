@@ -5,6 +5,7 @@
  */
 import jsRules from '@/highlight/javascript/rules';
 import htmlRules from '@/highlight/html/rules';
+import cssRules from '@/highlight/css/rules';
 import Util from '@/common/util';
 export default class {
     constructor(editor, context) {
@@ -24,6 +25,11 @@ export default class {
             case 'HTML':
                 this.initRules(htmlRules);
                 break;
+            case 'CSS':
+                this.initRules(cssRules);
+                break;
+            default:
+                this.language = 'plain';
         }
     }
     initProperties(editor) {
@@ -48,6 +54,7 @@ export default class {
             this.ruleNextMap = obj.ruleNextMap;
             return;
         }
+        rules = Util.deepAssign({}, rules);
         let pairLevel = rules.pairLevel || 1;
         this.ruleId = 1;
         this.ruleIdMap = {};
@@ -188,6 +195,9 @@ export default class {
         }
     }
     onInsertContent(line) {
+        if (this.language == 'plain') {
+            return;
+        }
         if (line <= this.currentLine) {
             this.tokenizeLines(line);
         } else {
@@ -195,6 +205,9 @@ export default class {
         }
     }
     onDeleteContent(line) {
+        if (this.language == 'plain') {
+            return;
+        }
         if (line <= this.currentLine) {
             this.tokenizeLines(line);
         } else {
@@ -202,6 +215,9 @@ export default class {
         }
     }
     onScroll() {
+        if (this.language == 'plain') {
+            return;
+        }
         this.tokenizeVisibleLins();
     }
     tokenizeVisibleLins() {
@@ -229,7 +245,7 @@ export default class {
                     if (rule && typeof rule.value === 'function') {
                         return rule.value(item.value);
                     } else {
-                        return `<span class="${item.type}">${Util.htmlTrans(item.value)}</span>`;
+                        return `<span class="${item.type.split('.').join(' ')}">${Util.htmlTrans(item.value)}</span>`;
                     }
                 }).join('');
                 if (this.renderedIdMap.has(lineObj.lineId)) {
@@ -316,7 +332,21 @@ export default class {
                         flag = 'start';
                     }
                 }
-                token.type = typeof rule.token == 'function' ? rule.token(token.value, flag) : rule.token;
+                if (typeof rule.token == 'function') {
+                    token.type = rule.token(token.value, flag);
+                } else if (rule.token instanceof Array) {
+                    if (rule.start && rule.next) {
+                        if (flag == 'start') {
+                            token.type = rule.token[0];
+                        } else {
+                            token.type = rule.token[1];
+                        }
+                    } else {
+                        token.type = rule.token.join('.');
+                    }
+                } else {
+                    token.type = rule.token;
+                }
                 tokens.push(token);
                 preEnd = match.index + result.length;
                 break;
