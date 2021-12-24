@@ -8,7 +8,6 @@ import rules from '@/highlight/html/rules';
 import Util from '@/common/util';
 export default class {
     constructor(editor, context) {
-        this.editor = editor;
         this.context = context;
         this.rules = rules;
         this.currentLine = 1;
