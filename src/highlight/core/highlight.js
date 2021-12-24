@@ -333,7 +333,7 @@ export default class {
         let rule = null;
         let preRule = this.ruleIdMap[preRuleId];
         if (preRule && typeof preRule.name === 'string' &&
-            states.indexOf(preRuleId) == -1 && this.ruleStartMap[preRule.name]) { //以preRule的完整匹配开始节点
+            states.indexOf(preRuleId) == -1 && this.ruleStartMap[preRule.name]) { //以preRule的完整匹配为开始节点
             rule = this.ruleStartMap[preRule.name];
             states.push(rule.ruleId);
             ruleId = rule.ruleId;
