@@ -82,10 +82,9 @@ class Util {
     }
     // 深度克隆
     static deepAssign(targetObj, originObj, excludeKeys) {
-        var assigned = [];
-        return _assign(targetObj, originObj, excludeKeys);
+        return _assign(targetObj, originObj, excludeKeys, []);
 
-        function _assign(targetObj, originObj, excludeKeys) {
+        function _assign(targetObj, originObj, excludeKeys, assigned) {
             excludeKeys = excludeKeys || [];
             for (var key in originObj) {
                 var value = originObj[key];
@@ -96,9 +95,9 @@ class Util {
                     (!value.nodeName || !value.nodeType) && assigned.indexOf(value) == -1) {
                     assigned.push(value);
                     if (value instanceof Array) {
-                        targetObj[key] = _assign(targetObj[key] || [], value);
+                        targetObj[key] = _assign(targetObj[key] || [], value, excludeKeys, assigned.slice(0));
                     } else {
-                        targetObj[key] = _assign(targetObj[key] || {}, value);
+                        targetObj[key] = _assign(targetObj[key] || {}, value, excludeKeys, assigned.slice(0));
                     }
                 } else {
                     targetObj[key] = value;

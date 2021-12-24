@@ -5,7 +5,6 @@
  */
 import jsRules from '../javascript/rules';
 import cssRules from '../css/rules';
-import Util from '@/common/util';
 
 const styleRules = [{
     regex: /(?<=(?:\;|'|")\s*?)[^\<\>\:\;'"]+/,
@@ -48,7 +47,7 @@ const attrRules = [{
     token: 'xml-attr-value',
     level: 2,
     childRule: {
-        rules: Util.deepAssign([], styleRules)
+        rules: styleRules
     }
 }, {
     start: /(?<=style\s*?\=\s*?)"/,
@@ -56,7 +55,7 @@ const attrRules = [{
     token: 'xml-attr-value',
     level: 2,
     childRule: {
-        rules: Util.deepAssign([], styleRules)
+        rules: styleRules
     }
 }];
 
@@ -77,7 +76,7 @@ export default {
         },
         childFirst: true,
         childRule: {
-            rules: Util.deepAssign([], attrRules)
+            rules: attrRules
         }
     }, {
         start: /\<\!\-\-/,
@@ -91,7 +90,7 @@ export default {
         token: tagToken,
         childFirst: true,
         childRule: {
-            rules: Util.deepAssign([], attrRules)
+            rules: attrRules
         }
     }, {
         name: 'script-end',
@@ -117,7 +116,7 @@ export default {
         token: tagToken,
         childFirst: true,
         childRule: {
-            rules: Util.deepAssign([], attrRules)
+            rules: attrRules
         }
     }, {
         name: 'style-end',
@@ -134,7 +133,7 @@ export default {
     }, {
         start: 'style-start',
         next: 'style-end',
-        childRule: Util.deepAssign([], cssRules)
+        childRule: cssRules
     }]
 }
 
