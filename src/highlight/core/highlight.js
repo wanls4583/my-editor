@@ -3,16 +3,28 @@
  * @Date: 2021-12-15 11:39:41
  * @Description: 
  */
-// import rules from '@/highlight/javascript/rules';
-import rules from '@/highlight/html/rules';
+import jsRules from '@/highlight/javascript/rules';
+import htmlRules from '@/highlight/html/rules';
 import Util from '@/common/util';
 export default class {
     constructor(editor, context) {
         this.context = context;
-        this.rules = rules;
         this.currentLine = 1;
+        this.languageMap = [];
         this.initProperties(editor);
-        this.initRules();
+        this.initLanguage(editor.language);
+    }
+    initLanguage(language) {
+        this.language = language;
+        clearTimeout(this.tokenizeLines.timer);
+        switch (language) {
+            case 'JavaScript':
+                this.initRules(jsRules);
+                break;
+            case 'HTML':
+                this.initRules(htmlRules);
+                break;
+        }
     }
     initProperties(editor) {
         let properties = ['startLine', 'maxVisibleLines', 'maxLine', 'renderedIdMap'];
@@ -26,22 +38,39 @@ export default class {
         });
         Object.defineProperties(this, result);
     }
-    initRules() {
-        let pairLevel = this.rules.pairLevel || 1;
+    initRules(rules) {
+        if (this.languageMap[this.language]) {
+            let obj = this.languageMap[this.language];
+            this.rules = obj.rules;
+            this.ruleIdMap = obj.ruleIdMap;
+            this.ruleNameMap = obj.ruleNameMap;
+            this.ruleStartMap = obj.ruleStartMap;
+            this.ruleNextMap = obj.ruleNextMap;
+            return;
+        }
+        let pairLevel = rules.pairLevel || 1;
         this.ruleId = 1;
         this.ruleIdMap = {};
         this.ruleNameMap = {};
         this.ruleStartMap = {};
         this.ruleNextMap = {};
-        this.rules.rules.map((item) => {
+        rules.rules.map((item) => {
             this.setRuleUuid(item, pairLevel);
         });
-        this.rules = this.rules.rules;
-        this.rules.sort((a, b) => {
+        rules = rules.rules;
+        rules.sort((a, b) => {
             return b.level - a.level;
         });
-        this.setCombStartRegex(this.rules, []);
-        this.setCombNextRegex(this.rules, []);
+        this.setCombStartRegex(rules, []);
+        this.setCombNextRegex(rules, []);
+        this.rules = rules;
+        this.languageMap[this.language] = {
+            rules: rules,
+            ruleIdMap: this.ruleIdMap,
+            ruleNameMap: this.ruleNameMap,
+            ruleStartMap: this.ruleStartMap,
+            ruleNextMap: this.ruleNextMap,
+        };
     }
     setRuleUuid(item, pairLevel, parentUuid) {
         // 每个规则生成一个唯一标识

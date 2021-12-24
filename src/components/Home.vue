@@ -61,7 +61,7 @@
 				ref="textarea"
 			></textarea>
 		</div>
-		<status-bar :column="cursorPos.column+1" :height="statusHeight" :language="language" :line="cursorPos.line" :tabSize="tabSize"></status-bar>
+		<status-bar :column="cursorPos.column+1" :height="statusHeight" :language.sync="language" :line="cursorPos.line" :tabSize.sync="tabSize"></status-bar>
 	</div>
 </template>
 
@@ -193,6 +193,20 @@ export default {
             }
         },
     },
+    watch: {
+        language: function (newVal) {
+            context.htmls.map((lineObj) => {
+                lineObj.tokens = null;
+                lineObj.states = null;
+                lineObj.html = '';
+            });
+            this.highlighter.initLanguage(newVal);
+            this.highlighter.tokenizeVisibleLins();
+        },
+        tabSize: function (newVal) {
+
+        }
+    },
     created() {
         window.editor = this;
         window.context = context;
@@ -282,8 +296,8 @@ export default {
             if (line) {
                 let obj = this.renderHtmls[line - this.startLine];
                 this.renderedIdMap.delete(obj.lineId);
-                obj.html = context.htmls[line - 1].html;
                 obj.text = context.htmls[line - 1].text;
+                obj.html = context.htmls[line - 1].html || this.$util.htmlTrans(obj.text);
                 obj.lineId = context.htmls[line - 1].lineId;
                 Object.assign(obj, _getObj(obj, line));
                 this.renderedIdMap.set(lineId, obj);
@@ -309,7 +323,7 @@ export default {
                     selected = true;
                 }
                 return {
-                    html: item.html,
+                    html: item.html || that.$util.htmlTrans(item.text),
                     num: num,
                     tabNum: tabNum,
                     selected: selected,
@@ -373,7 +387,7 @@ export default {
                 item = {
                     lineId: this.lineId++,
                     text: item,
-                    html: this.$util.htmlTrans(item),
+                    html: '',
                     width: 0,
                     tokens: null,
                     states: null
@@ -384,14 +398,11 @@ export default {
             if (text.length > 1) { // 插入多行
                 newColume = text[text.length - 1].text.length;
                 text[0].text = nowLineText.slice(0, nowColume) + text[0].text;
-                text[0].html = this.$util.htmlTrans(text[0].text);
                 text[text.length - 1].text = text[text.length - 1].text + nowLineText.slice(nowColume);
-                text[text.length - 1].html = this.$util.htmlTrans(text[text.length - 1].text);
                 context.htmls = context.htmls.slice(0, this.cursorPos.line - 1).concat(text).concat(context.htmls.slice(this.cursorPos.line));
             } else { // 插入一行
                 newColume += text[0].text.length;
                 text[0].text = nowLineText.slice(0, nowColume) + text[0].text + nowLineText.slice(this.cursorPos.column);
-                text[0].html = this.$util.htmlTrans(text[0].text);
                 context.htmls.splice(this.cursorPos.line - 1, 1, text[0]);
             }
             newLine += text.length - 1;
@@ -491,7 +502,6 @@ export default {
                 }
                 startObj.text = text;
             }
-            startObj.html = this.$util.htmlTrans(startObj.text);
             startObj.width = this.getStrWidth(startObj.text);
             startObj.tokens = null;
             startObj.states = null;
