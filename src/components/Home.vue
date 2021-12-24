@@ -567,10 +567,8 @@ export default {
                 } else if (
                     lastCommand.type == this.$util.command.INSERT &&
                     command.preCursorPos.line == command.cursorPos.line &&
-                    (
-                        this.$util.comparePos(lastCommand.cursorPos, command.preCursorPos == 0) ||
-                        this.$util.comparePos(lastCommand.cursorPos, command.cursorPos == 0)
-                    )) {
+                    this.$util.comparePos(lastCommand.cursorPos, command.preCursorPos) == 0
+                ) {
                     lastCommand.text = command.text + lastCommand.text;
                     lastCommand.cursorPos = command.cursorPos;
                 } else {
