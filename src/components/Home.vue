@@ -654,7 +654,7 @@ export default {
                 mid = Math.floor((left + right) / 2);
                 width = this.getStrWidth(text, 0, mid);
                 w1 = text[mid - 1] && text[mid - 1].match(this.$util.fullAngleReg) ? halfFullCharWidth : halfCharWidth;
-                w2 = text[mid] && text[mid].match(this.$util.fullAngleReg) ? halfFullCharWidth : halfCharWidth;
+                w2 = text[mid] && (text[mid].match(this.$util.fullAngleReg) ? halfFullCharWidth : halfCharWidth) || w1;
                 if (width >= offsetX && width - offsetX < w1 || offsetX >= width && offsetX - width < w2) {
                     left = mid;
                     break;
