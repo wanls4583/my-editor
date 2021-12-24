@@ -78,7 +78,7 @@ export default class {
             if (item.childRule) {
                 this.setCombStartRegex(item.childRule, parentRules.concat([item]));
             }
-            if (item.start) {
+            if (item.start && item.next) {
                 item = this.getStartRegex(item);
             }
             startRegexs.push(item);
@@ -97,7 +97,7 @@ export default class {
             if (item.childRule) {
                 this.setCombNextRegex(item.childRule, parentRules.concat([item]));
             }
-            if (item.next) {
+            if (item.start && item.next) {
                 _build(item, parentRules);
             }
         });
@@ -261,7 +261,7 @@ export default class {
                         type: 'plain'
                     });
                 }
-                if (rule.next) { //多行token被匹配
+                if (rule.start && rule.next) { //多行token被匹配
                     if (states.indexOf(ruleId) > -1) { //多行token尾
                         while (states.peek() != ruleId) {
                             states.pop();
