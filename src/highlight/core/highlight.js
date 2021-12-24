@@ -41,7 +41,8 @@ export default class {
         this.rules.sort((a, b) => {
             return b.level - a.level;
         });
-        this.setCombRegex(this.rules, []);
+        this.setCombStartRegex(this.rules, []);
+        this.setCombNextRegex(this.rules, []);
     }
     setRuleUuid(item, pairLevel, parentUuid) {
         // 每个规则生成一个唯一标识
@@ -66,36 +67,97 @@ export default class {
         }
     }
     // 组合同一层级的正则表达式
-    setCombRegex(rules, parentRules) {
-        let source = [];
+    setCombStartRegex(rules, parentRules) {
+        let sources = [];
+        let sourceMap = {};
+        let startRegexs = [];
+        parentRules.map((parentRule) => {
+            startRegexs.push(this.getNextRegex(parentRule));
+        });
         rules.map((item) => {
             if (item.childRule) {
-                this.setCombRegex(item.childRule, parentRules.concat(item));
+                this.setCombStartRegex(item.childRule, parentRules.concat([item]));
             }
-            if (item.regex) {
-                source.push(`?<_${item.ruleId}>${item.regex.source}`);
-            } else if (item.start instanceof RegExp) {
-                source.push(`?<_${item.ruleId}>${item.start.source}`);
+            if (item.start) {
+                item = this.getStartRegex(item);
             }
-            if (item.next instanceof RegExp) {
-                item.nextRegex = new RegExp(`(?<_${item.ruleId}>${item.next.source})`, 'g');
+            startRegexs.push(item);
+        });
+        startRegexs.map((item) => {
+            if (!sourceMap[item.ruleId]) {
+                sources.push(`?<_${item.ruleId}>${item.regex.source}`);
+                sourceMap[item.ruleId] = true;
             }
         });
-        parentRules.reverse().map((parentRule) => {
-            if (typeof parentRule.next === 'string') { //命名next
-                let rule = this.ruleNameMap[parentRule.next];
-                while (typeof rule.start === 'string') {
-                    rule = this.ruleNameMap[rule.start];
-                }
-                if (rule.start instanceof RegExp) {
-                    parentRule.nextRegex = new RegExp(`(?<_${rule.ruleId}>${rule.start.source})`, 'g');
-                    source.unshift(`?<_${rule.ruleId}>${rule.start.source}`);
-                }
-            } else {
-                source.unshift(`?<_${parentRule.ruleId}>${parentRule.next.source}`);
+        rules.regex = new RegExp(`(${sources.join(')|(')})`, 'g');
+    }
+    setCombNextRegex(rules, parentRules) {
+        let that = this;
+        rules.map((item) => {
+            if (item.childRule) {
+                this.setCombNextRegex(item.childRule, parentRules.concat([item]));
+            }
+            if (item.next) {
+                _build(item, parentRules);
             }
         });
-        rules.regex = new RegExp(`(${source.join(')|(')})`, 'g');
+
+        function _build(rule, parentRules) {
+            let sources = [];
+            let sourceMap = {};
+            let nextRegexs = [that.getNextRegex(rule)];
+            let index = parentRules.length - 1;
+            while (index >= 0 && !parentRules[index].childFirst) {
+                let parentRule = parentRules[index];
+                nextRegexs.push(that.getNextRegex(parentRule));
+                index--;
+            }
+            nextRegexs.reverse().map((item) => {
+                if (!sourceMap[item.ruleId]) {
+                    sources.push(`?<_${item.ruleId}>${item.regex.source}`)
+                    sourceMap[item.ruleId] = true;
+                }
+            });
+            rule.nextRegex = new RegExp(`(${sources.join(')|(')})`, 'g');
+        }
+    }
+    getStartRegex(rule) {
+        if (typeof rule.start === 'string') { //命名start
+            let _rule = this.ruleNameMap[rule.next];
+            while (_rule && typeof _rule.start === 'string') {
+                _rule = this.ruleNameMap[_rule.start];
+            }
+            if (_rule && _rule.start instanceof RegExp) {
+                return {
+                    ruleId: _rule.ruleId,
+                    regex: _rule.start
+                };
+            }
+        } else if (rule.start instanceof RegExp) {
+            return {
+                ruleId: rule.ruleId,
+                regex: rule.start
+            };
+        }
+    }
+    getNextRegex(rule) {
+        if (typeof rule.next === 'string') { //命名next
+            let _rule = this.ruleNameMap[rule.next];
+            while (_rule && typeof _rule.start === 'string') {
+                _rule = this.ruleNameMap[_rule.start];
+            }
+            if (_rule && _rule.start instanceof RegExp) {
+                return {
+                    ruleId: _rule.ruleId,
+                    regex: _rule.start
+                };
+            }
+        } else if (rule.next instanceof RegExp) {
+            return {
+                ruleId: rule.ruleId,
+                regex: rule.next
+            };
+        }
     }
     onInsertContent(line) {
         if (line <= this.currentLine) {

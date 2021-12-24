@@ -77,6 +77,7 @@ export default {
                 return 'xml-tag-close';
             }
         },
+        childFirst: true,
         childRule: {
             rules: attrRules.map((item) => {
                 return Object.assign({}, item);
@@ -88,6 +89,7 @@ export default {
         next: /\>/g,
         level: 2,
         token: tagToken,
+        childFirst: true,
         childRule: {
             rules: attrRules.map((item) => {
                 return Object.assign({}, item);
