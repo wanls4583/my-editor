@@ -3,6 +3,7 @@
  * @Date: 2021-12-10 09:31:38
  * @Description: 
  */
+import Util from '../../common/util';
 import JsRules from '../javascript/rules';
 
 const styleRules = [{
@@ -46,9 +47,7 @@ const attrRules = [{
     token: 'xml-attr-value',
     level: 2,
     childRule: {
-        rules: styleRules.map((item) => {
-            return Object.assign({}, item);
-        })
+        rules: Util.deepAssign([], styleRules)
     }
 }, {
     start: /(?<=style\s*?\=\s*?)"/g,
@@ -56,9 +55,7 @@ const attrRules = [{
     token: 'xml-attr-value',
     level: 2,
     childRule: {
-        rules: styleRules.map((item) => {
-            return Object.assign({}, item);
-        })
+        rules: Util.deepAssign([], styleRules)
     }
 }];
 
@@ -79,9 +76,7 @@ export default {
         },
         childFirst: true,
         childRule: {
-            rules: attrRules.map((item) => {
-                return Object.assign({}, item);
-            })
+            rules: Util.deepAssign([], attrRules)
         }
     }, {
         name: 'script-start',
@@ -91,9 +86,7 @@ export default {
         token: tagToken,
         childFirst: true,
         childRule: {
-            rules: attrRules.map((item) => {
-                return Object.assign({}, item);
-            })
+            rules: Util.deepAssign([], attrRules)
         }
     }, {
         name: 'script-end',
@@ -110,7 +103,7 @@ export default {
     }, {
         start: 'script-start',
         next: 'script-end',
-        childRule: JsRules
+        childRule: Util.deepAssign({}, JsRules)
     }, {
         start: /\<\!\-\-/g,
         next: /\-\-\>/g,

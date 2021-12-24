@@ -92,7 +92,8 @@ class Util {
                 if (excludeKeys.indexOf(key) > -1) {
                     continue;
                 }
-                if (typeof value === 'object' && value !== null && (!value.nodeName || !value.nodeType) && assigned.indexOf(value) == -1) {
+                if (typeof value === 'object' && !(value instanceof RegExp) && value !== null &&
+                    (!value.nodeName || !value.nodeType) && assigned.indexOf(value) == -1) {
                     assigned.push(value);
                     if (value instanceof Array) {
                         targetObj[key] = _assign(targetObj[key] || [], value);
