@@ -33,12 +33,16 @@ export default class {
         }
     }
     initProperties(editor) {
-        let properties = ['startLine', 'maxVisibleLines', 'maxLine', 'renderedIdMap'];
+        let properties = ['startLine', 'maxVisibleLines', 'maxLine', 'renderLine'];
         let result = {};
         properties.map((property) => {
             result[property] = {
                 get: function () {
-                    return editor[property];
+                    if (typeof editor[property] == 'function') {
+                        return editor[property].bind(editor);
+                    } else {
+                        return editor[property];
+                    }
                 }
             }
         });
@@ -248,9 +252,7 @@ export default class {
                         return `<span class="${item.type.split('.').join(' ')}">${Util.htmlTrans(item.value)}</span>`;
                     }
                 }).join('');
-                if (this.renderedIdMap.has(lineObj.lineId)) {
-                    this.renderedIdMap.get(lineObj.lineId).html = lineObj.html;
-                }
+                this.renderLine(lineObj.lineId);
                 if (lineObj.states + '' != data.states + '') {
                     lineObj.states = data.states;
                     lineObj = this.context.htmls[startLine];

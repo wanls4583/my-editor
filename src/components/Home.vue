@@ -298,17 +298,15 @@ export default {
             });
         },
         // 渲染代码
-        renderLine(line) {
+        renderLine(lineId) {
             let that = this;
             // 只更新一行
-            if (line) {
-                let obj = this.renderHtmls[line - this.startLine];
-                this.renderedIdMap.delete(obj.lineId);
-                obj.text = context.htmls[line - 1].text;
-                obj.html = context.htmls[line - 1].html || Util.htmlTrans(obj.text);
-                obj.lineId = context.htmls[line - 1].lineId;
-                Object.assign(obj, _getObj(obj, line));
-                this.renderedIdMap.set(lineId, obj);
+            if (lineId) {
+                if (this.renderedIdMap.has(lineId)) {
+                    let item = this.lineIdMap.get(lineId);
+                    let obj = this.renderedIdMap.get(lineId);
+                    Object.assign(obj, _getObj(item, obj.num));
+                }
                 return;
             }
             this.renderedIdMap.clear();
