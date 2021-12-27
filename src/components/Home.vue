@@ -68,6 +68,8 @@
 <script>
 import Highlight from '@/highlight/core/highlight';
 import StatusBar from './StatusBar';
+import Util from '@/common/util';
+import $ from 'jquery';
 const context = {
     htmls: []
 }
@@ -163,8 +165,8 @@ export default {
         },
         _textAreaPos() {
             let cursorRealPos = this._cursorRealPos;
-            let left = this.$util.getNum(cursorRealPos.left);
-            let top = this.$util.getNum(cursorRealPos.top) + this.top;
+            let left = Util.getNum(cursorRealPos.left);
+            let top = Util.getNum(cursorRealPos.top) + this.top;
             left -= this.scrollLeft;
             left = left < this.charObj.charWidth ? this.charObj.charWidth : left;
             left = left > this.scrollerArea.width - this.charObj.charWidth ? this.scrollerArea.width - this.charObj.charWidth : left;
@@ -192,6 +194,9 @@ export default {
                 return (tab - 1) * this.tabSize * this.charObj.charWidth + 'px';
             }
         },
+        space() {
+            return Util.space(this.tabSize);
+        }
     },
     watch: {
         language: function (newVal) {
@@ -221,14 +226,13 @@ export default {
         this.$vScroller = this.$refs.vScroller;
         this.$hScroller = this.$refs.hScroller;
         this.maxVisibleLines = Math.ceil(this.$scroller.clientHeight / this.charObj.charHight) + 1;
-        this.charObj = this.$util.getCharWidth(this.$scroller);
+        this.charObj = Util.getCharWidth(this.$scroller);
         this.render();
         this.focus();
     },
     methods: {
         // 初始化数据
         initData() {
-            this.space = this.$util.space(this.tabSize);
             this.history = []; // 操作历史
             this.lineId = Number.MIN_SAFE_INTEGER;
             this.lineIdMap = new Map(); // htmls的唯一标识对象
@@ -246,10 +250,10 @@ export default {
         },
         // 初始化文档事件
         initEvent() {
-            this.$(document).on('mousemove', (e) => {
+            $(document).on('mousemove', (e) => {
                 this.onScrollerMmove(e);
             });
-            this.$(document).on('mouseup', (e) => {
+            $(document).on('mouseup', (e) => {
                 this.onScrollerMup(e);
             });
         },
@@ -298,7 +302,7 @@ export default {
                 let obj = this.renderHtmls[line - this.startLine];
                 this.renderedIdMap.delete(obj.lineId);
                 obj.text = context.htmls[line - 1].text;
-                obj.html = context.htmls[line - 1].html || this.$util.htmlTrans(obj.text);
+                obj.html = context.htmls[line - 1].html || Util.htmlTrans(obj.text);
                 obj.lineId = context.htmls[line - 1].lineId;
                 Object.assign(obj, _getObj(obj, line));
                 this.renderedIdMap.set(lineId, obj);
@@ -318,13 +322,20 @@ export default {
 
             function _getObj(item, num) {
                 let selected = false;
-                let tabNum = /^\s+/.exec(item.text);
-                tabNum = tabNum && Math.floor(tabNum[0].length / 4) || 0;
+                let spaceNum = /^\s+/.exec(item.text);
+                let tabNum = 0;
+                if (spaceNum) {
+                    tabNum = /\t+/.exec(spaceNum[0]);
+                    tabNum = tabNum && tabNum[0].length || 0;
+                    tabNum = tabNum + Math.ceil((spaceNum[0].length - tabNum) / 4);
+                }
                 if (that.selectedRange && num > that.selectedRange.start.line && num < that.selectedRange.end.line) {
                     selected = true;
                 }
+                let html = item.html || Util.htmlTrans(item.text);
+                html = html.replace(/\t/g, that.space);
                 return {
-                    html: item.html || that.$util.htmlTrans(item.text),
+                    html: html,
                     num: num,
                     tabNum: tabNum,
                     selected: selected,
@@ -338,7 +349,7 @@ export default {
             }
             let start = this.selectedRange.start;
             let end = this.selectedRange.end;
-            let same = this.$util.comparePos(start, end);
+            let same = Util.comparePos(start, end);
             this.setCursorPos(end.line, end.column, forceCursorView);
             if (same > 0) {
                 let tmp = start;
@@ -382,7 +393,6 @@ export default {
             let nowLine = this.cursorPos.line;
             let newLine = nowLine;
             let newColume = nowColume;
-            text = text.replace(/\t/g, this.space);
             text = text.split(/\r\n|\n/);
             text = text.map((item) => {
                 item = {
@@ -415,7 +425,7 @@ export default {
                 this.setCursorPos(newLine, newColume);
             });
             let historyObj = {
-                type: this.$util.command.DELETE,
+                type: Util.command.DELETE,
                 start: {
                     line: nowLine,
                     column: nowColume
@@ -471,7 +481,7 @@ export default {
                     context.htmls.splice(start.line, end.line - start.line);
                 }
                 this.setCursorPos(start.line, start.column);
-            } else if (this.$util.keyCode.DELETE == keyCode) { // 向后删除一个字符
+            } else if (Util.keyCode.DELETE == keyCode) { // 向后删除一个字符
                 if (this.cursorPos.column == text.length) { // 光标处于行尾
                     if (this.cursorPos.line < context.htmls.length) {
                         this.lineIdMap.delete(context.htmls[this.cursorPos.line].lineId);
@@ -520,9 +530,9 @@ export default {
                 this.setMaxWidth();
             }
             let historyObj = {
-                type: this.$util.command.INSERT,
+                type: Util.command.INSERT,
                 keyCode: keyCode,
-                cursorPos: this.$util.deepAssign({}, this.cursorPos),
+                cursorPos: Util.deepAssign({}, this.cursorPos),
                 preCursorPos: originPos,
                 text: deleteText
             };
@@ -551,14 +561,14 @@ export default {
         // 操作命令
         doCommand(command) {
             switch (command.type) {
-                case this.$util.command.DELETE:
+                case Util.command.DELETE:
                     this.selectedRange = {
                         start: command.start,
                         end: command.end
                     }
-                    this.deleteContent(this.$util.keyCode.BACKSPACE, true);
+                    this.deleteContent(Util.keyCode.BACKSPACE, true);
                     break;
-                case this.$util.command.INSERT:
+                case Util.command.INSERT:
                     this.setCursorPos(command.cursorPos.line, command.cursorPos.column);
                     this.insertContent(command.text, true);
                     break;
@@ -571,14 +581,14 @@ export default {
             // 两次操作可以合并
             if (lastCommand && lastCommand.type == command.type && Date.now() - this.pushHistoryTime < 2000) {
                 if (
-                    lastCommand.type == this.$util.command.DELETE &&
+                    lastCommand.type == Util.command.DELETE &&
                     command.end.line == command.start.line &&
-                    this.$util.comparePos(lastCommand.end, command.start) == 0) {
+                    Util.comparePos(lastCommand.end, command.start) == 0) {
                     lastCommand.end = command.end;
                 } else if (
-                    lastCommand.type == this.$util.command.INSERT &&
+                    lastCommand.type == Util.command.INSERT &&
                     command.preCursorPos.line == command.cursorPos.line &&
-                    this.$util.comparePos(lastCommand.cursorPos, command.preCursorPos) == 0
+                    Util.comparePos(lastCommand.cursorPos, command.preCursorPos) == 0
                 ) {
                     lastCommand.text = command.text + lastCommand.text;
                     lastCommand.cursorPos = command.cursorPos;
@@ -649,7 +659,7 @@ export default {
         },
         // 获取文本在浏览器中的宽度
         getStrWidth(str, start, end) {
-            return this.$util.getStrWidth(str, this.charObj.charWidth, this.charObj.fullAngleCharWidth, start, end);
+            return Util.getStrWidth(str, this.charObj.charWidth, this.charObj.fullAngleCharWidth, this.tabSize, start, end);
         },
         // 获取行对应的文本在浏览器中的宽度
         getStrWidthByLine(line, start, end) {
@@ -657,15 +667,13 @@ export default {
         },
         // 根据文本宽度计算当前列号
         getColumnByWidth(text, offsetX) {
-            let halfCharWidth = this.charObj.charWidth / 2;
-            let halfFullCharWidth = this.charObj.fullAngleCharWidth / 2;
             let left = 0, right = text.length;
             let mid, width, w1, w2;
             while (left < right) {
                 mid = Math.floor((left + right) / 2);
                 width = this.getStrWidth(text, 0, mid);
-                w1 = text[mid - 1] && text[mid - 1].match(this.$util.fullAngleReg) ? halfFullCharWidth : halfCharWidth;
-                w2 = text[mid] && (text[mid].match(this.$util.fullAngleReg) ? halfFullCharWidth : halfCharWidth) || w1;
+                w1 = text[mid - 1] && this.getStrWidth(text[mid - 1]) / 2;
+                w2 = text[mid] && this.getStrWidth(text[mid]) / 2 || w1;
                 if (width >= offsetX && width - offsetX < w1 || offsetX >= width && offsetX - width < w2) {
                     left = mid;
                     break;
@@ -679,7 +687,7 @@ export default {
         },
         // 根据鼠标事件对象获取行列坐标
         getPosByEvent(e) {
-            let $scroller = this.$(this.$scroller);
+            let $scroller = $(this.$scroller);
             let offset = $scroller.offset();
             let column = 0;
             let clientX = e.clientX < 0 ? 0 : e.clientX;
@@ -728,7 +736,7 @@ export default {
         onScrollerMmove(e) {
             let that = this;
             if (this.mouseStartObj && Date.now() - this.mouseStartObj.time > 100) {
-                var offset = this.$(this.$scroller).offset();
+                var offset = $(this.$scroller).offset();
                 this.selectedRange = {
                     start: Object.assign({}, this.mouseStartObj.start),
                     end: this.getPosByEvent(e)
@@ -924,7 +932,7 @@ export default {
                 switch (e.keyCode) {
                     case 9: //tab键
                         e.preventDefault();
-                        this.insertContent(this.space);
+                        this.insertContent('\t');
                         break;
                     case 37: //left arrow
                         if (this.cursorPos.column > 0) {
@@ -963,11 +971,11 @@ export default {
                         }
                         this.clearRnage();
                         break;
-                    case this.$util.keyCode.DELETE: //delete
-                        this.deleteContent(this.$util.keyCode.DELETE);
+                    case Util.keyCode.DELETE: //delete
+                        this.deleteContent(Util.keyCode.DELETE);
                         break;
-                    case this.$util.keyCode.BACKSPACE: //backspace
-                        this.deleteContent(this.$util.keyCode.BACKSPACE);
+                    case Util.keyCode.BACKSPACE: //backspace
+                        this.deleteContent(Util.keyCode.BACKSPACE);
                         break;
                 }
             }

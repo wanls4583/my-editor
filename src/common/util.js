@@ -18,33 +18,10 @@ class Util {
         }
         return num;
     }
-    /**
-     * 获取文本在浏览器中的真实宽度
-     * @param  {string} str       文本
-     * @param  {number} charW     半角符号/文字宽度
-     * @param  {number} fullCharW 全角符号/文字宽度
-     * @param  {number} start     文本开始索引
-     * @param  {number} end       文本结束索引
-     * @return {number}           文本真实宽度
-     */
-    static getStrWidth(str, charW, fullCharW, start, end) {
-        if (typeof start != 'undefined') {
-            str = str.substr(start);
-        }
-        if (typeof end != 'undefined') {
-            str = str.substring(0, end - start);
-        }
-        var match = str.match(this.fullAngleReg);
-        var width = str.length * charW;
-        if (match) {
-            width = match.length * fullCharW + (str.length - match.length) * charW;
-        }
-        return width;
-    }
     //生成指定个数的空白符
-    static space(tabsize) {
+    static space(tabSize) {
         var val = '';
-        for (var tmp = 0; tmp < tabsize; tmp++) {
+        for (var tmp = 0; tmp < tabSize; tmp++) {
             val += ' '
         };
         return val;
@@ -75,6 +52,36 @@ class Util {
             charHight: charHight,
             fontSize: fontSize
         }
+    }
+    /**
+     * 获取文本在浏览器中的真实宽度
+     * @param  {string} str       文本
+     * @param  {number} charW     半角符号/文字宽度
+     * @param  {number} fullCharW 全角符号/文字宽度
+     * @param  {number} tabSize   tab符所占宽度
+     * @param  {number} start     文本开始索引
+     * @param  {number} end       文本结束索引
+     * @return {number}           文本真实宽度
+     */
+    static getStrWidth(str, charW, fullCharW, tabSize, start, end) {
+        tabSize = tabSize || 4;
+        if (typeof start != 'undefined') {
+            str = str.substr(start);
+        }
+        if (typeof end != 'undefined') {
+            str = str.substring(0, end - start);
+        }
+        var match = str.match(this.fullAngleReg);
+        var width = str.length * charW;
+        var tabNum = str.match(/\t/g);
+        tabNum = tabNum && tabNum.length || 0;
+        match = match && match.length || 0;
+        if (match) {
+            match = match - tabNum;
+            width = match * fullCharW + (str.length - match) * charW;
+            width += tabNum * charW * (tabSize - 1);
+        }
+        return width;
     }
     //<,>转义
     static htmlTrans(cont) {
