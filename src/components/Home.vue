@@ -1,5 +1,12 @@
 <template>
-	<div :style="{'padding-bottom': _statusHeight}" @click="onClickEditor" @contextmenu.prevent="onContextmenu" @selectstart.prevent class="my-editor-wrap">
+	<div
+		:style="{'padding-bottom': _statusHeight}"
+		@click="onClickEditor"
+		@contextmenu.prevent="onContextmenu"
+		@selectstart.prevent
+		class="my-editor-wrap"
+		ref="editor"
+	>
 		<!-- 行号 -->
 		<div :style="{top: _numTop}" class="my-editor-nums">
 			<!-- 占位行号，避免行号宽度滚动时变化 -->
@@ -64,7 +71,7 @@
 		<!-- 状态栏 -->
 		<status-bar :column="cursorPos.column+1" :height="statusHeight" :language.sync="language" :line="cursorPos.line" :tabSize.sync="tabSize" ref="statusBar"></status-bar>
 		<!-- 右键菜单 -->
-		<!-- <panel :menuList="menuList" :styles="menuStyle" @change="onClickMenu"></panel> -->
+		<panel :checkable="false" :menuList="menuList" :styles="menuStyle" @change="onClickMenu" v-show="menuVisble"></panel>
 	</div>
 </template>
 
@@ -116,12 +123,25 @@ export default {
                 lineId: null,
                 width: 0
             },
-            menuList: [[{ name: 'Cut', op: 'cut' }, { name: 'Copy', op: 'copy' }, { name: 'Paste', op: 'paste' }]],
+            menuList: [[{
+                name: 'Cut',
+                op: 'cut',
+                shortcut: 'Ctrl+X'
+            }, {
+                name: 'Copy',
+                op: 'copy',
+                shortcut: 'Ctrl+C'
+            }, {
+                name: 'Paste',
+                op: 'paste',
+                shortcut: 'Ctrl+V'
+            }]],
             menuStyle: {
                 top: '0px',
                 left: '0px',
                 'min-width': '200px'
-            }
+            },
+            menuVisble: false
         }
     },
     computed: {
@@ -234,6 +254,7 @@ export default {
         this.initEvent();
     },
     mounted() {
+        this.$editor = this.$refs.editor;
         this.$scroller = this.$refs.scroller;
         this.$content = this.$refs.content;
         this.$textarea = this.$refs.textarea;
@@ -473,13 +494,13 @@ export default {
                 if (start.line == 1 && end.line == this.maxLine) { //全选删除
                     rangeUuid = [this.maxWidthObj.lineId];
                     this.lineIdMap.clear();
-                    this.lineIdMap.set(startObj.lineId, startObj);
                 } else {
                     rangeUuid = context.htmls.slice(start.line - 1, end.line).map((item) => {
                         this.lineIdMap.delete(item.lineId);
                         return item.lineId;
                     });
                 }
+                this.lineIdMap.set(startObj.lineId, startObj);
                 if (start.line == end.line) { // 单行选中
                     text = text.slice(0, start.column) + text.slice(end.column);
                     startObj.text = text;
@@ -735,28 +756,47 @@ export default {
         },
         // 右键菜单事件
         onContextmenu(e) {
-            let $scroller = $(this.$scroller);
-            let offset = $scroller.offset();
-            let column = 0;
-            let clientX = e.clientX < 0 ? 0 : e.clientX;
-            let clientY = e.clientY < 0 ? 0 : e.clientY;
-            this.menuStyle.top = clientY - offset.top + 'px';
-            this.menuStyle.left = clientX - offset.left + 'px';
+            let $editor = $(this.$editor);
+            let offset = $editor.offset();
+            this.menuStyle.top = e.clientY - offset.top + 'px';
+            this.menuStyle.left = e.clientX - offset.left + 'px';
+            this.menuVisble = true;
         },
         // 选中菜单
-        onClickMenu() {
-
+        onClickMenu(menu) {
+            switch (menu.op) {
+                case 'cut':
+                case 'copy':
+                    if (this.selectedRange) {
+                        let text = this.getRangeText(this.selectedRange.start, this.selectedRange.end);
+                        if (menu.op == 'cut') {
+                            this.deleteContent();
+                        }
+                        Util.writeClipboard(text);
+                    }
+                    break;
+                case 'paste':
+                    if (this.selectedRange) {
+                        this.deleteContent();
+                    }
+                    this.$textarea.focus();
+                    Util.readClipboard().then((text) => {
+                        this.insertContent(text);
+                    });
+                    break;
+            }
+            this.menuVisble = false;
         },
         // 点击编辑器
         onClickEditor() {
             this.$refs.statusBar.closeAllPanel();
+            this.menuVisble = false;
         },
         // 滚动区域鼠标按下事件
         onScrollerMdown(e) {
             let pos = this.getPosByEvent(e);
             this.setCursorPos(pos.line, pos.column);
             this.focus();
-            this.clearRnage();
             this.mouseStartObj = {
                 time: Date.now(),
                 start: pos
@@ -847,7 +887,7 @@ export default {
                 }
                 this.renderSelectedBg();
                 this.setCursorPos(end.line, end.column);
-            } else {
+            } else if (e.which != 3) {
                 this.clearRnage();
             }
             // 停止滚动选中

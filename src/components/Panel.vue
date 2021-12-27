@@ -4,10 +4,11 @@
  * @Description: 
 -->
 <template>
-	<div :style="styles" @click.stop class="my-editor-panel">
+	<div :style="styles" @mouseup.stop class="my-editor-panel">
 		<div class="my-editor-menu-group" v-for="group in menuList">
-			<div :class="{checked: item.checked}" @click="onClick(item, group)" class="my-editor-menu-item" v-for="item in group">
+			<div :class="{checked: checkable && item.checked}" @click="onClick(item, group)" class="my-editor-menu-item" v-for="item in group">
 				<div class="my-editor-menu-content">{{item.name}}</div>
+				<div class="my-editor-menu-shortcut" v-if="item.shortcut">{{item.shortcut}}</div>
 			</div>
 		</div>
 	</div>
@@ -22,6 +23,10 @@ export default {
         },
         styles: {
             type: Object
+        },
+        checkable: {
+            type: Boolean,
+            default: true
         }
     },
     data() {

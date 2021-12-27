@@ -264,6 +264,9 @@ body {
 
     &-menu-item {
         position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
         padding-left: 25px;
         padding-right: 10px;
         font-size: 12px;
@@ -291,5 +294,10 @@ body {
 
     &-menu-content {
         padding: 5px 0;
+    }
+
+    &-menu-shortcut {
+        margin-left: 20px;
+        color: #999999;
     }
 }

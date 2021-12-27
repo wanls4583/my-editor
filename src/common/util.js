@@ -6,6 +6,22 @@
 import $ from 'jquery';
 
 class Util {
+    static readClipboard() {
+        if (window.clipboardData) {
+            return new Promise((resolve) => {
+                resolve(clipboardData.getData('Text'));
+            });
+        } else if (navigator.clipboard) {
+            return navigator.clipboard.readText();
+        }
+    }
+    static writeClipboard(text) {
+        if (window.clipboardData) {
+            clipboardData.setData('Text', text);
+        } else if (navigator.clipboard) {
+            navigator.clipboard.writeText(text);
+        }
+    }
     //获取数字
     static getNum(value) {
         value = String(value);
