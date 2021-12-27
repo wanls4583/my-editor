@@ -4,18 +4,18 @@
  * @Description: 
 -->
 <template>
-	<div :style="{height:height+'px'}" @click.stop class="my-editor-status-bar">
+	<div :style="{height:height+'px'}" class="my-editor-status-bar">
 		<div class="my-editor-status-left">
 			<div class="my-editor-status-item">
 				<span>Line {{line}}, Column {{column}}</span>
 			</div>
 		</div>
 		<div class="my-editor-status-right">
-			<div @click="showTabsize" class="my-editor-status-item clickable">
+			<div @click.stop="showTabsize" class="my-editor-status-item clickable">
 				<span>Tab Size:{{_tabSize}}</span>
 				<panel :menuList="tabSizeList" :styles="{right: 0, bottom: height+'px'}" @change="onTabsizeChange" v-show="tabsizeVisible"></panel>
 			</div>
-			<div @click="showLanguage" class="my-editor-status-item clickable">
+			<div @click.stop="showLanguage" class="my-editor-status-item clickable">
 				<span>{{_language}}</span>
 				<panel :menuList="languageList" :styles="{right: 0, bottom: height+'px'}" @change="onLnaguageChange" v-show="languageVisible"></panel>
 			</div>
@@ -82,12 +82,18 @@ export default {
             });
         },
         showTabsize() {
-            this.languageVisible = false;
-            this.tabsizeVisible = !this.tabsizeVisible;
+            let visible = this.tabsizeVisible;
+            this.closeAllPanel();
+            this.tabsizeVisible = !visible;
         },
         showLanguage() {
+            let visible = this.languageVisible;
+            this.closeAllPanel();
+            this.languageVisible = !visible;
+        },
+        closeAllPanel() {
+            this.languageVisible = false;
             this.tabsizeVisible = false;
-            this.languageVisible = !this.languageVisible;
         },
         onTabsizeChange(item) {
             if (this._tabSize != item.size) {

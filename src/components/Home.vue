@@ -1,5 +1,5 @@
 <template>
-	<div :style="{'padding-bottom': _statusHeight}" @selectstart.prevent class="my-editor-wrap">
+	<div :style="{'padding-bottom': _statusHeight}" @click="onClickEditor" @selectstart.prevent class="my-editor-wrap">
 		<!-- 行号 -->
 		<div :style="{top: _numTop}" class="my-editor-nums">
 			<!-- 占位行号，避免行号宽度滚动时变化 -->
@@ -61,7 +61,7 @@
 				ref="textarea"
 			></textarea>
 		</div>
-		<status-bar :column="cursorPos.column+1" :height="statusHeight" :language.sync="language" :line="cursorPos.line" :tabSize.sync="tabSize"></status-bar>
+		<status-bar :column="cursorPos.column+1" :height="statusHeight" :language.sync="language" :line="cursorPos.line" :tabSize.sync="tabSize" ref="statusBar"></status-bar>
 	</div>
 </template>
 
@@ -211,6 +211,8 @@ export default {
         },
         tabSize: function (newVal) {
             this.render();
+            this.maxWidthObj = { lineId: null, width: 0 };
+            this.setLineWidth(context.htmls);
         }
     },
     created() {
@@ -614,11 +616,11 @@ export default {
         },
         // 获取最大宽度
         setMaxWidth() {
-            let maxWidthObj = { line: 1, width: 0 };
-            context.htmls.map((item, index) => {
+            let maxWidthObj = { line: context.htmls[0].lineId, width: 0 };
+            context.htmls.map((item) => {
                 if (item.width > maxWidthObj.width) {
                     maxWidthObj = {
-                        line: index + 1,
+                        line: item.lineId,
                         width: item.width
                     }
                 }
@@ -628,12 +630,12 @@ export default {
         setLineWidth(texts) {
             let index = 0;
             let that = this;
-
+            clearTimeout(this.setLineWidth.timer);
             _setLineWidth();
 
             function _setLineWidth() {
                 let count = 0;
-                while (count < 10000 && index < texts.length) {
+                while (count < 5000 && index < texts.length) {
                     let lineObj = texts[index];
                     if (that.lineIdMap.has(lineObj.lineId)) {
                         let width = that.getStrWidth(lineObj.text);
@@ -720,6 +722,9 @@ export default {
                 text = text.slice(start.column, end.column);
             }
             return text;
+        },
+        onClickEditor() {
+            this.$refs.statusBar.closeAllPanel();
         },
         // 鼠标按下事件
         onScrollerMdown(e) {
