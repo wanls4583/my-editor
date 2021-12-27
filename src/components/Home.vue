@@ -207,7 +207,8 @@ export default {
             });
             this.render();
             this.highlighter.initLanguage(newVal);
-            this.highlighter.onScroll();
+            this.highlighter.tokenizeVisibleLins();
+            this.highlighter.tokenizeLines(1);
         },
         tabSize: function (newVal) {
             this.render();
