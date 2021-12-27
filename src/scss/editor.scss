@@ -246,11 +246,12 @@ body {
     // 面板
     &-panel {
         position: absolute;
-        bottom: 0;
+        z-index: 99;
         min-width: 120px;
         background-color: #fff;
         border-radius: 4px;
         padding: 10px 0;
+        color: #333333;
     }
 
     &-menu-group {

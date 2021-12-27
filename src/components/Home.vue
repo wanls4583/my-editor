@@ -1,5 +1,5 @@
 <template>
-	<div :style="{'padding-bottom': _statusHeight}" @click="onClickEditor" @selectstart.prevent class="my-editor-wrap">
+	<div :style="{'padding-bottom': _statusHeight}" @click="onClickEditor" @contextmenu.prevent="onContextmenu" @selectstart.prevent class="my-editor-wrap">
 		<!-- 行号 -->
 		<div :style="{top: _numTop}" class="my-editor-nums">
 			<!-- 占位行号，避免行号宽度滚动时变化 -->
@@ -61,13 +61,17 @@
 				ref="textarea"
 			></textarea>
 		</div>
+		<!-- 状态栏 -->
 		<status-bar :column="cursorPos.column+1" :height="statusHeight" :language.sync="language" :line="cursorPos.line" :tabSize.sync="tabSize" ref="statusBar"></status-bar>
+		<!-- 右键菜单 -->
+		<!-- <panel :menuList="menuList" :styles="menuStyle" @change="onClickMenu"></panel> -->
 	</div>
 </template>
 
 <script>
 import Highlight from '@/highlight/core/highlight';
 import StatusBar from './StatusBar';
+import Panel from './Panel';
 import Util from '@/common/util';
 import $ from 'jquery';
 const context = {
@@ -76,7 +80,8 @@ const context = {
 export default {
     name: 'Home',
     components: {
-        StatusBar
+        StatusBar,
+        Panel
     },
     data() {
         return {
@@ -110,6 +115,12 @@ export default {
             maxWidthObj: {
                 lineId: null,
                 width: 0
+            },
+            menuList: [[{ name: 'Cut', op: 'cut' }, { name: 'Copy', op: 'copy' }, { name: 'Paste', op: 'paste' }]],
+            menuStyle: {
+                top: '0px',
+                left: '0px',
+                'min-width': '200px'
             }
         }
     },
@@ -722,10 +733,25 @@ export default {
             }
             return text;
         },
+        // 右键菜单事件
+        onContextmenu(e) {
+            let $scroller = $(this.$scroller);
+            let offset = $scroller.offset();
+            let column = 0;
+            let clientX = e.clientX < 0 ? 0 : e.clientX;
+            let clientY = e.clientY < 0 ? 0 : e.clientY;
+            this.menuStyle.top = clientY - offset.top + 'px';
+            this.menuStyle.left = clientX - offset.left + 'px';
+        },
+        // 选中菜单
+        onClickMenu() {
+
+        },
+        // 点击编辑器
         onClickEditor() {
             this.$refs.statusBar.closeAllPanel();
         },
-        // 鼠标按下事件
+        // 滚动区域鼠标按下事件
         onScrollerMdown(e) {
             let pos = this.getPosByEvent(e);
             this.setCursorPos(pos.line, pos.column);
