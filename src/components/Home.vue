@@ -210,7 +210,7 @@ export default {
             this.highlighter.onScroll();
         },
         tabSize: function (newVal) {
-
+            this.render();
         }
     },
     created() {
@@ -327,7 +327,7 @@ export default {
                 if (spaceNum) {
                     tabNum = /\t+/.exec(spaceNum[0]);
                     tabNum = tabNum && tabNum[0].length || 0;
-                    tabNum = tabNum + Math.ceil((spaceNum[0].length - tabNum) / 4);
+                    tabNum = tabNum + Math.ceil((spaceNum[0].length - tabNum) / that.tabSize);
                 }
                 if (that.selectedRange && num > that.selectedRange.start.line && num < that.selectedRange.end.line) {
                     selected = true;
