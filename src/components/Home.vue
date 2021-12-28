@@ -1,8 +1,8 @@
 <template>
 	<div
 		:style="{'padding-bottom': _statusHeight}"
-		@mouseup="onClickEditor"
 		@contextmenu.prevent="onContextmenu"
+		@mouseup="onClickEditor"
 		@selectstart.prevent
 		class="my-editor-wrap"
 		ref="editor"
@@ -760,6 +760,11 @@ export default {
             let offset = $editor.offset();
             this.menuStyle.top = e.clientY - offset.top + 'px';
             this.menuStyle.left = e.clientX - offset.left + 'px';
+            this.menuList[0].map((menu) => {
+                if (['cut', 'copy'].indexOf(menu.op) > -1) {
+                    menu.disabled = !this.selectedRange;
+                }
+            });
             this.menuVisble = true;
         },
         // 选中菜单
@@ -968,6 +973,7 @@ export default {
         // 失去焦点
         onBlur() {
             this.hideCursor();
+            this.menuVisble = false;
         },
         // 键盘按下事件
         onKeyDown(e) {

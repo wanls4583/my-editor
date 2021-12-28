@@ -276,6 +276,7 @@ body {
 
         &:hover {
             background-color: #c2cbd8;
+            cursor: pointer;
         }
 
         &:last-child {
@@ -290,6 +291,19 @@ body {
             top: 5px;
             left: 10px;
         }
+
+        &.disabled {
+
+            &:hover {
+                background-color: transparent;
+                cursor: auto;
+            }
+
+            .my-editor-menu-content,
+            .my-editor-menu-shortcut {
+                color: #999999;
+            }
+        }
     }
 
     &-menu-content {
@@ -298,6 +312,5 @@ body {
 
     &-menu-shortcut {
         margin-left: 20px;
-        color: #999999;
     }
 }
