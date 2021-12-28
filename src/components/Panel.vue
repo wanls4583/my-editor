@@ -6,7 +6,7 @@
 <template>
 	<div :style="styles" @mouseup.stop class="my-editor-panel">
 		<div class="my-editor-menu-group" v-for="group in menuList">
-			<div :class="{checked: checkable && item.checked}" @click="onClick(item, group)" class="my-editor-menu-item" v-for="item in group">
+			<div :class="{checked: checkable && item.checked}" @mouseup="onClick(item, group)" class="my-editor-menu-item" v-for="item in group">
 				<div class="my-editor-menu-content">{{item.name}}</div>
 				<div class="my-editor-menu-shortcut" v-if="item.shortcut">{{item.shortcut}}</div>
 			</div>

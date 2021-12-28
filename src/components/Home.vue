@@ -1,7 +1,7 @@
 <template>
 	<div
 		:style="{'padding-bottom': _statusHeight}"
-		@click="onClickEditor"
+		@mouseup="onClickEditor"
 		@contextmenu.prevent="onContextmenu"
 		@selectstart.prevent
 		class="my-editor-wrap"

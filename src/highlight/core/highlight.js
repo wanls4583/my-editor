@@ -3,9 +3,9 @@
  * @Date: 2021-12-15 11:39:41
  * @Description: 
  */
-import jsRules from '@/highlight/javascript/rules';
-import htmlRules from '@/highlight/html/rules';
-import cssRules from '@/highlight/css/rules';
+import jsRules from '@/highlight/rules/javascript.js';
+import htmlRules from '@/highlight/rules/html.js';
+import cssRules from '@/highlight/rules/css.js';
 import Util from '@/common/util';
 export default class {
     constructor(editor, context) {

@@ -3,8 +3,8 @@
  * @Date: 2021-12-10 09:31:38
  * @Description: 
  */
-import jsRules from '../javascript/rules';
-import cssRules from '../css/rules';
+import jsRules from './javascript.js';
+import cssRules from './css.js';
 
 const styleRules = [{
     regex: /(?<=(?:\;|'|")\s*?)[^\<\>\:\;'"]+/,
