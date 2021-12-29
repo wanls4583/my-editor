@@ -354,7 +354,7 @@ export default {
                 }
             }
 
-            function _getObj(item, num) {
+            function _getObj(item, line) {
                 let selected = false;
                 let spaceNum = /^\s+/.exec(item.text);
                 let tabNum = 0;
@@ -364,28 +364,45 @@ export default {
                     tabNum = tabNum && tabNum[0].length || 0;
                     tabNum = tabNum + Math.ceil((spaceNum[0].length - tabNum) / that.tabSize);
                 }
-                if (that.selectedRange && num > that.selectedRange.start.line && num < that.selectedRange.end.line) {
+                if (that.selectedRange && line > that.selectedRange.start.line && line < that.selectedRange.end.line) {
                     selected = true;
                 }
                 if (that.foldMap.has(item.lineId)) {
                     fold = 'close';
-                } else if (item.folds && item.folds.length) {
-                    for (let i = 0; i < item.folds.length; i++) {
-                        if (item.folds[i].type == -1) {
-                            fold = 'open';
-                            break;
-                        }
-                    }
+                } else if (_checkFoldAble(line)) {
+                    fold = 'open';
                 }
                 let html = item.html || Util.htmlTrans(item.text);
                 html = html.replace(/\t/g, that.space);
                 return {
                     html: html,
-                    num: num,
+                    num: line,
                     tabNum: tabNum,
                     selected: selected,
                     fold: fold
                 }
+            }
+
+            function _checkFoldAble(line) {
+                let lineObj = context.htmls[line - 1];
+                if (!lineObj.folds || !lineObj.folds.length) {
+                    return false;
+                }
+                for (let i = 0; i < lineObj.folds.length; i++) {
+                    let fold = lineObj.folds[i];
+                    if (fold.type == -1) {
+                        let nextObj = context.htmls[line];
+                        if (nextObj && nextObj.folds && nextObj.folds.length) {
+                            for (let j = 0; j < nextObj.folds.length; j++) {
+                                if (nextObj.folds[j].name == fold.name && nextObj.folds[j].type == 1) {
+                                    return false;
+                                }
+                            }
+                        }
+                        return true;
+                    }
+                }
+                return false;
             }
         },
         // 渲染选中背景
