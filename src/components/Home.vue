@@ -346,8 +346,8 @@ export default {
                 let obj = _getObj(lineObj, startLine);
                 this.renderHtmls.push(obj);
                 this.renderedIdMap.set(lineId, obj);
-                if (this.foldMap.has(lineObj.lineId)) {
-                    let fold = this.foldMap.get(lineObj.lineId);
+                if (this.foldMap.has(startLine)) {
+                    let fold = this.foldMap.get(startLine);
                     startLine = fold.endLine;
                 } else {
                     startLine++;
@@ -367,7 +367,7 @@ export default {
                 if (that.selectedRange && line > that.selectedRange.start.line && line < that.selectedRange.end.line) {
                     selected = true;
                 }
-                if (that.foldMap.has(item.lineId)) {
+                if (that.foldMap.has(line)) {
                     fold = 'close';
                 } else if (_checkFoldAble(line)) {
                     fold = 'open';
@@ -896,13 +896,15 @@ export default {
             let lineObj = context.htmls[startLine - 1];
             let resultFold = null;
             line++;
-            if (this.foldMap.has(lineObj.lineId)) {
-                this.foldMap.delete(lineObj.lineId);
+            if (this.foldMap.has(startLine)) {
+                this.foldMap.delete(startLine);
                 this.folds = this.folds.filter((fold) => {
                     return fold.startLine != startLine;
                 });
                 this.setScrollerHeight();
                 this.render();
+                this.focus();
+                this.setCursorRealPos();
                 return;
             }
             for (let i = 0; i < lineObj.folds.length; i++) {
@@ -940,20 +942,19 @@ export default {
                 line++;
             }
             if (resultFold) {
-                lineObj = context.htmls[startLine - 1];
-                this.folds = this.folds.filter((fold) => {
-                    if (fold.startLine > resultFold.startLine && fold.startLine < resultFold.endLine) {
-                        return false;
-                    }
-                    return true;
-                });
-                this.foldMap.set(lineObj.lineId, resultFold);
+                this.foldMap.set(resultFold.startLine, resultFold);
                 this.folds.push(resultFold);
                 this.folds.sort((a, b) => {
                     return a.startLine - b.startLine;
                 });
+                if (this.cursorPos.line > resultFold.startLine && this.cursorPos.line < resultFold.endLine) {
+                    lineObj = context.htmls[resultFold.startLine - 1];
+                    this.setCursorPos(resultFold.startLine, lineObj.text.length);
+                }
                 this.setScrollerHeight();
                 this.render();
+                this.focus();
+                this.setCursorRealPos();
             }
         },
         // 点击编辑器
