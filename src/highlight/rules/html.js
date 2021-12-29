@@ -35,15 +35,15 @@ const attrRules = [{
     token: 'xml-attr-name'
 }, {
     start: /(?<=\=\s*?)"/,
-    next: /"/,
+    end: /"/,
     token: 'xml-attr-value'
 }, {
     start: /(?<=\=\s*?)'/,
-    next: /'/,
+    end: /'/,
     token: 'xml-attr-value'
 }, {
     start: /(?<=style\s*?\=\s*?)'/,
-    next: /'/,
+    end: /'/,
     token: 'xml-attr-value',
     level: 2,
     childRule: {
@@ -51,7 +51,7 @@ const attrRules = [{
     }
 }, {
     start: /(?<=style\s*?\=\s*?)"/,
-    next: /"/,
+    end: /"/,
     token: 'xml-attr-value',
     level: 2,
     childRule: {
@@ -62,7 +62,7 @@ const attrRules = [{
 export default {
     rules: [{
         start: /\<\/?(?=\w+\b)/,
-        next: /\>/,
+        end: /\>/,
         token: function (value, state) {
             if (state == 'start') {
                 if (value[1] == '/') {
@@ -80,12 +80,12 @@ export default {
         }
     }, {
         start: /\<\!\-\-/,
-        next: /\-\-\>/,
+        end: /\-\-\>/,
         token: 'xml-comment'
     }, {
         name: 'script-start',
         start: /\<(?=script\b)/,
-        next: /\>/,
+        end: /\>/,
         level: 2,
         token: tagToken,
         childFirst: true,
@@ -95,7 +95,7 @@ export default {
     }, {
         name: 'script-end',
         start: /\<\/(?=script\>)/,
-        next: /\>/,
+        end: /\>/,
         token: tagToken,
         childRule: {
             rules: [{
@@ -106,12 +106,12 @@ export default {
         }
     }, {
         start: 'script-start',
-        next: 'script-end',
+        end: 'script-end',
         childRule: jsRules
     }, {
         name: 'style-start',
         start: /\<(?=style\b)/,
-        next: /\>/,
+        end: /\>/,
         level: 2,
         token: tagToken,
         childFirst: true,
@@ -121,7 +121,7 @@ export default {
     }, {
         name: 'style-end',
         start: /\<\/(?=style\s*?\>)/,
-        next: /\>/,
+        end: /\>/,
         token: tagToken,
         childRule: {
             rules: [{
@@ -132,7 +132,7 @@ export default {
         }
     }, {
         start: 'style-start',
-        next: 'style-end',
+        end: 'style-end',
         childRule: cssRules
     }]
 }

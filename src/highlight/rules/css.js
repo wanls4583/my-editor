@@ -20,7 +20,7 @@ export default {
         token: 'css-pseudo'
     }, {
         start: /\{/,
-        next: /\}/,
+        end: /\}/,
         token: ['css-lparen', 'css-rparen'],
         childRule: {
             rules: [{

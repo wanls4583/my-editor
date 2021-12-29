@@ -11,8 +11,16 @@
 		<div :style="{top: _numTop}" class="my-editor-nums">
 			<!-- 占位行号，避免行号宽度滚动时变化 -->
 			<div class="my-editor-num" style="visibility:hidden">{{maxLine}}</div>
-			<div :class="{'my-editor-num-active': cursorPos.line==num}" :key="num" class="my-editor-num" v-for="num in nums">
-				<span>{{num}}</span>
+			<div
+				:class="{'my-editor-num-active': cursorPos.line==line.num}"
+				:key="line.num"
+				:style="{height:_lineHeight, 'line-height':_lineHeight}"
+				class="my-editor-num"
+				v-for="line in renderHtmls"
+			>
+				<span>{{line.num}}</span>
+				<!-- 折叠图标 -->
+				<span :class="[line.fold=='open'?'my-editor-fold-open':'my-editor-fold-close']" class="my-editor-fold" v-if="line.fold"></span>
 			</div>
 		</div>
 		<div :style="{'box-shadow': _leftShadow}" class="my-editor-content-wrap">
@@ -20,7 +28,13 @@
 			<div @mousedown="onScrollerMdown" @wheel.prevent="onWheel" class="my-editor-content-scroller" ref="scroller">
 				<!-- 内如区域 -->
 				<div :style="{top: _top, minWidth: _contentMinWidth}" @selectend.prevent="onSelectend" class="my-editor-content" ref="content">
-					<div :class="{active: cursorPos.line == line.num}" :key="line.num" class="my-editor-line" v-for="line in renderHtmls">
+					<div
+						:class="{active: cursorPos.line == line.num}"
+						:key="line.num"
+						:style="{height:_lineHeight, 'line-height':_lineHeight}"
+						class="my-editor-line"
+						v-for="line in renderHtmls"
+					>
 						<!-- my-editor-bg-color为选中的背景颜色 -->
 						<div :class="[line.selected ? 'my-editor-bg-color' : '']" class="my-editor-code" v-html="line.html"></div>
 						<!-- 选中时的首行背景 -->
@@ -105,7 +119,7 @@ export default {
                 show: false,
                 visible: true,
             },
-            language: 'HTML',
+            language: 'JavaScript',
             statusHeight: 23,
             tabSize: 4,
             nums: [1],
@@ -233,6 +247,7 @@ export default {
         language: function (newVal) {
             context.htmls.map((lineObj) => {
                 lineObj.tokens = null;
+                lineObj.folds = null;
                 lineObj.states = null;
                 lineObj.html = '';
             });
@@ -278,6 +293,7 @@ export default {
                 html: '',
                 width: 0,
                 tokens: null,
+                folds: null,
                 states: null
             }];
             this.lineIdMap.set(context.htmls[0].lineId, context.htmls[0]);
@@ -357,6 +373,7 @@ export default {
                 let selected = false;
                 let spaceNum = /^\s+/.exec(item.text);
                 let tabNum = 0;
+                let fold = '';
                 if (spaceNum) {
                     tabNum = /\t+/.exec(spaceNum[0]);
                     tabNum = tabNum && tabNum[0].length || 0;
@@ -365,6 +382,14 @@ export default {
                 if (that.selectedRange && num > that.selectedRange.start.line && num < that.selectedRange.end.line) {
                     selected = true;
                 }
+                if (item.folds && item.folds.length) {
+                    for (let i = 0; i < item.folds.length; i++) {
+                        if (item.folds[i].type == -1) {
+                            fold = 'open';
+                            break;
+                        }
+                    }
+                }
                 let html = item.html || Util.htmlTrans(item.text);
                 html = html.replace(/\t/g, that.space);
                 return {
@@ -372,6 +397,7 @@ export default {
                     num: num,
                     tabNum: tabNum,
                     selected: selected,
+                    fold: fold
                 }
             }
         },
@@ -434,6 +460,7 @@ export default {
                     html: '',
                     width: 0,
                     tokens: null,
+                    folds: null,
                     states: null
                 };
                 this.lineIdMap.set(item.lineId, item);
@@ -548,6 +575,7 @@ export default {
             }
             startObj.width = this.getStrWidth(startObj.text);
             startObj.tokens = null;
+            startObj.folds = null;
             startObj.states = null;
             this.maxLine = context.htmls.length;
             this.highlighter.onDeleteContent(this.cursorPos.line);

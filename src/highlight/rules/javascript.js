@@ -2,6 +2,16 @@ const variable = `[\\$_a-zA-Z][\\$_a-zA-Z0-9]*?`
 export default {
     pairLevel: 3,
     rules: [{
+            regex: /(\{)|(\[)|(\()/,
+            token: ['js-lbraces', 'js-lbracket', 'js-lparen'],
+            foldType: -1,
+            foldName: ['js-braces', 'js-bracket', 'js-paren']
+        }, {
+            regex: /(\})|(\])|(\))/,
+            token: ['js-rbraces', 'js-rbracket', 'js-rparen'],
+            foldType: 1,
+            foldName: ['js-braces', 'js-bracket', 'js-paren']
+        }, {
             regex: /\bwindow\b|\bdocument\b/,
             token: 'js-local-var'
         }, {
@@ -54,26 +64,30 @@ export default {
         //多行注释
         {
             start: /\/\*/,
-            next: /\*\//,
-            token: 'js-comment'
+            end: /\*\//,
+            token: 'js-comment',
+            foldName: 'js-comment'
         },
         //字符串``
         {
             start: /`/,
-            next: /`/,
-            token: 'js-string'
+            end: /`/,
+            token: 'js-string',
+            foldName: 'js-string'
         },
         //字符串''
         {
             start: /'/,
-            next: /'|[^\\]$|^$/,
-            token: 'js-string'
+            end: /'|[^\\]$|^$/,
+            token: 'js-string',
+            foldName: 'js-single-string'
         },
         //字符串"""
         {
             start: /"/,
-            next: /"|[^\\]$|^$/,
-            token: 'js-string'
+            end: /"|[^\\]$|^$/,
+            token: 'js-string',
+            foldName: 'js-double-string'
         }
     ]
 }

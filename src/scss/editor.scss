@@ -44,6 +44,7 @@ body {
     }
 
     &-num {
+        position: relative;
         padding: 0 20px;
         color: #999999;
         text-align: right;
@@ -77,8 +78,6 @@ body {
     &-line {
         position: relative;
         z-index: 1;
-        height: 19px;
-        line-height: 19px;
         white-space: nowrap;
 
         &.active::before {
@@ -146,7 +145,6 @@ body {
         left: 0;
         z-index: -1;
         width: 1px;
-        height: 19px;
         padding: 0;
         border-style: none;
         outline: none;
@@ -202,6 +200,56 @@ body {
         background-color: rgb(115, 116, 112);
     }
 
+    // 折叠标记-begin
+    &-fold {
+        position: absolute;
+        top: 0;
+        right: 0;
+        box-sizing: border-box;
+        height: 100%;
+        padding: 3px 6px 0 6px;
+        cursor: pointer;
+    }
+
+    &-fold-open:after {
+        display: block;
+        margin-top: 50%;
+        content: '';
+        border-width: 6px 4px 0 4px;
+        border-style: solid;
+        border-color: rgb(139, 139, 132) transparent;
+    }
+
+    &-fold-open:hover:after {
+        display: block;
+        margin-top: 50%;
+        content: '';
+        border-width: 6px 4px 0 4px;
+        border-style: solid;
+        border-color: rgb(200, 200, 200) transparent;
+    }
+
+    &-fold-close:after {
+        display: block;
+        margin-top: 50%;
+        content: '';
+        border-width: 4px 0 4px 6px;
+        border-style: solid;
+        border-color: rgb(139, 139, 132) transparent;
+    }
+
+    &-fold-close:hover:after {
+        display: block;
+        margin-top: 50%;
+        content: '';
+        border-width: 4px 0 4px 6px;
+        border-style: solid;
+        border-color: rgb(200, 200, 200) transparent;
+    }
+
+    // 折叠标记-end
+
+    // 状态栏-begin
     &-status-bar {
         position: absolute;
         bottom: 0;
@@ -243,7 +291,9 @@ body {
         }
     }
 
-    // 面板
+    // 状态栏-end
+
+    // 面板-begin
     &-panel {
         position: absolute;
         z-index: 99;
@@ -313,4 +363,6 @@ body {
     &-menu-shortcut {
         margin-left: 20px;
     }
+
+    // 面板-end
 }
