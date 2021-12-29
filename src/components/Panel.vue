@@ -20,7 +20,7 @@
 </template>
 <script>
 export default {
-    name: 'Home',
+    name: 'Panel',
     props: {
         menuList: {
             type: Array,

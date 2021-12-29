@@ -235,7 +235,7 @@ body {
         content: '';
         border-width: 4px 0 4px 6px;
         border-style: solid;
-        border-color: rgb(139, 139, 132) transparent;
+        border-color: transparent rgb(139, 139, 132);
     }
 
     &-fold-close:hover:after {
@@ -244,7 +244,7 @@ body {
         content: '';
         border-width: 4px 0 4px 6px;
         border-style: solid;
-        border-color: rgb(200, 200, 200) transparent;
+        border-color: transparent rgb(200, 200, 200);
     }
 
     // 折叠标记-end

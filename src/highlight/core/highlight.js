@@ -440,9 +440,9 @@ export default class {
             if (rule.foldName instanceof Array) {
                 let expIndex = this.getChildExpIndex(match);
                 expIndex = expIndex == -1 ? 0 : expIndex;
-                fold.foldName = rule.foldName[expIndex];
+                fold.name = rule.foldName[expIndex];
             } else {
-                fold.foldName = rule.foldName;
+                fold.name = rule.foldName;
             }
         }
         return fold;

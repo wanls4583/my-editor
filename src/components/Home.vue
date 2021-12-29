@@ -20,7 +20,7 @@
 			>
 				<span>{{line.num}}</span>
 				<!-- 折叠图标 -->
-				<span :class="[line.fold=='open'?'my-editor-fold-open':'my-editor-fold-close']" class="my-editor-fold" v-if="line.fold"></span>
+				<span :class="[line.fold=='open'?'my-editor-fold-open':'my-editor-fold-close']" @click="onToggleFold(line.num)" class="my-editor-fold" v-if="line.fold"></span>
 			</div>
 		</div>
 		<div :style="{'box-shadow': _leftShadow}" class="my-editor-content-wrap">
@@ -53,7 +53,7 @@
 					</div>
 					<!-- 模拟光标 -->
 					<div
-						:style="{height: _lineHeight, top: _cursorRealPos.top, left: _cursorRealPos.left, visibility: _cursorVisible}"
+						:style="{height: _lineHeight, top: cursorRealPos.top, left: cursorRealPos.left, visibility: _cursorVisible}"
 						class="my-editor-cursor"
 						v-show="cursorPos.show"
 					></div>
@@ -65,7 +65,7 @@
 			</div>
 			<!-- 垂直滚动条 -->
 			<div @mousedown.stop @mouseup.stop @scroll="onVscroll" class="my-editor-v-scroller-wrap" ref="vScroller">
-				<div :style="{height: _vScrollHeight}" class="my-editor-v-scroller"></div>
+				<div :style="{height: scrollerHeight}" class="my-editor-v-scroller"></div>
 			</div>
 			<!-- 输入框 -->
 			<textarea
@@ -119,10 +119,13 @@ export default {
                 show: false,
                 visible: true,
             },
+            cursorRealPos: {
+                top: '0px',
+                left: '0px'
+            },
             language: 'JavaScript',
             statusHeight: 23,
             tabSize: 4,
-            nums: [1],
             renderHtmls: [],
             startLine: 1,
             startToEndToken: null,
@@ -131,6 +134,7 @@ export default {
             scrollTop: 0,
             maxVisibleLines: 1,
             maxLine: 1,
+            scrollerHeight: 'auto',
             scrollerArea: {},
             selectedRange: null,
             maxWidthObj: {
@@ -177,39 +181,14 @@ export default {
         _cursorVisible() {
             return this.cursorPos.visible ? 'visible' : 'hidden';
         },
-        _vScrollHeight() {
-            return this.maxLine * this.charObj.charHight + 'px';
-        },
         _hScrollWidth() {
             return this.maxWidthObj.width ? this.maxWidthObj.width + 'px' : 'auto';
         },
         _contentMinWidth() {
             return this.maxWidthObj.width > this.scrollerArea.width ? this.maxWidthObj.width + 'px' : '100%';
         },
-        _cursorRealPos() {
-            let left = this.getStrWidthByLine(this.cursorPos.line, 0, this.cursorPos.column);
-            let top = (this.cursorPos.line - this.startLine) * this.charObj.charHight;
-            let relTop = this.cursorPos.line * this.charObj.charHight;
-            // 强制滚动使光标处于可见区域
-            if (this.forceCursorView) {
-                if (relTop > this.scrollTop + this.scrollerArea.height - this.charObj.charHight) {
-                    this.$vScroller.scrollTop = relTop + this.charObj.charHight - this.scrollerArea.height;
-                } else if (top < 0 || top == 0 && this.top < 0) {
-                    this.$vScroller.scrollTop = (this.cursorPos.line - 1) * this.charObj.charHight;
-                }
-                if (left > this.scrollerArea.width + this.scrollLeft - this.charObj.fullAngleCharWidth) {
-                    this.$hScroller.scrollLeft = left + this.charObj.fullAngleCharWidth - this.scrollerArea.width;
-                } else if (left < this.scrollLeft) {
-                    this.$hScroller.scrollLeft = left - 1;
-                }
-            }
-            return {
-                top: top + 'px',
-                left: left + 'px'
-            };
-        },
         _textAreaPos() {
-            let cursorRealPos = this._cursorRealPos;
+            let cursorRealPos = this.cursorRealPos;
             let left = Util.getNum(cursorRealPos.left);
             let top = Util.getNum(cursorRealPos.top) + this.top;
             left -= this.scrollLeft;
@@ -287,6 +266,8 @@ export default {
             this.lineId = Number.MIN_SAFE_INTEGER;
             this.lineIdMap = new Map(); // htmls的唯一标识对象
             this.renderedIdMap = new Map(); // renderHtmls的唯一标识对象
+            this.folds = [];
+            this.foldMap = new Map();
             context.htmls = [{
                 lineId: this.lineId++,
                 text: '',
@@ -358,16 +339,20 @@ export default {
                 return;
             }
             this.renderedIdMap.clear();
-            this.renderHtmls = context.htmls.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines).map((item, index) => {
-                let num = this.startLine + index;
-                let lineId = item.lineId;
-                item = _getObj(item, num);
-                this.renderedIdMap.set(lineId, item);
-                return item;
-            });;
-            this.nums = this.renderHtmls.map((item) => {
-                return item.num
-            });
+            this.renderHtmls = [];
+            for (let i = 0, startLine = this.startLine; i < this.maxVisibleLines && startLine <= context.htmls.length; i++) {
+                let lineObj = context.htmls[startLine - 1];
+                let lineId = lineObj.lineId;
+                let obj = _getObj(lineObj, startLine);
+                this.renderHtmls.push(obj);
+                this.renderedIdMap.set(lineId, obj);
+                if (this.foldMap.has(lineObj.lineId)) {
+                    let fold = this.foldMap.get(lineObj.lineId);
+                    startLine = fold.endLine;
+                } else {
+                    startLine++;
+                }
+            }
 
             function _getObj(item, num) {
                 let selected = false;
@@ -382,7 +367,9 @@ export default {
                 if (that.selectedRange && num > that.selectedRange.start.line && num < that.selectedRange.end.line) {
                     selected = true;
                 }
-                if (item.folds && item.folds.length) {
+                if (that.foldMap.has(item.lineId)) {
+                    fold = 'close';
+                } else if (item.folds && item.folds.length) {
                     for (let i = 0; i < item.folds.length; i++) {
                         if (item.folds[i].type == -1) {
                             fold = 'open';
@@ -479,6 +466,7 @@ export default {
             newLine += text.length - 1;
             this.maxLine = context.htmls.length;
             this.highlighter.onInsertContent(nowLine);
+            this.setScrollerHeight();
             this.setLineWidth(text);
             this.render();
             this.$nextTick(() => {
@@ -579,6 +567,7 @@ export default {
             startObj.states = null;
             this.maxLine = context.htmls.length;
             this.highlighter.onDeleteContent(this.cursorPos.line);
+            this.setScrollerHeight();
             this.clearRnage();
             this.render();
             // 更新最大文本宽度
@@ -666,12 +655,36 @@ export default {
         updateHistory(index, command) {
             this.history[index - 1] = command;
         },
-        // 设置鼠标位置
+        // 设置光标位置
         setCursorPos(line, column, forceCursorView) {
             this.cursorPos.line = line;
             this.cursorPos.column = column;
             this.cursorPos.visible = true;
             this.forceCursorView = forceCursorView === undefined ? true : forceCursorView;
+            this.setCursorRealPos();
+        },
+        // 设置真实光标位置
+        setCursorRealPos() {
+            let left = this.getStrWidthByLine(this.cursorPos.line, 0, this.cursorPos.column);
+            let top = (this.getRelativeLine(this.cursorPos.line) - this.getRelativeLine(this.startLine)) * this.charObj.charHight;
+            let relTop = this.getRelativeLine(this.cursorPos.line) * this.charObj.charHight;
+            // 强制滚动使光标处于可见区域
+            if (this.forceCursorView) {
+                if (relTop > this.scrollTop + this.scrollerArea.height - this.charObj.charHight) {
+                    this.$vScroller.scrollTop = relTop + this.charObj.charHight - this.scrollerArea.height;
+                } else if (top < 0 || top == 0 && this.top < 0) {
+                    this.$vScroller.scrollTop = (this.cursorPos.line - 1) * this.charObj.charHight;
+                }
+                if (left > this.scrollerArea.width + this.scrollLeft - this.charObj.fullAngleCharWidth) {
+                    this.$hScroller.scrollLeft = left + this.charObj.fullAngleCharWidth - this.scrollerArea.width;
+                } else if (left < this.scrollLeft) {
+                    this.$hScroller.scrollLeft = left - 1;
+                }
+            }
+            this.cursorRealPos = {
+                top: top + 'px',
+                left: left + 'px'
+            };
         },
         // 获取最大宽度
         setMaxWidth() {
@@ -718,6 +731,13 @@ export default {
                 }
             }
         },
+        setScrollerHeight() {
+            let maxLine = context.htmls.length;
+            this.folds.map((item) => {
+                maxLine -= item.endLine - item.startLine - 1;
+            });
+            this.scrollerHeight = maxLine * this.charObj.charHight + 'px';
+        },
         // 获取文本在浏览器中的宽度
         getStrWidth(str, start, end) {
             return Util.getStrWidth(str, this.charObj.charWidth, this.charObj.fullAngleCharWidth, this.tabSize, start, end);
@@ -754,6 +774,7 @@ export default {
             let clientX = e.clientX < 0 ? 0 : e.clientX;
             let clientY = e.clientY < 0 ? 0 : e.clientY;
             let line = Math.ceil((clientY + this.scrollTop - offset.top) / this.charObj.charHight) || 1;
+            line = this.getRealLine(line);
             if (line > context.htmls.length) {
                 line = context.htmls.length;
                 column = context.htmls[line - 1].text.length;
@@ -781,6 +802,36 @@ export default {
                 text = text.slice(start.column, end.column);
             }
             return text;
+        },
+        // 获取真实行号(折叠后行号会改变)
+        getRealLine(line) {
+            let i = 1;
+            let realLine = 1;
+            let folds = this.folds.slice(0);
+            while (folds.length && i < line) {
+                if (i + folds[0].startLine - realLine < line) {
+                    i += folds[0].startLine - realLine;
+                    realLine = folds[0].endLine - 1;
+                } else {
+                    break;
+                }
+                folds.shift();
+            }
+            realLine += line - i;
+            return realLine;
+        },
+        // 获取相对行号
+        getRelativeLine(line) {
+            let relLine = line;
+            let folds = this.folds.slice(0);
+            for (let i = 0; i < folds.length; i++) {
+                if (line > folds[i].startLine) {
+                    relLine -= folds[i].endLine - folds[i].startLine - 1;
+                } else {
+                    break;
+                }
+            }
+            return relLine;
         },
         // 右键菜单事件
         onContextmenu(e) {
@@ -819,6 +870,74 @@ export default {
                     break;
             }
             this.menuVisble = false;
+        },
+        // 折叠/展开
+        onToggleFold(line) {
+            let startFold = null;
+            let stack = [];
+            let startLine = line;
+            let lineObj = context.htmls[startLine - 1];
+            let resultFold = null;
+            line++;
+            if (this.foldMap.has(lineObj.lineId)) {
+                this.foldMap.delete(lineObj.lineId);
+                this.folds = this.folds.filter((fold) => {
+                    return fold.startLine != startLine;
+                });
+                this.setScrollerHeight();
+                this.render();
+                return;
+            }
+            for (let i = 0; i < lineObj.folds.length; i++) {
+                let fold = lineObj.folds[i];
+                if (fold.type == -1) {
+                    if (!stack.length || stack.peek().name == fold.name) {
+                        stack.push(fold);
+                    }
+                } else if (stack.length && stack.peek().name == fold.name) {
+                    stack.pop();
+                }
+            }
+            while (stack.length && line <= context.htmls.length) {
+                lineObj = context.htmls[line - 1];
+                if (lineObj.folds && lineObj.folds.length) {
+                    for (let i = 0; i < lineObj.folds.length; i++) {
+                        let fold = lineObj.folds[i];
+                        if (fold.type == -1) {
+                            if (stack.peek().name == fold.name) {
+                                stack.push(fold);
+                            }
+                        } else if (stack.peek().name == fold.name) {
+                            stack.pop();
+                            if (!stack.length) {
+                                resultFold = {
+                                    startLine: startLine,
+                                    endLine: line,
+                                    name: fold.name
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+                line++;
+            }
+            if (resultFold) {
+                lineObj = context.htmls[startLine - 1];
+                this.folds = this.folds.filter((fold) => {
+                    if (fold.startLine > resultFold.startLine && fold.startLine < resultFold.endLine) {
+                        return false;
+                    }
+                    return true;
+                });
+                this.foldMap.set(lineObj.lineId, resultFold);
+                this.folds.push(resultFold);
+                this.folds.sort((a, b) => {
+                    return a.startLine - b.startLine;
+                });
+                this.setScrollerHeight();
+                this.render();
+            }
         },
         // 点击编辑器
         onClickEditor() {
@@ -935,9 +1054,11 @@ export default {
         },
         // 上下滚动事件
         onVscroll(e) {
+            let startLine = 1;
             this.scrollTop = e.target.scrollTop;
-            this.startLine = Math.floor(this.scrollTop / this.charObj.charHight);
-            this.startLine++;
+            startLine = Math.floor(this.scrollTop / this.charObj.charHight);
+            startLine++;
+            this.startLine = this.getRealLine(startLine);
             this.top = -this.scrollTop % this.charObj.charHight;
             this.forceCursorView = false;
             this.highlighter.onScroll();

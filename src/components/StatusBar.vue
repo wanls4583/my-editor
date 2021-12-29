@@ -25,7 +25,7 @@
 <script>
 import Panel from './Panel';
 export default {
-    name: 'Home',
+    name: 'StatusBar',
     props: {
         height: {
             type: Number,
