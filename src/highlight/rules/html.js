@@ -26,15 +26,8 @@ const attrRules = [{
     regex: /(?<=\<\/?)\w+\b/,
     token: 'xml-tag-name',
     level: 1,
-    foldName: function (e) {
-        return e.value;
-    },
-    foldType: function (e) {
-        if (e.text[e.index - 1] == '/') {
-            return 1;
-        }
-        return -1;
-    }
+    foldName: tagFoldName,
+    foldType: tagFoldType
 }, {
     regex: /(?<=\=)\s*?[^\<\>\s\'\"]+\b/,
     token: 'xml-attr-value',
@@ -100,7 +93,9 @@ export default {
             rules: [{
                 regex: /(?<=\<\/?)\w+\b/,
                 token: 'xml-tag-name',
-                level: 1
+                level: 1,
+                foldName: tagFoldName,
+                foldType: tagFoldType
             }]
         }
     }, {
@@ -126,7 +121,9 @@ export default {
             rules: [{
                 regex: /(?<=\<\/?)\w+\b/,
                 token: 'xml-tag-name',
-                level: 1
+                level: 1,
+                foldName: tagFoldName,
+                foldType: tagFoldType
             }]
         }
     }, {
@@ -158,4 +155,15 @@ function tagNameToken(e) {
     } else {
         return 'xml-tag-close';
     }
+}
+
+function tagFoldName(e) {
+    return e.value;
+}
+
+function tagFoldType(e) {
+    if (e.text[e.index - 1] == '/') {
+        return 1;
+    }
+    return -1;
 }
