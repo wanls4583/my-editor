@@ -462,6 +462,9 @@ export default {
             newLine += text.length - 1;
             this.maxLine = context.htmls.length;
             this.highlighter.onInsertContent(nowLine);
+            if (this.foldMap.has(nowLine) && text.length > 1) {
+                this.unFold(nowLine);
+            }
             this.setScrollerHeight();
             this.setLineWidth(text);
             this.render();
