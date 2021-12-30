@@ -367,9 +367,9 @@ export default {
                 if (that.selectedRange && line > that.selectedRange.start.line && line < that.selectedRange.end.line) {
                     selected = true;
                 }
-                if (that.foldMap.has(line)) {
+                if (that.foldMap.has(line)) { //该行已经折叠
                     fold = 'close';
-                } else if (_checkFoldAble(line)) {
+                } else if (item.folds && item.folds.length && item.folds.peek().type == -1) { //可折叠
                     fold = 'open';
                 }
                 let html = item.html || Util.htmlTrans(item.text);
@@ -381,26 +381,6 @@ export default {
                     selected: selected,
                     fold: fold
                 }
-            }
-
-            function _checkFoldAble(line) {
-                let lineObj = context.htmls[line - 1];
-                if (!lineObj.folds || !lineObj.folds.length) {
-                    return false;
-                }
-                let fold = lineObj.folds.peek();
-                if (fold.type == -1) {
-                    let nextObj = context.htmls[line];
-                    if (nextObj && nextObj.folds && nextObj.folds.length) {
-                        for (let j = 0; j < nextObj.folds.length; j++) {
-                            if (nextObj.folds[j].name == fold.name && nextObj.folds[j].type == 1) {
-                                return false;
-                            }
-                        }
-                    }
-                    return true;
-                }
-                return false;
             }
         },
         // 渲染选中背景

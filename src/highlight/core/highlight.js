@@ -278,8 +278,6 @@ export default class {
         }
     }
     tokenizeLine(line) {
-        let tokens = [];
-        let folds = [];
         let match = null;
         let rule = null;
         let lastIndex = 0;
@@ -288,6 +286,10 @@ export default class {
         let states = preStates.slice(0);
         let lineObj = this.context.htmls[line - 1];
         let regex = this.getRegex(states.peek());
+        let resultObj = {
+            tokens: [],
+            folds: []
+        }
         while (match = regex.exec(lineObj.text)) {
             let token = null;
             let fold = null;
@@ -298,27 +300,15 @@ export default class {
                 ruleId = ruleId.slice(1) - 0;
                 rule = this.ruleIdMap[ruleId];
                 if (preEnd < match.index) { //普通文本
-                    tokens.push({
+                    resultObj.tokens.push({
                         value: lineObj.text.slice(preEnd, match.index),
                         type: 'plain'
                     });
                 }
-                fold = this.getFold(rule, match, states);
-                token = this.getToken(rule, match, states, preStates, tokens, lineObj.text);
-                if (fold) {
-                    if (fold.type == 1) {
-                        for (let i = folds.length - 1; i >= 0; i--) {
-                            // 同行折叠无效
-                            if (folds[i].name == fold.name && folds[i].type == -1) {
-                                folds = folds.slice(0, i);
-                                fold = null;
-                                break;
-                            }
-                        }
-                    }
-                    fold && folds.push(fold);
-                }
-                tokens.push(token);
+                fold = this.getFold(rule, match, states, resultObj, line);
+                token = this.getToken(rule, match, states, preStates, resultObj.tokens, lineObj.text);
+                resultObj.tokens.push(token);
+                fold && resultObj.folds.push(fold);
                 preEnd = match.index + match[0].length;
                 break;
             }
@@ -330,31 +320,31 @@ export default class {
             regex = this.getRegex(states.peek(), rule.ruleId, states);
             regex.lastIndex = lastIndex;
         }
-        if (!tokens.length && states.length) { // 整行被多行token包裹
+        if (!resultObj.tokens.length && states.length) { // 整行被多行token包裹
             rule = this.ruleIdMap[states.peek()];
             if (rule.childRule) {
-                tokens.push({
+                resultObj.tokens.push({
                     value: lineObj.text,
                     type: 'plain'
                 });
             } else {
-                tokens.push({
+                resultObj.tokens.push({
                     value: lineObj.text,
                     type: typeof rule.token == 'function' ? rule.token(lineObj.text) : rule.token
                 });
             }
         } else if (states.length && preStates.indexOf(states.peek()) == -1) { //最后一个token未匹配到尾节点
-            tokens.peek().value += lineObj.text.slice(preEnd);
+            resultObj.tokens.peek().value += lineObj.text.slice(preEnd);
         } else if (preEnd < lineObj.text.length) { //普通文本
-            tokens.push({
+            resultObj.tokens.push({
                 value: lineObj.text.slice(preEnd),
                 type: 'plain'
             });
         }
         regex.lastIndex = 0;
         return {
-            tokens: tokens,
-            folds: folds,
+            tokens: resultObj.tokens,
+            folds: resultObj.folds,
             states: states
         };
     }
@@ -413,7 +403,7 @@ export default class {
         }
         return token;
     }
-    getFold(rule, match, states) {
+    getFold(rule, match, states, resultObj, line) {
         let result = match[0];
         let flag = 'start';
         let fold = null;
@@ -445,7 +435,29 @@ export default class {
                 fold.name = rule.foldName;
             }
         }
+        if (fold && fold.type == 1) {
+            fold = _checkFold(resultObj, fold);
+            if (fold && line > 1) {
+                resultObj = this.context.htmls[line - 2];
+                fold = _checkFold(resultObj, fold);
+            }
+        }
         return fold;
+
+        function _checkFold(resultObj, fold) {
+            let folds = resultObj.folds;
+            if (folds) {
+                for (let i = folds.length - 1; i >= 0; i--) {
+                    // 同行或相邻行折叠无效
+                    if (folds[i].name == fold.name && folds[i].type == -1) {
+                        resultObj.folds = folds.slice(0, i);
+                        fold = null;
+                        break;
+                    }
+                }
+            }
+            return fold;
+        }
     }
     /**
      * 获取子表达式索引位置
