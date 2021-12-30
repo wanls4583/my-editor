@@ -36,7 +36,7 @@
 						v-for="line in renderHtmls"
 					>
 						<!-- my-editor-bg-color为选中的背景颜色 -->
-						<div :class="[line.selected ? 'my-editor-bg-color' : '']" class="my-editor-code" v-html="line.html"></div>
+						<div :class="[line.selected ? 'my-editor-bg-color' : '', line.fold == 'close' ? 'fold-close' : '']" class="my-editor-code" v-html="line.html"></div>
 						<!-- 选中时的首行背景 -->
 						<div
 							:style="{left: selectedRange.start.left + 'px', width: selectedRange.start.width + 'px'}"
@@ -369,7 +369,7 @@ export default {
                 }
                 if (that.foldMap.has(line)) { //该行已经折叠
                     fold = 'close';
-                } else if (item.folds && item.folds.length && item.folds.peek().type == -1) { //可折叠
+                } else if (that.getRangeFold(line, true)) { //可折叠
                     fold = 'open';
                 }
                 let html = item.html || Util.htmlTrans(item.text);
@@ -489,7 +489,6 @@ export default {
             let start = null;
             let startObj = context.htmls[this.cursorPos.line - 1];
             let text = startObj.text;
-            let ifOneLine = false; // 是否只需更新一行
             let originPos = { line: this.cursorPos.line, column: this.cursorPos.column };
             let deleteText = '';
             let rangeUuid = [];
@@ -514,7 +513,6 @@ export default {
                 if (start.line == end.line) { // 单行选中
                     text = text.slice(0, start.column) + text.slice(end.column);
                     startObj.text = text;
-                    ifOneLine = true;
                 } else { // 多行选中
                     text = text.slice(0, start.column);
                     startObj.text = text;
@@ -522,6 +520,9 @@ export default {
                     text = text.slice(end.column);
                     startObj.text += text;
                     context.htmls.splice(start.line, end.line - start.line);
+                }
+                for (let line = start.line; line < end.line; line++) {
+                    this.unFold(line);
                 }
                 this.setCursorPos(start.line, start.column);
             } else if (Util.keyCode.DELETE == keyCode) { // 向后删除一个字符
@@ -535,7 +536,6 @@ export default {
                 } else {
                     deleteText = text[this.cursorPos.column];
                     text = text.slice(0, this.cursorPos.column) + text.slice(this.cursorPos.column + 1);
-                    ifOneLine = true;
                 }
                 startObj.text = text;
             } else { // 向前删除一个字符
@@ -552,7 +552,6 @@ export default {
                     deleteText = text[this.cursorPos.column - 1];
                     text = text.slice(0, this.cursorPos.column - 1) + text.slice(this.cursorPos.column);
                     this.setCursorPos(this.cursorPos.line, this.cursorPos.column - 1);
-                    ifOneLine = true;
                 }
                 startObj.text = text;
             }
@@ -597,7 +596,7 @@ export default {
                 }
             } else if (this.foldMap.has(line - 1)) {
                 let fold = this.foldMap.get(line - 1);
-                if (!_findFold(line - 1, fold.name, 1)) {
+                if (!_findFold(line, fold.name, 1)) {
                     this.unFold(line);
                 }
             }
@@ -618,51 +617,10 @@ export default {
         },
         // 折叠行
         foldLine(line) {
-            let startFold = null;
-            let stack = [];
             let startLine = line;
             let lineObj = context.htmls[startLine - 1];
-            let resultFold = null;
-            line++;
-            for (let i = 0; i < lineObj.folds.length; i++) {
-                let fold = lineObj.folds[i];
-                if (fold.type == -1) {
-                    if (!stack.length || stack.peek().name == fold.name) {
-                        stack.push(fold);
-                    }
-                }
-            }
-            while (stack.length && line <= context.htmls.length) {
-                lineObj = context.htmls[line - 1];
-                if (lineObj.folds && lineObj.folds.length) {
-                    for (let i = 0; i < lineObj.folds.length; i++) {
-                        let fold = lineObj.folds[i];
-                        if (fold.type == -1) {
-                            if (stack.peek().name == fold.name) {
-                                stack.push(fold);
-                            }
-                        } else if (stack.peek().name == fold.name) {
-                            if (stack.length == 1) {
-                                resultFold = {
-                                    start: {
-                                        line: startLine,
-                                        start: stack.peek().start
-                                    },
-                                    end: {
-                                        line: line,
-                                        end: fold.end
-                                    },
-                                    name: fold.name
-                                }
-                                stack.pop();
-                                break;
-                            }
-                            stack.pop();
-                        }
-                    }
-                }
-                line++;
-            }
+            let resultFold = this.getRangeFold(line);
+            this.focus();
             if (resultFold) {
                 this.foldMap.set(startLine, resultFold);
                 this.folds.push(resultFold);
@@ -675,7 +633,6 @@ export default {
                 }
                 this.setScrollerHeight();
                 this.render();
-                this.focus();
                 this.setCursorRealPos();
             }
         },
@@ -683,6 +640,10 @@ export default {
         unFold(line) {
             let left = 0;
             let right = this.folds.length;
+            this.focus();
+            if (!this.foldMap.has(line)) {
+                return;
+            }
             while (left <= right) {
                 let mid = Math.floor((left + right) / 2);
                 if (this.folds[mid].start.line == line) {
@@ -697,7 +658,6 @@ export default {
             this.foldMap.delete(line);
             this.setScrollerHeight();
             this.render();
-            this.focus();
             this.setCursorRealPos();
         },
         // 撤销操作
@@ -940,6 +900,64 @@ export default {
                 }
             }
             return relLine;
+        },
+        /**
+         * 获取折叠范围
+         * @param {Number} line 行号
+         * @param {Boolean} foldIconCheck 检测是否显示折叠图标
+         */
+        getRangeFold(line, foldIconCheck) {
+            let stack = [];
+            let startLine = line;
+            let lineObj = context.htmls[startLine - 1];
+            let resultFold = null;
+            line++;
+            if (lineObj.folds && lineObj.folds.length) {
+                for (let i = 0; i < lineObj.folds.length; i++) {
+                    let fold = lineObj.folds[i];
+                    if (fold.type == -1) {
+                        if (!stack.length || stack.peek().name == fold.name) {
+                            stack.push(fold);
+                        }
+                    }
+                }
+            }
+            while (stack.length && line <= context.htmls.length && (!foldIconCheck || line - startLine <= 1)) {
+                lineObj = context.htmls[line - 1];
+                if (lineObj.folds && lineObj.folds.length) {
+                    for (let i = 0; i < lineObj.folds.length; i++) {
+                        let fold = lineObj.folds[i];
+                        if (fold.type == -1) {
+                            if (stack.peek().name == fold.name) {
+                                stack.push(fold);
+                            }
+                        } else if (stack.peek().name == fold.name) {
+                            if (stack.length == 1) {
+                                if (foldIconCheck) {
+                                    return line - startLine > 1;
+                                } else {
+                                    resultFold = {
+                                        start: {
+                                            line: startLine,
+                                            start: stack.peek().start
+                                        },
+                                        end: {
+                                            line: line,
+                                            end: fold.end
+                                        },
+                                        name: fold.name
+                                    }
+                                    stack.pop();
+                                    break;
+                                }
+                            }
+                            stack.pop();
+                        }
+                    }
+                }
+                line++;
+            }
+            return foldIconCheck ? line - startLine > 1 : resultFold;
         },
         // 右键菜单事件
         onContextmenu(e) {

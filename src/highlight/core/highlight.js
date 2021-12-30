@@ -305,7 +305,7 @@ export default class {
                         type: 'plain'
                     });
                 }
-                fold = this.getFold(rule, match, states, resultObj, line);
+                fold = this.getFold(rule, match, states, resultObj);
                 token = this.getToken(rule, match, states, preStates, resultObj.tokens, lineObj.text);
                 resultObj.tokens.push(token);
                 fold && resultObj.folds.push(fold);
@@ -403,7 +403,7 @@ export default class {
         }
         return token;
     }
-    getFold(rule, match, states, resultObj, line) {
+    getFold(rule, match, states, resultObj) {
         let result = match[0];
         let flag = 'start';
         let fold = null;
@@ -437,10 +437,6 @@ export default class {
         }
         if (fold && fold.type == 1) {
             fold = _checkFold(resultObj, fold);
-            if (fold && line > 1) {
-                resultObj = this.context.htmls[line - 2];
-                fold = _checkFold(resultObj, fold);
-            }
         }
         return fold;
 
@@ -448,7 +444,7 @@ export default class {
             let folds = resultObj.folds;
             if (folds) {
                 for (let i = folds.length - 1; i >= 0; i--) {
-                    // 同行或相邻行折叠无效
+                    // 同行折叠无效
                     if (folds[i].name == fold.name && folds[i].type == -1) {
                         resultObj.folds = folds.slice(0, i);
                         fold = null;
