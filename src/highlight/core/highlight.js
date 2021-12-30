@@ -305,8 +305,8 @@ export default class {
                         type: 'plain'
                     });
                 }
-                fold = this.getFold(rule, match, states, resultObj);
-                token = this.getToken(rule, match, states, preStates, resultObj.tokens, lineObj.text);
+                fold = this.getFold(rule, match, states, resultObj, lineObj.text);
+                token = this.getToken(rule, match, states, preStates, resultObj, lineObj.text);
                 resultObj.tokens.push(token);
                 fold && resultObj.folds.push(fold);
                 preEnd = match.index + match[0].length;
@@ -330,7 +330,11 @@ export default class {
             } else {
                 resultObj.tokens.push({
                     value: lineObj.text,
-                    type: typeof rule.token == 'function' ? rule.token(lineObj.text) : rule.token
+                    type: typeof rule.token == 'function' ? rule.token({
+                        value: lineObj.text,
+                        text: lineObj.text,
+                        index: 0
+                    }) : rule.token
                 });
             }
         } else if (states.length && preStates.indexOf(states.peek()) == -1) { //最后一个token未匹配到尾节点
@@ -348,7 +352,7 @@ export default class {
             states: states
         };
     }
-    getToken(rule, match, states, preStates, tokens, text) {
+    getToken(rule, match, states, preStates, resultObj, text) {
         let result = match[0];
         let flag = '';
         let token = {
@@ -363,15 +367,15 @@ export default class {
                 if (!rule.childRule) { //无子节点
                     if (preStates.indexOf(rule.ruleId) == -1) { //在同一行匹配
                         let value = '';
-                        token = tokens.pop();
+                        token = resultObj.tokens.pop();
                         value = token.value;
                         if (token.type == 'plain') {
-                            token = tokens.pop();
+                            token = resultObj.tokens.pop();
                             value = token.value + value;
                         }
                         token.value = value + result;
                     } else { //跨行匹配
-                        tokens.pop()
+                        resultObj.tokens.pop()
                         token.value = text.slice(0, match.index + result.length);
                     }
                 }
@@ -382,7 +386,12 @@ export default class {
             }
         }
         if (typeof rule.token == 'function') {
-            token.type = rule.token(token.value, flag);
+            token.type = rule.token({
+                value: token.value,
+                index: match.index,
+                text: text,
+                state: flag
+            });
         } else if (rule.token instanceof Array) {
             if (rule.start && rule.end) {
                 if (flag == 'start') {
@@ -403,40 +412,68 @@ export default class {
         }
         return token;
     }
-    getFold(rule, match, states, resultObj) {
+    getFold(rule, match, states, resultObj, text) {
         let result = match[0];
-        let flag = 'start';
+        let flag = '';
         let fold = null;
         if (rule.start && rule.end) { //多行token被匹配
+            flag = 'start';
             if (states.indexOf(rule.ruleId) > -1) {
                 flag = 'end';
             }
             if (rule.foldName) { //多行匹配可折叠
                 fold = {
-                    name: rule.foldName,
-                    type: flag == 'start' ? -1 : 1,
                     start: match.index,
                     end: match.index + result.length,
                     value: result
                 };
+                if (rule.foldName instanceof Array) {
+                    fold.name = flag == 'start' ? rule.foldName[0] : rule.foldName[1];
+                }
+                if (rule.foldType instanceof Array) {
+                    fold.type = flag == 'start' ? rule.foldType[0] : rule.foldType[1];
+                }
             }
         } else if (rule.foldName && rule.foldType) { //折叠标记
             fold = {
-                type: rule.foldType,
                 start: match.index,
                 end: match.index + result.length,
                 value: result
             };
+            let expIndex = this.getChildExpIndex(match);
+            expIndex = expIndex == -1 ? 0 : expIndex;
             if (rule.foldName instanceof Array) {
-                let expIndex = this.getChildExpIndex(match);
-                expIndex = expIndex == -1 ? 0 : expIndex;
                 fold.name = rule.foldName[expIndex];
-            } else {
-                fold.name = rule.foldName;
+            }
+            if (rule.foldType instanceof Array) {
+                fold.type = rule.foldType[expIndex];
             }
         }
-        if (fold && fold.type == 1) {
-            fold = _checkFold(resultObj, fold);
+        if (fold) {
+            if (typeof rule.foldName === 'function') {
+                fold.name = rule.foldName({
+                    value: result,
+                    text: text,
+                    index: match.index,
+                    state: flag
+                });
+            } else if (!(rule.foldName instanceof Array)) {
+                fold.name = rule.foldName;
+            }
+
+            if (typeof rule.foldType === 'function') {
+                fold.type = rule.foldType({
+                    value: result,
+                    text: text,
+                    index: match.index,
+                    state: flag
+                });
+            } else if (!(rule.foldType instanceof Array)) {
+                fold.type = flag ? (flag === 'start' ? -1 : 1) : rule.foldType;
+            }
+            if (fold.type == 1) {
+                fold = _checkFold(resultObj, fold);
+            }
         }
         return fold;
 

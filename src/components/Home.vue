@@ -805,9 +805,7 @@ export default {
         },
         setScrollerHeight() {
             let maxLine = context.htmls.length;
-            this.folds.map((item) => {
-                maxLine -= item.end.line - item.start.line - 1;
-            });
+            maxLine = this.getRelativeLine(maxLine);
             this.scrollerHeight = maxLine * this.charObj.charHight + 'px';
         },
         // 获取文本在浏览器中的宽度
@@ -887,7 +885,10 @@ export default {
                 } else {
                     break;
                 }
-                folds.shift();
+                let fold = folds.shift();
+                while (folds.length && folds[0].end.line <= fold.end.line) { //多级折叠
+                    folds.shift();
+                }
             }
             realLine += line - i;
             return realLine;
@@ -896,12 +897,16 @@ export default {
         getRelativeLine(line) {
             let relLine = line;
             let folds = this.folds.slice(0);
+            let preFold = null;
             for (let i = 0; i < folds.length; i++) {
                 if (line > folds[i].start.line) {
-                    relLine -= folds[i].end.line - folds[i].start.line - 1;
+                    if (!preFold || preFold.end.line <= folds[i].start.line) {
+                        relLine -= folds[i].end.line - folds[i].start.line - 1;
+                    }
                 } else {
                     break;
                 }
+                preFold = folds[i];
             }
             return relLine;
         },

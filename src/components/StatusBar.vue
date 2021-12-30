@@ -4,7 +4,7 @@
  * @Description: 
 -->
 <template>
-	<div :style="{height:height+'px'}" class="my-editor-status-bar">
+	<div :style="{height:height+'px'}" @contextmenu.stop.prevent class="my-editor-status-bar">
 		<div class="my-editor-status-left">
 			<div class="my-editor-status-item">
 				<span>Line {{line}}, Column {{column}}</span>

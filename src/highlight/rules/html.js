@@ -25,7 +25,16 @@ const styleRules = [{
 const attrRules = [{
     regex: /(?<=\<\/?)\w+\b/,
     token: 'xml-tag-name',
-    level: 1
+    level: 1,
+    foldName: function (e) {
+        return e.value;
+    },
+    foldType: function (e) {
+        if (e.text[e.index - 1] == '/') {
+            return 1;
+        }
+        return -1;
+    }
 }, {
     regex: /(?<=\=)\s*?[^\<\>\s\'\"]+\b/,
     token: 'xml-attr-value',
@@ -63,17 +72,7 @@ export default {
     rules: [{
         start: /\<\/?(?=\w+\b)/,
         end: /\>/,
-        token: function (value, state) {
-            if (state == 'start') {
-                if (value[1] == '/') {
-                    return 'xml-end-tag-open';
-                } else {
-                    return 'xml-tag-open';
-                }
-            } else {
-                return 'xml-tag-close';
-            }
-        },
+        token: tagNameToken,
         childFirst: true,
         childRule: {
             rules: attrRules
@@ -137,9 +136,21 @@ export default {
     }]
 }
 
-function tagToken(value, state) {
-    if (state == 'start') {
-        if (value[1] == '/') {
+function tagToken(e) {
+    if (e.state == 'start') {
+        if (e.value[1] == '/') {
+            return 'xml-end-tag-open';
+        } else {
+            return 'xml-tag-open';
+        }
+    } else {
+        return 'xml-tag-close';
+    }
+}
+
+function tagNameToken(e) {
+    if (e.state == 'start') {
+        if (e.value[1] == '/') {
             return 'xml-end-tag-open';
         } else {
             return 'xml-tag-open';
