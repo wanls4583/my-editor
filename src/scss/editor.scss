@@ -239,7 +239,7 @@ body {
         padding: 3px 6px 0 6px;
         cursor: pointer;
         opacity: 0;
-        transition: opacity 0.2s;
+        // transition: opacity 0.2s;
     }
 
     &-fold-open:after {
@@ -258,6 +258,10 @@ body {
         border-width: 6px 4px 0 4px;
         border-style: solid;
         border-color: rgb(200, 200, 200) transparent;
+    }
+
+    &-fold-close {
+        opacity: 1;
     }
 
     &-fold-close:after {

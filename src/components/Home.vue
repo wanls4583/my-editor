@@ -4,6 +4,7 @@
 		@contextmenu.prevent="onContextmenu"
 		@mouseup="onClickEditor"
 		@selectstart.prevent
+		@wheel.prevent="onWheel"
 		class="my-editor-wrap"
 		ref="editor"
 	>
@@ -25,7 +26,7 @@
 		</div>
 		<div :style="{'box-shadow': _leftShadow}" class="my-editor-content-wrap">
 			<!-- 可滚动区域 -->
-			<div @mousedown="onScrollerMdown" @wheel.prevent="onWheel" class="my-editor-content-scroller" ref="scroller">
+			<div @mousedown="onScrollerMdown" class="my-editor-content-scroller" ref="scroller">
 				<!-- 内如区域 -->
 				<div :style="{top: _top, minWidth: _contentMinWidth}" @selectend.prevent="onSelectend" class="my-editor-content" ref="content">
 					<div
@@ -521,10 +522,10 @@ export default {
                     startObj.text += text;
                     context.htmls.splice(start.line, end.line - start.line);
                 }
+                this.setCursorPos(start.line, start.column);
                 for (let line = start.line; line < end.line; line++) {
                     this.unFold(line);
                 }
-                this.setCursorPos(start.line, start.column);
             } else if (Util.keyCode.DELETE == keyCode) { // 向后删除一个字符
                 if (this.cursorPos.column == text.length) { // 光标处于行尾
                     if (this.cursorPos.line < context.htmls.length) {
