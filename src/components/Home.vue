@@ -462,13 +462,13 @@ export default {
             }
             newLine += text.length - 1;
             this.maxLine = context.htmls.length;
+            this.setLineWidth(text);
+            this.render();
             this.highlighter.onInsertContent(nowLine);
             if (this.foldMap.has(nowLine) && text.length > 1) {
                 this.unFold(nowLine);
             }
             this.setScrollerHeight();
-            this.setLineWidth(text);
-            this.render();
             this.$nextTick(() => {
                 this.setCursorPos(newLine, newColume);
             });
@@ -565,10 +565,10 @@ export default {
             startObj.folds = null;
             startObj.states = null;
             this.maxLine = context.htmls.length;
-            this.highlighter.onDeleteContent(this.cursorPos.line);
             this.setScrollerHeight();
             this.clearRnage();
             this.render();
+            this.highlighter.onDeleteContent(this.cursorPos.line);
             // 更新最大文本宽度
             if (startObj.width >= this.maxWidthObj.width) {
                 this.maxWidthObj = {
