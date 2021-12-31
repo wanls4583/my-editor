@@ -2,7 +2,7 @@
 	<div
 		:style="{'padding-bottom': _statusHeight}"
 		@contextmenu.prevent="onContextmenu"
-		@mouseup="onClickEditor"
+		@mousedown="onClickEditor"
 		@selectstart.prevent
 		@wheel.prevent="onWheel"
 		class="my-editor-wrap"
@@ -97,7 +97,12 @@ import Panel from './Panel';
 import Util from '@/common/util';
 import $ from 'jquery';
 const context = {
-    htmls: []
+    htmls: [],
+    folds: [],
+    history: [],
+    lineIdMap: new Map(),
+    renderedIdMap: new Map(),
+    foldMap: new Map()
 }
 export default {
     name: 'Home',
@@ -241,6 +246,9 @@ export default {
             this.render();
             this.maxWidthObj = { lineId: null, width: 0 };
             this.setLineWidth(context.htmls);
+        },
+        maxLine: function (newVal) {
+            this.setScrollerHeight();
         }
     },
     created() {
@@ -264,12 +272,11 @@ export default {
     methods: {
         // 初始化数据
         initData() {
-            this.history = []; // 操作历史
             this.lineId = Number.MIN_SAFE_INTEGER;
-            this.lineIdMap = new Map(); // htmls的唯一标识对象
-            this.renderedIdMap = new Map(); // renderHtmls的唯一标识对象
-            this.folds = [];
-            this.foldMap = new Map();
+            context.history = []; // 操作历史
+            context.lineIdMap = new Map(); // htmls的唯一标识对象
+            context.renderedIdMap = new Map(); // renderHtmls的唯一标识对象
+            context.foldMap = new Map();
             context.htmls = [{
                 lineId: this.lineId++,
                 text: '',
@@ -279,7 +286,7 @@ export default {
                 folds: null,
                 states: null
             }];
-            this.lineIdMap.set(context.htmls[0].lineId, context.htmls[0]);
+            context.lineIdMap.set(context.htmls[0].lineId, context.htmls[0]);
             this.highlighter = new Highlight(this, context);
         },
         // 初始化文档事件
@@ -333,23 +340,23 @@ export default {
             let that = this;
             // 只更新一行
             if (lineId) {
-                if (this.renderedIdMap.has(lineId)) {
-                    let item = this.lineIdMap.get(lineId);
-                    let obj = this.renderedIdMap.get(lineId);
+                if (context.renderedIdMap.has(lineId)) {
+                    let item = context.lineIdMap.get(lineId);
+                    let obj = context.renderedIdMap.get(lineId);
                     Object.assign(obj, _getObj(item, obj.num));
                 }
                 return;
             }
-            this.renderedIdMap.clear();
+            context.renderedIdMap.clear();
             this.renderHtmls = [];
             for (let i = 0, startLine = this.startLine; i < this.maxVisibleLines && startLine <= context.htmls.length; i++) {
                 let lineObj = context.htmls[startLine - 1];
                 let lineId = lineObj.lineId;
                 let obj = _getObj(lineObj, startLine);
                 this.renderHtmls.push(obj);
-                this.renderedIdMap.set(lineId, obj);
-                if (this.foldMap.has(startLine)) {
-                    let fold = this.foldMap.get(startLine);
+                context.renderedIdMap.set(lineId, obj);
+                if (context.foldMap.has(startLine)) {
+                    let fold = context.foldMap.get(startLine);
                     startLine = fold.end.line;
                 } else {
                     startLine++;
@@ -369,7 +376,7 @@ export default {
                 if (that.selectedRange && line > that.selectedRange.start.line && line < that.selectedRange.end.line) {
                     selected = true;
                 }
-                if (that.foldMap.has(line)) { //该行已经折叠
+                if (context.foldMap.has(line)) { //该行已经折叠
                     fold = 'close';
                 } else if (that.getRangeFold(line, true)) { //可折叠
                     fold = 'open';
@@ -447,7 +454,7 @@ export default {
                     folds: null,
                     states: null
                 };
-                this.lineIdMap.set(item.lineId, item);
+                context.lineIdMap.set(item.lineId, item);
                 return item;
             });
             if (text.length > 1) { // 插入多行
@@ -465,10 +472,9 @@ export default {
             this.setLineWidth(text);
             this.render();
             this.highlighter.onInsertContent(nowLine);
-            if (this.foldMap.has(nowLine) && text.length > 1) {
+            if (context.foldMap.has(nowLine) && text.length > 1) {
                 this.unFold(nowLine);
             }
-            this.setScrollerHeight();
             this.$nextTick(() => {
                 this.setCursorPos(newLine, newColume);
             });
@@ -486,7 +492,7 @@ export default {
             if (!isDoCommand) { // 新增历史记录
                 this.pushHistory(historyObj);
             } else { // 撤销或重做操作后，更新历史记录
-                this.updateHistory(this.history.index, historyObj);
+                this.updateHistory(context.history.index, historyObj);
             }
         },
         // 删除内容
@@ -507,14 +513,14 @@ export default {
                 deleteText = this.getRangeText(this.selectedRange.start, this.selectedRange.end);
                 if (start.line == 1 && end.line == this.maxLine) { //全选删除
                     rangeUuid = [this.maxWidthObj.lineId];
-                    this.lineIdMap.clear();
+                    context.lineIdMap.clear();
                 } else {
                     rangeUuid = context.htmls.slice(start.line - 1, end.line).map((item) => {
-                        this.lineIdMap.delete(item.lineId);
+                        context.lineIdMap.delete(item.lineId);
                         return item.lineId;
                     });
                 }
-                this.lineIdMap.set(startObj.lineId, startObj);
+                context.lineIdMap.set(startObj.lineId, startObj);
                 if (start.line == end.line) { // 单行选中
                     text = text.slice(0, start.column) + text.slice(end.column);
                     startObj.text = text;
@@ -533,7 +539,7 @@ export default {
             } else if (Util.keyCode.DELETE == keyCode) { // 向后删除一个字符
                 if (this.cursorPos.column == text.length) { // 光标处于行尾
                     if (this.cursorPos.line < context.htmls.length) {
-                        this.lineIdMap.delete(context.htmls[this.cursorPos.line].lineId);
+                        context.lineIdMap.delete(context.htmls[this.cursorPos.line].lineId);
                         text = startObj.text + context.htmls[this.cursorPos.line].text;
                         context.htmls.splice(this.cursorPos.line, 1);
                         deleteText = '\n';
@@ -547,7 +553,7 @@ export default {
                 if (this.cursorPos.column == 0) { // 光标处于行首
                     if (this.cursorPos.line > 1) {
                         let column = context.htmls[this.cursorPos.line - 2].text.length;
-                        this.lineIdMap.delete(context.htmls[this.cursorPos.line - 2].lineId);
+                        context.lineIdMap.delete(context.htmls[this.cursorPos.line - 2].lineId);
                         text = context.htmls[this.cursorPos.line - 2].text + text;
                         context.htmls.splice(this.cursorPos.line - 2, 1);
                         this.setCursorPos(this.cursorPos.line - 1, column);
@@ -565,7 +571,6 @@ export default {
             startObj.folds = null;
             startObj.states = null;
             this.maxLine = context.htmls.length;
-            this.setScrollerHeight();
             this.clearRnage();
             this.render();
             this.highlighter.onDeleteContent(this.cursorPos.line);
@@ -588,19 +593,19 @@ export default {
             if (!isDoCommand) { // 新增历史记录
                 deleteText && this.pushHistory(historyObj);
             } else { // 撤销或重做操作后，更新历史记录
-                this.updateHistory(this.history.index, historyObj);
+                this.updateHistory(context.history.index, historyObj);
             }
         },
         // 检查折叠的行是否还有效
         checkFold(line) {
             let lineObj = null;
-            if (this.foldMap.has(line)) {
-                let fold = this.foldMap.get(line);
+            if (context.foldMap.has(line)) {
+                let fold = context.foldMap.get(line);
                 if (!_findFold(line, fold.name, -1)) {
                     this.unFold(line);
                 }
-            } else if (this.foldMap.has(line - 1)) {
-                let fold = this.foldMap.get(line - 1);
+            } else if (context.foldMap.has(line - 1)) {
+                let fold = context.foldMap.get(line - 1);
                 if (!_findFold(line, fold.name, 1)) {
                     this.unFold(line);
                 }
@@ -627,9 +632,9 @@ export default {
             let resultFold = this.getRangeFold(line);
             this.focus();
             if (resultFold) {
-                this.foldMap.set(startLine, resultFold);
-                this.folds.push(resultFold);
-                this.folds.sort((a, b) => {
+                context.foldMap.set(startLine, resultFold);
+                context.folds.push(resultFold);
+                context.folds.sort((a, b) => {
                     return a.start.line - b.start.line;
                 });
                 if (this.cursorPos.line > startLine && this.cursorPos.line < resultFold.end.line) {
@@ -637,47 +642,47 @@ export default {
                     this.setCursorPos(startLine, lineObj.text.length);
                 }
                 this.setScrollerHeight();
-                this.render();
                 this.setCursorRealPos();
+                this.render();
             }
         },
         // 展开折叠行
         unFold(line) {
             let left = 0;
-            let right = this.folds.length;
+            let right = context.folds.length;
             this.focus();
-            if (!this.foldMap.has(line)) {
+            if (!context.foldMap.has(line)) {
                 return;
             }
             while (left <= right) {
                 let mid = Math.floor((left + right) / 2);
-                if (this.folds[mid].start.line == line) {
-                    this.folds.splice(mid, 1);
+                if (context.folds[mid].start.line == line) {
+                    context.folds.splice(mid, 1);
                     break;
-                } else if (this.folds[mid].start.line > line) {
+                } else if (context.folds[mid].start.line > line) {
                     right = mid - 1;
                 } else {
                     left = mid + 1;
                 }
             }
-            this.foldMap.delete(line);
+            context.foldMap.delete(line);
             this.setScrollerHeight();
-            this.render();
             this.setCursorRealPos();
+            this.render();
         },
         // 撤销操作
         undo() {
-            if (this.history.index > 0) {
-                let command = this.history[this.history.index - 1];
+            if (context.history.index > 0) {
+                let command = context.history[context.history.index - 1];
                 this.doCommand(command);
-                this.history.index--;
+                context.history.index--;
             }
         },
         // 重做操作
         redo() {
-            if (this.history.index < this.history.length) {
-                let command = this.history[this.history.index];
-                this.history.index++;
+            if (context.history.index < context.history.length) {
+                let command = context.history[context.history.index];
+                context.history.index++;
                 this.doCommand(command);
             }
         },
@@ -699,8 +704,8 @@ export default {
         },
         // 添加历史记录
         pushHistory(command) {
-            var lastCommand = this.history[this.history.index - 1];
-            this.history = this.history.slice(0, this.history.index);
+            var lastCommand = context.history[context.history.index - 1];
+            context.history = context.history.slice(0, context.history.index);
             // 两次操作可以合并
             if (lastCommand && lastCommand.type == command.type && Date.now() - this.pushHistoryTime < 2000) {
                 if (
@@ -716,17 +721,17 @@ export default {
                     lastCommand.text = command.text + lastCommand.text;
                     lastCommand.cursorPos = command.cursorPos;
                 } else {
-                    this.history.push(command);
+                    context.history.push(command);
                 }
             } else {
-                this.history.push(command);
+                context.history.push(command);
             }
-            this.history.index = this.history.length;
+            context.history.index = context.history.length;
             this.pushHistoryTime = Date.now();
         },
         // 更新历史记录
         updateHistory(index, command) {
-            this.history[index - 1] = command;
+            context.history[index - 1] = command;
         },
         // 设置光标位置
         setCursorPos(line, column, forceCursorView) {
@@ -782,7 +787,7 @@ export default {
                 let count = 0;
                 while (count < 5000 && index < texts.length) {
                     let lineObj = texts[index];
-                    if (that.lineIdMap.has(lineObj.lineId)) {
+                    if (context.lineIdMap.has(lineObj.lineId)) {
                         let width = that.getStrWidth(lineObj.text);
                         // 增加2像素，给光标预留位置
                         width += 2;
@@ -878,7 +883,7 @@ export default {
         getRealLine(line) {
             let i = 1;
             let realLine = 1;
-            let folds = this.folds.slice(0);
+            let folds = context.folds.slice(0);
             while (folds.length && i < line) {
                 if (i + folds[0].start.line - realLine < line) {
                     i += folds[0].start.line - realLine;
@@ -897,7 +902,7 @@ export default {
         // 获取相对行号
         getRelativeLine(line) {
             let relLine = line;
-            let folds = this.folds.slice(0);
+            let folds = context.folds.slice(0);
             let preFold = null;
             for (let i = 0; i < folds.length; i++) {
                 if (line > folds[i].start.line) {
@@ -1009,7 +1014,7 @@ export default {
         },
         // 折叠/展开
         onToggleFold(line) {
-            if (this.foldMap.has(line)) {
+            if (context.foldMap.has(line)) {
                 this.unFold(line);
                 return;
             } else {
@@ -1023,9 +1028,12 @@ export default {
         },
         // 滚动区域鼠标按下事件
         onScrollerMdown(e) {
+            this.focus();
+            if (e.which == 3) { //右键
+                return;
+            }
             let pos = this.getPosByEvent(e);
             this.setCursorPos(pos.line, pos.column);
-            this.focus();
             this.mouseStartObj = {
                 time: Date.now(),
                 start: pos

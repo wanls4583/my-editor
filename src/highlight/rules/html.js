@@ -147,7 +147,8 @@ export default {
     }, {
         start: /\<\!\-\-/,
         end: /\-\-\>/,
-        token: 'xml-comment'
+        token: 'xml-comment',
+        foldName: 'xml-comment'
     }, {
         start: scriptStart,
         end: scriptEnd,
