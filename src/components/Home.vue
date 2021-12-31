@@ -91,7 +91,9 @@
 </template>
 
 <script>
-import Highlight from '@/highlight/core/highlight';
+import Tokenizer from '@/module/tokenizer/core/index';
+import Fold from '@/module/fold/index';
+import History from '@/module/history/index';
 import StatusBar from './StatusBar';
 import Panel from './Panel';
 import Util from '@/common/util';
@@ -189,10 +191,12 @@ export default {
             return this.cursorPos.visible ? 'visible' : 'hidden';
         },
         _hScrollWidth() {
-            return this.maxWidthObj.width ? this.maxWidthObj.width + 'px' : 'auto';
+            return this.maxWidthObj.width + this.charObj.fullAngleCharWidth * 2 + 'px';
         },
         _contentMinWidth() {
-            return this.maxWidthObj.width > this.scrollerArea.width ? this.maxWidthObj.width + 'px' : '100%';
+            let width = this.maxWidthObj.width + this.charObj.fullAngleCharWidth * 2;
+            width = this.scrollerArea.width > width ? this.scrollerArea.width : width;
+            return width + 'px';
         },
         _textAreaPos() {
             let cursorRealPos = this.cursorRealPos;
@@ -238,9 +242,9 @@ export default {
                 lineObj.html = '';
             });
             this.render();
-            this.highlighter.initLanguage(newVal);
-            this.highlighter.tokenizeVisibleLins();
-            this.highlighter.tokenizeLines(1);
+            this.tokenizer.initLanguage(newVal);
+            this.tokenizer.tokenizeVisibleLins();
+            this.tokenizer.tokenizeLines(1);
         },
         tabSize: function (newVal) {
             this.render();
@@ -287,7 +291,9 @@ export default {
                 states: null
             }];
             context.lineIdMap.set(context.htmls[0].lineId, context.htmls[0]);
-            this.highlighter = new Highlight(this, context);
+            this.tokenizer = new Tokenizer(this, context);
+            this.folder = new Fold(this, context);
+            this.history = new History(this, context);
         },
         // 初始化文档事件
         initEvent() {
@@ -378,7 +384,7 @@ export default {
                 }
                 if (context.foldMap.has(line)) { //该行已经折叠
                     fold = 'close';
-                } else if (that.getRangeFold(line, true)) { //可折叠
+                } else if (that.folder.getRangeFold(line, true)) { //可折叠
                     fold = 'open';
                 }
                 let html = item.html || Util.htmlTrans(item.text);
@@ -422,8 +428,7 @@ export default {
                     item.selected = item.num > start.line && item.num < end.line;
                 });
             }
-            this.selectedRange.start = start;
-            this.selectedRange.end = end;
+            this.setSelectedRange(start, end);
         },
         // 清除选中背景
         clearRnage() {
@@ -471,7 +476,7 @@ export default {
             this.maxLine = context.htmls.length;
             this.setLineWidth(text);
             this.render();
-            this.highlighter.onInsertContent(nowLine);
+            this.tokenizer.onInsertContent(nowLine);
             if (context.foldMap.has(nowLine) && text.length > 1) {
                 this.unFold(nowLine);
             }
@@ -490,9 +495,9 @@ export default {
                 }
             }
             if (!isDoCommand) { // 新增历史记录
-                this.pushHistory(historyObj);
+                this.history.pushHistory(historyObj);
             } else { // 撤销或重做操作后，更新历史记录
-                this.updateHistory(context.history.index, historyObj);
+                this.history.updateHistory(context.history.index, historyObj);
             }
         },
         // 删除内容
@@ -573,7 +578,7 @@ export default {
             this.maxLine = context.htmls.length;
             this.clearRnage();
             this.render();
-            this.highlighter.onDeleteContent(this.cursorPos.line);
+            this.tokenizer.onDeleteContent(this.cursorPos.line);
             // 更新最大文本宽度
             if (startObj.width >= this.maxWidthObj.width) {
                 this.maxWidthObj = {
@@ -591,55 +596,19 @@ export default {
                 text: deleteText
             };
             if (!isDoCommand) { // 新增历史记录
-                deleteText && this.pushHistory(historyObj);
+                deleteText && this.history.pushHistory(historyObj);
             } else { // 撤销或重做操作后，更新历史记录
-                this.updateHistory(context.history.index, historyObj);
-            }
-        },
-        // 检查折叠的行是否还有效
-        checkFold(line) {
-            let lineObj = null;
-            if (context.foldMap.has(line)) {
-                let fold = context.foldMap.get(line);
-                if (!_findFold(line, fold.name, -1)) {
-                    this.unFold(line);
-                }
-            } else if (context.foldMap.has(line - 1)) {
-                let fold = context.foldMap.get(line - 1);
-                if (!_findFold(line, fold.name, 1)) {
-                    this.unFold(line);
-                }
-            }
-
-            function _findFold(line, foldName, type) {
-                let lineObj = context.htmls[line - 1];
-                if (!lineObj.folds || !lineObj.folds.length) {
-                    return false;
-                }
-                for (let i = 0; i < lineObj.folds.length; i++) {
-                    let fold = lineObj.folds[i];
-                    if (fold.name == foldName && fold.type == type) {
-                        return true;
-                    }
-                }
-                return false;
+                this.history.updateHistory(context.history.index, historyObj);
             }
         },
         // 折叠行
         foldLine(line) {
-            let startLine = line;
-            let lineObj = context.htmls[startLine - 1];
-            let resultFold = this.getRangeFold(line);
+            let resultFold = this.folder.foldLine(line);
             this.focus();
             if (resultFold) {
-                context.foldMap.set(startLine, resultFold);
-                context.folds.push(resultFold);
-                context.folds.sort((a, b) => {
-                    return a.start.line - b.start.line;
-                });
-                if (this.cursorPos.line > startLine && this.cursorPos.line < resultFold.end.line) {
-                    lineObj = context.htmls[startLine - 1];
-                    this.setCursorPos(startLine, lineObj.text.length);
+                if (this.cursorPos.line > line && this.cursorPos.line < resultFold.end.line) {
+                    let lineObj = context.htmls[line - 1];
+                    this.setCursorPos(line, lineObj.text.length);
                 }
                 this.setScrollerHeight();
                 this.setCursorRealPos();
@@ -648,90 +617,12 @@ export default {
         },
         // 展开折叠行
         unFold(line) {
-            let left = 0;
-            let right = context.folds.length;
             this.focus();
-            if (!context.foldMap.has(line)) {
-                return;
+            if (this.folder.unFold(line)) {
+                this.setScrollerHeight();
+                this.setCursorRealPos();
+                this.render();
             }
-            while (left <= right) {
-                let mid = Math.floor((left + right) / 2);
-                if (context.folds[mid].start.line == line) {
-                    context.folds.splice(mid, 1);
-                    break;
-                } else if (context.folds[mid].start.line > line) {
-                    right = mid - 1;
-                } else {
-                    left = mid + 1;
-                }
-            }
-            context.foldMap.delete(line);
-            this.setScrollerHeight();
-            this.setCursorRealPos();
-            this.render();
-        },
-        // 撤销操作
-        undo() {
-            if (context.history.index > 0) {
-                let command = context.history[context.history.index - 1];
-                this.doCommand(command);
-                context.history.index--;
-            }
-        },
-        // 重做操作
-        redo() {
-            if (context.history.index < context.history.length) {
-                let command = context.history[context.history.index];
-                context.history.index++;
-                this.doCommand(command);
-            }
-        },
-        // 操作命令
-        doCommand(command) {
-            switch (command.type) {
-                case Util.command.DELETE:
-                    this.selectedRange = {
-                        start: command.start,
-                        end: command.end
-                    }
-                    this.deleteContent(Util.keyCode.BACKSPACE, true);
-                    break;
-                case Util.command.INSERT:
-                    this.setCursorPos(command.cursorPos.line, command.cursorPos.column);
-                    this.insertContent(command.text, true);
-                    break;
-            }
-        },
-        // 添加历史记录
-        pushHistory(command) {
-            var lastCommand = context.history[context.history.index - 1];
-            context.history = context.history.slice(0, context.history.index);
-            // 两次操作可以合并
-            if (lastCommand && lastCommand.type == command.type && Date.now() - this.pushHistoryTime < 2000) {
-                if (
-                    lastCommand.type == Util.command.DELETE &&
-                    command.end.line == command.start.line &&
-                    Util.comparePos(lastCommand.end, command.start) == 0) {
-                    lastCommand.end = command.end;
-                } else if (
-                    lastCommand.type == Util.command.INSERT &&
-                    command.preCursorPos.line == command.cursorPos.line &&
-                    Util.comparePos(lastCommand.cursorPos, command.preCursorPos) == 0
-                ) {
-                    lastCommand.text = command.text + lastCommand.text;
-                    lastCommand.cursorPos = command.cursorPos;
-                } else {
-                    context.history.push(command);
-                }
-            } else {
-                context.history.push(command);
-            }
-            context.history.index = context.history.length;
-            this.pushHistoryTime = Date.now();
-        },
-        // 更新历史记录
-        updateHistory(index, command) {
-            context.history[index - 1] = command;
         },
         // 设置光标位置
         setCursorPos(line, column, forceCursorView) {
@@ -744,8 +635,8 @@ export default {
         // 设置真实光标位置
         setCursorRealPos() {
             let left = this.getStrWidthByLine(this.cursorPos.line, 0, this.cursorPos.column);
-            let top = (this.getRelativeLine(this.cursorPos.line) - this.getRelativeLine(this.startLine)) * this.charObj.charHight;
-            let relTop = this.getRelativeLine(this.cursorPos.line) * this.charObj.charHight;
+            let top = (this.folder.getRelativeLine(this.cursorPos.line) - this.folder.getRelativeLine(this.startLine)) * this.charObj.charHight;
+            let relTop = this.folder.getRelativeLine(this.cursorPos.line) * this.charObj.charHight;
             // 强制滚动使光标处于可见区域
             if (this.forceCursorView) {
                 if (relTop > this.scrollTop + this.scrollerArea.height - this.charObj.charHight) {
@@ -770,7 +661,7 @@ export default {
             context.htmls.map((item) => {
                 if (item.width > maxWidthObj.width) {
                     maxWidthObj = {
-                        line: item.lineId,
+                        lineId: item.lineId,
                         width: item.width
                     }
                 }
@@ -789,8 +680,6 @@ export default {
                     let lineObj = texts[index];
                     if (context.lineIdMap.has(lineObj.lineId)) {
                         let width = that.getStrWidth(lineObj.text);
-                        // 增加2像素，给光标预留位置
-                        width += 2;
                         lineObj.width = width;
                         if (width > that.maxWidthObj.width) {
                             that.maxWidthObj = {
@@ -811,8 +700,19 @@ export default {
         },
         setScrollerHeight() {
             let maxLine = context.htmls.length;
-            maxLine = this.getRelativeLine(maxLine);
+            maxLine = this.folder.getRelativeLine(maxLine);
             this.scrollerHeight = maxLine * this.charObj.charHight + 'px';
+        },
+        /**
+         * 设置选中区域
+         * @param {Object} start
+         * @param {Object} end
+         */
+        setSelectedRange(start, end) {
+            this.selectedRange = {
+                start: start,
+                end: end
+            }
         },
         // 获取文本在浏览器中的宽度
         getStrWidth(str, start, end) {
@@ -850,7 +750,7 @@ export default {
             let clientX = e.clientX < 0 ? 0 : e.clientX;
             let clientY = e.clientY < 0 ? 0 : e.clientY;
             let line = Math.ceil((clientY + this.scrollTop - offset.top) / this.charObj.charHight) || 1;
-            line = this.getRealLine(line);
+            line = this.folder.getRealLine(line);
             if (line > context.htmls.length) {
                 line = context.htmls.length;
                 column = context.htmls[line - 1].text.length;
@@ -878,101 +778,6 @@ export default {
                 text = text.slice(start.column, end.column);
             }
             return text;
-        },
-        // 获取真实行号(折叠后行号会改变)
-        getRealLine(line) {
-            let i = 1;
-            let realLine = 1;
-            let folds = context.folds.slice(0);
-            while (folds.length && i < line) {
-                if (i + folds[0].start.line - realLine < line) {
-                    i += folds[0].start.line - realLine;
-                    realLine = folds[0].end.line - 1;
-                } else {
-                    break;
-                }
-                let fold = folds.shift();
-                while (folds.length && folds[0].end.line <= fold.end.line) { //多级折叠
-                    folds.shift();
-                }
-            }
-            realLine += line - i;
-            return realLine;
-        },
-        // 获取相对行号
-        getRelativeLine(line) {
-            let relLine = line;
-            let folds = context.folds.slice(0);
-            let preFold = null;
-            for (let i = 0; i < folds.length; i++) {
-                if (line > folds[i].start.line) {
-                    if (!preFold || preFold.end.line <= folds[i].start.line) {
-                        relLine -= folds[i].end.line - folds[i].start.line - 1;
-                    }
-                } else {
-                    break;
-                }
-                preFold = folds[i];
-            }
-            return relLine;
-        },
-        /**
-         * 获取折叠范围
-         * @param {Number} line 行号
-         * @param {Boolean} foldIconCheck 检测是否显示折叠图标
-         */
-        getRangeFold(line, foldIconCheck) {
-            let stack = [];
-            let startLine = line;
-            let lineObj = context.htmls[startLine - 1];
-            let resultFold = null;
-            line++;
-            if (lineObj.folds && lineObj.folds.length) {
-                for (let i = 0; i < lineObj.folds.length; i++) {
-                    let fold = lineObj.folds[i];
-                    if (fold.type == -1) {
-                        if (!stack.length || stack.peek().name == fold.name) {
-                            stack.push(fold);
-                        }
-                    }
-                }
-            }
-            while (stack.length && line <= context.htmls.length && (!foldIconCheck || line - startLine <= 1)) {
-                lineObj = context.htmls[line - 1];
-                if (lineObj.folds && lineObj.folds.length) {
-                    for (let i = 0; i < lineObj.folds.length; i++) {
-                        let fold = lineObj.folds[i];
-                        if (fold.type == -1) {
-                            if (stack.peek().name == fold.name) {
-                                stack.push(fold);
-                            }
-                        } else if (stack.peek().name == fold.name) {
-                            if (stack.length == 1) {
-                                if (foldIconCheck) {
-                                    return line - startLine > 1;
-                                } else {
-                                    resultFold = {
-                                        start: {
-                                            line: startLine,
-                                            start: stack.peek().start
-                                        },
-                                        end: {
-                                            line: line,
-                                            end: fold.end
-                                        },
-                                        name: fold.name
-                                    }
-                                    stack.pop();
-                                    break;
-                                }
-                            }
-                            stack.pop();
-                        }
-                    }
-                }
-                line++;
-            }
-            return foldIconCheck ? line - startLine > 1 : resultFold;
         },
         // 右键菜单事件
         onContextmenu(e) {
@@ -1059,10 +864,7 @@ export default {
             let that = this;
             if (this.mouseStartObj && Date.now() - this.mouseStartObj.time > 100) {
                 var offset = $(this.$scroller).offset();
-                this.selectedRange = {
-                    start: Object.assign({}, this.mouseStartObj.start),
-                    end: this.getPosByEvent(e)
-                }
+                this.setSelectedRange(Object.assign({}, this.mouseStartObj.start), this.getPosByEvent(e));
                 this.renderSelectedBg();
                 cancelAnimationFrame(this.selectMoveTimer);
                 if (e.clientY > offset.top + this.scrollerArea.height) { //鼠标超出底部区域
@@ -1109,18 +911,7 @@ export default {
                     line = line < 1 ? 1 : (line > context.htmls.length ? context.htmls.length : line);
                     column = column < 0 ? 0 : (column > context.htmls[originLine - 1].text.length ? context.htmls[originLine - 1].text.length : column);
                     that.setCursorPos(line, column);
-                    that.selectedRange = {
-                        start: Object.assign(that.mouseStartObj.start),
-                        end: {
-                            line: line,
-                            column: column
-                        }
-                    }
-                    that.selectedRange.start = that.mouseStartObj.start;
-                    that.selectedRange.end = {
-                        line: line,
-                        column: column
-                    }
+                    that.setSelectedRange(that.mouseStartObj.start, { line: line, column: column });
                     that.renderSelectedBg();
                     that.selectMoveTimer = requestAnimationFrame(() => {
                         _run(autoDirect, speed)
@@ -1133,10 +924,7 @@ export default {
             // 按下到抬起的间隔大于100ms，属于选中结束事件
             if (this.mouseStartObj && Date.now() - this.mouseStartObj.time > 100) {
                 let end = this.getPosByEvent(e);
-                this.selectedRange = {
-                    start: this.mouseStartObj.start,
-                    end: end
-                }
+                this.setSelectedRange(this.mouseStartObj.start, end);
                 this.renderSelectedBg();
                 this.setCursorPos(end.line, end.column);
             } else if (e.which != 3) {
@@ -1158,10 +946,10 @@ export default {
             this.scrollTop = e.target.scrollTop;
             startLine = Math.floor(this.scrollTop / this.charObj.charHight);
             startLine++;
-            this.startLine = this.getRealLine(startLine);
+            this.startLine = this.folder.getRealLine(startLine);
             this.top = -this.scrollTop % this.charObj.charHight;
             this.forceCursorView = false;
-            this.highlighter.onScroll();
+            this.tokenizer.onScroll();
             this.render();
             this.setCursorRealPos();
         },
@@ -1231,27 +1019,18 @@ export default {
                 switch (e.keyCode) {
                     case 65://ctrl+a,全选
                         e.preventDefault();
-                        this.selectedRange = {
-                            start: {
-                                line: 1,
-                                column: 0
-                            },
-                            end: {
-                                line: context.htmls.length,
-                                column: context.htmls[context.htmls.length - 1].text.length
-                            }
-                        }
+                        this.setSelectedRange({ line: 1, column: 0 }, { line: context.htmls.length, column: context.htmls.peek().text.length })
                         this.renderSelectedBg(false);
                         break;
                     case 90: //ctrl+z，撤销
                     case 122:
                         e.preventDefault();
-                        this.undo();
+                        this.history.undo();
                         break;
                     case 89: //ctrl+y，重做
                     case 121:
                         e.preventDefault();
-                        this.redo();
+                        this.history.redo();
                         break;
                 }
             } else {

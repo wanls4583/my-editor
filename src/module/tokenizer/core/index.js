@@ -3,16 +3,15 @@
  * @Date: 2021-12-15 11:39:41
  * @Description: 
  */
-import jsRules from '@/highlight/rules/javascript.js';
-import htmlRules from '@/highlight/rules/html.js';
-import cssRules from '@/highlight/rules/css.js';
+import jsRules from '@/module/tokenizer/rules/javascript.js';
+import htmlRules from '@/module/tokenizer/rules/html.js';
+import cssRules from '@/module/tokenizer/rules/css.js';
 import Util from '@/common/util';
 export default class {
     constructor(editor, context) {
-        this.context = context;
         this.currentLine = 1;
         this.languageMap = [];
-        this.initProperties(editor);
+        this.initProperties(editor, context);
         this.initLanguage(editor.language);
     }
     initLanguage(language) {
@@ -32,21 +31,26 @@ export default class {
                 this.language = 'plain';
         }
     }
-    initProperties(editor) {
-        let properties = ['startLine', 'maxVisibleLines', 'maxLine', 'renderLine'];
-        let result = {};
-        properties.map((property) => {
-            result[property] = {
-                get: function () {
-                    if (typeof editor[property] == 'function') {
-                        return editor[property].bind(editor);
-                    } else {
-                        return editor[property];
+    initProperties(editor, context) {
+        let taht = this;
+        _initProperties(editor, ['startLine', 'maxVisibleLines', 'maxLine', 'renderLine']);
+        _initProperties(context, ['htmls']);
+
+        function _initProperties(context, properties) {
+            let result = {};
+            properties.map((property) => {
+                result[property] = {
+                    get: function () {
+                        if (typeof context[property] == 'function') {
+                            return context[property].bind(context);
+                        } else {
+                            return context[property];
+                        }
                     }
                 }
-            }
-        });
-        Object.defineProperties(this, result);
+            });
+            Object.defineProperties(taht, result);
+        }
     }
     initRules(rules) {
         if (this.languageMap[this.language]) {
@@ -234,14 +238,8 @@ export default class {
         this.tokenizeVisibleLins();
     }
     tokenizeVisibleLins() {
-        let startLine = this.startLine;
-        let endLine = this.startLine + this.maxVisibleLines;
         let currentLine = this.currentLine;
-        endLine = endLine > this.maxLine ? this.maxLine : endLine;
-        while (startLine <= endLine && this.context.htmls[startLine - 1].tokens) {
-            startLine++;
-        }
-        this.tokenizeLines(startLine, endLine);
+        this.tokenizeLines(this.startLine);
         this.currentLine = currentLine;
     }
     tokenizeLines(startLine, endLine) {
@@ -249,7 +247,7 @@ export default class {
         let processedTime = Date.now();
         endLine = endLine || this.maxLine;
         while (startLine <= endLine) {
-            let lineObj = this.context.htmls[startLine - 1];
+            let lineObj = this.htmls[startLine - 1];
             if (!lineObj.tokens) {
                 let data = this.tokenizeLine(startLine);
                 lineObj.tokens = data.tokens;
@@ -265,7 +263,7 @@ export default class {
                 this.renderLine(lineObj.lineId);
                 if (lineObj.states + '' != data.states + '') {
                     lineObj.states = data.states;
-                    lineObj = this.context.htmls[startLine];
+                    lineObj = this.htmls[startLine];
                     if (lineObj) {
                         lineObj.tokens = null;
                     }
@@ -291,9 +289,9 @@ export default class {
         let rule = null;
         let lastIndex = 0;
         let preEnd = 0;
-        let preStates = line > 1 && this.context.htmls[line - 2].states || [];
+        let preStates = line > 1 && this.htmls[line - 2].states || [];
         let states = preStates.slice(0);
-        let lineObj = this.context.htmls[line - 1];
+        let lineObj = this.htmls[line - 1];
         let regex = this.getRegex(states.peek());
         let resultObj = {
             tokens: [],
