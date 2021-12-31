@@ -101,10 +101,10 @@ import $ from 'jquery';
 const context = {
     htmls: [],
     folds: [],
-    history: [],
-    lineIdMap: new Map(),
-    renderedIdMap: new Map(),
-    foldMap: new Map()
+    history: [], // 操作历史
+    lineIdMap: new Map(), //htmls的唯一标识对象
+    renderedIdMap: new Map(), //renderHtmls的唯一标识对象
+    foldMap: new Map() //folds的唯一标识对象
 }
 export default {
     name: 'Home',
@@ -277,11 +277,7 @@ export default {
         // 初始化数据
         initData() {
             this.lineId = Number.MIN_SAFE_INTEGER;
-            context.history = []; // 操作历史
-            context.lineIdMap = new Map(); // htmls的唯一标识对象
-            context.renderedIdMap = new Map(); // renderHtmls的唯一标识对象
-            context.foldMap = new Map();
-            context.htmls = [{
+            context.htmls.push({
                 lineId: this.lineId++,
                 text: '',
                 html: '',
@@ -289,7 +285,7 @@ export default {
                 tokens: null,
                 folds: null,
                 states: null
-            }];
+            });
             context.lineIdMap.set(context.htmls[0].lineId, context.htmls[0]);
             this.tokenizer = new Tokenizer(this, context);
             this.folder = new Fold(this, context);
@@ -327,6 +323,7 @@ export default {
         },
         // 聚焦
         focus() {
+            this.$textarea.focus();
             setTimeout(() => {
                 this.$textarea.focus();
             }, 300);
