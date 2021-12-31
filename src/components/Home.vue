@@ -86,7 +86,7 @@
 		<!-- 状态栏 -->
 		<status-bar :column="cursorPos.column+1" :height="statusHeight" :language.sync="language" :line="cursorPos.line" :tabSize.sync="tabSize" ref="statusBar"></status-bar>
 		<!-- 右键菜单 -->
-		<panel :checkable="false" :menuList="menuList" :styles="menuStyle" @change="onClickMenu" v-show="menuVisble"></panel>
+		<panel :checkable="false" :menuList="menuList" :styles="menuStyle" @change="onClickMenu" ref="menu" v-show="menuVisble"></panel>
 	</div>
 </template>
 
@@ -976,16 +976,30 @@ export default {
         },
         // 右键菜单事件
         onContextmenu(e) {
+            let panelWidth = 0;
+            let panelHeight = 0;
             let $editor = $(this.$editor);
             let offset = $editor.offset();
-            this.menuStyle.top = e.clientY - offset.top + 'px';
-            this.menuStyle.left = e.clientX - offset.left + 'px';
+            this.menuVisble = true;
+            this.$nextTick(() => {
+                panelWidth = this.$refs.menu.$el.clientWidth;
+                panelHeight = this.$refs.menu.$el.clientHeight;
+                if (panelHeight + e.clientY > offset.top + this.scrollerArea.height) {
+                    this.menuStyle.top = e.clientY - offset.top - panelHeight + 'px';
+                } else {
+                    this.menuStyle.top = e.clientY - offset.top + 'px';
+                }
+                if (panelWidth + e.clientX > offset.left + $editor[0].clientWidth) {
+                    this.menuStyle.left = e.clientX - offset.left - panelWidth + 'px';
+                } else {
+                    this.menuStyle.left = e.clientX - offset.left + 'px';
+                }
+            });
             this.menuList[0].map((menu) => {
                 if (['cut', 'copy'].indexOf(menu.op) > -1) {
                     menu.disabled = !this.selectedRange;
                 }
             });
-            this.menuVisble = true;
         },
         // 选中菜单
         onClickMenu(menu) {
@@ -1011,6 +1025,7 @@ export default {
                     break;
             }
             this.menuVisble = false;
+            this.focus();
         },
         // 折叠/展开
         onToggleFold(line) {
