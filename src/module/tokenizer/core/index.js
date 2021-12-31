@@ -32,25 +32,8 @@ export default class {
         }
     }
     initProperties(editor, context) {
-        let taht = this;
-        _initProperties(editor, ['startLine', 'maxVisibleLines', 'maxLine', 'renderLine']);
-        _initProperties(context, ['htmls']);
-
-        function _initProperties(context, properties) {
-            let result = {};
-            properties.map((property) => {
-                result[property] = {
-                    get: function () {
-                        if (typeof context[property] == 'function') {
-                            return context[property].bind(context);
-                        } else {
-                            return context[property];
-                        }
-                    }
-                }
-            });
-            Object.defineProperties(taht, result);
-        }
+        Util.defineProperties(this, editor, ['startLine', 'maxVisibleLines', 'maxLine', 'renderLine']);
+        Util.defineProperties(this, context, ['htmls']);
     }
     initRules(rules) {
         if (this.languageMap[this.language]) {

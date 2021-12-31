@@ -3,30 +3,13 @@
  * @Date: 2021-12-31 14:42:01
  * @Description: 
  */
+import Util from '@/common/util';
 export default class {
     constructor(editor, context) {
-        this.context = context;
         this.initProperties(editor, context);
     }
     initProperties(editor, context) {
-        let taht = this;
-        _initProperties(context, ['htmls', 'folds', 'foldMap']);
-
-        function _initProperties(context, properties) {
-            let result = {};
-            properties.map((property) => {
-                result[property] = {
-                    get: function () {
-                        if (typeof context[property] == 'function') {
-                            return context[property].bind(context);
-                        } else {
-                            return context[property];
-                        }
-                    }
-                }
-            });
-            Object.defineProperties(taht, result);
-        }
+        Util.defineProperties(this, context, ['htmls', 'folds', 'foldMap']);
     }
     // 折叠行
     foldLine(line) {

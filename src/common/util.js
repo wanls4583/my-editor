@@ -157,6 +157,21 @@ class Util {
         var worker = new Worker(url);
         return worker;
     }
+    static defineProperties(target, context, properties) {
+        let result = {};
+        properties.map((property) => {
+            result[property] = {
+                get: function () {
+                    if (typeof context[property] == 'function') {
+                        return context[property].bind(context);
+                    } else {
+                        return context[property];
+                    }
+                }
+            }
+        });
+        Object.defineProperties(target, result);
+    }
 }
 Array.prototype.peek = function () {
     if (this.length) {

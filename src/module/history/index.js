@@ -6,29 +6,11 @@
 import Util from '@/common/util';
 export default class {
     constructor(editor, context) {
-        this.context = context;
         this.initProperties(editor, context);
     }
     initProperties(editor, context) {
-        let taht = this;
-        _initProperties(editor, ['insertContent', 'deleteContent', 'setCursorPos', 'setSelectedRange']);
-        _initProperties(context, ['history']);
-
-        function _initProperties(context, properties) {
-            let result = {};
-            properties.map((property) => {
-                result[property] = {
-                    get: function () {
-                        if (typeof context[property] == 'function') {
-                            return context[property].bind(context);
-                        } else {
-                            return context[property];
-                        }
-                    }
-                }
-            });
-            Object.defineProperties(taht, result);
-        }
+        Util.defineProperties(this, editor, ['insertContent', 'deleteContent', 'setCursorPos', 'setSelectedRange']);
+        Util.defineProperties(this, context, ['history']);
     }
     // 撤销操作
     undo() {
