@@ -21,7 +21,8 @@ export default {
     }, {
         start: /\{/,
         end: /\}/,
-        token: ['css-lparen', 'css-rparen'],
+        token: ['css-lbraces', 'css-rbraces'],
+        foldName: 'css-braces',
         childRule: {
             rules: [{
                 regex: /;/,

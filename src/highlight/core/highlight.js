@@ -53,18 +53,12 @@ export default class {
             let obj = this.languageMap[this.language];
             this.rules = obj.rules;
             this.ruleIdMap = obj.ruleIdMap;
-            this.ruleNameMap = obj.ruleNameMap;
-            this.ruleStartMap = obj.ruleStartMap;
-            this.ruleEndMap = obj.ruleEndMap;
             return;
         }
         rules = Util.deepAssign({}, rules);
         let pairLevel = rules.pairLevel || 1;
         this.ruleId = 1;
         this.ruleIdMap = {};
-        this.ruleNameMap = {};
-        this.ruleStartMap = {};
-        this.ruleEndMap = {};
         rules.rules.map((item) => {
             this.setRuleUuid(item, pairLevel);
         });
@@ -77,32 +71,43 @@ export default class {
         this.rules = rules;
         this.languageMap[this.language] = {
             rules: rules,
-            ruleIdMap: this.ruleIdMap,
-            ruleNameMap: this.ruleNameMap,
-            ruleStartMap: this.ruleStartMap,
-            ruleEndMap: this.ruleEndMap,
+            ruleIdMap: this.ruleIdMap
         };
     }
     setRuleUuid(item, pairLevel, parentUuid) {
+        let that = this;
         // 每个规则生成一个唯一标识
         item.ruleId = this.ruleId++;
         item.parentUuid = parentUuid;
         item.level = item.level || 0;
         this.ruleIdMap[item.ruleId] = item;
-        typeof item.name === 'string' && (this.ruleNameMap[item.name] = item);
         if (item.start && item.end) {
             item.level = item.level || pairLevel;
-            typeof item.start === 'string' && (this.ruleStartMap[item.start] = item); //命名start
-            typeof item.end === 'string' && (this.ruleEndMap[item.end] = item); //命名end
         }
-        if (item.childRule && item.childRule.rules) {
-            item.childRule.rules.map((_item) => {
-                this.setRuleUuid(_item, item.childRule.pairLevel || 1, item.ruleId);
-            });
-            item.childRule = item.childRule.rules;
-            item.childRule.sort((a, b) => {
-                return b.level - a.level;
-            });
+        if (typeof item.start === 'object' && !(item.start instanceof RegExp)) {
+            item.start.ruleId = this.ruleId++;
+            item.start.startBy = item.ruleId;
+            this.ruleIdMap[item.start.ruleId] = item.start;
+            _setChildRuleId(item.start);
+        }
+        if (typeof item.end === 'object' && !(item.end instanceof RegExp)) {
+            item.end.ruleId = this.ruleId++;
+            item.end.endBy = item.ruleId;
+            this.ruleIdMap[item.end.ruleId] = item.end;
+            _setChildRuleId(item.end);
+        }
+        _setChildRuleId(item);
+
+        function _setChildRuleId(item) {
+            if (item.childRule && item.childRule.rules) {
+                item.childRule.rules.map((_item) => {
+                    that.setRuleUuid(_item, item.childRule.pairLevel || 1, item.ruleId);
+                });
+                item.childRule = item.childRule.rules;
+                item.childRule.sort((a, b) => {
+                    return b.level - a.level;
+                });
+            }
         }
     }
     // 组合同一层级的正则表达式
@@ -114,10 +119,16 @@ export default class {
             startRegexs.push(this.getEndRegex(parentRule));
         });
         rules.map((item) => {
-            if (item.childRule) {
+            if (item.childRule && item.childRule.length) {
                 this.setCombStartRegex(item.childRule, parentRules.concat([item]));
             }
             if (item.start && item.end) {
+                if (item.start.childRule && item.start.childRule.length) {
+                    this.setCombStartRegex(item.start.childRule, parentRules.concat([item.start]));
+                }
+                if (item.end.childRule && item.end.childRule.length) {
+                    this.setCombStartRegex(item.end.childRule, parentRules.concat([item.end]));
+                }
                 item = this.getStartRegex(item);
             }
             startRegexs.push(item);
@@ -133,10 +144,16 @@ export default class {
     setCombEndRegex(rules, parentRules) {
         let that = this;
         rules.map((item) => {
-            if (item.childRule) {
+            if (item.childRule && item.childRule.length) {
                 this.setCombEndRegex(item.childRule, parentRules.concat([item]));
             }
             if (item.start && item.end) {
+                if (item.start.childRule && item.start.childRule.length) {
+                    this.setCombEndRegex(item.start.childRule, parentRules.concat([item.start]));
+                }
+                if (item.end.childRule && item.end.childRule.length) {
+                    this.setCombEndRegex(item.end.childRule, parentRules.concat([item.end]));
+                }
                 _build(item, parentRules);
             }
         });
@@ -161,41 +178,33 @@ export default class {
         }
     }
     getStartRegex(rule) {
-        if (typeof rule.start === 'string') { //命名start
-            let _rule = this.ruleNameMap[rule.start];
-            while (_rule && typeof _rule.start === 'string') {
-                _rule = this.ruleNameMap[_rule.start];
-            }
-            if (_rule && _rule.start instanceof RegExp) {
-                return {
-                    ruleId: _rule.ruleId,
-                    regex: _rule.start
-                };
+        if (rule.regex instanceof RegExp) {
+            return {
+                ruleId: rule.ruleId,
+                regex: rule.regex
             }
         } else if (rule.start instanceof RegExp) {
             return {
                 ruleId: rule.ruleId,
                 regex: rule.start
             };
+        } else if (rule.start.startBy) {
+            return this.getStartRegex(rule.start);
         }
     }
     getEndRegex(rule) {
-        if (typeof rule.end === 'string') { //命名end
-            let _rule = this.ruleNameMap[rule.end];
-            while (_rule && typeof _rule.start === 'string') {
-                _rule = this.ruleNameMap[_rule.start];
-            }
-            if (_rule && _rule.start instanceof RegExp) {
-                return {
-                    ruleId: _rule.ruleId,
-                    regex: _rule.start
-                };
+        if (rule.regex instanceof RegExp) {
+            return {
+                ruleId: rule.ruleId,
+                regex: rule.regex
             }
         } else if (rule.end instanceof RegExp) {
             return {
                 ruleId: rule.ruleId,
                 regex: rule.end
             };
+        } else if (rule.end.endBy) {
+            return this.getStartRegex(rule.end);
         }
     }
     onInsertContent(line) {
@@ -460,7 +469,9 @@ export default class {
             } else if (!(rule.foldName instanceof Array)) {
                 fold.name = rule.foldName;
             }
-
+            if (!fold.name) { //没有折叠名称无效
+                return null;
+            }
             if (typeof rule.foldType === 'function') {
                 fold.type = rule.foldType({
                     value: result,
@@ -525,14 +536,12 @@ export default class {
         let regex = null;
         let rule = null;
         let preRule = this.ruleIdMap[preRuleId];
-        if (preRule && typeof preRule.name === 'string' &&
-            states.indexOf(preRuleId) == -1 && this.ruleStartMap[preRule.name]) { //以preRule的完整匹配为开始节点
-            rule = this.ruleStartMap[preRule.name];
+        if (preRule && states.indexOf(preRuleId) == -1 && preRule.startBy) { //以preRule的完整匹配为开始节点
+            rule = this.ruleIdMap[preRule.startBy];
             states.push(rule.ruleId);
             ruleId = rule.ruleId;
         }
-        if (preRule && typeof preRule.name === 'string' &&
-            states.indexOf(preRuleId) == -1 && this.ruleEndMap[preRule.name]) { //以preRule的完整匹配为结束节点
+        if (preRule && states.indexOf(preRuleId) == -1 && preRule.endBy) { //以preRule的完整匹配为结束节点
             states.pop();
             ruleId = states.peek();
         }
