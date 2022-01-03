@@ -492,6 +492,9 @@ export default class {
         let regex = null;
         let preRule = this.ruleIdMap[preRuleId];
         while (preRule && states.indexOf(preRuleId) == -1 && preRule.endBy) {
+            while (states.peek() != preRule.endBy) {
+                states.pop();
+            }
             states.pop();
             preRule = this.ruleIdMap[preRule.endBy];
         }
