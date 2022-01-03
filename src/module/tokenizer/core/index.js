@@ -97,11 +97,10 @@ export default class {
             this.setCombStartRegex(rule.end, parentRules);
         }
         if (rule.rules && rule.rules.length) {
+            rule.ruleId && (parentRules = (parentRules.concat([rule])));
             parentRules.map((parentRule) => {
                 startRegexs.push(this.getEndRegex(parentRule));
             });
-            rule.start && rule.end && startRegexs.push(this.getEndRegex(rule));
-            rule.ruleId && (parentRules = (parentRules.concat([rule])));
             rule.rules.map((item) => {
                 this.setCombStartRegex(item, parentRules);
                 startRegexs.push(this.getStartRegex(item));
