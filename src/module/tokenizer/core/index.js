@@ -56,7 +56,7 @@ export default class {
         this.setCombEndRegex(rules, []);
         this.rules = rules.rules;
         this.languageMap[this.language] = {
-            rules: rules,
+            rules: this.rules,
             ruleIdMap: this.ruleIdMap
         };
     }
