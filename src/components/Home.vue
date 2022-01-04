@@ -176,7 +176,7 @@ export default {
             return this.top - this.charObj.charHight + 'px';
         },
         _leftShadow() {
-            return this.scrollLeft ? '17px 0 16px -16px rgba(0, 0, 0, 0.4) inset' : 'none';
+            return this.scrollLeft ? '17px 0 16px -16px rgba(0, 0, 0, 0.8) inset' : 'none';
         },
         _top() {
             return this.top + 'px';
