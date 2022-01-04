@@ -466,7 +466,7 @@ export default class {
                 index: match.index,
                 state: flag
             });
-        } else if (!(rule.foldName instanceof Array)) {
+        } else {
             foldName = rule.foldName;
         }
         return foldName;
@@ -495,7 +495,9 @@ export default class {
                 index: match.index,
                 state: flag
             });
-        } else if (!(rule.foldType instanceof Array)) {
+        } else if (rule.start && rule.end) {
+            foldType = flag == 'start' ? -1 : 1;
+        } else {
             foldType = rule.foldType;
         }
         return foldType;
