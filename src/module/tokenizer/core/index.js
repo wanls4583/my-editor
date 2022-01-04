@@ -283,11 +283,7 @@ export default class {
             } else {
                 resultObj.tokens.push({
                     value: lineObj.text,
-                    type: typeof rule.token == 'function' ? rule.token({
-                        value: lineObj.text,
-                        text: lineObj.text,
-                        index: 0
-                    }) : rule.token
+                    type: this.getTokenType(rule, match, lineObj.text, lineObj.text)
                 });
             }
         } else if (states.length && preStates.indexOf(states.peek()) == -1) { //最后一个token未匹配到尾节点
@@ -305,6 +301,15 @@ export default class {
             states: states
         };
     }
+    /**
+     * 获取折叠标记对象
+     * @param {Object} rule 规则对象
+     * @param {Object} match 正则结果对象
+     * @param {Array} states 状态栈
+     * @param {Array} preStates 上一行的状态栈
+     * @param {Object} resultObj 结果对象
+     * @param {String} text 当前行文本
+     */
     getToken(rule, match, states, preStates, resultObj, text) {
         let result = match[0];
         let flag = '';
@@ -338,9 +343,22 @@ export default class {
                 flag = 'start';
             }
         }
+        token.type = this.getTokenType(rule, match, text, token.value, flag);
+        return token;
+    }
+    /**
+     * 获取token类型
+     * @param {Object} rule 规则对象
+     * @param {Object} match 正则执行后的结果对象
+     * @param {String} text 当前行的文本
+     * @param {String} value token的文本范围
+     * @param {String} flag 开始/结束标记
+     */
+    getTokenType(rule, match, text, value, flag) {
+        let type = '';
         if (typeof rule.token == 'function') {
-            token.type = rule.token({
-                value: token.value,
+            type = rule.token({
+                value: value,
                 index: match.index,
                 text: text,
                 state: flag
@@ -348,23 +366,31 @@ export default class {
         } else if (rule.token instanceof Array) {
             if (rule.start && rule.end) {
                 if (flag == 'start') {
-                    token.type = rule.token[0];
+                    type = rule.token[0];
                 } else {
-                    token.type = rule.token[1];
+                    type = rule.token[1];
                 }
             } else {
                 let expIndex = this.getChildExpIndex(match);
                 if (expIndex > -1) {
-                    token.type = rule.token[expIndex];
+                    type = rule.token[expIndex];
                 } else {
-                    token.type = rule.token.join('.');
+                    type = rule.token.join('.');
                 }
             }
         } else {
-            token.type = rule.token;
+            type = rule.token;
         }
-        return token;
+        return type;
     }
+    /**
+     * 获取折叠标记对象
+     * @param {Object} rule 规则对象
+     * @param {Object} match 正则结果对象
+     * @param {Array} states 状态栈
+     * @param {Object} resultObj 结果对象
+     * @param {String} text 当前行文本
+     */
     getFold(rule, match, states, resultObj, text) {
         let result = match[0];
         let flag = '';
@@ -380,12 +406,6 @@ export default class {
                     end: match.index + result.length,
                     value: result
                 };
-                if (rule.foldName instanceof Array) {
-                    fold.name = flag == 'start' ? rule.foldName[0] : rule.foldName[1];
-                }
-                if (rule.foldType instanceof Array) {
-                    fold.type = flag == 'start' ? rule.foldType[0] : rule.foldType[1];
-                }
             }
         } else if (rule.foldName && rule.foldType) { //折叠标记
             fold = {
@@ -393,39 +413,14 @@ export default class {
                 end: match.index + result.length,
                 value: result
             };
-            let expIndex = this.getChildExpIndex(match);
-            expIndex = expIndex == -1 ? 0 : expIndex;
-            if (rule.foldName instanceof Array) {
-                fold.name = rule.foldName[expIndex];
-            }
-            if (rule.foldType instanceof Array) {
-                fold.type = rule.foldType[expIndex];
-            }
         }
         if (fold) {
-            if (typeof rule.foldName === 'function') {
-                fold.name = rule.foldName({
-                    value: result,
-                    text: text,
-                    index: match.index,
-                    state: flag
-                });
-            } else if (!(rule.foldName instanceof Array)) {
-                fold.name = rule.foldName;
-            }
-            if (!fold.name) { //没有折叠名称无效
+            let foldName = this.getFoldName(rule, match, text, flag);
+            if (!foldName) { //没有折叠名称无效
                 return null;
             }
-            if (typeof rule.foldType === 'function') {
-                fold.type = rule.foldType({
-                    value: result,
-                    text: text,
-                    index: match.index,
-                    state: flag
-                });
-            } else if (!(rule.foldType instanceof Array)) {
-                fold.type = flag ? (flag === 'start' ? -1 : 1) : rule.foldType;
-            }
+            fold.name = foldName;
+            fold.type = this.getFoldType(rule, match, text, flag);
             if (fold.type == 1) {
                 fold = _checkFold(resultObj, fold);
             }
@@ -446,6 +441,64 @@ export default class {
             }
             return fold;
         }
+    }
+    /**
+     * 获取折叠名称[唯一标识]
+     * @param {Object} rule 规则对象
+     * @param {Object} match 正则执行后的结果对象
+     * @param {String} text 当前行的文本
+     * @param {String} flag 开始/结束标记
+     */
+    getFoldName(rule, match, text, flag) {
+        let foldName = '';
+        if (rule.foldName instanceof Array) {
+            if (rule.start && rule.end) {
+                foldName = flag == 'start' ? rule.foldName[0] : rule.foldName[1];
+            } else {
+                let expIndex = this.getChildExpIndex(match);
+                expIndex = expIndex == -1 ? 0 : expIndex;
+                foldName = rule.foldName[expIndex];
+            }
+        } else if (typeof rule.foldName === 'function') {
+            foldName = rule.foldName({
+                value: match[0],
+                text: text,
+                index: match.index,
+                state: flag
+            });
+        } else if (!(rule.foldName instanceof Array)) {
+            foldName = rule.foldName;
+        }
+        return foldName;
+    }
+    /**
+     * 获取折叠类型[-1:首,1:尾]
+     * @param {Object} rule 规则对象
+     * @param {Object} match 正则执行后的结果对象
+     * @param {String} text 当前行的文本
+     * @param {String} flag 开始/结束标记
+     */
+    getFoldType(rule, match, text, flag) {
+        let foldType = '';
+        if (rule.foldType instanceof Array) {
+            if (rule.start && rule.end) {
+                foldType = flag == 'start' ? rule.foldType[0] : rule.foldType[1];
+            } else {
+                let expIndex = this.getChildExpIndex(match);
+                expIndex = expIndex == -1 ? 0 : expIndex;
+                foldType = rule.foldType[expIndex];
+            }
+        } else if (typeof rule.foldType === 'function') {
+            foldType = rule.foldType({
+                value: match[0],
+                text: text,
+                index: match.index,
+                state: flag
+            });
+        } else if (!(rule.foldType instanceof Array)) {
+            foldType = rule.foldType;
+        }
+        return foldType;
     }
     /**
      * 获取子表达式索引位置
