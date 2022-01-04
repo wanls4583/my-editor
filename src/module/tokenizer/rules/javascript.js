@@ -1,7 +1,54 @@
 const variable = `[\\$_a-zA-Z][\\$_a-zA-Z0-9]*?`
 export default {
-    pairLevel: 3,
-    rules: [{
+    rules: [ //多行注释
+        {
+            start: /\/\*/,
+            end: /\*\//,
+            token: 'js-comment',
+            foldName: 'js-comment'
+        },
+        //字符串``
+        {
+            start: /`/,
+            end: /`/,
+            token: 'js-string',
+            foldName: 'js-string'
+        },
+        //字符串''
+        {
+            start: /'/,
+            end: /'|[^\\]$|^$/,
+            token: 'js-string',
+            foldName: 'js-single-string'
+        },
+        //字符串"""
+        {
+            start: /"/,
+            end: /"|[^\\]$|^$/,
+            token: 'js-string',
+            foldName: 'js-double-string'
+        }, {
+            regex: /\/\/[\s\S]*$/,
+            token: 'js-comment'
+        }, {
+            regex: /\bconst\b|\bcontinue\b|\bbreak\b|\bswitch\b|\bcase\b|\bdo\b|\belse\b|\bfor\b|\bif\b|\bnew\b|\breturn\b|\bfrom\b|\btypeof|\beach\b|\bin\b|\bimport\b|\bexport\b|\bdefault\b/,
+            token: 'js-key'
+        }, {
+            regex: /\bclass\b/, //class {}
+            token: 'js-class'
+        }, {
+            regex: /\bfunction\b/,
+            token: 'js-function'
+        }, {
+            regex: new RegExp(`(${variable})\\s*?(?=\\([^\\)]*?\\)\\s*?\\{)`), //ie. test(){}
+            token: 'js-function-name'
+        }, {
+            regex: new RegExp(`(?<=\\bfunction\\s+?)${variable}`), //ie. function test
+            token: 'js-function-name'
+        }, {
+            regex: new RegExp(`(?<=\\bnew\\s+?)${variable}(?=\\s*?\\()`), //ie. new Test()
+            token: 'js-new-class'
+        }, {
             regex: /(\{)|(\[)|(\()/,
             token: ['js-lbraces', 'js-lbracket', 'js-lparen'],
             foldType: -1,
@@ -32,62 +79,6 @@ export default {
         }, {
             regex: new RegExp(`(?<=\\s*?class\\s*?)${variable}(?=\\s*?\\{)`), //ie. calss Test{}
             token: 'js-class-name'
-        }, {
-            regex: new RegExp(`(${variable})\\s*?(?=\\([^\\)]*?\\)\\s*?\\{)`), //ie. test(){}
-            token: 'js-function-name',
-            level: 1
-        }, {
-            regex: new RegExp(`(?<=\\bfunction\\s+?)${variable}`), //ie. function test
-            token: 'js-function-name',
-            level: 1
-        }, {
-            regex: new RegExp(`(?<=\\bnew\\s+?)${variable}(?=\\s*?\\()`), //ie. new Test()
-            token: 'js-new-class',
-            level: 1
-        }, {
-            regex: /\bconst\b|\bcontinue\b|\bbreak\b|\bswitch\b|\bcase\b|\bdo\b|\belse\b|\bfor\b|\bif\b|\bnew\b|\breturn\b|\bfrom\b|\btypeof|\beach\b|\bin\b|\bimport\b|\bexport\b|\bdefault\b/,
-            token: 'js-key',
-            level: 2
-        }, {
-            regex: /\bclass\b/, //class {}
-            token: 'js-class',
-            level: 2
-        }, {
-            regex: /\bfunction\b/,
-            token: 'js-function',
-            level: 2
-        }, {
-            regex: /\/\/[\s\S]*$/,
-            token: 'js-comment',
-            level: 3
-        },
-        //多行注释
-        {
-            start: /\/\*/,
-            end: /\*\//,
-            token: 'js-comment',
-            foldName: 'js-comment'
-        },
-        //字符串``
-        {
-            start: /`/,
-            end: /`/,
-            token: 'js-string',
-            foldName: 'js-string'
-        },
-        //字符串''
-        {
-            start: /'/,
-            end: /'|[^\\]$|^$/,
-            token: 'js-string',
-            foldName: 'js-single-string'
-        },
-        //字符串"""
-        {
-            start: /"/,
-            end: /"|[^\\]$|^$/,
-            token: 'js-string',
-            foldName: 'js-double-string'
         }
     ]
 }

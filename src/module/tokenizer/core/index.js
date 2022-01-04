@@ -43,14 +43,10 @@ export default class {
             return;
         }
         rules = Util.deepAssign({}, rules);
-        let pairLevel = rules.pairLevel || 1;
         this.ruleId = 1;
         this.ruleIdMap = {};
         rules.rules.map((item) => {
-            this.setRuleId(item, pairLevel);
-        });
-        rules.rules.sort((a, b) => {
-            return b.level - a.level;
+            this.setRuleId(item);
         });
         this.setCombStartRegex(rules, []);
         this.setCombEndRegex(rules, []);
@@ -60,15 +56,10 @@ export default class {
             ruleIdMap: this.ruleIdMap
         };
     }
-    setRuleId(rule, pairLevel, parentUuid) {
+    setRuleId(rule) {
         // 每个规则生成一个唯一标识
         rule.ruleId = this.ruleId++;
-        rule.parentUuid = parentUuid;
-        rule.level = rule.level || 0;
         this.ruleIdMap[rule.ruleId] = rule;
-        if (rule.start && rule.end) {
-            rule.level = rule.level || pairLevel;
-        }
         if (typeof rule.start === 'object' && !(rule.start instanceof RegExp)) {
             this.setRuleId(rule.start);
             rule.start.startBy = rule.ruleId;
@@ -79,12 +70,9 @@ export default class {
         }
         if (rule.childRule && rule.childRule.rules) {
             rule.childRule.rules.map((_item) => {
-                this.setRuleId(_item, rule.childRule.pairLevel || 1, rule.ruleId);
+                this.setRuleId(_item);
             });
             rule.rules = rule.childRule.rules;
-            rule.rules.sort((a, b) => {
-                return b.level - a.level;
-            });
         }
     }
     // 组合同一层级的正则表达式

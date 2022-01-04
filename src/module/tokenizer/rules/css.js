@@ -5,20 +5,6 @@
  */
 export default {
     rules: [{
-        regex: /[#\.]?[^\s\,\:]+/,
-        token: function (value) {
-            if (value[0] == '.') {
-                return 'css-selector-class';
-            } else if (value[0] == '#') {
-                return 'css-selector-id';
-            } else {
-                return 'css-selector-tag';
-            }
-        }
-    }, {
-        regex: /(?<=\:)[^\s\,\:]+/,
-        token: 'css-pseudo'
-    }, {
         start: /\{/,
         end: /\}/,
         token: ['css-lbraces', 'css-rbraces'],
@@ -38,5 +24,19 @@ export default {
                 token: 'css-value'
             }]
         }
+    }, {
+        regex: /[#\.]?[^\s\,\:]+/,
+        token: function (value) {
+            if (value[0] == '.') {
+                return 'css-selector-class';
+            } else if (value[0] == '#') {
+                return 'css-selector-id';
+            } else {
+                return 'css-selector-tag';
+            }
+        }
+    }, {
+        regex: /(?<=\:)[^\s\,\:]+/,
+        token: 'css-pseudo'
     }]
 }
