@@ -16,6 +16,13 @@ export default class {
         let startLine = line;
         let resultFold = this.getRangeFold(line);
         if (resultFold) {
+            for (let line = resultFold.start.line; line < resultFold.end.line; line++) {
+                if (this.foldMap.has(line)) {
+                    if (this.foldMap.get(line).end.line > resultFold.end.line) {
+                        this.unFold(line);
+                    }
+                }
+            }
             this.foldMap.set(startLine, resultFold);
             this.folds.push(resultFold);
             this.folds.sort((a, b) => {
@@ -105,38 +112,38 @@ export default class {
     }
     // 根据相对行号获取真实行号(折叠后行号会改变)
     getRealLine(line) {
-        let i = 1;
+        let i = 0;
+        let lineCount = 1;
         let realLine = 1;
-        let folds = this.folds.slice(0);
-        while (folds.length && i < line) {
-            if (i + folds[0].start.line - realLine < line) {
-                i += folds[0].start.line - realLine;
-                realLine = folds[0].end.line - 1;
+        while (i < this.folds.length && lineCount < line) {
+            if (lineCount + this.folds[i].start.line - realLine < line) {
+                lineCount += this.folds[i].start.line - realLine;
+                realLine = this.folds[i].end.line - 1;
             } else {
                 break;
             }
-            let fold = folds.shift();
-            while (folds.length && folds[0].end.line <= fold.end.line) { //多级折叠
-                folds.shift();
+            let fold = this.folds[i];
+            i++;
+            while (i < this.folds.length && this.folds[i].end.line <= fold.end.line) { //多级折叠
+                i++;
             }
         }
-        realLine += line - i;
+        realLine += line - lineCount;
         return realLine;
     }
     // 根据真实行号获取相对行号
     getRelativeLine(line) {
         let relLine = line;
-        let folds = this.folds.slice(0);
         let preFold = null;
-        for (let i = 0; i < folds.length; i++) {
-            if (line > folds[i].start.line) {
-                if (!preFold || preFold.end.line <= folds[i].start.line) {
-                    relLine -= folds[i].end.line - folds[i].start.line - 1;
+        for (let i = 0; i < this.folds.length; i++) {
+            if (line > this.folds[i].start.line) {
+                if (!preFold || preFold.end.line <= this.folds[i].start.line) {
+                    relLine -= this.folds[i].end.line - this.folds[i].start.line - 1;
                 }
             } else {
                 break;
             }
-            preFold = folds[i];
+            preFold = this.folds[i];
         }
         return relLine;
     }
