@@ -445,6 +445,8 @@ export default {
             let nowLine = this.cursorPos.line;
             let newLine = nowLine;
             let newColume = nowColume;
+            this.tokenizer.onInsertContentBefore(nowLine);
+            this.folder.onInsertContentBefore(nowLine);
             text = text.split(/\r\n|\n/);
             text = text.map((item) => {
                 item = {
@@ -471,9 +473,10 @@ export default {
             }
             newLine += text.length - 1;
             this.maxLine = context.htmls.length;
+            this.tokenizer.onInsertContentAfter(newLine);
+            this.folder.onInsertContentAfter(newLine);
             this.setLineWidth(text);
             this.render();
-            this.tokenizer.onInsertContent(nowLine);
             if (context.foldMap.has(nowLine) && text.length > 1) {
                 this.unFold(nowLine);
             }
@@ -505,6 +508,8 @@ export default {
             let originPos = { line: this.cursorPos.line, column: this.cursorPos.column };
             let deleteText = '';
             let rangeUuid = [];
+            this.tokenizer.onDeleteContentBefore(this.cursorPos.line);
+            this.folder.onDeleteContentBefore(this.cursorPos.line);
             if (this.selectedRange) { // 删除选中区域
                 let end = this.selectedRange.end;
                 let endObj = context.htmls[end.line - 1];
@@ -535,9 +540,6 @@ export default {
                     context.htmls.splice(start.line, end.line - start.line);
                 }
                 this.setCursorPos(start.line, start.column);
-                for (let line = start.line; line < end.line; line++) {
-                    this.unFold(line);
-                }
             } else if (Util.keyCode.DELETE == keyCode) { // 向后删除一个字符
                 if (this.cursorPos.column == text.length) { // 光标处于行尾
                     if (this.cursorPos.line < context.htmls.length) {
@@ -573,9 +575,10 @@ export default {
             startObj.folds = null;
             startObj.states = null;
             this.maxLine = context.htmls.length;
+            this.tokenizer.onDeleteContentAfter(this.cursorPos.line);
+            this.folder.onDeleteContentAfter(this.cursorPos.line);
             this.clearRnage();
             this.render();
-            this.tokenizer.onDeleteContent(this.cursorPos.line);
             // 更新最大文本宽度
             if (startObj.width >= this.maxWidthObj.width) {
                 this.maxWidthObj = {

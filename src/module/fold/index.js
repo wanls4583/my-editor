@@ -6,10 +6,74 @@
 import Util from '@/common/util';
 export default class {
     constructor(editor, context) {
+        this.editorFunObj = {};
         this.initProperties(editor, context);
     }
     initProperties(editor, context) {
+        Util.defineProperties(this.editorFunObj, editor, ['unFold']);
+        Util.defineProperties(this, editor, ['selectedRange']);
         Util.defineProperties(this, context, ['htmls', 'folds', 'foldMap']);
+    }
+    onInsertContentBefore(nowLine) {
+        if (this.folds.length) {
+            let index = this.findFoldIndex(nowLine);
+            let unFolds = [];
+            while (index < this.folds.length && this.folds[index].start.line < nowLine && this.folds[index].end.line > nowLine) {
+                unFolds.push(this.folds[index].start.line);
+                index++;
+            }
+            unFolds.map((line) => {
+                this.editorFunObj.unFold(line);
+            });
+        }
+    }
+    onInsertContentAfter(nowLine) {}
+    onDeleteContentBefore(nowLine) {
+        if (this.selectedRange) {
+            let start = this.selectedRange.start;
+            let end = this.selectedRange.end;
+            for (let line = start.line; line < end.line; line++) { //删除折叠区域
+                this.editorFunObj.unFold(line);
+            }
+        }
+    }
+    onDeleteContentAfter(nowLine) {
+        if (this.folds.length) {
+            let index = this.findFoldIndex(nowLine);
+            let unFolds = [];
+            console.log(index);
+            while (index < this.folds.length && this.folds[index].start.line < nowLine && this.folds[index].end.line > nowLine) {
+                unFolds.push(this.folds[index].start.line);
+                index++;
+            }
+            unFolds.map((line) => {
+                this.editorFunObj.unFold(line);
+            });
+        }
+    }
+    /**
+     * 寻找第一个包裹nowLine的折叠对象的下标
+     * @param {Number} nowLine 
+     */
+    findFoldIndex(nowLine) {
+        let left = 0;
+        let right = this.folds.length - 1;
+        while (left < right) {
+            let mid = Math.floor((left + right) / 2);
+            let fold = this.folds[mid];
+            if (fold.start.line < nowLine) {
+                if (fold.end.line <= nowLine) {
+                    left = mid + 1;
+                } else {
+                    right = mid;
+                }
+            } else if (fold.start.line == nowLine) {
+                left = mid + 1;
+            } else {
+                right = mid - 1;
+            }
+        }
+        return left;
     }
     // 折叠行
     foldLine(line) {
@@ -136,7 +200,7 @@ export default class {
         let relLine = line;
         let preFold = null;
         for (let i = 0; i < this.folds.length; i++) {
-            if (line > this.folds[i].start.line) {
+            if (line >= this.folds[i].end.line) {
                 if (!preFold || preFold.end.line <= this.folds[i].start.line) {
                     relLine -= this.folds[i].end.line - this.folds[i].start.line - 1;
                 }

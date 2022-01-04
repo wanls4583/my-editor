@@ -157,22 +157,27 @@ export default class {
             return this.getStartRegex(rule.end);
         }
     }
-    onInsertContent(line) {
+    onInsertContentBefore(nowLine) {
+        this.onInsertContentBefore.nowLine = nowLine;
+    }
+    onInsertContentAfter(nowLine) {
+        nowLine = this.onInsertContentBefore.nowLine;
         if (this.language == 'plain') {
             return;
         }
-        if (line <= this.currentLine) {
-            this.tokenizeLines(line);
+        if (nowLine <= this.currentLine) {
+            this.tokenizeLines(nowLine);
         } else {
             this.tokenizeVisibleLins();
         }
     }
-    onDeleteContent(line) {
+    onDeleteContentBefore(nowLine) {}
+    onDeleteContentAfter(nowLine) {
         if (this.language == 'plain') {
             return;
         }
-        if (line <= this.currentLine) {
-            this.tokenizeLines(line);
+        if (nowLine <= this.currentLine) {
+            this.tokenizeLines(nowLine);
         } else {
             this.tokenizeVisibleLins();
         }
