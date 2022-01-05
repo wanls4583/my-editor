@@ -6,7 +6,7 @@
 import jsRules from '@/module/tokenizer/rules/javascript.js';
 import htmlRules from '@/module/tokenizer/rules/html.js';
 import cssRules from '@/module/tokenizer/rules/css.js';
-import Util from '@/common/util';
+import Util from '@/common/Util';
 export default class {
     constructor(editor, context) {
         this.currentLine = 1;

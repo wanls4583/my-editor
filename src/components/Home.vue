@@ -96,7 +96,7 @@ import Fold from '@/module/fold/index';
 import History from '@/module/history/index';
 import StatusBar from './StatusBar';
 import Panel from './Panel';
-import Util from '@/common/util';
+import Util from '@/common/Util';
 import $ from 'jquery';
 const context = {
     htmls: [],

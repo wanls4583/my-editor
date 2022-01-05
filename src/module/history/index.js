@@ -3,7 +3,7 @@
  * @Date: 2021-12-31 15:11:27
  * @Description: 
  */
-import Util from '@/common/util';
+import Util from '@/common/Util';
 export default class {
     constructor(editor, context) {
         this.initProperties(editor, context);
