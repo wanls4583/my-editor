@@ -7,7 +7,7 @@ import Util from '@/common/util';
 import PeekIterator from '@/common/PeekIterator';
 import TokenType from './TokenType';
 import Token from './Token';
-import LintError from './LintError';
+import Error from './Error';
 class Lexer {
     constructor(editor, context) {
         this.initProperties(editor, context)
@@ -20,12 +20,12 @@ class Lexer {
     onDeleteContentBefore(nowLine) {}
     onDeleteContentAfter(nowLine) {}
     tokenizeLine(nowLine) {
-        let lintError = null;
-        let lintTokens = [];
-        let lintStates = [];
+        let lexError = null;
+        let tokens = [];
+        let states = [];
         let it = new PeekIterator(this.htmls[nowLine - 1].text);
-        if (nowLine > 1 && this.htmls[nowLine - 2].lintStates) {
-            lintStates = this.htmls[nowLine - 2].lintStates.slice(0);
+        if (nowLine > 1 && this.htmls[nowLine - 2].lint.states) {
+            states = this.htmls[nowLine - 2].lint.states.slice(0);
         }
         while (it.hasNext()) {
             let token = null;
@@ -36,8 +36,8 @@ class Lexer {
                 continue;
             }
 
-            if (lintStates.length) { //有未完成的token提取
-                let state = lintStates.peek();
+            if (states.length) { //有未完成的token提取
+                let state = states.peek();
                 if (state == '/*') { //多行注释
                     if (c != '*' || lookahead != '/') {
                         continue;
@@ -45,19 +45,19 @@ class Lexer {
                 } else if (state == '\'' || state == '"') { //多行字符串
                     if (c != state) {
                         if (!it.hasNext() && c != '\\') {
-                            lintStates.pop();
-                            lintError = new LintError(`Unexpected error in column ${it.index()}`)
+                            states.pop();
+                            lexError = new Error();
                         }
                         continue;
                     }
-                    lintTokens.push(new Token(TokenType.STRING, state));
+                    tokens.push(new Token(TokenType.STRING, state));
                 } else if (state == '`') { //模板字符串
                     if (c != state) {
                         continue;
                     }
-                    lintTokens.push(new Token(TokenType.STRING, state));
+                    tokens.push(new Token(TokenType.STRING, state));
                 }
-                lintStates.pop();
+                states.pop();
                 continue;
             }
 
@@ -66,20 +66,20 @@ class Lexer {
                 if (lookahead == "/") { //单行注释
                     break;
                 } else if (lookahead == "*") { //多行注释
-                    lintStates.push('/*');
+                    states.push('/*');
                     continue;
                 }
             }
 
             // 提取模板字符串
             if (c == '\'' || c == '"' || c == '`') {
-                lintStates.push(c);
+                states.push(c);
                 continue;
             }
 
             // 括号
             if (c == "{" || c == "}" || c == "(" || c == ")") {
-                lintTokens.push(new Token(TokenType.BRACKET, c));
+                tokens.push(new Token(TokenType.BRACKET, c));
                 continue;
             }
 
@@ -87,10 +87,10 @@ class Lexer {
             if (AlphabetHelper.isLetter(c)) {
                 it.putBack();
                 token = Token.makeVarOrKeyword(it);
-                if (token instanceof LintError) {
-                    lintError = token;
+                if (token instanceof Error) {
+                    lexError = token;
                 } else {
-                    lintTokens.push(token);
+                    tokens.push(token);
                 }
                 continue;
             }
@@ -99,45 +99,53 @@ class Lexer {
             if (AlphabetHelper.isNumber(c)) {
                 it.putBack();
                 token = Token.makeNumber(it);
-                if (token instanceof LintError) {
-                    lintError = token;
+                if (token instanceof Error) {
+                    lexError = token;
                 } else {
-                    lintTokens.push(token);
+                    tokens.push(token);
                 }
                 continue;
-            }
-
-            if ((c == '-' || c == '+') && AlphabetHelper.isNumber(lookahead)) {
-                let preToken = lintTokens.peek();
-                if (!preToken || !lastToken.isValue()) {
-                    it.putBack();
-                    token = Token.makeNumber(it);
-                    if (token instanceof LintError) {
-                        lintError = token;
-                    } else {
-                        lintTokens.push(token);
-                    }
-                    continue;
-                }
             }
 
             if (AlphabetHelper.isOperator(c)) {
                 it.putBack();
                 token = Token.makeOp(it);
-                if (token instanceof LintError) {
-                    lintError = token;
+                if (token instanceof Error) {
+                    lexError = token;
                 } else {
-                    lintTokens.push(token);
+                    tokens.push(token);
                 }
                 continue;
             }
 
         }
         return {
-            lintStates: lintStates,
-            lintTokens: lintTokens,
-            lintError: lintError,
+            states: states,
+            tokens: tokens,
+            error: lexError,
         }
+    }
+    parse(it, line) {
+        let tokens = [];
+        if (line > 1) {
+            tokens = this.htmls[line - 2].lint;
+            tokens = tokens && tokens.parser.tokens || [];
+        }
+        let lastToken = tokens.peek();
+        if(lastToken) {
+            let lookahead = it.peek();
+            if(lastToken.isValue()) {
+                if(lookahead && token.getType() == TokenType.OPERATOR) {
+                    this.parseExpr(it, tokens);
+                } else {
+                    lastToken = tokens.peek(2);
+                }
+            } else if(lastToken.getType() == TokenType.OPERATOR) {
+                this.parseExpr(it, tokens);
+            }
+        }
+    }
+    parseExpr(it, tokens) {
     }
 }
 

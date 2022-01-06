@@ -5,7 +5,7 @@
  */
 import TokenType from './TokenType';
 import AlphabetHelper from './AlphabetHelper';
-import LintError from './LintError';
+import Error from './Error';
 
 const Keywords = new Set([
     "var",
@@ -79,21 +79,30 @@ export default class {
     static makeOp(it) {
         let op = it.next();
         let lookahead = it.peek();
-        if (lookahead == '=') {
-            if (['+', '-', '*', '/', '%', '&', '|', '~', '^', '>', '<', '!', '='].indexOf(op) > -1) {
-                op += '=';
-            } else {
-                return new LintError(`Unexpected error in column ${it.index()}`);
-            }
-        } else if (lookahead == op) {
-            if (['+', '-', '&', '|'].indexOf(op) > -1) {
-                op += op;
+        if (lookahead == op) {
+            if (['+', '-', '&', '|', '>', '<', '='].indexOf(op) > -1) {
+                op += it.next();
+                if (['>', '<', '='].indexOf(lookahead) > -1) { //>>=、<<=、===
+                    lookahead = it.peek();
+                } else {
+                    lookahead = null;
+                }
             } else if (op == '!') {
                 while (it.peek() == lookahead) {
                     op += it.next();
                 }
+                if (op == '!') { //!=
+                    lookahead = it.peek();
+                }
             } else {
-                return new LintError(`Unexpected error in column ${it.index()}`);
+                return new Error();
+            }
+        }
+        if (lookahead == '=') {
+            if (['+', '-', '*', '/', '%', '&', '|', '~', '^', '>', '<', '!', '='].indexOf(op) > -1) {
+                op += it.next();
+            } else {
+                return new Error();
             }
         }
         return new Token(TokenType.OPERATOR, op, it.index());
@@ -102,15 +111,18 @@ export default class {
         let s = '';
         let hasDot = false;
         while (it.hasNext()) {
-            let c = it.peek();
+            let c = it.next();
+            let lookahead = it.peek();
             if (AlphabetHelper.isNumber(lookahead)) {
                 s += c;
             } else if (c == '.') {
                 if (hasDot) {
-                    return new LintError(`Unexpected error in column ${it.index()}`);
+                    return new Error();
                 }
                 s += c;
                 hasDot = true;
+            } else if (!s && (c == '+' || c == '-')) {
+                s += c;
             } else {
                 break;
             }

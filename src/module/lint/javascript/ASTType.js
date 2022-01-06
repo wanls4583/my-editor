@@ -11,6 +11,8 @@ export default {
     OPERATOR: new Enum("OPERATOR", 3),
     BRACKET: new Enum("BRACKET", 4),
     NUMBER: new Enum("NUMBER", 5),
-    BOOLEAN: new Enum("BOOLEAN", 7),
-    STRING: new Enum("STRING", 8)
+    BOOLEAN: new Enum("BOOLEAN", 6),
+    STRING: new Enum("STRING", 7),
+    STRING_START: new Enum("STRING_START", 8),
+    COMMENT_START: new Enum("COMMENT_START", 9),
 }

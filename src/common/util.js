@@ -173,9 +173,9 @@ class Util {
         Object.defineProperties(target, result);
     }
 }
-Array.prototype.peek = function () {
+Array.prototype.peek = function (index) {
     if (this.length) {
-        return this[this.length - 1];
+        return this[this.length - (index || 1)];
     }
 }
 //全角符号和中文字符

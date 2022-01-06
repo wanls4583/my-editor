@@ -539,14 +539,14 @@ export default class {
     getRegex(states, preRuleId) {
         let regex = null;
         let preRule = this.ruleIdMap[preRuleId];
-        while (preRule && states.indexOf(preRuleId) == -1 && preRule.endBy) {
+        while (preRule && states.indexOf(preRule.ruleId) == -1 && preRule.endBy) {
             while (states.peek() != preRule.endBy) {
                 states.pop();
             }
             states.pop();
             preRule = this.ruleIdMap[preRule.endBy];
         }
-        if (preRule && states.indexOf(preRuleId) == -1 && preRule.startBy) {
+        if (preRule && states.indexOf(preRule.ruleId) == -1 && preRule.startBy) {
             states.push(preRule.startBy);
         }
         let ruleId = states.peek();
