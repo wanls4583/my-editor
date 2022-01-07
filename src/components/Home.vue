@@ -92,6 +92,7 @@
 
 <script>
 import Tokenizer from '@/module/tokenizer/core/index';
+import Lint from '@/module/lint/core/index';
 import Fold from '@/module/fold/index';
 import History from '@/module/history/index';
 import StatusBar from './StatusBar';
@@ -131,8 +132,8 @@ export default {
                 top: '0px',
                 left: '0px'
             },
-            language: 'HTML',
-            // language: 'JavaScript',
+            // language: 'HTML',
+            language: 'JavaScript',
             statusHeight: 23,
             tabSize: 4,
             renderHtmls: [],
@@ -288,6 +289,7 @@ export default {
             });
             context.lineIdMap.set(context.htmls[0].lineId, context.htmls[0]);
             this.tokenizer = new Tokenizer(this, context);
+            this.lint = new Lint(this, context);
             this.folder = new Fold(this, context);
             this.history = new History(this, context);
         },
@@ -446,6 +448,7 @@ export default {
             let newLine = nowLine;
             let newColume = nowColume;
             this.tokenizer.onInsertContentBefore(nowLine);
+            this.lint.onInsertContentBefore(nowLine);
             this.folder.onInsertContentBefore(nowLine);
             text = text.split(/\r\n|\n/);
             text = text.map((item) => {
@@ -474,6 +477,7 @@ export default {
             newLine += text.length - 1;
             this.maxLine = context.htmls.length;
             this.tokenizer.onInsertContentAfter(newLine);
+            this.lint.onInsertContentAfter(newLine);
             this.folder.onInsertContentAfter(newLine);
             this.setLineWidth(text);
             this.render();
@@ -509,6 +513,7 @@ export default {
             let deleteText = '';
             let rangeUuid = [];
             this.tokenizer.onDeleteContentBefore(this.cursorPos.line);
+            this.lint.onDeleteContentBefore(this.cursorPos.line);
             this.folder.onDeleteContentBefore(this.cursorPos.line);
             if (this.selectedRange) { // 删除选中区域
                 let end = this.selectedRange.end;
@@ -576,6 +581,7 @@ export default {
             startObj.states = null;
             this.maxLine = context.htmls.length;
             this.tokenizer.onDeleteContentAfter(this.cursorPos.line);
+            this.lint.onDeleteContentAfter(this.cursorPos.line);
             this.folder.onDeleteContentAfter(this.cursorPos.line);
             this.clearRnage();
             this.render();

@@ -3,7 +3,7 @@
  * @Date: 2022-01-07 10:07:14
  * @Description: 
  */
-export default function () {
+export default function (text) {
     var keywords = [
         "if", "in", "do", "var", "for", "new",
         "try", "let", "this", "else", "case",
@@ -43,21 +43,32 @@ export default function () {
     }
 
     function Error(token, type, param) {
-        this.type = type,
-            this.param = param,
-            this.line = token.line,
-            this.column = token.column,
-            this.value = token.value
+        this.type = type;
+        this.param = param;
+        this.line = token.line;
+        this.column = token.column;
+        this.value = token.value;
+    }
+
+    Error.expectedIdentifier = function (token) {
+        return new Error(token, ErrorType.EXPECTED, ['identifier']);
+    }
+
+    Error.unexpected = function (token) {
+        return new Error(token, ErrorType.UNEXPECTED);
     }
 
     // 词法分析器
     function Lexer(text) {
-        this.lines = text.split('\n');
+        this.reset(text);
+    }
+
+    Lexer.prototype.reset = function (text) {
+        this.lines = text && text.split('\n') || [''];
         this.input = this.lines[0];
         this.line = 1;
         this.column = 0
         this.errors = [];
-        this.init();
     }
 
     Lexer.prototype.skip = function (length) {
@@ -73,7 +84,7 @@ export default function () {
 
     Lexer.prototype.hasNext = function () {
         return this.line < this.lines.length ||
-            this.line == this.lines.length && this.lines.peek().length < this.column
+            this.line == this.lines.length && this.lines.peek().length > this.column
     }
 
     Lexer.prototype.isVariable = function (token) {
@@ -84,21 +95,11 @@ export default function () {
         return this.isScalar(token) || this.isVariable(token);
     }
 
-    Lexer.prototype.isType = function (token) {
-        return (
-            token.value === "bool" ||
-            token.value === "int" ||
-            token.value === "float" ||
-            token.value === "void" ||
-            token.value === "string"
-        );
-    }
-
     Lexer.prototype.isScalar = function (token) {
         return (
-            token_type == TokenType.NUMBER ||
-            token_type == TokenType.STRING ||
-            token_type == TokenType.BOOLEAN
+            token.type == TokenType.NUMBER ||
+            token.type == TokenType.STRING ||
+            token.type == TokenType.BOOLEAN
         );
     }
 
@@ -165,6 +166,21 @@ export default function () {
         }
     }
 
+    Lexer.prototype.scanNunmber = function () {
+        var exec = null;
+        var token = null;
+        if (exec = regs.number.exec(this.input)) {
+            token = {
+                type: TokenType.NUMBER,
+                line: this.line,
+                column: this.column,
+                value: exec[0]
+            }
+            this.skip(exec[0].length);
+        }
+        return token;
+    }
+
     Lexer.prototype.scanIdentifier = function () {
         var exec = null;
         var token = null;
@@ -214,74 +230,73 @@ export default function () {
         var ch2 = this.input[1];
         var ch3 = this.input[2];
         var ch4 = this.input[3];
+        var token = null;
         if (ch1 === ">" && ch2 === ">" && ch3 === ">" && ch4 === "=") {
-            return {
+            token = {
                 type: TokenType.OPERATOR,
                 value: ">>>="
             };
-        }
-        if (ch1 === "=" && ch2 === "=" && ch3 === "=") {
-            return {
+        } else if (ch1 === "=" && ch2 === "=" && ch3 === "=") {
+            token = {
                 type: TokenType.OPERATOR,
                 value: "==="
             };
-        }
-        if (ch1 === "!" && ch2 === "=" && ch3 === "=") {
-            return {
+        } else if (ch1 === "!" && ch2 === "=" && ch3 === "=") {
+            token = {
                 type: TokenType.OPERATOR,
                 value: "!=="
             };
-        }
-        if (ch1 === ">" && ch2 === ">" && ch3 === ">") {
-            return {
+        } else if (ch1 === ">" && ch2 === ">" && ch3 === ">") {
+            token = {
                 type: TokenType.OPERATOR,
                 value: ">>>"
             };
-        }
-        if (ch1 === "<" && ch2 === "<" && ch3 === "=") {
-            return {
+        } else if (ch1 === "<" && ch2 === "<" && ch3 === "=") {
+            token = {
                 type: TokenType.OPERATOR,
                 value: "<<="
             };
-        }
-        if (ch1 === ">" && ch2 === ">" && ch3 === "=") {
-            return {
+        } else if (ch1 === ">" && ch2 === ">" && ch3 === "=") {
+            token = {
                 type: TokenType.OPERATOR,
                 value: ">>="
             };
-        }
-        if (ch1 === "=" && ch2 === ">") {
-            return {
+        } else if (ch1 === "=" && ch2 === ">") {
+            token = {
                 type: TokenType.OPERATOR,
                 value: '=>'
             };
-        }
-        if (ch1 === ch2 && ("+-<>&|*".indexOf(ch1) >= 0)) {
+        } else if (ch1 === ch2 && ("+-<>&|*".indexOf(ch1) >= 0)) {
             if (ch1 === "*" && ch3 === "=") {
-                return {
+                token = {
                     type: TokenType.OPERATOR,
                     value: ch1 + ch2 + ch3
                 };
             }
 
-            return {
+            token = {
                 type: TokenType.OPERATOR,
                 value: ch1 + ch2
             };
-        }
-        if ("<>=!+-*%&|^/,".indexOf(ch1) >= 0) {
+        } else if ("<>=!+-*%&|^/,".indexOf(ch1) >= 0) {
             if (ch2 === "=" && ch1 != ',') {
-                return {
+                token = {
                     type: TokenType.OPERATOR,
                     value: ch1 + ch2
                 };
             }
 
-            return {
+            token = {
                 type: TokenType.OPERATOR,
                 value: ch1
             };
         }
+        if (token) {
+            token.line = this.line;
+            token.column = this.column;
+            this.skip(token.value.length);
+        }
+        return token;
     }
 
     Lexer.prototype.scanUnexpected = function () {
@@ -302,10 +317,15 @@ export default function () {
         var token = null;
         this.scanComment();
         if (this.hasNext()) {
-            token = this.scanIdentifier() || this.scanBracket() || this.scanOperator() || this.scanPunctuator() || this.scanString();
+            token = this.scanNunmber() ||
+                this.scanIdentifier() ||
+                this.scanBracket() ||
+                this.scanOperator() ||
+                this.scanPunctuator() ||
+                this.scanString();
             if (!token) { //存在非法变量
                 this.scanUnexpected();
-                return this.token();
+                return this.next();
             }
         }
         return token;
@@ -332,17 +352,17 @@ export default function () {
     Parser.prototype.nextMatch = function (value) {
         var token = this.next();
         if (!token || token.value != value) {
-            this.errors.push(new Error(token, ErrorType.EXPECTED, [value]));
+            this.errors.push(new Error(token || this.preToken, ErrorType.EXPECTED, [value]));
         }
-        return token;
+        return true;
     }
 
     Parser.prototype.nextMatchType = function (type) {
         var token = this.next();
         if (!token || token.type != type) {
-            this.errors.push(new Error(token, ErrorType.EXPECTED, [type]));
+            this.errors.push(new Error(token || this.preToken, ErrorType.EXPECTED, [type]));
         }
-        return token;
+        return true;
     }
 
     Parser.prototype.peek = function (safe) {
@@ -399,6 +419,7 @@ export default function () {
     Parser.prototype.parseDeclareStmt = function () {
         if (['var', 'let', 'const'].indexOf(this.peek(true).value) > -1) {
             this.next();
+            this.nextMatchType(TokenType.IDENTIFIER);
             this.parseAssignStmt();
             return true;
         }
@@ -450,6 +471,7 @@ export default function () {
             this.nextMatch('{');
             this.parseBlock();
             this.nextMatch('}');
+            return true;
         }
     }
 
@@ -478,56 +500,50 @@ export default function () {
     // 表达式分析
     Parser.prototype.parseExpr = function (need) {
         var token = null;
-        var preToken = null;
+        var lookahead = null;
         if (!this.hasNext()) {
-            if (need) {
-                this.errors.push(new Error(token, ErrorType.EXPECTED, ['identifier']));
-            }
+            need && this.errors.push(Error.expectedIdentifier(this.preToken));
             return;
         }
-        token = this.next();
-        if (token.value == '+' || token.value == '-') {
-            token = this.next();
-        }
-        preToken = this.preToken;
         while (this.hasNext()) {
-            token = this.peek();
-            if (this.lexer.isValue(token) && this.lexer.isValue(preToken)) { //相邻的两个值
-                if (token.line > preToken.line) { //在不同的行，说明表达式结束
+            token = this.next();
+            if (['+', '-'].indexOf(token.value) > -1) {
+                token = this.next();
+            } else if (['++', '--'].indexOf(token.value) > -1) {
+                token = this.next();
+                if (!this.lexer.isVariable(this.peek(true))) {
+                    this.errors.push(Error.expectedIdentifier(token));
                     break;
                 }
-                this.errors.push(new Error(token, ErrorType.MISS, [';']));
             }
-            this.next();
-            if (token.value === '++' || token.value === '--') { //a--,a++
-                if (!this.lexer.isVariable(preToken)) { //*--,*++
-                    this.errors.push(new Error(token, ErrorType.UNEXPECTED));
-                }
+            if (token.value === 'function' || token.value === '{') { //函数或者对象字面量
+                token.value === 'function' ? this.parseFunction() : this.parseObject();
                 continue;
             }
-            if (token.value === '+' && preToken.value === '++' ||
-                token.value === '-' && preToken.value === '--') { //+++,---
-                this.errors.push(new Error(token, ErrorType.UNEXPECTED));
+            if (!this.lexer.isValue(token)) {
+                this.errors.push(Error.expectedIdentifier(token));
+                break;
             }
-            if (preToken.type === TokenType.OPERATOR &&
-                (token === '+' || token.value === '-') &&
-                preToken.value != token.value) { //a-+1
-                continue;
+            lookahead = this.peek(true);
+            if (['++', '--'].indexOf(lookahead.value) > -1) {
+                this.next();
+                lookahead = this.peek(true);
             }
-            if (token.type === preToken.type == TokenType.OPERATOR) { //-*
-                this.errors.push(new Error(token, ErrorType.UNEXPECTED));
-                continue;
+            if (lookahead.type != TokenType.OPERATOR) { //下一个不是运算符，表达式结束
+                break;
             }
-            if (preToken.type == TokenType.OPERATOR) {
-                if (token.value === 'function' || token.value === '{') { //函数或者对象字面量
-                    token.value === 'function' ? this.parseFunction() : this.parseObject();;
-                    if (this.hasNext() && this.peek().type != TokenType.OPERATOR) {
-                        break;
-                    }
-                    continue;
-                }
-            }
-            preToken = token;
+            token = this.next();
         }
+        if (token && token.type === TokenType.OPERATOR) { //表达式未结束
+            this.errors.push(Error.expectedIdentifier(token));
+        }
+    }
+
+    var lexer = new Lexer();
+    var parser = new Parser(lexer);
+    if (text) {
+        lexer.reset(text);
+        parser.parseStmt();
+        console.log(lexer.errors.concat(parser.errors));
     }
 }
