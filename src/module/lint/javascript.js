@@ -1,5 +1,6 @@
 import {
-    lastIndexOf
+    lastIndexOf,
+    turn
 } from "core-js/fn/array";
 import {
     toExponential
@@ -43,7 +44,8 @@ export default function () {
         IDENTIFIER: 4,
         KEYWORD: 5,
         OPERATOR: 6,
-        BRACKET: 7
+        BRACKET: 7,
+        PUNCTUATOR: 8
     }
     var ErrorType = {
         UNEXPECTED: 1,
@@ -203,7 +205,22 @@ export default function () {
         }
     }
 
-    Lexer.prototype.sacnOperator = function () {
+    // 标点符号
+    Lexer.prototype.scanPunctuator = function () {
+        var ch = this.input[0];
+        if (ch == '?' || ch == ':') {
+            this.skip(1);
+            return {
+                type: TokenType.PUNCTUATOR,
+                line: this.line,
+                column: this.column,
+                value: ch
+            }
+        }
+    }
+
+    // 操作符号
+    Lexer.prototype.scanOperator = function () {
         var ch1 = this.input[0];
         var ch2 = this.input[1];
         var ch3 = this.input[2];
@@ -263,8 +280,8 @@ export default function () {
                 value: ch1 + ch2
             };
         }
-        if ("<>=!+-*%&|^/".indexOf(ch1) >= 0) {
-            if (ch2 === "=") {
+        if ("<>=!+-*%&|^/,".indexOf(ch1) >= 0) {
+            if (ch2 === "=" && ch1 != ',') {
                 return {
                     type: TokenType.OPERATOR,
                     value: ch1 + ch2
@@ -296,7 +313,7 @@ export default function () {
         var token = null;
         this.scanComment();
         if (this.hasNext()) {
-            token = this.scanIdentifier() || this.scanBracket() || this.sacnOperator() || this.scanString();
+            token = this.scanIdentifier() || this.scanBracket() || this.scanOperator() || this.scanPunctuator() || this.scanString();
             if (!token) { //存在非法变量
                 this.scanUnexpected();
                 return this.token();
@@ -323,13 +340,31 @@ export default function () {
         return token;
     }
 
-    Parser.prototype.peek = function () {
-        if (this.backs.length) {
-            return this.backs[0];
+    Parser.prototype.nextMatch = function (value) {
+        var token = this.next();
+        if (!token || token.value != value) {
+            this.errors.push(new Error(token, ErrorType.EXPECTED, [value]));
         }
-        var token = this.lexer.next();
-        token && this.backs.push(token);
         return token;
+    }
+
+    Parser.prototype.nextMatchType = function (type) {
+        var token = this.next();
+        if (!token || token.type != type) {
+            this.errors.push(new Error(token, ErrorType.EXPECTED, [type]));
+        }
+        return token;
+    }
+
+    Parser.prototype.peek = function (safe) {
+        var token = null;
+        if (this.backs.length) {
+            token = this.backs[0];
+        } else {
+            token = this.lexer.next();
+            token && this.backs.push(token);
+        }
+        return token || safe && {};
     }
 
     Parser.prototype.hasNext = function () {
@@ -340,84 +375,170 @@ export default function () {
         this.preToken && this.backs.push(this.preToken);
     }
 
-    // 表达式分析
-    Parser.prototype.parseExpr = function () {
-        var token = null;
-        token = this.next();
-        if (token.value == '+' || token.value == '-') {
-            token = this.next();
+    // 代码块
+    Parser.prototype.parseStmt = function () {
+        if (this.hasNext()) {
+            this.parseDeclareStmt() ||
+                this.parseAssignStmt() ||
+                this.parseFunction() ||
+                this.parseIfStmt() ||
+                this.parseWithStmt() ||
+                this.parseObject() ||
+                this.parseBlock() ||
+                this.parseExpr();
         }
-        while (this.hasNext() && token.type != TokenType.IDENTIFIER) {
-            this.errors.push(new Error(token, ErrorType.EXPECTED, ['identifier']));
-            token = this.next();
-        }
-        while (this.hasNext()) {
-            token = this.peek();
-            if (token.type != TokenType.OPERATOR && !this.lexer.isValue(token)) { //不是运算符和值，解析结束
-                break;
-            }
-            if (this.lexer.isValue(token) && this.lexer.isValue(this.preToken)) { //相邻的两个值
-                if (token.line > this.preToken.line) { //在不同的行，说明表达式结束
-                    break;
-                }
-                this.errors.push(new Error(token, ErrorType.MISS, [';']));
-            }
+    }
+
+    // 代码块
+    Parser.prototype.parseBlock = function () {
+        if (this.peek(true).value == '{') {
             this.next();
-            if (token.value === '++' || token.value === '--') {
-                if (!this.lexer.isVariable(token)) {
-                    this.errors.push(new Error(token, ErrorType.UNEXPECTED));
-                    continue;
-                }
-            }
-            if (token.type === this.preToken.type == TokenType.OPERATOR) {
-                this.errors.push(new Error(token, ErrorType.UNEXPECTED));
-                continue;
-            }
-            this.preToken = token;
+            this.parseStmt();
+            this.nextMatch('}');
+            return true;
+        }
+    }
+
+    // 对象字面量
+    Parser.prototype.parseObject = function () {
+        if (this.peek(true).value == '{') {
+            return true;
         }
     }
 
     // 声明语句
     Parser.prototype.parseDeclareStmt = function () {
-        if (this.hasNext() && ['var', 'let', 'const'].indexOf(this.peek().value) > -1) {
+        if (['var', 'let', 'const'].indexOf(this.peek(true).value) > -1) {
             this.next();
             this.parseAssignStmt();
+            return true;
         }
     }
 
     // 赋值语句
     Parser.prototype.parseAssignStmt = function () {
-        if (this.hasNext() && this.peek().value == '=') {
+        if (this.peek(true).value == '=') {
             this.next();
-            this.parseExpr();
+            this.parseExpr(true);
+            return true;
+        }
+    }
+
+    // if语句
+    Parser.prototype.parseIfStmt = function () {
+        var that = this;
+        if (this.peek(true).value == 'if') {
+            this.next();
+            _nextExpr();
+            _nextBlock();
+            if (this.peek(true).value === 'else') {
+                this.next();
+                if (this.peek(true).value === 'if') {
+                    _nextExpr();
+                }
+                _nextBlock();
+            }
+            return true;
+        }
+
+        function _nextExpr() {
+            that.nextMatch('(');
+            that.parseExpr(true);
+            that.nextMatch(')');
+        }
+
+        function _nextBlock() {
+            that.nextMatch('{');
+            that.parseBlock();
+            that.nextMatch('}');
+        }
+    }
+
+    // with语句
+    Parser.prototype.parseWithStmt = function () {
+        if (this.peek(true).value == 'with') {
+            this.next();
+            this.nextMatch('{');
+            this.parseBlock();
+            this.nextMatch('}');
         }
     }
 
     // 函数声明
     Parser.prototype.parseFunction = function () {
-        if (this.hasNext() && this.peek().value == 'function') {
+        if (this.peek(true).value == 'function') {
             var needName = !this.preToken || this.preToken.type != TokenType.OPERATOR && this.preToken.value != '(';
-            var token = this.next();
-            if (!this.hasNext()) {
-                this.errors.push(new Error(token, ErrorType.EXPECTED, ['(']));
-                return;
-            }
-            if (needName) {
-                if (token.type != TokenType.IDENTIFIER) {
-                    this.errors.push(new Error(token, ErrorType.EXPECTED, ['identifier']));
-                    if (token.value == '(') {
-                        this.pubBack();
-                    }
-                }
-            }
+            this.next();
+            needName && this.nextMatchType(TokenType.IDENTIFIER);
             this.parseFunArgs();
+            return true;
         }
     }
 
     // 函数参数
-    Parser.prototype.parseFunArgs = function() {
-        while (this.hasNext() && this.next().value != '(') {
-            this.errors.push(new Error(token, ErrorType.EXPECTED, ['(']));
+    Parser.prototype.parseFunArgs = function () {
+        this.nextMatch('(');
+        while (this.hasNext() && this.peek().value != ')') {
+            this.nextMatchType(TokenType.IDENTIFIER);
+            this.nextMatch(',');
+        }
+        this.next();
+        this.parseBlock();
+    }
+
+    // 表达式分析
+    Parser.prototype.parseExpr = function (need) {
+        var token = null;
+        var preToken = null;
+        if (!this.hasNext()) {
+            if (need) {
+                this.errors.push(new Error(token, ErrorType.EXPECTED, ['identifier']));
+            }
+            return;
+        }
+        token = this.next();
+        if (token.value == '+' || token.value == '-') {
+            token = this.next();
+        }
+        preToken = this.preToken;
+        while (this.hasNext()) {
+            token = this.peek();
+            if (this.lexer.isValue(token) && this.lexer.isValue(preToken)) { //相邻的两个值
+                if (token.line > preToken.line) { //在不同的行，说明表达式结束
+                    break;
+                }
+                this.errors.push(new Error(token, ErrorType.MISS, [';']));
+            }
+            this.next();
+            if (token.value === '++' || token.value === '--') { //a--,a++
+                if (!this.lexer.isVariable(preToken)) { //*--,*++
+                    this.errors.push(new Error(token, ErrorType.UNEXPECTED));
+                }
+                continue;
+            }
+            if (token.value === '+' && preToken.value === '++' ||
+                token.value === '-' && preToken.value === '--') { //+++,---
+                this.errors.push(new Error(token, ErrorType.UNEXPECTED));
+            }
+            if (preToken.type === TokenType.OPERATOR &&
+                (token === '+' || token.value === '-') &&
+                preToken.value != token.value) { //a-+1
+                continue;
+            }
+            if (token.type === preToken.type == TokenType.OPERATOR) { //-*
+                this.errors.push(new Error(token, ErrorType.UNEXPECTED));
+                continue;
+            }
+            if (preToken.type == TokenType.OPERATOR) {
+                if (token.value === 'function' || token.value === '{') { //函数或者对象字面量
+                    token.value === 'function' ? this.parseFunction() : this.parseObject();;
+                    if (this.hasNext() && this.peek().type != TokenType.OPERATOR) {
+                        break;
+                    }
+                    continue;
+                }
+            }
+            preToken = token;
         }
     }
 }
