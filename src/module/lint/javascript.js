@@ -109,7 +109,9 @@ export default function (text) {
         return (
             token.type == TokenType.NUMBER ||
             token.type == TokenType.STRING ||
-            token.type == TokenType.BOOLEAN
+            token.type == TokenType.BOOLEAN ||
+            token.value === 'this' ||
+            token.value === 'null'
         );
     }
 
@@ -227,7 +229,7 @@ export default function (text) {
     Lexer.prototype.scanPunctuator = function () {
         var token = null;
         var ch = this.input[0];
-        var punctuator = ['?', ':', ',', ';']
+        var punctuator = ['?', ':', ',', ';', '.']
         if (punctuator.indexOf(ch) > -1) {
             token = {
                 type: TokenType.PUNCTUATOR,
@@ -352,6 +354,7 @@ export default function (text) {
         this.lexer = lexer;
         this.backs = [];
         this.errors = [];
+        this.parseList = [];
     }
 
     Parser.prototype.next = function () {
@@ -410,7 +413,7 @@ export default function (text) {
     }
 
     // 代码块
-    Parser.prototype.parseStmt = function () {
+    Parser.prototype.parseStmt = function (stopValue) {
         while (this.hasNext()) {
             var lookahead = this.peek();
             if (this.preToken && this.preToken.line == lookahead.line && lookahead.value != ';') {
@@ -420,32 +423,49 @@ export default function (text) {
                 this.next();
                 lookahead = this.peek();
             }
-            if (['var', 'let', 'const'].indexOf(lookahead.value) > -1) {
-                this.parseDeclareStmt();
-            } else if (lookahead.value === '=') {
-                this.parseAssignStmt();
-            } else if (lookahead.value === 'if') {
-                this.parseIfStmt();
-            } else if (lookahead.value === 'with') {
-                this.parseWithStmt();
-            } else if (lookahead.value === 'for') {
-                this.parseForStmt();
-            } else if (lookahead.value === 'function') {
-                this.parseFunction();
-            } else if (lookahead.value === '{') {
-                if (this.peek(2).value === ':') { //对象字面量
-                    this.parseObject();
-                } else { //代码块
-                    this.parseBlock();
-                }
-            } else {
-                lookahead.value == '(' && this.nextMatch('(');
-                this.parseExpr();
-                lookahead.value == '(' && this.nextMatch(')');
-                if (this.peek() === lookahead) { //非表达式
-                    this.errors.push(Error.unexpected(lookahead));
-                    this.next();
-                }
+            if (lookahead.value === stopValue || !lookahead.value) {
+                break;
+            }
+            switch (lookahead.value) {
+                case 'var':
+                case 'let':
+                case 'const':
+                    this.parseDeclareStmt();
+                    break;
+                case '=':
+                    this.parseAssignStmt();
+                    break;
+                case 'if':
+                    this.parseIfStmt();
+                    break;
+                case 'with':
+                    this.parseWithStmt();
+                    break;
+                case 'while':
+                    this.parseWhileStmt();
+                    break;
+                case 'do':
+                    this.parseDoStmt();
+                    break;
+                case 'try':
+                    this.parseTryStmt();
+                    break;
+                case 'for':
+                    this.parseForStmt();
+                    break;
+                case 'function':
+                    this.parseFunction();
+                    break;
+                case '{':
+                    if (this.peek(2).value === ':') { //对象字面量
+                        this.parseObject();
+                    } else { //代码块
+                        this.parseBlock();
+                    }
+                    break;
+                default:
+                    this.parseExpr();
+                    break;
             }
         }
     }
@@ -453,7 +473,7 @@ export default function (text) {
     // 代码块
     Parser.prototype.parseBlock = function () {
         this.nextMatch('{');
-        this.parseStmt();
+        this.parseStmt('}');
         this.nextMatch('}');
     }
 
@@ -480,7 +500,7 @@ export default function (text) {
     // 赋值语句
     Parser.prototype.parseAssignStmt = function () {
         this.nextMatch('=');
-        this.parseExpr(true);
+        this.parseExpr();
     }
 
     // if语句
@@ -500,7 +520,7 @@ export default function (text) {
 
         function _nextExpr() {
             that.nextMatch('(');
-            that.parseExpr(true);
+            that.parseExpr();
             that.nextMatch(')');
         }
     }
@@ -509,22 +529,70 @@ export default function (text) {
     Parser.prototype.parseWithStmt = function () {
         this.nextMatch('with');
         this.nextMatch('(');
-        this.parseExpr(true);
+        this.parseExpr();
+        this.nextMatch(')');
+        this.parseBlock();
+    }
+
+    // while语句
+    Parser.prototype.parseWhileStmt = function () {
+        this.parseList.push('while');
+        this.nextMatch('while');
+        this.nextMatch('(');
+        this.parseExpr();
+        this.nextMatch(')');
+        this.parseBlock();
+        this.parseList.pop();
+    }
+
+    // do while语句
+    Parser.prototype.parseDoStmt = function () {
+        this.parseList.push('do');
+        this.nextMatch('do');
+        this.nextMatch('(');
+        this.parseExpr();
+        this.nextMatch(')');
+        this.parseBlock();
+        this.nextMatch('while');
+        this.nextMatch('(');
+        this.parseExpr();
+        this.nextMatch(')');
+        this.parseList.pop();
+    }
+
+    // try catch语句
+    Parser.prototype.parseTryStmt = function () {
+        this.nextMatch('try');
+        this.parseBlock();
+        this.nextMatch('catch');
+        this.nextMatch('(');
+        this.nextMatchType(TokenType.IDENTIFIER);
         this.nextMatch(')');
         this.parseBlock();
     }
 
     // for语句
     Parser.prototype.parseForStmt = function () {
+        this.parseList.push('for');
         this.nextMatch('for');
         this.nextMatch('(');
-        this.parseExpr();
-        this.nextMatch(';');
-        this.parseExpr();
-        this.nextMatch(';');
-        this.parseExpr();
+        if (this.peek(2).value == 'in' || this.peek(3).value == 'in') { //for in语句
+            if (this.peek(3).value == 'in') {
+                this.nextMatch(['var', 'let', 'const']);
+            }
+            this.nextMatchType(TokenType.IDENTIFIER);
+            this.nextMatch('in');
+            this.parseExpr();
+        } else {
+            this.peek().value != ';' && this.parseExpr();
+            this.nextMatch(';');
+            this.peek().value != ';' && this.parseExpr();
+            this.nextMatch(';');
+            this.peek().value != ')' && this.parseExpr();
+        }
         this.nextMatch(')');
         this.parseBlock();
+        this.parseList.pop();
     }
 
     // 函数声明
@@ -548,44 +616,84 @@ export default function (text) {
 
     // 表达式分析
     Parser.prototype.parseExpr = function (need) {
-        var preToken = null;
+        var originToken = this.peek();
+        var lookahead = null;
         if (!this.hasNext()) {
-            need && this.errors.push(Error.expectedIdentifier(this.preToken));
+            this.errors.push(new Error(this.preToken, ErrorType.EXPECTED, 'expression'));
             return;
         }
         while (this.hasNext()) {
-            var lookahead = this.peek();
-            if (['+', '-'].indexOf(lookahead.value) > -1) {
-                this.next();
-                lookahead = this.peek();
-            } else if (['++', '--'].indexOf(lookahead.value) > -1) {
-                this.next();
-                lookahead = this.peek();
-                if (!this.lexer.isVariable(lookahead)) {
-                    this.errors.push(Error.expectedIdentifier(lookahead));
-                    break;
-                }
-            }
-            if (!this.lexer.isValue(lookahead)) { //左侧非标识符
-                (preToken || need) && this.errors.push(Error.expectedIdentifier(lookahead));
+            this.parseValue();
+            if (!this.lexer.isValue(this.preToken)) { //左侧没有标识符
+                this.errors.push(Error.expectedIdentifier(this.preToken));
                 break;
             }
-            this.next();
             lookahead = this.peek();
-            if (['++', '--'].indexOf(lookahead.value) > -1) {
+            if (['++', '--'].indexOf(lookahead.value) > -1) { //后置运算符
+                if (!this.lexer.isVariable(this.preToken)) { //1++，非法
+                    this.errors.push(Error.expectedIdentifier(this.preToken))
+                }
                 this.next();
+                lookahead = this.peek();
             }
-            lookahead = this.peek();
+            if (lookahead.value === '.') { //点运算符
+                this.parseDot();
+                lookahead = this.peek();
+            }
             if (lookahead.type != TokenType.OPERATOR) { //下一个不是运算符，表达式结束
                 if (lookahead.value == ',') { //下一个表达式
                     this.next();
-                    this.parseExpr(true);
+                    this.parseExpr();
                 }
                 break;
             }
-            preToken = this.next();
+            this.next();
             if (!this.hasNext()) { //表达式未结束
                 this.errors.push(Error.expectedIdentifier(preToken));
+            }
+        }
+        if (this.peek() === originToken) { //非表达式
+            this.errors.push(Error.unexpected(lookahead));
+            this.next();
+        }
+    }
+
+    Parser.prototype.parseValue = function () {
+        var token = this.next();
+        if (['+', '-'].indexOf(token.value) > -1) { //前置运算符:+1,-1
+            token = this.next();
+        } else if (['++', '--'].indexOf(token.value) > -1) { //前置运算符:++a,--a
+            token = this.next();
+            if (!this.lexer.isVariable(token)) {
+                this.errors.push(Error.expectedIdentifier(token));
+            }
+        }
+        if (token.value === ')') { // 括号表达式(1+2)
+            this.next();
+            this.parseExpr();
+            this.nextMatch(')')
+        } else if (this.peek().value === '(') { //函数调用test()
+            this.next();
+            this.peek().value !== ')' && this.parseExpr();
+            this.nextMatch(')')
+        }
+    }
+
+    // 点运算符
+    Parser.prototype.parseDot = function () {
+        if (!this.lexer.isVariable(this.preToken) && this.preToken.value !== 'this') {
+            this.errors.push(Error.expectedIdentifier(this.preToken));
+        }
+        while (this.hasNext()) {
+            this.nextMatch('.');
+            this.nextMatchType(TokenType.IDENTIFIER);
+            if (this.peek().value === '(') { //函数调用test()
+                this.next();
+                this.peek().value !== ')' && this.parseExpr();
+                this.nextMatch(')')
+            }
+            if (this.peek().value !== '.') {
+                break;
             }
         }
     }
