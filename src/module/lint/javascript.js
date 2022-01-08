@@ -468,7 +468,8 @@ export default function (text) {
     Parser.prototype.parseStmt = function (stopValue) {
         while (this.hasNext()) {
             var lookahead = this.peek();
-            if (this.preToken && this.preToken.line == lookahead.line && lookahead.value != ';') {
+            if (this.preToken && this.preToken.line == lookahead.line &&
+                this.preToken.value != '{' && lookahead.value != ';') { //两条语句在同一行，且没有分隔符
                 Error.errors.push(Error.expectedSeparator(lookahead));
             }
             if (lookahead.value == ';') {
