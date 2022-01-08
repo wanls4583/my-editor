@@ -442,6 +442,10 @@ export default function (text) {
                 lookahead.value == '(' && this.nextMatch('(');
                 this.parseExpr();
                 lookahead.value == '(' && this.nextMatch(')');
+                if (this.peek() === lookahead) { //非表达式
+                    this.errors.push(Error.unexpected(lookahead));
+                    this.next();
+                }
             }
         }
     }
