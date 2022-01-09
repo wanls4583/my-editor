@@ -619,9 +619,6 @@ export default function (text) {
     // 赋值语句
     Parser.prototype.parseAssignStmt = function (value, stopValue) {
         value = value || '=';
-        if (!this.preToken || this.preToken.type !== TokenType.IDENTIFIER) {
-            Error.errors.push(Error.expectedIdentifier(this.preToken));
-        }
         this.nextMatch(value);
         if (this.peek().value === 'function') {
             this.parseFunction();
@@ -868,7 +865,7 @@ export default function (text) {
         while (this.hasNext() && this.peek().value != '}') {
             if (this.peek(2).value === '=') { //属性
                 this.nextMatchType(TokenType.IDENTIFIER);
-                this.parseAssignStmt();
+                this.parseAssignStmt('=');
             } else { //方法
                 if (this.peek().value === 'static' || this.peek().value === 'get') {
                     this.next();
@@ -956,6 +953,9 @@ export default function (text) {
                 break;
             }
             if (this.lexer.isAssignOperator(lookahead)) { //赋值运算符
+                if (this.preToken.type !== TokenType.IDENTIFIER) {
+                    Error.errors.push(Error.expectedIdentifier(this.preToken));
+                }
                 this.parseAssignStmt(lookahead.value);
                 break;
             }
@@ -1011,7 +1011,10 @@ export default function (text) {
                 lookLength++;
                 lookToken = this.peek(lookLength);
             }
-            if (this.peek(lookLength + 1).value === '=>') { //箭头函数
+            if (lookLength == 2 && this.preToken.type === IDENTIFIER &&
+                this.lexer.isAssignOperator(this.peek(lookLength + 1))) { //(a)=1
+                this.parseAssignStmt(this.peek(lookLength + 1).value);
+            } else if (this.peek(lookLength + 1).value === '=>') { //箭头函数
                 this.putBack();
                 this.parseFunArgs();
                 this.nextMatch('=>');
@@ -1035,6 +1038,9 @@ export default function (text) {
             this.next();
             this.parseExpr();
             this.nextMatch(']');
+            if (this.lexer.isAssignOperator(this.peek())) { //a[b]=1
+                this.parseAssignStmt(this.peek().value);
+            }
         } else if (token.value === 'new') { //new对象
             this.parseCall();
         } else if (token.value == '{') { //对象字面量
