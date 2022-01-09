@@ -12,20 +12,20 @@ export default function (text) {
         "super", "return", "typeof", "delete",
         "switch", "export", "import", "default",
         "finally", "extends", "function", "continue",
-        "debugger", "instanceof", "true", "false", "null", "async", "await"
+        "debugger", "instanceof", "true", "false", "null", "undefined", "async", "await"
     ];
-    var assignOperator = ['>>>=', '>>=', '<<=', '+=', '-=', '*=', '/=', '%=', '&=', '|=', '^='];
+    var assignOperator = ['=', '>>>=', '>>=', '<<=', '+=', '-=', '*=', '/=', '%=', '&=', '|=', '^='];
     var regs = {
         space: /^\s+/,
         number: /^\d+/,
         identifier: /^[a-zA-Z_$][a-zA-Z0-9_$]*/,
         comment: /^\/\//,
         pair_comment: /\*\//,
-        string1: /'/,
-        string2: /"/,
-        string3: /`/,
+        string1: /([^\\]|^)'/,
+        string2: /([^\\]|^)"/,
+        string3: /([^\\]|^)`/,
         stringNext: /\\$/,
-        unexpected: /^[^\b]+?\b/
+        unexpected: /^[^\s]+?\b/
     }
     var maxErrors = 100;
 
@@ -123,9 +123,11 @@ export default function (text) {
     Lexer.prototype.skip = function (length) {
         this.input = this.input.slice(length);
         if (!this.input.length) {
-            this.line++;
-            this.column = 0;
-            this.input = this.lines[this.line - 1] || '';
+            while (!this.input.length && this.line <= this.lines.length) {
+                this.line++;
+                this.column = 0;
+                this.input = this.lines[this.line - 1] || '';
+            }
         } else {
             this.column += length;
         }
@@ -159,7 +161,8 @@ export default function (text) {
             token.type == TokenType.STRING ||
             token.type == TokenType.BOOLEAN ||
             token.value === 'this' ||
-            token.value === 'null'
+            token.value === 'null' ||
+            token.value === 'undefined'
         );
     }
 
@@ -170,21 +173,24 @@ export default function (text) {
     Lexer.prototype.scanSpace = function () {
         var exec = regs.space.exec(this.input);
         if (exec) {
-            this.skip(exec[0].length);
-            return true;
+            this.skip(exec.index + exec[0].length);
+            this.scanSpace();
         }
     }
 
     Lexer.prototype.scanComment = function () {
         var exec = null;
-        while (this.scanSpace()) {}
+        this.skip(0); //去掉空行
+        this.scanSpace(); //去掉空格
         if (exec = regs.comment.exec(this.input)) {
             this.skipLine(1);
             this.scanComment();
         } else if (this.input[0] == '/' && this.input[1] == '*') {
+            this.skip(2);
             while (!(exec = regs.pair_comment.exec(this.input))) {
                 this.skipLine(1);
             }
+            exec && this.skip(exec.index + exec[0].length);
         }
     }
 
@@ -207,13 +213,13 @@ export default function (text) {
             while (!(exec = regs.string3.exec(this.input))) {
                 this.skipLine(1);
             }
-            exec && this.skip(exec.index + 1);
+            exec && this.skip(exec.index + exec[0].length);
         }
         return token;
 
         function _end(reg) {
             if (exec = reg.exec(that.input)) {
-                that.skip(exec.index + 1);
+                that.skip(exec.index + exec[0].length);
                 return true;
             } else if (exec = regs.stringNext.exec(that.input)) {
                 that.skipLine(1);
@@ -242,7 +248,7 @@ export default function (text) {
                 column: this.column,
                 value: exec[0]
             }
-            this.skip(exec[0].length);
+            this.skip(exec.index + exec[0].length);
         }
         return token;
     }
@@ -257,7 +263,7 @@ export default function (text) {
                 column: this.column,
                 value: exec[0]
             }
-            this.skip(exec[0].length);
+            this.skip(exec.index + exec[0].length);
         }
         return token;
     }
@@ -343,24 +349,24 @@ export default function (text) {
                     type: TokenType.OPERATOR,
                     value: ch1 + ch2 + ch3
                 };
+            } else {
+                token = {
+                    type: TokenType.OPERATOR,
+                    value: ch1 + ch2
+                };
             }
-
-            token = {
-                type: TokenType.OPERATOR,
-                value: ch1 + ch2
-            };
         } else if ("<>=!+-*%&|^/".indexOf(ch1) >= 0) {
             if (ch2 === "=") {
                 token = {
                     type: TokenType.OPERATOR,
                     value: ch1 + ch2
                 };
+            } else {
+                token = {
+                    type: TokenType.OPERATOR,
+                    value: ch1
+                };
             }
-
-            token = {
-                type: TokenType.OPERATOR,
-                value: ch1
-            };
         }
         if (token) {
             token.line = this.line;
@@ -379,7 +385,7 @@ export default function (text) {
                 column: this.column,
                 value: exec[0]
             }
-            this.skip(exec[0].length);
+            this.skip(exec.index + exec[0].length);
             Error.errors.push(Error.unexpected(token));
         }
     }
@@ -460,12 +466,13 @@ export default function (text) {
         return this.backs.length || this.lexer.hasNext();
     }
 
-    Parser.prototype.pubBack = function () {
-        this.putBackToken && this.backs.push(this.putBackToken);
+    Parser.prototype.putBack = function () {
+        this.putBackToken && this.backs.unshift(this.putBackToken);
     }
 
     // 代码块
     Parser.prototype.parseStmt = function (stopValue) {
+        stopValue = stopValue instanceof Array ? stopValue : [stopValue];
         while (this.hasNext()) {
             var lookahead = this.peek();
             if (this.preToken && this.preToken.line == lookahead.line &&
@@ -477,7 +484,7 @@ export default function (text) {
                 this.next();
                 lookahead = this.peek();
             }
-            if (lookahead.value === stopValue || !lookahead.value) {
+            if (stopValue.indexOf(lookahead.value) > -1 || !lookahead.value) {
                 break;
             }
             switch (lookahead.value) {
@@ -494,6 +501,9 @@ export default function (text) {
                     break;
                 case 'if':
                     this.parseIfStmt();
+                    break;
+                case 'switch':
+                    this.parseSwitchStmt();
                     break;
                 case 'with':
                     this.parseWithStmt();
@@ -570,7 +580,7 @@ export default function (text) {
 
     // 赋值语句
     Parser.prototype.parseAssignStmt = function (value, stopValue) {
-        value = value || '';
+        value = value || '=';
         if (!this.preToken || this.preToken.type !== TokenType.IDENTIFIER) {
             Error.errors.push(Error.expectedIdentifier(token));
         }
@@ -622,6 +632,10 @@ export default function (text) {
             lookahead = this.peek();
             if (lookahead.value == 'function') { //export default function
                 this.parseFunction();
+            } else if (lookahead.value === 'class') {
+                this.parseClass();
+            } else if (lookahead.value === '{') {
+                this.parseObject();
             } else {
                 this.parseExpr();
             }
@@ -683,6 +697,35 @@ export default function (text) {
             that.parseExpr();
             that.nextMatch(')');
         }
+    }
+
+    // switch语句
+    Parser.prototype.parseSwitchStmt = function () {
+        this.parseList.push('switch');
+        this.nextMatch('switch');
+        this.nextMatch('(');
+        this.parseExpr();
+        this.nextMatch(')');
+        this.nextMatch('{');
+        while (this.hasNext() && this.peek().value != '}') {
+            this.nextMatch('case');
+            this.parseExpr();
+            this.nextMatch(':');
+            this.parseStmt(['case', 'break', '}']);
+            if (this.peek().value === 'break') {
+                this.next();
+                while (this.peek().value === ';') {
+                    this.next();
+                }
+                if (['}', 'case'].indexOf(this.peek().value) == -1) { //break后面只能跟随case
+                    Error.errors.push(Error.expected(this.peek(), 'case'));
+                    while (this.hasNext() && ['}', 'case'].indexOf(this.peek().value) == -1) {
+                        this.next();
+                    }
+                }
+            }
+        }
+        this.nextMatch('}');
     }
 
     // with语句
@@ -763,6 +806,7 @@ export default function (text) {
             this.nextMatchType(TokenType.IDENTIFIER);
         }
         this.parseFunArgs();
+        this.parseBlock();
     }
 
     // 类声明
@@ -787,6 +831,7 @@ export default function (text) {
                 }
                 this.nextMatchType(TokenType.IDENTIFIER);
                 this.parseFunArgs();
+                this.parseBlock();
             }
         }
         this.nextMatch('}');
@@ -795,12 +840,14 @@ export default function (text) {
     // 函数参数
     Parser.prototype.parseFunArgs = function () {
         this.nextMatch('(');
-        while (this.hasNext() && this.peek().value != ')') {
+        if (this.peek().value != ')') {
             this.nextMatchType(TokenType.IDENTIFIER);
+        }
+        while (this.hasNext() && this.peek().value != ')') {
             this.nextMatch(',');
+            this.nextMatchType(TokenType.IDENTIFIER);
         }
         this.nextMatch(')');
-        this.parseBlock();
     }
 
     // break,continu
@@ -811,7 +858,7 @@ export default function (text) {
                 Error.errors.push(Error.unexpected(lookahead));
             }
         } else if (lookahead.value === 'break') {
-            if (!this.checkIn(['for', 'while', 'do', 'case'])) {
+            if (!this.checkIn(['for', 'while', 'do'])) {
                 Error.errors.push(Error.unexpected(lookahead));
             }
         }
@@ -826,7 +873,7 @@ export default function (text) {
 
     Parser.prototype.checkIn = function (value) {
         value = value instanceof Array ? value : [value];
-        for (var i = this.parseList.length; i >= 0; i++) {
+        for (var i = this.parseList.length; i >= 0; i--) {
             if (value.indexOf(this.parseList[i]) > -1) {
                 return true;
             }
@@ -838,18 +885,21 @@ export default function (text) {
     Parser.prototype.parseExpr = function (stopValue) {
         var originToken = this.peek();
         var lookahead = null;
+        stopValue = stopValue instanceof Array ? stopValue : [stopValue];
         if (!this.hasNext()) {
             Error.errors.push(Error.expected(null, 'expression'));
             return;
         }
         while (this.hasNext()) {
-            this.parseValue();
+            if (this.parseValue() === false) { //前面非标识符
+                break;
+            }
             lookahead = this.peek();
             if (lookahead.value === '.') { //点运算符
                 this.parseDot();
                 lookahead = this.peek();
             }
-            if (lookahead.value === stopValue) {
+            if (stopValue.indexOf(lookahead) > -1) { //遇到停止符
                 break;
             }
             if (lookahead.type != TokenType.OPERATOR) { //下一个不是运算符，表达式结束
@@ -865,6 +915,7 @@ export default function (text) {
                 break;
             }
             if (this.lexer.isAssignOperator(lookahead)) { //赋值运算符
+                this.parseAssignStmt(lookahead.value);
                 break;
             }
             this.next();
@@ -897,13 +948,31 @@ export default function (text) {
                 Error.errors.push(Error.expectedIdentifier(token))
             }
         }
+
         if (token.value === '(') { //括号表达式(1+2)
-            this.parseExpr();
-            this.nextMatch(')')
+            var lookLength = 1;
+            var lookToken = this.peek(lookLength);
+            while (lookToken.value && lookToken.value != ')') {
+                lookLength++;
+                lookToken = this.peek(lookLength);
+            }
+            if (this.peek(lookLength + 1).value === '=>') { //箭头函数
+                this.putBack();
+                this.parseFunArgs();
+                this.nextMatch('=>');
+                this.parseBlock();
+                return false;
+            } else {
+                this.parseExpr();
+                this.nextMatch(')');
+            }
         } else if (this.peek().value === '(') { //函数调用test()
+            this.putBack();
+            this.parseCall();
+        } else if (this.peek().value === '=>') { //箭头函数test=>{}
             this.next();
-            this.peek().value !== ')' && this.parseExpr();
-            this.nextMatch(')')
+            this.parseBlock();
+            return false;
         } else if (token.value === '[') { //数组
             this.peek().value !== ']' && this.parseExpr();
             this.nextMatch(']');
@@ -921,7 +990,26 @@ export default function (text) {
             }
         } else if (!this.lexer.isValue(token)) { //非标识符
             Error.errors.push(Error.expectedIdentifier(token));
+            return false;
         }
+    }
+
+    // 函数调用
+    Parser.prototype.parseCall = function () {
+        this.nextMatchType(TokenType.IDENTIFIER);
+        this.nextMatch('(');
+        while (this.hasNext() && this.peek().value !== ')') {
+            if (this.peek().value === 'function') {
+                this.parseFunction();
+            } else {
+                this.parseExpr(',');
+            }
+            if (this.peek().value != ')') {
+                this.nextMatch(',');
+            }
+        }
+        this.preToken.value == ',' && Error.errors.push(Error.unexpected(this.preToken));
+        this.nextMatch(')')
     }
 
     // 点运算符
@@ -933,9 +1021,8 @@ export default function (text) {
             this.nextMatch('.');
             this.nextMatchType(TokenType.IDENTIFIER);
             if (this.peek().value === '(') { //函数调用test()
-                this.next();
-                this.peek().value !== ')' && this.parseExpr();
-                this.nextMatch(')')
+                this.putBack();
+                this.parseCall();
             }
             if (this.peek().value !== '.') {
                 break;
@@ -948,6 +1035,6 @@ export default function (text) {
     if (text) {
         lexer.reset(text);
         parser.parseStmt();
-        console.log(Error.errors.join('\n'));
+        console.log(Error.errors);
     }
 }
