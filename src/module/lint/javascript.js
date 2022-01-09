@@ -16,7 +16,7 @@ export default function (text) {
     ];
     var assignOperator = ['=', '>>>=', '>>=', '<<=', '+=', '-=', '*=', '/=', '%=', '&=', '|=', '^='];
     var binaryOperator = [
-        '+', '-', '*', '/', '%', '&', '|', '&&', '||', '===', '==',
+        '+', '-', '*', '/', '%', '&', '|', '&&', '||', '===', '==', '!=', '!==',
         '>', '>=', '<', '<=', '>>', '>>>', '<<', 'instanceof'
     ];
     var unitOperator = ['+', '-', 'typeof', '!'];
@@ -125,6 +125,7 @@ export default function (text) {
         this.assignOperatorMap = {};
         this.unitOperatorMap = {};
         this.binaryOperatorMap = {};
+        this.keywordsMap = {};
         assignOperator.map((item) => {
             this.assignOperatorMap[item] = true;
         });
@@ -134,6 +135,9 @@ export default function (text) {
         binaryOperator.map((item) => {
             this.binaryOperatorMap[item] = true;
         });
+        keywords.map((item) => {
+            this.keywordsMap['key_' + item] = true;
+        })
     }
 
     Lexer.prototype.reset = function (text) {
@@ -201,6 +205,10 @@ export default function (text) {
 
     Lexer.prototype.isBinaryOperator = function (token) {
         return this.binaryOperatorMap[token.value];
+    }
+
+    Lexer.prototype.isKeyWord = function (value) {
+        return this.keywordsMap['key_' + value];
     }
 
     Lexer.prototype.scanSpace = function () {
@@ -291,10 +299,13 @@ export default function (text) {
         var token = null;
         if (exec = regs.identifier.exec(this.input)) {
             token = {
-                type: keywords.indexOf(exec[0]) > -1 ? TokenType.KEYWORD : TokenType.IDENTIFIER,
+                type: this.isKeyWord(exec[0]) ? TokenType.KEYWORD : TokenType.IDENTIFIER,
                 line: this.line,
                 column: this.column,
                 value: exec[0]
+            }
+            if (token.value === 'true' || token.value === 'false') {
+                token.type = TokenType.BOOLEAN;
             }
             this.skip(exec.index + exec[0].length);
         }
@@ -452,15 +463,19 @@ export default function (text) {
         this.parseList = [];
     }
 
-    Parser.prototype.next = function () {
+    Parser.prototype.next = function (length) {
         var token = null;
-        if (this.backs.length) {
-            token = this.backs.shift();
-        } else {
-            token = this.lexer.next();
+        length = length || 1;
+        while (length > 0) {
+            if (this.backs.length) {
+                token = this.backs.shift();
+            } else {
+                token = this.lexer.next();
+            }
+            this.preToken = token || this.preToken;
+            this.putBackToken = token;
+            length--;
         }
-        this.preToken = token || this.preToken;
-        this.putBackToken = token;
         return token;
     }
 
@@ -732,14 +747,6 @@ export default function (text) {
         }
     }
 
-    // 三元运算符
-    Parser.prototype.parseTernary = function () {
-        this.nextMatch('?');
-        this.parseExpr();
-        this.nextMatch(':');
-        this.parseExpr();
-    }
-
     // switch语句
     Parser.prototype.parseSwitchStmt = function () {
         this.parseList.push('switch');
@@ -749,8 +756,12 @@ export default function (text) {
         this.nextMatch(')');
         this.nextMatch('{');
         while (this.hasNext() && this.peek().value != '}') {
-            this.nextMatch('case');
-            this.parseExpr();
+            if (this.peek().value === 'default') {
+                this.nextMatch('default');
+            } else {
+                this.nextMatch('case');
+                this.parseExpr();
+            }
             this.nextMatch(':');
             this.parseStmt(['case', 'break', '}']);
             if (this.peek().value === 'break') {
@@ -758,7 +769,7 @@ export default function (text) {
                 while (this.peek().value === ';') {
                     this.next();
                 }
-                if (['}', 'case'].indexOf(this.peek().value) == -1) { //break后面只能跟随case
+                if (['}', 'case', 'default'].indexOf(this.peek().value) == -1) { //break后面只能跟随case
                     Error.errors.push(Error.expected(this.peek(), 'case'));
                     while (this.hasNext() && ['}', 'case'].indexOf(this.peek().value) == -1) {
                         this.next();
@@ -828,7 +839,11 @@ export default function (text) {
             this.nextMatch('in');
             this.parseExpr();
         } else {
-            this.peek().value != ';' && this.parseExpr();
+            if (['var', 'let', 'const'].indexOf(this.peek().value) > -1) {
+                this.parseDeclareStmt();
+            } else if (this.peek().value != ';') {
+                this.parseExpr();
+            }
             this.nextMatch(';');
             this.peek().value != ';' && this.parseExpr();
             this.nextMatch(';');
@@ -909,7 +924,9 @@ export default function (text) {
     // return语句
     Parser.prototype.parseReturnStmt = function () {
         this.nextMatch('return');
-        this.parseExpr();
+        if (['}', ';'].indexOf(this.peek().value) == -1) {
+            this.parseExpr();
+        }
     }
 
     Parser.prototype.checkIn = function (value) {
@@ -941,15 +958,12 @@ export default function (text) {
                 break;
             }
             lookahead = this.peek();
-            if (stopValue.indexOf(lookahead.value) > -1) { //遇到停止符
-                break;
-            }
             if (lookahead.value === '.') { //点运算符
                 this.parseDot();
                 lookahead = this.peek();
             }
             if (lookahead.value === '?') { //三元运算符
-                this.parseTernary();
+                this.parseTernary(stopValue);
                 break;
             }
             if (this.lexer.isAssignOperator(lookahead)) { //赋值运算符
@@ -957,6 +971,9 @@ export default function (text) {
                     Error.errors.push(Error.expectedIdentifier(this.preToken));
                 }
                 this.parseAssignStmt(lookahead.value);
+                break;
+            }
+            if (stopValue.indexOf(lookahead.value) > -1) { //遇到停止符
                 break;
             }
             if (!this.lexer.isBinaryOperator(lookahead)) { //下一个不是二元运算符，表达式结束
@@ -1011,9 +1028,10 @@ export default function (text) {
                 lookLength++;
                 lookToken = this.peek(lookLength);
             }
-            if (lookLength == 2 && this.preToken.type === IDENTIFIER &&
+            if (lookLength == 2 && this.peek(lookLength - 1).type === TokenType.IDENTIFIER &&
                 this.lexer.isAssignOperator(this.peek(lookLength + 1))) { //(a)=1
-                this.parseAssignStmt(this.peek(lookLength + 1).value);
+                this.next(lookLength);
+                this.parseAssignStmt(this.peek().value);
             } else if (this.peek(lookLength + 1).value === '=>') { //箭头函数
                 this.putBack();
                 this.parseFunArgs();
@@ -1035,12 +1053,7 @@ export default function (text) {
             this.peek().value !== ']' && this.parseExpr();
             this.nextMatch(']');
         } else if (this.peek().value === '[') { //属性表达式
-            this.next();
-            this.parseExpr();
-            this.nextMatch(']');
-            if (this.lexer.isAssignOperator(this.peek())) { //a[b]=1
-                this.parseAssignStmt(this.peek().value);
-            }
+            this.parseProperty();
         } else if (token.value === 'new') { //new对象
             this.parseCall();
         } else if (token.value == '{') { //对象字面量
@@ -1075,7 +1088,8 @@ export default function (text) {
 
     // 点运算符
     Parser.prototype.parseDot = function () {
-        if (!this.lexer.isVariable(this.preToken) && [']', ')'].indexOf(this.preToken.value) === -1) {
+        if (!this.lexer.isVariable(this.preToken) &&
+            this.preToken.type != TokenType.STRING && [']', ')'].indexOf(this.preToken.value) === -1) {
             Error.errors.push(Error.expectedIdentifier(this.preToken));
         }
         while (this.hasNext()) {
@@ -1084,11 +1098,33 @@ export default function (text) {
             if (this.peek().value === '(') { //函数调用test()
                 this.putBack();
                 this.parseCall();
+            } else if (this.peek().value === '[') {
+                this.parseProperty();
             }
             if (this.peek().value !== '.') {
+                if (['++', '--'].indexOf(this.peek().value) > -1) {
+                    this.next();
+                }
                 break;
             }
         }
+    }
+
+    Parser.prototype.parseProperty = function () {
+        this.nextMatch('[');
+        this.parseExpr();
+        this.nextMatch(']');
+        if (this.lexer.isAssignOperator(this.peek())) { //a[b]=1
+            this.parseAssignStmt(this.peek().value);
+        }
+    }
+
+    // 三元运算符
+    Parser.prototype.parseTernary = function (stopValue) {
+        this.nextMatch('?');
+        this.parseExpr();
+        this.nextMatch(':');
+        this.parseExpr(stopValue);
     }
 
     var lexer = new Lexer();
