@@ -15,10 +15,15 @@ export default function (text) {
         "debugger", "instanceof", "true", "false", "null", "undefined", "async", "await"
     ];
     var assignOperator = ['=', '>>>=', '>>=', '<<=', '+=', '-=', '*=', '/=', '%=', '&=', '|=', '^='];
+    var binaryOperator = [
+        '+', '-', '*', '/', '%', '&', '|', '&&', '||', '===', '==',
+        '>', '>=', '<', '<=', '>>', '>>>', '<<', , 'instanceof'
+    ];
+    var unitOperator = ['+', '-', 'typeof', '!'];
     var regs = {
         space: /^\s+/,
-        number: /^\d+/,
-        identifier: /^[a-zA-Z_$][a-zA-Z0-9_$]*/,
+        number: /^\d+\b/,
+        identifier: /^[a-zA-Z_$][a-zA-Z0-9_$]*\b/,
         comment: /^\/\//,
         pair_comment: /\*\//,
         string1: /([^\\]|^)'/,
@@ -109,7 +114,23 @@ export default function (text) {
 
     // 词法分析器
     function Lexer(text) {
+        this.init();
         this.reset(text);
+    }
+
+    Lexer.prototype.init = function () {
+        this.assignOperatorMap = {};
+        this.unitOperatorMap = {};
+        this.binaryOperatorMap = {};
+        assignOperator.map((item) => {
+            this.assignOperatorMap[item] = true;
+        });
+        unitOperator.map((item) => {
+            this.unitOperatorMap[item] = true;
+        });
+        binaryOperator.map((item) => {
+            this.binaryOperatorMap[item] = true;
+        });
     }
 
     Lexer.prototype.reset = function (text) {
@@ -167,7 +188,15 @@ export default function (text) {
     }
 
     Lexer.prototype.isAssignOperator = function (token) {
-        return assignOperator.indexOf(token.value) > -1;
+        return this.assignOperatorMap[token.value];
+    }
+
+    Lexer.prototype.isUnitOperator = function (token) {
+        return this.unitOperatorMap[token.value];
+    }
+
+    Lexer.prototype.isBinaryOperator = function (token) {
+        return this.binaryOperatorMap[token.value];
     }
 
     Lexer.prototype.scanSpace = function () {
@@ -541,11 +570,7 @@ export default function (text) {
                     this.parseReturnStmt();
                     break;
                 default:
-                    if (this.lexer.isAssignOperator(lookahead)) { //赋值语句
-                        this.parseAssignStmt(lookahead.value);
-                    } else {
-                        this.parseExpr();
-                    }
+                    this.parseExpr();
                     break;
             }
         }
@@ -697,6 +722,14 @@ export default function (text) {
             that.parseExpr();
             that.nextMatch(')');
         }
+    }
+
+    // 三元运算符
+    Parser.prototype.parseTernary = function () {
+        this.nextMatch('?');
+        this.parseExpr();
+        this.nextMatch(':');
+        this.parseExpr();
     }
 
     // switch语句
@@ -895,14 +928,22 @@ export default function (text) {
                 break;
             }
             lookahead = this.peek();
+            if (stopValue.indexOf(lookahead) > -1) { //遇到停止符
+                break;
+            }
             if (lookahead.value === '.') { //点运算符
                 this.parseDot();
                 lookahead = this.peek();
             }
-            if (stopValue.indexOf(lookahead) > -1) { //遇到停止符
+            if (lookahead.value === '?') { //三元运算符
+                this.parseTernary();
                 break;
             }
-            if (lookahead.type != TokenType.OPERATOR) { //下一个不是运算符，表达式结束
+            if (this.lexer.isAssignOperator(lookahead)) { //赋值运算符
+                this.parseAssignStmt(lookahead.value);
+                break;
+            }
+            if (!this.lexer.isBinaryOperator(lookahead)) { //下一个不是二元运算符，表达式结束
                 if (lookahead.value == ',') { //下一个表达式
                     this.next();
                     if (this.lexer.isAssignOperator(this.peek(2))) {
@@ -912,10 +953,6 @@ export default function (text) {
                         this.parseExpr();
                     }
                 }
-                break;
-            }
-            if (this.lexer.isAssignOperator(lookahead)) { //赋值运算符
-                this.parseAssignStmt(lookahead.value);
                 break;
             }
             this.next();
@@ -931,10 +968,12 @@ export default function (text) {
 
     Parser.prototype.parseValue = function () {
         var token = this.next();
-        if (['+', '-'].indexOf(token.value) > -1) { //前置运算符:+1,-1
-            token = this.next();
-        } else if (token.value === '!') { //前置运算符:!a
-            while (token.value === '!') {
+        if (this.lexer.isUnitOperator(token)) { //前置运算符:+1,-1
+            if (token.value === '!') {
+                while (token.value === '!') {
+                    token = this.next();
+                }
+            } else {
                 token = this.next();
             }
         } else if (['++', '--'].indexOf(token.value) > -1) { //前置运算符:++a,--a
