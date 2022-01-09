@@ -476,11 +476,11 @@ export default {
             }
             newLine += text.length - 1;
             this.maxLine = context.htmls.length;
+            this.render();
             this.tokenizer.onInsertContentAfter(newLine);
             this.lint.onInsertContentAfter(newLine);
             this.folder.onInsertContentAfter(newLine);
             this.setLineWidth(text);
-            this.render();
             if (context.foldMap.has(nowLine) && text.length > 1) {
                 this.unFold(nowLine);
             }
@@ -580,11 +580,11 @@ export default {
             startObj.folds = null;
             startObj.states = null;
             this.maxLine = context.htmls.length;
+            this.render(); //必须放在tokenizer前面，renderline(lineId)的时候.obj.num将失效
+            this.clearRnage();
             this.tokenizer.onDeleteContentAfter(this.cursorPos.line);
             this.lint.onDeleteContentAfter(this.cursorPos.line);
             this.folder.onDeleteContentAfter(this.cursorPos.line);
-            this.clearRnage();
-            this.render();
             // 更新最大文本宽度
             if (startObj.width >= this.maxWidthObj.width) {
                 this.maxWidthObj = {

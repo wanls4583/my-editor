@@ -17,7 +17,7 @@ export default function (text) {
     var assignOperator = ['=', '>>>=', '>>=', '<<=', '+=', '-=', '*=', '/=', '%=', '&=', '|=', '^='];
     var binaryOperator = [
         '+', '-', '*', '/', '%', '&', '|', '&&', '||', '===', '==',
-        '>', '>=', '<', '<=', '>>', '>>>', '<<', , 'instanceof'
+        '>', '>=', '<', '<=', '>>', '>>>', '<<', 'instanceof'
     ];
     var unitOperator = ['+', '-', 'typeof', '!'];
     var regs = {
@@ -30,6 +30,7 @@ export default function (text) {
         string2: /([^\\]|^)"/,
         string3: /([^\\]|^)`/,
         stringNext: /\\$/,
+        regex: /^\/[\s\S]+\//,
         unexpected: /^[^\s]+?\b/
     }
     var maxErrors = 100;
@@ -51,6 +52,8 @@ export default function (text) {
     TokenType.OPERATOR = new TokenType(6, 'operator');
     TokenType.BRACKET = new TokenType(7, 'bracket');
     TokenType.PUNCTUATOR = new TokenType(8, 'punctuator');
+    TokenType.REGEXP = new TokenType(9, 'regexp');
+    TokenType.UNEXPECTED = new TokenType(10, 'unexpeted');
 
     function ErrorType(type) {
         this.type = type;
@@ -181,6 +184,7 @@ export default function (text) {
             token.type == TokenType.NUMBER ||
             token.type == TokenType.STRING ||
             token.type == TokenType.BOOLEAN ||
+            token.type == TokenType.REGEXP ||
             token.value === 'this' ||
             token.value === 'null' ||
             token.value === 'undefined'
@@ -313,19 +317,17 @@ export default function (text) {
         return token;
     }
 
-    // 标点符号
-    Lexer.prototype.scanPunctuator = function () {
+    Lexer.prototype.scanRegex = function () {
+        var exec = null;
         var token = null;
-        var ch = this.input[0];
-        var punctuator = ['?', ':', ',', ';', '.']
-        if (punctuator.indexOf(ch) > -1) {
+        if (exec = regs.regex.exec(this.input)) {
             token = {
-                type: TokenType.PUNCTUATOR,
+                type: TokenType.REGEXP,
                 line: this.line,
                 column: this.column,
-                value: ch
+                value: exec[0]
             }
-            this.skip(1);
+            this.skip(exec.index + exec[0].length);
         }
         return token;
     }
@@ -396,6 +398,11 @@ export default function (text) {
                     value: ch1
                 };
             }
+        } else if ('?:.,;'.indexOf(ch1) > -1) {
+            token = {
+                type: TokenType.PUNCTUATOR,
+                value: ch1
+            };
         }
         if (token) {
             token.line = this.line;
@@ -407,16 +414,17 @@ export default function (text) {
 
     Lexer.prototype.scanUnexpected = function () {
         var exec = null;
+        var token = null;
         if (exec = regs.unexpected.exec(this.input)) {
-            var token = {
-                type: ErrorType.UNEXPECTED,
+            token = {
+                type: TokenType.UNEXPECTED,
                 line: this.line,
                 column: this.column,
                 value: exec[0]
             }
             this.skip(exec.index + exec[0].length);
-            Error.errors.push(Error.unexpected(token));
         }
+        return token
     }
 
     Lexer.prototype.next = function () {
@@ -426,8 +434,8 @@ export default function (text) {
             token = this.scanNunmber() ||
                 this.scanIdentifier() ||
                 this.scanBracket() ||
+                this.scanRegex() ||
                 this.scanOperator() ||
-                this.scanPunctuator() ||
                 this.scanString();
             if (!token) { //存在非法变量
                 this.scanUnexpected();
@@ -492,7 +500,8 @@ export default function (text) {
     }
 
     Parser.prototype.hasNext = function () {
-        return this.backs.length || this.lexer.hasNext();
+        var lookahead = this.peek();
+        return lookahead.value
     }
 
     Parser.prototype.putBack = function () {
@@ -521,6 +530,13 @@ export default function (text) {
                 case 'let':
                 case 'const':
                     this.parseDeclareStmt();
+                    break;
+                case '{':
+                    if (this.peek(2).value === ':') { //对象字面量
+                        this.parseObject();
+                    } else { //代码块
+                        this.parseBlock();
+                    }
                     break;
                 case 'import':
                     this.parseImportStmt();
@@ -555,13 +571,6 @@ export default function (text) {
                 case 'class':
                     this.parseClass();
                     break;
-                case '{':
-                    if (this.peek(2).value === ':') { //对象字面量
-                        this.parseObject();
-                    } else { //代码块
-                        this.parseBlock();
-                    }
-                    break;
                 case 'continue':
                 case 'break':
                     this.parseControlStmt();
@@ -589,8 +598,12 @@ export default function (text) {
         while (this.hasNext() && this.peek().value != '}') {
             this.nextMatchType([TokenType.NUMBER, TokenType.STRING, TokenType.IDENTIFIER]);
             this.nextMatch(':');
-            this.parseExpr();
+            this.parseExpr(',');
+            if (this.peek().value != '}') {
+                this.nextMatch(',');
+            }
         }
+        this.preToken.value === ',' && Error.errors.push(Error.unexpected(this.preToken));
         this.nextMatch('}');
     }
 
@@ -607,7 +620,7 @@ export default function (text) {
     Parser.prototype.parseAssignStmt = function (value, stopValue) {
         value = value || '=';
         if (!this.preToken || this.preToken.type !== TokenType.IDENTIFIER) {
-            Error.errors.push(Error.expectedIdentifier(token));
+            Error.errors.push(Error.expectedIdentifier(this.preToken));
         }
         this.nextMatch(value);
         if (this.peek().value === 'function') {
@@ -659,8 +672,6 @@ export default function (text) {
                 this.parseFunction();
             } else if (lookahead.value === 'class') {
                 this.parseClass();
-            } else if (lookahead.value === '{') {
-                this.parseObject();
             } else {
                 this.parseExpr();
             }
@@ -914,6 +925,11 @@ export default function (text) {
         return false;
     }
 
+    // 正则表达式
+    Parser.prototype.parseRegex = function () {
+        var regex = this.next();
+    }
+
     // 表达式分析
     Parser.prototype.parseExpr = function (stopValue) {
         var originToken = this.peek();
@@ -928,7 +944,7 @@ export default function (text) {
                 break;
             }
             lookahead = this.peek();
-            if (stopValue.indexOf(lookahead) > -1) { //遇到停止符
+            if (stopValue.indexOf(lookahead.value) > -1) { //遇到停止符
                 break;
             }
             if (lookahead.value === '.') { //点运算符
@@ -1020,13 +1036,13 @@ export default function (text) {
             this.parseExpr();
             this.nextMatch(']');
         } else if (token.value === 'new') { //new对象
-            this.next();
-            this.nextMatchType(TokenType.IDENTIFIER);
-            if (this.peek().value === '(') { //new Object(test);
-                this.next();
-                this.parseExpr();
-                this.nextMatch(')');
-            }
+            this.parseCall();
+        } else if (token.value == '{') { //对象字面量
+            this.putBack();
+            this.parseObject();
+        } else if (token.type === TokenType.REGEXP) { //正则表达式
+            this.putBack();
+            this.parseRegex();
         } else if (!this.lexer.isValue(token)) { //非标识符
             Error.errors.push(Error.expectedIdentifier(token));
             return false;

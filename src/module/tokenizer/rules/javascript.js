@@ -1,6 +1,9 @@
 const variable = `[\\$_a-zA-Z][\\$_a-zA-Z0-9]*?`
 export default {
-    rules: [ //多行注释
+    rules: [{
+            regex: /\/[\s\S]+\//,
+            token: 'js-regex'
+        }, //多行注释
         {
             start: /\/\*/,
             end: /\*\//,
