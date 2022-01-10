@@ -41,7 +41,7 @@ export default function () {
         string2: /\\*"/,
         string3: /\\*`/,
         regex: /^\/[\s\S]*?[^\\]\//,
-        other: /^[^\s]+?\b/
+        other: /^[^\s]+?/
     }
     var maxErrors = 100;
 

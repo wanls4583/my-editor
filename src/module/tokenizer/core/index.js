@@ -251,6 +251,7 @@ export default class {
         while (match = regex.exec(lineObj.text)) {
             let token = null;
             let fold = null;
+            let valid = true;
             for (let ruleId in match.groups) {
                 if (match.groups[ruleId] == undefined) {
                     continue;
@@ -263,6 +264,23 @@ export default class {
                         type: 'plain'
                     });
                 }
+                if (typeof rule.valid === 'function') {
+                    let flag = '';
+                    if (rule.start && rule.end) { //多行token被匹配
+                        flag = 'start';
+                        if (states.indexOf(rule.ruleId) > -1) {
+                            flag = 'end';
+                        }
+                    }
+                    valid = rule.valid({
+                        index: match.index,
+                        value: match[0],
+                        text: lineObj.text
+                    });
+                    if (!valid) {
+                        break;
+                    }
+                }
                 fold = this.getFold(rule, match, states, resultObj, lineObj.text);
                 token = this.getToken(rule, match, states, preStates, resultObj, lineObj.text);
                 resultObj.tokens.push(token);
@@ -272,6 +290,9 @@ export default class {
             }
             if (!match[0]) { //考虑/^$/的情况
                 break;
+            }
+            if (!valid) { //跳过当前无效结果
+                continue;
             }
             lastIndex = regex.lastIndex;
             regex.lastIndex = 0;

@@ -1,4 +1,11 @@
 const variable = `[\\$_a-zA-Z][\\$_a-zA-Z0-9]*?`
+const strValid = function (e) {
+    let value = e.value;
+    if (value[0] === '\\' && value.length % 2 === 0) {
+        return false;
+    }
+    return true;
+}
 export default {
     rules: [{
             regex: /\/[\s\S]*?[^\\]\//,
@@ -13,23 +20,26 @@ export default {
         //字符串``
         {
             start: /`/,
-            end: /`/,
+            end: /\\*?`/,
             token: 'js-string',
-            foldName: 'js-string'
+            foldName: 'js-string',
+            valid: strValid
         },
         //字符串''
         {
             start: /'/,
-            end: /'|[^\\]$|^$/,
+            end: /\\*?'|[^\\]$|^$/,
             token: 'js-string',
-            foldName: 'js-single-string'
+            foldName: 'js-single-string',
+            valid: strValid
         },
         //字符串"""
         {
             start: /"/,
-            end: /"|[^\\]$|^$/,
+            end: /"\\*?|[^\\]$|^$/,
             token: 'js-string',
-            foldName: 'js-double-string'
+            foldName: 'js-double-string',
+            valid: strValid
         }, {
             regex: /\/\/[\s\S]*$/,
             token: 'js-comment'
