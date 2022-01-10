@@ -652,7 +652,7 @@ export default function () {
                     break;
             }
             if (++count % 10 === 0 && Date.now() - startTime > 200) {
-                setTimeout(() => {
+                this.parseTimer = setTimeout(() => {
                     this.parseStmt(stopValue);
                 }, 10);
             }
