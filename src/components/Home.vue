@@ -19,9 +19,20 @@
 				class="my-editor-num"
 				v-for="line in renderHtmls"
 			>
+				<span
+					:class="[line.error?'my-editor-icon-error':'']"
+					@mouseleave="onIconMouseLeave"
+					@mouseover="onIconMouseOver(line.num, $event)"
+					class="my-editor-icon my-editor-center"
+				></span>
 				<span>{{line.num}}</span>
 				<!-- 折叠图标 -->
-				<span :class="[line.fold=='open'?'my-editor-fold-open':'my-editor-fold-close']" @click="onToggleFold(line.num)" class="my-editor-fold" v-if="line.fold"></span>
+				<span
+					:class="[line.fold=='open'?'my-editor-fold-open':'my-editor-fold-close']"
+					@click="onToggleFold(line.num)"
+					class="my-editor-fold my-editor-center"
+					v-if="line.fold"
+				></span>
 			</div>
 		</div>
 		<div :style="{'box-shadow': _leftShadow}" class="my-editor-content-wrap">
@@ -87,6 +98,7 @@
 		<status-bar :column="cursorPos.column+1" :height="statusHeight" :language.sync="language" :line="cursorPos.line" :tabSize.sync="tabSize" ref="statusBar"></status-bar>
 		<!-- 右键菜单 -->
 		<panel :checkable="false" :menuList="menuList" :styles="menuStyle" @change="onClickMenu" ref="menu" v-show="menuVisble"></panel>
+		<tip :content="tipContent" :styles="tipStyle" v-show="tipContent"></tip>
 	</div>
 </template>
 
@@ -97,6 +109,7 @@ import Fold from '@/module/fold/index';
 import History from '@/module/history/index';
 import StatusBar from './StatusBar';
 import Panel from './Panel';
+import Tip from './Tip';
 import Util from '@/common/Util';
 import $ from 'jquery';
 const context = {
@@ -111,7 +124,8 @@ export default {
     name: 'Home',
     components: {
         StatusBar,
-        Panel
+        Panel,
+        Tip
     },
     data() {
         return {
@@ -169,7 +183,13 @@ export default {
                 left: '0px',
                 'min-width': '200px'
             },
-            menuVisble: false
+            tipStyle: {
+                top: '0px',
+                left: '0px'
+            },
+            menuVisble: false,
+            tipContent: false,
+            tipContent: '',
         }
     },
     computed: {
@@ -282,6 +302,7 @@ export default {
                 lineId: this.lineId++,
                 text: '',
                 html: '',
+                error: '',
                 width: 0,
                 tokens: null,
                 folds: null,
@@ -393,7 +414,8 @@ export default {
                     num: line,
                     tabNum: tabNum,
                     selected: selected,
-                    fold: fold
+                    fold: fold,
+                    error: item.error
                 }
             }
         },
@@ -428,6 +450,11 @@ export default {
                 });
             }
             this.setSelectedRange(start, end);
+        },
+        renderError(lineId) {
+            if (context.renderedIdMap.has(lineId)) {
+                context.renderedIdMap.get(lineId).error = context.lineIdMap.get(lineId).error;
+            }
         },
         // 清除选中背景
         clearRnage() {
@@ -837,6 +864,19 @@ export default {
             }
             this.menuVisble = false;
             this.focus();
+        },
+        // 提示图标hover事件
+        onIconMouseOver(line, e) {
+            let $editor = $(this.$editor);
+            let offset = $editor.offset();
+            this.tipStyle = {
+                left: e.clientX - offset.left + 10 + 'px',
+                top: e.clientY - offset.top + 10 + 'px'
+            }
+            this.tipContent = context.htmls[line - 1].error;
+        },
+        onIconMouseLeave() {
+            this.tipContent = '';
         },
         // 折叠/展开
         onToggleFold(line) {

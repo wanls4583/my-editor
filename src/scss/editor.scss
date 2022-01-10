@@ -16,6 +16,11 @@ body {
 }
 
 .my-editor {
+    &-center {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
 
     &-wrap {
         position: relative;
@@ -230,13 +235,13 @@ body {
     }
 
     // 折叠标记-begin
+
     &-fold {
         position: absolute;
         top: 0;
         right: 0;
-        box-sizing: border-box;
+        width: 20px;
         height: 100%;
-        padding: 3px 6px 0 6px;
         cursor: pointer;
         opacity: 0;
         // transition: opacity 0.2s;
@@ -244,7 +249,6 @@ body {
 
     &-fold-open:after {
         display: block;
-        margin-top: 50%;
         content: '';
         border-width: 6px 4px 0 4px;
         border-style: solid;
@@ -253,7 +257,6 @@ body {
 
     &-fold-open:hover:after {
         display: block;
-        margin-top: 50%;
         content: '';
         border-width: 6px 4px 0 4px;
         border-style: solid;
@@ -266,7 +269,6 @@ body {
 
     &-fold-close:after {
         display: block;
-        margin-top: 50%;
         content: '';
         border-width: 4px 0 4px 6px;
         border-style: solid;
@@ -275,7 +277,6 @@ body {
 
     &-fold-close:hover:after {
         display: block;
-        margin-top: 50%;
         content: '';
         border-width: 4px 0 4px 6px;
         border-style: solid;
@@ -284,7 +285,32 @@ body {
 
     // 折叠标记-end
 
+    // 提示图标-begin
+
+    &-icon {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 20px;
+        height: 100%;
+
+        &-error::before {
+            content: "×";
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            border: 1px solid red;
+            color: red;
+        }
+    }
+
+    // 提示图标-end
+
     // 状态栏-begin
+
     &-status-bar {
         position: absolute;
         bottom: 0;
@@ -329,6 +355,7 @@ body {
     // 状态栏-end
 
     // 面板-begin
+
     &-panel {
         position: absolute;
         z-index: 99;
@@ -400,4 +427,19 @@ body {
     }
 
     // 面板-end
+
+    // 提示-begin
+
+    &-tip {
+        position: absolute;
+        z-index: 99;
+        min-width: 120px;
+        background-color: #fff;
+        border-radius: 4px;
+        padding: 5px 10px;
+        color: #666666;
+        line-height: 1.2em;
+    }
+
+    // 提示-end
 }

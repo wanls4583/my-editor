@@ -151,8 +151,8 @@ class Util {
             return -1;
         }
     }
-    static createWorker(fun) {
-        var blob = new Blob(['(' + fun.toString() + ')()']);
+    static createWorker(funStr) {
+        var blob = new Blob([funStr]);
         var url = window.URL.createObjectURL(blob);
         var worker = new Worker(url);
         return worker;
@@ -178,7 +178,6 @@ Array.prototype.peek = function (index) {
         return this[this.length - (index || 1)];
     }
 }
-Array.prototype._isArray = true;
 String.prototype.peek = function (index) {
     if (this.length) {
         return this[this.length - (index || 1)];

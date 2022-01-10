@@ -3,7 +3,18 @@
  * @Date: 2022-01-07 10:07:14
  * @Description: 
  */
-export default function (text) {
+export default function () {
+    Array.prototype.peek = function (index) {
+        if (this.length) {
+            return this[this.length - (index || 1)];
+        }
+    }
+    Array.prototype._isArray = true;
+    String.prototype.peek = function (index) {
+        if (this.length) {
+            return this[this.length - (index || 1)];
+        }
+    }
     var keywords = [
         "if", "in", "do", "var", "for", "new",
         "try", "let", "this", "else", "case",
@@ -73,7 +84,6 @@ export default function (text) {
         this.value = token.value;
         this.error = this.toString();
     }
-    window.Error = Error;
 
     Error.prototype.toString = function () {
         var error = '';
@@ -495,8 +505,14 @@ export default function (text) {
     // 语法分析器
     function Parser(lexer) {
         this.lexer = lexer;
+        this.reset();
+    }
+
+    Parser.prototype.reset = function () {
         this.backs = [];
         this.parseList = [];
+        this.preToken = null;
+        this.putBackToken = null;
     }
 
     Parser.prototype.next = function (length) {
@@ -1164,11 +1180,19 @@ export default function (text) {
 
     var lexer = new Lexer();
     var parser = new Parser(lexer);
-    if (text) {
-        lexer.reset(text);
-        var time1 = Date.now()
-        parser.parseStmt();
-        console.log(Date.now() - time1);
-        console.log(Error.errors);
+
+    return {
+        parse: function (text) {
+            lexer.reset(text);
+            parser.reset();
+            parser.parseStmt();
+            return Error.errors.map((item) => {
+                return {
+                    line: item.line,
+                    column: item.column,
+                    error: item.error
+                }
+            });
+        }
     }
 }
