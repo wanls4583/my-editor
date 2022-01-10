@@ -41,7 +41,6 @@ export default class {
                 lineObj = that.htmls[line - 1];
                 lineObj.error = arr.join('<br>');
                 that.renderError(lineObj.lineId);
-                console.log(lineObj)
             }
         }
     }

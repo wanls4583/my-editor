@@ -665,7 +665,11 @@ export default function () {
         while (this.hasNext() && this.peek().value != '}') {
             this.nextMatch([TokenType.NUMBER, TokenType.STRING, TokenType.IDENTIFIER]);
             this.nextMatch(':');
-            this.parseExpr([',']);
+            if (this.peek().value === 'function') {
+                this.parseFunction();
+            } else {
+                this.parseExpr([',']);
+            }
             if (this.peek().value != '}') {
                 this.nextMatch(',');
             }
@@ -908,7 +912,7 @@ export default function () {
 
     // 函数声明
     Parser.prototype.parseFunction = function () {
-        var needName = !this.preToken || ['(', '=', 'default'].indexOf(this.preToken.value) == -1;
+        var needName = !this.preToken || ['(', '=', ':', 'default'].indexOf(this.preToken.value) == -1;
         this.nextMatch('function');
         if (this.peek().type === TokenType.IDENTIFIER || needName) {
             this.nextMatch(TokenType.IDENTIFIER);
@@ -975,8 +979,10 @@ export default function () {
 
     // return语句
     Parser.prototype.parseReturnStmt = function () {
+        var lookahead = null;
         this.nextMatch('return');
-        if (['}', ';'].indexOf(this.peek().value) == -1) {
+        lookahead = this.peek();
+        if (lookahead.value !== ';' && lookahead.value !== '}') {
             this.parseExpr();
         }
     }
