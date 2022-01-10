@@ -1,7 +1,7 @@
 const variable = `[\\$_a-zA-Z][\\$_a-zA-Z0-9]*?`
 export default {
     rules: [{
-            regex: /\/[\s\S]+\//,
+            regex: /\/[\s\S]*?[^\\]\//,
             token: 'js-regex'
         }, //多行注释
         {
@@ -34,7 +34,7 @@ export default {
             regex: /\/\/[\s\S]*$/,
             token: 'js-comment'
         }, {
-            regex: /\bconst\b|\bcontinue\b|\bbreak\b|\bswitch\b|\bcase\b|\bdo\b|\belse\b|\bfor\b|\bif\b|\bnew\b|\breturn\b|\bfrom\b|\btypeof|\beach\b|\bin\b|\bimport\b|\bexport\b|\bdefault\b|\bwith\b/,
+            regex: /\bconst\b|\bcontinue\b|\bbreak\b|\bswitch\b|\bcase\b|\bdo\b|\bwhile\b|\belse\b|\bfor\b|\bif\b|\bnew\b|\breturn\b|\bfrom\b|\btypeof|\beach\b|\bin\b|\bimport\b|\bexport\b|\bdefault\b|\bwith\b/,
             token: 'js-key'
         }, {
             regex: /\bclass\b/, //class {}
