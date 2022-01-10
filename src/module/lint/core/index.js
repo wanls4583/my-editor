@@ -7,12 +7,13 @@ import Util from '@/common/Util';
 import jsLint from '../javascript';
 export default class {
     constructor(editor, context) {
+        this.parseId = 1;
         this.initProperties(editor, context);
         this.initLanguage(editor.language);
     }
     initProperties(editor, context) {
-        Util.defineProperties(this, context, ['htmls']);
-        Util.defineProperties(this, editor, ['renderError']);
+        Util.defineProperties(this, context, ['htmls', ]);
+        Util.defineProperties(this, editor, ['setErrorMap']);
     }
     initLanguage(language) {
         let that = this;
@@ -27,21 +28,24 @@ export default class {
                 break;
         }
         this.worker.onmessage = function (e) {
-            let errros = e.data;
+            let parseId = e.data.parseId;
+            let errors = e.data.errors;
             let index = 0;
-            let lineObj = null;
-            while (index < errros.length) {
-                let line = errros[index].line;
+            let errorMap = [];
+            if (that.parseId != parseId) {
+                return;
+            }
+            while (index < errors.length) {
+                let line = errors[index].line;
                 let arr = [];
-                while (index < errros.length && errros[index].line === line) {
-                    arr.push(errros[index].error);
+                while (index < errors.length && errors[index].line === line) {
+                    arr.push(errors[index].error);
                     index++;
                 }
                 line = line || that.htmls.length;
-                lineObj = that.htmls[line - 1];
-                lineObj.error = arr.join('<br>');
-                that.renderError(lineObj.lineId);
+                errorMap[line] = arr.join('<br>');
             }
+            that.setErrorMap(errorMap);
         }
     }
     createWorker(mod) {
@@ -49,8 +53,12 @@ export default class {
             `function fun${mod.toString().slice(8)}
             let parser = fun();
             self.onmessage = function(e) {
-                var errors = parser.parse(e.data);
-                self.postMessage(errors);
+                var parseId = e.data.parseId;
+                var errors = parser.parse(e.data.text);
+                self.postMessage({
+                    errors: errors,
+                    parseId: parseId
+                });
             }`;
         return Util.createWorker(str);
     }
@@ -59,19 +67,29 @@ export default class {
         if (!this.worker) {
             return;
         }
-        let text = this.htmls.map((item) => {
-            return item.text;
-        }).join('\n');
-        this.worker.postMessage(text);
+        clearTimeout(this.parseTimer);
+        this.parseTimer = setTimeout(() => {
+            this.parse();
+        }, 300);
     }
     onDeleteContentBefore(nowLine) {}
     onDeleteContentAfter(nowLine) {
         if (!this.worker) {
             return;
         }
+        clearTimeout(this.parseTimer);
+        this.parseTimer = setTimeout(() => {
+            this.parse();
+        }, 300);
+    }
+    parse() {
         let text = this.htmls.map((item) => {
             return item.text;
         }).join('\n');
-        this.worker.postMessage(text);
+        this.parseId++;
+        this.worker.postMessage({
+            text: text,
+            parseId: this.parseId
+        });
     }
 }

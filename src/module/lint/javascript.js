@@ -578,6 +578,8 @@ export default function () {
 
     // 代码块
     Parser.prototype.parseStmt = function (stopValue) {
+        var count = 0;
+        var startTime = Date.now();
         while (this.hasNext()) {
             var lookahead = this.peek();
             if (this.preToken && this.preToken.line == lookahead.line &&
@@ -648,6 +650,11 @@ export default function () {
                 default:
                     this.parseExpr();
                     break;
+            }
+            if (++count % 10 === 0 && Date.now() - startTime > 200) {
+                setTimeout(() => {
+                    this.parseStmt(stopValue);
+                }, 10);
             }
         }
     }
@@ -1189,6 +1196,7 @@ export default function () {
 
     return {
         parse: function (text) {
+            clearTimeout(parser.parseTimer);
             lexer.reset(text);
             parser.reset();
             parser.parseStmt();

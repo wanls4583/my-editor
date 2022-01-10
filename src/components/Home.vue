@@ -20,7 +20,7 @@
 				v-for="line in renderHtmls"
 			>
 				<span
-					:class="[line.error?'my-editor-icon-error':'']"
+					:class="[errorMap[line.num]?'my-editor-icon-error':'']"
 					@mouseleave="onIconMouseLeave"
 					@mouseover="onIconMouseOver(line.num, $event)"
 					class="my-editor-icon my-editor-center"
@@ -187,6 +187,7 @@ export default {
                 top: '0px',
                 left: '0px'
             },
+            errorMap: {},
             menuVisble: false,
             tipContent: false,
             tipContent: '',
@@ -302,7 +303,6 @@ export default {
                 lineId: this.lineId++,
                 text: '',
                 html: '',
-                error: '',
                 width: 0,
                 tokens: null,
                 folds: null,
@@ -415,7 +415,6 @@ export default {
                     tabNum: tabNum,
                     selected: selected,
                     fold: fold,
-                    error: item.error
                 }
             }
         },
@@ -450,11 +449,6 @@ export default {
                 });
             }
             this.setSelectedRange(start, end);
-        },
-        renderError(lineId) {
-            if (context.renderedIdMap.has(lineId)) {
-                context.renderedIdMap.get(lineId).error = context.lineIdMap.get(lineId).error;
-            }
         },
         // 清除选中背景
         clearRnage() {
@@ -747,6 +741,9 @@ export default {
                 end: end
             }
         },
+        setErrorMap(errorMap) {
+            this.errorMap = errorMap;
+        },
         // 获取文本在浏览器中的宽度
         getStrWidth(str, start, end) {
             return Util.getStrWidth(str, this.charObj.charWidth, this.charObj.fullAngleCharWidth, this.tabSize, start, end);
@@ -873,7 +870,7 @@ export default {
                 left: e.clientX - offset.left + 10 + 'px',
                 top: e.clientY - offset.top + 10 + 'px'
             }
-            this.tipContent = context.htmls[line - 1].error;
+            this.tipContent = this.errorMap[line];
         },
         onIconMouseLeave() {
             this.tipContent = '';
