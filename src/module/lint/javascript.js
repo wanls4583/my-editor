@@ -517,6 +517,7 @@ export default function () {
         this.preToken = null;
         this.putBackToken = null;
         this.recovery(text);
+        Error.errors = [];
     }
 
     // 添加缓存
@@ -526,11 +527,8 @@ export default function () {
         }
         this.preToken && this.cacheList.push({
             line: this.preToken.line,
-            column: this.preToken.column + this.preToken.value.length,
-            parseList: this.parseList.slice(0),
-            preToken: this.preToken,
-            putBackToken: this.putBackToken,
-            errorLength: Error.errors.length
+            column: this.preToken.column,
+            parseList: this.parseList.slice(0)
         });
     }
 
@@ -554,15 +552,13 @@ export default function () {
             if (cacheIndex > -1) {
                 var cache = this.cacheList[cacheIndex];
                 this.parseList = cache.parseList;
-                this.preToken = cache.preToken;
-                this.putBackToken = cache.putBackToken;
                 this.cacheList = this.cacheList.slice(0, cacheIndex + 1);
                 this.lexer.reset({
                     texts: texts,
                     line: cache.line,
                     column: cache.column
                 });
-                Error.errors = Error.errors.slice(0, cache.errorLength);
+                this.next();
                 hasCache = true;
             }
         }
@@ -571,7 +567,6 @@ export default function () {
             this.lexer.reset({
                 texts: texts
             });
-            Error.errors = [];
         }
     }
 
@@ -641,7 +636,7 @@ export default function () {
         var startTime = Date.now();
         while (this.hasNext()) {
             this.parseStmt();
-            this.cache();
+            !Error.errors.length && this.cache();
             if (++count % 10 === 0 && Date.now() - startTime > 200) {
                 this.parseTimer = setTimeout(() => {
                     this.parseStmt();
