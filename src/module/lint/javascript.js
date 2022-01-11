@@ -117,23 +117,23 @@ export default function () {
     }
 
     Error.expectedIdentifier = function (token) {
-        return new Error(token, ErrorType.EXPECTED, TokenType.IDENTIFIER);
+        Error.push(new Error(token, ErrorType.EXPECTED, TokenType.IDENTIFIER));
     }
 
-    Error.expectedSeparator = function (token) {
-        return new Error(token, ErrorType.MISS, ';');
+    Error.expectedSemicolon = function (token) {
+        Error.push(new Error(token, ErrorType.MISS, ';'));
     }
 
     Error.expected = function (token, value) {
-        return new Error(token, ErrorType.EXPECTED, value);
+        Error.push(new Error(token, ErrorType.EXPECTED, value));
     }
 
     Error.unexpected = function (token) {
-        return new Error(token, ErrorType.UNEXPECTED);
+        Error.push(new Error(token, ErrorType.UNEXPECTED));
     }
 
     Error.unmatch = function (token) {
-        return new Error(token, ErrorType.UNMATCH);
+        Error.push(new Error(token, ErrorType.UNMATCH));
     }
 
     // 词法分析器
@@ -278,14 +278,14 @@ export default function () {
             token = _token(this.line, this.column, '\'');
             this.skip(1);
             if (!_end(regs.string1)) {
-                Error.push(Error.unmatch(token));
+                Error.unmatch(token);
             }
             return token;
         } else if (this.input[0] === '"') {
             token = _token(this.line, this.column, '"');
             this.skip(1);
             if (!_end(regs.string2)) {
-                Error.push(Error.unmatch(token));
+                Error.unmatch(token);
             }
         } else if (this.input[0] === '`') {
             token = _token(this.line, this.column, '`');
@@ -300,7 +300,7 @@ export default function () {
                 }
             }
             if (!(exec && exec[0].length % 2 === 1)) { //未匹配到结束符
-                Error.push(Error.unmatch(token));
+                Error.unmatch(token);
             }
         }
         return token;
@@ -500,7 +500,7 @@ export default function () {
                 this.scanString();
             if (!token) { //存在非法变量
                 token = this.scanOther();
-                token && Error.push(Error.unexpected(token));
+                token && Error.unexpected(token);
                 return this.next();
             }
         }
@@ -616,9 +616,9 @@ export default function () {
         pass = token.value && this.match(token, value);
         if (!pass) {
             if (token.value && this.match(this.peek(), value)) {
-                Error.push(Error.unexpected(token));
+                Error.unexpected(token);
             } else {
-                Error.push(Error.expected(token, value));
+                Error.expected(token, value);
             }
         }
         return pass;
@@ -650,9 +650,9 @@ export default function () {
             this.next();
         } else {
             if (token.value && this.match(this.peek(), value)) {
-                Error.push(Error.unexpected(token));
+                Error.unexpected(token);
             } else {
-                Error.push(Error.expected(token, value));
+                Error.expected(token, value);
             }
         }
         return pass;
@@ -688,7 +688,7 @@ export default function () {
         if (this.preToken && this.preToken.line == lookahead.line &&
             this.preToken.value != '{' && this.preToken.value != '}' &&
             lookahead.value != ';') { //两条语句在同一行，且没有分隔符
-            Error.push(Error.expectedSeparator(lookahead));
+            Error.expectedSemicolon(lookahead);
         }
         if (lookahead.value == ';') {
             this.next();
@@ -770,7 +770,7 @@ export default function () {
             this.parseStmt();
         }
         if (!this.peekMatch('}') && start.value === '{') {
-            Error.push(Error.unmatch(start));
+            Error.unmatch(start);
         }
     }
 
@@ -790,9 +790,9 @@ export default function () {
                 this.nextMatch(',');
             }
         }
-        this.preToken.value === ',' && Error.push(Error.unexpected(this.preToken));
+        this.preToken.value === ',' && Error.unexpected(this.preToken);
         if (!this.peekMatch('}') && start.value === '{') {
-            Error.push(Error.unmatch(start));
+            Error.unmatch(start);
         }
     }
 
@@ -908,13 +908,13 @@ export default function () {
         var that = this;
         this.nextMatch('if');
         _nextExpr();
-        this.parseBlock(['if', 'else']);
+        this.parseBlock(['else']);
         if (this.peek().value === 'else') {
             this.next();
             if (this.peek().value === 'if') {
                 this.parseIfStmt();
             } else {
-                this.parseBlock(['if', 'else']);
+                this.parseBlock(['else']);
             }
         }
 
@@ -961,7 +961,7 @@ export default function () {
                     this.next();
                 }
                 if (['}', 'case', 'default'].indexOf(this.peek().value) == -1) { //break后面只能跟随case
-                    Error.push(Error.expected(this.peek(), 'case'));
+                    Error.expected(this.peek(), 'case');
                     while (this.hasNext() && ['}', 'case'].indexOf(this.peek().value) == -1) {
                         this.next();
                     }
@@ -969,7 +969,7 @@ export default function () {
             }
         }
         if (!this.peekMatch('}') && start.value === '{') {
-            Error.push(Error.unmatch(start));
+            Error.unmatch(start);
         }
         this.parseList.pop();
     }
@@ -1087,7 +1087,7 @@ export default function () {
             }
         }
         if (!this.peekMatch('}') && start.value === '{') {
-            Error.push(Error.unmatch(start));
+            Error.unmatch(start);
         }
     }
 
@@ -1109,11 +1109,11 @@ export default function () {
         var token = this.next();
         if (token.value === 'continue') {
             if (!this.checkIn(['for', 'while', 'do'])) {
-                Error.push(Error.unexpected(token));
+                Error.unexpected(token);
             }
         } else if (token.value === 'break') {
             if (!this.checkIn(['for', 'while', 'do'])) {
-                Error.push(Error.unexpected(token));
+                Error.unexpected(token);
             }
         }
     }
@@ -1160,7 +1160,7 @@ export default function () {
         var originToken = this.peek();
         var lookahead = null;
         if (!this.hasNext()) {
-            Error.push(Error.expected(null, 'expression'));
+            Error.expected(null, 'expression');
             return;
         }
         while (this.hasNext()) {
@@ -1190,11 +1190,11 @@ export default function () {
             }
             this.next();
             if (!this.hasNext()) { //表达式未结束
-                Error.push(Error.unexpected(this.preToken));
+                Error.unexpected(this.preToken);
             }
         }
         if (this.peek() === originToken) { //非表达式
-            Error.push(Error.unexpected(originToken));
+            Error.unexpected(originToken);
             this.next();
         }
     }
@@ -1216,19 +1216,19 @@ export default function () {
         } else if (token.value === '++' || token.value === '--') { //前置运算符:++a,--a
             token = this.next();
             if (!this.lexer.isVariable(token)) {
-                Error.push(Error.expectedIdentifier(token));
+                Error.expectedIdentifier(token);
             }
             assignAble = false;
         } else if (token.value !== ')' && token.value !== ']' &&
             (lookahead.value === '++' || lookahead.value === '--')) { //后置运算符
             this.next();
             if (!this.lexer.isVariable(token)) { //1++，非法
-                Error.push(Error.expectedIdentifier(token));
+                Error.expectedIdentifier(token);
             }
             assignAble = false;
         }
         if (!token) {
-            Error.push(Error.expectedIdentifier());
+            Error.expectedIdentifier();
             end = true;
         }
         if (token.value === '(') { //括号表达式(1+2)
@@ -1278,7 +1278,7 @@ export default function () {
             this.parseRegex();
             assignAble = false;
         } else if (!this.lexer.isValue(token)) { //非标识符
-            Error.push(Error.expectedIdentifier(token));
+            Error.expectedIdentifier(token);
             end = true;
         }
         return {
@@ -1304,7 +1304,7 @@ export default function () {
                     break;
                 }
             }
-            this.preToken.value == ',' && Error.push(Error.unexpected(this.preToken));
+            this.preToken.value == ',' && Error.unexpected(this.preToken);
         }
         this.peekMatch(')');
     }
@@ -1335,7 +1335,7 @@ export default function () {
                 }
             }
         } else {
-            Error.push(Error.unexpected(this.next()));
+            Error.unexpected(this.next());
         }
     }
 
