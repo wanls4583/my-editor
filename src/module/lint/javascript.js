@@ -131,12 +131,16 @@ export default function () {
     }
 
     // 词法分析器
-    function Lexer(text) {
+    function Lexer() {
         this.init();
-        this.reset(text);
     }
 
     Lexer.prototype.init = function () {
+        Error.errors = [];
+        this.lines = [''];
+        this.line = 1;
+        this.column = 0;
+        this.input = '';
         this.assignOperatorMap = {};
         this.unitOperatorMap = {};
         this.binaryOperatorMap = {};
@@ -159,25 +163,16 @@ export default function () {
         });
     }
 
-    Lexer.prototype.reset = function (text) {
-        this.lines = text && text.split('\n') || [''];
-        this.input = this.lines[0];
-        this.line = 1;
-        this.column = 0
-        Error.errors = [];
+    Lexer.prototype.reset = function (option) {
+        this.lines = option.texts;
+        this.line = option.line || 1;
+        this.column = option.column || 0
+        this.input = this.lines[this.line - 1].slice(this.column);
     }
 
     Lexer.prototype.skip = function (length) {
         this.input = length ? this.input.slice(length) : this.input;
-        if (!this.input.length) {
-            while (!this.input.length && this.line <= this.lines.length) {
-                this.line++;
-                this.column = 0;
-                this.input = this.lines[this.line - 1] || '';
-            }
-        } else {
-            this.column += length;
-        }
+        this.column += length;
     }
 
     Lexer.prototype.skipLine = function (length) {
@@ -239,7 +234,11 @@ export default function () {
     }
 
     Lexer.prototype.scanSpace = function () {
-        var exec = regs.space.exec(this.input);
+        var exec = null;
+        while (!this.input.length && this.line < this.lines.length) { //去掉空行
+            this.skipLine(1);
+        }
+        exec = regs.space.exec(this.input);
         if (exec) {
             this.skip(exec.index + exec[0].length);
             exec.index >= this.input.length - 1 && this.scanSpace();
@@ -250,7 +249,6 @@ export default function () {
         var exec = null;
         var ch1 = null;
         var ch2 = null;
-        this.skip(0); //去掉空行
         this.scanSpace(); //去掉空格
         ch1 = this.input[0];
         ch2 = this.input[1];
@@ -505,14 +503,76 @@ export default function () {
     // 语法分析器
     function Parser(lexer) {
         this.lexer = lexer;
-        this.reset();
-    }
-
-    Parser.prototype.reset = function () {
+        this.cacheList = [];
         this.backs = [];
         this.parseList = [];
         this.preToken = null;
         this.putBackToken = null;
+        Error.errors = [];
+    }
+
+    Parser.prototype.reset = function (text) {
+        this.backs = [];
+        this.parseList = [];
+        this.preToken = null;
+        this.putBackToken = null;
+        this.recovery(text);
+    }
+
+    // 添加缓存
+    Parser.prototype.cache = function () {
+        if (this.cacheList.length && this.cacheList.peek().line == this.lexer.line) {
+            this.cacheList.pop();
+        }
+        this.preToken && this.cacheList.push({
+            line: this.preToken.line,
+            column: this.preToken.column + this.preToken.value.length,
+            parseList: this.parseList.slice(0),
+            preToken: this.preToken,
+            putBackToken: this.putBackToken,
+            errorLength: Error.errors.length
+        });
+    }
+
+    // 从缓存中恢复
+    Parser.prototype.recovery = function (text) {
+        var index = 0;
+        var texts = text.split('\n') || [''];
+        var hasCache = false;
+        while (index < texts.length && index < this.lexer.lines.length && texts[index] === this.lexer.lines[index]) {
+            index++;
+        }
+        if (index > 0) {
+            var cacheIndex = -1;
+            for (var i = 0; i < this.cacheList.length; i++) {
+                if (this.cacheList[i].line <= index) {
+                    cacheIndex = i;
+                } else {
+                    break;
+                }
+            }
+            if (cacheIndex > -1) {
+                var cache = this.cacheList[cacheIndex];
+                this.parseList = cache.parseList;
+                this.preToken = cache.preToken;
+                this.putBackToken = cache.putBackToken;
+                this.cacheList = this.cacheList.slice(0, cacheIndex + 1);
+                this.lexer.reset({
+                    texts: texts,
+                    line: cache.line,
+                    column: cache.column
+                });
+                Error.errors = Error.errors.slice(0, cache.errorLength);
+                hasCache = true;
+            }
+        }
+        if (!hasCache) {
+            this.cacheList = [];
+            this.lexer.reset({
+                texts: texts
+            });
+            Error.errors = [];
+        }
     }
 
     Parser.prototype.next = function (length) {
@@ -576,93 +636,107 @@ export default function () {
         this.putBackToken && this.backs.unshift(this.putBackToken);
     }
 
-    // 代码块
-    Parser.prototype.parseStmt = function (stopValue) {
+    Parser.prototype.parse = function () {
         var count = 0;
         var startTime = Date.now();
         while (this.hasNext()) {
-            var lookahead = this.peek();
-            if (this.preToken && this.preToken.line == lookahead.line &&
-                this.preToken.value != '{' && this.preToken.value != '}' &&
-                lookahead.value != ';') { //两条语句在同一行，且没有分隔符
-                Error.errors.push(Error.expectedSeparator(lookahead));
-            }
-            if (lookahead.value == ';') {
-                this.next();
-                lookahead = this.peek();
-            }
-            if (stopValue && stopValue.indexOf(lookahead.value) > -1 || !lookahead.value) {
-                break;
-            }
-            switch (lookahead.value) {
-                case 'var':
-                case 'let':
-                case 'const':
-                    this.parseDeclareStmt();
-                    break;
-                case '{':
-                    if (this.peek(2).value === ':') { //对象字面量
-                        this.parseObject();
-                    } else { //代码块
-                        this.parseBlock();
-                    }
-                    break;
-                case 'import':
-                    this.parseImportStmt();
-                    break;
-                case 'export':
-                    this.parseExportStmt();
-                    break;
-                case 'if':
-                    this.parseIfStmt();
-                    break;
-                case 'switch':
-                    this.parseSwitchStmt();
-                    break;
-                case 'with':
-                    this.parseWithStmt();
-                    break;
-                case 'while':
-                    this.parseWhileStmt();
-                    break;
-                case 'do':
-                    this.parseDoStmt();
-                    break;
-                case 'try':
-                    this.parseTryStmt();
-                    break;
-                case 'for':
-                    this.parseForStmt();
-                    break;
-                case 'function':
-                    this.parseFunction();
-                    break;
-                case 'class':
-                    this.parseClass();
-                    break;
-                case 'continue':
-                case 'break':
-                    this.parseControlStmt();
-                    break;
-                case 'return':
-                    this.parseReturnStmt();
-                    break;
-                default:
-                    this.parseExpr();
-                    break;
-            }
+            this.parseStmt();
+            this.cache();
             if (++count % 10 === 0 && Date.now() - startTime > 200) {
                 this.parseTimer = setTimeout(() => {
-                    this.parseStmt(stopValue);
+                    this.parseStmt();
                 }, 10);
+                break;
             }
+        }
+    }
+
+    // 代码块
+    Parser.prototype.parseStmt = function () {
+        var lookahead = this.peek();
+        if (this.preToken && this.preToken.line == lookahead.line &&
+            this.preToken.value != '{' && this.preToken.value != '}' &&
+            lookahead.value != ';') { //两条语句在同一行，且没有分隔符
+            Error.errors.push(Error.expectedSeparator(lookahead));
+        }
+        if (lookahead.value == ';') {
+            this.next();
+            lookahead = this.peek();
+        }
+        switch (lookahead.value) {
+            case 'var':
+            case 'let':
+            case 'const':
+                this.parseDeclareStmt();
+                break;
+            case '{':
+                if (this.peek(2).value === ':') { //对象字面量
+                    this.parseObject();
+                } else { //代码块
+                    this.parseBlock();
+                }
+                break;
+            case 'import':
+                this.parseImportStmt();
+                break;
+            case 'export':
+                this.parseExportStmt();
+                break;
+            case 'if':
+                this.parseIfStmt();
+                break;
+            case 'switch':
+                this.parseSwitchStmt();
+                break;
+            case 'with':
+                this.parseWithStmt();
+                break;
+            case 'while':
+                this.parseWhileStmt();
+                break;
+            case 'do':
+                this.parseDoStmt();
+                break;
+            case 'try':
+                this.parseTryStmt();
+                break;
+            case 'for':
+                this.parseForStmt();
+                break;
+            case 'function':
+                this.parseFunction();
+                break;
+            case 'class':
+                this.parseClass();
+                break;
+            case 'continue':
+            case 'break':
+                this.parseControlStmt();
+                break;
+            case 'return':
+                this.parseReturnStmt();
+                break;
+            default:
+                this.parseExpr();
+                break;
         }
     }
 
     // 代码块
     Parser.prototype.parseBlock = function () {
         this.nextMatch('{');
-        this.parseStmt(['}']);
+        while (this.hasNext()) {
+            var lookahead = this.peek();
+            var look2head = this.peek(2);
+            if (lookahead.value === ';') {
+                lookahead = look2head;
+            }
+            if (lookahead.value === '}') {
+                lookahead === look2head && this.next();
+                break;
+            }
+            this.parseStmt();
+        }
         this.nextMatch('}');
     }
 
@@ -826,7 +900,18 @@ export default function () {
                 this.parseExpr();
             }
             this.nextMatch(':');
-            this.parseStmt(['case', 'break', '}']);
+            while (this.hasNext()) {
+                var lookahead = this.peek();
+                var look2head = this.peek(2);
+                if (lookahead.value === ';') {
+                    lookahead = look2head;
+                }
+                if (lookahead.value === '}' || lookahead.value === 'case' || lookahead.value === 'break') {
+                    lookahead === look2head && this.next();
+                    break;
+                }
+                this.parseStmt();
+            }
             if (this.peek().value === 'break') {
                 this.next();
                 while (this.peek().value === ';') {
@@ -841,6 +926,7 @@ export default function () {
             }
         }
         this.nextMatch('}');
+        this.parseList.pop();
     }
 
     // with语句
@@ -1198,9 +1284,8 @@ export default function () {
     return {
         parse: function (text) {
             clearTimeout(parser.parseTimer);
-            lexer.reset(text);
-            parser.reset();
-            parser.parseStmt();
+            parser.reset(text);
+            parser.parse();
             return Error.errors.map((item) => {
                 return {
                     line: item.line,
