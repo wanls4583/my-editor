@@ -41,7 +41,7 @@ export default function () {
         string2: /\\*"/,
         string3: /\\*`/,
         regex: /^\/[\s\S]*?[^\\]\//,
-        other: /^[^\s]+?/
+        other: /^[^\s]+/
     }
     var maxErrors = 100;
 
@@ -493,7 +493,8 @@ export default function () {
                 this.scanOperator() ||
                 this.scanString();
             if (!token) { //存在非法变量
-                this.scanUnexpected();
+                token = this.scanUnexpected();
+                Error.errors.push(Error.unexpected(token));
                 return this.next();
             }
         }
@@ -570,6 +571,22 @@ export default function () {
         }
     }
 
+    Parser.prototype.match = function (token, value) {
+        var pass = false;
+        for (var i = 0; i < value.length; i++) {
+            if (this.lexer.isTokenType(value[i])) {
+                if (value[i] === token.type) {
+                    pass = true;
+                    break;
+                }
+            } else if (value[i] === token.value) {
+                pass = true;
+                break;
+            }
+        };
+        return pass;
+    }
+
     Parser.prototype.next = function (length) {
         var token = null;
         length = length || 1;
@@ -590,18 +607,14 @@ export default function () {
         var token = this.next() || {};
         var pass = false;
         value = value._isArray ? value : [value];
-        for (var i = 0; i < value.length; i++) {
-            if (this.lexer.isTokenType(value[i])) {
-                if (value[i] === token.type) {
-                    pass = true;
-                    break;
-                }
-            } else if (value[i] === token.value) {
-                pass = true;
-                break;
+        pass = token.value && this.match(token, value);
+        if (!pass) {
+            if (token.value && this.match(this.peek(), value)) {
+                Error.errors.push(Error.unexpected(token));
+            } else {
+                Error.errors.push(Error.expected(token, value));
             }
-        };
-        !pass && Error.errors.push(Error.expected(token, value));
+        }
         return pass;
     }
 
@@ -620,6 +633,23 @@ export default function () {
             }
         }
         return token || {};
+    }
+
+    Parser.prototype.peekMatch = function (value) {
+        var token = this.peek() || {};
+        var pass = false;
+        value = value._isArray ? value : [value];
+        pass = token.value && this.match(token, value);
+        if (pass) {
+            this.next();
+        } else {
+            if (token.value && this.match(this.peek(), value)) {
+                Error.errors.push(Error.unexpected(token));
+            } else {
+                Error.errors.push(Error.expected(token, value));
+            }
+        }
+        return pass;
     }
 
     Parser.prototype.hasNext = function () {
