@@ -1088,8 +1088,9 @@ export default function () {
                 Error.errors.push(Error.expectedIdentifier(token));
             }
         }
-
-        if (token.value === '(') { //括号表达式(1+2)
+        if (!token) {
+            return false;
+        } else if (token.value === '(') { //括号表达式(1+2)
             var lookLength = 1;
             var lookToken = this.peek(lookLength);
             while (lookToken.value && lookToken.value != ')') {
