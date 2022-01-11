@@ -41,7 +41,7 @@ export default function () {
         string2: /\\*"/,
         string3: /\\*`/,
         regex: /^\/[\s\S]*?[^\\]\//,
-        other: /^[^\s]+\b/
+        other: /^[^\s+\-\*\/%&\|\^\=\!\>\<\~\{\}\(\)]+/
     }
     var maxErrors = 100;
 
@@ -88,8 +88,7 @@ export default function () {
     Error.prototype.toString = function () {
         var error = '';
         var param = this.param instanceof Array ? this.param : [this.param];
-        param = param.join('\' \'');
-        param = '\'' + param + '\'';
+        param = `${param.length === 1 ? 'a ' : ''}'${param.join(`'、'`)}'`;
         switch (this.type) {
             case ErrorType.UNEXPECTED:
                 error = `unexpected '${this.value}'`;
@@ -105,6 +104,9 @@ export default function () {
                 if (this.value) {
                     error += ` before '${this.value}'`
                 }
+                break;
+            case ErrorType.UNMATCH:
+                error = `unmatched '${this.value}'`
                 break;
         }
         return error;
@@ -752,7 +754,8 @@ export default function () {
     }
 
     // 代码块
-    Parser.prototype.parseBlock = function () {
+    Parser.prototype.parseBlock = function (ends) {
+        var start = this.peek();
         this.peekMatch('{');
         while (this.hasNext()) {
             var lookahead = this.peek();
@@ -760,17 +763,20 @@ export default function () {
             if (lookahead.value === ';') {
                 lookahead = look2head;
             }
-            if (lookahead.value === '}') {
+            if (lookahead.value === '}' || ends && ends.indexOf(lookahead.value) > -1) {
                 lookahead === look2head && this.next();
                 break;
             }
             this.parseStmt();
         }
-        this.peekMatch('}');
+        if (!this.peekMatch('}') && start.value === '{') {
+            Error.push(Error.unmatch(start));
+        }
     }
 
     // 对象字面量
     Parser.prototype.parseObject = function () {
+        var start = this.peek();
         this.peekMatch('{');
         while (this.hasNext() && this.peek().value != '}') {
             this.nextMatch([TokenType.NUMBER, TokenType.STRING, TokenType.IDENTIFIER]);
@@ -785,7 +791,9 @@ export default function () {
             }
         }
         this.preToken.value === ',' && Error.push(Error.unexpected(this.preToken));
-        this.peekMatch('}');
+        if (!this.peekMatch('}') && start.value === '{') {
+            Error.push(Error.unmatch(start));
+        }
     }
 
     // 声明语句
@@ -900,13 +908,13 @@ export default function () {
         var that = this;
         this.nextMatch('if');
         _nextExpr();
-        this.parseBlock();
+        this.parseBlock(['if', 'else']);
         if (this.peek().value === 'else') {
             this.next();
             if (this.peek().value === 'if') {
                 this.parseIfStmt();
             } else {
-                this.parseBlock();
+                this.parseBlock(['if', 'else']);
             }
         }
 
@@ -919,11 +927,13 @@ export default function () {
 
     // switch语句
     Parser.prototype.parseSwitchStmt = function () {
+        var start = null;
         this.parseList.push('switch');
         this.nextMatch('switch');
         this.peekMatch('(');
         this.parseExprStmt();
         this.peekMatch(')');
+        start = this.peek();
         this.peekMatch('{');
         while (this.hasNext() && this.peek().value != '}') {
             if (this.peek().value === 'default') {
@@ -958,7 +968,9 @@ export default function () {
                 }
             }
         }
-        this.peekMatch('}');
+        if (!this.peekMatch('}') && start.value === '{') {
+            Error.push(Error.unmatch(start));
+        }
         this.parseList.pop();
     }
 
@@ -1049,6 +1061,7 @@ export default function () {
 
     // 类声明
     Parser.prototype.parseClass = function () {
+        var start = null;
         var needName = !this.preToken || ['(', '=', 'default'].indexOf(this.preToken.value) == -1;
         this.nextMatch('class');
         if (this.peek().type === TokenType.IDENTIFIER || needName) {
@@ -1058,6 +1071,7 @@ export default function () {
             this.next();
             this.nextMatch(TokenType.IDENTIFIER);
         }
+        start = this.peek();
         this.peekMatch('{');
         while (this.hasNext() && this.peek().value != '}') {
             if (this.peek(2).value === '=') { //属性
@@ -1072,7 +1086,9 @@ export default function () {
                 this.parseBlock();
             }
         }
-        this.peekMatch('}');
+        if (!this.peekMatch('}') && start.value === '{') {
+            Error.push(Error.unmatch(start));
+        }
     }
 
     // 函数参数
@@ -1337,6 +1353,13 @@ export default function () {
             clearTimeout(parser.parseTimer);
             parser.reset(text);
             parser.parse();
+            Error.errors.sort((a, b) => {
+                if (a.line === b.line) {
+                    return a.column - b.column;
+                }
+                return a.line - b.line;
+            });
+            console.log(Error.errors);
             return Error.errors.map((item) => {
                 return {
                     line: item.line,
