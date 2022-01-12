@@ -59,6 +59,7 @@ export default class {
     setRuleId(rule) {
         // 每个规则生成一个唯一标识
         rule.ruleId = this.ruleId++;
+        rule.level = rule.level || 0;
         this.ruleIdMap[rule.ruleId] = rule;
         if (typeof rule.start === 'object' && !(rule.start instanceof RegExp)) {
             this.setRuleId(rule.start);
@@ -85,10 +86,14 @@ export default class {
             this.setCombStartRegex(rule.end, parentRules);
         }
         if (rule.rules && rule.rules.length && !rule.rules.regex) {
+            let index = 0;
             rule.ruleId && (parentRules = (parentRules.concat([rule])));
-            parentRules.map((parentRule) => {
-                startRegexs.push(this.getEndRegex(parentRule));
-            });
+            index = parentRules.length - 1;
+            while (index >= 0 && parentRules[index].level >= rule.level) {
+                startRegexs.push(this.getEndRegex(parentRules[index]));
+                index--;
+            }
+            startRegexs.reverse();
             rule.rules.map((item) => {
                 startRegexs.push(this.getStartRegex(item));
             });
@@ -110,7 +115,7 @@ export default class {
             let sourceMap = {};
             let endRegexs = [this.getEndRegex(rule)];
             let index = parentRules.length - 1;
-            while (index >= 0 && !parentRules[index].childFirst) {
+            while (index >= 0 && parentRules[index].level >= rule.level) {
                 endRegexs.push(this.getEndRegex(parentRules[index]));
                 index--;
             }
@@ -244,6 +249,7 @@ export default class {
         let preEnd = 0;
         let preStates = line > 1 && this.htmls[line - 2].states || [];
         let states = preStates.slice(0);
+        let newStates = [];
         let lineObj = this.htmls[line - 1];
         let regex = this.getRegex(states);
         let resultObj = {
@@ -284,7 +290,7 @@ export default class {
                     }
                 }
                 fold = this.getFold(rule, match, states, resultObj, lineObj.text);
-                token = this.getToken(rule, match, states, preStates, resultObj, lineObj.text);
+                token = this.getToken(rule, match, states, newStates, resultObj, lineObj.text);
                 resultObj.tokens.push(token);
                 fold && resultObj.folds.push(fold);
                 preEnd = match.index + match[0].length;
@@ -314,7 +320,7 @@ export default class {
                     type: this.getTokenType(rule, match, lineObj.text, lineObj.text)
                 });
             }
-        } else if (states.length && preStates.indexOf(states.peek()) == -1) { //最后一个token未匹配到尾节点
+        } else if (states.length && newStates.indexOf(states.peek()) > -1) { //最后一个token未匹配到尾节点
             resultObj.tokens.peek().value += lineObj.text.slice(preEnd);
         } else if (preEnd < lineObj.text.length) { //普通文本
             resultObj.tokens.push({
@@ -334,11 +340,11 @@ export default class {
      * @param {Object} rule 规则对象
      * @param {Object} match 正则结果对象
      * @param {Array} states 状态栈
-     * @param {Array} preStates 上一行的状态栈
+     * @param {Array} newStates 当前行的新增状态栈
      * @param {Object} resultObj 结果对象
      * @param {String} text 当前行文本
      */
-    getToken(rule, match, states, preStates, resultObj, text) {
+    getToken(rule, match, states, newStates, resultObj, text) {
         let result = match[0];
         let flag = '';
         let token = {
@@ -351,7 +357,7 @@ export default class {
                 }
                 states.pop();
                 if (!rule.rules) { //无子节点
-                    if (preStates.indexOf(rule.ruleId) == -1) { //在同一行匹配
+                    if (newStates.indexOf(rule.ruleId) > -1) { //在同一行匹配
                         let value = '';
                         token = resultObj.tokens.pop();
                         value = token.value;
@@ -368,6 +374,7 @@ export default class {
                 flag = 'end';
             } else { //多行token始
                 states.push(rule.ruleId);
+                newStates.push(rule.ruleId);
                 flag = 'start';
             }
         }

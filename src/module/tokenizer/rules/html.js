@@ -24,6 +24,7 @@ const attrRules = [{
     start: /(?<=style\s*?\=\s*?)'/,
     end: /'/,
     token: 'xml-attr-value',
+    level: 1,
     childRule: {
         rules: styleRules
     }
@@ -31,16 +32,19 @@ const attrRules = [{
     start: /(?<=style\s*?\=\s*?)"/,
     end: /"/,
     token: 'xml-attr-value',
+    level: 1,
     childRule: {
         rules: styleRules
     }
 }, {
     start: /(?<=\=\s*?)"/,
     end: /"/,
+    level: 1,
     token: 'xml-attr-value'
 }, {
     start: /(?<=\=\s*?)'/,
     end: /'/,
+    level: 1,
     token: 'xml-attr-value'
 }, {
     regex: /(?<=\<\/?)\w+\b/,
@@ -59,7 +63,6 @@ const scriptStart = {
     start: /\<(?=script\b)/,
     end: /\>/,
     token: tagToken,
-    childFirst: true,
     childRule: {
         rules: attrRules
     }
@@ -83,7 +86,6 @@ const styleStart = {
     start: /\<(?=style\b)/,
     end: /\>/,
     token: tagToken,
-    childFirst: true,
     childRule: {
         rules: attrRules
     }
@@ -142,7 +144,6 @@ export default {
         start: /\<\/?(?=\w+\b)/,
         end: /\/?\>/,
         token: tagToken,
-        childFirst: true,
         childRule: {
             rules: attrRules
         }
