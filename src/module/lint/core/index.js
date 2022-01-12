@@ -27,6 +27,9 @@ export default class {
                 this.worker = this.createWorker(jsLint);
                 break;
         }
+        if (!this.worker) {
+            return;
+        }
         this.worker.onmessage = function (e) {
             let parseId = e.data.parseId;
             let errors = e.data.errors;

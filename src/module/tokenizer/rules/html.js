@@ -106,7 +106,7 @@ const styleEnd = {
 }
 
 function tagToken(e) {
-    if (e.state == 'start') {
+    if (e.side == 'start') {
         if (e.value[1] == '/') {
             return 'xml-end-tag-open';
         } else {

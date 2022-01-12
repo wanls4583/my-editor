@@ -99,7 +99,7 @@ export default class {
             });
             startRegexs.map((item) => {
                 if (!sourceMap[item.ruleId]) {
-                    sources.push(`?<_${item.ruleId}>${item.regex.source}`);
+                    sources.push(`?<${item.side===-1?'start':'end'}_${item.ruleId}>${item.regex.source}`);
                     sourceMap[item.ruleId] = true;
                 }
             });
@@ -121,7 +121,7 @@ export default class {
             }
             endRegexs.reverse().map((item) => {
                 if (!sourceMap[item.ruleId]) {
-                    sources.push(`?<_${item.ruleId}>${item.regex.source}`)
+                    sources.push(`?<${item.side===-1?'start':'end'}_${item.ruleId}>${item.regex.source}`)
                     sourceMap[item.ruleId] = true;
                 }
             });
@@ -138,30 +138,34 @@ export default class {
         if (rule.regex instanceof RegExp) {
             return {
                 ruleId: rule.ruleId,
-                regex: rule.regex
+                regex: rule.regex,
+                side: -1
             }
         } else if (rule.start instanceof RegExp) {
             return {
                 ruleId: rule.ruleId,
-                regex: rule.start
+                regex: rule.start,
+                side: -1
             };
         } else if (rule.start.startBy) {
             return this.getStartRegex(rule.start);
         }
     }
-    getEndRegex(rule) {
+    getEndRegex(rule, side) {
         if (rule.regex instanceof RegExp) {
             return {
                 ruleId: rule.ruleId,
-                regex: rule.regex
+                regex: rule.regex,
+                side: side || 1
             }
         } else if (rule.end instanceof RegExp) {
             return {
                 ruleId: rule.ruleId,
-                regex: rule.end
+                regex: rule.end,
+                side: side || 1
             };
         } else if (rule.end.endBy) {
-            return this.getStartRegex(rule.end);
+            return this.getStartRegex(rule.end, -1);
         }
     }
     onInsertContentBefore(nowLine) {
@@ -247,9 +251,8 @@ export default class {
         let rule = null;
         let lastIndex = 0;
         let preEnd = 0;
-        let preStates = line > 1 && this.htmls[line - 2].states || [];
-        let states = preStates.slice(0);
         let newStates = [];
+        let states = line > 1 && this.htmls[line - 2].states.slice(0) || [];
         let lineObj = this.htmls[line - 1];
         let regex = this.getRegex(states);
         let resultObj = {
@@ -260,12 +263,14 @@ export default class {
             let token = null;
             let fold = null;
             let valid = true;
+            let side = '';
             for (let ruleId in match.groups) {
                 if (match.groups[ruleId] == undefined) {
                     continue;
                 }
-                ruleId = ruleId.slice(1) - 0;
+                ruleId = ruleId.split('_')[1] - 0;
                 rule = this.ruleIdMap[ruleId];
+                side = this.getSide(rule, states);
                 if (preEnd < match.index) { //普通文本
                     resultObj.tokens.push({
                         value: lineObj.text.slice(preEnd, match.index),
@@ -273,24 +278,18 @@ export default class {
                     });
                 }
                 if (typeof rule.valid === 'function') {
-                    let flag = '';
-                    if (rule.start && rule.end) { //多行token被匹配
-                        flag = 'start';
-                        if (states.indexOf(rule.ruleId) > -1) {
-                            flag = 'end';
-                        }
-                    }
                     valid = rule.valid({
                         index: match.index,
                         value: match[0],
-                        text: lineObj.text
+                        text: lineObj.text,
+                        side: side
                     });
                     if (!valid) {
                         break;
                     }
                 }
                 fold = this.getFold(rule, match, states, resultObj, lineObj.text);
-                token = this.getToken(rule, match, states, newStates, resultObj, lineObj.text);
+                token = this.getToken(rule, match, states, newStates, resultObj, lineObj.text, side);
                 resultObj.tokens.push(token);
                 fold && resultObj.folds.push(fold);
                 preEnd = match.index + match[0].length;
@@ -320,7 +319,7 @@ export default class {
                     type: this.getTokenType(rule, match, lineObj.text, lineObj.text)
                 });
             }
-        } else if (states.length && newStates.indexOf(states.peek()) > -1) { //最后一个token未匹配到尾节点
+        } else if (states.length && newStates.peek() === states.peek()) { //最后一个token未匹配到尾节点
             resultObj.tokens.peek().value += lineObj.text.slice(preEnd);
         } else if (preEnd < lineObj.text.length) { //普通文本
             resultObj.tokens.push({
@@ -335,6 +334,19 @@ export default class {
             states: states
         };
     }
+    getSide(rule, states) {
+        let index = states.length - 1;
+        if (states.indexOf(rule.ruleId) == -1) {
+            return 'start';
+        }
+        while (index >= 0 && states[index] != rule.ruleId) {
+            if (this.ruleIdMap[states[index]].level > rule.level) {
+                return 'start';
+            }
+            index--
+        }
+        return 'end';
+    }
     /**
      * 获取折叠标记对象
      * @param {Object} rule 规则对象
@@ -343,15 +355,15 @@ export default class {
      * @param {Array} newStates 当前行的新增状态栈
      * @param {Object} resultObj 结果对象
      * @param {String} text 当前行文本
+     * @param {String} side 开始/结束标记
      */
-    getToken(rule, match, states, newStates, resultObj, text) {
+    getToken(rule, match, states, newStates, resultObj, text, side) {
         let result = match[0];
-        let flag = '';
         let token = {
             value: result
         };
-        if (rule.start && rule.end) { //多行token被匹配
-            if (states.indexOf(rule.ruleId) > -1) { //多行token尾
+        if (rule.start && rule.end) { //多行token-end
+            if (side === 'end') { //多行token尾
                 while (states.peek() != rule.ruleId) {
                     states.pop();
                 }
@@ -371,14 +383,12 @@ export default class {
                         token.value = text.slice(0, match.index + result.length);
                     }
                 }
-                flag = 'end';
-            } else { //多行token始
+            } else { //多行token-start
                 states.push(rule.ruleId);
                 newStates.push(rule.ruleId);
-                flag = 'start';
             }
         }
-        token.type = this.getTokenType(rule, match, text, token.value, flag);
+        token.type = this.getTokenType(rule, match, text, token.value, side);
         return token;
     }
     /**
@@ -387,20 +397,20 @@ export default class {
      * @param {Object} match 正则执行后的结果对象
      * @param {String} text 当前行的文本
      * @param {String} value token的文本范围
-     * @param {String} flag 开始/结束标记
+     * @param {String} side 开始/结束标记
      */
-    getTokenType(rule, match, text, value, flag) {
+    getTokenType(rule, match, text, value, side) {
         let type = '';
         if (typeof rule.token == 'function') {
             type = rule.token({
                 value: value,
                 index: match.index,
                 text: text,
-                state: flag
+                side: side
             });
         } else if (rule.token instanceof Array) {
             if (rule.start && rule.end) {
-                if (flag == 'start') {
+                if (side == 'start') {
                     type = rule.token[0];
                 } else {
                     type = rule.token[1];
@@ -428,12 +438,12 @@ export default class {
      */
     getFold(rule, match, states, resultObj, text) {
         let result = match[0];
-        let flag = '';
+        let side = '';
         let fold = null;
         if (rule.start && rule.end) { //多行token被匹配
-            flag = 'start';
+            side = 'start';
             if (states.indexOf(rule.ruleId) > -1) {
-                flag = 'end';
+                side = 'end';
             }
             if (rule.foldName) { //多行匹配可折叠
                 fold = {
@@ -450,12 +460,12 @@ export default class {
             };
         }
         if (fold) {
-            let foldName = this.getFoldName(rule, match, text, flag);
+            let foldName = this.getFoldName(rule, match, text, side);
             if (!foldName) { //没有折叠名称无效
                 return null;
             }
             fold.name = foldName;
-            fold.type = this.getFoldType(rule, match, text, flag);
+            fold.type = this.getFoldType(rule, match, text, side);
             if (fold.type == 1) {
                 fold = _checkFold(resultObj, fold);
             }
@@ -482,13 +492,13 @@ export default class {
      * @param {Object} rule 规则对象
      * @param {Object} match 正则执行后的结果对象
      * @param {String} text 当前行的文本
-     * @param {String} flag 开始/结束标记
+     * @param {String} side 开始/结束标记
      */
-    getFoldName(rule, match, text, flag) {
+    getFoldName(rule, match, text, side) {
         let foldName = '';
         if (rule.foldName instanceof Array) {
             if (rule.start && rule.end) {
-                foldName = flag == 'start' ? rule.foldName[0] : rule.foldName[1];
+                foldName = side == 'start' ? rule.foldName[0] : rule.foldName[1];
             } else {
                 let expIndex = this.getChildExpIndex(match);
                 expIndex = expIndex == -1 ? 0 : expIndex;
@@ -499,7 +509,7 @@ export default class {
                 value: match[0],
                 text: text,
                 index: match.index,
-                state: flag
+                side: side
             });
         } else {
             foldName = rule.foldName;
@@ -511,13 +521,13 @@ export default class {
      * @param {Object} rule 规则对象
      * @param {Object} match 正则执行后的结果对象
      * @param {String} text 当前行的文本
-     * @param {String} flag 开始/结束标记
+     * @param {String} side 开始/结束标记
      */
-    getFoldType(rule, match, text, flag) {
+    getFoldType(rule, match, text, side) {
         let foldType = '';
         if (rule.foldType instanceof Array) {
             if (rule.start && rule.end) {
-                foldType = flag == 'start' ? rule.foldType[0] : rule.foldType[1];
+                foldType = side == 'start' ? rule.foldType[0] : rule.foldType[1];
             } else {
                 let expIndex = this.getChildExpIndex(match);
                 expIndex = expIndex == -1 ? 0 : expIndex;
@@ -528,10 +538,10 @@ export default class {
                 value: match[0],
                 text: text,
                 index: match.index,
-                state: flag
+                side: side
             });
         } else if (rule.start && rule.end) {
-            foldType = flag == 'start' ? -1 : 1;
+            foldType = side == 'start' ? -1 : 1;
         } else {
             foldType = rule.foldType;
         }

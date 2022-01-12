@@ -1,7 +1,7 @@
 const variable = `[\\$_a-zA-Z][\\$_a-zA-Z0-9]*?`
 const strValid = function (e) {
     let value = e.value;
-    if (value[0] === '\\' && value.length % 2 === 0) {
+    if (e.side === 'end' && value[0] === '\\' && value.length % 2 === 0) {
         return false;
     }
     return true;
