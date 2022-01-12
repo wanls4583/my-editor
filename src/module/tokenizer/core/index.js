@@ -70,7 +70,7 @@ export default class {
         }
         if (rule.childRule && rule.childRule.rules) {
             rule.childRule.rules.map((_item) => {
-                this.setRuleId(_item);
+                !_item.ruleId && this.setRuleId(_item);
             });
             rule.rules = rule.childRule.rules;
         }
@@ -90,7 +90,6 @@ export default class {
                 startRegexs.push(this.getEndRegex(parentRule));
             });
             rule.rules.map((item) => {
-                this.setCombStartRegex(item, parentRules);
                 startRegexs.push(this.getStartRegex(item));
             });
             startRegexs.map((item) => {
@@ -100,6 +99,9 @@ export default class {
                 }
             });
             rule.rules.regex = new RegExp(`(${sources.join(')|(')})`, 'g');
+            rule.rules.map((item) => {
+                this.setCombStartRegex(item, parentRules);
+            });
         }
     }
     setCombEndRegex(rule, parentRules) {
