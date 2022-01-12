@@ -804,7 +804,7 @@ export default function () {
         this.peekMatch('{');
         while (this.hasNext() && this.peek().value != '}') {
             this.nextMatch([TokenType.NUMBER, TokenType.STRING, TokenType.IDENTIFIER]);
-            this.nextMatch(':');
+            this.peekMatch(':');
             if (this.peek().value === 'function') {
                 this.parseFunctionStmt();
             } else {
@@ -814,7 +814,6 @@ export default function () {
                 this.nextMatch(',');
             }
         }
-        this.preToken.value === ',' && Error.unexpected(this.preToken);
         if (!this.peekMatch('}') && start.value === '{') {
             Error.unmatch(start);
         }
@@ -863,7 +862,7 @@ export default function () {
             this.next();
             this.nextMatch(TokenType.IDENTIFIER);
             while (this.hasNext() && this.peek().value != '}') {
-                this.nextMatch(',');
+                this.peekMatch(',');
                 this.nextMatch(TokenType.IDENTIFIER);
                 if (this.peek().value === 'as') {
                     this.next();
@@ -903,7 +902,7 @@ export default function () {
             this.next();
             this.nextMatch(TokenType.IDENTIFIER);
             while (this.hasNext() && this.peek().value != '}') {
-                this.nextMatch(',');
+                this.peekMatch(',');
                 this.nextMatch(TokenType.IDENTIFIER);
                 if (this.peek().value === 'as') { //export {a as b} from 'test'
                     this.next();
@@ -966,7 +965,7 @@ export default function () {
                 this.nextMatch('case');
                 this.parseExprStmt();
             }
-            this.nextMatch(':');
+            this.peekMatch(':');
             while (this.hasNext()) {
                 var lookahead = this.peek();
                 var look2head = this.peek(2);
@@ -1122,7 +1121,7 @@ export default function () {
             this.nextMatch(TokenType.IDENTIFIER);
         }
         while (this.hasNext() && this.peek().value != ')') {
-            this.nextMatch(',');
+            this.peekMatch(',');
             this.nextMatch(TokenType.IDENTIFIER);
         }
         this.peekMatch(')');
@@ -1200,7 +1199,7 @@ export default function () {
             if (lookahead.value === '?') { //三元运算符
                 this.nextMatch('?');
                 this.parseExprStmt();
-                this.nextMatch(':');
+                this.peekMatch(':');
                 continue;
             }
             if (this.lexer.isAssignOperator(lookahead) && leftHand.assignAble) {
@@ -1285,7 +1284,12 @@ export default function () {
             this.parseBlockStmt();
             end = true;
         } else if (token.value === '[') { //数组
-            this.peek().value !== ']' && this.parseExprStmt();
+            while (this.hasNext() && this.peek().value !== ']') {
+                this.parseExpr();
+                if (this.peek().value === ',') {
+                    this.next();
+                }
+            }
             this.nextMatch(']');
             assignAble = false;
         } else if (this.peek().value === '[') { //属性表达式
@@ -1323,7 +1327,7 @@ export default function () {
                     this.parseExpr();
                 }
                 if (this.peek().value != ')') {
-                    this.nextMatch(',');
+                    this.peekMatch(',');
                 } else {
                     break;
                 }

@@ -252,7 +252,7 @@ export default class {
         let lastIndex = 0;
         let preEnd = 0;
         let newStates = [];
-        let states = line > 1 && this.htmls[line - 2].states.slice(0) || [];
+        let states = (line > 1 && this.htmls[line - 2].states || []).slice(0);
         let lineObj = this.htmls[line - 1];
         let regex = this.getRegex(states);
         let resultObj = {
