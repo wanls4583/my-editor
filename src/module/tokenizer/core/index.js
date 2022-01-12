@@ -84,7 +84,7 @@ export default class {
             this.setCombStartRegex(rule.start, parentRules);
             this.setCombStartRegex(rule.end, parentRules);
         }
-        if (rule.rules && rule.rules.length) {
+        if (rule.rules && rule.rules.length && !rule.rules.regex) {
             rule.ruleId && (parentRules = (parentRules.concat([rule])));
             parentRules.map((parentRule) => {
                 startRegexs.push(this.getEndRegex(parentRule));
@@ -124,7 +124,7 @@ export default class {
         }
         rule.ruleId && (parentRules = (parentRules.concat([rule])));
         rule.rules && rule.rules.map((item) => {
-            this.setCombEndRegex(item, parentRules);
+            !item.endRegex && this.setCombEndRegex(item, parentRules);
         });
     }
     getStartRegex(rule) {

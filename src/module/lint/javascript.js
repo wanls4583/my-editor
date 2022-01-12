@@ -292,10 +292,8 @@ export default function () {
             this.skip(1);
             while (this.hasNext()) {
                 exec = regs.string3.exec(this.input)
-                if (exec && exec[2]) { //幕布字符串内的表达式：${test}
-                    this.skip(exec.index + exec[2].length);
-                    this.parser.parseExprStmt();
-                    this.parser.peekMatch('}');
+                if (exec && exec[2]) { //模板字符串内的表达式：${test}
+                    _parseTmpStr(exec);
                 } else if (!exec || exec[0].length % 2 === 0) { //含有基数个\：\\\`
                     this.skipLine(1);
                 } else {
@@ -330,6 +328,28 @@ export default function () {
                 column: column,
                 value: value
             }
+        }
+
+        function _parseTmpStr(exec) {
+            let preToken = that.parser.preToken;
+            let putBackToken = that.parser.putBackToken;
+            let backs = that.parser.backs.slice(0);
+            let parseList = that.parser.parseList.slice(0);
+            that.skip(exec.index + exec[2].length);
+            //清空状态--begin
+            that.parser.preToken = null;
+            that.parser.putBackToken = null;
+            that.parser.backs = [];
+            that.parser.parseList = [];
+            //清空状态--end
+            that.parser.parseExprStmt();
+            that.parser.peekMatch('}');
+            //恢复状态--begin
+            that.parser.preToken = preToken;
+            that.parser.putBackToken = putBackToken;
+            that.parser.backs = backs;
+            that.parser.parseList = parseList;
+            //恢复状态--end
         }
     }
 
