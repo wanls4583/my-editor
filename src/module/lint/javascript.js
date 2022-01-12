@@ -295,7 +295,7 @@ export default function () {
                 if (exec && exec[2]) { //幕布字符串内的表达式：${test}
                     this.skip(exec.index + exec[2].length);
                     this.parser.parseExprStmt();
-                    this.parser.nextMatch('}');
+                    this.parser.peekMatch('}');
                 } else if (!exec || exec[0].length % 2 === 0) { //含有基数个\：\\\`
                     this.skipLine(1);
                 } else {
