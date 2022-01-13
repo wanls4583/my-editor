@@ -22,6 +22,8 @@ export default class {
         }
         this.language = language;
         this.worker && this.worker.terminate();
+        this.worker = null;
+        this.setErrorMap({});
         switch (language) {
             case 'JavaScript':
                 this.worker = this.createWorker(jsLint);
@@ -34,7 +36,7 @@ export default class {
             let parseId = e.data.parseId;
             let errors = e.data.errors;
             let index = 0;
-            let errorMap = [];
+            let errorMap = {};
             if (that.parseId != parseId) {
                 return;
             }
@@ -50,6 +52,7 @@ export default class {
             }
             that.setErrorMap(errorMap);
         }
+        this.parse();
     }
     createWorker(mod) {
         var str =

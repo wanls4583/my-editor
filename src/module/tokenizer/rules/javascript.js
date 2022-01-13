@@ -49,6 +49,9 @@ const rules = [{
         regex: /\bclass\b/, //class {}
         token: 'js-class'
     }, {
+        regex: /[A-Z][\\$_a-zA-Z0-9]*?(?=\.)/, //Token.
+        token: 'js-function-class'
+    }, {
         regex: /\bfunction\b/,
         token: 'js-function'
     }, {
@@ -71,8 +74,11 @@ const rules = [{
         foldType: 1,
         foldName: ['js-braces', 'js-bracket', 'js-paren']
     }, {
+        regex: /(?<=\.)(?:prototype\b|toString\b|valueOf\b|toLocaleString\b|hasOwnProperty\b|isPrototypeOf\b|propertyIsEnumerable\b)/,
+        token: 'js-local'
+    }, {
         regex: /\bwindow\b|\bdocument\b/,
-        token: 'js-local-var'
+        token: 'js-local'
     }, {
         regex: /\bthis\b|\bself\b/,
         token: 'js-this'
@@ -97,13 +103,13 @@ const tplStr = {
     start: /`/,
     end: /\\*?`/,
     token: 'js-string',
+    plainToken: 'js-string',
     foldName: 'js-string',
     valid: strValid,
     childRule: {
         rules: [{
             start: /\$\{/,
             end: /\}/,
-            token: 'js-string-expr',
             foldName: 'js-string-expr',
             level: 1,
             childRule: {

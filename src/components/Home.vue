@@ -267,6 +267,7 @@ export default {
             this.tokenizer.initLanguage(newVal);
             this.tokenizer.tokenizeVisibleLins();
             this.tokenizer.tokenizeLines(1);
+            this.lint.initLanguage(newVal);
         },
         tabSize: function (newVal) {
             this.render();

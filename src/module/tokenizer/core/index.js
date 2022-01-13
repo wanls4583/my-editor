@@ -60,6 +60,7 @@ export default class {
         // 每个规则生成一个唯一标识
         rule.ruleId = this.ruleId++;
         rule.level = rule.level || 0;
+        rule.token = rule.token || '';
         this.ruleIdMap[rule.ruleId] = rule;
         if (typeof rule.start === 'object' && !(rule.start instanceof RegExp)) {
             this.setRuleId(rule.start);
@@ -272,16 +273,22 @@ export default class {
                 rule = this.ruleIdMap[ruleId];
                 side = this.getSide(rule, states);
                 if (preEnd < match.index) { //普通文本
+                    let value = lineObj.text.slice(preEnd, match.index);
                     resultObj.tokens.push({
-                        value: lineObj.text.slice(preEnd, match.index),
-                        type: 'plain'
+                        value: value,
+                        type: this.getTokenType({
+                            rule: this.ruleIdMap[states.peek()],
+                            index: preEnd,
+                            value: value,
+                            text: lineObj.text
+                        })
                     });
                 }
                 if (typeof rule.valid === 'function') {
                     valid = rule.valid({
                         index: match.index,
-                        value: match[0],
                         text: lineObj.text,
+                        value: match[0],
                         side: side
                     });
                     if (!valid) {
@@ -307,24 +314,26 @@ export default class {
             regex.lastIndex = lastIndex;
         }
         if (!resultObj.tokens.length && states.length) { // 整行被多行token包裹
-            rule = this.ruleIdMap[states.peek()];
-            if (rule.rules) {
-                resultObj.tokens.push({
+            resultObj.tokens.push({
+                value: lineObj.text,
+                type: this.getTokenType({
+                    rule: this.ruleIdMap[states.peek()],
                     value: lineObj.text,
-                    type: 'plain'
-                });
-            } else {
-                resultObj.tokens.push({
-                    value: lineObj.text,
-                    type: this.getTokenType(rule, match, lineObj.text, lineObj.text)
-                });
-            }
+                    text: lineObj.text
+                })
+            });
         } else if (states.length && newStates.peek() === states.peek()) { //最后一个token未匹配到尾节点
             resultObj.tokens.peek().value += lineObj.text.slice(preEnd);
-        } else if (preEnd < lineObj.text.length) { //普通文本
+        } else if (preEnd < lineObj.text.length) { //文本末尾
+            var value = lineObj.text.slice(preEnd);
             resultObj.tokens.push({
-                value: lineObj.text.slice(preEnd),
-                type: 'plain'
+                value: value,
+                type: this.getTokenType({
+                    rule: this.ruleIdMap[states.peek()],
+                    index: preEnd,
+                    value: value,
+                    text: lineObj.text
+                })
             });
         }
         regex.lastIndex = 0;
@@ -360,6 +369,7 @@ export default class {
     getToken(rule, match, states, newStates, resultObj, text, side) {
         let result = match[0];
         let token = {
+            ruleId: rule.ruleId,
             value: result
         };
         if (rule.start && rule.end) { //多行token-end
@@ -373,7 +383,7 @@ export default class {
                         let value = '';
                         token = resultObj.tokens.pop();
                         value = token.value;
-                        if (token.type == 'plain') {
+                        if (token.ruleId !== rule.ruleId) {
                             token = resultObj.tokens.pop();
                             value = token.value + value;
                         }
@@ -388,23 +398,42 @@ export default class {
                 newStates.push(rule.ruleId);
             }
         }
-        token.type = this.getTokenType(rule, match, text, token.value, side);
+        token.type = this.getTokenType({
+            rule: rule,
+            index: match.index,
+            value: token.value,
+            text: text,
+            match: match,
+            side: side
+        });
         return token;
     }
     /**
      * 获取token类型
-     * @param {Object} rule 规则对象
-     * @param {Object} match 正则执行后的结果对象
-     * @param {String} text 当前行的文本
-     * @param {String} value token的文本范围
-     * @param {String} side 开始/结束标记
+     * @param {Object} option {
+     *  rule: 规则对象,
+     *  index: value在text中的开始索引,
+     *  text: 当前行的文本,
+     *  value: token的文本范围,
+     *  side: 开始/结束标记,
+     *  match: 正则执行后的结果对象
+     * } 
      */
-    getTokenType(rule, match, text, value, side) {
+    getTokenType(option) {
+        let rule = option.rule;
+        let index = option.index || 0;
+        let value = option.value || text;
+        let text = option.text;
+        let match = option.match;
+        let side = option.side || (rule && rule.start && rule.end ? 'start' : '');
         let type = '';
+        if (!rule) {
+            return 'plain';
+        }
         if (typeof rule.token == 'function') {
             type = rule.token({
                 value: value,
-                index: match.index,
+                index: index,
                 text: text,
                 side: side
             });
@@ -416,7 +445,7 @@ export default class {
                     type = rule.token[1];
                 }
             } else {
-                let expIndex = this.getChildExpIndex(match);
+                let expIndex = match && this.getChildExpIndex(match) || -1;
                 if (expIndex > -1) {
                     type = rule.token[expIndex];
                 } else {
