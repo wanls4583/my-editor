@@ -9,6 +9,7 @@ const strValid = function (e) {
     return true;
 }
 const tplStrChild = {};
+//字符串``
 const tplStr = {
     start: /`/,
     end: /\\*?`/,
@@ -26,18 +27,7 @@ const tplStr = {
         }]
     }
 };
-const rules = [{
-        regex: /\/[\s\S]*?[^\\]\//,
-        token: 'js-regex'
-    }, //多行注释
-    {
-        start: /\/\*/,
-        end: /\*\//,
-        token: 'js-comment',
-        foldName: 'js-comment'
-    },
-    //字符串``
-    tplStr,
+const rules = [
     //字符串''
     {
         start: /'/,
@@ -53,9 +43,19 @@ const rules = [{
         token: 'js-string',
         foldName: 'js-double-string',
         valid: strValid
+    },
+    //多行注释
+    {
+        start: /\/\*/,
+        end: /\*\//,
+        token: 'js-comment',
+        foldName: 'js-comment'
     }, {
         regex: /\/\/[\s\S]*$/,
         token: 'js-comment'
+    }, {
+        regex: /\/[\s\S]*?[^\\]\//,
+        token: 'js-regex'
     }, {
         regex: /\bconst\b|\bcontinue\b|\bbreak\b|\bswitch\b|\bcase\b|\bdo\b|\bwhile\b|\belse\b|\bfor\b|\bif\b|\bnew\b|\breturn\b|\bfrom\b|\btypeof|\beach\b|\bin\b|\bimport\b|\bexport\b|\bdefault\b|\bwith\b/,
         token: 'js-key'
@@ -114,7 +114,9 @@ const rules = [{
     }
 ];
 tplStrChild.rules = Util.deepAssign([], rules);
-tplStrChild.rules[2] = tplStr;
+tplStrChild.rules.unshift(tplStr);
+rules.unshift(tplStr);
+
 export default {
     rules: rules
 }
