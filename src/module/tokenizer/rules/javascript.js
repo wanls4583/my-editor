@@ -1,3 +1,5 @@
+import Util from "../../../common/Util";
+
 const variable = `[\\$_a-zA-Z][\\$_a-zA-Z0-9]*?`
 const strValid = function (e) {
     let value = e.value;
@@ -6,6 +8,24 @@ const strValid = function (e) {
     }
     return true;
 }
+const tplStrChild = {};
+const tplStr = {
+    start: /`/,
+    end: /\\*?`/,
+    token: 'js-string',
+    plainToken: 'js-string',
+    foldName: 'js-string',
+    valid: strValid,
+    childRule: {
+        rules: [{
+            start: /\$\{/,
+            end: /\}/,
+            foldName: 'js-string-expr',
+            level: 1,
+            childRule: tplStrChild
+        }]
+    }
+};
 const rules = [{
         regex: /\/[\s\S]*?[^\\]\//,
         token: 'js-regex'
@@ -17,13 +37,7 @@ const rules = [{
         foldName: 'js-comment'
     },
     //字符串``
-    // {
-    //     start: /`/,
-    //     end: /\\*?`/,
-    //     token: 'js-string',
-    //     foldName: 'js-string',
-    //     valid: strValid
-    // },
+    tplStr,
     //字符串''
     {
         start: /'/,
@@ -99,26 +113,7 @@ const rules = [{
         token: 'js-class-name'
     }
 ];
-const tplStr = {
-    start: /`/,
-    end: /\\*?`/,
-    token: 'js-string',
-    plainToken: 'js-string',
-    foldName: 'js-string',
-    valid: strValid,
-    childRule: {
-        rules: [{
-            start: /\$\{/,
-            end: /\}/,
-            foldName: 'js-string-expr',
-            level: 1,
-            childRule: {
-                rules: rules
-            }
-        }]
-    }
-};
-rules.splice(2, 0, tplStr);
+tplStrChild.rules = Util.deepAssign([], rules);
 export default {
     rules: rules
 }
