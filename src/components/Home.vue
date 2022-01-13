@@ -349,8 +349,10 @@ export default {
         focus() {
             this.$textarea.focus();
             setTimeout(() => {
-                this.$textarea.focus();
-            }, 300);
+                setTimeout(() => {
+                    this.$textarea.focus();
+                }, 100);
+            }, 100);
         },
         // 渲染
         render() {
