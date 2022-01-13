@@ -114,6 +114,7 @@ const rules = [{
     }
 ];
 tplStrChild.rules = Util.deepAssign([], rules);
+tplStrChild.rules[2] = tplStr;
 export default {
     rules: rules
 }
