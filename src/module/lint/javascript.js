@@ -34,7 +34,7 @@ export default function () {
     var brackets = ['{', '}', '[', ']', '(', ')'];
     var regs = {
         space: /^\s+/,
-        number: /^\d+\b/,
+        number: /^\d+(?:\.\d*)?\b/,
         identifier: /^[a-zA-Z_$][a-zA-Z0-9_$]*\b/,
         comment: /\*\//,
         string1: /\\*'/,
@@ -391,6 +391,9 @@ export default function () {
             token = this.craeteToken(exec[0], this.isKeyWord(exec[0]) ? TokenType.KEYWORD : TokenType.IDENTIFIER);
             if (token.value === 'true' || token.value === 'false') {
                 token.type = TokenType.BOOLEAN;
+            }
+            if (token.value === 'null' || token.value === 'undefined') {
+                token.type = TokenType.NUMBER;
             }
             this.skip(exec.index + exec[0].length);
         }
@@ -757,17 +760,31 @@ export default function () {
     // 对象字面量
     Parser.prototype.parseObjectStmt = function () {
         var start = this.peek();
+        var lookahead = null;
         this.peekMatch('{');
         while (this.hasNext() && this.peek().value != '}') {
             this.nextMatch([TokenType.NUMBER, TokenType.STRING, TokenType.IDENTIFIER]);
-            this.peekMatch(':');
-            if (this.peek().value === 'function') {
-                this.parseFunctionStmt();
-            } else {
-                this.parseExpr();
+            lookahead = this.peek();
+            if (lookahead.value === ':') { //{a:1,b:2}
+                this.peekMatch(':');
+                if (this.peek().value === 'function') {
+                    this.parseFunctionStmt();
+                } else {
+                    this.parseExpr();
+                }
+            } else { //{a,b}
+                if (this.preToken.type !== TokenType.IDENTIFIER) {
+                    Error.expected(lookahead, ':');
+                }
+                if (lookahead.value === '(') { //{a(){},b}
+                    this.parseFunArgsStmt();
+                    this.parseBlockStmt();
+                }
             }
             if (this.peek().value != '}') {
-                this.nextMatch(',');
+                if (!this.peekMatch(',')) {
+                    break;
+                }
             }
         }
         if (!this.peekMatch('}') && start.value === '{') {
@@ -777,14 +794,26 @@ export default function () {
 
     // 声明语句
     Parser.prototype.parseDeclareStmt = function () {
+        let that = this;
         this.nextMatch(['var', 'let', 'const']);
         this.nextMatch(TokenType.IDENTIFIER);
         if (this.peek().value === '=') {
-            this.nextMatch('=');
-            if (this.peek().value === 'function') {
-                this.parseFunctionStmt();
+            _assign();
+        }
+        while (this.hasNext() && this.peek().value === ',') {
+            this.next();
+            this.nextMatch(TokenType.IDENTIFIER);
+            if (this.peek().value === '=') {
+                _assign();
+            }
+        }
+
+        function _assign() {
+            that.next();
+            if (that.peek().value === 'function') {
+                that.parseFunctionStmt();
             } else {
-                this.parseExpr();
+                that.parseExpr();
             }
         }
     }
@@ -818,12 +847,17 @@ export default function () {
             this.next();
             this.nextMatch(TokenType.IDENTIFIER);
             while (this.hasNext() && this.peek().value != '}') {
-                this.peekMatch(',');
+                if (!this.peekMatch(',')) {
+                    break;
+                }
                 this.nextMatch(TokenType.IDENTIFIER);
                 if (this.peek().value === 'as') {
                     this.next();
                     this.nextMatch(TokenType.IDENTIFIER);
                 }
+            }
+            if (!this.peekMatch('}')) {
+                Error.unmatch(lookahead);
             }
         } else if (lookahead.value === '*') { //import * as a from 'test'
             this.next();
@@ -858,12 +892,17 @@ export default function () {
             this.next();
             this.nextMatch(TokenType.IDENTIFIER);
             while (this.hasNext() && this.peek().value != '}') {
-                this.peekMatch(',');
+                if (!this.peekMatch(',')) {
+                    break;
+                }
                 this.nextMatch(TokenType.IDENTIFIER);
                 if (this.peek().value === 'as') { //export {a as b} from 'test'
                     this.next();
                     this.nextMatch(TokenType.IDENTIFIER);
                 }
+            }
+            if (!this.peekMatch('}')) {
+                Error.unmatch(lookahead);
             }
             if (this.peek().value === 'from') {
                 this.next();
@@ -1151,6 +1190,9 @@ export default function () {
             if (lookahead.value === '.') { //点运算符
                 this.parseDot();
                 lookahead = this.peek();
+                leftHand = {
+                    assignAble: true
+                };
             }
             if (lookahead.value === '?') { //三元运算符
                 this.nextMatch('?');
@@ -1159,8 +1201,6 @@ export default function () {
                 continue;
             }
             if (this.lexer.isAssignOperator(lookahead) && leftHand.assignAble) {
-                this.putBack();
-                this.nextMatch([TokenType.IDENTIFIER, 'this', ']']);
                 this.parseAssignStmt(this.peek().value);
                 break;
             }
@@ -1181,8 +1221,8 @@ export default function () {
     Parser.prototype.parseLeftHand = function () {
         var token = this.next();
         var lookahead = this.peek();
-        var assignAble = true;
-        var end = false;
+        var assignAble = true; //是否可赋值
+        var end = false; //是否结束当前表达式
         if (this.lexer.isUnitOperator(token)) { //一元运算符:+1,-1
             if (token.value === '!') {
                 while (token.value === '!') {
@@ -1223,8 +1263,7 @@ export default function () {
             } else if (this.peek(lookLength + 1).value === '=>') { //箭头函数
                 this.putBack();
                 this.parseFunArgsStmt();
-                this.nextMatch('=>');
-                this.parseBlockStmt();
+                this.parseArrorwFunction();
                 end = true;
             } else {
                 this.parseExprStmt();
@@ -1239,8 +1278,7 @@ export default function () {
             this.parseCall();
             assignAble = false;
         } else if (this.peek().value === '=>') { //箭头函数test=>{}
-            this.next();
-            this.parseBlockStmt();
+            this.parseArrorwFunction();
             end = true;
         } else if (token.value === '[') { //数组
             while (this.hasNext() && this.peek().value !== ']') {
@@ -1267,10 +1305,21 @@ export default function () {
         } else if (!this.lexer.isValue(token)) { //非标识符
             Error.expectedIdentifier(token);
             end = true;
+        } else if (assignAble && !this.lexer.isVariable(token)) { //是否可赋值
+            assignAble = false;
         }
         return {
             assignAble: assignAble,
             end: end
+        }
+    }
+
+    Parser.prototype.parseArrorwFunction = function () {
+        this.nextMatch('=>');
+        if (this.peek().value === '{') {
+            this.parseBlockStmt();
+        } else {
+            this.parseExprStmt();
         }
     }
 
@@ -1308,7 +1357,7 @@ export default function () {
             this.preToken.value === ']') {
             while (this.hasNext()) {
                 this.nextMatch('.');
-                this.nextMatch([TokenType.IDENTIFIER, 'delete']);
+                this.nextMatch([TokenType.IDENTIFIER, 'delete', 'finally']);
                 lookahead = this.peek();
                 if (lookahead.value === '(') { //函数调用test()
                     this.putBack();
