@@ -43,11 +43,11 @@ export default class {
             this.regexMap = obj.regexMap;
             return;
         }
-        this.rules = Object.assign({}, rules);
         this.ruleId = 1;
         this.ruleIdMap = {};
         this.regexMap = {};
-        rules.rules.map((item) => {
+        this.rules = Util.deepAssign({}, rules);
+        this.rules.rules.map((item) => {
             this.setRuleId(item);
         });
         this.languageMap[this.language] = {
@@ -84,11 +84,27 @@ export default class {
         let sources = [];
         let sourceMap = {};
         let regexs = [];
-        let index = states.length - 1;
-        let rule = states.length && this.ruleIdMap[states.peek()] || this.rules;
+        let index = 0;
+        let rule = null;
         if (this.regexMap[statesKey]) {
             return this.regexMap[statesKey];
         }
+        if (states.length > 1) {
+            let resultStates = [];
+            while (index < states.length - 1) {
+                rule = this.ruleIdMap[states[index + 1]];
+                if (rule.startBy === states[index] || rule.endBy === states[index]) { //处于同一层级
+                    index++;
+                    continue;
+                }
+                resultStates.push(states[index]);
+                index++;
+            }
+            resultStates.push(states[index]);
+            states = resultStates;
+        }
+        index = states.length - 1;
+        rule = states.length && this.ruleIdMap[states.peek()] || this.rules;
         while (index >= 0 && this.ruleIdMap[states[index]].level >= rule.level) {
             regexs.push(this.getEndRegex(this.ruleIdMap[states[index]]));
             index--;
@@ -393,7 +409,7 @@ export default class {
     getTokenType(option) {
         let rule = option.rule;
         let index = option.index || 0;
-        let value = option.value || text;
+        let value = option.value || option.text;
         let text = option.text;
         let match = option.match;
         let side = option.side || (rule && rule.start && rule.end ? 'start' : '');
@@ -577,7 +593,6 @@ export default class {
         return -1;
     }
     getRegex(states, preRuleId) {
-        let regex = null;
         let preRule = this.ruleIdMap[preRuleId];
         while (preRule && states.indexOf(preRule.ruleId) == -1 && preRule.endBy) {
             while (states.peek() != preRule.endBy) {
