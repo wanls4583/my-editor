@@ -40,20 +40,20 @@ export default class {
             let obj = this.languageMap[this.language];
             this.rules = obj.rules;
             this.ruleIdMap = obj.ruleIdMap;
+            this.regexMap = obj.regexMap;
             return;
         }
-        rules = Util.deepAssign({}, rules);
+        this.rules = Object.assign({}, rules);
         this.ruleId = 1;
         this.ruleIdMap = {};
+        this.regexMap = {};
         rules.rules.map((item) => {
             this.setRuleId(item);
         });
-        this.setCombStartRegex(rules, []);
-        this.setCombEndRegex(rules, []);
-        this.rules = rules.rules;
         this.languageMap[this.language] = {
             rules: this.rules,
-            ruleIdMap: this.ruleIdMap
+            ruleIdMap: this.ruleIdMap,
+            regexMap: this.regexMap
         };
     }
     setRuleId(rule) {
@@ -77,63 +77,34 @@ export default class {
             rule.rules = rule.childRule.rules;
         }
     }
-    // 组合同一层级的正则表达式
-    setCombStartRegex(rule, parentRules) {
+    // 组合正则表达式
+    getCombRegex(states) {
+        states = states || [];
+        let statesKey = states + '' || '0';
         let sources = [];
         let sourceMap = {};
-        let startRegexs = [];
-        if (rule.start && rule.end) {
-            this.setCombStartRegex(rule.start, parentRules);
-            this.setCombStartRegex(rule.end, parentRules);
+        let regexs = [];
+        let index = states.length - 1;
+        let rule = states.length && this.ruleIdMap[states.peek()] || this.rules;
+        if (this.regexMap[statesKey]) {
+            return this.regexMap[statesKey];
         }
-        if (rule.rules && rule.rules.length && !rule.rules.regex) {
-            let index = 0;
-            rule.ruleId && (parentRules = (parentRules.concat([rule])));
-            index = parentRules.length - 1;
-            while (index >= 0 && parentRules[index].level >= rule.level) {
-                startRegexs.push(this.getEndRegex(parentRules[index]));
-                index--;
-            }
-            startRegexs.reverse();
-            rule.rules.map((item) => {
-                startRegexs.push(this.getStartRegex(item));
-            });
-            startRegexs.map((item) => {
-                if (!sourceMap[item.ruleId]) {
-                    sources.push(`?<${item.side===-1?'start':'end'}_${item.ruleId}>${item.regex.source}`);
-                    sourceMap[item.ruleId] = true;
-                }
-            });
-            rule.rules.regex = new RegExp(`(${sources.join(')|(')})`, 'g');
-            rule.rules.map((item) => {
-                this.setCombStartRegex(item, parentRules);
-            });
+        while (index >= 0 && this.ruleIdMap[states[index]].level >= rule.level) {
+            regexs.push(this.getEndRegex(this.ruleIdMap[states[index]]));
+            index--;
         }
-    }
-    setCombEndRegex(rule, parentRules) {
-        if (rule.start && rule.end) {
-            let sources = [];
-            let sourceMap = {};
-            let endRegexs = [this.getEndRegex(rule)];
-            let index = parentRules.length - 1;
-            while (index >= 0 && parentRules[index].level >= rule.level) {
-                endRegexs.push(this.getEndRegex(parentRules[index]));
-                index--;
-            }
-            endRegexs.reverse().map((item) => {
-                if (!sourceMap[item.ruleId]) {
-                    sources.push(`?<${item.side===-1?'start':'end'}_${item.ruleId}>${item.regex.source}`)
-                    sourceMap[item.ruleId] = true;
-                }
-            });
-            rule.endRegex = new RegExp(`(${sources.join(')|(')})`, 'g');
-            this.setCombEndRegex(rule.start, parentRules);
-            this.setCombEndRegex(rule.end, parentRules);
-        }
-        rule.ruleId && (parentRules = (parentRules.concat([rule])));
+        regexs.reverse();
         rule.rules && rule.rules.map((item) => {
-            !item.endRegex && this.setCombEndRegex(item, parentRules);
+            regexs.push(this.getStartRegex(item));
         });
+        regexs.map((item) => {
+            if (!sourceMap[item.ruleId]) {
+                sources.push(`?<${item.side===-1?'start':'end'}_${item.ruleId}>${item.regex.source}`);
+                sourceMap[item.ruleId] = true;
+            }
+        });
+        this.regexMap[statesKey] = new RegExp(`(${sources.join(')|(')})`, 'g');
+        return this.regexMap[statesKey];
     }
     getStartRegex(rule) {
         if (rule.regex instanceof RegExp) {
@@ -618,17 +589,6 @@ export default class {
         if (preRule && states.indexOf(preRule.ruleId) == -1 && preRule.startBy) {
             states.push(preRule.startBy);
         }
-        let ruleId = states.peek();
-        if (ruleId) {
-            let rule = this.ruleIdMap[ruleId];
-            if (rule.rules) {
-                regex = rule.rules.regex;
-            } else {
-                regex = rule.endRegex;
-            }
-        } else {
-            regex = this.rules.regex;
-        }
-        return regex;
+        return this.getCombRegex(states);
     }
 }

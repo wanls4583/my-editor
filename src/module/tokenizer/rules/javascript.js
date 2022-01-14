@@ -10,7 +10,7 @@ const strValid = function (e) {
 }
 const tplStrChild = {};
 //字符串``
-const tplStr = {
+const tplStrReg = {
     start: /`/,
     end: /\\*?`/,
     token: 'js-string',
@@ -28,6 +28,7 @@ const tplStr = {
     }
 };
 const rules = [
+    tplStrReg,
     //字符串''
     {
         start: /'/,
@@ -113,9 +114,7 @@ const rules = [
         token: 'js-class-name'
     }
 ];
-tplStrChild.rules = Util.deepAssign([], rules);
-tplStrChild.rules.unshift(tplStr);
-rules.unshift(tplStr);
+tplStrChild.rules = rules;
 
 export default {
     rules: rules

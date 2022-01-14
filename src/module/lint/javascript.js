@@ -1273,6 +1273,9 @@ export default function () {
             } else {
                 this.parseExprStmt();
                 this.peekMatch(')');
+                if (this.peek().value === '[') {
+                    this.parseProperty();
+                }
                 assignAble = false;
             }
         } else if (this.peek().value === '(') { //函数调用test()
@@ -1335,6 +1338,9 @@ export default function () {
             this.preToken.value == ',' && Error.unexpected(this.preToken);
         }
         this.peekMatch(')');
+        if (this.peek().value === '[') { //test()['a'];
+            this.parseProperty();
+        }
     }
 
     // 点运算符
