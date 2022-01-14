@@ -1,7 +1,3 @@
-import {
-    hasData
-} from "jquery";
-
 /*
  * @Author: lisong
  * @Date: 2022-01-07 10:07:14
@@ -243,6 +239,21 @@ export default function () {
         return type._isTokenType;
     }
 
+    Lexer.prototype.craeteToken = function (value, type) {
+        let line = this.line;
+        let column = this.column;
+        if (line > this.lines.length) {
+            line = this.lines.length;
+            column = this.lines.peek().length;
+        }
+        return {
+            type: type,
+            line: line,
+            column: column,
+            value: value
+        }
+    }
+
     Lexer.prototype.scanSpace = function () {
         var exec = null;
         while (!this.input.length && this.line < this.lines.length) { //去掉空行
@@ -259,6 +270,7 @@ export default function () {
         var exec = null;
         var ch1 = null;
         var ch2 = null;
+        var startToken = null;
         this.scanSpace(); //去掉空格
         ch1 = this.input[0];
         ch2 = this.input[1];
@@ -266,11 +278,16 @@ export default function () {
             this.skipLine(1);
             this.scanComment();
         } else if (ch1 === '/' && ch2 === '*') {
+            startToken = this.craeteToken('/*');
             this.skip(2);
-            while (!(exec = regs.comment.exec(this.input))) {
+            while (this.hasNext() && !(exec = regs.comment.exec(this.input))) {
                 this.skipLine(1);
             }
-            exec && this.skip(exec.index + exec[0].length);
+            if (exec) {
+                this.skip(exec.index + exec[0].length);
+            } else {
+                Error.unmatch(startToken);
+            }
         }
     }
 
@@ -280,25 +297,25 @@ export default function () {
         var token = null;
         var startToken = null;
         if (this.input[0] === '\'') {
-            startToken = _token(this.line, this.column, '\'');
+            startToken = this.craeteToken('\'', TokenType.STRING);
             this.skip(1);
             exec = _end(regs.string1);
-            token = _token(this.line, this.column, '\'');
+            token = this.craeteToken('\'', TokenType.STRING);
             if (!exec) {
                 Error.unmatch(startToken);
             }
             return token;
         } else if (this.input[0] === '"') {
-            startToken = _token(this.line, this.column, '"');
+            startToken = this.craeteToken('"', TokenType.STRING);
             this.skip(1);
             exec = _end(regs.string2);
-            token = _token(this.line, this.column, '"');
+            token = this.craeteToken('"', TokenType.STRING);
             if (!exec) {
                 Error.unmatch(startToken);
             }
             return token;
         } else if (this.input[0] === '`') {
-            startToken = _token(this.line, this.column, '`');
+            startToken = this.craeteToken('`', TokenType.STRING);
             this.skip(1);
             while (this.hasNext()) {
                 exec = regs.string3.exec(this.input)
@@ -311,7 +328,7 @@ export default function () {
                     break;
                 }
             }
-            token = _token(this.line, this.column, '`');
+            token = this.craeteToken('`', TokenType.STRING);
             if (!(exec && exec[0].length % 2 === 1)) { //未匹配到结束符
                 Error.unmatch(startToken);
             }
@@ -330,19 +347,6 @@ export default function () {
                 return _end(reg);
             }
             return false;
-        }
-
-        function _token(line, column, value) {
-            if (line > that.lines.length) {
-                line = that.lines.length;
-                column = that.lines.peek().length;
-            }
-            return {
-                type: TokenType.STRING,
-                line: line,
-                column: column,
-                value: value
-            }
         }
 
         function _parseTmpStr(exec) {
@@ -372,12 +376,7 @@ export default function () {
         var exec = null;
         var token = null;
         if (exec = regs.number.exec(this.input)) {
-            token = {
-                type: TokenType.NUMBER,
-                line: this.line,
-                column: this.column,
-                value: exec[0]
-            }
+            token = this.craeteToken(exec[0], TokenType.NUMBER);
             this.skip(exec.index + exec[0].length);
         }
         return token;
@@ -387,12 +386,7 @@ export default function () {
         var exec = null;
         var token = null;
         if (exec = regs.identifier.exec(this.input)) {
-            token = {
-                type: this.isKeyWord(exec[0]) ? TokenType.KEYWORD : TokenType.IDENTIFIER,
-                line: this.line,
-                column: this.column,
-                value: exec[0]
-            }
+            token = this.craeteToken(exec[0], this.isKeyWord(exec[0]) ? TokenType.KEYWORD : TokenType.IDENTIFIER);
             if (token.value === 'true' || token.value === 'false') {
                 token.type = TokenType.BOOLEAN;
             }
@@ -405,12 +399,7 @@ export default function () {
         var token = null;
         var ch = this.input[0];
         if (this.isBracket(ch)) {
-            token = {
-                type: TokenType.BRACKET,
-                line: this.line,
-                column: this.column,
-                value: ch
-            }
+            token = this.craeteToken(ch, TokenType.BRACKET);
             this.skip(1);
         }
         return token;
@@ -420,12 +409,7 @@ export default function () {
         var exec = null;
         var token = null;
         if (exec = regs.regex.exec(this.input)) {
-            token = {
-                type: TokenType.REGEXP,
-                line: this.line,
-                column: this.column,
-                value: exec[0]
-            }
+            token = this.craeteToken(exec[0], TokenType.REGEXP);
             this.skip(exec.index + exec[0].length);
         }
         return token;
@@ -439,75 +423,35 @@ export default function () {
         var ch4 = this.input[3];
         var token = null;
         if (ch1 === ">" && ch2 === ">" && ch3 === ">" && ch4 === "=") {
-            token = {
-                type: TokenType.OPERATOR,
-                value: ">>>="
-            };
+            token = this.craeteToken('>>>=', TokenType.OPERATOR);
         } else if (ch1 === "=" && ch2 === "=" && ch3 === "=") {
-            token = {
-                type: TokenType.OPERATOR,
-                value: "==="
-            };
+            token = this.craeteToken('===', TokenType.OPERATOR);
         } else if (ch1 === "!" && ch2 === "=" && ch3 === "=") {
-            token = {
-                type: TokenType.OPERATOR,
-                value: "!=="
-            };
+            token = this.craeteToken('!==', TokenType.OPERATOR);
         } else if (ch1 === ">" && ch2 === ">" && ch3 === ">") {
-            token = {
-                type: TokenType.OPERATOR,
-                value: ">>>"
-            };
+            token = this.craeteToken('>>>', TokenType.OPERATOR);
         } else if (ch1 === "<" && ch2 === "<" && ch3 === "=") {
-            token = {
-                type: TokenType.OPERATOR,
-                value: "<<="
-            };
+            token = this.craeteToken('<<=', TokenType.OPERATOR);
         } else if (ch1 === ">" && ch2 === ">" && ch3 === "=") {
-            token = {
-                type: TokenType.OPERATOR,
-                value: ">>="
-            };
+            token = this.craeteToken('>>=', TokenType.OPERATOR);
         } else if (ch1 === "=" && ch2 === ">") {
-            token = {
-                type: TokenType.OPERATOR,
-                value: '=>'
-            };
+            token = this.craeteToken('=>', TokenType.OPERATOR);
         } else if (ch1 === ch2 && ("+-<>&|*".indexOf(ch1) >= 0)) {
             if (ch1 === "*" && ch3 === "=") {
-                token = {
-                    type: TokenType.OPERATOR,
-                    value: ch1 + ch2 + ch3
-                };
+                token = this.craeteToken(ch1 + ch2 + ch3, TokenType.OPERATOR);
             } else {
-                token = {
-                    type: TokenType.OPERATOR,
-                    value: ch1 + ch2
-                };
+                token = this.craeteToken(ch1 + ch2, TokenType.OPERATOR);
             }
         } else if ("<>=!+-*%&|^/".indexOf(ch1) >= 0) {
             if (ch2 === "=") {
-                token = {
-                    type: TokenType.OPERATOR,
-                    value: ch1 + ch2
-                };
+                token = this.craeteToken(ch1 + ch2, TokenType.OPERATOR);
             } else {
-                token = {
-                    type: TokenType.OPERATOR,
-                    value: ch1
-                };
+                token = this.craeteToken(ch1, TokenType.OPERATOR);
             }
         } else if ('?:.,;'.indexOf(ch1) > -1) {
-            token = {
-                type: TokenType.PUNCTUATOR,
-                value: ch1
-            };
+            token = this.craeteToken(ch1, TokenType.OPERATOR);
         }
-        if (token) {
-            token.line = this.line;
-            token.column = this.column;
-            this.skip(token.value.length);
-        }
+        token && this.skip(token.value.length);
         return token;
     }
 
@@ -515,12 +459,7 @@ export default function () {
         var exec = null;
         var token = null;
         if (exec = regs.other.exec(this.input)) {
-            token = {
-                type: TokenType.OTHER,
-                line: this.line,
-                column: this.column,
-                value: exec[0]
-            }
+            token = this.craeteToken(exec[0], TokenType.OTHER);
             this.skip(exec.index + exec[0].length);
         }
         return token
