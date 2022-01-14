@@ -112,7 +112,7 @@ function tagToken(e) {
         } else {
             return 'xml-tag-open';
         }
-    } else {
+    } else if (e.side === 'end') {
         return 'xml-tag-close';
     }
 }
