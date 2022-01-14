@@ -303,6 +303,7 @@ export default function () {
             token = this.craeteToken('\'', TokenType.STRING);
             if (!exec) {
                 Error.unmatch(startToken);
+                this.skipLine(1);
             }
             return token;
         } else if (this.input[0] === '"') {
@@ -312,6 +313,7 @@ export default function () {
             token = this.craeteToken('"', TokenType.STRING);
             if (!exec) {
                 Error.unmatch(startToken);
+                this.skipLine(1);
             }
             return token;
         } else if (this.input[0] === '`') {
@@ -1350,9 +1352,15 @@ export default function () {
             });
             console.log(Error.errors);
             return Error.errors.map((item) => {
+                var line = item.line;
+                var column = item.column;
+                if (!item.line || item.line > lexer.lines.length) {
+                    line = lexer.lines.length;
+                    column = lexer.lines.peek().length;
+                }
                 return {
-                    line: item.line,
-                    column: item.column,
+                    line: line,
+                    column: column,
                     error: item.error
                 }
             });
