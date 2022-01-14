@@ -1,3 +1,7 @@
+import {
+    hasData
+} from "jquery";
+
 /*
  * @Author: lisong
  * @Date: 2022-01-07 10:07:14
@@ -274,21 +278,27 @@ export default function () {
         var that = this;
         var exec = null;
         var token = null;
+        var startToken = null;
         if (this.input[0] === '\'') {
-            token = _token(this.line, this.column, '\'');
+            startToken = _token(this.line, this.column, '\'');
             this.skip(1);
-            if (!_end(regs.string1)) {
-                Error.unmatch(token);
+            exec = _end(regs.string1);
+            token = _token(this.line, this.column, '\'');
+            if (!exec) {
+                Error.unmatch(startToken);
             }
             return token;
         } else if (this.input[0] === '"') {
-            token = _token(this.line, this.column, '"');
+            startToken = _token(this.line, this.column, '"');
             this.skip(1);
-            if (!_end(regs.string2)) {
-                Error.unmatch(token);
+            exec = _end(regs.string2);
+            token = _token(this.line, this.column, '"');
+            if (!exec) {
+                Error.unmatch(startToken);
             }
+            return token;
         } else if (this.input[0] === '`') {
-            token = _token(this.line, this.column, '`');
+            startToken = _token(this.line, this.column, '`');
             this.skip(1);
             while (this.hasNext()) {
                 exec = regs.string3.exec(this.input)
@@ -301,8 +311,9 @@ export default function () {
                     break;
                 }
             }
+            token = _token(this.line, this.column, '`');
             if (!(exec && exec[0].length % 2 === 1)) { //未匹配到结束符
-                Error.unmatch(token);
+                Error.unmatch(startToken);
             }
         }
         return token;
@@ -322,6 +333,10 @@ export default function () {
         }
 
         function _token(line, column, value) {
+            if (line > that.lines.length) {
+                line = that.lines.length;
+                column = that.lines.peek().length;
+            }
             return {
                 type: TokenType.STRING,
                 line: line,
