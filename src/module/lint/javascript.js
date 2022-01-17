@@ -1311,47 +1311,63 @@ export default function () {
 
     Parser.prototype.parseParen = function () {
         let lookLength = 1;
-        let lookToken = null;
         let assignAble = false;
         let end = false;
-        let lParenLength = 0;
-        let isFun = false;
-        while (this.peek().value === '(') {
-            lParenLength++;
-            this.next();
-        }
-        lookToken = this.peek();
-        while (lookToken.value && lookToken.value != ')') {
-            lookLength++;
-            lookToken = this.peek(lookLength);
-        }
-        if (lookToken.value === ')' && this.peek(lookLength + 1).value === '=>') { //es6箭头函数
-            this.putBack();
-            this.parseFunArgsStmt();
-            this.parseArrorwFunction();
-            end = true;
-            isFun = true;
-            lParenLength--;
-        } else if (lookToken.value === ')' && lookLength === 2) { //无效括号：(a)=1
-            if (this.lexer.isVariable(this.next())) {
-                assignAble = true;
-            }
-        } else { //括号表达式(1+2)
-            if (this.peek().value === 'function') {
-                this.parseFunctionStmt();
-                isFun = true;
+        let startToken = this.peek();
+        this.nextMatch('(');
+        if (this.peek().value === '(') { //下一个仍然是括号表达式
+            let result = this.parseParen();
+            assignAble = result.assignAble;
+            if (this.peek().value === ')') {
+                this.next();
+                if ((result.end || result.assignAble) && this.peek().value === '(') { //(function(){})()、(()=>{})();
+                    this.next();
+                    this.peek().value !== ')' && this.parseExprStmt();
+                    this.nextMatch(')');
+                }
             } else {
-                this.parseExprStmt();
+                let token = this.next() || {};
+                if (this.lexer.isBinaryOperator(token) || token.value === ',') {
+                    this.parseExprStmt();
+                } else {
+                    Error.unexpected(token);
+                }
+                this.peekMatch(')');
+                assignAble = false;
             }
-        }
-        while (lParenLength > 0) { //((...()=>{}...))
-            this.nextMatch(')');
-            lParenLength--;
-        }
-        if ((isFun || assignAble) && this.peek().value === '(') { //(function(){})()、(a)()、(()=>{})()
-            this.parseFunArgsStmt();
-            assignAble = false;
-            end = true;
+            end = false;
+        } else {
+            let lookToken = this.peek();
+            while (lookToken.value && lookToken.value != ')') {
+                lookLength++;
+                lookToken = this.peek(lookLength);
+            }
+            if (lookToken.value === ')' && this.peek(lookLength + 1).value === '=>') { //es6箭头函数
+                this.putBack();
+                this.parseFunArgsStmt();
+                this.parseArrorwFunction();
+                end = true;
+            } else if (lookToken.value === ')' && lookLength === 2) { //无效括号：(a)=1
+                if (this.lexer.isVariable(this.next())) {
+                    assignAble = true;
+                }
+                this.next();
+            } else { //括号表达式(1+2)
+                if (this.peek().value === 'function') {
+                    this.parseFunctionStmt();
+                    !this.peekMatch(')') && Error.unmatch(startToken);
+                    if (this.peek().value === '(') { //(function(){})();
+                        this.next();
+                        this.peek().value !== ')' && this.parseExprStmt();
+                        this.nextMatch(')');
+                    } else {
+                        end = true;
+                    }
+                } else {
+                    this.parseExprStmt();
+                    !this.peekMatch(')') && Error.unmatch(startToken);
+                }
+            }
         }
         return {
             assignAble: assignAble,
