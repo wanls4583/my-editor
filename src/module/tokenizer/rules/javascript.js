@@ -64,7 +64,7 @@ const rules = [
         regex: /\bclass\b/, //class {}
         token: 'js-class'
     }, {
-        regex: /[A-Z][\\$_a-zA-Z0-9]*?(?=\.)/, //Token.
+        regex: /\b[A-Z][\\$_a-zA-Z0-9]*?(?=\.)/, //Token.
         token: 'js-function-class'
     }, {
         regex: /\bfunction\b/,

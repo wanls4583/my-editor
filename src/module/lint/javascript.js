@@ -208,11 +208,20 @@ export default function () {
             token.type == TokenType.NUMBER ||
             token.type == TokenType.STRING ||
             token.type == TokenType.BOOLEAN ||
-            token.type == TokenType.REGEXP ||
-            token.value === 'this' ||
-            token.value === 'null' ||
-            token.value === 'undefined'
+            token.type == TokenType.REGEXP
         );
+    }
+
+    Lexer.prototype.isDotAble = function (token) {
+        return token.type === TokenType.IDENTIFIER || token.type === TokenType.KEYWORD;
+    }
+
+    Lexer.prototype.isPostOp = function (token) {
+        return token.value === '++' || token.value === '--';
+    }
+
+    Lexer.prototype.isPreOp = function (token) {
+        return token.value === '++' || token.value === '--';
     }
 
     Lexer.prototype.isAssignOperator = function (token) {
@@ -353,13 +362,11 @@ export default function () {
 
         function _parseTmpStr(exec) {
             let preToken = that.parser.preToken;
-            let putBackToken = that.parser.putBackToken;
             let backs = that.parser.backs.slice(0);
             let parseList = that.parser.parseList.slice(0);
             that.skip(exec.index + exec[2].length);
             //清空状态--begin
             that.parser.preToken = null;
-            that.parser.putBackToken = null;
             that.parser.backs = [];
             that.parser.parseList = [];
             //清空状态--end
@@ -367,7 +374,6 @@ export default function () {
             that.parser.peekMatch('}');
             //恢复状态--begin
             that.parser.preToken = preToken;
-            that.parser.putBackToken = putBackToken;
             that.parser.backs = backs;
             that.parser.parseList = parseList;
             //恢复状态--end
@@ -497,7 +503,6 @@ export default function () {
         this.backs = [];
         this.parseList = [];
         this.preToken = null;
-        this.putBackToken = null;
         Error.errors = [];
     }
 
@@ -505,7 +510,6 @@ export default function () {
         this.backs = [];
         this.parseList = [];
         this.preToken = null;
-        this.putBackToken = null;
         this.recovery(text);
         Error.errors = [];
     }
@@ -585,10 +589,11 @@ export default function () {
             } else {
                 token = this.lexer.next();
             }
+            this.pre2Token = this.preToken;
             this.preToken = token || this.preToken;
-            this.putBackToken = token;
             length--;
         }
+        this.puted = false;
         return token;
     }
 
@@ -647,7 +652,11 @@ export default function () {
     }
 
     Parser.prototype.putBack = function () {
-        this.putBackToken && this.backs.unshift(this.putBackToken);
+        if (this.preToken && !this.puted) {
+            this.backs.unshift(this.preToken);
+            this.preToken = this.pre2Token;
+            this.puted = true;
+        }
     }
 
     Parser.prototype.parse = function () {
@@ -717,9 +726,6 @@ export default function () {
             case 'for':
                 this.parseForStmt();
                 break;
-            case 'function':
-                this.parseFunctionStmt();
-                break;
             case 'class':
                 this.parseClassStmt();
                 break;
@@ -767,11 +773,7 @@ export default function () {
             lookahead = this.peek();
             if (lookahead.value === ':') { //{a:1,b:2}
                 this.peekMatch(':');
-                if (this.peek().value === 'function') {
-                    this.parseFunctionStmt();
-                } else {
-                    this.parseExpr();
-                }
+                this.parseExpr();
             } else { //{a,b}
                 if (this.preToken.type !== TokenType.IDENTIFIER) {
                     Error.expected(lookahead, ':');
@@ -810,11 +812,7 @@ export default function () {
 
         function _assign() {
             that.next();
-            if (that.peek().value === 'function') {
-                that.parseFunctionStmt();
-            } else {
-                that.parseExpr();
-            }
+            that.parseExpr();
         }
     }
 
@@ -823,10 +821,8 @@ export default function () {
         value = value || '=';
         this.nextMatch(value);
         while (this.hasNext()) {
-            if (this.peek().value === 'function') { //a=function(){},b=1
-                this.parseFunctionStmt();
-            } else if (this.peek(2).value === '=') { //a=1,b=2
-                this.nextMatch([TokenType.IDENTIFIER, 'this']);
+            if (this.peek(2).value === '=') { //a=1,b=2
+                !this.lexer.isVariable(this.next()) && Error.expected(TokenType.IDENTIFIER);
                 this.parseAssignStmt('=');
                 break;
             } else {
@@ -1181,26 +1177,34 @@ export default function () {
             Error.expected(null, 'expression');
             return;
         }
-        while (this.hasNext()) {
+        while (true) {
             var leftHand = this.parseLeftHand();
             if (leftHand.end) { //前面非标识符
                 break;
             }
             lookahead = this.peek();
-            if (lookahead.value === '.') { //点运算符
+            if (lookahead.value === '.' && this.preToken.type !== TokenType.NUMBER) { //点运算符
                 this.parseDot();
                 lookahead = this.peek();
-                leftHand = {
-                    assignAble: true
-                };
+                leftHand.assignAble = true;
+            }
+            if (lookahead.value === '[' && this.preToken.type !== TokenType.NUMBER) { //属性运算符
+                this.parseProperty();
+                lookahead = this.peek();
+                leftHand.assignAble = true;
+            }
+            if (this.lexer.isPostOp(lookahead)) { //后置运算符
+                !leftHand.assignAble && Error.expectedIdentifier(token);
+                leftHand.assignAble = false;
+                this.next();
             }
             if (lookahead.value === '?') { //三元运算符
                 this.nextMatch('?');
-                this.parseExprStmt();
+                this.parseExpr();
                 this.peekMatch(':');
                 continue;
             }
-            if (this.lexer.isAssignOperator(lookahead) && leftHand.assignAble) {
+            if (this.lexer.isAssignOperator(lookahead) && leftHand.assignAble) { //赋值运算符
                 this.parseAssignStmt(this.peek().value);
                 break;
             }
@@ -1210,6 +1214,7 @@ export default function () {
             this.next();
             if (!this.hasNext()) { //表达式未结束
                 Error.unexpected(this.preToken);
+                break;
             }
         }
         if (this.peek() === originToken) { //非表达式
@@ -1221,97 +1226,108 @@ export default function () {
     Parser.prototype.parseLeftHand = function () {
         var token = this.next();
         var lookahead = this.peek();
-        var assignAble = true; //是否可赋值
+        var assignAble = false; //是否可赋值
         var end = false; //是否结束当前表达式
+        var isPreOp = false;
+        var isSignOp = false;
         if (this.lexer.isUnitOperator(token)) { //一元运算符:+1,-1
-            if (token.value === '!') {
-                while (token.value === '!') {
-                    token = this.next();
-                }
-            } else {
+            token = this.next();
+            while (token.value === '!') { //!!!...
                 token = this.next();
             }
-            assignAble = false;
-        } else if (token.value === '++' || token.value === '--') { //前置运算符:++a,--a
+        } else if (this.lexer.isPreOp(token)) { //前置运算符:++a,--a
             token = this.next();
-            if (!this.lexer.isVariable(token)) {
-                Error.expectedIdentifier(token);
-            }
-            assignAble = false;
-        } else if (token.value !== ')' && token.value !== ']' &&
-            (lookahead.value === '++' || lookahead.value === '--')) { //后置运算符
-            this.next();
-            if (!this.lexer.isVariable(token)) { //1++，非法
-                Error.expectedIdentifier(token);
-            }
-            assignAble = false;
+            !this.lexer.isVariable(token) && Error.expectedIdentifier(token);
+            isPreOp = true;
         }
         if (!token) {
             Error.expectedIdentifier();
             end = true;
         }
-        if (token.value === '(') { //括号表达式(1+2)
-            var lookLength = 1;
-            var lookToken = this.peek(lookLength);
-            while (lookToken.value && lookToken.value != ')') {
-                lookLength++;
-                lookToken = this.peek(lookLength);
-            }
-            if (lookLength == 2 && this.lexer.isAssignOperator(this.peek(lookLength + 1))) { //(a)=1
-                this.nextMatch([TokenType.IDENTIFIER], 'this');
-                this.next();
-            } else if (this.peek(lookLength + 1).value === '=>') { //箭头函数
-                this.putBack();
-                this.parseFunArgsStmt();
-                this.parseArrorwFunction();
-                end = true;
-            } else {
-                this.parseExprStmt();
-                this.peekMatch(')');
-                if (this.peek().value === '[') {
-                    this.parseProperty();
-                }
-                assignAble = false;
-            }
-        } else if (this.peek().value === '(') { //函数调用test()
+        if (token.value === 'function') { //函数声明
             this.putBack();
-            this.parseCall();
-            assignAble = false;
-        } else if (this.peek().value === '=>') { //箭头函数test=>{}
-            this.parseArrorwFunction();
+            this.parseFunctionStmt();
             end = true;
+        } else if (token.value === '(') {
+            let result = null;
+            this.putBack();
+            result = this.parseParen();
+            end = result.end;
+            assignAble = result.assignAble;
         } else if (token.value === '[') { //数组
-            while (this.hasNext() && this.peek().value !== ']') {
-                this.parseExpr();
-                if (this.peek().value === ',') {
-                    this.next();
-                }
-            }
-            this.nextMatch(']');
-            assignAble = false;
-        } else if (this.peek().value === '[') { //属性表达式
-            this.parseProperty();
+            this.putBack();
+            this.parseArray();
         } else if (token.value === 'new') { //new对象
             this.parseCall();
-            assignAble = false;
         } else if (token.value == '{') { //对象字面量
             this.putBack();
             this.parseObjectStmt();
-            assignAble = false;
         } else if (token.type === TokenType.REGEXP) { //正则表达式
             this.putBack();
             this.parseRegex();
-            assignAble = false;
-        } else if (!this.lexer.isValue(token)) { //非标识符
+        } else if (lookahead.value === '(' && !isPreOp) { //函数调用test()
+            this.putBack();
+            this.parseCall();
+        } else if (lookahead.value === '=>' &&
+            !isPreOp && !isSignOp && this.lexer.isVariable(token)) { //箭头函数test=>{}
+            this.parseArrorwFunction();
+            end = true;
+        } else if (!isPreOp && !isSignOp && this.lexer.isVariable(token)) { //是否可赋值
+            assignAble = true;
+        } else if (!this.lexer.isValue(token)) { //非运算对象
             Error.expectedIdentifier(token);
             end = true;
-        } else if (assignAble && !this.lexer.isVariable(token)) { //是否可赋值
-            assignAble = false;
         }
         return {
             assignAble: assignAble,
             end: end
         }
+    }
+
+    Parser.prototype.parseParen = function () {
+        var lookLength = 1;
+        var lookToken = null;
+        var assignAble = false;
+        var end = false;
+        this.nextMatch('(');
+        lookToken = this.peek(lookLength);
+        while (lookToken.value && lookToken.value != ')') {
+            lookLength++;
+            lookToken = this.peek(lookLength);
+        }
+        if (lookToken.value === ')' && this.peek(lookLength + 1).value === '=>') { //箭头函数
+            this.putBack();
+            this.parseFunArgsStmt();
+            this.parseArrorwFunction();
+            end = true;
+        } else if (lookToken.value === ')' && lookLength == 2) { //无效括号：(a)=1
+            if (this.lexer.isVariable(this.next())) {
+                assignAble = true;
+            }
+            this.next();
+        } else { //括号表达式(1+2)
+            this.parseExprStmt();
+            !this.peekMatch(')') && Error.unmatch(token);
+        }
+        return {
+            assignAble: assignAble,
+            end: end
+        }
+    }
+
+    Parser.prototype.parseArray = function () {
+        var lookahead = null;
+        this.nextMatch('[');
+        while (this.hasNext() && this.peek().value !== ']') {
+            this.parseExpr();
+            lookahead = this.peek();
+            if (lookahead.value === ',') {
+                this.next();
+            } else {
+                break;
+            }
+        }
+        this.nextMatch(']');
     }
 
     Parser.prototype.parseArrorwFunction = function () {
@@ -1325,15 +1341,11 @@ export default function () {
 
     // 函数调用
     Parser.prototype.parseCall = function () {
-        this.nextMatch([TokenType.IDENTIFIER, 'delete']);
+        this.nextMatch([TokenType.IDENTIFIER]);
         this.peekMatch('(');
         if (this.peek().value !== ')') {
             while (this.hasNext()) {
-                if (this.peek().value === 'function') {
-                    this.parseFunctionStmt();
-                } else {
-                    this.parseExpr();
-                }
+                this.parseExpr();
                 if (this.peek().value != ')') {
                     this.peekMatch(',');
                 } else {
@@ -1343,9 +1355,6 @@ export default function () {
             this.preToken.value == ',' && Error.unexpected(this.preToken);
         }
         this.peekMatch(')');
-        if (this.peek().value === '[') { //test()['a'];
-            this.parseProperty();
-        }
     }
 
     // 点运算符
@@ -1355,23 +1364,23 @@ export default function () {
             this.preToken.type === TokenType.STRING ||
             this.preToken.value === ')' ||
             this.preToken.value === ']') {
-            while (this.hasNext()) {
-                this.nextMatch('.');
-                this.nextMatch([TokenType.IDENTIFIER, 'delete', 'finally']);
+            this.nextMatch('.');
+            lookahead = this.peek();
+            if (this.lexer.isDotAble(lookahead)) {
+                this.next();
                 lookahead = this.peek();
                 if (lookahead.value === '(') { //函数调用test()
                     this.putBack();
                     this.parseCall();
-                } else if (lookahead.value === '[') {
-                    this.parseProperty();
                 }
                 lookahead = this.peek();
-                if (lookahead.value !== '.') {
-                    if (lookahead.value === '++' || lookahead.value === '--') {
-                        this.next();
-                    }
-                    break;
+                if (lookahead.value === '[') {
+                    this.parseProperty();
+                } else if (lookahead.value === '.') {
+                    this.parseDot();
                 }
+            } else {
+                Error.expected(lookahead, TokenType.IDENTIFIER);
             }
         } else {
             Error.unexpected(this.next());
@@ -1379,9 +1388,21 @@ export default function () {
     }
 
     Parser.prototype.parseProperty = function () {
+        var lookahead = null;
         this.nextMatch('[');
         this.parseExprStmt();
         this.nextMatch(']');
+        lookahead = this.peek();
+        if (lookahead.value === '(') { //函数调用test()
+            this.putBack();
+            this.parseCall();
+        }
+        lookahead = this.peek();
+        if (lookahead.value === '[') {
+            this.parseProperty();
+        } else if (lookahead.value === '.') {
+            this.parseDot();
+        }
     }
 
     var lexer = new Lexer();
