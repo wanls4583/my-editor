@@ -1314,9 +1314,13 @@ export default function () {
         let lookToken = null;
         let assignAble = false;
         let end = false;
-        let token = this.peek();
-        this.nextMatch('(');
-        lookToken = this.peek(lookLength);
+        let lParenLength = 0;
+        let isFun = false;
+        while (this.peek().value === '(') {
+            lParenLength++;
+            this.next();
+        }
+        lookToken = this.peek();
         while (lookToken.value && lookToken.value != ')') {
             lookLength++;
             lookToken = this.peek(lookLength);
@@ -1326,14 +1330,28 @@ export default function () {
             this.parseFunArgsStmt();
             this.parseArrorwFunction();
             end = true;
-        } else if (lookToken.value === ')' && lookLength == 2) { //无效括号：(a)=1
+            isFun = true;
+            lParenLength--;
+        } else if (lookToken.value === ')' && lookLength === 2) { //无效括号：(a)=1
             if (this.lexer.isVariable(this.next())) {
                 assignAble = true;
             }
-            this.next();
         } else { //括号表达式(1+2)
-            this.parseExprStmt();
-            !this.peekMatch(')') && Error.unmatch(token);
+            if (this.peek().value === 'function') {
+                this.parseFunctionStmt();
+                isFun = true;
+            } else {
+                this.parseExprStmt();
+            }
+        }
+        while (lParenLength > 0) { //((...()=>{}...))
+            this.nextMatch(')');
+            lParenLength--;
+        }
+        if ((isFun || assignAble) && this.peek().value === '(') { //(function(){})()、(a)()、(()=>{})()
+            this.parseFunArgsStmt();
+            assignAble = false;
+            end = true;
         }
         return {
             assignAble: assignAble,
