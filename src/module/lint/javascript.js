@@ -35,7 +35,7 @@ export default function () {
     var regs = {
         space: /^\s+/,
         number: /^\d+(?:\.\d*)?\b/,
-        identifier: /^[a-zA-Z_$][a-zA-Z0-9_$]*\b/,
+        identifier: /^[a-zA-Z_$][a-zA-Z0-9_$]*/,
         comment: /\*\//,
         string1: /\\*'/,
         string2: /\\*"/,
@@ -764,6 +764,9 @@ export default function () {
             case 'return':
                 this.parseReturnStmt();
                 break;
+            case 'throw':
+                this.parseThrowStmt();
+                break;
             case 'function':
                 this.parseFunctionStmt(true);
                 break;
@@ -1203,6 +1206,18 @@ export default function () {
         this.nextMatch('return');
         lookahead = this.peek();
         if (lookahead.value !== ';' && lookahead.value !== '}' && lookahead.line === this.preToken.line) {
+            this.parseExprStmt();
+        }
+    }
+
+    // throw语句
+    Parser.prototype.parseThrowStmt = function () {
+        var lookahead = null;
+        this.nextMatch('throw');
+        lookahead = this.peek();
+        if (lookahead.line !== this.preToken.line) {
+            Error.expectedIdentifier();
+        } else {
             this.parseExprStmt();
         }
     }
