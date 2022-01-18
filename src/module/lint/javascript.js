@@ -1302,7 +1302,7 @@ export default function () {
         let isSignOp = false;
         if (this.lexer.isUnitOperator(token)) { //一元运算符:+1,-1
             token = this.next();
-            while (token.value === '!') { //!!!...
+            while (token && token.value === '!') { //!!!...
                 token = this.next();
             }
             isSignOp = true;
@@ -1314,8 +1314,7 @@ export default function () {
         if (!token) {
             Error.expectedIdentifier();
             end = true;
-        }
-        if (token.value === 'function') { //函数声明
+        } else if (token.value === 'function') { //函数声明
             this.putBack();
             this.parseFunctionStmt();
             if (this.peek().value === '(' && isSignOp) { //+function(){}()
