@@ -507,13 +507,16 @@ export default function () {
                     that.preToken.value === '[' ||
                     that.preToken.value === '('
                 ) {
-                    token = {
-                        value: that.input,
-                        type: REGEXP
-                    }
-                    that.skipLine(1);
-                    if (token.value.peek() !== '/') {
-                        Error.unmatch(token);
+                    token = that.scanRegex();
+                    if (!token) {
+                        token = {
+                            value: that.input,
+                            type: TokenType.REGEXP
+                        }
+                        that.skipLine(1);
+                        if (token.value.peek() !== '/') {
+                            Error.unmatch(token);
+                        }
                     }
                 } else {
                     token = {

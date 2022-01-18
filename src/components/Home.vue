@@ -86,6 +86,7 @@
 				@compositionend="onCompositionend"
 				@compositionstart="onCompositionstart"
 				@copy.prevent="onCopy"
+				@cut.prevent="onCut"
 				@focus="onFocus"
 				@input="onInput"
 				@keydown="onKeyDown"
@@ -833,11 +834,11 @@ export default {
                     this.menuStyle.left = e.clientX - offset.left + 'px';
                 }
             });
-            this.menuList[0].map((menu) => {
-                if (['cut', 'copy'].indexOf(menu.op) > -1) {
-                    menu.disabled = !this.selectedRange;
-                }
-            });
+            // this.menuList[0].map((menu) => {
+            //     if (['cut', 'copy'].indexOf(menu.op) > -1) {
+            //         menu.disabled = !this.selectedRange;
+            //     }
+            // });
         },
         // 选中菜单
         onClickMenu(menu) {
@@ -848,6 +849,13 @@ export default {
                         let text = this.getRangeText(this.selectedRange.start, this.selectedRange.end);
                         if (menu.op == 'cut') {
                             this.deleteContent();
+                        }
+                        Util.writeClipboard(text);
+                    } else {
+                        let text = context.htmls[this.cursorPos.line - 1].text;
+                        if (menu.op === 'cut') {
+                            text && this.setSelectedRange({ line: this.cursorPos.line, column: 0 }, { line: this.cursorPos.line, column: text.length });
+                            text && this.deleteContent();
                         }
                         Util.writeClipboard(text);
                     }
@@ -1040,6 +1048,22 @@ export default {
             if (this.selectedRange) {
                 let text = this.getRangeText(this.selectedRange.start, this.selectedRange.end);
                 clipboardData.setData(mime, text);
+            } else {
+                clipboardData.setData(mime, context.htmls[this.cursorPos.line - 1].text);
+            }
+        },
+        onCut(e) {
+            let mime = window.clipboardData ? "Text" : "text/plain";
+            let clipboardData = e.clipboardData || window.clipboardData;
+            if (this.selectedRange) {
+                let text = this.getRangeText(this.selectedRange.start, this.selectedRange.end);
+                clipboardData.setData(mime, text);
+                this.deleteContent();
+            } else {
+                let text = context.htmls[this.cursorPos.line - 1].text;
+                text && clipboardData.setData(mime, context.htmls[this.cursorPos.line - 1].text);
+                text && this.setSelectedRange({ line: this.cursorPos.line, column: 0 }, { line: this.cursorPos.line, column: text.length });
+                this.deleteContent();
             }
         },
         // 粘贴事件
