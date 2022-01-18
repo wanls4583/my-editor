@@ -55,7 +55,7 @@ const rules = [
         regex: /\/\/[\s\S]*$/,
         token: 'js-comment'
     }, {
-        regex: /\/[\s\S]*?[^\\]\//,
+        regex: /(?<=^|[\(\{\[\;\,\:\?\!\+\-\*\%\=\>\<\&\|]\s*?)\/[\s\S]*?[^\\]\//,
         token: 'js-regex'
     }, {
         regex: /\bconst\b|\bcontinue\b|\bbreak\b|\bswitch\b|\bcase\b|\bdo\b|\bwhile\b|\belse\b|\bfor\b|\bif\b|\bnew\b|\breturn\b|\bfrom\b|\btypeof|\beach\b|\bin\b|\bimport\b|\bexport\b|\bdefault\b|\bwith\b/,

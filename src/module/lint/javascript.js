@@ -433,7 +433,9 @@ export default function () {
         var ch3 = this.input[2];
         var ch4 = this.input[3];
         var token = null;
-        if (ch1 === ">" && ch2 === ">" && ch3 === ">" && ch4 === "=") {
+        if (ch1 == '.' && ch2 === '.' && ch3 === '.') {
+            token = this.craeteToken('...', TokenType.OPERATOR);
+        } else if (ch1 === ">" && ch2 === ">" && ch3 === ">" && ch4 === "=") {
             token = this.craeteToken('>>>=', TokenType.OPERATOR);
         } else if (ch1 === "=" && ch2 === "=" && ch3 === "=") {
             token = this.craeteToken('===', TokenType.OPERATOR);
@@ -459,7 +461,7 @@ export default function () {
             } else {
                 token = this.craeteToken(ch1, TokenType.OPERATOR);
             }
-        } else if (['?', ':', '...', '.', ';', ','].indexOf(ch1) > -1) {
+        } else if ('?:.;,'.indexOf(ch1) > -1) {
             token = this.craeteToken(ch1, TokenType.OPERATOR);
         }
         token && this.skip(token.value.length);
@@ -477,23 +479,54 @@ export default function () {
     }
 
     Lexer.prototype.next = function () {
-        var token = null;
+        let token = null;
+        let that = this;
         this.scanComment();
         if (this.hasNext()) {
             token =
                 this.scanIdentifier() ||
                 this.scanBracket() ||
                 this.scanNunmber() ||
-                this.scanRegex() ||
-                this.scanOperator() ||
-                this.scanString();
+                this.scanString() ||
+                _scanOp()
             if (!token) { //存在非法变量
                 token = this.scanOther();
                 token && Error.unexpected(token);
                 return this.next();
             }
         }
+        this.preToken = token;
         return token;
+
+        function _scanOp() {
+            let token = null;
+            if (that.input[0] === '/') {
+                if (!that.preToken ||
+                    that.preToken.type === TokenType.OPERATOR ||
+                    that.preToken.value === '{' ||
+                    that.preToken.value === '[' ||
+                    that.preToken.value === '('
+                ) {
+                    token = {
+                        value: that.input,
+                        type: REGEXP
+                    }
+                    that.skipLine(1);
+                    if (token.value.peek() !== '/') {
+                        Error.unmatch(token);
+                    }
+                } else {
+                    token = {
+                        value: '/',
+                        type: TokenType.OPERATOR
+                    };
+                    that.skip(1);
+                }
+            } else {
+                token = that.scanOperator();
+            }
+            return token;
+        }
     }
 
     // 语法分析器
@@ -693,11 +726,7 @@ export default function () {
                 this.parseDeclareStmt();
                 break;
             case '{':
-                if (this.peek(2).value === ':') { //对象字面量
-                    this.parseObjectStmt();
-                } else { //代码块
-                    this.parseBlockStmt();
-                }
+                this.parseObjectStmt();
                 break;
             case 'import':
                 this.parseImportStmt();
@@ -1432,6 +1461,9 @@ export default function () {
             this.parseExprStmt();
         }
         this.peekMatch(')');
+        if (this.peek().value === '(') {
+            this.parseCallArgs();
+        }
     }
 
     // 点运算符
