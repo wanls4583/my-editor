@@ -309,8 +309,6 @@ export default class {
                     text: lineObj.text
                 })
             });
-        } else if (states.length && newStates.peek() === states.peek()) { //最后一个token未匹配到尾节点
-            resultObj.tokens.peek().value += lineObj.text.slice(preEnd);
         } else if (preEnd < lineObj.text.length) { //文本末尾
             var value = lineObj.text.slice(preEnd);
             resultObj.tokens.push({

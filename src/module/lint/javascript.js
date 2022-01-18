@@ -509,20 +509,16 @@ export default function () {
                 ) {
                     token = that.scanRegex();
                     if (!token) {
-                        token = {
-                            value: that.input,
-                            type: TokenType.REGEXP
-                        }
+                        token = that.craeteToken(that.input, TokenType.REGEXP);
                         that.skipLine(1);
                         if (token.value.peek() !== '/') {
-                            Error.unmatch(token);
+                            let _token = Object.assign({}, token);
+                            _token.value = '/';
+                            Error.unmatch(_token);
                         }
                     }
                 } else {
-                    token = {
-                        value: '/',
-                        type: TokenType.OPERATOR
-                    };
+                    token = that.craeteToken('/', TokenType.OPERATOR);
                     that.skip(1);
                 }
             } else {

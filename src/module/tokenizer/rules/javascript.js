@@ -27,6 +27,45 @@ const tplStrReg = {
         }]
     }
 };
+// 正则字面量
+const regexp = {
+    start: /(?<=^|[\(\{\[\;\,\:\?\!\+\-\*\%\=\>\<\&\|]\s*?)\//,
+    end: /(?<=[^\\])\//,
+    childRule: {
+        rules: [{
+            regex: /\\b/,
+            token: 'js-regex-ctrl'
+        }, {
+            regex: /\\[\s\S]/,
+            token: 'js-regex-escape'
+        }, {
+            regex: /\?\=|\?\<\=|\?\!|\?\<\!/,
+            token: 'js-regex'
+        }, {
+            regex: /\*|\^|\$|\?/,
+            token: 'js-regex-ctrl'
+        }, {
+            start: /\[/,
+            end: /(?<!\\)\]/,
+            token: 'js-regex-bracket',
+            childRule: {
+                rules: [{
+                    regex: /\^/,
+                    token: 'js-regex-ctrl',
+                    valid: function (option) {
+                        let text = option.text;
+                        let index = option.index;
+                        if (text[index - 1] === '[' && text[index - 2] !== '\\') {
+                            return true;
+                        }
+                        return false;
+                    }
+                }]
+            }
+        }]
+    },
+    token: 'js-regex'
+}
 const rules = [
     tplStrReg,
     //字符串''
@@ -54,11 +93,14 @@ const rules = [
     }, {
         regex: /\/\/[\s\S]*$/,
         token: 'js-comment'
-    }, {
-        regex: /(?<=^|[\(\{\[\;\,\:\?\!\+\-\*\%\=\>\<\&\|]\s*?)\/[\s\S]*?[^\\]\//,
-        token: 'js-regex'
-    }, {
-        regex: /\bconst\b|\bcontinue\b|\bbreak\b|\bswitch\b|\bcase\b|\bdo\b|\bwhile\b|\belse\b|\bfor\b|\bif\b|\bnew\b|\breturn\b|\bfrom\b|\btypeof|\beach\b|\bin\b|\bimport\b|\bexport\b|\bdefault\b|\bwith\b/,
+    },
+    regexp,
+    {
+        regex: /\bvar\b|\blet\b|\bconst\b/,
+        token: 'js-type'
+    },
+    {
+        regex: /\bcontinue\b|\bbreak\b|\bswitch\b|\bcase\b|\bdo\b|\bwhile\b|\belse\b|\bfor\b|\bif\b|\bnew\b|\breturn\b|\bfrom\b|\btypeof|\beach\b|\bin\b|\bimport\b|\bexport\b|\bdefault\b|\bwith\b/,
         token: 'js-key'
     }, {
         regex: /\bclass\b/, //class {}
@@ -103,9 +145,6 @@ const rules = [
     }, {
         regex: new RegExp(`\\b\\d+\\b|\\b0[xX][a-zA-Z0-9]*?\\b|\\bundefined\\b|\\bnull\\b|\\btrue\\b|\\bfalse\\b|\\bNaN\\b`),
         token: 'js-number'
-    }, {
-        regex: /\bvar\b/,
-        token: 'js-type'
     }, {
         regex: new RegExp(`(${variable})(?=\\()`), //ie. test(),.test()
         token: 'js-function-exec'

@@ -20,6 +20,10 @@
     color: #66d9ef;
 }
 
+.js-new-class {
+    color: #66d9ef;
+}
+
 /*函数执行*/
 .js-function-exec {
     color: #66d9ef;
@@ -65,7 +69,19 @@
 
 /* 正则表达式 */
 .js-regex {
+    color: #e6db74;
+}
+
+.js-regex-escape {
+    color: #ae81ff;
+}
+
+.js-regex-ctrl {
     color: #f92672;
+}
+
+.js-regex-bracket {
+    color: #ae81ff;
 }
 
 /*操作符号*/
