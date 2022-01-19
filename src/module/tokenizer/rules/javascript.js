@@ -79,7 +79,7 @@ const rules = [
     //字符串"""
     {
         start: /"/,
-        end: /"\\*?|[^\\]$|^$/,
+        end: /\\*?"|[^\\]$|^$/,
         token: 'js-string',
         foldName: 'js-double-string',
         valid: strValid
