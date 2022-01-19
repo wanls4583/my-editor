@@ -30,7 +30,7 @@ const tplStrReg = {
 // 正则字面量
 const regexp = {
     start: /(?<=^|[\(\{\[\;\,\:\?\!\+\-\*\%\=\>\<\&\|]\s*?)\//,
-    end: /(?<=[^\\])\//,
+    end: /(?<=(?:\\[\s\S]|[^\\])+?)\/|$/,
     childRule: {
         rules: [{
             regex: /\\b/,
@@ -100,7 +100,7 @@ const rules = [
         token: 'js-type'
     },
     {
-        regex: /\bcontinue\b|\bbreak\b|\bswitch\b|\bcase\b|\bdo\b|\bwhile\b|\belse\b|\bfor\b|\bif\b|\bnew\b|\breturn\b|\bfrom\b|\btypeof|\beach\b|\bin\b|\bimport\b|\bexport\b|\bdefault\b|\bwith\b/,
+        regex: /\bcontinue\b|\bbreak\b|\bswitch\b|\bcase\b|\bdo\b|\bwhile\b|\belse\b|\bfor\b|\bif\b|\bnew\b|\breturn\b|\bfrom\b|\btypeof|\beach\b|\bin\b|\bimport\b|\bexport\b|\bdefault\b|\bwith\b|\bthrow\b|\btry\b|\bcatch\b|\bfinally\b/,
         token: 'js-key'
     }, {
         regex: /\bclass\b/, //class {}
