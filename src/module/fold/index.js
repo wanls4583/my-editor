@@ -179,13 +179,13 @@ export default class {
         let lineCount = 1;
         let realLine = 1;
         while (i < this.folds.length && lineCount < line) {
-            if (lineCount + this.folds[i].start.line - realLine < line) {
-                lineCount += this.folds[i].start.line - realLine;
-                realLine = this.folds[i].end.line - 1;
+            let fold = this.folds[i];
+            if (lineCount + fold.start.line - realLine < line) {
+                lineCount += fold.start.line + 1 - realLine;
+                realLine = fold.end.line;
             } else {
                 break;
             }
-            let fold = this.folds[i];
             i++;
             while (i < this.folds.length && this.folds[i].end.line <= fold.end.line) { //多级折叠
                 i++;
@@ -197,16 +197,18 @@ export default class {
     // 根据真实行号获取相对行号
     getRelativeLine(line) {
         let relLine = line;
-        let preFold = null;
-        for (let i = 0; i < this.folds.length; i++) {
-            if (line >= this.folds[i].end.line) {
-                if (!preFold || preFold.end.line <= this.folds[i].start.line) {
-                    relLine -= this.folds[i].end.line - this.folds[i].start.line - 1;
-                }
+        let i = 0;
+        while (i < this.folds.length) {
+            let fold = this.folds[i];
+            if (line >= fold.end.line) {
+                relLine -= fold.end.line - fold.start.line - 1;
             } else {
                 break;
             }
-            preFold = this.folds[i];
+            i++;
+            while (i < this.folds.length && this.folds[i].end.line <= fold.end.line) { //多级折叠
+                i++;
+            }
         }
         return relLine;
     }
