@@ -112,7 +112,7 @@ const rules = [
         regex: /\bfunction\b/,
         token: 'js-function'
     }, {
-        regex: new RegExp(`(${variable})\\s*?(?=\\([^\\)]*?\\)\\s*?\\{)`), //ie. test(){}
+        regex: new RegExp(`(${variable})\\s*?(?=\\([^\\(]*?\\)\\s*?\\{)`), //ie. test(){}
         token: 'js-function-name'
     }, {
         regex: new RegExp(`(?<=\\bfunction\\s+?)${variable}`), //ie. function test
