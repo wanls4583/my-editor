@@ -34,7 +34,7 @@ export default function () {
     var brackets = ['{', '}', '[', ']', '(', ')'];
     var regs = {
         space: /^\s+/,
-        number: /^(?:\d+(?:\.\d*)?|0x[a-z0-9]+?)(?:e[\+\-]?\d+(?:\.\d*)?)?\b/i,
+        number: /^(?:\d+(?:\.\d*)?|\.\d+?|0x[a-z0-9]+?)(?:e[\+\-]?\d+(?:\.\d*)?)?\b/i,
         identifier: /^[a-zA-Z_$][a-zA-Z0-9_$]*/,
         comment: /\*\//,
         string1: /\\*'/,
@@ -499,30 +499,29 @@ export default function () {
 
         function _scanOp() {
             let token = null;
-            if (that.input[0] === '/') {
-                if (!that.preToken ||
+            if (
+                that.input[0] === '/' &&
+                (
+                    !that.preToken ||
                     that.preToken.type === TokenType.OPERATOR ||
                     that.preToken.value === '{' ||
                     that.preToken.value === '[' ||
                     that.preToken.value === '(' ||
                     that.preToken.value === 'return'
-                ) { //正则表达式
-                    let exec = regs.regex.exec(that.input);
-                    if (exec) {
-                        token = that.craeteToken(exec[0], TokenType.REGEXP);
-                        that.skip(exec.index + exec[0].length);
-                    } else {
-                        token = that.craeteToken(that.input, TokenType.REGEXP);
-                        that.skipLine(1);
-                        if (token.value.peek() !== '/') {
-                            let _token = Object.assign({}, token);
-                            _token.value = '/';
-                            Error.unmatch(_token);
-                        }
-                    }
+                )
+            ) {
+                let exec = regs.regex.exec(that.input);
+                if (exec) {
+                    token = that.craeteToken(exec[0], TokenType.REGEXP);
+                    that.skip(exec.index + exec[0].length);
                 } else {
-                    token = that.craeteToken('/', TokenType.OPERATOR);
-                    that.skip(1);
+                    token = that.craeteToken(that.input, TokenType.REGEXP);
+                    that.skipLine(1);
+                    if (token.value.peek() !== '/') {
+                        let _token = Object.assign({}, token);
+                        _token.value = '/';
+                        Error.unmatch(_token);
+                    }
                 }
             } else {
                 token = that.scanOperator();
@@ -720,7 +719,11 @@ export default function () {
     // 代码块
     Parser.prototype.parseStmt = function (skipCheckSemicolon) {
         var lookahead = this.peek();
-        if (!skipCheckSemicolon && this.preToken && this.preToken.line == lookahead.line &&
+        if (skipCheckSemicolon) {
+            if (lookahead.value === ';') {
+                return;
+            }
+        } else if (this.preToken && this.preToken.line == lookahead.line &&
             this.preToken.value != '{' && this.preToken.value != '}' &&
             lookahead.value != ';') { //两条语句在同一行，且没有分隔符
             Error.expectedSemicolon(lookahead);
@@ -982,7 +985,9 @@ export default function () {
         this.nextMatch('if');
         this.parseList.push('if');
         _nextExpr();
-        _stmt();
+        if (_stmt()) {
+            this.skipSemicolon(1);
+        }
         if (this.peek().value === 'else') {
             this.next();
             if (this.peek().value === 'if') {
@@ -1004,7 +1009,7 @@ export default function () {
                 that.parseBlockStmt(['else']);
             } else {
                 that.parseStmt(true);
-                that.skipSemicolon(1);
+                return true;
             }
         }
     }
@@ -1344,11 +1349,12 @@ export default function () {
         let isSignOp = false;
         if (this.lexer.isUnitOperator(token)) { //一元运算符:+1,-1
             token = this.next();
-            while (token && token.value === '!') { //!!!...
+            while (token && (token.value === '!' || token.value === 'delete' || token.value === 'void')) { //!!!...
                 token = this.next();
             }
             isSignOp = true;
-        } else if (this.lexer.isPreOp(token)) { //前置运算符:++a,--a
+        }
+        if (this.lexer.isPreOp(token)) { //前置运算符:++a,--a
             token = this.next();
             !this.lexer.isVariable(token) && Error.expectedIdentifier(token);
             isPreOp = true;
