@@ -41,7 +41,6 @@ export default class {
         if (this.folds.length) {
             let index = this.findFoldIndex(nowLine);
             let unFolds = [];
-            console.log(index);
             while (index < this.folds.length && this.folds[index].start.line < nowLine && this.folds[index].end.line > nowLine) {
                 unFolds.push(this.folds[index].start.line);
                 index++;
