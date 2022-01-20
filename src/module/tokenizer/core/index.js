@@ -198,7 +198,7 @@ export default class {
         endLine = endLine || this.maxLine;
         while (startLine <= endLine) {
             let lineObj = this.htmls[startLine - 1];
-            if (!lineObj.tokens && lineObj.text.length < 10000) { //文本超过一万时跳过高亮
+            if (!lineObj.tokens) { //文本超过一万时跳过高亮
                 let data = this.tokenizeLine(startLine);
                 lineObj.tokens = data.tokens;
                 lineObj.folds = data.folds;
@@ -207,7 +207,7 @@ export default class {
                     if (rule && typeof rule.value === 'function') {
                         return rule.value(item.value);
                     } else {
-                        return `<span class="${item.type.split('.').join(' ')}">${Util.htmlTrans(item.value)}</span>`;
+                        return `<span class="${item.type.split('.').join(' ')}" data-column="${item.column}">${Util.htmlTrans(item.value)}</span>`;
                     }
                 }).join('');
                 this.renderLine(lineObj.lineId);
@@ -247,6 +247,17 @@ export default class {
             tokens: [],
             folds: []
         }
+        if (lineObj.text.length > 10000) {
+            return {
+                tokens: this.splitLongToken([{
+                    type: 'plain',
+                    column: 0,
+                    value: lineObj.text
+                }]),
+                folds: [],
+                states: states
+            }
+        }
         while (match = regex.exec(lineObj.text)) {
             let token = null;
             let fold = null;
@@ -263,6 +274,7 @@ export default class {
                     let value = lineObj.text.slice(preEnd, match.index);
                     resultObj.tokens.push({
                         value: value,
+                        column: preEnd,
                         type: this.getTokenType({
                             rule: this.ruleIdMap[states.peek()],
                             index: preEnd,
@@ -303,6 +315,7 @@ export default class {
         if (!resultObj.tokens.length && states.length) { // 整行被多行token包裹
             resultObj.tokens.push({
                 value: lineObj.text,
+                column: 0,
                 type: this.getTokenType({
                     rule: this.ruleIdMap[states.peek()],
                     value: lineObj.text,
@@ -313,6 +326,7 @@ export default class {
             var value = lineObj.text.slice(preEnd);
             resultObj.tokens.push({
                 value: value,
+                column: preEnd,
                 type: this.getTokenType({
                     rule: this.ruleIdMap[states.peek()],
                     index: preEnd,
@@ -323,10 +337,37 @@ export default class {
         }
         regex.lastIndex = 0;
         return {
-            tokens: resultObj.tokens,
+            tokens: this.splitLongToken(resultObj.tokens),
             folds: resultObj.folds,
             states: states
         };
+    }
+    splitLongToken(tokens) {
+        let result = [];
+        tokens.map((token) => {
+            if (token.value.length > 100) { //将文本数量大于100的token分隔
+                let count = Math.floor(token.value.length / 100);
+                for (let i = 0; i < count; i++) {
+                    let column = i * 100;
+                    result.push({
+                        column: column,
+                        value: token.value.slice(column, column + 100),
+                        type: token.type
+                    });
+                }
+                count = count * 100;
+                if (count < token.value.length) {
+                    result.push({
+                        column: count,
+                        value: token.value.slice(count),
+                        type: token.type
+                    });
+                }
+            } else {
+                result.push(token);
+            }
+        });
+        return result;
     }
     getSide(rule, states) {
         let index = states.length - 1;
@@ -355,7 +396,8 @@ export default class {
         let result = match[0];
         let token = {
             ruleId: rule.ruleId,
-            value: result
+            value: result,
+            column: match.index
         };
         if (rule.start && rule.end) { //多行token-end
             if (side === 'end') { //多行token尾

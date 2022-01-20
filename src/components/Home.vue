@@ -42,13 +42,20 @@
 				<div :style="{top: _top, minWidth: _contentMinWidth}" @selectend.prevent="onSelectend" class="my-editor-content" ref="content">
 					<div
 						:class="{active: cursorPos.line == line.num}"
+						:data-line="line.num"
+						:id="'line_'+line.num"
 						:key="line.num"
 						:style="{height:_lineHeight, 'line-height':_lineHeight}"
 						class="my-editor-line"
 						v-for="line in renderHtmls"
 					>
 						<!-- my-editor-bg-color为选中的背景颜色 -->
-						<div :class="[line.selected ? 'my-editor-bg-color' : '', line.fold == 'close' ? 'fold-close' : '']" class="my-editor-code" v-html="line.html"></div>
+						<div
+							:class="[line.selected ? 'my-editor-bg-color' : '', line.fold == 'close' ? 'fold-close' : '']"
+							:data-line="line.num"
+							class="my-editor-code"
+							v-html="line.html"
+						></div>
 						<!-- 选中时的首行背景 -->
 						<div
 							:style="{left: selectedRange.start.left + 'px', width: selectedRange.start.width + 'px'}"
@@ -306,9 +313,9 @@ export default {
                 text: '',
                 html: '',
                 width: 0,
-                tokens: null,
-                folds: null,
-                states: null
+                tokens: [],
+                folds: [],
+                states: []
             });
             context.lineIdMap.set(context.htmls[0].lineId, context.htmls[0]);
             this.tokenizer = new Tokenizer(this, context);
@@ -665,7 +672,14 @@ export default {
         },
         // 设置真实光标位置
         setCursorRealPos() {
-            let left = this.getStrWidthByLine(this.cursorPos.line, 0, this.cursorPos.column);
+            let that = this;
+            let left = 0;
+            let lineObj = context.htmls[that.cursorPos.line - 1];
+            if ($('#line_' + this.cursorPos.line).length && lineObj.tokens && lineObj.tokens.length) {
+                left = _getExactLeft();
+            } else {
+                left = this.getStrWidthByLine(this.cursorPos.line, 0, this.cursorPos.column);
+            }
             let top = (this.folder.getRelativeLine(this.cursorPos.line) - this.folder.getRelativeLine(this.startLine)) * this.charObj.charHight;
             let relTop = this.folder.getRelativeLine(this.cursorPos.line) * this.charObj.charHight;
             // 强制滚动使光标处于可见区域
@@ -685,6 +699,21 @@ export default {
                 top: top + 'px',
                 left: left + 'px'
             };
+
+            function _getExactLeft() {
+                let lineObj = context.htmls[that.cursorPos.line - 1];
+                let token = lineObj.tokens[0];
+                for (let i = 1; i < lineObj.tokens.length; i++) {
+                    if (lineObj.tokens[i].column < that.cursorPos.column) {
+                        token = lineObj.tokens[i];
+                    } else {
+                        break;
+                    }
+                }
+                let $token = $('#line_' + that.cursorPos.line).children('.my-editor-code').children('span[data-column="' + token.column + '"]');
+                let text = token.value.slice(0, that.cursorPos.column - token.column);
+                return $token[0].offsetLeft + that.getStrWidth(text);
+            }
         },
         // 获取最大宽度
         setMaxWidth() {
@@ -778,6 +807,11 @@ export default {
         },
         // 根据鼠标事件对象获取行列坐标
         getPosByEvent(e) {
+            let that = this;
+            let $target = $(e.target);
+            if ($target.attr('data-line') || $target.attr('data-column')) {
+                return _getExactPos(e);
+            }
             let $scroller = $(this.$scroller);
             let offset = $scroller.offset();
             let column = 0;
@@ -794,6 +828,26 @@ export default {
             return {
                 line: line,
                 column: column
+            }
+
+            function _getExactPos(e) {
+                let $target = $(e.target);
+                let line = $target.attr('data-line') - 0;
+                let column = $target.attr('data-column');
+                if (!line) {
+                    line = $target.parent().attr('data-line') - 0;
+                }
+                let lineObj = context.htmls[line - 1];
+                if (!column) {
+                    column = lineObj.text.length;
+                } else {
+                    column = Number(column);
+                    column += that.getColumnByWidth($target.text(), e.offsetX);
+                }
+                return {
+                    line: line,
+                    column: column
+                }
             }
         },
         // 获取选中范围内的文本

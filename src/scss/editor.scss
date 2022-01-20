@@ -142,6 +142,10 @@ body {
         height: 100%;
         white-space: pre;
 
+        span {
+            display: inline-block;
+        }
+
         &.fold-close::before {
             content: "...";
             position: absolute;
