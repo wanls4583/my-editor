@@ -847,8 +847,13 @@ export default {
                 if (!column) {
                     column = lineObj.text.length;
                 } else {
-                    column = Number(column);
-                    column += that.getColumnByWidth($target.text(), e.offsetX);
+                    column = column - 0;
+                    for (let i = 0; i < lineObj.tokens.length; i++) {
+                        if (lineObj.tokens[i].column == column) {
+                            column += that.getColumnByWidth(lineObj.tokens[i].value, e.offsetX);
+                            break;
+                        }
+                    }
                 }
                 return {
                     line: line,
