@@ -198,7 +198,7 @@ export default class {
         endLine = endLine || this.maxLine;
         while (startLine <= endLine) {
             let lineObj = this.htmls[startLine - 1];
-            if (!lineObj.tokens) {
+            if (!lineObj.tokens && lineObj.text.length < 10000) { //文本超过一万时跳过高亮
                 let data = this.tokenizeLine(startLine);
                 lineObj.tokens = data.tokens;
                 lineObj.folds = data.folds;
