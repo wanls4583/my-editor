@@ -845,6 +845,13 @@ export default function () {
                     if (lookahead.value === '(') { //{a(){},b}
                         this.parseFunArgsStmt();
                         this.parseBlockStmt();
+                    } else if (this.peek(2).value === '(') { //{get a(){}, static b(){}}
+                        if (this.preToken.value !== 'get' && this.preToken.value !== 'static') {
+                            Error.expected(this.preToken, ['get', 'static']);
+                        }
+                        this.nextMatch(TokenType.IDENTIFIER);
+                        this.parseFunArgsStmt();
+                        this.parseBlockStmt();
                     }
                 }
             }
@@ -881,16 +888,18 @@ export default function () {
         }
 
         function _identifier() {
-            if (that.peek().value === '{') { //es6:const {a,b} = {a:1,b:2}
+            let lookahead = that.peek();
+            if (lookahead.value === '{' || lookahead.value === '[') { //es6:const {a,b} = {a:1,b:2}、const [a,b] = [1,2]
                 let startToken = that.next();
+                let value = lookahead.value === '{' ? '}' : ']';
                 that.nextMatch(TokenType.IDENTIFIER);
-                while (that.hasNext() && that.peek().value !== '}') {
+                while (that.hasNext() && that.peek().value !== value) {
                     that.peekMatch(',')
                     if (!that.peekMatch(TokenType.IDENTIFIER)) {
                         break;
                     }
                 }
-                if (!that.peekMatch('}')) {
+                if (!that.peekMatch(value)) {
                     Error.unmatch(startToken);
                 }
             } else {
@@ -1158,12 +1167,15 @@ export default function () {
         this.parseList.push('for');
         this.nextMatch('for');
         this.peekMatch('(');
-        if (this.peek(2).value == 'in' || this.peek(3).value == 'in') { //for in语句
-            if (this.peek(3).value == 'in') {
+        if (this.peek(2).value === 'in' ||
+            this.peek(2).value === 'of' ||
+            this.peek(3).value === 'in' ||
+            this.peek(3).value === 'of') { //for in、es6 for of 语句
+            if (this.peek(3).value === 'in' || this.peek(3).value === 'of') {
                 this.nextMatch(['var', 'let', 'const']);
             }
             this.nextMatch(TokenType.IDENTIFIER);
-            this.nextMatch('in');
+            this.nextMatch(['in', 'of']);
             this.parseExprStmt();
         } else {
             if (['var', 'let', 'const'].indexOf(this.peek().value) > -1) {
@@ -1457,6 +1469,9 @@ export default function () {
         var lookahead = null;
         this.nextMatch('[');
         while (this.hasNext() && this.peek().value !== ']') {
+            if (this.peek().value === '...') { // [...a]
+                this.next();
+            }
             this.parseExpr();
             lookahead = this.peek();
             if (lookahead.value === ',') {
@@ -1493,7 +1508,22 @@ export default function () {
     Parser.prototype.parseCallArgs = function () {
         this.peekMatch('(');
         if (this.peek().value !== ')') {
-            this.parseExprStmt();
+            while (this.hasNext()) {
+                if (this.peek().value === '...') {
+                    this.next();
+                    if (this.peek().value === '{') {
+                        this.parseObjectStmt();
+                    } else {
+                        this.nextMatch(TokenType.IDENTIFIER);
+                    }
+                } else {
+                    this.parseExpr();
+                }
+                if (this.peek().value === ')') {
+                    break;
+                }
+                this.peekMatch(',');
+            }
         }
         this.peekMatch(')');
         if (this.peek().value === '(') {

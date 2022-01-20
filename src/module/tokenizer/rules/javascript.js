@@ -132,7 +132,7 @@ const rules = [
         regex: /(?<=\.)(?:prototype\b|toString\b|valueOf\b|toLocaleString\b|hasOwnProperty\b|isPrototypeOf\b|propertyIsEnumerable\b)/,
         token: 'js-local'
     }, {
-        regex: /\bwindow\b|\bdocument\b/,
+        regex: /\bwindow\b|\bdocument\b|\bmodule\b|\bexports\b/,
         token: 'js-local'
     }, {
         regex: /\bthis\b|\bself\b/,
