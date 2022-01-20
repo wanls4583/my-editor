@@ -292,8 +292,8 @@ export default {
         this.$textarea = this.$refs.textarea;
         this.$vScroller = this.$refs.vScroller;
         this.$hScroller = this.$refs.hScroller;
-        this.maxVisibleLines = Math.ceil(this.$scroller.clientHeight / this.charObj.charHight) + 1;
         this.charObj = Util.getCharWidth(this.$scroller);
+        this.maxVisibleLines = Math.ceil(this.$scroller.clientHeight / this.charObj.charHight) + 1;
         this.render();
         this.focus();
     },
