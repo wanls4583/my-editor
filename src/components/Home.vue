@@ -728,15 +728,19 @@ export default {
             });
             this.maxWidthObj = maxWidthObj;
         },
+        /**
+         * 设置每行文本的宽度
+         * @param {Array} texts
+         */
         setLineWidth(texts) {
             let index = 0;
             let that = this;
+            let startTime = Date.now();
             clearTimeout(this.setLineWidth.timer);
             _setLineWidth();
 
             function _setLineWidth() {
-                let count = 0;
-                while (count < 5000 && index < texts.length) {
+                while (index < texts.length) {
                     let lineObj = texts[index];
                     if (context.lineIdMap.has(lineObj.lineId)) {
                         let width = that.getStrWidth(lineObj.text);
@@ -749,12 +753,14 @@ export default {
                         }
                     }
                     index++;
-                    count++;
+                    if (Date.now() - startTime > 20) {
+                        break;
+                    }
                 }
                 if (index < texts.length) {
-                    that.setLineWidth.timer = requestAnimationFrame(function () {
+                    that.setLineWidth.timer = setTimeout(() => {
                         _setLineWidth();
-                    });
+                    }, 20);
                 }
             }
         },
