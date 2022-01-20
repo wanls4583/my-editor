@@ -1,5 +1,3 @@
-import Util from "../../../common/Util";
-
 const variable = `[\\$_a-zA-Z][\\$_a-zA-Z0-9]*?`
 const strValid = function (e) {
     let value = e.value;
@@ -30,7 +28,7 @@ const tplStrReg = {
 // 正则字面量
 const regexp = {
     start: /(?<=^|[\(\{\[\;\,\:\?\!\+\-\*\%\=\>\<\&\|]\s*?)\//,
-    end: /(?<=(?:\\[\s\S]|[^\\])+?)\/|$/,
+    end: /(?<=(?:\\[\s\S]|[^\\])+?)\/(?:i|m|g|im|mi|ig|gi|mg|gm|img|igm|mig|mgi|gim|gmi)?|$/i,
     childRule: {
         rules: [{
             regex: /\\b/,
@@ -112,7 +110,7 @@ const rules = [
         regex: /\bfunction\b/,
         token: 'js-function'
     }, {
-        regex: new RegExp(`(${variable})\\s*?(?=\\([^\\(]*?\\)\\s*?\\{)`), //ie. test(){}
+        regex: new RegExp(`(${variable})\\s*?(?=\\([^\\(\\)]*?\\)\\s*?\\{)`), //ie. test(){}
         token: 'js-function-name'
     }, {
         regex: new RegExp(`(?<=\\bfunction\\s+?)${variable}`), //ie. function test
