@@ -221,10 +221,14 @@ export default {
             return this.cursorPos.visible ? 'visible' : 'hidden';
         },
         _hScrollWidth() {
-            return this.maxWidthObj.width + this.charObj.fullAngleCharWidth * 2 + 'px';
+            return this._contentMinWidth;
         },
         _contentMinWidth() {
-            let width = this.maxWidthObj.width + this.charObj.fullAngleCharWidth * 2;
+            let width = 0;
+            if (this.$content && context.lineIdMap.get(this.maxWidthObj.lineId)) {
+                width = Util.getStrExactWidth(context.lineIdMap.get(this.maxWidthObj.lineId).text, this.tabSize, this.$content);
+                width += this.charObj.fullAngleCharWidth;
+            }
             width = this.scrollerArea.width > width ? this.scrollerArea.width : width;
             return width + 'px';
         },
@@ -318,6 +322,7 @@ export default {
                 states: []
             });
             context.lineIdMap.set(context.htmls[0].lineId, context.htmls[0]);
+            this.maxWidthObj.lineId = context.htmls[0].lineId;
             this.tokenizer = new Tokenizer(this, context);
             this.lint = new Lint(this, context);
             this.folder = new Fold(this, context);

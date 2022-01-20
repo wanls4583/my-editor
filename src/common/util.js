@@ -99,8 +99,37 @@ class Util {
         }
         return width;
     }
+    /**
+     * 获取文本在浏览器中的真实宽度
+     * @param  {string} str       文本
+     * @param  {DOM} wrap     容器
+     */
+    static getStrExactWidth(str, tabSize, wrap) {
+        Util.getStrExactWidth.count = Util.getStrExactWidth.count || 0;
+        Util.getStrExactWidth.count++;
+        if (!str) {
+            return 0;
+        }
+        str = Util.htmlTrans(str);
+        str = str.replace(/\t/g, Util.space(tabSize || 4));
+        var id = 'str-width-' + Util.getUUID();
+        var $tempDom = $(`<div class="my-editor-line" style="height:19px;visibility:hidden"><span class="my-editor-temp-text my-editor-code" id="${id}">${str}</span></div>`);
+        $(wrap).append($tempDom)
+        var dom = $('#' + id)[0];
+        var charWidth = dom.clientWidth;
+        if (Util.getStrExactWidth.count > 50) { //避免频繁删除dom导致浏览器卡顿
+            $('.my-editor-temp-text').remove();
+        } else {
+            clearTimeout(Util.getStrExactWidth.timer);
+            Util.getStrExactWidth.timer = setTimeout(() => {
+                $('.my-editor-temp-text').remove();
+            }, 500);
+        }
+        return charWidth;
+    }
     //<,>转义
     static htmlTrans(cont) {
+        cont = cont.replace(/\&\#/g, '&amp;#');
         return cont.replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
     // 深度克隆
