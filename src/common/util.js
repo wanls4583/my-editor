@@ -112,16 +112,14 @@ class Util {
         if (!str) {
             return 0;
         }
-        str = Util.htmlTrans(str);
-        str = str.replace(/\t/g, Util.space(tabSize || 4));
         var id = 'str-width-' + Util.getUUID();
-        var $tempDom = $(`<div class="my-editor-line" style="visibility:hidden">
-        <div class="my-editor-temp-text my-editor-code" id="${id}"><span>${str}</span></div>
+        var $tempDom = $(`<div class="my-editor-line my-editor-temp-text" style="visibility:hidden">
+        <div class="my-editor-code" id="${id}">${_splitStr(str)}</div>
         </div>`);
         $(wrap).append($tempDom)
         var dom = $('#' + id)[0];
         var charWidth = dom.clientWidth;
-        if (Util.getStrExactWidth.count > 50) { //避免频繁删除dom导致浏览器卡顿
+        if (Util.getStrExactWidth.count > 5) { //避免频繁删除dom导致浏览器卡顿
             $('.my-editor-temp-text').remove();
         } else {
             clearTimeout(Util.getStrExactWidth.timer);
@@ -130,6 +128,20 @@ class Util {
             }, 500);
         }
         return charWidth;
+
+        function _splitStr(str) {
+            let count = Math.floor(str.length / 100);
+            let result = [];
+            for (let i = 0; i < count; i++) {
+                let column = i * 100;
+                result.push(Util.htmlTrans(str.slice(column, column + 100)));
+            }
+            count = count * 100;
+            if (count < str.length) {
+                result.push(Util.htmlTrans(str.slice(count)));
+            }
+            return `<span>${result.join('</span><span>').replace(/\t/g, Util.space(tabSize || 4))}</span>`;
+        }
     }
     //<,>转义
     static htmlTrans(cont) {
