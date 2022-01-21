@@ -484,7 +484,7 @@ export default {
             let nowColume = this.cursorPos.column;
             let nowLine = this.cursorPos.line;
             let newLine = nowLine;
-            let newColume = nowColume;
+            let newColumn = nowColume;
             this.tokenizer.onInsertContentBefore(nowLine);
             this.lint.onInsertContentBefore(nowLine);
             this.folder.onInsertContentBefore(nowLine);
@@ -503,12 +503,12 @@ export default {
                 return item;
             });
             if (text.length > 1) { // 插入多行
-                newColume = text[text.length - 1].text.length;
+                newColumn = text[text.length - 1].text.length;
                 text[0].text = nowLineText.slice(0, nowColume) + text[0].text;
                 text[text.length - 1].text = text[text.length - 1].text + nowLineText.slice(nowColume);
                 context.htmls = context.htmls.slice(0, this.cursorPos.line - 1).concat(text).concat(context.htmls.slice(this.cursorPos.line));
             } else { // 插入一行
-                newColume += text[0].text.length;
+                newColumn += text[0].text.length;
                 text[0].text = nowLineText.slice(0, nowColume) + text[0].text + nowLineText.slice(this.cursorPos.column);
                 context.htmls.splice(this.cursorPos.line - 1, 1, text[0]);
             }
@@ -522,9 +522,7 @@ export default {
             if (context.foldMap.has(nowLine) && text.length > 1) {
                 this.unFold(nowLine);
             }
-            this.$nextTick(() => {
-                this.setCursorPos(newLine, newColume);
-            });
+            this.setCursorPos(newLine, newColumn);
             let historyObj = {
                 type: Util.command.DELETE,
                 start: {
@@ -533,7 +531,7 @@ export default {
                 },
                 end: {
                     line: newLine,
-                    column: newColume
+                    column: newColumn
                 }
             }
             if (!isDoCommand) { // 新增历史记录
@@ -550,6 +548,8 @@ export default {
             let originPos = { line: this.cursorPos.line, column: this.cursorPos.column };
             let deleteText = '';
             let rangeUuid = [];
+            let newLine = this.cursorPos.line;
+            let newColumn = this.cursorPos.column;
             this.tokenizer.onDeleteContentBefore(this.cursorPos.line);
             this.lint.onDeleteContentBefore(this.cursorPos.line);
             this.folder.onDeleteContentBefore(this.cursorPos.line);
@@ -582,7 +582,8 @@ export default {
                     startObj.text += text;
                     context.htmls.splice(start.line, end.line - start.line);
                 }
-                this.setCursorPos(start.line, start.column);
+                newLine = start.line;
+                newColumn = start.column;
             } else if (Util.keyCode.DELETE == keyCode) { // 向后删除一个字符
                 if (this.cursorPos.column == text.length) { // 光标处于行尾
                     if (this.cursorPos.line < context.htmls.length) {
@@ -603,13 +604,14 @@ export default {
                         context.lineIdMap.delete(context.htmls[this.cursorPos.line - 2].lineId);
                         text = context.htmls[this.cursorPos.line - 2].text + text;
                         context.htmls.splice(this.cursorPos.line - 2, 1);
-                        this.setCursorPos(this.cursorPos.line - 1, column);
                         deleteText = '\n';
+                        newLine = this.cursorPos.line - 1;
+                        newColumn = column;
                     }
                 } else {
                     deleteText = text[this.cursorPos.column - 1];
                     text = text.slice(0, this.cursorPos.column - 1) + text.slice(this.cursorPos.column);
-                    this.setCursorPos(this.cursorPos.line, this.cursorPos.column - 1);
+                    newColumn = this.cursorPos.column - 1;
                 }
                 startObj.text = text;
             }
@@ -620,9 +622,12 @@ export default {
             this.maxLine = context.htmls.length;
             this.render(); //必须放在tokenizer前面，renderline(lineId)的时候.obj.num将失效
             this.clearRnage();
-            this.tokenizer.onDeleteContentAfter(this.cursorPos.line);
-            this.lint.onDeleteContentAfter(this.cursorPos.line);
-            this.folder.onDeleteContentAfter(this.cursorPos.line);
+            this.tokenizer.onDeleteContentAfter(newLine);
+            this.lint.onDeleteContentAfter(newLine);
+            this.folder.onDeleteContentAfter(newLine);
+            if (newLine != this.cursorPos.line || this.cursorPos.column != newColumn) {
+                this.setCursorPos(newLine, newColumn);
+            }
             // 更新最大文本宽度
             if (startObj.width >= this.maxWidthObj.width) {
                 this.maxWidthObj = {
@@ -675,7 +680,9 @@ export default {
             this.cursorPos.column = column;
             this.cursorPos.visible = true;
             this.forceCursorView = forceCursorView === undefined ? true : forceCursorView;
-            this.setCursorRealPos();
+            this.$nextTick(() => {
+                this.setCursorRealPos();
+            });
         },
         // 设置真实光标位置
         setCursorRealPos() {
