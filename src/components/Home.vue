@@ -680,8 +680,11 @@ export default {
             this.cursorPos.column = column;
             this.cursorPos.visible = true;
             this.forceCursorView = forceCursorView === undefined ? true : forceCursorView;
-            this.$nextTick(() => {
-                this.setCursorRealPos();
+            cancelAnimationFrame(this.setCursorPos.timer);
+            this.setCursorPos.timer = requestAnimationFrame(() => {
+                this.$nextTick(() => {
+                    this.setCursorRealPos();
+                });
             });
         },
         // 设置真实光标位置
