@@ -741,7 +741,11 @@ export default function () {
                 this.parseDeclareStmt();
                 break;
             case '{':
-                this.parseBlockStmt();
+                if (this.peek(3).value === ':') {
+                    this.parseObjectStmt();
+                } else {
+                    this.parseBlockStmt();
+                }
                 break;
             case 'import':
                 this.parseImportStmt();
