@@ -1,3 +1,8 @@
+// @font-face {
+//     font-family: myfont;
+//     src: url(./font/test.ttf) format("truetype")
+// }
+
 * {
     box-sizing: border-box;
 }
@@ -40,6 +45,7 @@ body {
         line-height: 1.5em;
         letter-spacing: 0px;
         font-family: Consolas, "Courier New", monospace;
+        // font-family: myfont;
         user-select: none;
         -webkit-tap-highlight-color: rgab(0, 0, 0, 0);
     }

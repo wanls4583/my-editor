@@ -932,31 +932,35 @@ export default function () {
         var lookahead = null;
         this.nextMatch('import');
         lookahead = this.peek();
-        if (lookahead.value === '{') { //import {a,b,c} from 'test'
+        if (lookahead.type === TokenType.STRING) { //import 'test.css'
             this.next();
-            this.nextMatch(TokenType.IDENTIFIER);
-            while (this.hasNext() && this.peek().value != '}') {
-                this.peekMatch(',')
-                if (!this.peekMatch(TokenType.IDENTIFIER)) {
-                    break;
+        } else {
+            if (lookahead.value === '{') { //import {a,b,c} from 'test'
+                this.next();
+                this.nextMatch(TokenType.IDENTIFIER);
+                while (this.hasNext() && this.peek().value != '}') {
+                    this.peekMatch(',')
+                    if (!this.peekMatch(TokenType.IDENTIFIER)) {
+                        break;
+                    }
+                    if (this.peek().value === 'as') { //import {a as b} from 'test'
+                        this.next();
+                        this.nextMatch(TokenType.IDENTIFIER);
+                    }
                 }
-                if (this.peek().value === 'as') { //import {a as b} from 'test'
-                    this.next();
-                    this.nextMatch(TokenType.IDENTIFIER);
+                if (!this.peekMatch('}')) {
+                    Error.unmatch(lookahead);
                 }
+            } else if (lookahead.value === '*') { //import * as a from 'test'
+                this.next();
+                this.nextMatch('as');
+                this.nextMatch(TokenType.IDENTIFIER);
+            } else { //import a from 'test'
+                this.nextMatch(TokenType.IDENTIFIER);
             }
-            if (!this.peekMatch('}')) {
-                Error.unmatch(lookahead);
-            }
-        } else if (lookahead.value === '*') { //import * as a from 'test'
-            this.next();
-            this.nextMatch('as');
-            this.nextMatch(TokenType.IDENTIFIER);
-        } else { //import a from 'test'
-            this.nextMatch(TokenType.IDENTIFIER);
+            this.nextMatch('from');
+            this.nextMatch(TokenType.STRING);
         }
-        this.nextMatch('from');
-        this.nextMatch(TokenType.STRING);
     }
 
     // export语句
@@ -1384,6 +1388,7 @@ export default function () {
     }
 
     Parser.prototype.parseLeftHand = function () {
+        let preToken = this.preToken;
         let token = this.next();
         let lookahead = null;
         let assignAble = false; //是否可赋值
@@ -1391,13 +1396,14 @@ export default function () {
         let isPreOp = false;
         let isSignOp = false;
         if (this.lexer.isUnitOperator(token)) { //一元运算符:+1,-1
-            token = this.next();
             while (token && (token.value === '!' || token.value === 'delete' || token.value === 'void')) { //!!!...
+                preToken = token;
                 token = this.next();
             }
             isSignOp = true;
         }
         if (token && this.lexer.isPreOp(token)) { //前置运算符:++a,--a
+            preToken = token;
             token = this.next();
             token && !this.lexer.isVariable(token) && Error.expectedIdentifier(token);
             isPreOp = true;
@@ -1432,7 +1438,7 @@ export default function () {
             this.parseCallArgs();
         } else if (lookahead.value === '=>' &&
             !isPreOp && !isSignOp && this.lexer.isVariable(token)) { //es6箭头函数test=>{}
-            this.parseArrorwFunction();
+            this.parseArrorwFunction(preToken && preToken.value === ':');
             end = true;
         } else if (!isPreOp && !isSignOp && this.lexer.isVariable(token)) { //是否可赋值
             assignAble = true;
@@ -1449,6 +1455,7 @@ export default function () {
     Parser.prototype.parseParen = function () {
         let lookLength = 1;
         let startToken = this.peek();
+        let preToken = this.preToken;
         this.nextMatch('(');
         let lookToken = this.peek();
         while (lookToken.value && lookToken.value != ')') {
@@ -1458,7 +1465,7 @@ export default function () {
         if (lookToken.value === ')' && this.peek(lookLength + 1).value === '=>') { //es6箭头函数
             this.putBack();
             this.parseFunArgsStmt();
-            this.parseArrorwFunction();
+            this.parseArrorwFunction(preToken && preToken.value === ':');
         } else {
             this.parseExprStmt();
             !this.peekMatch(')') && Error.unmatch(startToken);
@@ -1498,10 +1505,12 @@ export default function () {
         }
     }
 
-    Parser.prototype.parseArrorwFunction = function () {
+    Parser.prototype.parseArrorwFunction = function (skipNextExpr) {
         this.nextMatch('=>');
         if (this.peek().value === '{') {
             this.parseBlockStmt();
+        } else if (skipNextExpr) { //{a:t=>t()}
+            this.parseExpr();
         } else {
             this.parseExprStmt();
         }
