@@ -171,6 +171,7 @@ export default {
             selectedRange: null,
             maxWidthObj: {
                 lineId: null,
+                text: '',
                 width: 0
             },
             menuList: [[{
@@ -225,9 +226,8 @@ export default {
         },
         _contentMinWidth() {
             let width = 0;
-            if (this.$content && context.lineIdMap.get(this.maxWidthObj.lineId)) {
-                let lineObj = context.lineIdMap.get(this.maxWidthObj.lineId);
-                width = Util.getStrExactWidth(lineObj.text, this.tabSize, this.$content);
+            if (this.$content) {
+                width = Util.getStrExactWidth(this.maxWidthObj.text, this.tabSize, this.$content);
                 width += this.charObj.fullAngleCharWidth;
             }
             width = this.scrollerArea.width > width ? this.scrollerArea.width : width;
@@ -284,7 +284,7 @@ export default {
         },
         tabSize: function (newVal) {
             this.render();
-            this.maxWidthObj = { lineId: null, width: 0 };
+            this.maxWidthObj = { lineId: null, text: '', width: 0 };
             this.setLineWidth(context.htmls);
         },
         maxLine: function (newVal) {
@@ -627,6 +627,7 @@ export default {
             if (startObj.width >= this.maxWidthObj.width) {
                 this.maxWidthObj = {
                     lineId: startObj.lineId,
+                    text: startObj.text,
                     width: startObj.width
                 }
             } else if (rangeUuid.indexOf(this.maxWidthObj.lineId) > -1) {
@@ -728,6 +729,7 @@ export default {
                 if (item.width > maxWidthObj.width) {
                     maxWidthObj = {
                         lineId: item.lineId,
+                        text: item.text,
                         width: item.width
                     }
                 }
@@ -754,6 +756,7 @@ export default {
                         if (width > that.maxWidthObj.width) {
                             that.maxWidthObj = {
                                 lineId: lineObj.lineId,
+                                text: lineObj.text,
                                 width: width
                             }
                         }

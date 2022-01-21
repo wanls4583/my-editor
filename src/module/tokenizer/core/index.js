@@ -282,6 +282,7 @@ export default class {
                             text: lineObj.text
                         })
                     });
+                    preEnd = match.index;
                 }
                 if (typeof rule.valid === 'function') {
                     valid = rule.valid({
