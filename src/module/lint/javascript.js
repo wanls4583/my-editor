@@ -1013,14 +1013,17 @@ export default function () {
     // if语句
     Parser.prototype.parseIfStmt = function () {
         let that = this;
+        let lookahead = null;
         this.nextMatch('if');
         this.parseList.push('if');
         _nextExpr();
-        if (_stmt()) {
-            this.skipSemicolon(1);
+        if (_stmt() && this.peek().value === ';') {
+            lookahead = this.peek(2);
+        } else {
+            lookahead = this.peek();
         }
-        if (this.peek().value === 'else') {
-            this.next();
+        if (lookahead.value === 'else') {
+            this.next().value === ';' && this.next();
             if (this.peek().value === 'if') {
                 this.parseIfStmt();
             } else {
@@ -1394,7 +1397,7 @@ export default function () {
             }
             isSignOp = true;
         }
-        if (this.lexer.isPreOp(token)) { //前置运算符:++a,--a
+        if (token && this.lexer.isPreOp(token)) { //前置运算符:++a,--a
             token = this.next();
             token && !this.lexer.isVariable(token) && Error.expectedIdentifier(token);
             isPreOp = true;

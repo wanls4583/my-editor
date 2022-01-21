@@ -226,7 +226,8 @@ export default {
         _contentMinWidth() {
             let width = 0;
             if (this.$content && context.lineIdMap.get(this.maxWidthObj.lineId)) {
-                width = Util.getStrExactWidth(context.lineIdMap.get(this.maxWidthObj.lineId).text, this.tabSize, this.$content);
+                let lineObj = context.lineIdMap.get(this.maxWidthObj.lineId);
+                width = Util.getStrExactWidth(lineObj.text, this.tabSize, this.$content);
                 width += this.charObj.fullAngleCharWidth;
             }
             width = this.scrollerArea.width > width ? this.scrollerArea.width : width;
@@ -303,7 +304,7 @@ export default {
         this.$textarea = this.$refs.textarea;
         this.$vScroller = this.$refs.vScroller;
         this.$hScroller = this.$refs.hScroller;
-        this.charObj = Util.getCharWidth(this.$scroller);
+        this.charObj = Util.getCharWidth(this.$content);
         this.maxVisibleLines = Math.ceil(this.$scroller.clientHeight / this.charObj.charHight) + 1;
         this.render();
         this.focus();

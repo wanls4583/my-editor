@@ -54,7 +54,9 @@ class Util {
         var str2 = '一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一';
         var id1 = 'char-width-' + Util.getUUID();
         var id2 = 'char-width-' + Util.getUUID();
-        var $tempDom = $(`<span style="display:inline-block;white-space:nowrap" id="${id1}">${str1}</span><span style="display:inline-block;white-space:nowrap" id="${id2}">${str2}</span>`);
+        var $tempDom = $(`<div class="my-editor-line">
+        <div class="my-editor-code"><span id="${id1}">${str1}</span><span id="${id2}">${str2}</span></div>
+        </div>`);
         $(wrap).append($tempDom)
         var dom = $('#' + id1)[0];
         var charWidth = dom.scrollWidth / str1.length;
@@ -113,7 +115,9 @@ class Util {
         str = Util.htmlTrans(str);
         str = str.replace(/\t/g, Util.space(tabSize || 4));
         var id = 'str-width-' + Util.getUUID();
-        var $tempDom = $(`<div class="my-editor-line" style="height:19px;visibility:hidden"><span class="my-editor-temp-text my-editor-code" id="${id}">${str}</span></div>`);
+        var $tempDom = $(`<div class="my-editor-line" style="visibility:hidden">
+        <div class="my-editor-temp-text my-editor-code" id="${id}"><span>${str}</span></div>
+        </div>`);
         $(wrap).append($tempDom)
         var dom = $('#' + id)[0];
         var charWidth = dom.clientWidth;
