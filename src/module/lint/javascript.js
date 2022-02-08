@@ -1404,6 +1404,9 @@ export default function () {
                 preToken = token;
                 token = this.next();
             }
+            if (this.lexer.isUnitOperator(token)) {
+                token = this.next();
+            }
             isSignOp = true;
         }
         if (token && this.lexer.isPreOp(token)) { //前置运算符:++a,--a
