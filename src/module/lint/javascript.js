@@ -1400,11 +1400,14 @@ export default function () {
         let isPreOp = false;
         let isSignOp = false;
         if (this.lexer.isUnitOperator(token)) { //一元运算符:+1,-1
-            while (token && (token.value === '!' || token.value === 'delete' || token.value === 'void')) { //!!!...
+            if (token.value === '!' || token.value === 'delete' || token.value === 'void') {
+                let value = token.value;
+                while (token && token.value === value) { //!!!...
+                    preToken = token;
+                    token = this.next();
+                }
+            } else {
                 preToken = token;
-                token = this.next();
-            }
-            if (this.lexer.isUnitOperator(token)) {
                 token = this.next();
             }
             isSignOp = true;
