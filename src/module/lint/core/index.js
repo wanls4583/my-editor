@@ -4,7 +4,8 @@
  * @Description: 
  */
 import Util from '@/common/Util';
-import jsLint from '../javascript';
+import jsLint from '../language/javascript';
+import cssLint from '../language/css';
 export default class {
     constructor(editor, context) {
         this.parseId = 1;
@@ -27,6 +28,9 @@ export default class {
         switch (language) {
             case 'JavaScript':
                 this.worker = this.createWorker(jsLint);
+                break;
+            case 'CSS':
+                this.worker = this.createWorker(cssLint);
                 break;
         }
         if (!this.worker) {

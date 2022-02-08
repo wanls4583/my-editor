@@ -155,7 +155,8 @@ export default {
                 left: '0px'
             },
             // language: 'HTML',
-            language: 'JavaScript',
+            // language: 'JavaScript',
+            language: 'CSS',
             statusHeight: 23,
             tabSize: 4,
             renderHtmls: [],
