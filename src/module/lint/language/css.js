@@ -18,15 +18,14 @@ export default function () {
     const brackets = ['{', '}', '[', ']', '(', ')'];
     const regs = {
         space: /^\s+/,
-        number: /^\d+\b/i,
-        tag: /^[a-zA-Z_][a-zA-Z0-9_\-]*/,
-        propertyName: /^[a-zA-Z_$][a-zA-Z0-9_\-$]*/,
-        propertyValue: /^[+\-]?[a-zA-Z0-9_\-$]+/,
-        punctuator: /^[\+\-\*\~\,\:\;\.\#]/,
+        tag: /^@?[a-zA-Z_][a-zA-Z0-9_\-]*/,
+        propertyName: /^[\*]?[a-zA-Z_$][a-zA-Z0-9_\-$]*/,
+        propertyValue: /^[+\-]?[a-zA-Z0-9_\-$%]+|^#[a-zA-Z0-9]+|^(?:\d+(?:\.\d*)?|\.\d+)(?:[sS%]|px|PX)/,
+        punctuator: /^[\+\-\*\~\,\:\;\.\#\=\!]/,
         comment: /\*\//,
         string1: /\\*'/,
         string2: /\\*"/,
-        other: /^[^\s+\-\*\/%&\|\^\=\!\>\<\~\{\}\(\)]+/
+        other: /^[\s\S]/
     }
     const maxErrors = 100;
 
@@ -40,7 +39,6 @@ export default function () {
         return this.label;
     }
 
-    TokenType.NUMBER = new TokenType(1, 'number');
     TokenType.STRING = new TokenType(2, 'string');
     TokenType.SELECTOR = new TokenType(3, 'selector');
     TokenType.PROPERTY = new TokenType(4, 'property');
@@ -166,8 +164,7 @@ export default function () {
         return token.type === TokenType.VALUE ||
             token.type === TokenType.SELECTOR ||
             token.type === TokenType.PROPERTY ||
-            token.type === TokenType.STRING ||
-            token.type === TokenType.NUMBER
+            token.type === TokenType.STRING
     }
 
     Lexer.prototype.craeteToken = function (value, type) {
@@ -205,10 +202,7 @@ export default function () {
         this.scanSpace(); //去掉空格
         ch1 = this.input[0];
         ch2 = this.input[1];
-        if (ch1 === '/' && ch2 == '/') {
-            this.skipLine(1);
-            this.scanComment();
-        } else if (ch1 === '/' && ch2 === '*') {
+        if (ch1 === '/' && ch2 === '*') {
             startToken = this.craeteToken('/*');
             this.skip(2);
             while (this.hasNext() && !(exec = regs.comment.exec(this.input))) {
@@ -267,16 +261,6 @@ export default function () {
         }
     }
 
-    Lexer.prototype.scanNunmber = function () {
-        let exec = null;
-        let token = null;
-        if (exec = regs.number.exec(this.input)) {
-            token = this.craeteToken(exec[0], TokenType.NUMBER);
-            this.skip(exec.index + exec[0].length);
-        }
-        return token;
-    }
-
     Lexer.prototype.scanIdentifier = function () {
         let exec = null;
         let token = null;
@@ -330,7 +314,6 @@ export default function () {
             token =
                 this.scanIdentifier() ||
                 this.scanBracket() ||
-                this.scanNunmber() ||
                 this.scanString() ||
                 this.scanPunctuator()
             if (!token) { //存在非法字符
@@ -530,6 +513,21 @@ export default function () {
     }
 
     Parser.prototype.parseStmt = function () {
+        this.parseSelector();
+        if (this.peek().value === '{') {
+            this.parseBlock();
+        } else if (this.hasNext()) {
+            token = this.peek();
+            if (token.value === '+' || token.value === '~') { //兄弟选择器
+                this.next();
+            } else if (token.value === ',') { //并列选择器
+                this.next();
+            }
+            this.parseStmt();
+        }
+    }
+
+    Parser.prototype.parseSelector = function () {
         let token = this.next();
         if (token.value === '.' || token.value === '#') { //类、ID选择器
             this.nextMatch(TokenType.SELECTOR);
@@ -543,7 +541,7 @@ export default function () {
                 } else {
                     this.next();
                 }
-                this.nextMatch(':');
+                this.nextMatch(']');
             } else {
                 this.next();
             }
@@ -552,20 +550,14 @@ export default function () {
                 this.next();
             }
             this.nextMatch(TokenType.SELECTOR);
-        } else { //标签选择器
+            if (this.peek().value === '(') { //:not(p)
+                this.next();
+                this.parseSelector();
+                this.nextMatch(')');
+            }
+        } else if (token.value !== '*') { //标签选择器
             this.putBack();
             this.nextMatch(TokenType.SELECTOR);
-        }
-        if (this.peek().value === '{') {
-            this.parseBlock();
-        } else if (this.hasNext()) {
-            token = this.peek();
-            if (token.value === '+' || token.value === '~') { //兄弟选择器
-                this.next();
-            } else if (token.value === ',') { //并列选择器
-                this.next();
-            }
-            this.parseStmt();
         }
     }
 
@@ -596,15 +588,29 @@ export default function () {
             let hasValue = false;
             while (that.hasNext()) {
                 let token = that.peek();
-                if (token.value === ';' || token.value === '}') {
+                if (token.value === ';' || token.value === '}' || token.value === ')') {
                     break;
                 }
-                that.next();
-                hasValue = true;
+                token = that.next();
+                if (that.lexer.isValue(token)) {
+                    hasValue = true;
+                } else if (token.value === '(') {
+                    hasValue = _nextMatchValue() || hasValue;
+                    that.nextMatch(')');
+                } else if (hasValue && token.value === ',') {
+                    _nextMatchValue();
+                    break;
+                } else if (hasValue && token.value === '!') {
+                    that.nextMatch('important');
+                    break;
+                } else {
+                    Error.expected(token, 'value');
+                }
             }
             if (!hasValue) {
                 Error.expected(null, 'value');
             }
+            return hasValue;
         }
     }
 
