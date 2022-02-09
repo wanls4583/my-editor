@@ -4,6 +4,7 @@
  * @Description: 
  */
 import Util from '@/common/Util';
+import htmlLint from '../language/html';
 import jsLint from '../language/javascript';
 import cssLint from '../language/css';
 export default class {
@@ -26,6 +27,9 @@ export default class {
         this.worker = null;
         this.setErrorMap({});
         switch (language) {
+            case 'HTML':
+                this.worker = this.createWorker(htmlLint);
+                break;
             case 'JavaScript':
                 this.worker = this.createWorker(jsLint);
                 break;
@@ -59,8 +63,9 @@ export default class {
         this.parse();
     }
     createWorker(mod) {
+        var funStr = mod.toString().replace(/^[^\)]+?\)/, '');
         var str =
-            `function fun${mod.toString().slice(8)}
+            `function fun()${funStr}
             let parser = fun();
             self.onmessage = function(e) {
                 var parseId = e.data.parseId;
