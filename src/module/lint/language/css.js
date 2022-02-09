@@ -20,8 +20,8 @@ export default function () {
         space: /^\s+/,
         tag: /^@?[a-zA-Z_\-][a-zA-Z0-9_\-]*/,
         propertyName: /^[\*]?[a-zA-Z_$][a-zA-Z0-9_\-$]*/,
-        propertyValue: /^[+\-]?[a-zA-Z0-9_\-$%]+|^#[a-zA-Z0-9]+/,
         numValue: /^(?:\d+(?:\.\d*)?|\.\d+)(?:[sS%]|px|PX)?/,
+        propertyValue: /^[+\-]?[a-zA-Z0-9_\-$%]+|^#[a-zA-Z0-9]+/,
         punctuator: /^[\+\-\*\~\,\:\;\.\#\=\!]/,
         comment: /\*\//,
         string1: /\\*'/,
@@ -160,6 +160,11 @@ export default function () {
 
     Lexer.prototype.isTokenType = function (type) {
         return type._isTokenType;
+    }
+
+    Lexer.prototype.isProp = function (token) {
+        return token.type === TokenType.SELECTOR ||
+            token.type === TokenType.PROPERTY
     }
 
     Lexer.prototype.isValue = function (token) {
@@ -524,18 +529,48 @@ export default function () {
             this.parseKeyFrames();
             return;
         }
+        if (token.value === '@media') {
+            this.parseMedia();
+            return;
+        }
         this.parseSelector();
         if (this.peek().value === '{') {
             this.parseBlock();
-        } else if (this.hasNext()) {
-            token = this.peek();
-            if (token.value === '+' || token.value === '~') { //兄弟选择器
-                this.next();
-            } else if (token.value === ',') { //并列选择器
-                this.next();
-            }
-            this.parseStmt();
         }
+    }
+
+    Parser.prototype.parseMedia = function () {
+        let token = null;
+        this.nextMatch('@media');
+        token = this.peek();
+        if (token.value === 'not' || token.value === 'only') {
+            this.next();
+        }
+        this.nextMatch(['all', 'print', 'screen', 'speech']);
+        while (this.hasNext()) {
+            token = this.peek();
+            if (token.value === 'and' || token.value === 'or') {
+                this.next();
+                this.nextMatch('(');
+                token = this.next() || {};
+                if (!this.lexer.isProp(token)) {
+                    Error.expected(token, TokenType.PROPERTY);
+                }
+                if (this.peek().value != ')') {
+                    this.peekMatch(':')
+                    token = this.next() || {};
+                    if (!this.lexer.isValue(token)) {
+                        Error.expected(token, TokenType.VALUE);
+                    }
+                    this.peekMatch(')');
+                }
+            } else {
+                break;
+            }
+        }
+        this.peekMatch('{');
+        this.parseStmt();
+        this.peekMatch('}');
     }
 
     Parser.prototype.parseKeyFrames = function () {
@@ -545,7 +580,7 @@ export default function () {
         if (token.type !== TokenType.SELECTOR) {
             Error.expected(token, 'name');
         }
-        this.nextMatch('{');
+        this.peekMatch('{');
         while (this.hasNext()) {
             if (this.peek().value === '}') {
                 break;
@@ -553,7 +588,7 @@ export default function () {
             this.nextMatch(TokenType.NUM_VALUE);
             this.parseBlock();
         }
-        this.nextMatch('}');
+        this.peekMatch('}');
     }
 
     Parser.prototype.parseSelector = function () {
@@ -570,7 +605,7 @@ export default function () {
                 } else {
                     this.next();
                 }
-                this.nextMatch(']');
+                this.peekMatch(']');
             } else {
                 this.next();
             }
@@ -582,11 +617,20 @@ export default function () {
             if (this.peek().value === '(') { //:not(p)
                 this.next();
                 this.parseSelector();
-                this.nextMatch(')');
+                this.peekMatch(')');
             }
         } else if (token.value !== '*') { //标签选择器
             this.putBack();
             this.nextMatch(TokenType.SELECTOR);
+        }
+        if (this.hasNext() && this.peek().value !== '{') {
+            token = this.peek();
+            if (token.value === '+' || token.value === '~') { //兄弟选择器
+                this.next();
+            } else if (token.value === ',') { //并列选择器
+                this.next();
+            }
+            this.parseSelector();
         }
     }
 
@@ -598,13 +642,13 @@ export default function () {
                 break;
             }
             _nextMatchProperty();
-            this.nextMatch(':');
+            this.peekMatch(':');
             _nextMatchValue();
             if (this.peek().value !== '}') {
-                this.nextMatch(';');
+                this.peekMatch(';');
             }
         }
-        this.nextMatch('}');
+        this.peekMatch('}');
 
         function _nextMatchProperty() {
             let token = that.next();
@@ -633,19 +677,19 @@ export default function () {
                             lbraces++;
                         }
                     }
-                    lbraces && that.nextMatch(')');
+                    lbraces && that.peekMatch(')');
                 } else if (hasValue && token.value === ',') {
                     _nextMatchValue();
                     break;
                 } else if (hasValue && token.value === '!') {
-                    that.nextMatch('important');
+                    that.peekMatch('important');
                     break;
                 } else {
-                    Error.expected(token, 'value');
+                    Error.expected(token, TokenType.VALUE);
                 }
             }
             if (!hasValue) {
-                Error.expected(null, 'value');
+                Error.expected(null, TokenType.VALUE);
             }
             return hasValue;
         }
