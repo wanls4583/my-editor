@@ -18,9 +18,10 @@ export default function () {
     const brackets = ['{', '}', '[', ']', '(', ')'];
     const regs = {
         space: /^\s+/,
-        tag: /^@?[a-zA-Z_][a-zA-Z0-9_\-]*/,
+        tag: /^@?[a-zA-Z_\-][a-zA-Z0-9_\-]*/,
         propertyName: /^[\*]?[a-zA-Z_$][a-zA-Z0-9_\-$]*/,
-        propertyValue: /^[+\-]?[a-zA-Z0-9_\-$%]+|^#[a-zA-Z0-9]+|^(?:\d+(?:\.\d*)?|\.\d+)(?:[sS%]|px|PX)/,
+        propertyValue: /^[+\-]?[a-zA-Z0-9_\-$%]+|^#[a-zA-Z0-9]+/,
+        numValue: /^(?:\d+(?:\.\d*)?|\.\d+)(?:[sS%]|px|PX)?/,
         punctuator: /^[\+\-\*\~\,\:\;\.\#\=\!]/,
         comment: /\*\//,
         string1: /\\*'/,
@@ -43,6 +44,7 @@ export default function () {
     TokenType.SELECTOR = new TokenType(3, 'selector');
     TokenType.PROPERTY = new TokenType(4, 'property');
     TokenType.VALUE = new TokenType(5, 'value');
+    TokenType.NUM_VALUE = new TokenType(6, 'numValue');
     TokenType.BRACKET = new TokenType(7, 'bracket');
     TokenType.PUNCTUATOR = new TokenType(8, 'punctuator');
     TokenType.OTHER = new TokenType(10, 'other');
@@ -162,6 +164,7 @@ export default function () {
 
     Lexer.prototype.isValue = function (token) {
         return token.type === TokenType.VALUE ||
+            token.type === TokenType.NUM_VALUE ||
             token.type === TokenType.SELECTOR ||
             token.type === TokenType.PROPERTY ||
             token.type === TokenType.STRING
@@ -269,6 +272,9 @@ export default function () {
             this.skip(exec.index + exec[0].length);
         } else if (exec = regs.propertyName.exec(this.input)) {
             token = this.craeteToken(exec[0], TokenType.PROPERTY);
+            this.skip(exec.index + exec[0].length);
+        } else if (exec = regs.numValue.exec(this.input)) {
+            token = this.craeteToken(exec[0], TokenType.NUM_VALUE);
             this.skip(exec.index + exec[0].length);
         } else if (exec = regs.propertyValue.exec(this.input)) {
             token = this.craeteToken(exec[0], TokenType.VALUE);
@@ -513,6 +519,11 @@ export default function () {
     }
 
     Parser.prototype.parseStmt = function () {
+        let token = this.peek();
+        if (token.value === '@keyframes' || token.value === '@-webkit-keyframes') {
+            this.parseKeyFrames();
+            return;
+        }
         this.parseSelector();
         if (this.peek().value === '{') {
             this.parseBlock();
@@ -527,8 +538,26 @@ export default function () {
         }
     }
 
+    Parser.prototype.parseKeyFrames = function () {
+        let token = null;
+        this.nextMatch(['@keyframes', '@-webkit-keyframes']);
+        token = this.next();
+        if (token.type !== TokenType.SELECTOR) {
+            Error.expected(token, 'name');
+        }
+        this.nextMatch('{');
+        while (this.hasNext()) {
+            if (this.peek().value === '}') {
+                break;
+            }
+            this.nextMatch(TokenType.NUM_VALUE);
+            this.parseBlock();
+        }
+        this.nextMatch('}');
+    }
+
     Parser.prototype.parseSelector = function () {
-        let token = this.next();
+        let token = this.next() || {};
         if (token.value === '.' || token.value === '#') { //类、ID选择器
             this.nextMatch(TokenType.SELECTOR);
         } else if (token.value === '[') { //属性选择器
@@ -595,8 +624,16 @@ export default function () {
                 if (that.lexer.isValue(token)) {
                     hasValue = true;
                 } else if (token.value === '(') {
-                    hasValue = _nextMatchValue() || hasValue;
-                    that.nextMatch(')');
+                    let lbraces = 1;
+                    while (that.hasNext() && lbraces) {
+                        let token = that.next() || {};
+                        if (token.value === ')') {
+                            lbraces--;
+                        } else if (token.value === '(') {
+                            lbraces++;
+                        }
+                    }
+                    lbraces && that.nextMatch(')');
                 } else if (hasValue && token.value === ',') {
                     _nextMatchValue();
                     break;

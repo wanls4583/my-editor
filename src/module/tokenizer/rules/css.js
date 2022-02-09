@@ -9,33 +9,41 @@ const comment = {
     token: 'css-comment',
     foldName: 'css-comment'
 }
+const braces = {
+    start: /\{/,
+    end: /\}/,
+    token: ['css-lbraces', 'css-rbraces'],
+    foldName: 'css-braces',
+    childRule: {
+        rules: [
+            comment,
+            null,
+            {
+                regex: /;/,
+                token: 'css-split'
+            }, {
+                regex: /:/,
+                token: 'css-value-start'
+            }, {
+                regex: /[a-zA-Z][^;\:\s\}]*?(?=\s*?\:)/,
+                token: 'css-property'
+            }, {
+                regex: /(?<=\:\s*?)[^;\:\}]+?(?=;|}|$)/,
+                token: 'css-value'
+            }, {
+                regex: /(?:\d+(?:\.\d*)?|\.\d+)%/,
+                token: 'css-percent'
+            }
+        ]
+    }
+}
+braces.childRule.rules[1] = braces;
+
 export default {
     rules: [
         comment,
+        braces,
         {
-            start: /\{/,
-            end: /\}/,
-            token: ['css-lbraces', 'css-rbraces'],
-            foldName: 'css-braces',
-            childRule: {
-                rules: [
-                    comment,
-                    {
-                        regex: /;/,
-                        token: 'css-split'
-                    }, {
-                        regex: /:/,
-                        token: 'css-value-start'
-                    }, {
-                        regex: /[a-zA-Z][^;\:\s\}]*?(?=\s*?\:)/,
-                        token: 'css-property'
-                    }, {
-                        regex: /(?<=\:\s*?)[^;\:\}]+?(?=;|}|$)/,
-                        token: 'css-value'
-                    }
-                ]
-            }
-        }, {
             regex: /[#\.]?[^\s\,\:\{]+/,
             token: function (value) {
                 if (value[0] == '.') {

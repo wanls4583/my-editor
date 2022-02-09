@@ -114,9 +114,10 @@ export default class {
             regexs.push(this.getStartRegex(item));
         });
         regexs.map((item) => {
-            if (!sourceMap[item.ruleId]) {
-                sources.push(`?<${item.side===-1?'start':'end'}_${item.ruleId}>${item.regex.source}`);
-                sourceMap[item.ruleId] = true;
+            let side = item.side === -1 ? 'start' : 'end';
+            if (!sourceMap[item.ruleId] || sourceMap[item.ruleId] !== side) {
+                sources.push(`?<${side}_${item.ruleId}>${item.regex.source}`);
+                sourceMap[item.ruleId] = side;
             }
         });
         this.regexMap[statesKey] = new RegExp(`(${sources.join(')|(')})`, 'g');
@@ -267,9 +268,10 @@ export default class {
                 if (match.groups[ruleId] == undefined) {
                     continue;
                 }
+                side = ruleId.split('_')[0];
                 ruleId = ruleId.split('_')[1] - 0;
                 rule = this.ruleIdMap[ruleId];
-                side = this.getSide(rule, states);
+                // side = this.getSide(rule, states, side);
                 if (preEnd < match.index) { //普通文本
                     let value = lineObj.text.slice(preEnd, match.index);
                     resultObj.tokens.push({
@@ -370,19 +372,19 @@ export default class {
         });
         return result;
     }
-    getSide(rule, states) {
-        let index = states.length - 1;
-        if (states.indexOf(rule.ruleId) == -1) {
-            return 'start';
-        }
-        while (index >= 0 && states[index] != rule.ruleId) {
-            if (this.ruleIdMap[states[index]].level > rule.level) {
-                return 'start';
-            }
-            index--
-        }
-        return 'end';
-    }
+    // getSide(rule, states) {
+    //     let index = states.length - 1;
+    //     if (states.indexOf(rule.ruleId) == -1) {
+    //         return 'start';
+    //     }
+    //     while (index >= 0 && states[index] != rule.ruleId) {
+    //         if (this.ruleIdMap[states[index]].level > rule.level) {
+    //             return 'start';
+    //         }
+    //         index--
+    //     }
+    //     return 'end';
+    // }
     /**
      * 获取折叠标记对象
      * @param {Object} rule 规则对象
