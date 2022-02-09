@@ -525,6 +525,14 @@ export default function () {
 
     Parser.prototype.parseStmt = function () {
         let token = this.peek();
+        if (token.value === '@import') {
+            this.parseImport();
+            return;
+        }
+        if (token.value === '@charset') {
+            this.parseCharset();
+            return;
+        }
         if (token.value === '@keyframes' || token.value === '@-webkit-keyframes') {
             this.parseKeyFrames();
             return;
@@ -539,9 +547,24 @@ export default function () {
         }
     }
 
-    Parser.prototype.parseMedia = function () {
+    Parser.prototype.parseImport = function () {
+        this.nextMatch('@import');
+        this.nextMatch(TokenType.STRING);
+        if (['all', 'print', 'screen', 'speech'].indexOf(this.peek().value) > -1) {
+            this.parseMedia(true);
+        }
+        this.peekMatch(';');
+    }
+
+    Parser.prototype.parseCharset = function () {
+        this.nextMatch('@charset');
+        this.nextMatch(TokenType.STRING);
+        this.peekMatch(';');
+    }
+
+    Parser.prototype.parseMedia = function (onlyValue) {
         let token = null;
-        this.nextMatch('@media');
+        !onlyValue && this.nextMatch('@media');
         token = this.peek();
         if (token.value === 'not' || token.value === 'only') {
             this.next();
@@ -568,9 +591,11 @@ export default function () {
                 break;
             }
         }
-        this.peekMatch('{');
-        this.parseStmt();
-        this.peekMatch('}');
+        if (!onlyValue) {
+            this.peekMatch('{');
+            this.parseStmt();
+            this.peekMatch('}');
+        }
     }
 
     Parser.prototype.parseKeyFrames = function () {
