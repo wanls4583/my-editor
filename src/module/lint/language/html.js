@@ -7,65 +7,124 @@ import jsLint from './javascript';
 import cssLint from './css';
 
 function htmlLint() {
-    let parseJs = jsParser().parse;
-    let parseCss = cssParser().parse;
     let regs = {
-        js: /(?<!\<[^\>]*?['"][^\>]*?)\<script(?:\s[^\>]*?)?\>([\s\S]*?)\<\/script\>/,
-        css: /(?<!\<[^\>]*?['"][^\>]*?)\<style(?:\s[^\>]*?)?\>([\s\S]*?)\<\/style\>/,
+        js: /(?<!\<[^\>]*?['"][^\>]*?)(\<script(?:\s[^\>]*?)?\>)([\s\S]*?)\<\/script\>/,
+        css: /(?<!\<[^\>]*?['"][^\>]*?)(\<style(?:\s[^\>]*?)?\>)([\s\S]*?)\<\/style\>/,
         enter: /\n/g,
-        column: /\n[^\n]*?$/
+        column: /\n[^\n]*?$/,
+        comment: /\<\!--[\s\S]*?--\>/
     }
 
     function Parser() {}
 
     Parser.prototype.reset = function (text) {
         this.text = text;
+        this.comments = [];
+    }
+
+    Parser.prototype.parseComentRange = function () {
+        let exec = null;
+        let pos = {
+            line: 1,
+            column: 0,
+            index: 0
+        }
+        let text = this.text;
+        let start = null;
+        let end = null;
+        while (exec = regs.comment.exec(text)) {
+            this.setLineColumn(text.slice(0, exec.index), pos);
+            pos.index += exec.index;
+            start = Object.assign({}, pos);
+            this.setLineColumn(exec[0], pos);
+            pos.index += exec[0].length;
+            end = Object.assign({}, pos);
+            text = this.text.slice(pos.index);
+            this.comments.push({
+                start: start,
+                end: end
+            });
+        }
+    }
+
+    Parser.prototype.setLineColumn = function (text, pos) {
+        let lines = text.match(regs.enter);
+        lines = lines && lines.length || 0;
+        pos.line += lines;
+        if (lines) {
+            pos.column = regs.column.exec(text)[0].length;
+        } else {
+            pos.column += text.length;
+        }
     }
 
     Parser.prototype.parse = function () {
+        this.parseComentRange();
         return parser.parseJs().concat(parser.parseCss());
     }
 
     Parser.prototype.parseJs = function () {
+        let parseJs = jsParser().parse;
         return this._parse(regs.js, parseJs);
     }
 
     Parser.prototype.parseCss = function () {
+        let parseCss = cssParser().parse;
         return this._parse(regs.css, parseCss);
     }
 
     Parser.prototype._parse = function (reg, parseFun) {
         let exec = null;
-        let line = 1;
-        let column = 0;
+        let pos = {
+            line: 1,
+            column: 0,
+            index: 0
+        }
         let text = this.text;
         let result = [];
         while (exec = reg.exec(text)) {
-            setLineColumn(text.slice(0, exec.index));
-            if (exec[1]) {
-                let r = parseFun(exec[1]);
+            this.setLineColumn(text.slice(0, exec.index), pos);
+            pos.index += exec.index;
+            if (!this.checkInComment(pos)) {
+                text = this.text.slice(pos.index);
+                continue;
+            }
+            this.setLineColumn(exec[1], pos);
+            pos.index += exec[1].length;
+            if (exec[2]) {
+                let r = parseFun(exec[2]);
                 r.map((item) => {
                     if (item.line == 1) {
-                        item.column += column;
+                        item.column += pos.column;
                     }
-                    item.line += line - 1;
+                    item.line += pos.line - 1;
                 });
                 result = result.concat(r);
             }
-            setLineColumn(exec[0]);
-            text = text.slice(exec.index + exec[0].length);
+            this.setLineColumn(exec[0].slice(exec[1].length), pos);
+            pos.index += exec[0].slice(exec[1].length).length;
+            text = this.text.slice(pos.index);
         }
         return result;
+    }
 
-        function setLineColumn(text) {
-            let lines = text.match(regs.enter);
-            lines = lines && lines.length || 0;
-            line += lines;
-            if (lines) {
-                column = regs.column.exec(text)[0].length;
-            } else {
-                column += text.length;
+    Parser.prototype.checkInComment = function (pos) {
+        for (let i = 0; i < this.comments.length; i++) {
+            let item = this.comments[i];
+            if (_compare(item.start, pos) < 0 && _compare(item.end, pos) > 0) {
+                pos.line = item.end.line;
+                pos.column = item.end.column;
+                pos.index = item.end.index;
+                return false;
             }
+        }
+        return true;
+
+        function _compare(a, b) {
+            if (a.line === b.line) {
+                return a.column - b.column
+            }
+            return a.line - b.line;
         }
     }
 

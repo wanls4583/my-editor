@@ -349,11 +349,12 @@ export default class {
         let result = [];
         tokens.map((token) => {
             if (token.value.length > 100) { //将文本数量大于100的token分隔
+                let startCol = token.column;
                 let count = Math.floor(token.value.length / 100);
                 for (let i = 0; i < count; i++) {
                     let column = i * 100;
                     result.push({
-                        column: column,
+                        column: column + startCol,
                         value: token.value.slice(column, column + 100),
                         type: token.type
                     });
@@ -361,7 +362,7 @@ export default class {
                 count = count * 100;
                 if (count < token.value.length) {
                     result.push({
-                        column: count,
+                        column: count + startCol,
                         value: token.value.slice(count),
                         type: token.type
                     });
@@ -421,6 +422,7 @@ export default class {
                     } else { //跨行匹配
                         resultObj.tokens.pop()
                         token.value = text.slice(0, match.index + result.length);
+                        token.column = 0;
                     }
                 }
             } else { //多行token-start
