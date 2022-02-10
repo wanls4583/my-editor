@@ -146,8 +146,8 @@ function htmlLint() {
     }
 }
 
-export default new Function(`function jsParser${jsLint.toString().slice(8)}
-function cssParser${cssLint.toString().slice(8)}
-${htmlLint.toString()}
-return htmlLint();
+export default new Function(`function jsParser()${jsLint.toString().replace(/^[^\)]+?\)/, '')}
+function cssParser()${cssLint.toString().replace(/^[^\)]+?\)/, '')}
+function htmlParser()${htmlLint.toString().replace(/^[^\)]+?\)/, '')}
+return htmlParser();
 `)
