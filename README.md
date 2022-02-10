@@ -1,24 +1,24 @@
 # my-editor
 
-## Project setup
-```
-npm install
-```
+> A simple code editor developed with JavaScript
 
-### Compiles and hot-reloads for development
-```
-npm run serve
-```
+## 内容
 
-### Compiles and minifies for production
-```
-npm run build
-```
+- [**`功能特性`**](#功能特性)
+- [**`案例`**](#案例)
+- [**`贡献`**](#贡献)
 
-### Lints and fixes files
-```
-npm run lint
-```
+## 功能特性
+* [x] 使用 JavaScript 开发，可在浏览器中运行
+* [x] 支持代码的高亮，折叠，复制，删除，撤销，重做等操作
+* [ ] 支持代码的常见语法错误检查
+* [x] 支持百万行级别的代码
+* [x] 可扩展其他语言
 
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+## 案例
+![](https://wanls4583.github.io/images/code/my-editor.png)
+
+[**`online demo`**](https://blog.lisong.hn.cn/code/example/my-editor/dist/index.html)
+
+## 贡献
+欢迎给出一些意见和优化，期待你的 `Pull Request`
