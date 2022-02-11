@@ -9,7 +9,7 @@ export default class {
         this.initProperties(editor, context);
     }
     initProperties(editor, context) {
-        Util.defineProperties(this, editor, ['insertContent', 'deleteContent', 'setCursorPos', 'setSelectedRange']);
+        Util.defineProperties(this, editor, ['insertContent', 'deleteContent', 'clearCursorPos', 'addCursorPos', 'setSelectedRange']);
         Util.defineProperties(this, context, ['history']);
     }
     // 撤销操作
@@ -30,45 +30,95 @@ export default class {
     }
     // 操作命令
     doCommand(command) {
+        this.clearCursorPos();
         switch (command.type) {
             case Util.command.DELETE:
-                this.setSelectedRange(command.start, command.end);
-                this.deleteContent(Util.keyCode.BACKSPACE, true);
+                if (command instanceof Array) {
+                    command.map((command) => {
+                        this.deleteContent(Util.keyCode.BACKSPACE, {
+                            start: command.start,
+                            end: command.end
+                        });
+                    });
+                } else {
+                    this.deleteContent(Util.keyCode.BACKSPACE, {
+                        start: command.start,
+                        end: command.end
+                    });
+                }
                 break;
             case Util.command.INSERT:
-                this.setCursorPos(command.cursorPos.line, command.cursorPos.column);
-                this.insertContent(command.text, true);
+                if (command instanceof Array) {
+                    command.map((command) => {
+                        let cursorPos = Object.assign({}, command.cursorPos);
+                        this.insertContent(command.text, cursorPos);
+                    });
+                } else {
+                    this.insertContent(command.text, Object.assign({}, command.cursorPos));
+                }
                 break;
         }
     }
     // 添加历史记录
     pushHistory(command) {
-        var lastCommand = this.history[this.history.index - 1];
         while (this.history.length > this.history.index) {
             this.history.pop();
         }
-        // 两次操作可以合并
-        if (lastCommand && lastCommand.type == command.type && Date.now() - this.pushHistoryTime < 2000) {
-            if (
-                lastCommand.type == Util.command.DELETE &&
-                command.end.line == command.start.line &&
-                Util.comparePos(lastCommand.end, command.start) == 0) {
-                lastCommand.end = command.end;
-            } else if (
-                lastCommand.type == Util.command.INSERT &&
-                command.preCursorPos.line == command.cursorPos.line &&
-                Util.comparePos(lastCommand.cursorPos, command.preCursorPos) == 0
-            ) {
-                lastCommand.text = command.text + lastCommand.text;
-                lastCommand.cursorPos = command.cursorPos;
+        let that = this;
+        let lastCommand = this.history[this.history.index - 1];
+        if (lastCommand instanceof Array &&
+            command instanceof Array &&
+            lastCommand.length === command &&
+            Date.now() - this.pushHistoryTime < 2000) {
+            let pass = true;
+            for (let i = 0; i < lastCommand.length; i++) {
+                if (!_combCommand(lastCommand[i], command[i], true)) {
+                    pass = false;
+                    break;
+                }
+            }
+            if (pass) {
+                for (let i = 0; i < lastCommand.length; i++) {
+                    _combCommand(lastCommand[i], command[i]);
+                }
             } else {
                 this.history.push(command);
             }
-        } else {
+        } else if (!_combCommand(lastCommand, command)) {
             this.history.push(command);
         }
         this.history.index = this.history.length;
         this.pushHistoryTime = Date.now();
+
+        // 检查两次操作是否可以合并
+        function _combCommand(lastCommand, command, check) {
+            if (lastCommand && lastCommand.type &&
+                lastCommand.type == command.type &&
+                Date.now() - that.pushHistoryTime < 2000) {
+                if (
+                    lastCommand.type == Util.command.DELETE &&
+                    command.end.line == command.start.line &&
+                    Util.comparePos(lastCommand.end, command.start) == 0) {
+                    if (!check) {
+                        lastCommand.end = command.end;
+                    }
+                } else if (
+                    lastCommand.type == Util.command.INSERT &&
+                    command.preCursorPos.line == command.cursorPos.line &&
+                    Util.comparePos(lastCommand.cursorPos, command.preCursorPos) == 0
+                ) {
+                    if (!check) {
+                        lastCommand.text = command.text + lastCommand.text;
+                        lastCommand.cursorPos = command.cursorPos;
+                    }
+                } else {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+            return true;
+        }
     }
     // 更新历史记录
     updateHistory(index, command) {

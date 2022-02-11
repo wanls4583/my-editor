@@ -13,7 +13,7 @@
 			<!-- 占位行号，避免行号宽度滚动时变化 -->
 			<div class="my-editor-num" style="visibility:hidden">{{maxLine}}</div>
 			<div
-				:class="{'my-editor-num-active': cursorPos.line==line.num}"
+				:class="{'my-editor-num-active': nowCursorPos.line==line.num}"
 				:key="line.num"
 				:style="{height:_lineHeight, 'line-height':_lineHeight}"
 				class="my-editor-num"
@@ -41,7 +41,7 @@
 				<!-- 内如区域 -->
 				<div :style="{top: _top, minWidth: _contentMinWidth}" @selectend.prevent="onSelectend" class="my-editor-content" ref="content">
 					<div
-						:class="{active: cursorPos.line == line.num}"
+						:class="{active: nowCursorPos.line == line.num}"
 						:data-line="line.num"
 						:id="'line_'+line.num"
 						:key="line.num"
@@ -71,11 +71,7 @@
 						<span :style="{left: _tabLineLeft(tab)}" class="my-editor-tab-line" v-for="tab in line.tabNum"></span>
 					</div>
 					<!-- 模拟光标 -->
-					<div
-						:style="{height: _lineHeight, top: cursorRealPos.top, left: cursorRealPos.left, visibility: _cursorVisible}"
-						class="my-editor-cursor"
-						v-show="cursorPos.show"
-					></div>
+					<div :style="{height: _lineHeight, top: item.top, left: item.left, visibility: _cursorVisible}" class="my-editor-cursor" v-for="item in multiCursorPos"></div>
 				</div>
 			</div>
 			<!-- 水平滚动条 -->
@@ -103,7 +99,14 @@
 			></textarea>
 		</div>
 		<!-- 状态栏 -->
-		<status-bar :column="cursorPos.column+1" :height="statusHeight" :language.sync="language" :line="cursorPos.line" :tabSize.sync="tabSize" ref="statusBar"></status-bar>
+		<status-bar
+			:column="nowCursorPos.column+1"
+			:height="statusHeight"
+			:language.sync="language"
+			:line="nowCursorPos.line"
+			:tabSize.sync="tabSize"
+			ref="statusBar"
+		></status-bar>
 		<!-- 右键菜单 -->
 		<panel :checkable="false" :menuList="menuList" :styles="menuStyle" @change="onClickMenu" ref="menu" v-show="menuVisble"></panel>
 		<tip :content="tipContent" :styles="tipStyle" v-show="tipContent"></tip>
@@ -142,18 +145,14 @@ export default {
                 fullAngleCharWidth: 15,
                 charHight: 19,
             },
-            cursorPos: {
+            nowCursorPos: {
                 line: 1,
                 column: 0,
                 top: 0,
                 left: 0,
-                show: false,
-                visible: true,
             },
-            cursorRealPos: {
-                top: '0px',
-                left: '0px'
-            },
+            multiCursorPos: [],
+            cursorVisible: true,
             language: 'HTML',
             // language: 'JavaScript',
             // language: 'CSS',
@@ -220,7 +219,7 @@ export default {
             return this.statusHeight + 4 + 'px';
         },
         _cursorVisible() {
-            return this.cursorPos.visible ? 'visible' : 'hidden';
+            return this.cursorVisible ? 'visible' : 'hidden';
         },
         _hScrollWidth() {
             return this._contentMinWidth;
@@ -235,15 +234,21 @@ export default {
             return width + 'px';
         },
         _textAreaPos() {
-            let cursorRealPos = this.cursorRealPos;
-            let left = Util.getNum(cursorRealPos.left);
-            let top = Util.getNum(cursorRealPos.top) + this.top;
-            left -= this.scrollLeft;
-            left = left < this.charObj.charWidth ? this.charObj.charWidth : left;
-            left = left > this.scrollerArea.width - this.charObj.charWidth ? this.scrollerArea.width - this.charObj.charWidth : left;
-            top += this.charObj.charHight;
-            if (top > this.scrollerArea.height - 2 * this.charObj.charHight) {
-                top = this.scrollerArea.height - 2 * this.charObj.charHight;
+            let left = 0;
+            let top = this.top;
+            if (this.multiCursorPos.length) {
+                let cursorRealPos = this.multiCursorPos.slice().sort((a, b) => {
+                    return a.top - b.top;
+                })[0];
+                left = Util.getNum(cursorRealPos.left);
+                top = Util.getNum(cursorRealPos.top) + this.top;
+                left -= this.scrollLeft;
+                left = left < this.charObj.charWidth ? this.charObj.charWidth : left;
+                left = left > this.scrollerArea.width - this.charObj.charWidth ? this.scrollerArea.width - this.charObj.charWidth : left;
+                top += this.charObj.charHight;
+                if (top > this.scrollerArea.height - 2 * this.charObj.charHight) {
+                    top = this.scrollerArea.height - 2 * this.charObj.charHight;
+                }
             }
             return {
                 top: top + 'px',
@@ -325,6 +330,7 @@ export default {
             });
             context.lineIdMap.set(context.htmls[0].lineId, context.htmls[0]);
             this.maxWidthObj.lineId = context.htmls[0].lineId;
+            this.multiCursorPos.push(this.nowCursorPos);
             this.tokenizer = new Tokenizer(this, context);
             this.lint = new Lint(this, context);
             this.folder = new Fold(this, context);
@@ -341,15 +347,19 @@ export default {
         },
         // 显示光标
         showCursor() {
-            if (this.cursorPos.show) {
+            if (!this.multiCursorPos.length) {
+                this.showCursor.show = false;
                 return;
             }
-            this.cursorPos.show = true;
-            this.cursorPos.visible = true;
+            if (this.showCursor.show) {
+                return;
+            }
+            this.showCursor.show = true;
+            this.cursorVisible = true;
             let _timer = () => {
                 clearTimeout(this.curserTimer);
                 this.curserTimer = setTimeout(() => {
-                    this.cursorPos.visible = !this.cursorPos.visible;
+                    this.cursorVisible = !this.cursorVisible;
                     _timer();
                 }, 500);
             }
@@ -358,7 +368,8 @@ export default {
         // 隐藏光标
         hideCursor() {
             clearTimeout(this.curserTimer);
-            this.cursorPos.show = false;
+            this.showCursor.show = false;
+            this.clearCursorPos();
         },
         // 聚焦
         focus() {
@@ -437,14 +448,14 @@ export default {
             }
         },
         // 渲染选中背景
-        renderSelectedBg(forceCursorView) {
+        renderSelectedBg() {
             if (!this.selectedRange) {
                 return;
             }
             let start = this.selectedRange.start;
             let end = this.selectedRange.end;
             let same = Util.comparePos(start, end);
-            this.setCursorPos(end.line, end.column, forceCursorView);
+            this.setCursorPos(end.line, end.column);
             if (same > 0) {
                 let tmp = start;
                 start = end;
@@ -475,15 +486,42 @@ export default {
                 item.selected = false;
             });
         },
-        // 插入内容
-        insertContent(text, isDoCommand) {
+        insertContent(text, cursorPos) {
+            let historyArr = [];
             // 如果有选中区域，需要先删除选中区域
             if (this.selectedRange) {
                 this.deleteContent();
             }
-            let nowLineText = context.htmls[this.cursorPos.line - 1].text;
-            let nowColume = this.cursorPos.column;
-            let nowLine = this.cursorPos.line;
+            if (cursorPos) {
+                this.addCursorPos(cursorPos);
+                historyArr = this._insertContent(cursorPos, text);
+            } else if (this.multiCursorPos.length > 1) {
+                let texts = text instanceof Array ? text : text.split('\r\n|\n');
+                if (texts.length === this.multiCursorPos.length) {
+                    this.getOrderMultiCursorPos(false).map((cursorPos, index) => {
+                        let historyObj = this._insertContent(cursorPos, texts[index]);
+                        historyArr.pushHistory(historyObj);
+                    });
+                } else {
+                    this.getOrderMultiCursorPos(false).map((cursorPos) => {
+                        let historyObj = this._insertContent(cursorPos, text);
+                        historyArr.pushHistory(historyObj);
+                    });
+                }
+            } else {
+                historyArr = this._insertContent(this.multiCursorPos[0], text);
+            }
+            if (!cursorPos) { // 新增历史记录
+                this.history.pushHistory(historyArr);
+            } else { // 撤销或重做操作后，更新历史记录
+                this.history.updateHistory(context.history.index, historyArr);
+            }
+        },
+        // 插入内容
+        _insertContent(cursorPos, text) {
+            let nowLineText = context.htmls[cursorPos.line - 1].text;
+            let nowColume = cursorPos.column;
+            let nowLine = cursorPos.line;
             let newLine = nowLine;
             let newColumn = nowColume;
             this.tokenizer.onInsertContentBefore(nowLine);
@@ -507,11 +545,11 @@ export default {
                 newColumn = text[text.length - 1].text.length;
                 text[0].text = nowLineText.slice(0, nowColume) + text[0].text;
                 text[text.length - 1].text = text[text.length - 1].text + nowLineText.slice(nowColume);
-                context.htmls = context.htmls.slice(0, this.cursorPos.line - 1).concat(text).concat(context.htmls.slice(this.cursorPos.line));
+                context.htmls = context.htmls.slice(0, cursorPos.line - 1).concat(text).concat(context.htmls.slice(cursorPos.line));
             } else { // 插入一行
                 newColumn += text[0].text.length;
-                text[0].text = nowLineText.slice(0, nowColume) + text[0].text + nowLineText.slice(this.cursorPos.column);
-                context.htmls.splice(this.cursorPos.line - 1, 1, text[0]);
+                text[0].text = nowLineText.slice(0, nowColume) + text[0].text + nowLineText.slice(cursorPos.column);
+                context.htmls.splice(cursorPos.line - 1, 1, text[0]);
             }
             newLine += text.length - 1;
             this.maxLine = context.htmls.length;
@@ -523,7 +561,7 @@ export default {
             if (context.foldMap.has(nowLine) && text.length > 1) {
                 this.unFold(nowLine);
             }
-            this.setCursorPos(newLine, newColumn);
+            this.updateCursorPos(cursorPos, newLine, newColumn);
             let historyObj = {
                 type: Util.command.DELETE,
                 start: {
@@ -535,25 +573,41 @@ export default {
                     column: newColumn
                 }
             }
-            if (!isDoCommand) { // 新增历史记录
-                this.history.pushHistory(historyObj);
+            return historyObj;
+        },
+        deleteContent(keyCode, rangePos) {
+            let historyArr = [];
+            if (rangePos) {
+                this.setSelectedRange(rangePos.start, rangePos.end);
+                this.addCursorPos(rangePos.start);
+                let historyObj = this._deleteContent(rangePos.start, keyCode);
+                historyObj.text && historyArr.push(historyObj);
+            } else {
+                this.getOrderMultiCursorPos(false).map((cursorPos) => {
+                    let historyObj = this._deleteContent(cursorPos, keyCode);
+                    historyObj.text && historyArr.push(historyObj);
+                });
+            }
+            historyArr = historyArr.length > 1 ? historyArr : historyArr[0];
+            if (!rangePos) { // 新增历史记录
+                historyArr && this.history.pushHistory(historyArr);
             } else { // 撤销或重做操作后，更新历史记录
-                this.history.updateHistory(context.history.index, historyObj);
+                this.history.updateHistory(context.history.index, historyArr);
             }
         },
         // 删除内容
-        deleteContent(keyCode, isDoCommand) {
+        _deleteContent(cursorPos, keyCode) {
             let start = null;
-            let startObj = context.htmls[this.cursorPos.line - 1];
+            let startObj = context.htmls[cursorPos.line - 1];
             let text = startObj.text;
-            let originPos = { line: this.cursorPos.line, column: this.cursorPos.column };
+            let originPos = { line: cursorPos.line, column: cursorPos.column };
             let deleteText = '';
             let rangeUuid = [];
-            let newLine = this.cursorPos.line;
-            let newColumn = this.cursorPos.column;
-            this.tokenizer.onDeleteContentBefore(this.cursorPos.line);
-            this.lint.onDeleteContentBefore(this.cursorPos.line);
-            this.folder.onDeleteContentBefore(this.cursorPos.line);
+            let newLine = cursorPos.line;
+            let newColumn = cursorPos.column;
+            this.tokenizer.onDeleteContentBefore(cursorPos.line);
+            this.lint.onDeleteContentBefore(cursorPos.line);
+            this.folder.onDeleteContentBefore(cursorPos.line);
             if (this.selectedRange) { // 删除选中区域
                 let end = this.selectedRange.end;
                 let endObj = context.htmls[end.line - 1];
@@ -586,33 +640,33 @@ export default {
                 newLine = start.line;
                 newColumn = start.column;
             } else if (Util.keyCode.DELETE == keyCode) { // 向后删除一个字符
-                if (this.cursorPos.column == text.length) { // 光标处于行尾
-                    if (this.cursorPos.line < context.htmls.length) {
-                        context.lineIdMap.delete(context.htmls[this.cursorPos.line].lineId);
-                        text = startObj.text + context.htmls[this.cursorPos.line].text;
-                        context.htmls.splice(this.cursorPos.line, 1);
+                if (cursorPos.column == text.length) { // 光标处于行尾
+                    if (cursorPos.line < context.htmls.length) {
+                        context.lineIdMap.delete(context.htmls[cursorPos.line].lineId);
+                        text = startObj.text + context.htmls[cursorPos.line].text;
+                        context.htmls.splice(cursorPos.line, 1);
                         deleteText = '\n';
                     }
                 } else {
-                    deleteText = text[this.cursorPos.column];
-                    text = text.slice(0, this.cursorPos.column) + text.slice(this.cursorPos.column + 1);
+                    deleteText = text[cursorPos.column];
+                    text = text.slice(0, cursorPos.column) + text.slice(cursorPos.column + 1);
                 }
                 startObj.text = text;
             } else { // 向前删除一个字符
-                if (this.cursorPos.column == 0) { // 光标处于行首
-                    if (this.cursorPos.line > 1) {
-                        let column = context.htmls[this.cursorPos.line - 2].text.length;
-                        context.lineIdMap.delete(context.htmls[this.cursorPos.line - 2].lineId);
-                        text = context.htmls[this.cursorPos.line - 2].text + text;
-                        context.htmls.splice(this.cursorPos.line - 2, 1);
+                if (cursorPos.column == 0) { // 光标处于行首
+                    if (cursorPos.line > 1) {
+                        let column = context.htmls[cursorPos.line - 2].text.length;
+                        context.lineIdMap.delete(context.htmls[cursorPos.line - 2].lineId);
+                        text = context.htmls[cursorPos.line - 2].text + text;
+                        context.htmls.splice(cursorPos.line - 2, 1);
                         deleteText = '\n';
-                        newLine = this.cursorPos.line - 1;
+                        newLine = cursorPos.line - 1;
                         newColumn = column;
                     }
                 } else {
-                    deleteText = text[this.cursorPos.column - 1];
-                    text = text.slice(0, this.cursorPos.column - 1) + text.slice(this.cursorPos.column);
-                    newColumn = this.cursorPos.column - 1;
+                    deleteText = text[cursorPos.column - 1];
+                    text = text.slice(0, cursorPos.column - 1) + text.slice(cursorPos.column);
+                    newColumn = cursorPos.column - 1;
                 }
                 startObj.text = text;
             }
@@ -626,8 +680,8 @@ export default {
             this.tokenizer.onDeleteContentAfter(newLine);
             this.lint.onDeleteContentAfter(newLine);
             this.folder.onDeleteContentAfter(newLine);
-            if (newLine != this.cursorPos.line || this.cursorPos.column != newColumn) {
-                this.setCursorPos(newLine, newColumn);
+            if (newLine != cursorPos.line || cursorPos.column != newColumn) {
+                this.updateCursorPos(cursorPos, newLine, newColumn);
             }
             // 更新最大文本宽度
             if (startObj.width >= this.maxWidthObj.width) {
@@ -641,28 +695,31 @@ export default {
             }
             let historyObj = {
                 type: Util.command.INSERT,
-                keyCode: keyCode,
-                cursorPos: Util.deepAssign({}, this.cursorPos),
-                preCursorPos: originPos,
+                cursorPos: {
+                    line: cursorPos.line,
+                    column: cursorPos.column
+                },
+                preCursorPos: {
+                    line: originPos.line,
+                    column: originPos.column
+                },
                 text: deleteText
             };
-            if (!isDoCommand) { // 新增历史记录
-                deleteText && this.history.pushHistory(historyObj);
-            } else { // 撤销或重做操作后，更新历史记录
-                this.history.updateHistory(context.history.index, historyObj);
-            }
+            return historyObj;
         },
         // 折叠行
         foldLine(line) {
             let resultFold = this.folder.foldLine(line);
             this.focus();
             if (resultFold) {
-                if (this.cursorPos.line > line && this.cursorPos.line < resultFold.end.line) {
-                    let lineObj = context.htmls[line - 1];
-                    this.setCursorPos(line, lineObj.text.length);
-                }
-                this.setScrollerHeight();
+                this.multiCursorPos.map((cursorPos) => {
+                    if (cursorPos.line > line && cursorPos.line < resultFold.end.line) {
+                        let lineObj = context.htmls[line - 1];
+                        this.updateCursorPos(cursorPos, line, lineObj.text.length);
+                    }
+                });
                 this.setCursorRealPos();
+                this.setScrollerHeight();
                 this.render();
             }
         },
@@ -675,61 +732,114 @@ export default {
                 this.render();
             }
         },
-        // 设置光标位置
-        setCursorPos(line, column, forceCursorView) {
-            this.cursorPos.line = line;
-            this.cursorPos.column = column;
-            this.cursorPos.visible = true;
-            this.forceCursorView = forceCursorView === undefined ? true : forceCursorView;
-            cancelAnimationFrame(this.setCursorPos.timer);
-            this.setCursorPos.timer = requestAnimationFrame(() => {
-                this.$nextTick(() => {
-                    this.setCursorRealPos();
-                });
+        filterMultiCursorPos() {
+            let posMap = {};
+            this.multiCursorPos = this.multiCursorPos.filter((cursorPos) => {
+                let key = cursorPos.line + ',' + cursorPos.column;
+                if (posMap[key]) {
+                    return false;
+                }
+                posMap[key] = true;
+                return true;
             });
         },
+        clearCursorPos() {
+            this.multiCursorPos.map((cursorPos) => {
+                cursorPos.del = true;
+            });
+            this.multiCursorPos = [];
+        },
+        // 更新光标位置
+        updateCursorPos(cursorPos, line, column) {
+            cursorPos.line = line;
+            cursorPos.column = column;
+            this.setCursorRealPos(cursorPos);
+            this.filterMultiCursorPos();
+        },
+        // 添加光标
+        addCursorPos(cursorPos) {
+            this.multiCursorPos.push(cursorPos);
+            this.filterMultiCursorPos();
+            this.setCursorRealPos(cursorPos);
+        },
+        // 设置光标
+        setCursorPos(line, column) {
+            let cursorPos = {
+                line: line,
+                column: column
+            }
+            if (this.multiCursorPos.length == 1) {
+                let pos = this.multiCursorPos[0];
+                if (pos.line === cursorPos.line && pos.column === cursorPos.column) {
+                    return;
+                }
+            }
+            this.multiCursorPos = [cursorPos];
+            this.nowCursorPos = cursorPos;
+            this.setCursorRealPos(cursorPos);
+        },
         // 设置真实光标位置
-        setCursorRealPos() {
+        setCursorRealPos(cursorPos) {
             let that = this;
-            let left = 0;
-            let lineObj = context.htmls[that.cursorPos.line - 1];
-            if ($('#line_' + this.cursorPos.line).length && lineObj.tokens && lineObj.tokens.length) {
-                left = _getExactLeft();
+            if (!cursorPos) {
+                this.multiCursorPos.map((cursorPos) => {
+                    _deleySet(cursorPos);
+                });
             } else {
-                left = this.getStrWidthByLine(this.cursorPos.line, 0, this.cursorPos.column);
+                _deleySet(cursorPos);
             }
-            let top = (this.folder.getRelativeLine(this.cursorPos.line) - this.folder.getRelativeLine(this.startLine)) * this.charObj.charHight;
-            let relTop = this.folder.getRelativeLine(this.cursorPos.line) * this.charObj.charHight;
-            // 强制滚动使光标处于可见区域
-            if (this.forceCursorView) {
-                if (relTop > this.scrollTop + this.scrollerArea.height - this.charObj.charHight) {
-                    this.$vScroller.scrollTop = relTop + this.charObj.charHight - this.scrollerArea.height;
-                } else if (top < 0 || top == 0 && this.top < 0) {
-                    this.$vScroller.scrollTop = (this.cursorPos.line - 1) * this.charObj.charHight;
-                }
-                if (left > this.scrollerArea.width + this.scrollLeft - this.charObj.fullAngleCharWidth) {
-                    this.$hScroller.scrollLeft = left + this.charObj.fullAngleCharWidth - this.scrollerArea.width;
-                } else if (left < this.scrollLeft) {
-                    this.$hScroller.scrollLeft = left - 1;
-                }
-            }
-            this.cursorRealPos = {
-                top: top + 'px',
-                left: left + 'px'
-            };
+            this.cursorVisible = true;
 
-            function _getExactLeft() {
-                let lineObj = context.htmls[that.cursorPos.line - 1];
+            function _deleySet(cursorPos, line, column) {
+                that.$nextTick(() => {
+                    if (!cursorPos.del && cursorPos.line === cursorPos.line && cursorPos.column === cursorPos.column) {
+                        _setCursorRealPos(cursorPos);
+                    }
+                });
+            }
+
+            function _setCursorRealPos(cursorPos) {
+                let left = 0;
+                let lineObj = context.htmls[cursorPos.line - 1];
+                if ($('#line_' + cursorPos.line).length && lineObj.tokens && lineObj.tokens.length) {
+                    left = _getExactLeft(cursorPos);
+                } else {
+                    left = that.getStrWidthByLine(cursorPos.line, 0, cursorPos.column);
+                }
+                let top = (that.folder.getRelativeLine(cursorPos.line) - that.folder.getRelativeLine(that.startLine)) * that.charObj.charHight;
+                let relTop = that.folder.getRelativeLine(cursorPos.line) * that.charObj.charHight;
+                // 强制滚动使光标处于可见区域
+                console.log(cursorPos === that.nowCursorPos)
+                if (that.forceCursorView !== false && cursorPos === that.nowCursorPos) {
+                    if (relTop > that.scrollTop + that.scrollerArea.height - that.charObj.charHight) {
+                        that.$vScroller.scrollTop = relTop + that.charObj.charHight - that.scrollerArea.height;
+                    } else if (top < 0 || top == 0 && that.top < 0) {
+                        that.$vScroller.scrollTop = (cursorPos.line - 1) * that.charObj.charHight;
+                    }
+                    if (left > that.scrollerArea.width + that.scrollLeft - that.charObj.fullAngleCharWidth) {
+                        that.$hScroller.scrollLeft = left + that.charObj.fullAngleCharWidth - that.scrollerArea.width;
+                    } else if (left < that.scrollLeft) {
+                        that.$hScroller.scrollLeft = left - 1;
+                    }
+                }
+                that.forceCursorView = true;
+                cursorPos.top = top + 'px';
+                cursorPos.left = left + 'px';
+                that.multiCursorPos.splice();
+            }
+
+            function _getExactLeft(cursorPos) {
+                let lineObj = context.htmls[cursorPos.line - 1];
                 let token = lineObj.tokens[0];
                 for (let i = 1; i < lineObj.tokens.length; i++) {
-                    if (lineObj.tokens[i].column < that.cursorPos.column) {
+                    if (lineObj.tokens[i].column < cursorPos.column) {
                         token = lineObj.tokens[i];
                     } else {
                         break;
                     }
                 }
-                let $token = $('#line_' + that.cursorPos.line).children('.my-editor-code').children('span[data-column="' + token.column + '"]');
-                let text = token.value.slice(0, that.cursorPos.column - token.column);
+                let $token = $('#line_' + cursorPos.line).children('.my-editor-code').children('span[data-column="' + token.column + '"]');
+                let text = token.value.slice(0, cursorPos.column - token.column);
                 return $token[0].offsetLeft + that.getStrWidth(text);
             }
         },
@@ -898,6 +1008,14 @@ export default {
             }
             return text;
         },
+        getOrderMultiCursorPos(asc) {
+            return this.multiCursorPos.slice().sort((a, b) => {
+                if (a.line == b.line) {
+                    return asc === false ? b.column - a.column : a.column - b.column;
+                }
+                return asc === false ? b.line - a.line : a.line - b.line;
+            });
+        },
         // 右键菜单事件
         onContextmenu(e) {
             let panelWidth = 0;
@@ -937,12 +1055,16 @@ export default {
                         }
                         Util.writeClipboard(text);
                     } else {
-                        let text = context.htmls[this.cursorPos.line - 1].text;
-                        if (menu.op === 'cut') {
-                            text && this.setSelectedRange({ line: this.cursorPos.line, column: 0 }, { line: this.cursorPos.line, column: text.length });
-                            text && this.deleteContent();
-                        }
-                        Util.writeClipboard(text);
+                        let text = '';
+                        this.getOrderMultiCursorPos(false).map((cursorPos) => {
+                            let str = context.htmls[cursorPos.line - 1].text;
+                            if (menu.op === 'cut') {
+                                str && this.setSelectedRange({ line: cursorPos.line, column: 0 }, { line: cursorPos.line, column: str.length });
+                                str && this.deleteContent();
+                            }
+                            text = '\n' + str + text;
+                        });
+                        Util.writeClipboard(text.slice(1));
                     }
                     break;
                 case 'paste':
@@ -987,12 +1109,12 @@ export default {
         },
         // 滚动区域鼠标按下事件
         onScrollerMdown(e) {
-            this.focus();
             if (e.which == 3) { //右键
                 return;
             }
             let pos = this.getPosByEvent(e);
             this.setCursorPos(pos.line, pos.column);
+            this.focus();
             this.mouseStartObj = {
                 time: Date.now(),
                 start: pos
@@ -1017,8 +1139,8 @@ export default {
                 }
             }
             function _move(autoDirect, speed) {
-                let originLine = that.cursorPos.line;
-                let originColumn = that.cursorPos.column;
+                let originLine = that.nowCursorPos.line;
+                let originColumn = that.nowCursorPos.column;
                 let count = 0; // 累计滚动距离
                 _run(autoDirect, speed);
 
@@ -1134,7 +1256,16 @@ export default {
                 let text = this.getRangeText(this.selectedRange.start, this.selectedRange.end);
                 clipboardData.setData(mime, text);
             } else {
-                clipboardData.setData(mime, context.htmls[this.cursorPos.line - 1].text);
+                let text = '';
+                this.getOrderMultiCursorPos(false).map((cursorPos) => {
+                    let str = context.htmls[cursorPos.line - 1].text;
+                    if (menu.op === 'cut') {
+                        str && this.setSelectedRange({ line: cursorPos.line, column: 0 }, { line: cursorPos.line, column: str.length });
+                        str && this.deleteContent();
+                    }
+                    text = '\n' + str + text;
+                });
+                clipboardData.setData(mime, text.slice(1));
             }
         },
         onCut(e) {
@@ -1145,10 +1276,14 @@ export default {
                 clipboardData.setData(mime, text);
                 this.deleteContent();
             } else {
-                let text = context.htmls[this.cursorPos.line - 1].text;
-                text && clipboardData.setData(mime, context.htmls[this.cursorPos.line - 1].text);
-                text && this.setSelectedRange({ line: this.cursorPos.line, column: 0 }, { line: this.cursorPos.line, column: text.length });
-                this.deleteContent();
+                let text = '';
+                this.getOrderMultiCursorPos(false).map((cursorPos) => {
+                    let str = context.htmls[cursorPos.line - 1].text;
+                    str && this.setSelectedRange({ line: cursorPos.line, column: 0 }, { line: cursorPos.line, column: str.length });
+                    str && this.deleteContent();
+                    text = '\n' + str + text;
+                });
+                clipboardData.setData(mime, text.slice(1));
             }
         },
         // 粘贴事件
@@ -1161,12 +1296,14 @@ export default {
         },
         // 获得焦点
         onFocus() {
+            clearTimeout(this.onBlur.timer);
             this.showCursor();
         },
         // 失去焦点
         onBlur() {
-            this.hideCursor();
-            this.menuVisble = false;
+            this.onBlur.timer = setTimeout(() => {
+                this.hideCursor();
+            }, 300);
         },
         // 键盘按下事件
         onKeyDown(e) {
@@ -1175,7 +1312,8 @@ export default {
                     case 65://ctrl+a,全选
                         e.preventDefault();
                         this.setSelectedRange({ line: 1, column: 0 }, { line: context.htmls.length, column: context.htmls.peek().text.length })
-                        this.renderSelectedBg(false);
+                        this.renderSelectedBg();
+                        this.forceCursorView = false;
                         break;
                     case 90: //ctrl+z，撤销
                     case 122:
@@ -1195,40 +1333,48 @@ export default {
                         this.insertContent('\t');
                         break;
                     case 37: //left arrow
-                        if (this.cursorPos.column > 0) {
-                            this.setCursorPos(this.cursorPos.line, this.cursorPos.column - 1);
-                        } else if (this.cursorPos.line > 1) {
-                            this.setCursorPos(this.cursorPos.line - 1, context.htmls[this.cursorPos.line - 2].text.length);
-                        }
+                        this.multiCursorPos.map((cursorPos) => {
+                            if (cursorPos.column > 0) {
+                                this.updateCursorPos(cursorPos, cursorPos.line, cursorPos.column - 1);
+                            } else if (cursorPos.line > 1) {
+                                this.updateCursorPos(cursorPos, cursorPos.line - 1, context.htmls[cursorPos.line - 2].text.length);
+                            }
+                        });
                         this.clearRnage();
                         break;
                     case 38: //up arrow
-                        if (this.cursorPos.line > 1) {
-                            let text = context.htmls[this.cursorPos.line - 1].text;
-                            let width = this.getStrWidth(text, 0, this.cursorPos.column);
-                            text = context.htmls[this.cursorPos.line - 2].text;
-                            let column = this.getColumnByWidth(text, width);
-                            this.setCursorPos(this.cursorPos.line - 1, column);
-                        }
+                        this.multiCursorPos.map((cursorPos) => {
+                            if (cursorPos.line > 1) {
+                                let text = context.htmls[cursorPos.line - 1].text;
+                                let width = this.getStrWidth(text, 0, cursorPos.column);
+                                text = context.htmls[cursorPos.line - 2].text;
+                                let column = this.getColumnByWidth(text, width);
+                                this.updateCursorPos(cursorPos, cursorPos.line - 1, column);
+                            }
+                        });
                         this.clearRnage();
                         break;
                     case 39: //right arrow
-                        let text = context.htmls[this.cursorPos.line - 1].text;
-                        if (this.cursorPos.column < text.length) {
-                            this.setCursorPos(this.cursorPos.line, this.cursorPos.column + 1);
-                        } else if (this.cursorPos.line < context.htmls.length) {
-                            this.setCursorPos(this.cursorPos.line + 1, 0);
-                        }
+                        this.multiCursorPos.map((cursorPos) => {
+                            let text = context.htmls[cursorPos.line - 1].text;
+                            if (cursorPos.column < text.length) {
+                                this.updateCursorPos(cursorPos, cursorPos.line, cursorPos.column + 1);
+                            } else if (cursorPos.line < context.htmls.length) {
+                                this.updateCursorPos(cursorPos, cursorPos.line + 1, 0);
+                            }
+                        });
                         this.clearRnage();
                         break;
                     case 40: //down arrow
-                        if (this.cursorPos.line < context.htmls.length) {
-                            let text = context.htmls[this.cursorPos.line - 1].text;
-                            let width = this.getStrWidth(text, 0, this.cursorPos.column);
-                            text = context.htmls[this.cursorPos.line].text;
-                            let column = this.getColumnByWidth(text, width);
-                            this.setCursorPos(this.cursorPos.line + 1, column);
-                        }
+                        this.multiCursorPos.map((cursorPos) => {
+                            if (cursorPos.line < context.htmls.length) {
+                                let text = context.htmls[cursorPos.line - 1].text;
+                                let width = this.getStrWidth(text, 0, cursorPos.column);
+                                text = context.htmls[cursorPos.line].text;
+                                let column = this.getColumnByWidth(text, width);
+                                this.updateCursorPos(cursorPos, cursorPos.line + 1, column);
+                            }
+                        });
                         this.clearRnage();
                         break;
                     case Util.keyCode.DELETE: //delete
@@ -1238,6 +1384,7 @@ export default {
                         this.deleteContent(Util.keyCode.BACKSPACE);
                         break;
                 }
+                this.filterMultiCursorPos();
             }
         }
     }
