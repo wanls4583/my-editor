@@ -1475,48 +1475,57 @@ export default {
                         this.insertContent('\t');
                         break;
                     case 37: //left arrow
-                        this.multiCursorPos.map((cursorPos) => {
-                            if (cursorPos.column > 0) {
-                                this.updateCursorPos(cursorPos, cursorPos.line, cursorPos.column - 1);
-                            } else if (cursorPos.line > 1) {
-                                this.updateCursorPos(cursorPos, cursorPos.line - 1, context.htmls[cursorPos.line - 2].text.length);
-                            }
-                        });
+                        //ctrl+d后，第一次移动光标只是取消选中状态
+                        if (!this.checkCursorSelected(this.nowCursorPos)) {
+                            this.multiCursorPos.map((cursorPos) => {
+                                if (cursorPos.column > 0) {
+                                    this.updateCursorPos(cursorPos, cursorPos.line, cursorPos.column - 1);
+                                } else if (cursorPos.line > 1) {
+                                    this.updateCursorPos(cursorPos, cursorPos.line - 1, context.htmls[cursorPos.line - 2].text.length);
+                                }
+                            });
+                        }
                         this.clearRnage();
                         break;
                     case 38: //up arrow
-                        this.multiCursorPos.map((cursorPos) => {
-                            if (cursorPos.line > 1) {
-                                let text = context.htmls[cursorPos.line - 1].text;
-                                let width = this.getStrWidth(text, 0, cursorPos.column);
-                                text = context.htmls[cursorPos.line - 2].text;
-                                let column = this.getColumnByWidth(text, width);
-                                this.updateCursorPos(cursorPos, cursorPos.line - 1, column);
-                            }
-                        });
+                        if (!this.checkCursorSelected(this.nowCursorPos)) {
+                            this.multiCursorPos.map((cursorPos) => {
+                                if (cursorPos.line > 1) {
+                                    let text = context.htmls[cursorPos.line - 1].text;
+                                    let width = this.getStrWidth(text, 0, cursorPos.column);
+                                    text = context.htmls[cursorPos.line - 2].text;
+                                    let column = this.getColumnByWidth(text, width);
+                                    this.updateCursorPos(cursorPos, cursorPos.line - 1, column);
+                                }
+                            });
+                        }
                         this.clearRnage();
                         break;
                     case 39: //right arrow
-                        this.multiCursorPos.map((cursorPos) => {
-                            let text = context.htmls[cursorPos.line - 1].text;
-                            if (cursorPos.column < text.length) {
-                                this.updateCursorPos(cursorPos, cursorPos.line, cursorPos.column + 1);
-                            } else if (cursorPos.line < context.htmls.length) {
-                                this.updateCursorPos(cursorPos, cursorPos.line + 1, 0);
-                            }
-                        });
+                        if (!this.checkCursorSelected(this.nowCursorPos)) {
+                            this.multiCursorPos.map((cursorPos) => {
+                                let text = context.htmls[cursorPos.line - 1].text;
+                                if (cursorPos.column < text.length) {
+                                    this.updateCursorPos(cursorPos, cursorPos.line, cursorPos.column + 1);
+                                } else if (cursorPos.line < context.htmls.length) {
+                                    this.updateCursorPos(cursorPos, cursorPos.line + 1, 0);
+                                }
+                            });
+                        }
                         this.clearRnage();
                         break;
                     case 40: //down arrow
-                        this.multiCursorPos.map((cursorPos) => {
-                            if (cursorPos.line < context.htmls.length) {
-                                let text = context.htmls[cursorPos.line - 1].text;
-                                let width = this.getStrWidth(text, 0, cursorPos.column);
-                                text = context.htmls[cursorPos.line].text;
-                                let column = this.getColumnByWidth(text, width);
-                                this.updateCursorPos(cursorPos, cursorPos.line + 1, column);
-                            }
-                        });
+                        if (!this.checkCursorSelected(this.nowCursorPos)) {
+                            this.multiCursorPos.map((cursorPos) => {
+                                if (cursorPos.line < context.htmls.length) {
+                                    let text = context.htmls[cursorPos.line - 1].text;
+                                    let width = this.getStrWidth(text, 0, cursorPos.column);
+                                    text = context.htmls[cursorPos.line].text;
+                                    let column = this.getColumnByWidth(text, width);
+                                    this.updateCursorPos(cursorPos, cursorPos.line + 1, column);
+                                }
+                            });
+                        }
                         this.clearRnage();
                         break;
                     case Util.keyCode.DELETE: //delete
