@@ -889,9 +889,9 @@ export default {
             }
             this.cursorVisible = true;
 
-            function _deleySet(cursorPos, line, column) {
+            function _deleySet(cursorPos) {
                 that.$nextTick(() => {
-                    _setCursorRealPos(cursorPos);
+                    !cursorPos.del && _setCursorRealPos(cursorPos);
                 });
             }
 
