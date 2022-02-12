@@ -74,16 +74,9 @@ export default class {
         let lastCommand = this.history[this.history.index - 1];
         if (lastCommand instanceof Array &&
             command instanceof Array &&
-            lastCommand.length === command &&
+            lastCommand.length === command.length &&
             Date.now() - this.pushHistoryTime < 2000) {
-            let pass = true;
-            for (let i = 0; i < lastCommand.length; i++) {
-                if (!_combCommand(lastCommand[i], command[i], true)) {
-                    pass = false;
-                    break;
-                }
-            }
-            if (pass) {
+            if (_combCommand(lastCommand[0], command[0], true)) {
                 for (let i = 0; i < lastCommand.length; i++) {
                     _combCommand(lastCommand[i], command[i]);
                 }

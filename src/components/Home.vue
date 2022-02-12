@@ -13,7 +13,7 @@
 			<!-- 占位行号，避免行号宽度滚动时变化 -->
 			<div class="my-editor-num" style="visibility:hidden">{{maxLine}}</div>
 			<div
-				:class="{'my-editor-num-active': nowCursorPos.line==line.num}"
+				:class="{'my-editor-num-active': _activeLine(line.num)}"
 				:key="line.num"
 				:style="{height:_lineHeight, 'line-height':_lineHeight}"
 				class="my-editor-num"
@@ -41,7 +41,7 @@
 				<!-- 内如区域 -->
 				<div :style="{top: _top, minWidth: _contentMinWidth}" @selectend.prevent="onSelectend" class="my-editor-content" ref="content">
 					<div
-						:class="{active: nowCursorPos.line == line.num}"
+						:class="{active: _activeLine(line.num)}"
 						:data-line="line.num"
 						:id="'line_'+line.num"
 						:key="line.num"
@@ -272,6 +272,11 @@ export default {
         _tabLineLeft() {
             return (tab) => {
                 return (tab - 1) * this.tabSize * this.charObj.charWidth + 'px';
+            }
+        },
+        _activeLine() {
+            return (num) => {
+                return this.multiCursorPos.length === 1 && this.nowCursorPos.line == num;
             }
         },
         space() {
@@ -532,7 +537,7 @@ export default {
                     historyArr = this._insertContent(cursorPos, text);
                 }
             } else if (this.multiCursorPos.length > 1) {
-                let texts = text instanceof Array ? text : text.split('\r\n|\n');
+                let texts = text instanceof Array ? text : text.split(/\r\n|\n/);
                 if (texts.length === this.multiCursorPos.length) {
                     this.getOrderMultiCursorPos().map((cursorPos, index) => {
                         let historyObj = this._insertContent(cursorPos, texts[index]);
@@ -618,7 +623,7 @@ export default {
                 rangePos = rangePos instanceof Array ? rangePos : [rangePos];
                 rangePos.map((item) => {
                     this.addSelectedRange(item.start, item.end);
-                    cursorPos = this.addCursorPos(item.start);
+                    cursorPos = this.addCursorPos(item.end);
                     let historyObj = this._deleteContent(cursorPos, keyCode);
                     historyObj.text && historyArr.push(historyObj);
                 });
@@ -721,9 +726,7 @@ export default {
             this.tokenizer.onDeleteContentAfter(newLine);
             this.lint.onDeleteContentAfter(newLine);
             this.folder.onDeleteContentAfter(newLine);
-            if (newLine != cursorPos.line || cursorPos.column != newColumn) {
-                this.updateCursorPos(cursorPos, newLine, newColumn, true);
-            }
+            this.updateCursorPos(cursorPos, newLine, newColumn, true);
             // 更新最大文本宽度
             if (startObj.width >= this.maxWidthObj.width) {
                 this.maxWidthObj = {
@@ -837,6 +840,7 @@ export default {
                     if (item.line > cursorPos.line) {
                         item.line += line - cursorPos.line;
                     } else if (item.line === cursorPos.line && item.column > cursorPos.column) {
+                        item.line += line - cursorPos.line;
                         item.column += column - cursorPos.column;
                     }
                 }
@@ -887,9 +891,7 @@ export default {
 
             function _deleySet(cursorPos, line, column) {
                 that.$nextTick(() => {
-                    if (!cursorPos.del && cursorPos.line === cursorPos.line && cursorPos.column === cursorPos.column) {
-                        _setCursorRealPos(cursorPos);
-                    }
+                    _setCursorRealPos(cursorPos);
                 });
             }
 
