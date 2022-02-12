@@ -500,6 +500,7 @@ export default {
             } else {
                 this.selectedRanges = [];
             }
+            this.getToSearchObj.wholeWord = false;
             this.renderLine();
         },
         // 检测光标是否为在选中区域范围内
@@ -1146,7 +1147,7 @@ export default {
         // 获取待搜索的文本
         getToSearchObj() {
             let selectedRange = this.checkCursorSelected(this.nowCursorPos);
-            let wholeWord = false;
+            let wholeWord = this.getToSearchObj.wholeWord || false;
             let searchText = '';
             if (selectedRange) {
                 searchText = this.getRangeText(selectedRange.start, selectedRange.end);
@@ -1167,6 +1168,7 @@ export default {
                 wholeWord = true;
                 searchText = str;
             }
+            this.getToSearchObj.wholeWord = wholeWord;
             return {
                 text: searchText,
                 wholeWord: wholeWord
@@ -1324,10 +1326,14 @@ export default {
                 this.setCursorPos(end);
             } else if (e.which != 3) {
                 this.clearRnage();
+                if (this.mouseUpTime && Date.now() - this.mouseUpTime < 300) { //双击选中单词
+                    this.search();
+                }
             }
             // 停止滚动选中
             cancelAnimationFrame(this.selectMoveTimer);
             this.mouseStartObj = null;
+            this.mouseUpTime = Date.now();
         },
         // 左右滚动事件
         onHscroll(e) {
