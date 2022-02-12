@@ -491,8 +491,8 @@ export default {
             }
             if (cursorPos) {
                 this.selectedRanges = this.selectedRanges.filter((selectedRange) => {
-                    if (Util.comparePos(cursorPos, selectedRange.start) == 0 ||
-                        Util.comparePos(cursorPos, selectedRange.end) == 0) {
+                    if (Util.comparePos(cursorPos, selectedRange.start) >= 0 &&
+                        Util.comparePos(cursorPos, selectedRange.end) <= 0) {
                         return false;
                     }
                     return true;
@@ -502,12 +502,12 @@ export default {
             }
             this.renderLine();
         },
-        // 检测光标是否为选中区域的开始或结束为止
+        // 检测光标是否为在选中区域范围内
         checkCursorSelected(cursorPos) {
             for (let i = 0; i < this.selectedRanges.length; i++) {
                 let selectedRange = this.selectedRanges[i];
-                if (Util.comparePos(cursorPos, selectedRange.start) == 0 ||
-                    Util.comparePos(cursorPos, selectedRange.end) == 0) {
+                if (Util.comparePos(cursorPos, selectedRange.start) >= 0 &&
+                    Util.comparePos(cursorPos, selectedRange.end) <= 0) {
                     return selectedRange;
                 }
             }
