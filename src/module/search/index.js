@@ -14,14 +14,17 @@ export default class {
         this.initProperties(editor, context);
     }
     initProperties(editor, context) {
-        Util.defineProperties(this, editor, ['addSelectedRange', 'renderSelectedBg']);
+        Util.defineProperties(this, editor, ['checkCursorSelected', 'nowCursorPos']);
         Util.defineProperties(this, context, ['htmls']);
     }
-    search(str) {
-        let reg = new RegExp(str.replace(/\\|\.|\*|\+|\-|\?|\(|\)|\[|\]|{|\}|\^|\$|\~|\!/g, '\\$&'));
-        let exec = null;
-        let start = null;
-        let end = null;
+    search(str, option) {
+        let reg = null,
+            exec = null,
+            start = null,
+            end = null,
+            result = null,
+            firstResult = null,
+            rangePos = null;
         let pos = {
             line: 1,
             column: 0,
@@ -31,6 +34,9 @@ export default class {
             return item.text
         }).join('\n');
         let originText = text;
+        option = option || {};
+        str = str.replace(/\\|\.|\*|\+|\-|\?|\(|\)|\[|\]|{|\}|\^|\$|\~|\!/g, '\\$&');
+        reg = new RegExp((option.wholeWord ? '\\b' : '') + str + (option.wholeWord ? '\\b' : ''), option.ignoreCase ? 'i' : '');
         while (exec = reg.exec(text)) {
             this.setLineColumn(text.slice(0, exec.index), pos);
             pos.index += exec.index;
@@ -38,10 +44,22 @@ export default class {
             this.setLineColumn(exec[0], pos);
             pos.index += exec[0].length;
             end = Object.assign({}, pos);
-            this.addSelectedRange(start, end); //选中
             text = originText.slice(pos.index);
+            rangePos = {
+                start: start,
+                end: end
+            };
+            firstResult = firstResult || rangePos;
+            if (Util.comparePos(end, this.nowCursorPos) > 0 ||
+                Util.comparePos(end, this.nowCursorPos) === 0 && !this.checkCursorSelected(start)) {
+                result = rangePos;
+                break;
+            }
         }
-        this.renderSelectedBg();
+        if (!result && rangePos && !this.checkCursorSelected(rangePos.start)) {
+            result = rangePos
+        }
+        return result;
     }
     setLineColumn(text, pos) {
         let lines = text.match(regs.enter);

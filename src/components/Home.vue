@@ -527,12 +527,12 @@ export default {
                 if (texts.length === this.multiCursorPos.length) {
                     this.getOrderMultiCursorPos(false).map((cursorPos, index) => {
                         let historyObj = this._insertContent(cursorPos, texts[index]);
-                        historyArr.pushHistory(historyObj);
+                        historyArr.push(historyObj);
                     });
                 } else {
                     this.getOrderMultiCursorPos(false).map((cursorPos) => {
                         let historyObj = this._insertContent(cursorPos, text);
-                        historyArr.pushHistory(historyObj);
+                        historyArr.push(historyObj);
                     });
                 }
             } else {
@@ -762,6 +762,26 @@ export default {
                 this.render();
             }
         },
+        search() {
+            if (this.search.stopSearch) {
+                return;
+            }
+            let searchObj = this.getToSearchObj();
+            let rangePos = null;
+            if (!searchObj.text) {
+                return;
+            }
+            rangePos = this.searcher.search(searchObj.text, searchObj);
+            if (rangePos) {
+                this.selectedRanges.length ?
+                    this.addCursorPos(rangePos.end) :
+                    this.setCursorPos(rangePos.end);
+                this.addSelectedRange(rangePos.start, rangePos.end);
+                this.renderSelectedBg();
+            } else {
+                this.search.stopSearch = true;
+            }
+        },
         filterMultiCursorPos() {
             let posMap = {};
             this.multiCursorPos = this.multiCursorPos.filter((cursorPos) => {
@@ -792,6 +812,7 @@ export default {
         },
         // 添加光标
         addCursorPos(cursorPos) {
+            cursorPos = Object.assign({}, cursorPos);
             if (this.multiCursorPos.filter((item) => {
                 if (Util.comparePos(cursorPos, item) == 0) {
                     return true;
@@ -806,11 +827,8 @@ export default {
             this.setCursorRealPos(cursorPos);
         },
         // 设置光标
-        setCursorPos(line, column) {
-            let cursorPos = {
-                line: line,
-                column: column
-            }
+        setCursorPos(cursorPos) {
+            cursorPos = Object.assign({}, cursorPos);
             if (this.multiCursorPos.length == 1) {
                 let pos = this.multiCursorPos[0];
                 if (pos.line === cursorPos.line && pos.column === cursorPos.column) {
@@ -820,6 +838,7 @@ export default {
             this.multiCursorPos = [cursorPos];
             this.nowCursorPos = cursorPos;
             this.setCursorRealPos(cursorPos);
+            this.search.stopSearch = false;
         },
         // 设置真实光标位置
         setCursorRealPos(cursorPos) {
@@ -978,8 +997,8 @@ export default {
                 return;
             }
             this.selectedRanges.push({
-                start: start,
-                end: end
+                start: Object.assign({}, start),
+                end: Object.assign({}, end)
             });
         },
         setErrorMap(errorMap) {
@@ -1112,10 +1131,32 @@ export default {
             return text.slice(1);
         },
         // 获取待搜索的文本
-        getToSearchText(cursorPos) {
-            let selectedRange = this.checkCursorSelected(cursorPos);
+        getToSearchObj() {
+            let selectedRange = this.checkCursorSelected(this.nowCursorPos);
+            let wholeWord = false;
+            let searchText = '';
             if (selectedRange) {
-                return this.getRangeText(selectedRange.start, selectedRange.end);
+                searchText = this.getRangeText(selectedRange.start, selectedRange.end);
+            } else {
+                let text = context.htmls[this.nowCursorPos.line - 1].text;
+                let str = '';
+                let index = this.nowCursorPos.column;
+                let sReg = /[a-zA-Z0-9_]/;
+                while (index > 0 && text[index - 1].match(sReg)) {
+                    str = text[index - 1] + str;
+                    index--;
+                }
+                index = this.nowCursorPos.column;
+                while (index < text.length && text[index].match(sReg)) {
+                    str += text[index];
+                    index++;
+                }
+                wholeWord = true;
+                searchText = str;
+            }
+            return {
+                text: searchText,
+                wholeWord: wholeWord
             }
         },
         // 右键菜单事件
@@ -1190,7 +1231,7 @@ export default {
                 return;
             }
             let pos = this.getPosByEvent(e);
-            this.setCursorPos(pos.line, pos.column);
+            this.setCursorPos(pos);
             this.focus();
             this.mouseStartObj = {
                 time: Date.now(),
@@ -1205,7 +1246,7 @@ export default {
                 let end = this.getPosByEvent(e);
                 this.setSelectedRange(Object.assign({}, this.mouseStartObj.start), end);
                 this.renderSelectedBg();
-                this.setCursorPos(end.line, end.column);
+                this.setCursorPos(end);
                 cancelAnimationFrame(this.selectMoveTimer);
                 if (e.clientY > offset.top + this.scrollerArea.height) { //鼠标超出底部区域
                     _move('down', e.clientY - offset.top - this.scrollerArea.height);
@@ -1250,7 +1291,7 @@ export default {
                     }
                     line = line < 1 ? 1 : (line > context.htmls.length ? context.htmls.length : line);
                     column = column < 0 ? 0 : (column > context.htmls[originLine - 1].text.length ? context.htmls[originLine - 1].text.length : column);
-                    that.setCursorPos(line, column);
+                    that.setCursorPos({ line: line, column: column });
                     that.setSelectedRange(that.mouseStartObj.start, { line: line, column: column });
                     that.renderSelectedBg();
                     that.selectMoveTimer = requestAnimationFrame(() => {
@@ -1267,7 +1308,7 @@ export default {
                 Util.comparePos(this.mouseStartObj.start, end) != 0) {
                 this.setSelectedRange(this.mouseStartObj.start, end);
                 this.renderSelectedBg();
-                this.setCursorPos(end.line, end.column);
+                this.setCursorPos(end);
             } else if (e.which != 3) {
                 this.clearRnage();
             }
@@ -1368,19 +1409,11 @@ export default {
                         this.setSelectedRange({ line: 1, column: 0 }, end);
                         this.renderSelectedBg();
                         this.forceCursorView = false;
-                        this.setCursorPos(end.line, end.column);
+                        this.setCursorPos(end);
                         break;
                     case 68: //ctrl+d，搜素
                         e.preventDefault();
-                        if (this.selectedRanges.length > 1) {
-
-                        } else {
-                            let cursorPos = this.getOrderMultiCursorPos()[0];
-                            if (cursorPos) {
-                                let str = this.getToSearchText(cursorPos);
-                                this.searcher.search(str);
-                            }
-                        }
+                        this.search();
                         break;
                     case 90: //ctrl+z，撤销
                     case 122:
