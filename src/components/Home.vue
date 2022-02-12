@@ -521,8 +521,16 @@ export default {
                 this.deleteContent();
             }
             if (cursorPos) {
-                this.addCursorPos(cursorPos);
-                historyArr = this._insertContent(cursorPos, text);
+                if (text instanceof Array) {
+                    text.map((item, index) => {
+                        let _cursorPos = this.addCursorPos(cursorPos[index]);
+                        let historyObj = this._insertContent(_cursorPos, text[index]);
+                        historyArr.push(historyObj);
+                    });
+                } else {
+                    cursorPos = this.addCursorPos(cursorPos);
+                    historyArr = this._insertContent(cursorPos, text);
+                }
             } else if (this.multiCursorPos.length > 1) {
                 let texts = text instanceof Array ? text : text.split('\r\n|\n');
                 if (texts.length === this.multiCursorPos.length) {
@@ -605,11 +613,15 @@ export default {
         },
         deleteContent(keyCode, rangePos) {
             let historyArr = [];
+            let cursorPos = null;
             if (rangePos) {
-                this.addSelectedRange(rangePos.start, rangePos.end);
-                this.addCursorPos(rangePos.start);
-                let historyObj = this._deleteContent(rangePos.start, keyCode);
-                historyObj.text && historyArr.push(historyObj);
+                rangePos = rangePos instanceof Array ? rangePos : [rangePos];
+                rangePos.map((item) => {
+                    this.addSelectedRange(item.start, item.end);
+                    cursorPos = this.addCursorPos(item.start);
+                    let historyObj = this._deleteContent(cursorPos, keyCode);
+                    historyObj.text && historyArr.push(historyObj);
+                });
             } else {
                 this.getOrderMultiCursorPos().map((cursorPos) => {
                     let historyObj = this._deleteContent(cursorPos, keyCode);
@@ -845,6 +857,7 @@ export default {
             this.nowCursorPos = cursorPos;
             this.filterMultiCursorPos();
             this.setCursorRealPos(cursorPos);
+            return cursorPos;
         },
         // 设置光标
         setCursorPos(cursorPos) {

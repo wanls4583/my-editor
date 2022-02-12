@@ -35,12 +35,14 @@ export default class {
         switch (commandType) {
             case Util.command.DELETE:
                 if (command instanceof Array) {
-                    command.map((command) => {
-                        this.deleteContent(Util.keyCode.BACKSPACE, {
+
+                    let list = command.slice().reverse().map((command) => {
+                        return {
                             start: command.start,
                             end: command.end
-                        });
+                        };
                     });
+                    this.deleteContent(Util.keyCode.BACKSPACE, list);
                 } else {
                     this.deleteContent(Util.keyCode.BACKSPACE, {
                         start: command.start,
@@ -50,10 +52,13 @@ export default class {
                 break;
             case Util.command.INSERT:
                 if (command instanceof Array) {
-                    command.map((command) => {
-                        let cursorPos = Object.assign({}, command.cursorPos);
-                        this.insertContent(command.text, cursorPos);
+                    let text = [];
+                    let cursorPos = [];
+                    command.slice().reverse().map((command) => {
+                        text.push(command.text);
+                        cursorPos.push(command.cursorPos);
                     });
+                    this.insertContent(text, cursorPos);
                 } else {
                     this.insertContent(command.text, Object.assign({}, command.cursorPos));
                 }
