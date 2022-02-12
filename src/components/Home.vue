@@ -60,13 +60,15 @@
 						<div
 							:style="{left: selectedRange.start.left + 'px', width: selectedRange.start.width + 'px'}"
 							class="my-editor-line-bg my-editor-bg-color"
-							v-if="_startBgLineVisible(line.num)"
+							v-for="selectedRange in selectedRanges"
+							v-if="_startBgLineVisible(selectedRange, line.num)"
 						></div>
 						<!-- 选中时的末行背景 -->
 						<div
 							:style="{left: selectedRange.end.left + 'px', width: selectedRange.end.width + 'px'}"
 							class="my-editor-line-bg my-editor-bg-color"
-							v-if="_endBgLineVisible(line.num)"
+							v-for="selectedRange in selectedRanges"
+							v-if="_endBgLineVisible(selectedRange, line.num)"
 						></div>
 						<span :style="{left: _tabLineLeft(tab)}" class="my-editor-tab-line" v-for="tab in line.tabNum"></span>
 					</div>
@@ -117,6 +119,7 @@
 import Tokenizer from '@/module/tokenizer/core/index';
 import Lint from '@/module/lint/core/index';
 import Fold from '@/module/fold/index';
+import Search from '@/module/search/index';
 import History from '@/module/history/index';
 import StatusBar from './StatusBar';
 import Panel from './Panel';
@@ -153,6 +156,7 @@ export default {
             },
             multiCursorPos: [],
             cursorVisible: true,
+            cursorFocus: true,
             language: 'HTML',
             // language: 'JavaScript',
             // language: 'CSS',
@@ -168,7 +172,7 @@ export default {
             maxLine: 1,
             scrollerHeight: 'auto',
             scrollerArea: {},
-            selectedRange: null,
+            selectedRanges: [],
             maxWidthObj: {
                 lineId: null,
                 text: '',
@@ -256,13 +260,13 @@ export default {
             }
         },
         _startBgLineVisible() {
-            return (num) => {
-                return this.selectedRange && num == this.selectedRange.start.line
+            return (selectedRange, num) => {
+                return num == selectedRange.start.line
             }
         },
         _endBgLineVisible() {
-            return (num) => {
-                return this.selectedRange && num == this.selectedRange.end.line && this.selectedRange.end.line > this.selectedRange.start.line
+            return (selectedRange, num) => {
+                return num == selectedRange.end.line && selectedRange.end.line > selectedRange.start.line
             }
         },
         _tabLineLeft() {
@@ -335,6 +339,7 @@ export default {
             this.lint = new Lint(this, context);
             this.folder = new Fold(this, context);
             this.history = new History(this, context);
+            this.searcher = new Search(this, context);
         },
         // 初始化文档事件
         initEvent() {
@@ -347,6 +352,7 @@ export default {
         },
         // 显示光标
         showCursor() {
+            this.cursorFocus = true;
             if (!this.multiCursorPos.length) {
                 this.showCursor.show = false;
                 return;
@@ -369,7 +375,7 @@ export default {
         hideCursor() {
             clearTimeout(this.curserTimer);
             this.showCursor.show = false;
-            this.clearCursorPos();
+            this.cursorFocus = false;
         },
         // 聚焦
         focus() {
@@ -428,8 +434,11 @@ export default {
                     tabNum = tabNum && tabNum[0].length || 0;
                     tabNum = tabNum + Math.ceil((spaceNum[0].length - tabNum) / that.tabSize);
                 }
-                if (that.selectedRange && line > that.selectedRange.start.line && line < that.selectedRange.end.line) {
-                    selected = true;
+                for (let i = 0; i < that.selectedRanges.length; i++) {
+                    let selectedRange = that.selectedRanges[i];
+                    if (selectedRange && line > selectedRange.start.line && line < selectedRange.end.line) {
+                        selected = true;
+                    }
                 }
                 if (context.foldMap.has(line)) { //该行已经折叠
                     fold = 'close';
@@ -447,23 +456,18 @@ export default {
                 }
             }
         },
-        // 渲染选中背景
         renderSelectedBg() {
-            if (!this.selectedRange) {
+            if (!this.selectedRanges.length) {
                 return;
             }
-            let start = this.selectedRange.start;
-            let end = this.selectedRange.end;
-            let same = Util.comparePos(start, end);
-            this.setCursorPos(end.line, end.column);
-            if (same > 0) {
-                let tmp = start;
-                start = end;
-                end = tmp;
-            } else if (!same) {
-                this.clearRnage();
-                return;
-            }
+            this.selectedRanges.map((selectedRange) => {
+                this._renderSelectedBg(selectedRange);
+            });
+        },
+        // 渲染选中背景
+        _renderSelectedBg(selectedRange) {
+            let start = selectedRange.start;
+            let end = selectedRange.end;
             let text = context.htmls[start.line - 1].text;
             start.left = this.getStrWidth(text, 0, start.column);
             if (start.line == end.line) {
@@ -477,19 +481,42 @@ export default {
                     item.selected = item.num > start.line && item.num < end.line;
                 });
             }
-            this.setSelectedRange(start, end);
+            selectedRange.start = start;
+            selectedRange.end = end;
         },
         // 清除选中背景
-        clearRnage() {
-            this.selectedRange = null;
-            this.renderHtmls.map((item) => {
-                item.selected = false;
-            });
+        clearRnage(cursorPos) {
+            if (!this.selectedRanges.length) {
+                return;
+            }
+            if (cursorPos) {
+                this.selectedRanges = this.selectedRanges.filter((selectedRange) => {
+                    if (Util.comparePos(cursorPos, selectedRange.start) == 0 ||
+                        Util.comparePos(cursorPos, selectedRange.end) == 0) {
+                        return false;
+                    }
+                    return true;
+                });
+            } else {
+                this.selectedRanges = [];
+            }
+            this.renderLine();
+        },
+        // 检测光标是否为选中区域的开始或结束为止
+        checkCursorSelected(cursorPos) {
+            for (let i = 0; i < this.selectedRanges.length; i++) {
+                let selectedRange = this.selectedRanges[i];
+                if (Util.comparePos(cursorPos, selectedRange.start) == 0 ||
+                    Util.comparePos(cursorPos, selectedRange.end) == 0) {
+                    return selectedRange;
+                }
+            }
+            return false;
         },
         insertContent(text, cursorPos) {
             let historyArr = [];
             // 如果有选中区域，需要先删除选中区域
-            if (this.selectedRange) {
+            if (this.selectedRanges.length) {
                 this.deleteContent();
             }
             if (cursorPos) {
@@ -578,7 +605,7 @@ export default {
         deleteContent(keyCode, rangePos) {
             let historyArr = [];
             if (rangePos) {
-                this.setSelectedRange(rangePos.start, rangePos.end);
+                this.addSelectedRange(rangePos.start, rangePos.end);
                 this.addCursorPos(rangePos.start);
                 let historyObj = this._deleteContent(rangePos.start, keyCode);
                 historyObj.text && historyArr.push(historyObj);
@@ -605,17 +632,18 @@ export default {
             let rangeUuid = [];
             let newLine = cursorPos.line;
             let newColumn = cursorPos.column;
+            let selectedRange = this.checkCursorSelected(cursorPos);
             this.tokenizer.onDeleteContentBefore(cursorPos.line);
             this.lint.onDeleteContentBefore(cursorPos.line);
             this.folder.onDeleteContentBefore(cursorPos.line);
-            if (this.selectedRange) { // 删除选中区域
-                let end = this.selectedRange.end;
+            if (selectedRange) { // 删除选中区域
+                let end = selectedRange.end;
                 let endObj = context.htmls[end.line - 1];
-                start = this.selectedRange.start;
+                start = selectedRange.start;
                 startObj = context.htmls[start.line - 1];
                 originPos = { line: end.line, column: end.column };
                 text = startObj.text;
-                deleteText = this.getRangeText(this.selectedRange.start, this.selectedRange.end);
+                deleteText = this.getRangeText(selectedRange.start, selectedRange.end);
                 if (start.line == 1 && end.line == this.maxLine) { //全选删除
                     rangeUuid = [this.maxWidthObj.lineId];
                     context.lineIdMap.clear();
@@ -639,6 +667,7 @@ export default {
                 }
                 newLine = start.line;
                 newColumn = start.column;
+                this.clearRnage(cursorPos);
             } else if (Util.keyCode.DELETE == keyCode) { // 向后删除一个字符
                 if (cursorPos.column == text.length) { // 光标处于行尾
                     if (cursorPos.line < context.htmls.length) {
@@ -676,7 +705,6 @@ export default {
             startObj.states = null;
             this.maxLine = context.htmls.length;
             this.render(); //必须放在tokenizer前面，renderline(lineId)的时候.obj.num将失效
-            this.clearRnage();
             this.tokenizer.onDeleteContentAfter(newLine);
             this.lint.onDeleteContentAfter(newLine);
             this.folder.onDeleteContentAfter(newLine);
@@ -718,6 +746,7 @@ export default {
                         this.updateCursorPos(cursorPos, line, lineObj.text.length);
                     }
                 });
+                this.forceCursorView = false;
                 this.setCursorRealPos();
                 this.setScrollerHeight();
                 this.render();
@@ -727,10 +756,25 @@ export default {
         unFold(line) {
             this.focus();
             if (this.folder.unFold(line)) {
-                this.setScrollerHeight();
+                this.forceCursorView = false;
                 this.setCursorRealPos();
+                this.setScrollerHeight();
                 this.render();
             }
+        },
+        addSelectedRange(start, end) {
+            let same = Util.comparePos(start, end);
+            if (same > 0) {
+                let tmp = start;
+                start = end;
+                end = tmp;
+            } else if (!same) {
+                return;
+            }
+            this.selectedRanges.push({
+                start: start,
+                end: end
+            });
         },
         filterMultiCursorPos() {
             let posMap = {};
@@ -740,6 +784,10 @@ export default {
                     return false;
                 }
                 posMap[key] = true;
+                if (this.nowCursorPos && this.nowCursorPos.line === cursorPos.line &&
+                    this.nowCursorPos.column === this.nowCursorPos.column) {
+                    this.nowCursorPos = cursorPos;
+                }
                 return true;
             });
         },
@@ -759,6 +807,7 @@ export default {
         // 添加光标
         addCursorPos(cursorPos) {
             this.multiCursorPos.push(cursorPos);
+            this.nowCursorPos = cursorPos;
             this.filterMultiCursorPos();
             this.setCursorRealPos(cursorPos);
         },
@@ -809,7 +858,6 @@ export default {
                 let top = (that.folder.getRelativeLine(cursorPos.line) - that.folder.getRelativeLine(that.startLine)) * that.charObj.charHight;
                 let relTop = that.folder.getRelativeLine(cursorPos.line) * that.charObj.charHight;
                 // 强制滚动使光标处于可见区域
-                console.log(cursorPos === that.nowCursorPos)
                 if (that.forceCursorView !== false && cursorPos === that.nowCursorPos) {
                     if (relTop > that.scrollTop + that.scrollerArea.height - that.charObj.charHight) {
                         that.$vScroller.scrollTop = relTop + that.charObj.charHight - that.scrollerArea.height;
@@ -905,10 +953,32 @@ export default {
          * @param {Object} end
          */
         setSelectedRange(start, end) {
-            this.selectedRange = {
+            let same = Util.comparePos(start, end);
+            if (same > 0) {
+                let tmp = start;
+                start = end;
+                end = tmp;
+            } else if (!same) {
+                return;
+            }
+            this.selectedRanges = [{
                 start: start,
                 end: end
+            }];
+        },
+        addSelectedRange(start, end) {
+            let same = Util.comparePos(start, end);
+            if (same > 0) {
+                let tmp = start;
+                start = end;
+                end = tmp;
+            } else if (!same) {
+                return;
             }
+            this.selectedRanges.push({
+                start: start,
+                end: end
+            });
         },
         setErrorMap(errorMap) {
             this.errorMap = errorMap;
@@ -1016,6 +1086,27 @@ export default {
                 return asc === false ? b.line - a.line : a.line - b.line;
             });
         },
+        getCopyText(cut) {
+            let text = '';
+            this.getOrderMultiCursorPos(false).map((cursorPos) => {
+                let str = '';
+                let selectedRange = this.checkCursorSelected(cursorPos);
+                if (selectedRange) {
+                    str = this.getRangeText(selectedRange.start, selectedRange.end);
+                    if (cut) {
+                        this.deleteContent();
+                    }
+                } else {
+                    str = context.htmls[cursorPos.line - 1].text;
+                    if (cut) {
+                        str && this.addSelectedRange({ line: cursorPos.line, column: 0 }, { line: cursorPos.line, column: str.length });
+                        str && this.deleteContent();
+                    }
+                }
+                text = '\n' + str + text;
+            });
+            return text.slice(1);
+        },
         // 右键菜单事件
         onContextmenu(e) {
             let panelWidth = 0;
@@ -1037,40 +1128,15 @@ export default {
                     this.menuStyle.left = e.clientX - offset.left + 'px';
                 }
             });
-            // this.menuList[0].map((menu) => {
-            //     if (['cut', 'copy'].indexOf(menu.op) > -1) {
-            //         menu.disabled = !this.selectedRange;
-            //     }
-            // });
         },
         // 选中菜单
         onClickMenu(menu) {
             switch (menu.op) {
                 case 'cut':
                 case 'copy':
-                    if (this.selectedRange) {
-                        let text = this.getRangeText(this.selectedRange.start, this.selectedRange.end);
-                        if (menu.op == 'cut') {
-                            this.deleteContent();
-                        }
-                        Util.writeClipboard(text);
-                    } else {
-                        let text = '';
-                        this.getOrderMultiCursorPos(false).map((cursorPos) => {
-                            let str = context.htmls[cursorPos.line - 1].text;
-                            if (menu.op === 'cut') {
-                                str && this.setSelectedRange({ line: cursorPos.line, column: 0 }, { line: cursorPos.line, column: str.length });
-                                str && this.deleteContent();
-                            }
-                            text = '\n' + str + text;
-                        });
-                        Util.writeClipboard(text.slice(1));
-                    }
+                    Util.writeClipboard(this.getCopyText(menu.op === 'cut'));
                     break;
                 case 'paste':
-                    if (this.selectedRange) {
-                        this.deleteContent();
-                    }
                     this.$textarea.focus();
                     Util.readClipboard().then((text) => {
                         this.insertContent(text);
@@ -1252,39 +1318,12 @@ export default {
         onCopy(e) {
             let mime = window.clipboardData ? "Text" : "text/plain";
             let clipboardData = e.clipboardData || window.clipboardData;
-            if (this.selectedRange) {
-                let text = this.getRangeText(this.selectedRange.start, this.selectedRange.end);
-                clipboardData.setData(mime, text);
-            } else {
-                let text = '';
-                this.getOrderMultiCursorPos(false).map((cursorPos) => {
-                    let str = context.htmls[cursorPos.line - 1].text;
-                    if (menu.op === 'cut') {
-                        str && this.setSelectedRange({ line: cursorPos.line, column: 0 }, { line: cursorPos.line, column: str.length });
-                        str && this.deleteContent();
-                    }
-                    text = '\n' + str + text;
-                });
-                clipboardData.setData(mime, text.slice(1));
-            }
+            clipboardData.setData(mime, this.getCopyText());
         },
         onCut(e) {
             let mime = window.clipboardData ? "Text" : "text/plain";
             let clipboardData = e.clipboardData || window.clipboardData;
-            if (this.selectedRange) {
-                let text = this.getRangeText(this.selectedRange.start, this.selectedRange.end);
-                clipboardData.setData(mime, text);
-                this.deleteContent();
-            } else {
-                let text = '';
-                this.getOrderMultiCursorPos(false).map((cursorPos) => {
-                    let str = context.htmls[cursorPos.line - 1].text;
-                    str && this.setSelectedRange({ line: cursorPos.line, column: 0 }, { line: cursorPos.line, column: str.length });
-                    str && this.deleteContent();
-                    text = '\n' + str + text;
-                });
-                clipboardData.setData(mime, text.slice(1));
-            }
+            clipboardData.setData(mime, this.getCopyText(true));
         },
         // 粘贴事件
         onPaste(e) {
@@ -1314,6 +1353,8 @@ export default {
                         this.setSelectedRange({ line: 1, column: 0 }, { line: context.htmls.length, column: context.htmls.peek().text.length })
                         this.renderSelectedBg();
                         this.forceCursorView = false;
+                        break;
+                    case 68: //ctrl+d，搜素
                         break;
                     case 90: //ctrl+z，撤销
                     case 122:
