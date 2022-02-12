@@ -223,7 +223,7 @@ export default {
             return this.statusHeight + 4 + 'px';
         },
         _cursorVisible() {
-            return this.cursorVisible ? 'visible' : 'hidden';
+            return this.cursorVisible && this.cursorFocus ? 'visible' : 'hidden';
         },
         _hScrollWidth() {
             return this._contentMinWidth;
@@ -588,7 +588,7 @@ export default {
             if (context.foldMap.has(nowLine) && text.length > 1) {
                 this.unFold(nowLine);
             }
-            this.updateCursorPos(cursorPos, newLine, newColumn);
+            this.updateCursorPos(cursorPos, newLine, newColumn, true);
             let historyObj = {
                 type: Util.command.DELETE,
                 start: {
@@ -709,7 +709,7 @@ export default {
             this.lint.onDeleteContentAfter(newLine);
             this.folder.onDeleteContentAfter(newLine);
             if (newLine != cursorPos.line || cursorPos.column != newColumn) {
-                this.updateCursorPos(cursorPos, newLine, newColumn);
+                this.updateCursorPos(cursorPos, newLine, newColumn, true);
             }
             // 更新最大文本宽度
             if (startObj.width >= this.maxWidthObj.width) {
@@ -804,7 +804,18 @@ export default {
             this.multiCursorPos = [];
         },
         // 更新光标位置
-        updateCursorPos(cursorPos, line, column) {
+        updateCursorPos(cursorPos, line, column, updateAfter) {
+            if (updateAfter) {
+                this.multiCursorPos.map((item) => {
+                    if (item != cursorPos) {
+                        if (item.line > cursorPos.line) {
+                            item.line += line - cursorPos.line;
+                        } else if (item.line === cursorPos.line && item.column > cursorPos.column) {
+                            item.column += column - cursorPos.column;
+                        }
+                    }
+                });
+            }
             cursorPos.line = line;
             cursorPos.column = column;
             this.setCursorRealPos(cursorPos);
