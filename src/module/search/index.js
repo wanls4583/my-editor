@@ -50,8 +50,7 @@ export default class {
                 end: end
             };
             firstRnagePos = firstRnagePos || rangePos;
-            if (Util.comparePos(end, this.nowCursorPos) > 0 ||
-                Util.comparePos(end, this.nowCursorPos) === 0 && !this.checkCursorSelected(start)) {
+            if (Util.comparePos(end, this.nowCursorPos) >= 0 && !this.checkCursorSelected(start)) {
                 result = rangePos;
                 break;
             }
