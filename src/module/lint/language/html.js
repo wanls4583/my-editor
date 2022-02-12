@@ -11,7 +11,7 @@ function htmlLint() {
         js: /(?<!\<[^\>]*?['"][^\>]*?)(\<script(?:\s[^\>]*?)?\>)([\s\S]*?)\<\/script\>/,
         css: /(?<!\<[^\>]*?['"][^\>]*?)(\<style(?:\s[^\>]*?)?\>)([\s\S]*?)\<\/style\>/,
         enter: /\n/g,
-        column: /\n[^\n]*?$/,
+        column: /\n([^\n]+)$/,
         comment: /\<\!--[\s\S]*?--\>/
     }
 
@@ -52,7 +52,8 @@ function htmlLint() {
         lines = lines && lines.length || 0;
         pos.line += lines;
         if (lines) {
-            pos.column = regs.column.exec(text)[0].length;
+            let exec = regs.column.exec(text);
+            pos.column = exec && exec[1].length || 0;
         } else {
             pos.column += text.length;
         }

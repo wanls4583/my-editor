@@ -762,20 +762,6 @@ export default {
                 this.render();
             }
         },
-        addSelectedRange(start, end) {
-            let same = Util.comparePos(start, end);
-            if (same > 0) {
-                let tmp = start;
-                start = end;
-                end = tmp;
-            } else if (!same) {
-                return;
-            }
-            this.selectedRanges.push({
-                start: start,
-                end: end
-            });
-        },
         filterMultiCursorPos() {
             let posMap = {};
             this.multiCursorPos = this.multiCursorPos.filter((cursorPos) => {
@@ -806,6 +792,14 @@ export default {
         },
         // 添加光标
         addCursorPos(cursorPos) {
+            if (this.multiCursorPos.filter((item) => {
+                if (Util.comparePos(cursorPos, item) == 0) {
+                    return true;
+                }
+                return false;
+            }).length > 0) {
+                return;
+            }
             this.multiCursorPos.push(cursorPos);
             this.nowCursorPos = cursorPos;
             this.filterMultiCursorPos();
@@ -975,6 +969,14 @@ export default {
             } else if (!same) {
                 return;
             }
+            if (this.selectedRanges.filter((item) => {
+                if (Util.comparePos(start, item.start) == 0 && Util.comparePos(end, item.end) == 0) {
+                    return true;
+                }
+                return false;
+            }).length > 0) {
+                return;
+            }
             this.selectedRanges.push({
                 start: start,
                 end: end
@@ -1078,6 +1080,7 @@ export default {
             }
             return text;
         },
+        // 获取排序后的光标
         getOrderMultiCursorPos(asc) {
             return this.multiCursorPos.slice().sort((a, b) => {
                 if (a.line == b.line) {
@@ -1086,6 +1089,7 @@ export default {
                 return asc === false ? b.line - a.line : a.line - b.line;
             });
         },
+        // 获取待复制的文本
         getCopyText(cut) {
             let text = '';
             this.getOrderMultiCursorPos(false).map((cursorPos) => {
@@ -1106,6 +1110,13 @@ export default {
                 text = '\n' + str + text;
             });
             return text.slice(1);
+        },
+        // 获取待搜索的文本
+        getToSearchText(cursorPos) {
+            let selectedRange = this.checkCursorSelected(cursorPos);
+            if (selectedRange) {
+                return this.getRangeText(selectedRange.start, selectedRange.end);
+            }
         },
         // 右键菜单事件
         onContextmenu(e) {
@@ -1191,8 +1202,10 @@ export default {
             let that = this;
             if (this.mouseStartObj && Date.now() - this.mouseStartObj.time > 100) {
                 var offset = $(this.$scroller).offset();
-                this.setSelectedRange(Object.assign({}, this.mouseStartObj.start), this.getPosByEvent(e));
+                let end = this.getPosByEvent(e);
+                this.setSelectedRange(Object.assign({}, this.mouseStartObj.start), end);
                 this.renderSelectedBg();
+                this.setCursorPos(end.line, end.column);
                 cancelAnimationFrame(this.selectMoveTimer);
                 if (e.clientY > offset.top + this.scrollerArea.height) { //鼠标超出底部区域
                     _move('down', e.clientY - offset.top - this.scrollerArea.height);
@@ -1248,9 +1261,10 @@ export default {
         },
         // 鼠标抬起事件
         onScrollerMup(e) {
+            let end = this.getPosByEvent(e);
             // 按下到抬起的间隔大于100ms，属于选中结束事件
-            if (this.mouseStartObj && Date.now() - this.mouseStartObj.time > 100) {
-                let end = this.getPosByEvent(e);
+            if (this.mouseStartObj && Date.now() - this.mouseStartObj.time > 100 &&
+                Util.comparePos(this.mouseStartObj.start, end) != 0) {
                 this.setSelectedRange(this.mouseStartObj.start, end);
                 this.renderSelectedBg();
                 this.setCursorPos(end.line, end.column);
@@ -1350,11 +1364,23 @@ export default {
                 switch (e.keyCode) {
                     case 65://ctrl+a,全选
                         e.preventDefault();
-                        this.setSelectedRange({ line: 1, column: 0 }, { line: context.htmls.length, column: context.htmls.peek().text.length })
+                        let end = { line: context.htmls.length, column: context.htmls.peek().text.length };
+                        this.setSelectedRange({ line: 1, column: 0 }, end);
                         this.renderSelectedBg();
                         this.forceCursorView = false;
+                        this.setCursorPos(end.line, end.column);
                         break;
                     case 68: //ctrl+d，搜素
+                        e.preventDefault();
+                        if (this.selectedRanges.length > 1) {
+
+                        } else {
+                            let cursorPos = this.getOrderMultiCursorPos()[0];
+                            if (cursorPos) {
+                                let str = this.getToSearchText(cursorPos);
+                                this.searcher.search(str);
+                            }
+                        }
                         break;
                     case 90: //ctrl+z，撤销
                     case 122:
