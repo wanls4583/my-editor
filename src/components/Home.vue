@@ -526,12 +526,12 @@ export default {
             } else if (this.multiCursorPos.length > 1) {
                 let texts = text instanceof Array ? text : text.split('\r\n|\n');
                 if (texts.length === this.multiCursorPos.length) {
-                    this.getOrderMultiCursorPos(false).map((cursorPos, index) => {
+                    this.getOrderMultiCursorPos().map((cursorPos, index) => {
                         let historyObj = this._insertContent(cursorPos, texts[index]);
                         historyArr.push(historyObj);
                     });
                 } else {
-                    this.getOrderMultiCursorPos(false).map((cursorPos) => {
+                    this.getOrderMultiCursorPos().map((cursorPos) => {
                         let historyObj = this._insertContent(cursorPos, text);
                         historyArr.push(historyObj);
                     });
@@ -611,7 +611,7 @@ export default {
                 let historyObj = this._deleteContent(rangePos.start, keyCode);
                 historyObj.text && historyArr.push(historyObj);
             } else {
-                this.getOrderMultiCursorPos(false).map((cursorPos) => {
+                this.getOrderMultiCursorPos().map((cursorPos) => {
                     let historyObj = this._deleteContent(cursorPos, keyCode);
                     historyObj.text && historyArr.push(historyObj);
                 });
@@ -808,19 +808,27 @@ export default {
         updateCursorPos(cursorPos, line, column, updateAfter) {
             if (updateAfter) {
                 this.multiCursorPos.map((item) => {
-                    if (item != cursorPos) {
-                        if (item.line > cursorPos.line) {
-                            item.line += line - cursorPos.line;
-                        } else if (item.line === cursorPos.line && item.column > cursorPos.column) {
-                            item.column += column - cursorPos.column;
-                        }
-                    }
+                    _updateAfter(item);
+                });
+                this.selectedRanges.map((item) => {
+                    _updateAfter(item.start);
+                    _updateAfter(item.end);
                 });
             }
             cursorPos.line = line;
             cursorPos.column = column;
             this.setCursorRealPos(cursorPos);
             this.filterMultiCursorPos();
+
+            function _updateAfter(item) {
+                if (item != cursorPos) {
+                    if (item.line > cursorPos.line) {
+                        item.line += line - cursorPos.line;
+                    } else if (item.line === cursorPos.line && item.column > cursorPos.column) {
+                        item.column += column - cursorPos.column;
+                    }
+                }
+            }
         },
         // 添加光标
         addCursorPos(cursorPos) {

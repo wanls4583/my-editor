@@ -30,8 +30,9 @@ export default class {
     }
     // 操作命令
     doCommand(command) {
+        let commandType = command instanceof Array ? command[0].type : command.type;
         this.clearCursorPos();
-        switch (command.type) {
+        switch (commandType) {
             case Util.command.DELETE:
                 if (command instanceof Array) {
                     command.map((command) => {
