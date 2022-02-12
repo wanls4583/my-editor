@@ -23,7 +23,7 @@ export default class {
             start = null,
             end = null,
             result = null,
-            firstResult = null,
+            firstRnagePos = null,
             rangePos = null;
         let pos = {
             line: 1,
@@ -49,15 +49,15 @@ export default class {
                 start: start,
                 end: end
             };
-            firstResult = firstResult || rangePos;
+            firstRnagePos = firstRnagePos || rangePos;
             if (Util.comparePos(end, this.nowCursorPos) > 0 ||
                 Util.comparePos(end, this.nowCursorPos) === 0 && !this.checkCursorSelected(start)) {
                 result = rangePos;
                 break;
             }
         }
-        if (!result && rangePos && !this.checkCursorSelected(rangePos.start)) {
-            result = rangePos
+        if (!result && firstRnagePos && !this.checkCursorSelected(firstRnagePos.start)) {
+            result = firstRnagePos
         }
         return result;
     }

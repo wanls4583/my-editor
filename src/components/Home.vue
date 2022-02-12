@@ -894,7 +894,9 @@ export default {
                         that.$hScroller.scrollLeft = left - 1;
                     }
                 }
-                that.forceCursorView = true;
+                requestAnimationFrame(() => {
+                    that.forceCursorView = true;
+                });
                 cursorPos.top = top + 'px';
                 cursorPos.left = left + 'px';
                 that.multiCursorPos.splice();
