@@ -32,13 +32,9 @@ export default class {
                     selectedRange.end.column = cursorPos.column;
                 }
             } else {
-                let _cursorPos = this.moveCursor(cursorPos, direct, wholeWord, true);
-                if (Util.comparePos(_cursorPos, cursorPos) < 0) {
-                    this.addSelectedRange(_cursorPos, cursorPos);
-                } else {
-                    this.addSelectedRange(cursorPos, _cursorPos);
-                }
-                this.moveCursor(cursorPos, direct, wholeWord);
+                let _cursorPos = Object.assign({}, cursorPos);
+                cursorPos = this.moveCursor(cursorPos, direct, wholeWord);
+                this.addSelectedRange(_cursorPos, cursorPos);
             }
         });
         this.filterSelectedRanges();
