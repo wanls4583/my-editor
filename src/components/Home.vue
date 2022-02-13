@@ -51,7 +51,7 @@
 					>
 						<!-- my-editor-select-bg为选中状态 -->
 						<div
-							:class="[line.selected ? 'my-editor-select-bg' : '', line.fold == 'close' ? 'fold-close' : '']"
+							:class="[line.selected ? 'my-editor-select-bg my-editor-select-active' : '', line.fold == 'close' ? 'fold-close' : '']"
 							:data-line="line.num"
 							class="my-editor-code"
 							v-html="line.html"
@@ -67,7 +67,7 @@
 						<!-- 选中时的末行背景 -->
 						<div
 							:style="{left: selectedRange.end.left + 'px', width: selectedRange.end.width + 'px'}"
-							class="my-editor-line-bg my-editor-select-bg"
+							class="my-editor-line-bg my-editor-select-bg my-editor-select-active"
 							v-for="selectedRange in selectedRanges"
 							v-if="_endBgLineVisible(selectedRange, line.num)"
 						></div>
@@ -499,6 +499,7 @@ export default {
         clearRange(cursorPos) {
             this.searcher.clearCache();
             this.search.stopSearch = false;
+            this.search.searchText = '';
             if (!this.selectedRanges.length) {
                 return;
             }
@@ -535,16 +536,18 @@ export default {
             } else if (this.multiCursorPos.length > 1) {
                 let texts = text instanceof Array ? text : text.split(/\r\n|\n/);
                 if (texts.length === this.multiCursorPos.length) {
-                    this.getOrderMultiCursorPos().map((cursorPos, index) => {
+                    this.multiCursorPos.map((cursorPos, index) => {
                         let historyObj = this._insertContent(cursorPos, texts[index]);
                         historyArr.push(historyObj);
                     });
                 } else {
-                    this.getOrderMultiCursorPos().map((cursorPos) => {
+                    this.multiCursorPos.map((cursorPos) => {
                         let historyObj = this._insertContent(cursorPos, text);
                         historyArr.push(historyObj);
                     });
                 }
+                historyArr.reverse();
+                this.nowCursorPos = this.multiCursorPos[0];
             } else {
                 historyArr = this._insertContent(this.multiCursorPos[0], text);
             }
@@ -557,6 +560,7 @@ export default {
         // 插入内容
         _insertContent(cursorPos, text) {
             let nowLineText = context.htmls[cursorPos.line - 1].text;
+            let originPos = { line: cursorPos.line, column: cursorPos.column };
             let nowColume = cursorPos.column;
             let nowLine = cursorPos.line;
             let newLine = nowLine;
@@ -601,13 +605,13 @@ export default {
             this.updateCursorPos(cursorPos, newLine, newColumn, true);
             let historyObj = {
                 type: Util.command.DELETE,
-                start: {
-                    line: nowLine,
-                    column: nowColume
-                },
-                end: {
+                cursorPos: {
                     line: newLine,
                     column: newColumn
+                },
+                preCursorPos: {
+                    line: originPos.line,
+                    column: originPos.column
                 }
             }
             return historyObj;
@@ -624,10 +628,12 @@ export default {
                     historyObj.text && historyArr.push(historyObj);
                 });
             } else {
-                this.getOrderMultiCursorPos().map((cursorPos) => {
+                this.multiCursorPos.map((cursorPos) => {
                     let historyObj = this._deleteContent(cursorPos, keyCode);
                     historyObj.text && historyArr.push(historyObj);
                 });
+                historyArr.reverse();
+                this.nowCursorPos = this.multiCursorPos[0];
             }
             historyArr = historyArr.length > 1 ? historyArr : historyArr[0];
             if (!rangePos) { // 新增历史记录
@@ -689,10 +695,27 @@ export default {
                         text = startObj.text + context.htmls[cursorPos.line].text;
                         context.htmls.splice(cursorPos.line, 1);
                         deleteText = '\n';
+                        this.multiCursorPos.map((item) => {
+                            if (item.line > cursorPos.line) {
+                                if (item.line === cursorPos.line + 1) {
+                                    if (item.column === 0) {
+                                        item.column = cursorPos.column;
+                                    } else {
+                                        item.column--;
+                                    }
+                                }
+                                item.line--;
+                            }
+                        });
                     }
                 } else {
                     deleteText = text[cursorPos.column];
                     text = text.slice(0, cursorPos.column) + text.slice(cursorPos.column + 1);
+                    this.multiCursorPos.map((item) => {
+                        if (item.line === cursorPos.line && item.column > cursorPos.column) {
+                            item.column--;
+                        }
+                    });
                 }
                 startObj.text = text;
             } else { // 向前删除一个字符
@@ -806,7 +829,7 @@ export default {
                 this.search.stopSearch = true;
             }
         },
-        moveCursor(cursorPos, direct, wholeWord, stopUpdate) {
+        moveCursor(cursorPos, direct, wholeWord) {
             let text = context.htmls[cursorPos.line - 1].text;
             let line = cursorPos.line;
             let column = cursorPos.column;
@@ -929,6 +952,12 @@ export default {
                 return;
             }
             this.multiCursorPos.push(cursorPos);
+            this.multiCursorPos.sort((a, b) => {
+                if (a.line == b.line) {
+                    return a.column - b.column;
+                }
+                return a.line - b.line;
+            });
             this.nowCursorPos = cursorPos;
             this.filterMultiCursorPos();
             this.setCursorRealPos(cursorPos);
@@ -1085,7 +1114,8 @@ export default {
             this.clearRange();
             this.selectedRanges = [{
                 start: start,
-                end: end
+                end: end,
+                active: true
             }];
         },
         setErrorMap(errorMap) {
@@ -1186,19 +1216,10 @@ export default {
             }
             return text;
         },
-        // 获取排序后的光标
-        getOrderMultiCursorPos(asc) {
-            return this.multiCursorPos.slice().sort((a, b) => {
-                if (a.line == b.line) {
-                    return asc === false ? b.column - a.column : a.column - b.column;
-                }
-                return asc === false ? b.line - a.line : a.line - b.line;
-            });
-        },
         // 获取待复制的文本
         getCopyText(cut) {
             let text = '';
-            this.getOrderMultiCursorPos(false).map((cursorPos) => {
+            this.multiCursorPos.map((cursorPos) => {
                 let str = '';
                 let selectedRange = this.selecter.checkCursorSelected(cursorPos);
                 if (selectedRange) {
@@ -1213,7 +1234,7 @@ export default {
                         str && this.deleteContent();
                     }
                 }
-                text = '\n' + str + text;
+                text += '\n' + str;
             });
             return text.slice(1);
         },

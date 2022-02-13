@@ -35,8 +35,7 @@ export default class {
         switch (commandType) {
             case Util.command.DELETE:
                 if (command instanceof Array) {
-
-                    let list = command.slice().reverse().map((command) => {
+                    let list = command.map((command) => {
                         return {
                             start: command.start,
                             end: command.end
@@ -54,7 +53,7 @@ export default class {
                 if (command instanceof Array) {
                     let text = [];
                     let cursorPos = [];
-                    command.slice().reverse().map((command) => {
+                    command.map((command) => {
                         text.push(command.text);
                         cursorPos.push(command.cursorPos);
                     });
@@ -76,47 +75,39 @@ export default class {
             command instanceof Array &&
             lastCommand.length === command.length &&
             Date.now() - this.pushHistoryTime < 2000) {
-            if (_combCommand(lastCommand[0], command[0], true)) {
+            if (_combCheck(lastCommand.peek(), command.peek())) {
                 for (let i = 0; i < lastCommand.length; i++) {
                     _combCommand(lastCommand[i], command[i]);
                 }
             } else {
                 this.history.push(command);
             }
-        } else if (!_combCommand(lastCommand, command)) {
+        } else if (_combCheck(lastCommand, command)) {
+            _combCommand(lastCommand, command);
+        } else {
             this.history.push(command);
         }
         this.history.index = this.history.length;
         this.pushHistoryTime = Date.now();
 
-        // 检查两次操作是否可以合并
-        function _combCommand(lastCommand, command, check) {
+        function _combCheck(lastCommand, command) {
             if (lastCommand && lastCommand.type &&
                 lastCommand.type == command.type &&
+                command.preCursorPos.line == command.cursorPos.line &&
+                Util.comparePos(lastCommand.cursorPos, command.preCursorPos) == 0 &&
                 Date.now() - that.pushHistoryTime < 2000) {
-                if (
-                    lastCommand.type == Util.command.DELETE &&
-                    command.end.line == command.start.line &&
-                    Util.comparePos(lastCommand.end, command.start) == 0) {
-                    if (!check) {
-                        lastCommand.end = command.end;
-                    }
-                } else if (
-                    lastCommand.type == Util.command.INSERT &&
-                    command.preCursorPos.line == command.cursorPos.line &&
-                    Util.comparePos(lastCommand.cursorPos, command.preCursorPos) == 0
-                ) {
-                    if (!check) {
-                        lastCommand.text = command.text + lastCommand.text;
-                        lastCommand.cursorPos = command.cursorPos;
-                    }
-                } else {
-                    return false;
-                }
-            } else {
-                return false;
+                return true;
             }
-            return true;
+        }
+
+        // 检查两次操作是否可以合并
+        function _combCommand(lastCommand, command) {
+            if (lastCommand.type === Util.command.DELETE) {
+                lastCommand.cursorPos = command.cursorPos;
+            } else {
+                lastCommand.text = command.text + lastCommand.text;
+                lastCommand.cursorPos = command.cursorPos;
+            }
         }
     }
     // 更新历史记录
