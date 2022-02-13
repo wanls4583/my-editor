@@ -14,15 +14,20 @@ export default class {
         this.initProperties(editor, context);
     }
     initProperties(editor, context) {
-        Util.defineProperties(this, editor, ['checkCursorSelected', 'nowCursorPos']);
+        Util.defineProperties(this, editor, ['selecter', 'nowCursorPos']);
         Util.defineProperties(this, context, ['htmls']);
     }
     search(str, option) {
+        let resultObj = this.checkCache(str);
+        if (resultObj) {
+            return resultObj;
+        }
         let reg = null,
             exec = null,
             start = null,
             end = null,
             result = null,
+            resultCaches = [],
             firstRnagePos = null,
             rangePos = null;
         let pos = {
@@ -34,9 +39,10 @@ export default class {
             return item.text
         }).join('\n');
         let originText = text;
+        let regStr = str.replace(/\\|\.|\*|\+|\-|\?|\(|\)|\[|\]|{|\}|\^|\$|\~|\!/g, '\\$&');
+        regStr = (option.wholeWord ? '\\b' : '') + regStr + (option.wholeWord ? '\\b' : '');
         option = option || {};
-        str = str.replace(/\\|\.|\*|\+|\-|\?|\(|\)|\[|\]|{|\}|\^|\$|\~|\!/g, '\\$&');
-        reg = new RegExp((option.wholeWord ? '\\b' : '') + str + (option.wholeWord ? '\\b' : ''), option.ignoreCase ? 'i' : '');
+        reg = new RegExp(regStr, option.ignoreCase ? 'i' : '');
         while (exec = reg.exec(text)) {
             this.setLineColumn(text.slice(0, exec.index), pos);
             pos.index += exec.index;
@@ -50,15 +56,51 @@ export default class {
                 end: end
             };
             firstRnagePos = firstRnagePos || rangePos;
-            if (Util.comparePos(end, this.nowCursorPos) >= 0 && !this.checkCursorSelected(start)) {
+            if (!result && Util.comparePos(end, this.nowCursorPos) >= 0 && !this.selecter.checkCursorSelected(start)) {
+                result = rangePos;
+            }
+            resultCaches.push(rangePos);
+        }
+        if (!result && firstRnagePos && !this.selecter.checkCursorSelected(firstRnagePos.start)) {
+            result = firstRnagePos
+        }
+        this.cache(str, resultCaches, result);
+        return {
+            list: Util.deepAssign([], resultCaches),
+            result: Util.deepAssign({}, result)
+        };
+    }
+    checkCache(str) {
+        if (!this.cacheData || this.cacheData.str !== str) {
+            return;
+        }
+        let resultCaches = this.cacheData.list;
+        let result = null;
+        for (let i = 0; i < resultCaches.length; i++) {
+            let rangePos = resultCaches[i];
+            if (Util.comparePos(rangePos.end, this.cacheData.result.end) > 0) {
                 result = rangePos;
                 break;
             }
         }
-        if (!result && firstRnagePos && !this.checkCursorSelected(firstRnagePos.start)) {
-            result = firstRnagePos
+        if (!result) {
+            result = resultCaches[0];
         }
-        return result;
+        this.cacheData.result = result;
+        return {
+            list: Util.deepAssign([], resultCaches),
+            result: Util.deepAssign({}, result)
+        }
+    }
+    cache(str, list, result) {
+        this.cacheData = {
+            str: str,
+            list: list,
+            result: result,
+        };
+    }
+    clearCache() {
+        this.cacheData = null;
     }
     setLineColumn(text, pos) {
         let lines = text.match(regs.enter);

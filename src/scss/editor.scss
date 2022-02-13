@@ -70,6 +70,7 @@ body {
 
         &-active {
             background-color: #3e3d32;
+            color: #fff;
         }
     }
 
@@ -129,8 +130,14 @@ body {
         height: 100%;
     }
 
-    &-bg-color {
+    &-select-bg {
+        border: 1px solid #fff;
+        border-radius: 4px;
+    }
+
+    &-select-active {
         background-color: #49483e;
+        border: none;
     }
 
     &-tab-line {

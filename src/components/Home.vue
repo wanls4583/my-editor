@@ -49,24 +49,25 @@
 						class="my-editor-line"
 						v-for="line in renderHtmls"
 					>
-						<!-- my-editor-bg-color为选中的背景颜色 -->
+						<!-- my-editor-select-bg为选中状态 -->
 						<div
-							:class="[line.selected ? 'my-editor-bg-color' : '', line.fold == 'close' ? 'fold-close' : '']"
+							:class="[line.selected ? 'my-editor-select-bg' : '', line.fold == 'close' ? 'fold-close' : '']"
 							:data-line="line.num"
 							class="my-editor-code"
 							v-html="line.html"
 						></div>
 						<!-- 选中时的首行背景 -->
 						<div
+							:class="{'my-editor-select-active': selectedRange.active}"
 							:style="{left: selectedRange.start.left + 'px', width: selectedRange.start.width + 'px'}"
-							class="my-editor-line-bg my-editor-bg-color"
+							class="my-editor-line-bg my-editor-select-bg"
 							v-for="selectedRange in selectedRanges"
 							v-if="_startBgLineVisible(selectedRange, line.num)"
 						></div>
 						<!-- 选中时的末行背景 -->
 						<div
 							:style="{left: selectedRange.end.left + 'px', width: selectedRange.end.width + 'px'}"
-							class="my-editor-line-bg my-editor-bg-color"
+							class="my-editor-line-bg my-editor-select-bg"
 							v-for="selectedRange in selectedRanges"
 							v-if="_endBgLineVisible(selectedRange, line.num)"
 						></div>
@@ -495,7 +496,9 @@ export default {
             selectedRange.end = end;
         },
         // 清除选中背景
-        clearRnage(cursorPos) {
+        clearRange(cursorPos) {
+            this.searcher.clearCache();
+            this.search.stopSearch = false;
             if (!this.selectedRanges.length) {
                 return;
             }
@@ -510,19 +513,7 @@ export default {
             } else {
                 this.selectedRanges = [];
             }
-            this.getToSearchObj.wholeWord = false;
             this.renderLine();
-        },
-        // 检测光标是否为在选中区域范围内
-        checkCursorSelected(cursorPos) {
-            for (let i = 0; i < this.selectedRanges.length; i++) {
-                let selectedRange = this.selectedRanges[i];
-                if (Util.comparePos(cursorPos, selectedRange.start) >= 0 &&
-                    Util.comparePos(cursorPos, selectedRange.end) <= 0) {
-                    return selectedRange;
-                }
-            }
-            return false;
         },
         insertContent(text, cursorPos) {
             let historyArr = [];
@@ -655,7 +646,7 @@ export default {
             let rangeUuid = [];
             let newLine = cursorPos.line;
             let newColumn = cursorPos.column;
-            let selectedRange = this.checkCursorSelected(cursorPos);
+            let selectedRange = this.selecter.checkCursorSelected(cursorPos);
             this.tokenizer.onDeleteContentBefore(cursorPos.line);
             this.lint.onDeleteContentBefore(cursorPos.line);
             this.folder.onDeleteContentBefore(cursorPos.line);
@@ -690,7 +681,7 @@ export default {
                 }
                 newLine = start.line;
                 newColumn = start.column;
-                this.clearRnage(cursorPos);
+                this.clearRange(cursorPos);
             } else if (Util.keyCode.DELETE == keyCode) { // 向后删除一个字符
                 if (cursorPos.column == text.length) { // 光标处于行尾
                     if (cursorPos.line < context.htmls.length) {
@@ -787,17 +778,29 @@ export default {
             if (this.search.stopSearch) {
                 return;
             }
-            let searchObj = this.getToSearchObj();
-            let rangePos = null;
+            let searchObj = {};
+            let resultObj = null;
+            if (this.search.searchText) {
+                searchObj.text = this.search.searchText;
+            } else {
+                searchObj = this.getToSearchObj();
+                this.search.searchText = searchObj.text;
+            }
             if (!searchObj.text) {
                 return;
             }
-            rangePos = this.searcher.search(searchObj.text, searchObj);
-            if (rangePos) {
+            resultObj = this.searcher.search(searchObj.text, searchObj);
+            if (resultObj) {
                 this.selectedRanges.length ?
-                    this.addCursorPos(rangePos.end) :
-                    this.setCursorPos(rangePos.end);
-                this.selecter.addSelectedRange(rangePos.start, rangePos.end);
+                    this.addCursorPos(resultObj.result.end) :
+                    this.setCursorPos(resultObj.result.end);
+                if (this.selectedRanges.length < 2) {
+                    resultObj.list.map((rangePos) => {
+                        this.selecter.addSelectedRange(rangePos.start, rangePos.end);
+                    });
+                } else {
+                    this.selecter.checkActive(resultObj.result.end, true);
+                }
                 this.renderSelectedBg();
             } else {
                 this.search.stopSearch = true;
@@ -943,7 +946,6 @@ export default {
             this.multiCursorPos = [cursorPos];
             this.nowCursorPos = cursorPos;
             this.setCursorRealPos(cursorPos);
-            this.search.stopSearch = false;
         },
         // 设置真实光标位置
         setCursorRealPos(cursorPos) {
@@ -1080,6 +1082,7 @@ export default {
             } else if (!same) {
                 return;
             }
+            this.clearRange();
             this.selectedRanges = [{
                 start: start,
                 end: end
@@ -1197,7 +1200,7 @@ export default {
             let text = '';
             this.getOrderMultiCursorPos(false).map((cursorPos) => {
                 let str = '';
-                let selectedRange = this.checkCursorSelected(cursorPos);
+                let selectedRange = this.selecter.checkCursorSelected(cursorPos);
                 if (selectedRange) {
                     str = this.getRangeText(selectedRange.start, selectedRange.end);
                     if (cut) {
@@ -1216,8 +1219,8 @@ export default {
         },
         // 获取待搜索的文本
         getToSearchObj() {
-            let selectedRange = this.checkCursorSelected(this.nowCursorPos);
-            let wholeWord = this.getToSearchObj.wholeWord || false;
+            let selectedRange = this.selecter.checkCursorSelected(this.nowCursorPos);
+            let wholeWord = false;
             let searchText = '';
             if (selectedRange) {
                 searchText = this.getRangeText(selectedRange.start, selectedRange.end);
@@ -1238,7 +1241,6 @@ export default {
                 wholeWord = true;
                 searchText = str;
             }
-            this.getToSearchObj.wholeWord = wholeWord;
             return {
                 text: searchText,
                 wholeWord: wholeWord
@@ -1395,7 +1397,7 @@ export default {
                 this.renderSelectedBg();
                 this.setCursorPos(end);
             } else if (e.which != 3) {
-                this.clearRnage();
+                this.clearRange();
                 if (this.mouseUpTime && Date.now() - this.mouseUpTime < 300) { //双击选中单词
                     this.search();
                 }
@@ -1508,11 +1510,11 @@ export default {
                 switch (e.keyCode) {
                     case 37: //left arrow
                         _moveCursor('left', true);
-                        this.clearRnage();
+                        this.clearRange();
                         break;
                     case 39: //right arrow
                         _moveCursor('right', true);
-                        this.clearRnage();
+                        this.clearRange();
                         break;
                     case 65://ctrl+a,全选
                         e.preventDefault();
@@ -1560,19 +1562,19 @@ export default {
                         break;
                     case 37: //left arrow
                         _moveCursor('left');
-                        this.clearRnage();
+                        this.clearRange();
                         break;
                     case 38: //up arrow
                         _moveCursor('up');
-                        this.clearRnage();
+                        this.clearRange();
                         break;
                     case 39: //right arrow
                         _moveCursor('right');
-                        this.clearRnage();
+                        this.clearRange();
                         break;
                     case 40: //down arrow
                         _moveCursor('down');
-                        this.clearRnage();
+                        this.clearRange();
                         break;
                     case Util.keyCode.DELETE: //delete
                         this.deleteContent(Util.keyCode.DELETE);
@@ -1586,7 +1588,7 @@ export default {
 
             function _moveCursor(direct, wholeWord) {
                 //ctrl+d后，第一次移动光标只是取消选中状态
-                if (!that.checkCursorSelected(that.nowCursorPos)) {
+                if (!that.selecter.checkCursorSelected(that.nowCursorPos)) {
                     that.multiCursorPos.map((cursorPos) => {
                         that.moveCursor(cursorPos, direct, wholeWord);
                     });

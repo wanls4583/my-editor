@@ -13,7 +13,6 @@ export default class {
         Util.defineProperties(this, editor, [
             'selectedRanges',
             'renderSelectedBg',
-            'checkCursorSelected',
             'moveCursor',
             'multiCursorPos'
         ]);
@@ -47,6 +46,7 @@ export default class {
     }
     // 添加选中区域
     addSelectedRange(start, end) {
+        let active = false;
         let same = Util.comparePos(start, end);
         if (same > 0) {
             let tmp = start;
@@ -63,11 +63,47 @@ export default class {
             }).length > 0) {
             return;
         }
+        active = this.checkSelectedCursor({
+            start: start,
+            end: end
+        });
         this.selectedRanges.push({
+            active: active,
             start: Object.assign({}, start),
             end: Object.assign({}, end)
         });
         this.filterSelectedRanges();
+    }
+    checkActive(cursorPos) {
+        let selectedRange = this.checkCursorSelected(cursorPos);
+        if (selectedRange) {
+            selectedRange.active = true;
+        }
+    }
+    // 检测光标是否在选中区域范围内
+    checkCursorSelected(cursorPos) {
+        for (let i = 0; i < this.selectedRanges.length; i++) {
+            let selectedRange = this.selectedRanges[i];
+            if (Util.comparePos(cursorPos, selectedRange.start) >= 0 &&
+                Util.comparePos(cursorPos, selectedRange.end) <= 0) {
+                return selectedRange;
+            }
+        }
+        return false;
+    }
+    // 检测区域范围是否包含光标
+    checkSelectedCursor(rangePos) {
+        if (rangePos.start.line !== rangePos.end.line) {
+            return true;
+        }
+        for (let i = 0; i < this.multiCursorPos.length; i++) {
+            let cursorPos = this.multiCursorPos[i];
+            if (Util.comparePos(cursorPos, rangePos.start) >= 0 &&
+                Util.comparePos(cursorPos, rangePos.end) <= 0) {
+                return cursorPos;
+            }
+        }
+        return false;
     }
     // 过滤选中区域
     filterSelectedRanges() {
