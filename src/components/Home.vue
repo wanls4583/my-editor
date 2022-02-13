@@ -546,7 +546,6 @@ export default {
                         historyArr.push(historyObj);
                     });
                 }
-                historyArr.reverse();
                 this.nowCursorPos = this.multiCursorPos[0];
             } else {
                 historyArr = this._insertContent(this.multiCursorPos[0], text);
@@ -610,8 +609,8 @@ export default {
                     column: newColumn
                 },
                 preCursorPos: {
-                    line: originPos.line,
-                    column: originPos.column
+                    line: nowLine,
+                    column: nowColume
                 }
             }
             return historyObj;
@@ -632,7 +631,6 @@ export default {
                     let historyObj = this._deleteContent(cursorPos, keyCode);
                     historyObj.text && historyArr.push(historyObj);
                 });
-                historyArr.reverse();
                 this.nowCursorPos = this.multiCursorPos[0];
             }
             historyArr = historyArr.length > 1 ? historyArr : historyArr[0];
@@ -884,9 +882,7 @@ export default {
                     column++;
                 }
             }
-            if (!stopUpdate) {
-                this.updateCursorPos(cursorPos, line, column)
-            };
+            this.updateCursorPos(cursorPos, line, column);
             return {
                 line: line,
                 column: column

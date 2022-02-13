@@ -37,15 +37,15 @@ export default class {
                 if (command instanceof Array) {
                     let list = command.map((command) => {
                         return {
-                            start: command.start,
-                            end: command.end
+                            start: command.preCursorPos,
+                            end: command.cursorPos
                         };
                     });
                     this.deleteContent(Util.keyCode.BACKSPACE, list);
                 } else {
                     this.deleteContent(Util.keyCode.BACKSPACE, {
-                        start: command.start,
-                        end: command.end
+                        start: command.preCursorPos,
+                        end: command.cursorPos
                     });
                 }
                 break;
@@ -71,11 +71,16 @@ export default class {
         }
         let that = this;
         let lastCommand = this.history[this.history.index - 1];
+        command = this.sortComand(command);
         if (lastCommand instanceof Array &&
             command instanceof Array &&
             lastCommand.length === command.length &&
             Date.now() - this.pushHistoryTime < 2000) {
             if (_combCheck(lastCommand.peek(), command.peek())) {
+                let commandItem = command.peek();
+                lastCommand.map((_commandItem) => {
+                    _updateAfter(_commandItem.preCursorPos, commandItem.preCursorPos, commandItem.cursorPos);
+                });
                 for (let i = 0; i < lastCommand.length; i++) {
                     _combCommand(lastCommand[i], command[i]);
                 }
@@ -109,9 +114,31 @@ export default class {
                 lastCommand.cursorPos = command.cursorPos;
             }
         }
+
+        function _updateAfter(item, preCursorPos, cursorPos) {
+            if (item.line > preCursorPos.line) {
+                item.line += cursorPos.line - preCursorPos.line;
+            } else if (item.line === preCursorPos.line && item.column > preCursorPos.column) {
+                item.line += cursorPos.line - preCursorPos.line;
+                item.column += cursorPos.column - preCursorPos.column;
+            }
+        }
     }
     // 更新历史记录
     updateHistory(index, command) {
-        this.history[index - 1] = command;
+        this.history[index - 1] = this.sortComand(command);
+    }
+    sortComand(command) {
+        if (command instanceof Array) {
+            command.sort((a, b) => {
+                a = a.cursorPos;
+                b = b.cursorPos;
+                if (a.line === b.line) {
+                    return b.column - a.column;
+                }
+                return b.line - a.line;
+            });
+        }
+        return command;
     }
 }
