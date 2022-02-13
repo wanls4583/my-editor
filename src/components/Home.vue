@@ -120,6 +120,7 @@ import Tokenizer from '@/module/tokenizer/core/index';
 import Lint from '@/module/lint/core/index';
 import Fold from '@/module/fold/index';
 import Search from '@/module/search/index';
+import Select from '@/module/select/index';
 import History from '@/module/history/index';
 import StatusBar from './StatusBar';
 import Panel from './Panel';
@@ -133,6 +134,9 @@ const context = {
     lineIdMap: new Map(), //htmls的唯一标识对象
     renderedIdMap: new Map(), //renderHtmls的唯一标识对象
     foldMap: new Map() //folds的唯一标识对象
+}
+const regs = {
+    word: /[a-zA-Z0-9_]/,
 }
 export default {
     name: 'Home',
@@ -345,6 +349,7 @@ export default {
             this.folder = new Fold(this, context);
             this.history = new History(this, context);
             this.searcher = new Search(this, context);
+            this.selecter = new Select(this, context);
         },
         // 初始化文档事件
         initEvent() {
@@ -622,7 +627,7 @@ export default {
             if (rangePos) {
                 rangePos = rangePos instanceof Array ? rangePos : [rangePos];
                 rangePos.map((item) => {
-                    this.addSelectedRange(item.start, item.end);
+                    this.selecter.addSelectedRange(item.start, item.end);
                     cursorPos = this.addCursorPos(item.end);
                     let historyObj = this._deleteContent(cursorPos, keyCode);
                     historyObj.text && historyArr.push(historyObj);
@@ -792,10 +797,73 @@ export default {
                 this.selectedRanges.length ?
                     this.addCursorPos(rangePos.end) :
                     this.setCursorPos(rangePos.end);
-                this.addSelectedRange(rangePos.start, rangePos.end);
+                this.selecter.addSelectedRange(rangePos.start, rangePos.end);
                 this.renderSelectedBg();
             } else {
                 this.search.stopSearch = true;
+            }
+        },
+        moveCursor(cursorPos, direct, wholeWord, stopUpdate) {
+            let text = context.htmls[cursorPos.line - 1].text;
+            let line = cursorPos.line;
+            let column = cursorPos.column;
+            if (direct === 'up') {
+                if (line > 1) {
+                    let width = this.getStrWidth(text, 0, column);
+                    line--;
+                    text = context.htmls[line - 1].text;
+                    column = this.getColumnByWidth(text, width);
+                }
+            } else if (direct === 'down') {
+                if (line < context.htmls.length) {
+                    let width = this.getStrWidth(text, 0, column);
+                    line++;
+                    text = context.htmls[line - 1].text;
+                    column = this.getColumnByWidth(text, width);
+                }
+            } else if (direct === 'left') {
+                while (column === 0 && line > 1) {
+                    line--;
+                    text = context.htmls[line - 1].text;
+                    column = text.length;
+                }
+                if (column === 0) {
+                    return;
+                }
+                if (wholeWord) {
+                    let exec = text[column - 1].match(regs.word);
+                    column--;
+                    while (column && Boolean(exec) === Boolean(text[column - 1].match(regs.word))) {
+                        column--
+                    }
+                } else if (cursorPos.line === line) {
+                    column--;
+                }
+            } else {
+                while (column === text.length && line < context.htmls.length) {
+                    line++;
+                    column = 0;
+                    text = context.htmls[line - 1].text;
+                }
+                if (column === text.length) {
+                    return;
+                }
+                if (wholeWord) {
+                    let exec = text[column].match(regs.word);
+                    column++;
+                    while (column < text.length && Boolean(exec) === Boolean(text[column].match(regs.word))) {
+                        column++
+                    }
+                } else if (cursorPos.line === line) {
+                    column++;
+                }
+            }
+            if (!stopUpdate) {
+                this.updateCursorPos(cursorPos, line, column)
+            };
+            return {
+                line: line,
+                column: column
             }
         },
         filterMultiCursorPos() {
@@ -992,6 +1060,7 @@ export default {
                 }
             }
         },
+        // 设置滚动区域真实高度
         setScrollerHeight() {
             let maxLine = context.htmls.length;
             maxLine = this.folder.getRelativeLine(maxLine);
@@ -1015,28 +1084,6 @@ export default {
                 start: start,
                 end: end
             }];
-        },
-        addSelectedRange(start, end) {
-            let same = Util.comparePos(start, end);
-            if (same > 0) {
-                let tmp = start;
-                start = end;
-                end = tmp;
-            } else if (!same) {
-                return;
-            }
-            if (this.selectedRanges.filter((item) => {
-                if (Util.comparePos(start, item.start) == 0 && Util.comparePos(end, item.end) == 0) {
-                    return true;
-                }
-                return false;
-            }).length > 0) {
-                return;
-            }
-            this.selectedRanges.push({
-                start: Object.assign({}, start),
-                end: Object.assign({}, end)
-            });
         },
         setErrorMap(errorMap) {
             this.errorMap = errorMap;
@@ -1159,7 +1206,7 @@ export default {
                 } else {
                     str = context.htmls[cursorPos.line - 1].text;
                     if (cut) {
-                        str && this.addSelectedRange({ line: cursorPos.line, column: 0 }, { line: cursorPos.line, column: str.length });
+                        str && this.selecter.addSelectedRange({ line: cursorPos.line, column: 0 }, { line: cursorPos.line, column: str.length });
                         str && this.deleteContent();
                     }
                 }
@@ -1443,8 +1490,30 @@ export default {
         },
         // 键盘按下事件
         onKeyDown(e) {
-            if (e.ctrlKey) {
+            let that = this;
+            if (e.ctrlKey && e.shiftKey) {
                 switch (e.keyCode) {
+                    case 37: //ctrl+shift+left
+                        this.selecter.select('left', true);
+                        break;
+                    case 38: //ctrl+shift+up
+                        break;
+                    case 39: //ctrl+shift+right
+                        this.selecter.select('right', true);
+                        break;
+                    case 40: //ctrl+shift+down
+                        break;
+                }
+            } else if (e.ctrlKey) {
+                switch (e.keyCode) {
+                    case 37: //left arrow
+                        _moveCursor('left', true);
+                        this.clearRnage();
+                        break;
+                    case 39: //right arrow
+                        _moveCursor('right', true);
+                        this.clearRnage();
+                        break;
                     case 65://ctrl+a,全选
                         e.preventDefault();
                         let end = { line: context.htmls.length, column: context.htmls.peek().text.length };
@@ -1468,6 +1537,21 @@ export default {
                         this.history.redo();
                         break;
                 }
+            } else if (e.shiftKey) {
+                switch (e.keyCode) {
+                    case 37: //left arrow
+                        this.selecter.select('left');
+                        break;
+                    case 38: //up arrow
+                        this.selecter.select('up');
+                        break;
+                    case 39: //right arrow
+                        this.selecter.select('right');
+                        break;
+                    case 40: //down arrow
+                        this.selecter.select('down');
+                        break;
+                }
             } else {
                 switch (e.keyCode) {
                     case 9: //tab键
@@ -1475,57 +1559,19 @@ export default {
                         this.insertContent('\t');
                         break;
                     case 37: //left arrow
-                        //ctrl+d后，第一次移动光标只是取消选中状态
-                        if (!this.checkCursorSelected(this.nowCursorPos)) {
-                            this.multiCursorPos.map((cursorPos) => {
-                                if (cursorPos.column > 0) {
-                                    this.updateCursorPos(cursorPos, cursorPos.line, cursorPos.column - 1);
-                                } else if (cursorPos.line > 1) {
-                                    this.updateCursorPos(cursorPos, cursorPos.line - 1, context.htmls[cursorPos.line - 2].text.length);
-                                }
-                            });
-                        }
+                        _moveCursor('left');
                         this.clearRnage();
                         break;
                     case 38: //up arrow
-                        if (!this.checkCursorSelected(this.nowCursorPos)) {
-                            this.multiCursorPos.map((cursorPos) => {
-                                if (cursorPos.line > 1) {
-                                    let text = context.htmls[cursorPos.line - 1].text;
-                                    let width = this.getStrWidth(text, 0, cursorPos.column);
-                                    text = context.htmls[cursorPos.line - 2].text;
-                                    let column = this.getColumnByWidth(text, width);
-                                    this.updateCursorPos(cursorPos, cursorPos.line - 1, column);
-                                }
-                            });
-                        }
+                        _moveCursor('up');
                         this.clearRnage();
                         break;
                     case 39: //right arrow
-                        if (!this.checkCursorSelected(this.nowCursorPos)) {
-                            this.multiCursorPos.map((cursorPos) => {
-                                let text = context.htmls[cursorPos.line - 1].text;
-                                if (cursorPos.column < text.length) {
-                                    this.updateCursorPos(cursorPos, cursorPos.line, cursorPos.column + 1);
-                                } else if (cursorPos.line < context.htmls.length) {
-                                    this.updateCursorPos(cursorPos, cursorPos.line + 1, 0);
-                                }
-                            });
-                        }
+                        _moveCursor('right');
                         this.clearRnage();
                         break;
                     case 40: //down arrow
-                        if (!this.checkCursorSelected(this.nowCursorPos)) {
-                            this.multiCursorPos.map((cursorPos) => {
-                                if (cursorPos.line < context.htmls.length) {
-                                    let text = context.htmls[cursorPos.line - 1].text;
-                                    let width = this.getStrWidth(text, 0, cursorPos.column);
-                                    text = context.htmls[cursorPos.line].text;
-                                    let column = this.getColumnByWidth(text, width);
-                                    this.updateCursorPos(cursorPos, cursorPos.line + 1, column);
-                                }
-                            });
-                        }
+                        _moveCursor('down');
                         this.clearRnage();
                         break;
                     case Util.keyCode.DELETE: //delete
@@ -1536,6 +1582,15 @@ export default {
                         break;
                 }
                 this.filterMultiCursorPos();
+            }
+
+            function _moveCursor(direct, wholeWord) {
+                //ctrl+d后，第一次移动光标只是取消选中状态
+                if (!that.checkCursorSelected(that.nowCursorPos)) {
+                    that.multiCursorPos.map((cursorPos) => {
+                        that.moveCursor(cursorPos, direct, wholeWord);
+                    });
+                }
             }
         }
     }

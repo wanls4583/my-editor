@@ -231,6 +231,10 @@ Array.prototype.peek = function (index) {
         return this[this.length - (index || 1)];
     }
 }
+Array.prototype.empty = function () {
+    this.length = 0;
+    return this;
+}
 String.prototype.peek = function (index) {
     if (this.length) {
         return this[this.length - (index || 1)];
