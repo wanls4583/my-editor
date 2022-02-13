@@ -24,7 +24,7 @@ export default class {
             if (selectedRange) {
                 this.moveCursor(cursorPos, direct, wholeWord);
                 if (Util.comparePos(cursorPos, selectedRange.start) < 0 ||
-                    Util.comparePos(cursorPos, selectedRange.end) < 0 && direct === 'right') {
+                    Util.comparePos(cursorPos, selectedRange.end) <= 0 && direct === 'right') {
                     selectedRange.start.line = cursorPos.line;
                     selectedRange.start.column = cursorPos.column;
                 } else {
