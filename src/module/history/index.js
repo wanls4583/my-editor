@@ -40,7 +40,7 @@ export default class {
         switch (commandType) {
             case Util.command.DELETE:
                 if (command instanceof Array) {
-                    let list = command.map((command) => {
+                    let list = command.slice().reverse().map((command) => {
                         return {
                             start: command.preCursorPos,
                             end: command.cursorPos
@@ -81,11 +81,13 @@ export default class {
             command instanceof Array &&
             lastCommand.length === command.length &&
             Date.now() - this.pushHistoryTime < 2000) {
-            if (_combCheck(lastCommand.peek(), command.peek())) {
-                let commandItem = command.peek();
-                lastCommand.map((_commandItem) => {
-                    _updateAfter(_commandItem.preCursorPos, commandItem.preCursorPos, commandItem.cursorPos);
-                });
+            if (_combCheck(lastCommand[0], command[0])) {
+                let commandItem = command[0];
+                if (commandItem.type === Util.command.DELETE) {
+                    lastCommand.map((_commandItem) => {
+                        _updateAfter(_commandItem.preCursorPos, commandItem.preCursorPos, commandItem.cursorPos);
+                    });
+                }
                 for (let i = 0; i < lastCommand.length; i++) {
                     _combCommand(lastCommand[i], command[i]);
                 }
@@ -139,9 +141,9 @@ export default class {
                 a = a.cursorPos;
                 b = b.cursorPos;
                 if (a.line === b.line) {
-                    return b.column - a.column;
+                    return a.column - b.column;
                 }
-                return b.line - a.line;
+                return a.line - b.line;
             });
         }
         return command;

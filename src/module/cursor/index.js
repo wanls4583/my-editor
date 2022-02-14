@@ -58,6 +58,22 @@ export default class {
             }
         }
     }
+    updateAfterCursor(cursorPos, line, column, aftetrList) {
+        aftetrList.map((item) => {
+            _updateAfter(item);
+        });
+
+        function _updateAfter(item) {
+            if (item != cursorPos) {
+                if (item.line > cursorPos.line) {
+                    item.line += line - cursorPos.line;
+                } else if (item.line === cursorPos.line && item.column > cursorPos.column) {
+                    item.line += line - cursorPos.line;
+                    item.column += column - cursorPos.column;
+                }
+            }
+        }
+    }
     // 添加光标
     addCursorPos(cursorPos) {
         cursorPos = Object.assign({}, cursorPos);

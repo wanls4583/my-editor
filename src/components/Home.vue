@@ -631,7 +631,7 @@ export default {
                     historyObj.text && historyArr.push(historyObj);
                 });
             } else {
-                this.multiCursorPos.map((cursorPos) => {
+                this.multiCursorPos.slice().reverse().map((cursorPos) => {
                     let historyObj = this._deleteContent(cursorPos, keyCode);
                     historyObj.text && historyArr.push(historyObj);
                 });
@@ -1108,7 +1108,7 @@ export default {
                 let str = '';
                 let index = this.nowCursorPos.column;
                 let sReg = regs.word;
-                if (text[index - 1].match(regs.dWord)) {
+                if (index && text[index - 1].match(regs.dWord)) {
                     sReg = regs.dWord;
                 }
                 while (index > 0 && text[index - 1].match(sReg)) {
