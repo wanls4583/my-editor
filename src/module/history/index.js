@@ -9,7 +9,12 @@ export default class {
         this.initProperties(editor, context);
     }
     initProperties(editor, context) {
-        Util.defineProperties(this, editor, ['insertContent', 'deleteContent', 'clearCursorPos', 'addCursorPos', 'setSelectedRange']);
+        Util.defineProperties(this, editor, [
+            'cursor',
+            'insertContent',
+            'deleteContent',
+            'setSelectedRange'
+        ]);
         Util.defineProperties(this, context, ['history']);
     }
     // 撤销操作
@@ -31,7 +36,7 @@ export default class {
     // 操作命令
     doCommand(command) {
         let commandType = command instanceof Array ? command[0].type : command.type;
-        this.clearCursorPos();
+        this.cursor.clearCursorPos();
         switch (commandType) {
             case Util.command.DELETE:
                 if (command instanceof Array) {

@@ -13,7 +13,7 @@ export default class {
         Util.defineProperties(this, editor, [
             'selectedRanges',
             'renderSelectedBg',
-            'moveCursor',
+            'cursor',
             'multiCursorPos'
         ]);
         Util.defineProperties(this, context, ['htmls']);
@@ -22,7 +22,7 @@ export default class {
         this.multiCursorPos.map((cursorPos) => {
             let selectedRange = this.checkCursorSelected(cursorPos);
             if (selectedRange) {
-                this.moveCursor(cursorPos, direct, wholeWord);
+                this.cursor.moveCursor(cursorPos, direct, wholeWord);
                 if (Util.comparePos(cursorPos, selectedRange.start) < 0 ||
                     Util.comparePos(cursorPos, selectedRange.end) <= 0 && direct === 'right') {
                     selectedRange.start.line = cursorPos.line;
@@ -33,7 +33,7 @@ export default class {
                 }
             } else {
                 let _cursorPos = Object.assign({}, cursorPos);
-                cursorPos = this.moveCursor(cursorPos, direct, wholeWord);
+                cursorPos = this.cursor.moveCursor(cursorPos, direct, wholeWord);
                 this.addSelectedRange(_cursorPos, cursorPos);
             }
         });

@@ -122,6 +122,7 @@ import Lint from '@/module/lint/core/index';
 import Fold from '@/module/fold/index';
 import Search from '@/module/search/index';
 import Select from '@/module/select/index';
+import Cursor from '@/module/cursor/index';
 import History from '@/module/history/index';
 import StatusBar from './StatusBar';
 import Panel from './Panel';
@@ -353,6 +354,7 @@ export default {
             this.history = new History(this, context);
             this.searcher = new Search(this, context);
             this.selecter = new Select(this, context);
+            this.cursor = new Cursor(this, context);
         },
         // 初始化文档事件
         initEvent() {
@@ -527,12 +529,12 @@ export default {
             if (cursorPos) {
                 if (text instanceof Array) {
                     text.map((item, index) => {
-                        let _cursorPos = this.addCursorPos(cursorPos[index]);
+                        let _cursorPos = this.cursor.addCursorPos(cursorPos[index]);
                         let historyObj = this._insertContent(_cursorPos, text[index]);
                         historyArr.push(historyObj);
                     });
                 } else {
-                    cursorPos = this.addCursorPos(cursorPos);
+                    cursorPos = this.cursor.addCursorPos(cursorPos);
                     historyArr = this._insertContent(cursorPos, text);
                 }
             } else if (this.multiCursorPos.length > 1) {
@@ -603,7 +605,7 @@ export default {
             if (context.foldMap.has(nowLine) && text.length > 1) {
                 this.unFold(nowLine);
             }
-            this.updateCursorPos(cursorPos, newLine, newColumn, true);
+            this.cursor.updateCursorPos(cursorPos, newLine, newColumn, true);
             let historyObj = {
                 type: Util.command.DELETE,
                 cursorPos: {
@@ -624,7 +626,7 @@ export default {
                 rangePos = rangePos instanceof Array ? rangePos : [rangePos];
                 rangePos.map((item) => {
                     this.selecter.addSelectedRange(item.start, item.end);
-                    cursorPos = this.addCursorPos(item.end);
+                    cursorPos = this.cursor.addCursorPos(item.end);
                     let historyObj = this._deleteContent(cursorPos, keyCode);
                     historyObj.text && historyArr.push(historyObj);
                 });
@@ -745,7 +747,7 @@ export default {
             this.tokenizer.onDeleteContentAfter(newLine);
             this.lint.onDeleteContentAfter(newLine);
             this.folder.onDeleteContentAfter(newLine);
-            this.updateCursorPos(cursorPos, newLine, newColumn, true);
+            this.cursor.updateCursorPos(cursorPos, newLine, newColumn, true);
             // 更新最大文本宽度
             if (startObj.width >= this.maxWidthObj.width) {
                 this.maxWidthObj = {
@@ -778,7 +780,7 @@ export default {
                 this.multiCursorPos.map((cursorPos) => {
                     if (cursorPos.line > line && cursorPos.line < resultFold.end.line) {
                         let lineObj = context.htmls[line - 1];
-                        this.updateCursorPos(cursorPos, line, lineObj.text.length);
+                        this.cursor.updateCursorPos(cursorPos, line, lineObj.text.length);
                     }
                 });
                 this.forceCursorView = false;
@@ -815,8 +817,8 @@ export default {
             resultObj = this.searcher.search(searchObj.text, searchObj);
             if (resultObj) {
                 this.selectedRanges.length ?
-                    this.addCursorPos(resultObj.result.end) :
-                    this.setCursorPos(resultObj.result.end);
+                    this.cursor.addCursorPos(resultObj.result.end) :
+                    this.cursor.setCursorPos(resultObj.result.end);
                 if (this.selectedRanges.length < 2) {
                     resultObj.list.map((rangePos) => {
                         this.selecter.addSelectedRange(rangePos.start, rangePos.end);
@@ -829,206 +831,8 @@ export default {
                 this.search.stopSearch = true;
             }
         },
-        moveCursor(cursorPos, direct, wholeWord) {
-            let text = context.htmls[cursorPos.line - 1].text;
-            let line = cursorPos.line;
-            let column = cursorPos.column;
-            if (direct === 'up') {
-                if (line > 1) {
-                    let width = this.getStrWidth(text, 0, column);
-                    line--;
-                    text = context.htmls[line - 1].text;
-                    column = this.getColumnByWidth(text, width);
-                }
-            } else if (direct === 'down') {
-                if (line < context.htmls.length) {
-                    let width = this.getStrWidth(text, 0, column);
-                    line++;
-                    text = context.htmls[line - 1].text;
-                    column = this.getColumnByWidth(text, width);
-                }
-            } else if (direct === 'left') {
-                while (column === 0 && line > 1) {
-                    line--;
-                    text = context.htmls[line - 1].text;
-                    column = text.length;
-                }
-                if (column === 0) {
-                    this.updateCursorPos(cursorPos, line, column);
-                    return {
-                        line: line,
-                        column: column
-                    }
-                }
-                if (wholeWord) {
-                    let sReg = null;
-                    //过滤开始的空格
-                    while (column && text[column - 1].match(regs.space)) {
-                        column--;
-                    }
-                    if (column == 0) {
-                        this.updateCursorPos(cursorPos, line, column);
-                        return {
-                            line: line,
-                            column: column
-                        }
-                    }
-                    if (text[column - 1].match(regs.word)) { //半角文字
-                        sReg = regs.word;
-                    } else if (text[column - 1].match(regs.dWord)) { //全角文字或字符
-                        sReg = regs.dWord;
-                    }
-                    if (sReg) {
-                        while (column && text[column - 1].match(sReg)) {
-                            column--
-                        }
-                    } else {
-                        while (column &&
-                            !text[column - 1].match(regs.space) &&
-                            !text[column - 1].match(regs.word) &&
-                            !text[column - 1].match(regs.dWord)) {
-                            column--
-                        }
-                    }
-                } else if (cursorPos.line === line) {
-                    column--;
-                }
-            } else {
-                while (column === text.length && line < context.htmls.length) {
-                    line++;
-                    column = 0;
-                    text = context.htmls[line - 1].text;
-                }
-                if (column == text.length) {
-                    this.updateCursorPos(cursorPos, line, column);
-                    return {
-                        line: line,
-                        column: column
-                    }
-                }
-                if (wholeWord) {
-                    let sReg = null;
-                    //过滤开始的空格
-                    while (column < text.length && text[column].match(regs.space)) {
-                        column++;
-                    }
-                    if (column == text.length) {
-                        this.updateCursorPos(cursorPos, line, column);
-                        return {
-                            line: line,
-                            column: column
-                        }
-                    }
-                    if (text[column].match(regs.word)) { //半角文字
-                        sReg = regs.word;
-                    } else if (text[column].match(regs.dWord)) { //全角文字或字符
-                        sReg = regs.dWord;
-                    }
-                    if (sReg) {
-                        while (column < text.length && text[column].match(sReg)) {
-                            column++
-                        }
-                    } else {
-                        while (column < text.length &&
-                            !text[column].match(regs.space) &&
-                            !text[column].match(regs.word) &&
-                            !text[column].match(regs.dWord)) {
-                            column++
-                        }
-                    }
-                } else if (cursorPos.line === line) {
-                    column++;
-                }
-            }
-            this.updateCursorPos(cursorPos, line, column);
-            return {
-                line: line,
-                column: column
-            }
-        },
-        filterMultiCursorPos() {
-            let posMap = {};
-            this.multiCursorPos = this.multiCursorPos.filter((cursorPos) => {
-                let key = cursorPos.line + ',' + cursorPos.column;
-                if (posMap[key]) {
-                    return false;
-                }
-                posMap[key] = true;
-                if (this.nowCursorPos && this.nowCursorPos.line === cursorPos.line &&
-                    this.nowCursorPos.column === this.nowCursorPos.column) {
-                    this.nowCursorPos = cursorPos;
-                }
-                return true;
-            });
-        },
-        clearCursorPos() {
-            this.multiCursorPos.map((cursorPos) => {
-                cursorPos.del = true;
-            });
-            this.multiCursorPos = [];
-        },
-        // 更新光标位置
-        updateCursorPos(cursorPos, line, column, updateAfter) {
-            if (updateAfter) {
-                this.multiCursorPos.map((item) => {
-                    _updateAfter(item);
-                });
-                this.selectedRanges.map((item) => {
-                    _updateAfter(item.start);
-                    _updateAfter(item.end);
-                });
-            }
-            cursorPos.line = line;
-            cursorPos.column = column;
-            this.setCursorRealPos(cursorPos);
-            this.filterMultiCursorPos();
-
-            function _updateAfter(item) {
-                if (item != cursorPos) {
-                    if (item.line > cursorPos.line) {
-                        item.line += line - cursorPos.line;
-                    } else if (item.line === cursorPos.line && item.column > cursorPos.column) {
-                        item.line += line - cursorPos.line;
-                        item.column += column - cursorPos.column;
-                    }
-                }
-            }
-        },
-        // 添加光标
-        addCursorPos(cursorPos) {
-            cursorPos = Object.assign({}, cursorPos);
-            if (this.multiCursorPos.filter((item) => {
-                if (Util.comparePos(cursorPos, item) == 0) {
-                    return true;
-                }
-                return false;
-            }).length > 0) {
-                return;
-            }
-            this.multiCursorPos.push(cursorPos);
-            this.multiCursorPos.sort((a, b) => {
-                if (a.line == b.line) {
-                    return a.column - b.column;
-                }
-                return a.line - b.line;
-            });
-            this.nowCursorPos = cursorPos;
-            this.filterMultiCursorPos();
-            this.setCursorRealPos(cursorPos);
-            return cursorPos;
-        },
-        // 设置光标
-        setCursorPos(cursorPos) {
-            cursorPos = Object.assign({}, cursorPos);
-            if (this.multiCursorPos.length == 1) {
-                let pos = this.multiCursorPos[0];
-                if (pos.line === cursorPos.line && pos.column === cursorPos.column) {
-                    return;
-                }
-            }
-            this.multiCursorPos = [cursorPos];
-            this.nowCursorPos = cursorPos;
-            this.setCursorRealPos(cursorPos);
+        setNowCursorPos(nowCursorPos) {
+            this.nowCursorPos = nowCursorPos;
         },
         // 设置真实光标位置
         setCursorRealPos(cursorPos) {
@@ -1396,7 +1200,7 @@ export default {
                 return;
             }
             let pos = this.getPosByEvent(e);
-            this.setCursorPos(pos);
+            this.cursor.setCursorPos(pos);
             this.focus();
             this.mouseStartObj = {
                 time: Date.now(),
@@ -1411,7 +1215,7 @@ export default {
                 let end = this.getPosByEvent(e);
                 this.setSelectedRange(Object.assign({}, this.mouseStartObj.start), end);
                 this.renderSelectedBg();
-                this.setCursorPos(end);
+                this.cursor.setCursorPos(end);
                 cancelAnimationFrame(this.selectMoveTimer);
                 if (e.clientY > offset.top + this.scrollerArea.height) { //鼠标超出底部区域
                     _move('down', e.clientY - offset.top - this.scrollerArea.height);
@@ -1456,7 +1260,7 @@ export default {
                     }
                     line = line < 1 ? 1 : (line > context.htmls.length ? context.htmls.length : line);
                     column = column < 0 ? 0 : (column > context.htmls[originLine - 1].text.length ? context.htmls[originLine - 1].text.length : column);
-                    that.setCursorPos({ line: line, column: column });
+                    that.cursor.setCursorPos({ line: line, column: column });
                     that.setSelectedRange(that.mouseStartObj.start, { line: line, column: column });
                     that.renderSelectedBg();
                     that.selectMoveTimer = requestAnimationFrame(() => {
@@ -1473,7 +1277,7 @@ export default {
                 Util.comparePos(this.mouseStartObj.start, end) != 0) {
                 this.setSelectedRange(this.mouseStartObj.start, end);
                 this.renderSelectedBg();
-                this.setCursorPos(end);
+                this.cursor.setCursorPos(end);
             } else if (e.which != 3) {
                 this.clearRange();
                 if (this.mouseUpTime && Date.now() - this.mouseUpTime < 300) { //双击选中单词
@@ -1600,7 +1404,7 @@ export default {
                         this.setSelectedRange({ line: 1, column: 0 }, end);
                         this.renderSelectedBg();
                         this.forceCursorView = false;
-                        this.setCursorPos(end);
+                        this.cursor.setCursorPos(end);
                         break;
                     case 68: //ctrl+d，搜素
                         e.preventDefault();
@@ -1661,14 +1465,14 @@ export default {
                         this.deleteContent(Util.keyCode.BACKSPACE);
                         break;
                 }
-                this.filterMultiCursorPos();
+                this.cursor.filterMultiCursorPos();
             }
 
             function _moveCursor(direct, wholeWord) {
                 //ctrl+d后，第一次移动光标只是取消选中状态
                 if (!that.selecter.checkCursorSelected(that.nowCursorPos)) {
                     that.multiCursorPos.map((cursorPos) => {
-                        that.moveCursor(cursorPos, direct, wholeWord);
+                        that.cursor.moveCursor(cursorPos, direct, wholeWord);
                     });
                 }
             }
