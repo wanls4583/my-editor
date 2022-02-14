@@ -24,50 +24,63 @@ export default class {
         }
         let reg = null,
             exec = null,
+            preExec = null,
+            lastIndex = null,
             start = null,
             end = null,
             result = null,
             resultCaches = [],
             firstRnagePos = null,
-            rangePos = null;
-        let pos = {
-            line: 1,
-            column: 0,
-            index: 0
-        }
+            rangePos = null,
+            that = this,
+            line = 1,
+            column = 0
         let text = context.htmls.map((item) => {
             return item.text
         }).join('\n');
-        let originText = text;
+        let strs = str.split(/\n/);
         let regStr = str.replace(/\\|\.|\*|\+|\-|\?|\(|\)|\[|\]|{|\}|\^|\$|\~|\!/g, '\\$&');
         regStr = (option.wholeWord ? '\\b' : '') + regStr + (option.wholeWord ? '\\b' : '');
         option = option || {};
-        reg = new RegExp(regStr, option.ignoreCase ? 'i' : '');
+        reg = new RegExp('[^\n]*?(' + regStr + ')|[^\n]*?\n', option.ignoreCase ? 'img' : 'mg');
         while (exec = reg.exec(text)) {
-            this.setLineColumn(text.slice(0, exec.index), pos);
-            pos.index += exec.index;
-            start = Object.assign({}, pos);
-            this.setLineColumn(exec[0], pos);
-            pos.index += exec[0].length;
-            end = Object.assign({}, pos);
-            text = originText.slice(pos.index);
-            rangePos = {
-                start: start,
-                end: end
-            };
-            firstRnagePos = firstRnagePos || rangePos;
-            if (!result && Util.comparePos(end, this.nowCursorPos) >= 0 && !this.selecter.checkCursorSelected(start)) {
-                result = rangePos;
+            if (!exec[1]) {
+                line++;
+                column = 0;
+            } else {
+                if (preExec[1] && lastIndex !== exec.index) {
+                    line++;
+                    column = 0;
+                }
+                start = {
+                    line: line,
+                    column: column + exec[0].length - strs[0].length
+                }
+                end = {
+                    line: line + strs.length - 1,
+                    column: strs.length > 1 ? strs.peek().length : column + exec[0].length
+                }
+                column = end.column;
+                rangePos = {
+                    start: start,
+                    end: end
+                };
+                firstRnagePos = firstRnagePos || rangePos;
+                if (!result && Util.comparePos(end, that.nowCursorPos) >= 0 && !that.selecter.checkCursorSelected(start)) {
+                    result = rangePos;
+                }
+                resultCaches.push(rangePos);
             }
-            resultCaches.push(rangePos);
+            lastIndex = reg.lastIndex;
+            preExec = exec;
         }
         if (!result && firstRnagePos && !this.selecter.checkCursorSelected(firstRnagePos.start)) {
             result = firstRnagePos
         }
         this.cache(str, resultCaches, result);
         return {
-            list: Util.deepAssign([], resultCaches),
-            result: Util.deepAssign({}, result)
+            list: resultCaches,
+            result: result
         };
     }
     checkCache(str) {
@@ -88,8 +101,8 @@ export default class {
         }
         this.cacheData.result = result;
         return {
-            list: Util.deepAssign([], resultCaches),
-            result: Util.deepAssign({}, result)
+            list: resultCaches,
+            result: result
         }
     }
     cache(str, list, result) {
@@ -101,16 +114,5 @@ export default class {
     }
     clearCache() {
         this.cacheData = null;
-    }
-    setLineColumn(text, pos) {
-        let lines = text.match(regs.enter);
-        lines = lines && lines.length || 0;
-        pos.line += lines;
-        if (lines) {
-            let exec = regs.column.exec(text);
-            pos.column = exec && exec[1].length || 0;
-        } else {
-            pos.column += text.length;
-        }
     }
 }

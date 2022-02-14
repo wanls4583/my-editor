@@ -440,12 +440,6 @@ export default {
                     tabNum = tabNum && tabNum[0].length || 0;
                     tabNum = tabNum + Math.ceil((spaceNum[0].length - tabNum) / that.tabSize);
                 }
-                for (let i = 0; i < that.selectedRanges.length; i++) {
-                    let selectedRange = that.selectedRanges[i];
-                    if (selectedRange.active && line > selectedRange.start.line && line < selectedRange.end.line) {
-                        selected = true;
-                    }
-                }
                 if (context.foldMap.has(line)) { //该行已经折叠
                     fold = 'close';
                 } else if (that.folder.getRangeFold(line, true)) { //可折叠
@@ -488,23 +482,21 @@ export default {
             }
             selectedRange.start = start;
             selectedRange.end = end;
-            this.$nextTick(() => {
-                this.renderHtmls.map((item) => {
-                    item.selected = selectedRange.active && item.num > start.line && item.num < end.line;
-                    if (item.num === start.line) {
-                        item.selectStarts.push({
-                            left: start.left,
-                            width: start.width,
-                            active: selectedRange.active
-                        });
-                    } else if (item.num === end.line) {
-                        item.selectEnds.push({
-                            left: end.left,
-                            width: end.width,
-                            active: selectedRange.active
-                        });
-                    }
-                });
+            this.renderHtmls.map((item) => {
+                item.selected = selectedRange.active && item.num > start.line && item.num < end.line;
+                if (item.num === start.line) {
+                    item.selectStarts.push({
+                        left: start.left,
+                        width: start.width,
+                        active: selectedRange.active
+                    });
+                } else if (item.num === end.line) {
+                    item.selectEnds.push({
+                        left: end.left,
+                        width: end.width,
+                        active: selectedRange.active
+                    });
+                }
             });
         },
         // 清除选中背景
