@@ -138,6 +138,8 @@ const context = {
 }
 const regs = {
     word: /[a-zA-Z0-9_]/,
+    dWord: Util.fullAngleReg,
+    space: /\s/
 }
 export default {
     name: 'Home',
@@ -852,13 +854,41 @@ export default {
                     column = text.length;
                 }
                 if (column === 0) {
-                    return;
+                    this.updateCursorPos(cursorPos, line, column);
+                    return {
+                        line: line,
+                        column: column
+                    }
                 }
                 if (wholeWord) {
-                    let exec = text[column - 1].match(regs.word);
-                    column--;
-                    while (column && Boolean(exec) === Boolean(text[column - 1].match(regs.word))) {
-                        column--
+                    let sReg = null;
+                    //过滤开始的空格
+                    while (column && text[column - 1].match(regs.space)) {
+                        column--;
+                    }
+                    if (column == 0) {
+                        this.updateCursorPos(cursorPos, line, column);
+                        return {
+                            line: line,
+                            column: column
+                        }
+                    }
+                    if (text[column - 1].match(regs.word)) { //半角文字
+                        sReg = regs.word;
+                    } else if (text[column - 1].match(regs.dWord)) { //全角文字或字符
+                        sReg = regs.dWord;
+                    }
+                    if (sReg) {
+                        while (column && text[column - 1].match(sReg)) {
+                            column--
+                        }
+                    } else {
+                        while (column &&
+                            !text[column - 1].match(regs.space) &&
+                            !text[column - 1].match(regs.word) &&
+                            !text[column - 1].match(regs.dWord)) {
+                            column--
+                        }
                     }
                 } else if (cursorPos.line === line) {
                     column--;
@@ -869,14 +899,42 @@ export default {
                     column = 0;
                     text = context.htmls[line - 1].text;
                 }
-                if (column === text.length) {
-                    return;
+                if (column == text.length) {
+                    this.updateCursorPos(cursorPos, line, column);
+                    return {
+                        line: line,
+                        column: column
+                    }
                 }
                 if (wholeWord) {
-                    let exec = text[column].match(regs.word);
-                    column++;
-                    while (column < text.length && Boolean(exec) === Boolean(text[column].match(regs.word))) {
-                        column++
+                    let sReg = null;
+                    //过滤开始的空格
+                    while (column < text.length && text[column].match(regs.space)) {
+                        column++;
+                    }
+                    if (column == text.length) {
+                        this.updateCursorPos(cursorPos, line, column);
+                        return {
+                            line: line,
+                            column: column
+                        }
+                    }
+                    if (text[column].match(regs.word)) { //半角文字
+                        sReg = regs.word;
+                    } else if (text[column].match(regs.dWord)) { //全角文字或字符
+                        sReg = regs.dWord;
+                    }
+                    if (sReg) {
+                        while (column < text.length && text[column].match(sReg)) {
+                            column++
+                        }
+                    } else {
+                        while (column < text.length &&
+                            !text[column].match(regs.space) &&
+                            !text[column].match(regs.word) &&
+                            !text[column].match(regs.dWord)) {
+                            column++
+                        }
                     }
                 } else if (cursorPos.line === line) {
                     column++;
@@ -1245,7 +1303,10 @@ export default {
                 let text = context.htmls[this.nowCursorPos.line - 1].text;
                 let str = '';
                 let index = this.nowCursorPos.column;
-                let sReg = /[a-zA-Z0-9_]/;
+                let sReg = regs.word;
+                if (text[index - 1].match(regs.dWord)) {
+                    sReg = regs.dWord;
+                }
                 while (index > 0 && text[index - 1].match(sReg)) {
                     str = text[index - 1] + str;
                     index--;
