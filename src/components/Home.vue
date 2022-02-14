@@ -58,18 +58,16 @@
 						></div>
 						<!-- 选中时的首行背景 -->
 						<div
-							:class="{'my-editor-select-active': selectedRange.active}"
-							:style="{left: selectedRange.start.left + 'px', width: selectedRange.start.width + 'px'}"
+							:class="{'my-editor-select-active': range.active}"
+							:style="{left: range.left + 'px', width: range.width + 'px'}"
 							class="my-editor-line-bg my-editor-select-bg"
-							v-for="selectedRange in selectedRanges"
-							v-if="_startBgLineVisible(selectedRange, line.num)"
+							v-for="range in line.selectStarts"
 						></div>
 						<!-- 选中时的末行背景 -->
 						<div
-							:style="{left: selectedRange.end.left + 'px', width: selectedRange.end.width + 'px'}"
+							:style="{left: range.left + 'px', width: range.width + 'px'}"
 							class="my-editor-line-bg my-editor-select-bg my-editor-select-active"
-							v-for="selectedRange in selectedRanges"
-							v-if="_endBgLineVisible(selectedRange, line.num)"
+							v-for="range in line.selectEnds"
 						></div>
 						<span :style="{left: _tabLineLeft(tab)}" class="my-editor-tab-line" v-for="tab in line.tabNum"></span>
 					</div>
@@ -267,16 +265,6 @@ export default {
                 left: left + 'px'
             }
         },
-        _startBgLineVisible() {
-            return (selectedRange, num) => {
-                return num == selectedRange.start.line
-            }
-        },
-        _endBgLineVisible() {
-            return (selectedRange, num) => {
-                return num == selectedRange.end.line && selectedRange.end.line > selectedRange.start.line
-            }
-        },
         _tabLineLeft() {
             return (tab) => {
                 return (tab - 1) * this.tabSize * this.charObj.charWidth + 'px';
@@ -404,6 +392,7 @@ export default {
         // 渲染
         render() {
             this.renderLine();
+            this.renderSelectedBg();
             this.$nextTick(() => {
                 this.scrollerArea = {
                     height: this.$scroller.clientHeight,
@@ -444,6 +433,8 @@ export default {
                 let spaceNum = /^\s+/.exec(item.text);
                 let tabNum = 0;
                 let fold = '';
+                let selectStarts = [];
+                let selectEnds = [];
                 if (spaceNum) {
                     tabNum = /\t+/.exec(spaceNum[0]);
                     tabNum = tabNum && tabNum[0].length || 0;
@@ -451,7 +442,7 @@ export default {
                 }
                 for (let i = 0; i < that.selectedRanges.length; i++) {
                     let selectedRange = that.selectedRanges[i];
-                    if (selectedRange && line > selectedRange.start.line && line < selectedRange.end.line) {
+                    if (selectedRange.active && line > selectedRange.start.line && line < selectedRange.end.line) {
                         selected = true;
                     }
                 }
@@ -466,6 +457,8 @@ export default {
                     html: html,
                     num: line,
                     tabNum: tabNum,
+                    selectStarts: selectStarts,
+                    selectEnds: selectEnds,
                     selected: selected,
                     fold: fold,
                 }
@@ -492,12 +485,27 @@ export default {
                 end.left = 0;
                 text = context.htmls[end.line - 1].text;
                 end.width = this.getStrWidth(text, 0, end.column);
-                this.renderHtmls.map((item) => {
-                    item.selected = item.num > start.line && item.num < end.line;
-                });
             }
             selectedRange.start = start;
             selectedRange.end = end;
+            this.$nextTick(() => {
+                this.renderHtmls.map((item) => {
+                    item.selected = selectedRange.active && item.num > start.line && item.num < end.line;
+                    if (item.num === start.line) {
+                        item.selectStarts.push({
+                            left: start.left,
+                            width: start.width,
+                            active: selectedRange.active
+                        });
+                    } else if (item.num === end.line) {
+                        item.selectEnds.push({
+                            left: end.left,
+                            width: end.width,
+                            active: selectedRange.active
+                        });
+                    }
+                });
+            });
         },
         // 清除选中背景
         clearRange(cursorPos) {
@@ -518,7 +526,7 @@ export default {
             } else {
                 this.selectedRanges = [];
             }
-            this.renderLine();
+            this.render();
         },
         insertContent(text, cursorPos) {
             let historyArr = [];
@@ -800,6 +808,7 @@ export default {
             }
         },
         search() {
+            let time = Date.now();
             if (this.search.stopSearch) {
                 return;
             }
@@ -815,6 +824,7 @@ export default {
                 return;
             }
             resultObj = this.searcher.search(searchObj.text, searchObj);
+            console.log(Date.now() - time)
             if (resultObj) {
                 this.selectedRanges.length ?
                     this.cursor.addCursorPos(resultObj.result.end) :

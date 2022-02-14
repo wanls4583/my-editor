@@ -51,14 +51,6 @@ export default class {
         } else if (!same) {
             return;
         }
-        if (this.selectedRanges.filter((item) => {
-                if (Util.comparePos(start, item.start) == 0 && Util.comparePos(end, item.end) == 0) {
-                    return true;
-                }
-                return false;
-            }).length > 0) {
-            return;
-        }
         active = this.checkSelectedCursor({
             start: start,
             end: end
@@ -68,7 +60,6 @@ export default class {
             start: Object.assign({}, start),
             end: Object.assign({}, end)
         });
-        this.filterSelectedRanges();
     }
     checkActive(cursorPos) {
         let selectedRange = this.checkCursorSelected(cursorPos);
