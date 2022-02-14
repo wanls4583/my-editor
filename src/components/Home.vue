@@ -523,7 +523,7 @@ export default {
         insertContent(text, cursorPos) {
             let historyArr = [];
             // 如果有选中区域，需要先删除选中区域
-            if (this.selectedRanges.length) {
+            if (this.selectedRanges.filter((item) => { return item.active }).length) {
                 this.deleteContent();
             }
             if (cursorPos) {
