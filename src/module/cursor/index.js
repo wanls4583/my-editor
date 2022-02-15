@@ -42,10 +42,12 @@ export default class {
                 _updateAfter(item.end);
             });
         }
-        cursorPos.line = line;
-        cursorPos.column = column;
-        this.setCursorRealPos(cursorPos);
-        this.filterMultiCursorPos();
+        if (!cursorPos.del) {
+            cursorPos.line = line;
+            cursorPos.column = column;
+            this.setCursorRealPos(cursorPos);
+            this.filterMultiCursorPos();
+        }
 
         function _updateAfter(item) {
             if (item != cursorPos) {

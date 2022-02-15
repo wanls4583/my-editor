@@ -798,6 +798,19 @@ export default {
             };
             return historyObj;
         },
+        // 向下复制一行
+        copyNext() {
+            let copyedLineMap = {};
+            this.multiCursorPos.map((cursorPos) => {
+                if (!copyedLineMap[cursorPos.line]) {
+                    let text = context.htmls[cursorPos.line - 1].text;
+                    let _cursorPos = { del: true, line: cursorPos.line, column: text.length };
+                    copyedLineMap[cursorPos.line] = true;
+                    this._insertContent(_cursorPos, '\n' + text);
+                    this.setCursorRealPos(cursorPos);
+                }
+            });
+        },
         // 折叠行
         foldLine(line) {
             let resultFold = this.folder.foldLine(line);
@@ -1413,7 +1426,11 @@ export default {
                         break;
                     case 40: //ctrl+shift+down
                         break;
+                    case 68: //ctrl+shift+d
+                        this.copyNext();
+                        break;
                 }
+                return false;
             } else if (e.ctrlKey) {
                 switch (e.keyCode) {
                     case 37: //left arrow
