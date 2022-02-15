@@ -89,7 +89,7 @@ export default class {
                     });
                 }
                 for (let i = 0; i < lastCommand.length; i++) {
-                    _combCommand(lastCommand[i], command[i], i);
+                    _combCommand(lastCommand[i], command[i]);
                 }
             } else {
                 this.history.push(command);
@@ -113,12 +113,13 @@ export default class {
         }
 
         // 检查两次操作是否可以合并
-        function _combCommand(lastCommand, command, index) {
+        function _combCommand(lastCommand, command, lineHead) {
             if (lastCommand.type === Util.command.DELETE) {
                 lastCommand.cursorPos = command.cursorPos;
             } else {
                 lastCommand.text = command.text + lastCommand.text;
-                lastCommand.cursorPos = index === 0 ? command.cursorPos : command.preCursorPos;
+                lastCommand.cursorPos.line += command.cursorPos.line - command.preCursorPos.line;
+                lastCommand.cursorPos.column += command.cursorPos.column - command.preCursorPos.column;
             }
         }
 
