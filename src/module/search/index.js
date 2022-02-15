@@ -25,7 +25,6 @@ export default class {
         let reg = null,
             exec = null,
             preExec = null,
-            lastIndex = null,
             start = null,
             end = null,
             result = null,
@@ -48,7 +47,7 @@ export default class {
                 line++;
                 column = 0;
             } else {
-                if (preExec[1] && lastIndex !== exec.index) {
+                if (preExec && preExec[1] && preExec.index + preExec[0].length !== exec.index) {
                     line++;
                     column = 0;
                 }
@@ -66,15 +65,14 @@ export default class {
                     end: end
                 };
                 firstRnagePos = firstRnagePos || rangePos;
-                if (!result && Util.comparePos(end, that.nowCursorPos) >= 0 && !that.selecter.checkCursorSelected(start)) {
+                if (!result && Util.comparePos(end, that.nowCursorPos) >= 0) {
                     result = rangePos;
                 }
                 resultCaches.push(rangePos);
             }
-            lastIndex = reg.lastIndex;
             preExec = exec;
         }
-        if (!result && firstRnagePos && !this.selecter.checkCursorSelected(firstRnagePos.start)) {
+        if (!result && firstRnagePos) {
             result = firstRnagePos
         }
         this.cache(str, resultCaches, result);

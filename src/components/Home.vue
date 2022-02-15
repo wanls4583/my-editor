@@ -133,6 +133,7 @@ const context = {
     history: [], // 操作历史
     lineIdMap: new Map(), //htmls的唯一标识对象
     renderedIdMap: new Map(), //renderHtmls的唯一标识对象
+    renderedLineMap: new Map(), //renderHtmls的唯一标识对象
     foldMap: new Map() //folds的唯一标识对象
 }
 const regs = {
@@ -413,6 +414,7 @@ export default {
                 return;
             }
             context.renderedIdMap.clear();
+            context.renderedLineMap.clear();
             this.renderHtmls = [];
             for (let i = 0, startLine = this.startLine; i < this.maxVisibleLines && startLine <= context.htmls.length; i++) {
                 let lineObj = context.htmls[startLine - 1];
@@ -420,6 +422,7 @@ export default {
                 let obj = _getObj(lineObj, startLine);
                 this.renderHtmls.push(obj);
                 context.renderedIdMap.set(lineId, obj);
+                context.renderedLineMap.set(startLine, obj);
                 if (context.foldMap.has(startLine)) {
                     let fold = context.foldMap.get(startLine);
                     startLine = fold.end.line;
@@ -462,12 +465,19 @@ export default {
             if (!this.selectedRanges.length) {
                 return;
             }
+            this.renderHtmls.map((item) => {
+                item.selected = false;
+                item.selectStarts = [];
+                item.selectEnds = [];
+            });
             this.selectedRanges.map((selectedRange) => {
                 this._renderSelectedBg(selectedRange);
             });
         },
         // 渲染选中背景
         _renderSelectedBg(selectedRange) {
+            let firstLine = this.renderHtmls[0].num;
+            let lastLine = this.renderHtmls.peek().num;
             let start = selectedRange.start;
             let end = selectedRange.end;
             let text = context.htmls[start.line - 1].text;
@@ -482,22 +492,26 @@ export default {
             }
             selectedRange.start = start;
             selectedRange.end = end;
-            this.renderHtmls.map((item) => {
-                item.selected = selectedRange.active && item.num > start.line && item.num < end.line;
-                if (item.num === start.line) {
-                    item.selectStarts.push({
-                        left: start.left,
-                        width: start.width,
-                        active: selectedRange.active
-                    });
-                } else if (item.num === end.line) {
-                    item.selectEnds.push({
-                        left: end.left,
-                        width: end.width,
-                        active: selectedRange.active
-                    });
-                }
-            });
+            firstLine = firstLine > start.line + 1 ? firstLine : start.line + 1;
+            lastLine = lastLine < end.line - 1 ? lastLine : end.line - 1;
+            for (let line = firstLine; line <= lastLine; line++) {
+                context.renderedLineMap.get(line).selected = selectedRange.active && true;
+            }
+            if (context.renderedLineMap.has(start.line)) {
+                context.renderedLineMap.get(start.line).selectStarts.push({
+                    left: start.left,
+                    width: start.width,
+                    active: selectedRange.active
+
+                });
+            }
+            if (end.line > start.line && context.renderedLineMap.has(end.line)) {
+                context.renderedLineMap.get(end.line).selectEnds.push({
+                    left: end.left,
+                    width: end.width,
+                    active: selectedRange.active
+                });
+            }
         },
         // 清除选中背景
         clearRange(cursorPos) {
@@ -527,16 +541,25 @@ export default {
                 this.deleteContent();
             }
             if (cursorPos) {
+                let cursorPosList = [];
+                let same = true;
                 if (text instanceof Array) {
                     text.map((item, index) => {
                         let _cursorPos = this.cursor.addCursorPos(cursorPos[index]);
                         let historyObj = this._insertContent(_cursorPos, text[index]);
+                        cursorPosList.push(_cursorPos);
                         historyArr.push(historyObj);
+                        same = same && text[index] === this.deleteContent.searchText;
                     });
                 } else {
                     cursorPos = this.cursor.addCursorPos(cursorPos);
                     historyArr = this._insertContent(cursorPos, text);
+                    cursorPosList.push(cursorPos);
+                    same = text === this.deleteContent.searchText;
                 }
+                this.deleteContent.searchText = '';
+                this.multiCursorPos = cursorPosList;
+                this.setNowCursorPos(cursorPosList[0]);
             } else if (this.multiCursorPos.length > 1) {
                 let texts = text instanceof Array ? text : text.split(/\r\n|\n/);
                 if (texts.length === this.multiCursorPos.length) {
@@ -550,7 +573,7 @@ export default {
                         historyArr.push(historyObj);
                     });
                 }
-                this.nowCursorPos = this.multiCursorPos[0];
+                this.setNowCursorPos(this.multiCursorPos[0]);
             } else {
                 historyArr = this._insertContent(this.multiCursorPos[0], text);
             }
@@ -622,6 +645,7 @@ export default {
         deleteContent(keyCode, rangePos) {
             let historyArr = [];
             let cursorPos = null;
+            let searchText = this.selectedRanges.length && this.search.searchText || '';
             if (rangePos) {
                 rangePos = rangePos instanceof Array ? rangePos : [rangePos];
                 rangePos.map((item) => {
@@ -637,6 +661,8 @@ export default {
                 });
                 this.nowCursorPos = this.multiCursorPos[0];
             }
+            this.deleteContent.searchText = searchText;
+            this.clearRange();
             historyArr = historyArr.length > 1 ? historyArr : historyArr[0];
             if (!rangePos) { // 新增历史记录
                 historyArr && this.history.pushHistory(historyArr);
@@ -800,7 +826,6 @@ export default {
             }
         },
         search() {
-            let time = Date.now();
             if (this.search.stopSearch) {
                 return;
             }
@@ -816,8 +841,7 @@ export default {
                 return;
             }
             resultObj = this.searcher.search(searchObj.text, searchObj);
-            console.log(Date.now() - time)
-            if (resultObj) {
+            if (resultObj && resultObj.result) {
                 this.selectedRanges.length ?
                     this.cursor.addCursorPos(resultObj.result.end) :
                     this.cursor.setCursorPos(resultObj.result.end);
