@@ -802,15 +802,19 @@ export default {
         copyNext() {
             let copyedLineMap = {};
             let cursorPosList = [];
-            this.multiCursorPos.map((cursorPos) => {
+            let texts = [];
+            this.multiCursorPos.reverse().slice().map((cursorPos) => {
                 if (!copyedLineMap[cursorPos.line]) {
-                    let text = context.htmls[cursorPos.line - 1].text;
-                    copyedLineMap[cursorPos.line] = true;
                     cursorPosList.push([cursorPos, cursorPos.column]);
-                    cursorPos.column = text.length;
-                    this.insertContent('\n' + text, cursorPos);
                 }
             });
+            cursorPosList.map((item) => {
+                let cursorPos = item[0];
+                let text = context.htmls[cursorPos.line - 1].text;
+                texts.push('\n' + text);
+                cursorPos.column = text.length;
+            });
+            this.insertContent(texts, cursorPosList.map((item) => { return item[0] }));
             cursorPosList.map((item) => {
                 item[0].column = item[1];
                 this.setCursorRealPos(item[0]);
