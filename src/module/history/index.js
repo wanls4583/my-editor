@@ -46,12 +46,12 @@ export default class {
                             end: command.cursorPos
                         };
                     });
-                    this.deleteContent(Util.keyCode.BACKSPACE, list);
+                    this.deleteContent(Util.keyCode.BACKSPACE, list, true);
                 } else {
                     this.deleteContent(Util.keyCode.BACKSPACE, {
                         start: command.preCursorPos,
                         end: command.cursorPos
-                    });
+                    }, true);
                 }
                 break;
             case Util.command.INSERT:
@@ -62,9 +62,9 @@ export default class {
                         text.push(command.text);
                         cursorPos.push(command.cursorPos);
                     });
-                    this.insertContent(text, cursorPos);
+                    this.insertContent(text, cursorPos, true);
                 } else {
-                    this.insertContent(command.text, Object.assign({}, command.cursorPos));
+                    this.insertContent(command.text, Object.assign({}, command.cursorPos), true);
                 }
                 break;
         }

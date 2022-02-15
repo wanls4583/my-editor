@@ -78,15 +78,15 @@ export default class {
     }
     // 添加光标
     addCursorPos(cursorPos) {
-        cursorPos = Object.assign({}, cursorPos);
         if (this.multiCursorPos.filter((item) => {
-                if (Util.comparePos(cursorPos, item) == 0) {
-                    return true;
-                }
-                return false;
-            }).length > 0) {
-            return;
+            if (Util.comparePos(cursorPos, item) == 0) {
+                return true;
+            }
+            return false;
+        }).length > 0) {
+            return cursorPos;
         }
+        cursorPos = Object.assign({}, cursorPos);
         this.multiCursorPos.push(cursorPos);
         this.multiCursorPos.sort((a, b) => {
             if (a.line == b.line) {
@@ -117,7 +117,7 @@ export default class {
         let posMap = {};
         let multiCursorPos = this.multiCursorPos.filter((cursorPos) => {
             let key = cursorPos.line + ',' + cursorPos.column;
-            if (posMap[key]) {
+            if (posMap[key] || cursorPos.del) {
                 return false;
             }
             posMap[key] = true;

@@ -534,7 +534,7 @@ export default {
             }
             this.render();
         },
-        insertContent(text, cursorPos) {
+        insertContent(text, cursorPos, isCommand) {
             let historyArr = [];
             // 如果有选中区域，需要先删除选中区域
             if (this.selectedRanges.filter((item) => { return item.active }).length) {
@@ -577,7 +577,7 @@ export default {
             } else {
                 historyArr = this._insertContent(this.multiCursorPos[0], text);
             }
-            if (!cursorPos) { // 新增历史记录
+            if (!isCommand) { // 新增历史记录
                 this.history.pushHistory(historyArr);
             } else { // 撤销或重做操作后，更新历史记录
                 this.history.updateHistory(context.history.index, historyArr);
@@ -642,7 +642,7 @@ export default {
             }
             return historyObj;
         },
-        deleteContent(keyCode, rangePos) {
+        deleteContent(keyCode, rangePos, isCommand) {
             let historyArr = [];
             let cursorPos = null;
             let searchText = this.selectedRanges.length && this.search.searchText || '';
@@ -664,7 +664,7 @@ export default {
             this.deleteContent.searchText = searchText;
             this.clearRange();
             historyArr = historyArr.length > 1 ? historyArr : historyArr[0];
-            if (!rangePos) { // 新增历史记录
+            if (!isCommand) { // 新增历史记录
                 historyArr && this.history.pushHistory(historyArr);
             } else { // 撤销或重做操作后，更新历史记录
                 this.history.updateHistory(context.history.index, historyArr);
@@ -801,14 +801,19 @@ export default {
         // 向下复制一行
         copyNext() {
             let copyedLineMap = {};
+            let cursorPosList = [];
             this.multiCursorPos.map((cursorPos) => {
                 if (!copyedLineMap[cursorPos.line]) {
                     let text = context.htmls[cursorPos.line - 1].text;
-                    let _cursorPos = { del: true, line: cursorPos.line, column: text.length };
                     copyedLineMap[cursorPos.line] = true;
-                    this._insertContent(_cursorPos, '\n' + text);
-                    this.setCursorRealPos(cursorPos);
+                    cursorPosList.push([cursorPos, cursorPos.column]);
+                    cursorPos.column = text.length;
+                    this.insertContent('\n' + text, cursorPos);
                 }
+            });
+            cursorPosList.map((item) => {
+                item[0].column = item[1];
+                this.setCursorRealPos(item[0]);
             });
         },
         // 折叠行
