@@ -79,11 +79,12 @@ export default class {
     // 添加光标
     addCursorPos(cursorPos) {
         if (this.multiCursorPos.filter((item) => {
-            if (Util.comparePos(cursorPos, item) == 0) {
-                return true;
-            }
-            return false;
-        }).length > 0) {
+                if (Util.comparePos(cursorPos, item) == 0) {
+                    cursorPos = item;
+                    return true;
+                }
+                return false;
+            }).length > 0) {
             return cursorPos;
         }
         cursorPos = Object.assign({}, cursorPos);
@@ -95,7 +96,6 @@ export default class {
             return a.line - b.line;
         });
         this.setNowCursorPos(cursorPos);
-        this.filterMultiCursorPos();
         this.setCursorRealPos(cursorPos);
         return cursorPos;
     }
