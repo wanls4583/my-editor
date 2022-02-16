@@ -569,7 +569,7 @@ export default {
             }
             this.render();
         },
-        insertContent(text, cursorPos, isCommand) {
+        insertContent(text, cursorPos, commandObj) {
             let historyArr = [];
             // 如果有选中区域，需要先删除选中区域
             if (this.selectedRanges.filter((item) => { return item.active }).length) {
@@ -579,12 +579,18 @@ export default {
                 if (text instanceof Array) {
                     text.map((item, index) => {
                         let _cursorPos = this.cursor.addCursorPos(cursorPos[index]);
-                        let historyObj = this._insertContent(_cursorPos, text[index]);
+                        let historyObj = this._insertContent(text[index], _cursorPos);
                         historyArr.push(historyObj);
+                        if (commandObj.keyCode === Util.keyCode.DELETE) {
+                            this.cursor.updateCursorPos(_cursorPos, cursorPos[index].line, cursorPos[index].column);
+                        }
                     });
                 } else {
-                    cursorPos = this.cursor.addCursorPos(cursorPos);
-                    historyArr = this._insertContent(cursorPos, text);
+                    let _cursorPos = this.cursor.addCursorPos(cursorPos);
+                    historyArr = this._insertContent(text, _cursorPos);
+                    if (commandObj.keyCode === Util.keyCode.DELETE) {
+                        this.cursor.updateCursorPos(_cursorPos, cursorPos.line, cursorPos.column);
+                    }
                 }
             } else if (this.multiCursorPos.length > 1) {
                 let texts = text instanceof Array ? text : text.split(/\r\n|\n/);
@@ -592,26 +598,26 @@ export default {
                 let multiCursorPos = this.multiCursorPos.slice().reverse();
                 if (texts.length === this.multiCursorPos.length) {
                     multiCursorPos.map((cursorPos, index) => {
-                        let historyObj = this._insertContent(cursorPos, texts[index]);
+                        let historyObj = this._insertContent(texts[index], cursorPos);
                         historyArr.push(historyObj);
                     });
                 } else {
                     multiCursorPos.map((cursorPos) => {
-                        let historyObj = this._insertContent(cursorPos, text);
+                        let historyObj = this._insertContent(text, cursorPos);
                         historyArr.push(historyObj);
                     });
                 }
             } else {
-                historyArr = this._insertContent(this.multiCursorPos[0], text);
+                historyArr = this._insertContent(text, this.multiCursorPos[0]);
             }
-            if (!isCommand) { // 新增历史记录
+            if (!commandObj) { // 新增历史记录
                 this.history.pushHistory(historyArr);
             } else { // 撤销或重做操作后，更新历史记录
                 this.history.updateHistory(context.history.index, historyArr);
             }
         },
         // 插入内容
-        _insertContent(cursorPos, text) {
+        _insertContent(text, cursorPos) {
             let nowLineText = context.htmls[cursorPos.line - 1].text;
             let originPos = { line: cursorPos.line, column: cursorPos.column };
             let nowColume = cursorPos.column;
@@ -819,6 +825,7 @@ export default {
                     line: originPos.line,
                     column: originPos.column
                 },
+                keyCode: keyCode,
                 text: deleteText
             };
             return historyObj;

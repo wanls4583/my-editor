@@ -62,9 +62,13 @@ export default class {
                         text.push(command.text);
                         cursorPos.push(command.cursorPos);
                     });
-                    this.insertContent(text, cursorPos, true);
+                    this.insertContent(text, cursorPos, {
+                        keyCode: command[0].keyCode
+                    });
                 } else {
-                    this.insertContent(command.text, Object.assign({}, command.cursorPos), true);
+                    this.insertContent(command.text, Object.assign({}, command.cursorPos), {
+                        keyCode: command.keyCode
+                    });
                 }
                 break;
         }
@@ -82,10 +86,8 @@ export default class {
             lastCommand.length === command.length &&
             Date.now() - this.pushHistoryTime < 2000) {
             if (_combCheck(lastCommand[0], command[0])) {
-                // 是否为向后删除
-                let deleteCode = Util.comparePos(command[0].preCursorPos, command[0].cursorPos) === 0;
                 for (let i = 0; i < lastCommand.length; i++) {
-                    _combCommand(lastCommand[i], command[i], deleteCode);
+                    _combCommand(lastCommand[i], command[i]);
                 }
             } else {
                 this.history.push(command);
@@ -109,13 +111,13 @@ export default class {
         }
 
         // 检查两次操作是否可以合并
-        function _combCommand(lastCommand, command, deleteCode) {
+        function _combCommand(lastCommand, command) {
             if (lastCommand.type === Util.command.DELETE) {
                 lastCommand.cursorPos.line += command.cursorPos.line - command.preCursorPos.line;
                 lastCommand.cursorPos.column += command.cursorPos.column - command.preCursorPos.column;
             } else {
                 lastCommand.cursorPos = command.cursorPos;
-                if (deleteCode) {
+                if (command.keyCode === Util.keyCode.DELETE) {
                     lastCommand.text = lastCommand.text + command.text;
                 } else {
                     lastCommand.text = command.text + lastCommand.text;
@@ -125,6 +127,13 @@ export default class {
     }
     // 更新历史记录
     updateHistory(index, command) {
+        if (command instanceof Array) {
+            command.map((item, _index) => {
+                item.keyCode = this.history[index - 1][_index].keyCode;
+            });
+        } else {
+            command.keyCode = this.history[index - 1].keyCode;
+        }
         this.history[index - 1] = this.sortComand(command);
     }
     sortComand(command) {
