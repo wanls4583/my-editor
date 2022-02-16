@@ -103,6 +103,9 @@ export default class {
             result: result
         }
     }
+    hasCache() {
+        return !!this.cacheData;
+    }
     cache(str, list, result) {
         this.cacheData = {
             str: str,

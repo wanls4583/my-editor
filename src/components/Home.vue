@@ -552,9 +552,7 @@ export default {
         },
         // 清除选中背景
         clearRange(cursorPos) {
-            this.searcher.clearCache();
-            this.search.stopSearch = false;
-            this.search.searchText = '';
+            this.clearSearch();
             if (!this.selectedRanges.length) {
                 return;
             }
@@ -879,26 +877,20 @@ export default {
             }
         },
         search() {
-            if (this.search.stopSearch) {
-                return;
-            }
-            let searchObj = {};
+            let searchObj = this.getToSearchObj();
             let resultObj = null;
-            if (this.search.searchText) {
-                searchObj.text = this.search.searchText;
-            } else {
-                searchObj = this.getToSearchObj();
-                this.search.searchText = searchObj.text;
-            }
+            let hasCache = this.searcher.hasCache();
             if (!searchObj.text) {
                 return;
             }
             resultObj = this.searcher.search(searchObj.text, searchObj);
             if (resultObj && resultObj.result) {
-                this.selectedRanges.length ?
-                    this.cursor.addCursorPos(resultObj.result.end) :
+                if (!this.selectedRanges.length) {
                     this.cursor.setCursorPos(resultObj.result.end);
-                if (this.selectedRanges.length < 2) {
+                } else {
+                    this.cursor.addCursorPos(resultObj.result.end);
+                }
+                if (!hasCache) {
                     resultObj.list.map((rangePos) => {
                         this.selecter.addSelectedRange(rangePos.start, rangePos.end);
                     });
@@ -906,9 +898,11 @@ export default {
                     this.selecter.checkActive(resultObj.result.end, true);
                 }
                 this.renderSelectedBg();
-            } else {
-                this.search.stopSearch = true;
             }
+        },
+        clearSearch() {
+            this.searcher.clearCache();
+            this.getToSearchObj.searchObj = null;
         },
         setNowCursorPos(nowCursorPos) {
             this.nowCursorPos = nowCursorPos;
@@ -1177,6 +1171,9 @@ export default {
         },
         // 获取待搜索的文本
         getToSearchObj() {
+            if (this.getToSearchObj.searchObj) {
+                return this.getToSearchObj.searchObj;
+            }
             let selectedRange = this.selecter.checkCursorSelected(this.nowCursorPos);
             let wholeWord = false;
             let searchText = '';
@@ -1202,10 +1199,11 @@ export default {
                 wholeWord = true;
                 searchText = str;
             }
-            return {
+            this.getToSearchObj.searchObj = {
                 text: searchText,
                 wholeWord: wholeWord
             }
+            return this.getToSearchObj.searchObj;
         },
         // 右键菜单事件
         onContextmenu(e) {

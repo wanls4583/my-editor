@@ -30,6 +30,7 @@ export default class {
             cursorPos.del = true;
         });
         this.multiCursorPos.empty();
+        this.setNowCursorPos(null);
     }
     // 更新光标位置
     updateCursorPos(cursorPos, line, column, updateAfter) {
