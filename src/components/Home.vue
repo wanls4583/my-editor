@@ -506,7 +506,7 @@ export default {
                 context.renderedLineMap.get(line).selected = true;
             }
             if (context.renderedLineMap.has(start.line)) {
-                active = _checkSelectedActive(selectedRange);
+                active = this.selecter.checkSelectedActive(selectedRange, multiCursorPosLineMap);
                 context.renderedLineMap.get(start.line).selectStarts.push({
                     left: start.left,
                     width: start.width,
@@ -518,36 +518,8 @@ export default {
                 context.renderedLineMap.get(end.line).selectEnds.push({
                     left: end.left,
                     width: end.width,
-                    active: active || _checkSelectedActive(selectedRange)
+                    active: active || this.selecter.checkSelectedActive(selectedRange, multiCursorPosLineMap)
                 });
-            }
-
-            function _checkSelectedActive(selectedRange) {
-                let cursorPosList = multiCursorPosLineMap.get(selectedRange.start.line) || [];
-                if (end.line > start.line) {
-                    for (let i = 0; i < cursorPosList.length; i++) {
-                        let item = cursorPosList[i];
-                        if (Util.comparePos(item, selectedRange.start) === 0) {
-                            return true;
-                        }
-                    }
-                    cursorPosList = multiCursorPosLineMap.get(selectedRange.end.line) || [];
-                    for (let i = 0; i < cursorPosList.length; i++) {
-                        let item = cursorPosList[i];
-                        if (Util.comparePos(item, selectedRange.end) === 0) {
-                            return true;
-                        }
-                    }
-                } else {
-                    for (let i = 0; i < cursorPosList.length; i++) {
-                        let item = cursorPosList[i];
-                        if (Util.comparePos(item, selectedRange.start) === 0 ||
-                            Util.comparePos(item, selectedRange.end) === 0) {
-                            return true;
-                        }
-                    }
-                }
-                return false;
             }
         },
         // 清除选中背景
@@ -626,7 +598,7 @@ export default {
             let newColumn = nowColume;
             this.tokenizer.onInsertContentBefore(nowLine);
             this.lint.onInsertContentBefore(nowLine);
-            this.folder.onInsertContentBefore(nowLine);
+            this.folder.onInsertContentBefore(Object.assign({}, originPos));
             text = text.split(/\r\n|\n/);
             text = text.map((item) => {
                 item = {
@@ -653,10 +625,10 @@ export default {
             }
             newLine += text.length - 1;
             this.maxLine = context.htmls.length;
+            this.folder.onInsertContentAfter({ line: newLine, column: newColumn });
+            this.lint.onInsertContentAfter(newLine);
             this.render();
             this.tokenizer.onInsertContentAfter(newLine);
-            this.lint.onInsertContentAfter(newLine);
-            this.folder.onInsertContentAfter(newLine);
             this.setLineWidth(text);
             if (context.foldMap.has(nowLine) && text.length > 1) {
                 this.unFold(nowLine);
@@ -714,7 +686,7 @@ export default {
             let selectedRange = this.selecter.checkCursorSelected(cursorPos);
             this.tokenizer.onDeleteContentBefore(cursorPos.line);
             this.lint.onDeleteContentBefore(cursorPos.line);
-            this.folder.onDeleteContentBefore(cursorPos.line);
+            this.folder.onDeleteContentBefore(Object.assign({}, cursorPos));
             if (selectedRange) { // 删除选中区域
                 let end = selectedRange.end;
                 let endObj = context.htmls[end.line - 1];
@@ -800,10 +772,10 @@ export default {
             startObj.folds = null;
             startObj.states = null;
             this.maxLine = context.htmls.length;
+            this.folder.onDeleteContentAfter({ line: newLine, column: newColumn });
+            this.lint.onDeleteContentAfter(newLine);
             this.render(); //必须放在tokenizer前面，renderline(lineId)的时候.obj.num将失效
             this.tokenizer.onDeleteContentAfter(newLine);
-            this.lint.onDeleteContentAfter(newLine);
-            this.folder.onDeleteContentAfter(newLine);
             this.cursor.updateCursorPos(cursorPos, newLine, newColumn, true);
             // 更新最大文本宽度
             if (startObj.width >= this.maxWidthObj.width) {

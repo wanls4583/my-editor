@@ -72,6 +72,44 @@ export default class {
         }
         return false;
     }
+    checkSelectedActive(selectedRange, multiCursorPosLineMap) {
+        if (!multiCursorPosLineMap) {
+            multiCursorPosLineMap = new Map();
+            this.multiCursorPos.map((item) => {
+                if (!multiCursorPosLineMap.has(item.line)) {
+                    multiCursorPosLineMap.set(item.line, []);
+                }
+                multiCursorPosLineMap.get(item.line).push(item);
+            });
+        }
+        let cursorPosList = multiCursorPosLineMap.get(selectedRange.start.line) || [];
+        let start = selectedRange.start;
+        let end = selectedRange.end;
+        if (end.line > start.line) {
+            for (let i = 0; i < cursorPosList.length; i++) {
+                let item = cursorPosList[i];
+                if (Util.comparePos(item, selectedRange.start) === 0) {
+                    return true;
+                }
+            }
+            cursorPosList = multiCursorPosLineMap.get(selectedRange.end.line) || [];
+            for (let i = 0; i < cursorPosList.length; i++) {
+                let item = cursorPosList[i];
+                if (Util.comparePos(item, selectedRange.end) === 0) {
+                    return true;
+                }
+            }
+        } else {
+            for (let i = 0; i < cursorPosList.length; i++) {
+                let item = cursorPosList[i];
+                if (Util.comparePos(item, selectedRange.start) === 0 ||
+                    Util.comparePos(item, selectedRange.end) === 0) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
     // 过滤选中区域
     filterSelectedRanges() {
         let direct = this.checkCursorSelected(this.selectedRanges[0].start);

@@ -11,13 +11,16 @@ export default class {
     }
     initProperties(editor, context) {
         Util.defineProperties(this.editorFunObj, editor, ['unFold']);
-        Util.defineProperties(this, editor, ['selectedRange']);
+        Util.defineProperties(this, editor, ['selectedRanges', 'selecter', 'multiCursorPos']);
         Util.defineProperties(this, context, ['htmls', 'folds', 'foldMap']);
     }
-    onInsertContentBefore(nowLine) {
+    onInsertContentBefore(cursorPos) {
+        let nowLine = cursorPos.line;
+        this.onInsertContentBefore.preCursorPos = cursorPos;
         if (this.folds.length) {
             let index = this.findFoldIndex(nowLine);
             let unFolds = [];
+            // 历史记录中操作光标在折叠区
             while (index < this.folds.length && this.folds[index].start.line < nowLine && this.folds[index].end.line > nowLine) {
                 unFolds.push(this.folds[index].start.line);
                 index++;
@@ -27,20 +30,51 @@ export default class {
             });
         }
     }
-    onInsertContentAfter(nowLine) {}
-    onDeleteContentBefore(nowLine) {
-        if (this.selectedRange) {
-            let start = this.selectedRange.start;
-            let end = this.selectedRange.end;
-            for (let line = start.line; line < end.line; line++) { //删除折叠区域
-                this.editorFunObj.unFold(line);
+    onInsertContentAfter(cursorPos) {
+        let preCursorPos = this.onInsertContentBefore.preCursorPos;
+        this.folds.slice().reverse().map((fold) => {
+            if (fold.start.line > preCursorPos.line) {
+                if (cursorPos.line - preCursorPos.line > 0) {
+                    this.foldMap.delete(fold.start.line);
+                    fold.start.line += cursorPos.line - preCursorPos.line;
+                    fold.end.line += cursorPos.line - preCursorPos.line;
+                    this.foldMap.set(fold.start.line, fold);
+                }
+            } else if (fold.start.line === preCursorPos.line) {
+                if (cursorPos.line - preCursorPos.line > 0) {
+                    this.unFold(fold.start.line);
+                }
             }
-        }
+        });
     }
-    onDeleteContentAfter(nowLine) {
+    onDeleteContentBefore(cursorPos) {
+        let multiCursorPosLineMap = new Map();
+        this.multiCursorPos.map((item) => {
+            if (!multiCursorPosLineMap.has(item.line)) {
+                multiCursorPosLineMap.set(item.line, []);
+            }
+            multiCursorPosLineMap.get(item.line).push(item);
+        });
+        this.onDeleteContentBefore.preCursorPos = cursorPos;
+        this.onDeleteContentBefore.maxLine = this.htmls.length;
+        this.selectedRanges.map((selectedRange) => {
+            if (this.selecter.checkSelectedActive(selectedRange, multiCursorPosLineMap)) {
+                let start = selectedRange.start;
+                let end = selectedRange.end;
+                for (let line = start.line; line <= end.line; line++) { //删除折叠区域
+                    this.editorFunObj.unFold(line);
+                }
+            }
+        });
+    }
+    onDeleteContentAfter(cursorPos) {
+        let nowLine = cursorPos.line;
+        let preCursorPos = this.onDeleteContentBefore.preCursorPos;
+        let delLine = this.onDeleteContentBefore.maxLine - this.htmls.length;
         if (this.folds.length) {
             let index = this.findFoldIndex(nowLine);
             let unFolds = [];
+            // 历史记录中操作光标在折叠区
             while (index < this.folds.length && this.folds[index].start.line < nowLine && this.folds[index].end.line > nowLine) {
                 unFolds.push(this.folds[index].start.line);
                 index++;
@@ -49,6 +83,25 @@ export default class {
                 this.editorFunObj.unFold(line);
             });
         }
+        this.folds.slice().reverse().map((fold) => {
+            if (fold.start.line > preCursorPos.line) {
+                if (delLine > 0) {
+                    if (delLine === 1 && preCursorPos.line === nowLine &&
+                        fold.start.line === preCursorPos.line + 1) {
+                        this.unFold(fold.start.line);
+                    } else {
+                        this.foldMap.delete(fold.start.line);
+                        fold.start.line -= delLine;
+                        fold.end.line -= delLine;
+                        this.foldMap.set(fold.start.line, fold);
+                    }
+                }
+            } else if (fold.start.line === preCursorPos.line) {
+                if (delLine > 0) {
+                    this.unFold(fold.start.line);
+                }
+            }
+        });
     }
     /**
      * 寻找第一个包裹nowLine的折叠对象的下标
