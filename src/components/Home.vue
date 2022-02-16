@@ -1291,8 +1291,8 @@ export default {
                 var offset = $(this.$scroller).offset();
                 let end = this.getPosByEvent(e);
                 this.setSelectedRange(Object.assign({}, this.mouseStartObj.start), end);
-                this.renderSelectedBg();
                 this.cursor.setCursorPos(end);
+                this.renderSelectedBg();
                 cancelAnimationFrame(this.selectMoveTimer);
                 if (e.clientY > offset.top + this.scrollerArea.height) { //鼠标超出底部区域
                     _move('down', e.clientY - offset.top - this.scrollerArea.height);
@@ -1353,8 +1353,8 @@ export default {
             if (this.mouseStartObj && Date.now() - this.mouseStartObj.time > 100 &&
                 Util.comparePos(this.mouseStartObj.start, end) != 0) {
                 this.setSelectedRange(this.mouseStartObj.start, end);
-                this.renderSelectedBg();
                 this.cursor.setCursorPos(end);
+                this.renderSelectedBg();
             } else if (e.which != 3) {
                 this.clearRange();
                 if (this.mouseUpTime && Date.now() - this.mouseUpTime < 300) { //双击选中单词
@@ -1483,9 +1483,9 @@ export default {
                         e.preventDefault();
                         let end = { line: context.htmls.length, column: context.htmls.peek().text.length };
                         this.setSelectedRange({ line: 1, column: 0 }, end);
-                        this.renderSelectedBg();
                         this.forceCursorView = false;
                         this.cursor.setCursorPos(end);
+                        this.renderSelectedBg();
                         break;
                     case 68: //ctrl+d，搜素
                         e.preventDefault();
