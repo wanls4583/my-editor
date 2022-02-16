@@ -553,14 +553,14 @@ export default {
                         let _cursorPos = this.cursor.addCursorPos(cursorPos[index]);
                         let historyObj = this._insertContent(text[index], _cursorPos);
                         historyArr.push(historyObj);
-                        if (commandObj.keyCode === Util.keyCode.DELETE) {
+                        if (commandObj && commandObj.keyCode === Util.keyCode.DELETE) {
                             this.cursor.updateCursorPos(_cursorPos, cursorPos[index].line, cursorPos[index].column);
                         }
                     });
                 } else {
                     let _cursorPos = this.cursor.addCursorPos(cursorPos);
                     historyArr = this._insertContent(text, _cursorPos);
-                    if (commandObj.keyCode === Util.keyCode.DELETE) {
+                    if (commandObj && commandObj.keyCode === Util.keyCode.DELETE) {
                         this.cursor.updateCursorPos(_cursorPos, cursorPos.line, cursorPos.column);
                     }
                 }
@@ -1428,6 +1428,7 @@ export default {
         onKeyDown(e) {
             let that = this;
             if (e.ctrlKey && e.shiftKey) {
+                e.preventDefault();
                 switch (e.keyCode) {
                     case 37: //ctrl+shift+left
                         this.selecter.select('left', true);
