@@ -40,7 +40,7 @@ export default class {
         switch (commandType) {
             case Util.command.DELETE:
                 if (command instanceof Array) {
-                    let list = command.slice().reverse().map((command) => {
+                    let list = command.map((command) => {
                         return {
                             start: command.preCursorPos,
                             end: command.cursorPos
@@ -58,7 +58,7 @@ export default class {
                 if (command instanceof Array) {
                     let text = [];
                     let cursorPos = [];
-                    command.map((command) => {
+                    command.slice().reverse().map((command) => {
                         text.push(command.text);
                         cursorPos.push(command.cursorPos);
                     });
@@ -82,14 +82,10 @@ export default class {
             lastCommand.length === command.length &&
             Date.now() - this.pushHistoryTime < 2000) {
             if (_combCheck(lastCommand[0], command[0])) {
-                let commandItem = command[0];
-                if (commandItem.type === Util.command.DELETE) {
-                    lastCommand.map((_commandItem) => {
-                        _updateAfter(_commandItem.preCursorPos, commandItem.preCursorPos, commandItem.cursorPos);
-                    });
-                }
+                // 是否为向后删除
+                let deleteCode = Util.comparePos(command[0].preCursorPos, command[0].cursorPos) === 0;
                 for (let i = 0; i < lastCommand.length; i++) {
-                    _combCommand(lastCommand[i], command[i]);
+                    _combCommand(lastCommand[i], command[i], deleteCode);
                 }
             } else {
                 this.history.push(command);
@@ -113,22 +109,17 @@ export default class {
         }
 
         // 检查两次操作是否可以合并
-        function _combCommand(lastCommand, command, lineHead) {
+        function _combCommand(lastCommand, command, deleteCode) {
             if (lastCommand.type === Util.command.DELETE) {
-                lastCommand.cursorPos = command.cursorPos;
-            } else {
-                lastCommand.text = command.text + lastCommand.text;
                 lastCommand.cursorPos.line += command.cursorPos.line - command.preCursorPos.line;
                 lastCommand.cursorPos.column += command.cursorPos.column - command.preCursorPos.column;
-            }
-        }
-
-        function _updateAfter(item, preCursorPos, cursorPos) {
-            if (item.line > preCursorPos.line) {
-                item.line += cursorPos.line - preCursorPos.line;
-            } else if (item.line === preCursorPos.line && item.column > preCursorPos.column) {
-                item.line += cursorPos.line - preCursorPos.line;
-                item.column += cursorPos.column - preCursorPos.column;
+            } else {
+                lastCommand.cursorPos = command.cursorPos;
+                if (deleteCode) {
+                    lastCommand.text = lastCommand.text + command.text;
+                } else {
+                    lastCommand.text = command.text + lastCommand.text;
+                }
             }
         }
     }

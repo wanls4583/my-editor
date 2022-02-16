@@ -576,35 +576,31 @@ export default {
                 this.deleteContent();
             }
             if (cursorPos) {
-                let cursorPosList = [];
                 if (text instanceof Array) {
                     text.map((item, index) => {
                         let _cursorPos = this.cursor.addCursorPos(cursorPos[index]);
                         let historyObj = this._insertContent(_cursorPos, text[index]);
-                        cursorPosList.push(_cursorPos);
                         historyArr.push(historyObj);
                     });
                 } else {
                     cursorPos = this.cursor.addCursorPos(cursorPos);
                     historyArr = this._insertContent(cursorPos, text);
-                    cursorPosList.push(cursorPos);
                 }
-                this.multiCursorPos = cursorPosList;
-                this.setNowCursorPos(cursorPosList[0]);
             } else if (this.multiCursorPos.length > 1) {
                 let texts = text instanceof Array ? text : text.split(/\r\n|\n/);
+                // 多点插入时候，逆序插入
+                let multiCursorPos = this.multiCursorPos.slice().reverse();
                 if (texts.length === this.multiCursorPos.length) {
-                    this.multiCursorPos.map((cursorPos, index) => {
+                    multiCursorPos.map((cursorPos, index) => {
                         let historyObj = this._insertContent(cursorPos, texts[index]);
                         historyArr.push(historyObj);
                     });
                 } else {
-                    this.multiCursorPos.map((cursorPos) => {
+                    multiCursorPos.map((cursorPos) => {
                         let historyObj = this._insertContent(cursorPos, text);
                         historyArr.push(historyObj);
                     });
                 }
-                this.setNowCursorPos(this.multiCursorPos[0]);
             } else {
                 historyArr = this._insertContent(this.multiCursorPos[0], text);
             }
@@ -685,12 +681,12 @@ export default {
                     historyObj.text && historyArr.push(historyObj);
                 });
             } else {
-                this.multiCursorPos.slice().reverse().map((cursorPos) => {
+                this.multiCursorPos.map((cursorPos) => {
                     let historyObj = this._deleteContent(cursorPos, keyCode);
                     historyObj.text && historyArr.push(historyObj);
                 });
-                this.nowCursorPos = this.multiCursorPos[0];
             }
+            this.setNowCursorPos(this.multiCursorPos[0]);
             this.clearRange();
             historyArr = historyArr.length > 1 ? historyArr : historyArr[0];
             if (!isCommand) { // 新增历史记录
