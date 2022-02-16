@@ -42,7 +42,6 @@ export default class {
     }
     // 添加选中区域
     addSelectedRange(start, end) {
-        let active = false;
         let same = Util.comparePos(start, end);
         if (same > 0) {
             let tmp = start;
@@ -51,12 +50,7 @@ export default class {
         } else if (!same) {
             return;
         }
-        active = this.checkSelectedCursor({
-            start: start,
-            end: end
-        });
         this.selectedRanges.push({
-            active: active,
             start: Object.assign({}, start),
             end: Object.assign({}, end)
         });
@@ -74,20 +68,6 @@ export default class {
             if (Util.comparePos(cursorPos, selectedRange.start) >= 0 &&
                 Util.comparePos(cursorPos, selectedRange.end) <= 0) {
                 return selectedRange;
-            }
-        }
-        return false;
-    }
-    // 检测区域范围是否包含光标
-    checkSelectedCursor(rangePos) {
-        if (rangePos.start.line !== rangePos.end.line) {
-            return true;
-        }
-        for (let i = 0; i < this.multiCursorPos.length; i++) {
-            let cursorPos = this.multiCursorPos[i];
-            if (Util.comparePos(cursorPos, rangePos.start) >= 0 &&
-                Util.comparePos(cursorPos, rangePos.end) <= 0) {
-                return cursorPos;
             }
         }
         return false;
