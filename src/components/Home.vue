@@ -336,7 +336,7 @@ export default {
             });
             context.lineIdMap.set(context.htmls[0].lineId, context.htmls[0]);
             this.maxWidthObj.lineId = context.htmls[0].lineId;
-            this.multiCursorPos.push(this.nowCursorPos);
+            this.cursor.addCursorPos(this.nowCursorPos);
             this.tokenizer = new Tokenizer(this, context);
             this.lint = new Lint(this, context);
             this.folder = new Fold(this, context);
