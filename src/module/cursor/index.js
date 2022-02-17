@@ -25,7 +25,16 @@ export default class {
         ]);
         Util.defineProperties(this, context, ['htmls', 'selectedRanges']);
     }
-    clearCursorPos() {
+    clearCursorPos(cursorPos) {
+        if (cursorPos) {
+            let index = this.multiCursorPos.indexOf(cursorPos);
+            if (index > -1) {
+                this.multiCursorPosLineMap.delete(cursorPos.line);
+                this.multiCursorPos.splice(index, 1);
+                cursorPos.del = true;
+            }
+            return;
+        }
         this.multiCursorPos.map((cursorPos) => {
             cursorPos.del = true;
         });

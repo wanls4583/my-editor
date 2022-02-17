@@ -1492,6 +1492,14 @@ export default {
                     });
                 }
             }
+
+            function _moveLineUp() {
+                
+            }
+
+            function _moveLineDown() {
+
+            }
         }
     }
 }

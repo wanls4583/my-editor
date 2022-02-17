@@ -15,7 +15,8 @@ export default class {
             'cursor',
             'multiCursorPos'
         ]);
-        Util.defineProperties(this, context, ['htmls',
+        Util.defineProperties(this, context, [
+            'htmls',
             'selectedRanges',
             'setContextValue'
         ]);
