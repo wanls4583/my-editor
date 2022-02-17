@@ -11,8 +11,8 @@ export default class {
     }
     initProperties(editor, context) {
         Util.defineProperties(this.editorFunObj, editor, ['unFold']);
-        Util.defineProperties(this, editor, ['selectedRanges', 'selecter', 'multiCursorPos']);
-        Util.defineProperties(this, context, ['htmls', 'folds', 'foldMap']);
+        Util.defineProperties(this, editor, ['selecter', 'multiCursorPos']);
+        Util.defineProperties(this, context, ['htmls', 'selectedRanges', 'folds', 'foldMap']);
     }
     onInsertContentBefore(cursorPos) {
         let nowLine = cursorPos.line;

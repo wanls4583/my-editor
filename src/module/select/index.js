@@ -11,12 +11,14 @@ export default class {
     }
     initProperties(editor, context) {
         Util.defineProperties(this, editor, [
-            'selectedRanges',
             'renderSelectedBg',
             'cursor',
             'multiCursorPos'
         ]);
-        Util.defineProperties(this, context, ['htmls']);
+        Util.defineProperties(this, context, ['htmls',
+            'selectedRanges',
+            'setContextValue'
+        ]);
     }
     select(direct, wholeWord) {
         this.multiCursorPos.map((cursorPos) => {
@@ -53,6 +55,27 @@ export default class {
         this.selectedRanges.push({
             start: Object.assign({}, start),
             end: Object.assign({}, end)
+        });
+    }
+    /**
+     * 设置选中区域
+     * @param {Object} start
+     * @param {Object} end
+     */
+    setSelectedRange(start, end) {
+        let same = Util.comparePos(start, end);
+        if (same > 0) {
+            let tmp = start;
+            start = end;
+            end = tmp;
+        } else if (!same) {
+            return;
+        }
+        this.clearRange();
+        this.selectedRanges.empty();
+        this.selectedRanges.push({
+            start: start,
+            end: end
         });
     }
     // 检测光标是否在选中区域范围内
@@ -94,6 +117,21 @@ export default class {
             }
         }
         return false;
+    }
+    // 清除选中背景
+    clearRange(cursorPos) {
+        if (cursorPos) {
+            let selectedRanges = this.selectedRanges.filter((selectedRange) => {
+                if (Util.comparePos(cursorPos, selectedRange.start) >= 0 &&
+                    Util.comparePos(cursorPos, selectedRange.end) <= 0) {
+                    return false;
+                }
+                return true;
+            });
+            this.setContextValue('selectedRanges', selectedRanges);
+        } else {
+            this.selectedRanges.empty();
+        }
     }
     // 过滤选中区域
     filterSelectedRanges() {

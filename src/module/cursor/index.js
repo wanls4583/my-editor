@@ -16,7 +16,6 @@ export default class {
     }
     initProperties(editor, context) {
         Util.defineProperties(this, editor, [
-            'selectedRanges',
             'nowCursorPos',
             'multiCursorPos',
             'setCursorRealPos',
@@ -24,7 +23,7 @@ export default class {
             'getColumnByWidth',
             'getStrWidth'
         ]);
-        Util.defineProperties(this, context, ['htmls']);
+        Util.defineProperties(this, context, ['htmls', 'selectedRanges']);
     }
     clearCursorPos() {
         this.multiCursorPos.map((cursorPos) => {

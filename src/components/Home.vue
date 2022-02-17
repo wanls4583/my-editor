@@ -131,10 +131,14 @@ const context = {
     htmls: [],
     folds: [],
     history: [], // 操作历史
+    selectedRanges: [],
     lineIdMap: new Map(), //htmls的唯一标识对象
     renderedIdMap: new Map(), //renderHtmls的唯一标识对象
     renderedLineMap: new Map(), //renderHtmls的唯一标识对象
     foldMap: new Map(), //folds的唯一标识对象
+    setContextValue: function (prop, value) {
+        context[prop] = value
+    }
 }
 const regs = {
     word: /[a-zA-Z0-9_]/,
@@ -179,7 +183,6 @@ export default {
             maxLine: 1,
             scrollerHeight: 'auto',
             scrollerArea: {},
-            selectedRanges: [],
             maxWidthObj: {
                 lineId: null,
                 text: '',
@@ -336,7 +339,6 @@ export default {
             });
             context.lineIdMap.set(context.htmls[0].lineId, context.htmls[0]);
             this.maxWidthObj.lineId = context.htmls[0].lineId;
-            this.cursor.addCursorPos(this.nowCursorPos);
             this.tokenizer = new Tokenizer(this, context);
             this.lint = new Lint(this, context);
             this.folder = new Fold(this, context);
@@ -344,6 +346,7 @@ export default {
             this.searcher = new Search(this, context);
             this.selecter = new Select(this, context);
             this.cursor = new Cursor(this, context);
+            this.cursor.addCursorPos(this.nowCursorPos);
         },
         // 初始化文档事件
         initEvent() {
@@ -462,7 +465,7 @@ export default {
             }
         },
         renderSelectedBg() {
-            if (!this.selectedRanges.length) {
+            if (!context.selectedRanges.length) {
                 return;
             }
             this.renderHtmls.map((item) => {
@@ -470,7 +473,7 @@ export default {
                 item.selectStarts = [];
                 item.selectEnds = [];
             });
-            this.selectedRanges.map((selectedRange) => {
+            context.selectedRanges.map((selectedRange) => {
                 this._renderSelectedBg(selectedRange);
             });
         },
@@ -518,26 +521,13 @@ export default {
         // 清除选中背景
         clearRange(cursorPos) {
             this.clearSearch();
-            if (!this.selectedRanges.length) {
-                return;
-            }
-            if (cursorPos) {
-                this.selectedRanges = this.selectedRanges.filter((selectedRange) => {
-                    if (Util.comparePos(cursorPos, selectedRange.start) >= 0 &&
-                        Util.comparePos(cursorPos, selectedRange.end) <= 0) {
-                        return false;
-                    }
-                    return true;
-                });
-            } else {
-                this.selectedRanges = [];
-            }
+            this.selecter.clearRange();
             this.render();
         },
         insertContent(text, cursorPos, commandObj) {
             let historyArr = [];
             // 如果有选中区域，需要先删除选中区域
-            if (this.selectedRanges.filter((item) => { return item.active }).length) {
+            if (context.selectedRanges.filter((item) => { return item.active }).length) {
                 this.deleteContent();
             }
             if (cursorPos) {
@@ -853,7 +843,7 @@ export default {
             }
             resultObj = this.searcher.search(searchObj.text, searchObj);
             if (resultObj && resultObj.result) {
-                if (!this.selectedRanges.length) {
+                if (!context.selectedRanges.length) {
                     this.cursor.setCursorPos(resultObj.result.end);
                 } else {
                     this.cursor.addCursorPos(resultObj.result.end);
@@ -993,27 +983,6 @@ export default {
             let maxLine = context.htmls.length;
             maxLine = this.folder.getRelativeLine(maxLine);
             this.scrollerHeight = maxLine * this.charObj.charHight + 'px';
-        },
-        /**
-         * 设置选中区域
-         * @param {Object} start
-         * @param {Object} end
-         */
-        setSelectedRange(start, end) {
-            let same = Util.comparePos(start, end);
-            if (same > 0) {
-                let tmp = start;
-                start = end;
-                end = tmp;
-            } else if (!same) {
-                return;
-            }
-            this.clearRange();
-            this.selectedRanges = [{
-                start: start,
-                end: end,
-                active: true
-            }];
         },
         setErrorMap(errorMap) {
             this.errorMap = errorMap;
@@ -1256,7 +1225,7 @@ export default {
             if (this.mouseStartObj && Date.now() - this.mouseStartObj.time > 100) {
                 var offset = $(this.$scroller).offset();
                 let end = this.getPosByEvent(e);
-                this.setSelectedRange(Object.assign({}, this.mouseStartObj.start), end);
+                this.selecter.setSelectedRange(Object.assign({}, this.mouseStartObj.start), end);
                 this.cursor.setCursorPos(end);
                 this.renderSelectedBg();
                 cancelAnimationFrame(this.selectMoveTimer);
@@ -1304,7 +1273,7 @@ export default {
                     line = line < 1 ? 1 : (line > context.htmls.length ? context.htmls.length : line);
                     column = column < 0 ? 0 : (column > context.htmls[originLine - 1].text.length ? context.htmls[originLine - 1].text.length : column);
                     that.cursor.setCursorPos({ line: line, column: column });
-                    that.setSelectedRange(that.mouseStartObj.start, { line: line, column: column });
+                    that.selecter.setSelectedRange(that.mouseStartObj.start, { line: line, column: column });
                     that.renderSelectedBg();
                     that.selectMoveTimer = requestAnimationFrame(() => {
                         _run(autoDirect, speed)
@@ -1318,7 +1287,7 @@ export default {
             // 按下到抬起的间隔大于100ms，属于选中结束事件
             if (this.mouseStartObj && Date.now() - this.mouseStartObj.time > 100 &&
                 Util.comparePos(this.mouseStartObj.start, end) != 0) {
-                this.setSelectedRange(this.mouseStartObj.start, end);
+                this.selecter.setSelectedRange(this.mouseStartObj.start, end);
                 this.cursor.setCursorPos(end);
                 this.renderSelectedBg();
             } else if (e.which != 3) {
@@ -1449,7 +1418,7 @@ export default {
                     case 65://ctrl+a,全选
                         e.preventDefault();
                         let end = { line: context.htmls.length, column: context.htmls.peek().text.length };
-                        this.setSelectedRange({ line: 1, column: 0 }, end);
+                        this.selecter.setSelectedRange({ line: 1, column: 0 }, end);
                         this.forceCursorView = false;
                         this.cursor.setCursorPos(end);
                         this.renderSelectedBg();
