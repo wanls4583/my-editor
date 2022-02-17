@@ -251,6 +251,10 @@ Util.command = {
     INSERT: 'insert',
     MOVEUP: 'moveLineUp',
     MOVEDOWN: 'moveLineDown',
+    COPY_UP: 'copyLineUp',
+    COPY_DOWN: 'copyLineDown',
+    DELETE_UP: 'delteLineUp',
+    DELETE_DOWN: 'delteLineDown',
 }
 Util.constData = {
     PAIR_START: -1,

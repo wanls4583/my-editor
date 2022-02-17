@@ -793,27 +793,32 @@ export default {
         },
         moveLineUp(cursorPos, isCommand) {
             let that = this;
-            let multiCursorPos = [];
+            let cursorPosList = [];
+            let historyPosList = [];
             let prePos = null;
-            let historyArr = [];
             if (cursorPos) {
-                multiCursorPos = cursorPos instanceof Array ? cursorPos : [cursorPos];
+                cursorPosList = cursorPos instanceof Array ? cursorPos : [cursorPos];
             } else {
                 that.multiCursorPos.map((item) => {
                     if (!prePos || item.line - prePos.line > 1) {
-                        item.line > 1 && multiCursorPos.push(item);
+                        item.line > 1 && cursorPosList.push(item);
                         prePos = item;
                     }
                 });
             }
-            multiCursorPos.map((cursorPos) => {
+            cursorPosList.map((cursorPos) => {
                 cursorPos = this.cursor.addCursorPos(cursorPos);
-                historyArr.push(_moveLineUp(cursorPos));
+                _moveLineUp(cursorPos);
+                historyPosList.push({ line: cursorPos.line, column: cursorPos.column });
             });
+            let historyObj = {
+                type: Util.command.MOVEDOWN,
+                cursorPos: historyPosList
+            }
             if (!isCommand) { // 新增历史记录
-                historyArr && this.history.pushHistory(historyArr);
+                this.history.pushHistory(historyObj);
             } else { // 撤销或重做操作后，更新历史记录
-                this.history.updateHistory(context.history.index, historyArr);
+                this.history.updateHistory(context.history.index, historyObj);
             }
 
             function _moveLineUp(cursorPos) {
@@ -826,35 +831,37 @@ export default {
                 });
                 that._insertContent(nowLineText + '\n' + upLineText, start);
                 that.cursor.updateCursorPos(cursorPos, cursorPos.line - 1, cursorPos.column);
-                return {
-                    type: Util.command.MOVEDOWN,
-                    cursorPos: { line: cursorPos.line, column: cursorPos.column }
-                }
             }
         },
         moveLineDown(cursorPos, isCommand) {
             let that = this;
-            let multiCursorPos = [];
+            let cursorPosList = [];
+            let historyPosList = [];
             let prePos = null;
             let historyArr = [];
             if (cursorPos) {
-                multiCursorPos = cursorPos instanceof Array ? cursorPos : [cursorPos];
+                cursorPosList = cursorPos instanceof Array ? cursorPos : [cursorPos];
             } else {
                 that.multiCursorPos.map((item) => {
                     if (!prePos || item.line - prePos.line > 1) {
-                        item.line > 1 && multiCursorPos.push(item);
+                        item.line > 1 && cursorPosList.push(item);
                         prePos = item;
                     }
                 });
             }
-            multiCursorPos.map((cursorPos) => {
+            cursorPosList.map((cursorPos) => {
                 cursorPos = this.cursor.addCursorPos(cursorPos);
-                historyArr.push(_moveLineDown(cursorPos));
+                _moveLineDown(cursorPos);
+                historyPosList.push({ line: cursorPos.line, column: cursorPos.column });
             });
+            let historyObj = {
+                type: Util.command.MOVEUP,
+                cursorPos: historyPosList
+            }
             if (!isCommand) { // 新增历史记录
-                historyArr && this.history.pushHistory(historyArr);
+                this.history.pushHistory(historyObj);
             } else { // 撤销或重做操作后，更新历史记录
-                this.history.updateHistory(context.history.index, historyArr);
+                this.history.updateHistory(context.history.index, historyObj);
             }
 
             function _moveLineDown(cursorPos) {
@@ -867,33 +874,91 @@ export default {
                 });
                 that._insertContent(downLineText + '\n' + nowLineText, start);
                 that.cursor.updateCursorPos(cursorPos, cursorPos.line + 1, cursorPos.column);
-                return {
-                    type: Util.command.MOVEUP,
-                    cursorPos: { line: cursorPos.line, column: cursorPos.column }
-                }
             }
         },
         // 向下复制一行
-        copyNext() {
+        copyLineDown(cursorPos, isCommand) {
             let copyedLineMap = {};
             let cursorPosList = [];
+            let historyPosList = [];
             let texts = [];
-            this.multiCursorPos.reverse().slice().map((cursorPos) => {
-                if (!copyedLineMap[cursorPos.line]) {
-                    cursorPosList.push([cursorPos, cursorPos.column]);
-                }
-            });
-            cursorPosList.map((item) => {
-                let cursorPos = item[0];
+            if (cursorPos) {
+                cursorPosList = cursorPos instanceof Array ? cursorPos : [cursorPos];
+            } else {
+                this.multiCursorPos.map((item) => {
+                    if (!copyedLineMap[item.line]) {
+                        cursorPosList.push(item);
+                    }
+                });
+            }
+            cursorPosList.slice().reverse().map((cursorPos) => {
                 let text = context.htmls[cursorPos.line - 1].text;
-                texts.push('\n' + text);
-                cursorPos.column = text.length;
+                cursorPos = this.cursor.addCursorPos(cursorPos);
+                historyPosList.push(cursorPos);
+                this._insertContent('\n' + text, { line: cursorPos.line, column: text.length });
+                this.cursor.updateAfterPos({ line: cursorPos.line + 1, column: 0 }, cursorPos.line + 2, 0);
             });
-            this.insertContent(texts, cursorPosList.map((item) => { return item[0] }));
-            cursorPosList.map((item) => {
-                item[0].column = item[1];
-                this.setCursorRealPos(item[0]);
+            historyPosList = historyPosList.map((item) => {
+                return { line: item.line, column: item.column };
             });
+            this.setCursorRealPos();
+            historyPosList.reverse();
+            let historyObj = {
+                type: Util.command.DELETE_DOWN,
+                cursorPos: cursorPosList
+            }
+            if (!isCommand) { // 新增历史记录
+                this.history.pushHistory(historyObj);
+            } else { // 撤销或重做操作后，更新历史记录
+                this.history.updateHistory(context.history.index, historyObj);
+            }
+        },
+        // 向下删除一行
+        deleteLineDown(cursorPos, isCommand) {
+            let copyedLineMap = {};
+            let cursorPosList = [];
+            let historyPosList = [];
+            let texts = [];
+            if (cursorPos) {
+                cursorPosList = cursorPos instanceof Array ? cursorPos : [cursorPos];
+            } else {
+                this.multiCursorPos.reverse().slice().map((item) => {
+                    if (!copyedLineMap[item.line]) {
+                        cursorPosList.push(item);
+                    }
+                });
+            }
+            cursorPosList.slice().reverse().map((cursorPos) => {
+                let nowText = context.htmls[cursorPos.line - 1].text;
+                let downText = context.htmls[cursorPos.line].text;
+                cursorPos = this.cursor.addCursorPos(cursorPos);
+                historyPosList.push(cursorPos);
+                this._deleteContent({
+                    start: { line: cursorPos.line, column: nowText.length },
+                    end: { line: cursorPos.line + 1, column: downText.length }
+                });
+                this.cursor.updateAfterPos({ line: cursorPos.line + 1, column: 0 }, cursorPos.line, 0);
+            });
+            historyPosList = historyPosList.map((item) => {
+                return { line: item.line, column: item.column };
+            });
+            this.setCursorRealPos();
+            historyPosList.reverse();
+            let historyObj = {
+                type: Util.command.COPY_DOWN,
+                cursorPos: cursorPosList
+            }
+            if (!isCommand) { // 新增历史记录
+                this.history.pushHistory(historyObj);
+            } else { // 撤销或重做操作后，更新历史记录
+                this.history.updateHistory(context.history.index, historyObj);
+            }
+        },
+        copyLineUp(cursorPos, isCommand) {
+
+        },
+        deleteLineUp(cursorPos, isCommand) {
+
         },
         // 折叠行
         foldLine(line) {
@@ -1491,7 +1556,7 @@ export default {
                         this.moveLineDown();
                         break;
                     case 68: //ctrl+shift+d
-                        this.copyNext();
+                        this.copyLineDown();
                         break;
                 }
                 return false;

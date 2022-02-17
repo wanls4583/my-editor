@@ -15,6 +15,10 @@ export default class {
             'deleteContent',
             'moveLineUp',
             'moveLineDown',
+            'copyLineUp',
+            'copyLineDown',
+            'deleteLineUp',
+            'deleteLineDown',
         ]);
         Util.defineProperties(this, context, ['history']);
     }
@@ -73,17 +77,19 @@ export default class {
                 }
                 break;
             case Util.command.MOVEUP:
-                command = command instanceof Array ? command : [command]
-                this.moveLineUp(command.map((item) => {
-                    return item.cursorPos;
-                }), true);
+                this.moveLineUp(command.cursorPos, true);
                 break;
             case Util.command.MOVEDOWN:
-                command = command instanceof Array ? command : [command]
-                this.moveLineDown(command.map((item) => {
-                    return item.cursorPos;
-                }), true);
+                this.moveLineDown(command.cursorPos, true);
                 break;
+            case Util.command.COPY_DOWN:
+                this.copyLineDown(command.cursorPos, true);
+            case Util.command.DELETE_DOWN:
+                this.deleteLineDown(command.cursorPos, true);
+            case Util.command.COPY_UP:
+                this.copyLineUp(command.cursorPos, true);
+            case Util.command.DELETE_UP:
+                this.deleteLineUp(command.cursorPos, true);
         }
     }
     // 添加历史记录

@@ -51,20 +51,12 @@ export default class {
         if (!this.hasCursorPos(cursorPos)) {
             return;
         }
-        if (updateAfter) {
-            this.multiCursorPos.map((item) => {
-                _updateAfter(item);
-            });
-            this.selectedRanges.map((item) => {
-                _updateAfter(item.start);
-                _updateAfter(item.end);
-            });
-        }
         let originLine = cursorPos.line;
+        let needToDel = null;
+        updateAfter && this.updateAfterPos(cursorPos, line, column);
         cursorPos.line = line;
         cursorPos.column = column;
         cursorPos.line !== originLine && this.setCursorPosLineMap();
-        let needToDel = null;
         let posArr = this.multiCursorPosLineMap.get(cursorPos.line) || [];
         let index = posArr.indexOf(cursorPos);
         this.setCursorRealPos(cursorPos);
@@ -79,6 +71,18 @@ export default class {
         if (needToDel) {
             index = this.multiCursorPos.indexOf(needToDel);
             this.multiCursorPos.splice(index, 1);
+        }
+    }
+    updateAfterPos(cursorPos, line, column) {
+        this.multiCursorPos.map((item) => {
+            _updateAfter(item);
+        });
+        this.selectedRanges.map((item) => {
+            _updateAfter(item.start);
+            _updateAfter(item.end);
+        });
+        if(cursorPos.line != line) {
+            this.setCursorPosLineMap();
         }
 
         function _updateAfter(item) {
