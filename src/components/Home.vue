@@ -465,24 +465,17 @@ export default {
             if (!this.selectedRanges.length) {
                 return;
             }
-            let multiCursorPosLineMap = new Map();
-            this.multiCursorPos.map((item) => {
-                if (!multiCursorPosLineMap.has(item.line)) {
-                    multiCursorPosLineMap.set(item.line, []);
-                }
-                multiCursorPosLineMap.get(item.line).push(item);
-            });
             this.renderHtmls.map((item) => {
                 item.selected = false;
                 item.selectStarts = [];
                 item.selectEnds = [];
             });
             this.selectedRanges.map((selectedRange) => {
-                this._renderSelectedBg(selectedRange, multiCursorPosLineMap);
+                this._renderSelectedBg(selectedRange);
             });
         },
         // 渲染选中背景
-        _renderSelectedBg(selectedRange, multiCursorPosLineMap) {
+        _renderSelectedBg(selectedRange) {
             let firstLine = this.renderHtmls[0].num;
             let lastLine = this.renderHtmls.peek().num;
             let start = selectedRange.start;
@@ -506,7 +499,7 @@ export default {
                 context.renderedLineMap.get(line).selected = true;
             }
             if (context.renderedLineMap.has(start.line)) {
-                active = this.selecter.checkSelectedActive(selectedRange, multiCursorPosLineMap);
+                active = this.selecter.checkSelectedActive(selectedRange);
                 context.renderedLineMap.get(start.line).selectStarts.push({
                     left: start.left,
                     width: start.width,
@@ -518,7 +511,7 @@ export default {
                 context.renderedLineMap.get(end.line).selectEnds.push({
                     left: end.left,
                     width: end.width,
-                    active: active || this.selecter.checkSelectedActive(selectedRange, multiCursorPosLineMap)
+                    active: active || this.selecter.checkSelectedActive(selectedRange)
                 });
             }
         },
@@ -869,8 +862,6 @@ export default {
                     resultObj.list.map((rangePos) => {
                         this.selecter.addSelectedRange(rangePos.start, rangePos.end);
                     });
-                } else {
-                    this.selecter.checkActive(resultObj.result.end, true);
                 }
                 this.renderSelectedBg();
             }
@@ -1522,7 +1513,6 @@ export default {
                         this.deleteContent(Util.keyCode.BACKSPACE);
                         break;
                 }
-                this.cursor.filterMultiCursorPos();
             }
 
             function _moveCursor(direct, wholeWord) {

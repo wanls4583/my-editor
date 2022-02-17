@@ -29,7 +29,6 @@ export default class {
             end = null,
             result = null,
             resultCaches = [],
-            firstRnagePos = null,
             rangePos = null,
             that = this,
             line = 1,
@@ -64,18 +63,19 @@ export default class {
                     start: start,
                     end: end
                 };
-                firstRnagePos = firstRnagePos || rangePos;
                 if (!result && Util.comparePos(end, that.nowCursorPos) >= 0) {
                     result = rangePos;
+                    resultCaches.index = resultCaches.length;
                 }
                 resultCaches.push(rangePos);
             }
             preExec = exec;
         }
-        if (!result && firstRnagePos) {
-            result = firstRnagePos
+        if (!result && resultCaches.length) {
+            resultCaches.index = 0;
+            result = resultCaches[0];
         }
-        this.cache(str, resultCaches, result);
+        this.cache(str, resultCaches);
         return {
             list: resultCaches,
             result: result
@@ -83,21 +83,21 @@ export default class {
     }
     checkCache(str) {
         if (!this.cacheData || this.cacheData.str !== str) {
-            return;
+            return null;
         }
-        let resultCaches = this.cacheData.list;
+        let resultCaches = this.cacheData.resultCaches;
+        let resultIndexMap = this.cacheData.resultIndexMap;
+        let index = resultCaches.index + 1;
         let result = null;
-        for (let i = 0; i < resultCaches.length; i++) {
-            let rangePos = resultCaches[i];
-            if (Util.comparePos(rangePos.end, this.cacheData.result.end) > 0) {
-                result = rangePos;
-                break;
-            }
+        if (index == resultCaches.length) {
+            index = 0;
         }
-        if (!result) {
-            result = resultCaches[0];
+        // 已经全部遍历完
+        if (!resultIndexMap[index]) {
+            result = resultCaches[index];
+            resultCaches.index = index;
+            resultIndexMap[index] = true;
         }
-        this.cacheData.result = result;
         return {
             list: resultCaches,
             result: result
@@ -106,11 +106,13 @@ export default class {
     hasCache() {
         return !!this.cacheData;
     }
-    cache(str, list, result) {
+    cache(str, resultCaches) {
+        let resultIndexMap = {};
+        resultIndexMap[resultCaches.index] = true;
         this.cacheData = {
             str: str,
-            list: list,
-            result: result,
+            resultCaches: resultCaches,
+            resultIndexMap: resultIndexMap
         };
     }
     clearCache() {

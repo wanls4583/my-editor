@@ -55,12 +55,6 @@ export default class {
             end: Object.assign({}, end)
         });
     }
-    checkActive(cursorPos) {
-        let selectedRange = this.checkCursorSelected(cursorPos);
-        if (selectedRange) {
-            selectedRange.active = true;
-        }
-    }
     // 检测光标是否在选中区域范围内
     checkCursorSelected(cursorPos) {
         for (let i = 0; i < this.selectedRanges.length; i++) {
@@ -72,17 +66,8 @@ export default class {
         }
         return false;
     }
-    checkSelectedActive(selectedRange, multiCursorPosLineMap) {
-        if (!multiCursorPosLineMap) {
-            multiCursorPosLineMap = new Map();
-            this.multiCursorPos.map((item) => {
-                if (!multiCursorPosLineMap.has(item.line)) {
-                    multiCursorPosLineMap.set(item.line, []);
-                }
-                multiCursorPosLineMap.get(item.line).push(item);
-            });
-        }
-        let cursorPosList = multiCursorPosLineMap.get(selectedRange.start.line) || [];
+    checkSelectedActive(selectedRange) {
+        let cursorPosList = this.cursor.multiCursorPosLineMap.get(selectedRange.start.line) || [];
         let start = selectedRange.start;
         let end = selectedRange.end;
         if (end.line > start.line) {
@@ -92,7 +77,7 @@ export default class {
                     return true;
                 }
             }
-            cursorPosList = multiCursorPosLineMap.get(selectedRange.end.line) || [];
+            cursorPosList = this.cursor.multiCursorPosLineMap.get(selectedRange.end.line) || [];
             for (let i = 0; i < cursorPosList.length; i++) {
                 let item = cursorPosList[i];
                 if (Util.comparePos(item, selectedRange.end) === 0) {

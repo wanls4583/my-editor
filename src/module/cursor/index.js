@@ -12,6 +12,7 @@ const regs = {
 export default class {
     constructor(editor, context) {
         this.initProperties(editor, context);
+        this.multiCursorPosLineMap = new Map();
     }
     initProperties(editor, context) {
         Util.defineProperties(this, editor, [
@@ -30,6 +31,7 @@ export default class {
             cursorPos.del = true;
         });
         this.multiCursorPos.empty();
+        this.multiCursorPosLineMap.clear();
         this.setNowCursorPos(null);
     }
     // 更新光标位置
@@ -47,24 +49,23 @@ export default class {
             cursorPos.line = line;
             cursorPos.column = column;
             this.setCursorRealPos(cursorPos);
-            this.filterMultiCursorPos();
-        }
-
-        function _updateAfter(item) {
-            if (item != cursorPos) {
-                if (item.line > cursorPos.line) {
-                    item.line += line - cursorPos.line;
-                } else if (item.line === cursorPos.line && item.column > cursorPos.column) {
-                    item.line += line - cursorPos.line;
-                    item.column += column - cursorPos.column;
-                }
+            cursorPos.line !== line && this.setCursorPosLineMap();
+            let posArr = this.multiCursorPosLineMap.get(cursorPos.line) || [];
+            let index = posArr.indexOf(cursorPos);
+            let needToDel = null;
+            // 过滤重叠光标
+            if (posArr[index - 1] && Util.comparePos(posArr[index - 1], cursorPos) === 0) {
+                needToDel = posArr[index - 1];
+                posArr.splice(index - 1, 1);
+            } else if (posArr[index + 1] && Util.comparePos(posArr[index + 1], cursorPos) === 0) {
+                needToDel = posArr[index + 1];
+                posArr.splice(index + 1, 1);
+            }
+            if (needToDel) {
+                index = this.multiCursorPos.indexOf(needToDel);
+                this.multiCursorPos.splice(index, 1);
             }
         }
-    }
-    updateAfterCursor(cursorPos, line, column, aftetrList) {
-        aftetrList.map((item) => {
-            _updateAfter(item);
-        });
 
         function _updateAfter(item) {
             if (item != cursorPos) {
@@ -79,14 +80,13 @@ export default class {
     }
     // 添加光标
     addCursorPos(cursorPos) {
-        if (this.multiCursorPos.filter((item) => {
-                if (Util.comparePos(cursorPos, item) == 0) {
-                    cursorPos = item;
-                    return true;
-                }
-                return false;
-            }).length > 0) {
-            return cursorPos;
+        let posArr = this.multiCursorPosLineMap.get(cursorPos.line) || [];
+        for (let pos of posArr) {
+            // 添加的光标已存在
+            if (Util.comparePos(cursorPos, pos) === 0) {
+                this.setNowCursorPos(pos);
+                return pos;
+            }
         }
         cursorPos = Object.assign({}, cursorPos);
         this.multiCursorPos.push(cursorPos);
@@ -96,6 +96,7 @@ export default class {
             }
             return a.line - b.line;
         });
+        this.setCursorPosLineMap();
         this.setNowCursorPos(cursorPos);
         this.setCursorRealPos(cursorPos);
         return cursorPos;
@@ -105,32 +106,27 @@ export default class {
         cursorPos = Object.assign({}, cursorPos);
         if (this.multiCursorPos.length == 1) {
             let pos = this.multiCursorPos[0];
-            if (pos.line === cursorPos.line && pos.column === cursorPos.column) {
+            if (Util.comparePos(pos, cursorPos) === 0) {
                 return;
             }
         }
         this.multiCursorPos.empty();
         this.multiCursorPos.push(cursorPos);
+        this.setCursorPosLineMap();
         this.setNowCursorPos(cursorPos);
         this.setCursorRealPos(cursorPos);
     }
-    filterMultiCursorPos() {
-        let posMap = {};
-        let multiCursorPos = this.multiCursorPos.filter((cursorPos) => {
-            let key = cursorPos.line + ',' + cursorPos.column;
-            if (posMap[key] || cursorPos.del) {
-                return false;
+    // 设置光标和行号映射
+    setCursorPosLineMap() {
+        this.multiCursorPosLineMap = new Map();
+        this.multiCursorPos.map((item) => {
+            if (!this.multiCursorPosLineMap.has(item.line)) {
+                this.multiCursorPosLineMap.set(item.line, []);
             }
-            posMap[key] = true;
-            if (this.nowCursorPos && this.nowCursorPos.line === cursorPos.line &&
-                this.nowCursorPos.column === this.nowCursorPos.column) {
-                this.setNowCursorPos(cursorPos);
-            }
-            return true;
+            this.multiCursorPosLineMap.get(item.line).push(item);
         });
-        this.multiCursorPos.empty();
-        this.multiCursorPos.push(...multiCursorPos);
     }
+    // 移动光标
     moveCursor(cursorPos, direct, wholeWord) {
         let text = this.htmls[cursorPos.line - 1].text;
         let line = cursorPos.line;

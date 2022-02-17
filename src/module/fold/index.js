@@ -48,17 +48,10 @@ export default class {
         });
     }
     onDeleteContentBefore(cursorPos) {
-        let multiCursorPosLineMap = new Map();
-        this.multiCursorPos.map((item) => {
-            if (!multiCursorPosLineMap.has(item.line)) {
-                multiCursorPosLineMap.set(item.line, []);
-            }
-            multiCursorPosLineMap.get(item.line).push(item);
-        });
         this.onDeleteContentBefore.preCursorPos = cursorPos;
         this.onDeleteContentBefore.maxLine = this.htmls.length;
         this.selectedRanges.map((selectedRange) => {
-            if (this.selecter.checkSelectedActive(selectedRange, multiCursorPosLineMap)) {
+            if (this.selecter.checkSelectedActive(selectedRange)) {
                 let start = selectedRange.start;
                 let end = selectedRange.end;
                 for (let line = start.line; line <= end.line; line++) { //删除折叠区域
