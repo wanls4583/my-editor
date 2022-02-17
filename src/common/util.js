@@ -248,7 +248,9 @@ Util.keyCode = {
 }
 Util.command = {
     DELETE: 'delete',
-    INSERT: 'insert'
+    INSERT: 'insert',
+    MOVEUP: 'moveLineUp',
+    MOVEDOWN: 'moveLineDown',
 }
 Util.constData = {
     PAIR_START: -1,

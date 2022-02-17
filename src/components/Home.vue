@@ -521,7 +521,7 @@ export default {
         // 清除选中背景
         clearRange(cursorPos) {
             this.clearSearch();
-            this.selecter.clearRange();
+            this.selecter.clearRange(cursorPos);
             this.render();
         },
         insertContent(text, cursorPos, commandObj) {
@@ -658,15 +658,21 @@ export default {
         },
         // 删除内容
         _deleteContent(cursorPos, keyCode) {
+            let selectedRange = null;
+            if (cursorPos.start && cursorPos.end) { //删除范围内的内容
+                selectedRange = cursorPos;
+                cursorPos = selectedRange.end;
+            } else { //光标在选中范围的边界
+                selectedRange = this.selecter.checkCursorSelected(cursorPos);
+            }
             let start = null;
             let startObj = context.htmls[cursorPos.line - 1];
             let text = startObj.text;
-            let originPos = { line: cursorPos.line, column: cursorPos.column };
             let deleteText = '';
             let rangeUuid = [];
+            let originPos = { line: cursorPos.line, column: cursorPos.column };
             let newLine = cursorPos.line;
             let newColumn = cursorPos.column;
-            let selectedRange = this.selecter.checkCursorSelected(cursorPos);
             this.tokenizer.onDeleteContentBefore(cursorPos.line);
             this.lint.onDeleteContentBefore(cursorPos.line);
             this.folder.onDeleteContentBefore(Object.assign({}, cursorPos));
@@ -701,7 +707,7 @@ export default {
                 }
                 newLine = start.line;
                 newColumn = start.column;
-                this.clearRange(cursorPos);
+                this.clearRange(originPos);
             } else if (Util.keyCode.DELETE == keyCode) { // 向后删除一个字符
                 if (cursorPos.column == text.length) { // 光标处于行尾
                     if (cursorPos.line < context.htmls.length) {
@@ -784,6 +790,88 @@ export default {
                 text: deleteText
             };
             return historyObj;
+        },
+        moveLineUp(cursorPos, isCommand) {
+            let that = this;
+            let multiCursorPos = [];
+            let prePos = null;
+            let historyArr = [];
+            if (cursorPos) {
+                multiCursorPos = cursorPos instanceof Array ? cursorPos : [cursorPos];
+            } else {
+                that.multiCursorPos.map((item) => {
+                    if (!prePos || item.line - prePos.line > 1) {
+                        item.line > 1 && multiCursorPos.push(item);
+                        prePos = item;
+                    }
+                });
+            }
+            multiCursorPos.map((cursorPos) => {
+                cursorPos = this.cursor.addCursorPos(cursorPos);
+                historyArr.push(_moveLineUp(cursorPos));
+            });
+            if (!isCommand) { // 新增历史记录
+                historyArr && this.history.pushHistory(historyArr);
+            } else { // 撤销或重做操作后，更新历史记录
+                this.history.updateHistory(context.history.index, historyArr);
+            }
+
+            function _moveLineUp(cursorPos) {
+                let upLineText = context.htmls[cursorPos.line - 2].text;
+                let nowLineText = context.htmls[cursorPos.line - 1].text;
+                let start = { line: cursorPos.line - 1, column: 0 };
+                that._deleteContent({
+                    start: start,
+                    end: { line: cursorPos.line, column: nowLineText.length }
+                });
+                that._insertContent(nowLineText + '\n' + upLineText, start);
+                that.cursor.updateCursorPos(cursorPos, cursorPos.line - 1, cursorPos.column);
+                return {
+                    type: Util.command.MOVEDOWN,
+                    cursorPos: { line: cursorPos.line, column: cursorPos.column }
+                }
+            }
+        },
+        moveLineDown(cursorPos, isCommand) {
+            let that = this;
+            let multiCursorPos = [];
+            let prePos = null;
+            let historyArr = [];
+            if (cursorPos) {
+                multiCursorPos = cursorPos instanceof Array ? cursorPos : [cursorPos];
+            } else {
+                that.multiCursorPos.map((item) => {
+                    if (!prePos || item.line - prePos.line > 1) {
+                        item.line > 1 && multiCursorPos.push(item);
+                        prePos = item;
+                    }
+                });
+            }
+            multiCursorPos.map((cursorPos) => {
+                cursorPos = this.cursor.addCursorPos(cursorPos);
+                historyArr.push(_moveLineDown(cursorPos));
+            });
+            if (!isCommand) { // 新增历史记录
+                historyArr && this.history.pushHistory(historyArr);
+            } else { // 撤销或重做操作后，更新历史记录
+                this.history.updateHistory(context.history.index, historyArr);
+            }
+
+            function _moveLineDown(cursorPos) {
+                let downLineText = context.htmls[cursorPos.line].text;
+                let nowLineText = context.htmls[cursorPos.line - 1].text;
+                let start = { line: cursorPos.line, column: 0 };
+                that._deleteContent({
+                    start: start,
+                    end: { line: cursorPos.line + 1, column: downLineText.length }
+                });
+                that._insertContent(downLineText + '\n' + nowLineText, start);
+                that.cursor.updateCursorPos(cursorPos, cursorPos.line + 1, cursorPos.column);
+                return {
+                    type: Util.command.MOVEUP,
+                    cursorPos: { line: cursorPos.line, column: cursorPos.column }
+                }
+            }
         },
         // 向下复制一行
         copyNext() {
@@ -1394,11 +1482,13 @@ export default {
                         this.selecter.select('left', true);
                         break;
                     case 38: //ctrl+shift+up
+                        this.moveLineUp();
                         break;
                     case 39: //ctrl+shift+right
                         this.selecter.select('right', true);
                         break;
                     case 40: //ctrl+shift+down
+                        this.moveLineDown();
                         break;
                     case 68: //ctrl+shift+d
                         this.copyNext();
@@ -1491,14 +1581,6 @@ export default {
                         that.cursor.moveCursor(cursorPos, direct, wholeWord);
                     });
                 }
-            }
-
-            function _moveLineUp() {
-                
-            }
-
-            function _moveLineDown() {
-
             }
         }
     }

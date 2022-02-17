@@ -42,8 +42,15 @@ export default class {
         this.multiCursorPosLineMap.clear();
         this.setNowCursorPos(null);
     }
+    hasCursorPos(cursorPos) {
+        let posArr = this.multiCursorPosLineMap.get(cursorPos.line) || [];
+        return posArr.indexOf(cursorPos) > -1;
+    }
     // 更新光标位置
     updateCursorPos(cursorPos, line, column, updateAfter) {
+        if (!this.hasCursorPos(cursorPos)) {
+            return;
+        }
         if (updateAfter) {
             this.multiCursorPos.map((item) => {
                 _updateAfter(item);
@@ -53,26 +60,25 @@ export default class {
                 _updateAfter(item.end);
             });
         }
-        if (!cursorPos.del) {
-            cursorPos.line = line;
-            cursorPos.column = column;
-            this.setCursorRealPos(cursorPos);
-            cursorPos.line !== line && this.setCursorPosLineMap();
-            let posArr = this.multiCursorPosLineMap.get(cursorPos.line) || [];
-            let index = posArr.indexOf(cursorPos);
-            let needToDel = null;
-            // 过滤重叠光标
-            if (posArr[index - 1] && Util.comparePos(posArr[index - 1], cursorPos) === 0) {
-                needToDel = posArr[index - 1];
-                posArr.splice(index - 1, 1);
-            } else if (posArr[index + 1] && Util.comparePos(posArr[index + 1], cursorPos) === 0) {
-                needToDel = posArr[index + 1];
-                posArr.splice(index + 1, 1);
-            }
-            if (needToDel) {
-                index = this.multiCursorPos.indexOf(needToDel);
-                this.multiCursorPos.splice(index, 1);
-            }
+        let originLine = cursorPos.line;
+        cursorPos.line = line;
+        cursorPos.column = column;
+        cursorPos.line !== originLine && this.setCursorPosLineMap();
+        let needToDel = null;
+        let posArr = this.multiCursorPosLineMap.get(cursorPos.line) || [];
+        let index = posArr.indexOf(cursorPos);
+        this.setCursorRealPos(cursorPos);
+        // 过滤重叠光标
+        if (posArr[index - 1] && Util.comparePos(posArr[index - 1], cursorPos) === 0) {
+            needToDel = posArr[index - 1];
+            posArr.splice(index - 1, 1);
+        } else if (posArr[index + 1] && Util.comparePos(posArr[index + 1], cursorPos) === 0) {
+            needToDel = posArr[index + 1];
+            posArr.splice(index + 1, 1);
+        }
+        if (needToDel) {
+            index = this.multiCursorPos.indexOf(needToDel);
+            this.multiCursorPos.splice(index, 1);
         }
 
         function _updateAfter(item) {

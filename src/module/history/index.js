@@ -13,7 +13,8 @@ export default class {
             'cursor',
             'insertContent',
             'deleteContent',
-            'setSelectedRange'
+            'moveLineUp',
+            'moveLineDown',
         ]);
         Util.defineProperties(this, context, ['history']);
     }
@@ -35,12 +36,12 @@ export default class {
     }
     // 操作命令
     doCommand(command) {
-        let commandType = command instanceof Array ? command[0].type : command.type;
+        let commandType = command.type || (command instanceof Array ? command[0].type : command.type);
         this.cursor.clearCursorPos();
         switch (commandType) {
             case Util.command.DELETE:
                 if (command instanceof Array) {
-                    let list = command.map((command) => {
+                    var list = command.map((command) => {
                         return {
                             start: command.preCursorPos,
                             end: command.cursorPos
@@ -56,8 +57,8 @@ export default class {
                 break;
             case Util.command.INSERT:
                 if (command instanceof Array) {
-                    let text = [];
-                    let cursorPos = [];
+                    var text = [];
+                    var cursorPos = [];
                     command.slice().reverse().map((command) => {
                         text.push(command.text);
                         cursorPos.push(command.cursorPos);
@@ -70,6 +71,18 @@ export default class {
                         keyCode: command.keyCode
                     });
                 }
+                break;
+            case Util.command.MOVEUP:
+                command = command instanceof Array ? command : [command]
+                this.moveLineUp(command.map((item) => {
+                    return item.cursorPos;
+                }), true);
+                break;
+            case Util.command.MOVEDOWN:
+                command = command instanceof Array ? command : [command]
+                this.moveLineDown(command.map((item) => {
+                    return item.cursorPos;
+                }), true);
                 break;
         }
     }
@@ -85,7 +98,8 @@ export default class {
             command instanceof Array &&
             lastCommand.length === command.length &&
             Date.now() - this.pushHistoryTime < 2000) {
-            if (_combCheck(lastCommand[0], command[0])) {
+            if (_checkSameOp(lastCommand) && _checkSameOp(command) &&
+                _combCheck(lastCommand[0], command[0])) {
                 for (let i = 0; i < lastCommand.length; i++) {
                     _combCommand(lastCommand[i], command[i]);
                 }
@@ -100,9 +114,19 @@ export default class {
         this.history.index = this.history.length;
         this.pushHistoryTime = Date.now();
 
+        function _checkSameOp(commandList) {
+            for (let i = 1; i < commandList.length; i++) {
+                if (commandList[i].type !== commandList[i - 1].type) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         function _combCheck(lastCommand, command) {
-            if (lastCommand && lastCommand.type &&
-                lastCommand.type == command.type &&
+            // 检测是否为连续插入或连续删除
+            if (lastCommand && lastCommand.type == command.type &&
+                (lastCommand.type == Util.command.DELETE || lastCommand.type === Util.command.INSERT) &&
                 command.preCursorPos.line == command.cursorPos.line &&
                 Util.comparePos(lastCommand.cursorPos, command.preCursorPos) == 0 &&
                 Date.now() - that.pushHistoryTime < 2000) {
