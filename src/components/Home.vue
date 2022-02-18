@@ -1037,10 +1037,17 @@ export default {
                         context.moveLineDown();
                         break;
                     case 68: //ctrl+shift+d
-                        context.copyLineDown();
+                        context.copyLineUp();
                         break;
                 }
                 return false;
+            } else if (e.altKey && e.shiftKey) {
+                e.preventDefault();
+                switch (e.keyCode) {
+                    case 40:
+                        context.copyLineDown();
+                        break;
+                }
             } else if (e.ctrlKey) {
                 switch (e.keyCode) {
                     case 37: //left arrow

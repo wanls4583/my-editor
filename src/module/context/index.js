@@ -448,7 +448,7 @@ export default class {
         let copyedLineMap = {};
         let cursorPosList = [];
         let historyPosList = [];
-        direct = direct || 'down';
+        direct = direct || 'up';
         if (cursorPos) {
             cursorPosList = cursorPos instanceof Array ? cursorPos : [cursorPos];
         } else {
@@ -467,9 +467,9 @@ export default class {
                 column: text.length
             });
             this.cursor.updateAfterPos({
-                line: cursorPos.line + (direct === 'down' ? 1 : 0),
+                line: cursorPos.line + (direct === 'up' ? 1 : 0),
                 column: 0
-            }, cursorPos.line + (direct === 'down' ? 2 : 1), 0);
+            }, cursorPos.line + (direct === 'up' ? 2 : 1), 0);
         });
         historyPosList = historyPosList.map((item) => {
             return {
@@ -480,7 +480,7 @@ export default class {
         this.setCursorRealPos();
         this.renderSelectedBg();
         let historyObj = {
-            type: direct === 'down' ? Util.command.DELETE_DOWN : Util.command.DELETE_UP,
+            type: direct === 'up' ? Util.command.DELETE_DOWN : Util.command.DELETE_UP,
             cursorPos: historyPosList
         }
         if (!isCommand) { // 新增历史记录
@@ -489,12 +489,13 @@ export default class {
             this.history.updateHistory(historyObj);
         }
     }
+    // 向上复制一行
+    copyLineUp(cursorPos, isCommand) {
+        this.copyLine(cursorPos, isCommand, 'up');
+    }
     // 向下复制一行
     copyLineDown(cursorPos, isCommand) {
         this.copyLine(cursorPos, isCommand, 'down');
-    }
-    copyLineUp(cursorPos, isCommand) {
-        this.copyLine(cursorPos, isCommand, 'up');
     }
     deleteLine(cursorPos, isCommand, direct) {
         let copyedLineMap = {};
@@ -526,9 +527,9 @@ export default class {
                 }
             });
             this.cursor.updateAfterPos({
-                line: cursorPos.line + 1,
+                line: cursorPos.line + (direct === 'down' ? 1 : 0),
                 column: 0
-            }, cursorPos.line, 0);
+            }, cursorPos.line + (direct === 'down' ? 0 : -1), 0);
         });
         historyPosList = historyPosList.map((item) => {
             return {
@@ -539,7 +540,7 @@ export default class {
         this.setCursorRealPos();
         this.renderSelectedBg();
         let historyObj = {
-            type: direct === 'down' ? Util.command.COPY_DOWN : Util.command.COPY_UP,
+            type: direct === 'down' ? Util.command.COPY_UP : Util.command.COPY_DOWN,
             cursorPos: historyPosList
         }
         if (!isCommand) { // 新增历史记录
@@ -548,12 +549,13 @@ export default class {
             this.history.updateHistory(historyObj);
         }
     }
-    // 向下删除一行
-    deleteLineDown(cursorPos, isCommand) {
-        this.deleteLine(cursorPos, isCommand, 'down');
-    }
+    // 删除上面一行
     deleteLineUp(cursorPos, isCommand) {
         this.deleteLine(cursorPos, isCommand, 'up');
+    }
+    // 删除下面一行
+    deleteLineDown(cursorPos, isCommand) {
+        this.deleteLine(cursorPos, isCommand, 'down');
     }
     // 获取选中范围内的文本
     getRangeText(start, end) {
