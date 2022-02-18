@@ -123,6 +123,7 @@ import Select from '@/module/select/index';
 import Cursor from '@/module/cursor/index';
 import History from '@/module/history/index';
 import Context from '@/module/context/index';
+import ShortCut from '@/module/shortcut/index';
 import StatusBar from './StatusBar';
 import Panel from './Panel';
 import Tip from './Tip';
@@ -330,6 +331,7 @@ export default {
             this.history = new History(this, context);
             this.searcher = new Search(this, context);
             this.selecter = new Select(this, context);
+            this.shortcut = new ShortCut(this, context);
             this.cursor = new Cursor(this, context);
             this.cursor.addCursorPos(this.nowCursorPos);
         },
@@ -1020,127 +1022,7 @@ export default {
         },
         // 键盘按下事件
         onKeyDown(e) {
-            let that = this;
-            if (e.ctrlKey && e.shiftKey) {
-                e.preventDefault();
-                switch (e.keyCode) {
-                    case 37: //ctrl+shift+left
-                        this.selecter.select('left', true);
-                        break;
-                    case 38: //ctrl+shift+up
-                        context.moveLineUp();
-                        break;
-                    case 39: //ctrl+shift+right
-                        this.selecter.select('right', true);
-                        break;
-                    case 40: //ctrl+shift+down
-                        context.moveLineDown();
-                        break;
-                    case 68: //ctrl+shift+d
-                        context.copyLineUp();
-                        break;
-                }
-                return false;
-            } else if (e.altKey && e.shiftKey) {
-                e.preventDefault();
-                switch (e.keyCode) {
-                    case 40:
-                        context.copyLineDown();
-                        break;
-                }
-            } else if (e.ctrlKey) {
-                switch (e.keyCode) {
-                    case 37: //left arrow
-                        _moveCursor('left', true);
-                        this.selecter.clearRange();
-                        this.renderSelectedBg();
-                        break;
-                    case 39: //right arrow
-                        _moveCursor('right', true);
-                        this.selecter.clearRange();
-                        this.renderSelectedBg();
-                        break;
-                    case 65://ctrl+a,全选
-                        e.preventDefault();
-                        let end = { line: context.htmls.length, column: context.htmls.peek().text.length };
-                        this.selecter.setSelectedRange({ line: 1, column: 0 }, end);
-                        this.forceCursorView = false;
-                        this.cursor.setCursorPos(end);
-                        this.renderSelectedBg();
-                        break;
-                    case 68: //ctrl+d，搜素
-                        e.preventDefault();
-                        this.search();
-                        break;
-                    case 90: //ctrl+z，撤销
-                    case 122:
-                        e.preventDefault();
-                        this.history.undo();
-                        break;
-                    case 89: //ctrl+y，重做
-                    case 121:
-                        e.preventDefault();
-                        this.history.redo();
-                        break;
-                }
-            } else if (e.shiftKey) {
-                switch (e.keyCode) {
-                    case 37: //left arrow
-                        this.selecter.select('left');
-                        break;
-                    case 38: //up arrow
-                        this.selecter.select('up');
-                        break;
-                    case 39: //right arrow
-                        this.selecter.select('right');
-                        break;
-                    case 40: //down arrow
-                        this.selecter.select('down');
-                        break;
-                }
-            } else {
-                switch (e.keyCode) {
-                    case 9: //tab键
-                        e.preventDefault();
-                        context.insertContent('\t');
-                        break;
-                    case 37: //left arrow
-                        _moveCursor('left');
-                        this.selecter.clearRange();
-                        this.renderSelectedBg();
-                        break;
-                    case 38: //up arrow
-                        _moveCursor('up');
-                        this.selecter.clearRange();
-                        this.renderSelectedBg();
-                        break;
-                    case 39: //right arrow
-                        _moveCursor('right');
-                        this.selecter.clearRange();
-                        this.renderSelectedBg();
-                        break;
-                    case 40: //down arrow
-                        _moveCursor('down');
-                        this.selecter.clearRange();
-                        this.renderSelectedBg();
-                        break;
-                    case Util.keyCode.DELETE: //delete
-                        context.deleteContent(Util.keyCode.DELETE);
-                        break;
-                    case Util.keyCode.BACKSPACE: //backspace
-                        context.deleteContent(Util.keyCode.BACKSPACE);
-                        break;
-                }
-            }
-
-            function _moveCursor(direct, wholeWord) {
-                //ctrl+d后，第一次移动光标只是取消选中状态
-                if (!that.selecter.checkCursorSelected(that.nowCursorPos)) {
-                    that.multiCursorPos.map((cursorPos) => {
-                        that.cursor.moveCursor(cursorPos, direct, wholeWord);
-                    });
-                }
-            }
+            this.shortcut.onKeyDown(e);
         }
     }
 }
