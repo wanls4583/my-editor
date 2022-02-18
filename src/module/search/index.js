@@ -33,7 +33,7 @@ export default class {
             that = this,
             line = 1,
             column = 0
-        let text = context.htmls.map((item) => {
+        let text = this.htmls.map((item) => {
             return item.text
         }).join('\n');
         let strs = str.split(/\n/);

@@ -18,7 +18,7 @@ export default class {
         Util.defineProperties(this, context, [
             'htmls',
             'selectedRanges',
-            'setContextValue'
+            'setSelectedRanges'
         ]);
     }
     select(direct, wholeWord) {
@@ -132,7 +132,7 @@ export default class {
                 }
                 return true;
             });
-            this.setContextValue('selectedRanges', selectedRanges);
+            this.setSelectedRanges(selectedRanges);
         } else {
             this.selectedRanges.empty();
         }

@@ -6,11 +6,14 @@
 import Util from '@/common/Util';
 export default class {
     constructor(editor, context) {
+        this.history = [];
         this.initProperties(editor, context);
     }
     initProperties(editor, context) {
         Util.defineProperties(this, editor, [
             'cursor',
+        ]);
+        Util.defineProperties(this, context, [
             'insertContent',
             'deleteContent',
             'moveLineUp',
@@ -20,7 +23,6 @@ export default class {
             'deleteLineUp',
             'deleteLineDown',
         ]);
-        Util.defineProperties(this, context, ['history']);
     }
     // 撤销操作
     undo() {
@@ -160,7 +162,8 @@ export default class {
         }
     }
     // 更新历史记录
-    updateHistory(index, command) {
+    updateHistory(command) {
+        let index = this.history.index;
         if (command instanceof Array) {
             command.map((item, _index) => {
                 item.keyCode = this.history[index - 1][_index].keyCode;
