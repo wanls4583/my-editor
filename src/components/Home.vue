@@ -433,6 +433,7 @@ export default {
                     startLine++;
                 }
             }
+            console.log(this.renderHtmls.length)
 
             function _getObj(item, line) {
                 let selected = false;
@@ -465,6 +466,11 @@ export default {
             }
         },
         renderSelectedBg() {
+            if (!this.renderHtmls.length) { //删除内容后，窗口还没滚动到可视区域
+                this.$nextTick(() => {
+                    this.renderSelectedBg();
+                });
+            }
             this.renderHtmls.map((item) => {
                 item.selected = false;
                 item.selectStarts = [];
