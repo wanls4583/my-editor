@@ -18,8 +18,10 @@ export default class {
         Util.defineProperties(this, context, [
             'htmls',
             'selectedRanges',
-            'setSelectedRanges'
         ]);
+        this.setContextData = (prop, value) => {
+            context.setData(prop, value);
+        }
     }
     select(direct, wholeWord) {
         this.multiCursorPos.map((cursorPos) => {
@@ -98,14 +100,14 @@ export default class {
             for (let i = 0; i < cursorPosList.length; i++) {
                 let item = cursorPosList[i];
                 if (Util.comparePos(item, selectedRange.start) === 0) {
-                    return true;
+                    return item;
                 }
             }
             cursorPosList = this.cursor.multiCursorPosLineMap.get(selectedRange.end.line) || [];
             for (let i = 0; i < cursorPosList.length; i++) {
                 let item = cursorPosList[i];
                 if (Util.comparePos(item, selectedRange.end) === 0) {
-                    return true;
+                    return item;
                 }
             }
         } else {
@@ -113,7 +115,7 @@ export default class {
                 let item = cursorPosList[i];
                 if (Util.comparePos(item, selectedRange.start) === 0 ||
                     Util.comparePos(item, selectedRange.end) === 0) {
-                    return true;
+                    return item;
                 }
             }
         }
@@ -132,7 +134,7 @@ export default class {
                 }
                 return true;
             });
-            this.setSelectedRanges(selectedRanges);
+            this.setContextData('selectedRanges', selectedRanges);
         } else {
             this.selectedRanges.empty();
         }
