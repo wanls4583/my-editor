@@ -21,6 +21,7 @@ export default class {
         this.renderedLineMap = new Map(); //renderHtmls的唯一标识对象
         this.foldMap = new Map(); //folds的唯一标识对象
         this.initProperties(editor);
+        this.initData();
     }
     initProperties(editor) {
         Util.defineProperties(this, editor, [
@@ -46,6 +47,18 @@ export default class {
         this.setEditorData = (prop, value) => {
             editor.setData(prop, value);
         }
+    }
+    initData() {
+        this.htmls.push({
+            lineId: this.lineId++,
+            text: '',
+            html: '',
+            width: 0,
+            tokens: [],
+            folds: [],
+            states: []
+        });
+        this.lineIdMap.set(this.htmls[0].lineId, this.htmls[0]);
     }
     setData(prop, value) {
         if (typeof this[prop] === 'function') {

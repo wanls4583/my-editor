@@ -314,16 +314,6 @@ export default {
         // 初始化数据
         initData() {
             context = new Context(this);
-            context.htmls.push({
-                lineId: context.lineId++,
-                text: '',
-                html: '',
-                width: 0,
-                tokens: [],
-                folds: [],
-                states: []
-            });
-            context.lineIdMap.set(context.htmls[0].lineId, context.htmls[0]);
             this.maxWidthObj.lineId = context.htmls[0].lineId;
             this.tokenizer = new Tokenizer(this, context);
             this.lint = new Lint(this, context);
@@ -342,6 +332,9 @@ export default {
             });
             $(document).on('mouseup', (e) => {
                 this.onScrollerMup(e);
+            });
+            $(window).on('resize', (e) => {
+                this.render();
             });
         },
         // 显示光标
