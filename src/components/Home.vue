@@ -37,7 +37,7 @@
 		</div>
 		<div :style="{'box-shadow': _leftShadow}" class="my-editor-content-wrap">
 			<!-- 可滚动区域 -->
-			<div @mousedown="onScrollerMdown" class="my-editor-content-scroller" ref="scroller">
+			<div @mousedown="onScrollerMdown" @mouseup="onScrollerMup" class="my-editor-content-scroller" ref="scroller">
 				<!-- 内如区域 -->
 				<div :style="{top: _top, minWidth: _contentMinWidth}" @selectend.prevent="onSelectend" class="my-editor-content" ref="content">
 					<div
@@ -331,7 +331,7 @@ export default {
                 this.onScrollerMmove(e);
             });
             $(document).on('mouseup', (e) => {
-                this.onScrollerMup(e);
+                this.onDocumentMouseUp(e);
             });
             $(window).on('resize', (e) => {
                 this.render();
@@ -484,7 +484,9 @@ export default {
             firstLine = firstLine > start.line + 1 ? firstLine : start.line + 1;
             lastLine = lastLine < end.line - 1 ? lastLine : end.line - 1;
             for (let line = firstLine; line <= lastLine; line++) {
-                context.renderedLineMap.get(line).selected = true;
+                if (context.renderedLineMap.has(line)) {
+                    context.renderedLineMap.get(line).selected = true;
+                }
             }
             if (context.renderedLineMap.has(start.line)) {
                 active = this.selecter.checkSelectedActive(selectedRange);
@@ -846,6 +848,21 @@ export default {
                 start: pos
             }
         },
+        onScrollerMup(e) {
+            let end = this.getPosByEvent(e);
+            if (this.mouseStartObj && Date.now() - this.mouseStartObj.time > 100 &&
+                Util.comparePos(this.mouseStartObj.start, end) != 0) {
+                return;
+            }
+            if (e.which != 3) {
+                this.selecter.clearRange();
+                this.clearSearch();
+                this.renderSelectedBg();
+                if (this.mouseUpTime && Date.now() - this.mouseUpTime < 300) { //双击选中单词
+                    this.search();
+                }
+            }
+        },
         // 鼠标移动事件
         onScrollerMmove(e) {
             let that = this;
@@ -909,7 +926,7 @@ export default {
             }
         },
         // 鼠标抬起事件
-        onScrollerMup(e) {
+        onDocumentMouseUp(e) {
             let end = this.getPosByEvent(e);
             // 按下到抬起的间隔大于100ms，属于选中结束事件
             if (this.mouseStartObj && Date.now() - this.mouseStartObj.time > 100 &&
@@ -917,13 +934,6 @@ export default {
                 this.selecter.setSelectedRange(this.mouseStartObj.start, end);
                 this.cursor.setCursorPos(end);
                 this.renderSelectedBg();
-            } else if (e.which != 3) {
-                this.selecter.clearRange();
-                this.clearSearch();
-                this.renderSelectedBg();
-                if (this.mouseUpTime && Date.now() - this.mouseUpTime < 300) { //双击选中单词
-                    this.search();
-                }
             }
             // 停止滚动选中
             cancelAnimationFrame(this.selectMoveTimer);
