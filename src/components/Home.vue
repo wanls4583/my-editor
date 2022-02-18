@@ -465,14 +465,14 @@ export default {
             }
         },
         renderSelectedBg() {
-            if (!context.selectedRanges.length) {
-                return;
-            }
             this.renderHtmls.map((item) => {
                 item.selected = false;
                 item.selectStarts = [];
                 item.selectEnds = [];
             });
+            if (!context.selectedRanges.length) {
+                return;
+            }
             context.selectedRanges.map((selectedRange) => {
                 this._renderSelectedBg(selectedRange);
             });
@@ -517,12 +517,6 @@ export default {
                     active: active || this.selecter.checkSelectedActive(selectedRange)
                 });
             }
-        },
-        // 清除选中背景
-        clearRange(cursorPos) {
-            this.clearSearch();
-            this.selecter.clearRange(cursorPos);
-            this.render();
         },
         insertContent(text, cursorPos, commandObj) {
             let historyArr = [];
@@ -648,7 +642,6 @@ export default {
                 });
             }
             this.setNowCursorPos(this.multiCursorPos[0]);
-            this.clearRange();
             historyArr = historyArr.length > 1 ? historyArr : historyArr[0];
             if (!isCommand) { // 新增历史记录
                 historyArr && this.history.pushHistory(historyArr);
@@ -707,7 +700,7 @@ export default {
                 }
                 newLine = start.line;
                 newColumn = start.column;
-                this.clearRange(originPos);
+                this.selecter.clearRange(selectedRange);
             } else if (Util.keyCode.DELETE == keyCode) { // 向后删除一个字符
                 if (cursorPos.column == text.length) { // 光标处于行尾
                     if (cursorPos.line < context.htmls.length) {
@@ -900,12 +893,12 @@ export default {
             });
             historyPosList = historyPosList.map((item) => {
                 return { line: item.line, column: item.column };
-            });
+            }).reverse();
             this.setCursorRealPos();
-            historyPosList.reverse();
+            this.renderSelectedBg();
             let historyObj = {
                 type: Util.command.DELETE_DOWN,
-                cursorPos: cursorPosList
+                cursorPos: historyPosList
             }
             if (!isCommand) { // 新增历史记录
                 this.history.pushHistory(historyObj);
@@ -941,12 +934,12 @@ export default {
             });
             historyPosList = historyPosList.map((item) => {
                 return { line: item.line, column: item.column };
-            });
+            }).reverse();
             this.setCursorRealPos();
-            historyPosList.reverse();
+            this.renderSelectedBg();
             let historyObj = {
                 type: Util.command.COPY_DOWN,
-                cursorPos: cursorPosList
+                cursorPos: historyPosList
             }
             if (!isCommand) { // 新增历史记录
                 this.history.pushHistory(historyObj);
@@ -1444,7 +1437,9 @@ export default {
                 this.cursor.setCursorPos(end);
                 this.renderSelectedBg();
             } else if (e.which != 3) {
-                this.clearRange();
+                this.selecter.clearRange();
+                this.clearSearch();
+                this.renderSelectedBg();
                 if (this.mouseUpTime && Date.now() - this.mouseUpTime < 300) { //双击选中单词
                     this.search();
                 }
@@ -1564,11 +1559,13 @@ export default {
                 switch (e.keyCode) {
                     case 37: //left arrow
                         _moveCursor('left', true);
-                        this.clearRange();
+                        this.selecter.clearRange();
+                        this.renderSelectedBg();
                         break;
                     case 39: //right arrow
                         _moveCursor('right', true);
-                        this.clearRange();
+                        this.selecter.clearRange();
+                        this.renderSelectedBg();
                         break;
                     case 65://ctrl+a,全选
                         e.preventDefault();
@@ -1616,19 +1613,23 @@ export default {
                         break;
                     case 37: //left arrow
                         _moveCursor('left');
-                        this.clearRange();
+                        this.selecter.clearRange();
+                        this.renderSelectedBg();
                         break;
                     case 38: //up arrow
                         _moveCursor('up');
-                        this.clearRange();
+                        this.selecter.clearRange();
+                        this.renderSelectedBg();
                         break;
                     case 39: //right arrow
                         _moveCursor('right');
-                        this.clearRange();
+                        this.selecter.clearRange();
+                        this.renderSelectedBg();
                         break;
                     case 40: //down arrow
                         _moveCursor('down');
-                        this.clearRange();
+                        this.selecter.clearRange();
+                        this.renderSelectedBg();
                         break;
                     case Util.keyCode.DELETE: //delete
                         this.deleteContent(Util.keyCode.DELETE);

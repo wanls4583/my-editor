@@ -84,12 +84,16 @@ export default class {
                 break;
             case Util.command.COPY_DOWN:
                 this.copyLineDown(command.cursorPos, true);
+                break;
             case Util.command.DELETE_DOWN:
                 this.deleteLineDown(command.cursorPos, true);
+                break;
             case Util.command.COPY_UP:
                 this.copyLineUp(command.cursorPos, true);
+                break;
             case Util.command.DELETE_UP:
                 this.deleteLineUp(command.cursorPos, true);
+                break;
         }
     }
     // 添加历史记录

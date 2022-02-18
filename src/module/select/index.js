@@ -120,11 +120,14 @@ export default class {
         return false;
     }
     // 清除选中背景
-    clearRange(cursorPos) {
-        if (cursorPos) {
-            let selectedRanges = this.selectedRanges.filter((selectedRange) => {
-                if (Util.comparePos(cursorPos, selectedRange.start) >= 0 &&
-                    Util.comparePos(cursorPos, selectedRange.end) <= 0) {
+    clearRange(selectedRange) {
+        if (selectedRange) {
+            if (selectedRange.line && selectedRange.column) {
+                selectedRange = this.checkCursorSelected(selectedRange);
+            }
+            let selectedRanges = this.selectedRanges.filter((item) => {
+                if (Util.comparePos(item.start, selectedRange.start) >= 0 &&
+                    Util.comparePos(item.end, selectedRange.end) <= 0) {
                     return false;
                 }
                 return true;

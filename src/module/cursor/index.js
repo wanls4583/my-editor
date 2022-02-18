@@ -81,7 +81,7 @@ export default class {
             _updateAfter(item.start);
             _updateAfter(item.end);
         });
-        if(cursorPos.line != line) {
+        if (cursorPos.line != line) {
             this.setCursorPosLineMap();
         }
 
@@ -106,7 +106,10 @@ export default class {
                 return pos;
             }
         }
-        cursorPos = Object.assign({}, cursorPos);
+        cursorPos = {
+            line: cursorPos.line,
+            column: cursorPos.column
+        };
         this.multiCursorPos.push(cursorPos);
         this.multiCursorPos.sort((a, b) => {
             if (a.line == b.line) {
@@ -121,7 +124,10 @@ export default class {
     }
     // 设置光标
     setCursorPos(cursorPos) {
-        cursorPos = Object.assign({}, cursorPos);
+        cursorPos = {
+            line: cursorPos.line,
+            column: cursorPos.column
+        };
         if (this.multiCursorPos.length == 1) {
             let pos = this.multiCursorPos[0];
             if (Util.comparePos(pos, cursorPos) === 0) {
