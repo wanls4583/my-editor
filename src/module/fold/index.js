@@ -12,7 +12,7 @@ export default class {
     initProperties(editor, context) {
         Util.defineProperties(this.editorFunObj, editor, ['unFold']);
         Util.defineProperties(this, editor, ['selecter', 'multiCursorPos']);
-        Util.defineProperties(this, context, ['htmls', 'selectedRanges', 'folds', 'foldMap']);
+        Util.defineProperties(this, context, ['htmls', 'folds', 'foldMap']);
     }
     onInsertContentBefore(cursorPos) {
         let nowLine = cursorPos.line;
@@ -50,7 +50,7 @@ export default class {
     onDeleteContentBefore(cursorPos) {
         this.onDeleteContentBefore.preCursorPos = cursorPos;
         this.onDeleteContentBefore.maxLine = this.htmls.length;
-        this.selectedRanges.map((selectedRange) => {
+        this.selecter.selectedRanges.map((selectedRange) => {
             if (this.selecter.checkSelectedActive(selectedRange)) {
                 let start = selectedRange.start;
                 let end = selectedRange.end;

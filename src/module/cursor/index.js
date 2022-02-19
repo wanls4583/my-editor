@@ -18,12 +18,13 @@ export default class {
         Util.defineProperties(this, editor, [
             'nowCursorPos',
             'multiCursorPos',
+            'selecter',
             'setCursorRealPos',
             'setNowCursorPos',
             'getColumnByWidth',
             'getStrWidth'
         ]);
-        Util.defineProperties(this, context, ['htmls', 'selectedRanges']);
+        Util.defineProperties(this, context, ['htmls']);
     }
     clearCursorPos(cursorPos) {
         if (cursorPos) {
@@ -77,7 +78,7 @@ export default class {
         this.multiCursorPos.map((item) => {
             _updateAfter(item);
         });
-        this.selectedRanges.map((item) => {
+        this.selecter.selectedRanges.map((item) => {
             _updateAfter(item.start);
             _updateAfter(item.end);
         });

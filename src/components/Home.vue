@@ -455,10 +455,10 @@ export default {
                 item.selectStarts = [];
                 item.selectEnds = [];
             });
-            if (!context.selectedRanges.length) {
+            if (!this.selecter.selectedRanges.length) {
                 return;
             }
-            context.selectedRanges.map((selectedRange) => {
+            this.selecter.selectedRanges.map((selectedRange) => {
                 this._renderSelectedBg(selectedRange);
             });
         },
@@ -541,7 +541,7 @@ export default {
             }
             resultObj = this.searcher.search(searchObj.text, searchObj);
             if (resultObj && resultObj.result) {
-                if (!context.selectedRanges.length) {
+                if (!this.selecter.selectedRanges.length) {
                     this.cursor.setCursorPos(resultObj.result.end);
                 } else {
                     this.cursor.addCursorPos(resultObj.result.end);

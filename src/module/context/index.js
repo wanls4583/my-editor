@@ -15,7 +15,6 @@ export default class {
         this.lineId = Number.MIN_SAFE_INTEGER;
         this.htmls = [];
         this.folds = [];
-        this.selectedRanges = [];
         this.lineIdMap = new Map(); //htmls的唯一标识对象
         this.renderedIdMap = new Map(); //renderHtmls的唯一标识对象
         this.renderedLineMap = new Map(); //renderHtmls的唯一标识对象
@@ -70,8 +69,8 @@ export default class {
         let historyArr = [];
         if (!cursorPos) {
             // 如果有选中区域，需要先删除选中区域
-            for (let i = 0; i < this.selectedRanges.length; i++) {
-                let item = this.selectedRanges[i];
+            for (let i = 0; i < this.selecter.selectedRanges.length; i++) {
+                let item = this.selecter.selectedRanges[i];
                 if (this.selecter.checkSelectedActive(item)) {
                     this.deleteContent();
                     break;
@@ -468,6 +467,7 @@ export default class {
             this.multiCursorPos.map((item) => {
                 if (!copyedLineMap[item.line]) {
                     cursorPosList.push(item);
+                    copyedLineMap[item.line] = true;
                 }
             });
         }

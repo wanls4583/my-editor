@@ -8,6 +8,7 @@ import Util from '@/common/Util';
 export default class {
     constructor(editor, context) {
         this.initProperties(editor, context);
+        this.selectedRanges = [];
     }
     initProperties(editor, context) {
         Util.defineProperties(this, editor, [
@@ -17,7 +18,6 @@ export default class {
         ]);
         Util.defineProperties(this, context, [
             'htmls',
-            'selectedRanges',
         ]);
         this.setContextData = (prop, value) => {
             context.setData(prop, value);

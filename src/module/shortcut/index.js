@@ -12,6 +12,7 @@ export default class {
     initProperties(editor, context) {
         Util.defineProperties(this, editor, [
             'multiCursorPos',
+            'nowCursorPos',
             'cursor',
             'selecter',
             'history',
