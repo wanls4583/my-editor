@@ -402,7 +402,9 @@ export default class {
                 }
             });
             that._insertContent(nowLineText + '\n' + upLineText, start);
-            that.cursor.updateCursorPos(cursorPos, cursorPos.line - 1, cursorPos.column);
+            that.cursor.multiCursorPosLineMap.get(cursorPos.line).map((item) => {
+                that.cursor.updateCursorPos(item, item.line - 1, item.column);
+            });
         }
     }
     moveLineDown(cursorPos, isCommand) {
@@ -453,7 +455,9 @@ export default class {
                 }
             });
             that._insertContent(downLineText + '\n' + nowLineText, start);
-            that.cursor.updateCursorPos(cursorPos, cursorPos.line + 1, cursorPos.column);
+            that.cursor.multiCursorPosLineMap.get(cursorPos.line).map((item) => {
+                that.cursor.updateCursorPos(item, item.line + 1, item.column);
+            });
         }
     }
     copyLine(cursorPos, isCommand, direct) {

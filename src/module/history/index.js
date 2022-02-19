@@ -43,9 +43,9 @@ export default class {
     // 操作命令
     doCommand(command) {
         let commandType = command.type || (command instanceof Array ? command[0].type : command.type);
-        this.cursor.clearCursorPos();
         switch (commandType) {
             case Util.command.DELETE:
+                this.cursor.clearCursorPos();
                 if (command instanceof Array) {
                     var list = command.map((command) => {
                         return {
@@ -62,6 +62,7 @@ export default class {
                 }
                 break;
             case Util.command.INSERT:
+                this.cursor.clearCursorPos();
                 if (command instanceof Array) {
                     var text = [];
                     var cursorPos = [];
