@@ -134,7 +134,7 @@ export default class {
                 }
                 return true;
             });
-            this.setContextData('selectedRanges', selectedRanges);
+            this.selectedRanges = selectedRanges;
         } else {
             this.selectedRanges.empty();
         }
