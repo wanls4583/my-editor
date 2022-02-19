@@ -18,7 +18,7 @@ export default class {
         Util.defineProperties(this, context, ['htmls']);
     }
     search(str, option) {
-        let resultObj = this.checkCache(str);
+        let resultObj = this.checkCache(str, option);
         if (resultObj) {
             return resultObj;
         }
@@ -75,25 +75,31 @@ export default class {
             resultCaches.index = 0;
             result = resultCaches[0];
         }
-        this.cache(str, resultCaches);
+        this.cache(str, option, resultCaches);
         return {
             list: resultCaches,
             result: result
         };
     }
-    checkCache(str) {
+    checkCache(str, option) {
         if (!this.cacheData || this.cacheData.str !== str) {
             return null;
         }
+        for (let key in option) {
+            if (this.cacheData.option[key] !== option[key]) {
+                return false;
+            }
+        }
         let resultCaches = this.cacheData.resultCaches;
         let resultIndexMap = this.cacheData.resultIndexMap;
-        let index = resultCaches.index + 1;
+        let index = resultCaches.index + (option.direct === 'up' ? -1 : 1);
         let result = null;
         if (index == resultCaches.length) {
             index = 0;
+        } else if (index < 0) {
+            index = resultCaches.length - 1;
         }
-        // 已经全部遍历完
-        if (!resultIndexMap[index]) {
+        if (!resultIndexMap[index] || option.loop) {
             result = resultCaches[index];
             resultCaches.index = index;
             resultIndexMap[index] = true;
@@ -106,11 +112,12 @@ export default class {
     hasCache() {
         return !!this.cacheData;
     }
-    cache(str, resultCaches) {
+    cache(str, option, resultCaches) {
         let resultIndexMap = {};
         resultIndexMap[resultCaches.index] = true;
         this.cacheData = {
             str: str,
+            option: option,
             resultCaches: resultCaches,
             resultIndexMap: resultIndexMap
         };
