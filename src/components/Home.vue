@@ -109,7 +109,7 @@
 			ref="statusBar"
 		></status-bar>
 		<!-- 右键菜单 -->
-		<panel :checkable="false" :menuList="menuList" :styles="menuStyle" @change="onClickMenu" ref="menu" v-show="menuVisble"></panel>
+		<Menu :checkable="false" :menuList="menuList" :styles="menuStyle" @change="onClickMenu" ref="menu" v-show="menuVisble"></Menu>
 		<tip :content="tipContent" :styles="tipStyle" v-show="tipContent"></tip>
 	</div>
 </template>
@@ -125,7 +125,7 @@ import History from '@/module/history/index';
 import Context from '@/module/context/index';
 import ShortCut from '@/module/shortcut/index';
 import StatusBar from './StatusBar';
-import Panel from './Panel';
+import Menu from './Menu';
 import Tip from './Tip';
 import Util from '@/common/Util';
 import $ from 'jquery';
@@ -135,7 +135,7 @@ export default {
     name: 'Home',
     components: {
         StatusBar,
-        Panel,
+        Menu,
         Tip
     },
     data() {
@@ -771,21 +771,21 @@ export default {
         },
         // 右键菜单事件
         onContextmenu(e) {
-            let panelWidth = 0;
-            let panelHeight = 0;
+            let menuWidth = 0;
+            let menuHeight = 0;
             let $editor = $(this.$editor);
             let offset = $editor.offset();
             this.menuVisble = true;
             this.$nextTick(() => {
-                panelWidth = this.$refs.menu.$el.clientWidth;
-                panelHeight = this.$refs.menu.$el.clientHeight;
-                if (panelHeight + e.clientY > offset.top + this.scrollerArea.height) {
-                    this.menuStyle.top = e.clientY - offset.top - panelHeight + 'px';
+                menuWidth = this.$refs.menu.$el.clientWidth;
+                menuHeight = this.$refs.menu.$el.clientHeight;
+                if (menuHeight + e.clientY > offset.top + this.scrollerArea.height) {
+                    this.menuStyle.top = e.clientY - offset.top - menuHeight + 'px';
                 } else {
                     this.menuStyle.top = e.clientY - offset.top + 'px';
                 }
-                if (panelWidth + e.clientX > offset.left + $editor[0].clientWidth) {
-                    this.menuStyle.left = e.clientX - offset.left - panelWidth + 'px';
+                if (menuWidth + e.clientX > offset.left + $editor[0].clientWidth) {
+                    this.menuStyle.left = e.clientX - offset.left - menuWidth + 'px';
                 } else {
                     this.menuStyle.left = e.clientX - offset.left + 'px';
                 }
@@ -832,7 +832,7 @@ export default {
         },
         // 点击编辑器
         onClickEditor() {
-            this.$refs.statusBar.closeAllPanel();
+            this.$refs.statusBar.closeAllMenu();
             this.menuVisble = false;
         },
         // 滚动区域鼠标按下事件

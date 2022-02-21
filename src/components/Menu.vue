@@ -4,7 +4,7 @@
  * @Description: 
 -->
 <template>
-	<div :style="styles" @mousedown.stop class="my-editor-panel">
+	<div :style="styles" @mousedown.stop class="my-editor-menu">
 		<div class="my-editor-menu-group" v-for="group in menuList">
 			<div
 				:class="{checked: checkable && item.checked, disabled: item.disabled}"
@@ -20,7 +20,7 @@
 </template>
 <script>
 export default {
-    name: 'Panel',
+    name: 'Menu',
     props: {
         menuList: {
             type: Array,

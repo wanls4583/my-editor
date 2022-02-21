@@ -13,17 +13,17 @@
 		<div class="my-editor-status-right">
 			<div @mousedown.stop="showTabsize" class="my-editor-status-item clickable">
 				<span>Tab Size:{{_tabSize}}</span>
-				<panel :menuList="tabSizeList" :styles="{right: 0, bottom: height+'px'}" @change="onTabsizeChange" v-show="tabsizeVisible"></panel>
+				<Menu :menuList="tabSizeList" :styles="{right: 0, bottom: height+'px'}" @change="onTabsizeChange" v-show="tabsizeVisible"></Menu>
 			</div>
 			<div @mousedown.stop="showLanguage" class="my-editor-status-item clickable">
 				<span>{{_language}}</span>
-				<panel :menuList="languageList" :styles="{right: 0, bottom: height+'px'}" @change="onLnaguageChange" v-show="languageVisible"></panel>
+				<Menu :menuList="languageList" :styles="{right: 0, bottom: height+'px'}" @change="onLnaguageChange" v-show="languageVisible"></Menu>
 			</div>
 		</div>
 	</div>
 </template>
 <script>
-import Panel from './Panel';
+import Menu from './Menu';
 export default {
     name: 'StatusBar',
     props: {
@@ -49,7 +49,7 @@ export default {
         }
     },
     components: {
-        Panel
+        Menu
     },
     data() {
         return {
@@ -83,15 +83,15 @@ export default {
         },
         showTabsize() {
             let visible = this.tabsizeVisible;
-            this.closeAllPanel();
+            this.closeAllMenu();
             this.tabsizeVisible = !visible;
         },
         showLanguage() {
             let visible = this.languageVisible;
-            this.closeAllPanel();
+            this.closeAllMenu();
             this.languageVisible = !visible;
         },
-        closeAllPanel() {
+        closeAllMenu() {
             this.languageVisible = false;
             this.tabsizeVisible = false;
         },
