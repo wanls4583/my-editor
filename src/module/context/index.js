@@ -34,6 +34,7 @@ export default class {
             'lint',
             'folder',
             'selecter',
+            'fSelecter',
             'render',
             'unFold',
             'renderSelectedBg',
@@ -134,6 +135,7 @@ export default class {
         this.tokenizer.onInsertContentBefore(nowLine);
         this.lint.onInsertContentBefore(nowLine);
         this.folder.onInsertContentBefore(Object.assign({}, originPos));
+        this.fSelecter.clearRange(cursorPos);
         text = text.split(/\r\n|\n/);
         text = text.map((item) => {
             item = {
@@ -270,6 +272,7 @@ export default class {
             newLine = start.line;
             newColumn = start.column;
             this.selecter.clearRange(selectedRange);
+            this.fSelecter.clearRange(selectedRange);
         } else if (Util.keyCode.DELETE == keyCode) { // 向后删除一个字符
             if (cursorPos.column == text.length) { // 光标处于行尾
                 if (cursorPos.line < this.htmls.length) {
