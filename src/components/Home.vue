@@ -111,6 +111,7 @@
 		<!-- 右键菜单 -->
 		<Menu :checkable="false" :menuList="menuList" :styles="menuStyle" @change="onClickMenu" ref="menu" v-show="menuVisble"></Menu>
 		<tip :content="tipContent" :styles="tipStyle" v-show="tipContent"></tip>
+		<search-dialog></search-dialog>
 	</div>
 </template>
 
@@ -125,6 +126,7 @@ import History from '@/module/history/index';
 import Context from '@/module/context/index';
 import ShortCut from '@/module/shortcut/index';
 import StatusBar from './StatusBar';
+import SearchDialog from './Search';
 import Menu from './Menu';
 import Tip from './Tip';
 import Util from '@/common/Util';
@@ -135,8 +137,9 @@ export default {
     name: 'Home',
     components: {
         StatusBar,
+        SearchDialog,
         Menu,
-        Tip
+        Tip,
     },
     data() {
         return {

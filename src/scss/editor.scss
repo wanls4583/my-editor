@@ -1,7 +1,18 @@
-// @font-face {
-//     font-family: myfont;
-//     src: url(./font/test.ttf) format("truetype")
-// }
+@font-face {
+    font-family: 'iconfont';
+    /* Project id 3194546 */
+    src: url('//at.alicdn.com/t/font_3194546_p6polausbn.woff2?t=1645417099699') format('woff2'),
+        url('//at.alicdn.com/t/font_3194546_p6polausbn.woff?t=1645417099699') format('woff'),
+        url('//at.alicdn.com/t/font_3194546_p6polausbn.ttf?t=1645417099699') format('truetype');
+}
+
+.iconfont {
+    font-family: "iconfont" !important;
+    font-size: 16px;
+    font-style: normal;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
 
 * {
     box-sizing: border-box;
@@ -461,4 +472,77 @@ body {
     }
 
     // 提示-end
+
+    &-search {
+        position: absolute;
+        top: 0;
+        right: 20px;
+        z-index: 99;
+        width: 500px;
+        display: flex;
+        justify-content: space-between;
+        padding: 5px 10px 5px 25px;
+        background-color: rgb(243, 243, 243);
+        color: #333;
+
+        .iconfont {
+            cursor: pointer;
+        }
+    }
+
+    &-search-left {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 25px;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+
+    &-search-right,
+    &-search-top,
+    &-search-bottom {
+        display: flex;
+        align-items: center;
+        height: 30px;
+    }
+
+    &-search-input {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 280px;
+        margin-right: 5px;
+        background-color: #fff;
+
+        input {
+            flex-grow: 1;
+            height: 30px;
+            line-height: 30px;
+            padding: 0 5px;
+            border-style: none;
+            outline: none;
+        }
+    }
+
+    &-search-suffix {
+        color: #999999;
+        margin: 0 4px;
+        cursor: pointer;
+
+        &:hover {
+            color: #333;
+        }
+    }
+
+    &-search-active {
+        color: #333333;
+    }
+
+    &-no-results {
+        color: red;
+    }
 }
