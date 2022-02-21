@@ -648,7 +648,8 @@ export default class {
         }
         return {
             text: searchText,
-            wholeWord: wholeWord
+            wholeWord: wholeWord,
+            ignoreCase: wholeWord,
         }
     }
 }

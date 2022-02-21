@@ -51,22 +51,23 @@
 					>
 						<!-- my-editor-select-bg为选中状态 -->
 						<div
-							:class="[line.selected ? 'my-editor-select-bg my-editor-select-active' : '', line.fold == 'close' ? 'fold-close' : '']"
+							:class="[line.selected ? 'my-editor-select-bg my-editor-select-active' : '', line.isFsearch ? 'my-editor-select-f' : '', line.fold == 'close' ? 'fold-close' : '']"
 							:data-line="line.num"
 							class="my-editor-code"
 							v-html="line.html"
 						></div>
 						<!-- 选中时的首行背景 -->
 						<div
-							:class="{'my-editor-select-active': range.active}"
+							:class="{'my-editor-select-active': range.active,'my-editor-select-f': range.isFsearch}"
 							:style="{left: range.left + 'px', width: range.width + 'px'}"
 							class="my-editor-line-bg my-editor-select-bg"
 							v-for="range in line.selectStarts"
 						></div>
 						<!-- 选中时的末行背景 -->
 						<div
+							:class="{'my-editor-select-active': range.active,'my-editor-select-f': range.isFsearch}"
 							:style="{left: range.left + 'px', width: range.width + 'px'}"
-							class="my-editor-line-bg my-editor-select-bg my-editor-select-active"
+							class="my-editor-line-bg my-editor-select-bg"
 							v-for="range in line.selectEnds"
 						></div>
 						<span :style="{left: _tabLineLeft(tab)}" class="my-editor-tab-line" v-for="tab in line.tabNum"></span>
@@ -335,7 +336,9 @@ export default {
             this.folder = new Fold(this, context);
             this.history = new History(this, context);
             this.searcher = new Search(this, context);
+            this.fSearcher = new Search(this, context);
             this.selecter = new Select(this, context);
+            this.fSelecter = new Select(this, context);
             this.shortcut = new ShortCut(this, context);
             this.cursor = new Cursor(this, context);
             this.cursor.addCursorPos(this.nowCursorPos);
@@ -470,15 +473,16 @@ export default {
                 item.selectStarts = [];
                 item.selectEnds = [];
             });
-            if (!this.selecter.selectedRanges.length) {
-                return;
-            }
             this.selecter.selectedRanges.map((selectedRange) => {
                 this._renderSelectedBg(selectedRange);
             });
+            this.fSelecter.selectedRanges.map((selectedRange) => {
+                this._renderSelectedBg(selectedRange, true);
+            });
         },
         // 渲染选中背景
-        _renderSelectedBg(selectedRange) {
+        _renderSelectedBg(selectedRange, isFsearch) {
+            let selecter = isFsearch ? this.fSelecter : this.selecter;
             let firstLine = this.renderHtmls[0].num;
             let lastLine = this.renderHtmls.peek().num;
             let start = selectedRange.start;
@@ -500,23 +504,26 @@ export default {
             lastLine = lastLine < end.line - 1 ? lastLine : end.line - 1;
             for (let line = firstLine; line <= lastLine; line++) {
                 if (context.renderedLineMap.has(line)) {
-                    context.renderedLineMap.get(line).selected = true;
+                    let lineObj = context.renderedLineMap.get(line);
+                    lineObj.selected = true;
+                    lineObj.isFsearch = isFsearch;
                 }
             }
             if (context.renderedLineMap.has(start.line)) {
-                active = this.selecter.checkSelectedActive(selectedRange);
+                active = selecter.checkSelectedActive(selectedRange);
                 context.renderedLineMap.get(start.line).selectStarts.push({
                     left: start.left,
                     width: start.width,
-                    active: active
-
+                    active: active,
+                    isFsearch: isFsearch
                 });
             }
             if (end.line > start.line && context.renderedLineMap.has(end.line)) {
                 context.renderedLineMap.get(end.line).selectEnds.push({
                     left: end.left,
                     width: end.width,
-                    active: active || this.selecter.checkSelectedActive(selectedRange)
+                    active: active || selecter.checkSelectedActive(selectedRange),
+                    isFsearch: isFsearch
                 });
             }
         },
@@ -547,6 +554,7 @@ export default {
                 this.render();
             }
         },
+        // ctrl+f打开搜索
         openSearch() {
             let obj = {};
             this.searchVisible = true;
@@ -556,35 +564,62 @@ export default {
             }
             this.$refs.search.initData(obj);
             this.$refs.search.search();
+            this.$refs.search.focus();
         },
-        search(searchObj, direct) {
+        // ctrl+d搜索完整单词
+        searchWord() {
+            if (this.searchVisible) {
+                let searchObj = context.getToSearchObj();
+                if (searchObj.text) {
+                    let $search = this.$refs.search;
+                    if ($search.searchText != searchObj.text || !$search.wholeWord || !$search.ignoreCase) {
+                        this.$refs.search.initData({
+                            searchText: searchObj.text,
+                            wholeWord: true,
+                            ignoreCase: true
+                        });
+                        this.$refs.search.search();
+                    } else {
+                        this.onSearchNext();
+                    }
+                }
+            } else {
+                this.search();
+            }
+        },
+        search(searcher, selecter, searchObj, direct) {
             let resultObj = null;
-            let hasCache = this.searcher.hasCache();
+            let hasCache = false;
+            searcher = searcher || this.searcher;
+            selecter = selecter || this.selecter;
+            hasCache = searcher.hasCache();
             if (hasCache) {
-                searchObj = searchObj || this.searcher.getConfig();
-                resultObj = direct === 'up' ? this.searcher.prev() : this.searcher.next();
+                searchObj = searchObj || searcher.getConfig();
+                resultObj = direct === 'up' ? searcher.prev() : searcher.next();
             } else {
                 searchObj = searchObj || context.getToSearchObj();
                 if (!searchObj.text) {
                     return;
                 }
-                resultObj = this.searcher.search(searchObj);
+                resultObj = searcher.search(searchObj);
             }
             if (resultObj && resultObj.result) {
-                if (!this.selecter.selectedRanges.length || searchObj.loop) {
+                if (!selecter.selectedRanges.length || !this.cursorFocus) {
                     this.cursor.setCursorPos(resultObj.result.end);
                 } else {
                     this.cursor.addCursorPos(resultObj.result.end);
                 }
-                this.searchNow = resultObj.now;
                 if (!hasCache) {
                     resultObj.list.map((rangePos) => {
-                        this.selecter.addSelectedRange(rangePos.start, rangePos.end);
+                        selecter.addSelectedRange(rangePos.start, rangePos.end);
                     });
                     this.searchCount = resultObj.list.length;
                 }
+                if (searcher === this.fSearcher) {
+                    this.searchNow = resultObj.now;
+                }
                 this.renderSelectedBg();
-            } else {
+            } else if (searcher === this.fSearcher) {
                 this.searchCount = 0;
             }
         },
@@ -1058,28 +1093,30 @@ export default {
             this.shortcut.onKeyDown(e);
         },
         onSearch(data) {
-            this.searcher.clearCache();
-            this.selecter.clearRange();
-            this.renderSelectedBg();
-            this.search({
+            this.fSearcher.clearCache();
+            this.fSelecter.clearRange();
+            this.search(this.fSearcher, this.fSelecter, {
                 text: data.value,
                 wholeWord: data.wholeWord,
                 ignoreCase: data.ignoreCase,
-                loop: true
             });
+            this.renderSelectedBg();
         },
         onSearchNext() {
-            if (this.searcher.hasCache()) {
-                this.search();
+            if (this.fSearcher.hasCache()) {
+                this.search(this.fSearcher, this.fSelecter);
             }
         },
         onSearchPrev() {
-            if (this.searcher.hasCache()) {
-                this.search(null, 'up');
+            if (this.fSearcher.hasCache()) {
+                this.search(this.fSearcher, this.fSelecter, null, 'up');
             }
         },
         onCloseSearch() {
             this.searchVisible = false;
+            this.fSelecter.clearRange();
+            this.renderSelectedBg();
+            this.focus();
         }
     }
 }

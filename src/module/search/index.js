@@ -14,7 +14,7 @@ export default class {
         this.initProperties(editor, context);
     }
     initProperties(editor, context) {
-        Util.defineProperties(this, editor, ['selecter', 'nowCursorPos']);
+        Util.defineProperties(this, editor, ['selecter', 'nowCursorPos', 'cursorFocus']);
         Util.defineProperties(this, context, ['htmls']);
     }
     search(option) {
@@ -88,7 +88,7 @@ export default class {
         } else if (index < 0) {
             index = resultCaches.length - 1;
         }
-        if (!resultIndexMap[index] || this.cacheData.option.loop) {
+        if (!resultIndexMap[index] || !this.cursorFocus) {
             result = resultCaches[index];
             resultCaches.index = index;
             resultIndexMap[index] = true;

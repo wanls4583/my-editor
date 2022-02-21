@@ -16,7 +16,7 @@ export default class {
             'cursor',
             'selecter',
             'history',
-            'search',
+            'searchWord',
             'openSearch',
             'renderSelectedBg',
         ]);
@@ -90,7 +90,7 @@ export default class {
                     break;
                 case 68: //ctrl+d，搜素
                     e.preventDefault();
-                    this.search();
+                    this.searchWord();
                     break;
                 case 70: //ctrl+f，搜素
                     e.preventDefault();

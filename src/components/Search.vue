@@ -76,7 +76,6 @@ export default {
                 ignoreCase: this.ignoreCase,
                 wholeWord: this.wholeWord
             });
-            this.$refs.input1.focus();
         },
         changeCase() {
             this.ignoreCase = !this.ignoreCase;
@@ -97,6 +96,11 @@ export default {
         },
         close() {
             this.$emit('close');
+        },
+        focus() {
+            this.$nextTick(() => {
+                this.$refs.input1.focus();
+            });
         },
         onKeyDown(e) {
             if (e.keyCode === 13) {

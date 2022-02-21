@@ -147,8 +147,15 @@ body {
     }
 
     &-select-active {
-        background-color: #49483e;
+        background-color: rgb(73, 72, 62);
         border: none;
+    }
+
+    &-select-f {
+        &.my-editor-select-active {
+            background-color: rgba(204, 233, 252, 0.5);
+            color: #333333;
+        }
     }
 
     &-tab-line {
