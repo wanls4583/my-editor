@@ -17,6 +17,7 @@ export default class {
             'selecter',
             'history',
             'search',
+            'openSearch',
             'renderSelectedBg',
         ]);
         Util.defineProperties(this, context, [
@@ -90,6 +91,10 @@ export default class {
                 case 68: //ctrl+d，搜素
                     e.preventDefault();
                     this.search();
+                    break;
+                case 70: //ctrl+f，搜素
+                    e.preventDefault();
+                    this.openSearch();
                     break;
                 case 90: //ctrl+z，撤销
                 case 122:

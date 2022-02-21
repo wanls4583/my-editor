@@ -621,9 +621,6 @@ export default class {
     }
     // 获取待搜索的文本
     getToSearchObj() {
-        if (this.getToSearchObj.searchObj) {
-            return this.getToSearchObj.searchObj;
-        }
         let selectedRange = this.selecter.checkCursorSelected(this.nowCursorPos);
         let wholeWord = false;
         let searchText = '';
@@ -649,10 +646,9 @@ export default class {
             wholeWord = true;
             searchText = str;
         }
-        this.getToSearchObj.searchObj = {
+        return {
             text: searchText,
             wholeWord: wholeWord
         }
-        return this.getToSearchObj.searchObj;
     }
 }

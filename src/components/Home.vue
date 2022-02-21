@@ -111,7 +111,16 @@
 		<!-- 右键菜单 -->
 		<Menu :checkable="false" :menuList="menuList" :styles="menuStyle" @change="onClickMenu" ref="menu" v-show="menuVisble"></Menu>
 		<tip :content="tipContent" :styles="tipStyle" v-show="tipContent"></tip>
-		<search-dialog></search-dialog>
+		<search-dialog
+			:count="searchCount"
+			:now="searchNow"
+			@close="onCloseSearch"
+			@next="onSearchNext"
+			@prev="onSearchPrev"
+			@search="onSearch"
+			ref="search"
+			v-show="searchVisible"
+		></search-dialog>
 	</div>
 </template>
 
@@ -201,8 +210,11 @@ export default {
             },
             errorMap: {},
             menuVisble: false,
+            searchVisible: false,
             tipContent: false,
             tipContent: '',
+            searchNow: 1,
+            searchCount: 0
         }
     },
     computed: {
@@ -535,31 +547,46 @@ export default {
                 this.render();
             }
         },
-        search() {
-            let searchObj = context.getToSearchObj();
+        openSearch() {
+            let obj = {};
+            this.searchVisible = true;
+            if (this.selecter.selectedRanges.length) {
+                let selectedRange = this.selecter.selectedRanges[0];
+                obj.searchText = context.getRangeText(selectedRange.start, selectedRange.end);
+            }
+            this.$refs.search.initData(obj);
+            this.$refs.search.search();
+        },
+        search(searchObj, direct) {
             let resultObj = null;
             let hasCache = this.searcher.hasCache();
-            if (!searchObj.text) {
-                return;
+            if (hasCache) {
+                searchObj = searchObj || this.searcher.getConfig();
+                resultObj = direct === 'up' ? this.searcher.prev() : this.searcher.next();
+            } else {
+                searchObj = searchObj || context.getToSearchObj();
+                if (!searchObj.text) {
+                    return;
+                }
+                resultObj = this.searcher.search(searchObj);
             }
-            resultObj = this.searcher.search(searchObj.text, searchObj);
             if (resultObj && resultObj.result) {
-                if (!this.selecter.selectedRanges.length) {
+                if (!this.selecter.selectedRanges.length || searchObj.loop) {
                     this.cursor.setCursorPos(resultObj.result.end);
                 } else {
                     this.cursor.addCursorPos(resultObj.result.end);
                 }
+                this.searchNow = resultObj.now;
                 if (!hasCache) {
                     resultObj.list.map((rangePos) => {
                         this.selecter.addSelectedRange(rangePos.start, rangePos.end);
                     });
+                    this.searchCount = resultObj.list.length;
                 }
                 this.renderSelectedBg();
+            } else {
+                this.searchCount = 0;
             }
-        },
-        clearSearch() {
-            this.searcher.clearCache();
-            context.getToSearchObj.searchObj = null;
         },
         setData(prop, value) {
             if (typeof this[prop] === 'function') {
@@ -859,7 +886,7 @@ export default {
             }
             if (e.which != 3) {
                 this.selecter.clearRange();
-                this.clearSearch();
+                this.searcher.clearCache();
                 this.renderSelectedBg();
                 if (this.mouseUpTime && Date.now() - this.mouseUpTime < 300) { //双击选中单词
                     this.search();
@@ -1029,6 +1056,30 @@ export default {
         // 键盘按下事件
         onKeyDown(e) {
             this.shortcut.onKeyDown(e);
+        },
+        onSearch(data) {
+            this.searcher.clearCache();
+            this.selecter.clearRange();
+            this.renderSelectedBg();
+            this.search({
+                text: data.value,
+                wholeWord: data.wholeWord,
+                ignoreCase: data.ignoreCase,
+                loop: true
+            });
+        },
+        onSearchNext() {
+            if (this.searcher.hasCache()) {
+                this.search();
+            }
+        },
+        onSearchPrev() {
+            if (this.searcher.hasCache()) {
+                this.search(null, 'up');
+            }
+        },
+        onCloseSearch() {
+            this.searchVisible = false;
         }
     }
 }

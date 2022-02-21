@@ -17,11 +17,7 @@ export default class {
         Util.defineProperties(this, editor, ['selecter', 'nowCursorPos']);
         Util.defineProperties(this, context, ['htmls']);
     }
-    search(str, option) {
-        let resultObj = this.checkCache(str, option);
-        if (resultObj) {
-            return resultObj;
-        }
+    search(option) {
         let reg = null,
             exec = null,
             preExec = null,
@@ -36,9 +32,9 @@ export default class {
         let text = this.htmls.map((item) => {
             return item.text
         }).join('\n');
-        let strs = str.split(/\n/);
-        let regStr = str.replace(/\\|\.|\*|\+|\-|\?|\(|\)|\[|\]|{|\}|\^|\$|\~|\!/g, '\\$&');
-        regStr = (option.wholeWord ? '\\b' : '') + regStr + (option.wholeWord ? '\\b' : '');
+        let strs = option.text.split(/\n/);
+        let regStr = option.text.replace(/\\|\.|\*|\+|\-|\?|\(|\)|\[|\]|{|\}|\^|\$|\~|\!/g, '\\$&');
+        regStr = (option.wholeWord ? '(?:\\b|(?=[^0-9a-zA-Z]))' : '') + regStr + (option.wholeWord ? '(?:\\b|(?=[^0-9a-zA-Z]))' : '');
         option = option || {};
         reg = new RegExp('[^\n]*?(' + regStr + ')|[^\n]*?\n', option.ignoreCase ? 'img' : 'mg');
         while (exec = reg.exec(text)) {
@@ -63,7 +59,7 @@ export default class {
                     start: start,
                     end: end
                 };
-                if (!result && Util.comparePos(end, that.nowCursorPos) >= 0) {
+                if (!result && (!that.nowCursorPos || Util.comparePos(end, that.nowCursorPos) >= 0)) {
                     result = rangePos;
                     resultCaches.index = resultCaches.length;
                 }
@@ -75,36 +71,30 @@ export default class {
             resultCaches.index = 0;
             result = resultCaches[0];
         }
-        this.cache(str, option, resultCaches);
+        this.cache(option, resultCaches);
         return {
+            now: resultCaches.index + 1,
             list: resultCaches,
             result: result
         };
     }
-    checkCache(str, option) {
-        if (!this.cacheData || this.cacheData.str !== str) {
-            return null;
-        }
-        for (let key in option) {
-            if (this.cacheData.option[key] !== option[key]) {
-                return false;
-            }
-        }
+    checkCache(direct) {
         let resultCaches = this.cacheData.resultCaches;
         let resultIndexMap = this.cacheData.resultIndexMap;
-        let index = resultCaches.index + (option.direct === 'up' ? -1 : 1);
+        let index = resultCaches.index + (direct === 'up' ? -1 : 1);
         let result = null;
         if (index == resultCaches.length) {
             index = 0;
         } else if (index < 0) {
             index = resultCaches.length - 1;
         }
-        if (!resultIndexMap[index] || option.loop) {
+        if (!resultIndexMap[index] || this.cacheData.option.loop) {
             result = resultCaches[index];
             resultCaches.index = index;
             resultIndexMap[index] = true;
         }
         return {
+            now: index + 1,
             list: resultCaches,
             result: result
         }
@@ -112,11 +102,10 @@ export default class {
     hasCache() {
         return !!this.cacheData;
     }
-    cache(str, option, resultCaches) {
+    cache(option, resultCaches) {
         let resultIndexMap = {};
         resultIndexMap[resultCaches.index] = true;
         this.cacheData = {
-            str: str,
             option: option,
             resultCaches: resultCaches,
             resultIndexMap: resultIndexMap
@@ -124,5 +113,14 @@ export default class {
     }
     clearCache() {
         this.cacheData = null;
+    }
+    next() {
+        return this.checkCache();
+    }
+    prev() {
+        return this.checkCache('up');
+    }
+    getConfig() {
+        return Object.assign({}, this.cacheData.option);
     }
 }

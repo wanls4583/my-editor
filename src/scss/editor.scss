@@ -477,7 +477,7 @@ body {
         position: absolute;
         top: 0;
         right: 20px;
-        z-index: 99;
+        z-index: 98;
         width: 500px;
         display: flex;
         justify-content: space-between;
@@ -530,7 +530,8 @@ body {
 
     &-search-suffix {
         color: #999999;
-        margin: 0 4px;
+        margin-right: 4px;
+        padding: 0 4px;
         cursor: pointer;
 
         &:hover {
@@ -539,7 +540,8 @@ body {
     }
 
     &-search-active {
-        color: #333333;
+        background-color: rgb(204, 233, 252);
+        color: #333;
     }
 
     &-no-results {
