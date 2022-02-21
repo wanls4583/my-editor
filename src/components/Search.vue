@@ -72,7 +72,7 @@ export default {
         },
         search() {
             this.$emit('search', {
-                value: this.searchText,
+                text: this.searchText,
                 ignoreCase: this.ignoreCase,
                 wholeWord: this.wholeWord
             });

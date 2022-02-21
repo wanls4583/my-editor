@@ -556,8 +556,12 @@ export default {
         },
         // ctrl+f打开搜索
         openSearch() {
+            if (this.searchVisible) {
+                return;
+            }
             let obj = {};
             this.searchVisible = true;
+            this.forceCursorView = false;
             if (this.selecter.selectedRanges.length) {
                 let selectedRange = this.selecter.selectedRanges[0];
                 obj.searchText = context.getRangeText(selectedRange.start, selectedRange.end);
@@ -619,7 +623,7 @@ export default {
                     this.searchNow = resultObj.now;
                 }
                 this.renderSelectedBg();
-            } else if (searcher === this.fSearcher) {
+            } else if (searcher === this.fSearcher && !resultObj) {
                 this.searchCount = 0;
             }
         },
