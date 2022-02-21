@@ -123,4 +123,7 @@ export default class {
     getConfig() {
         return Object.assign({}, this.cacheData.option);
     }
+    getNowIndex() {
+        return this.cacheData.resultCaches.index;
+    }
 }

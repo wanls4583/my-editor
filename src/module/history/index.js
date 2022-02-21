@@ -99,7 +99,7 @@ export default class {
                 this.deleteLineUp(command.cursorPos, true);
                 break;
             case Util.command.REPLACE:
-                this.clearCursorPos();
+                this.cursor.clearCursorPos();
                 this.replace(command.text, command.cursorPos, true);
                 break;
         }

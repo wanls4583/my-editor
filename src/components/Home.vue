@@ -119,7 +119,7 @@
 			@next="onSearchNext"
 			@prev="onSearchPrev"
 			@repalce="repalce"
-			@repalce-all="repalceAll"
+			@repalceAll="repalceAll"
 			@search="onSearch"
 			ref="search"
 			v-show="searchVisible"
@@ -631,12 +631,14 @@ export default {
         },
         repalce(data) {
             if (data.text && this.fSelecter.selectedRanges.length) {
-                context.replace(data.text, this.fSelecter.selectedRanges);
+                context.replace(data.text, [this.fSelecter.selectedRanges[this.fSearcher.getNowIndex()]]);
+                this.onSearchNext();
             }
         },
         repalceAll(data) {
             if (data.text && this.fSelecter.selectedRanges.length) {
                 context.replace(data.text, this.fSelecter.selectedRanges);
+                this.searchCount = 0;
             }
         },
         setData(prop, value) {
