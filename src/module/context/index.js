@@ -577,6 +577,40 @@ export default class {
     deleteLineDown(cursorPos, isCommand) {
         this.deleteLine(cursorPos, isCommand, 'down');
     }
+    replace(text, ranges, isCommand) {
+        let historyRnageList = [];
+        let deleteText = this.getRangeText(ranges[0].start, ranges[0].end);
+        ranges.slice().reverse().map((item) => {
+            let originPos = {
+                line: item.start.line,
+                column: item.start.column
+            };
+            this._deleteContent({
+                start: item.start,
+                end: item.end
+            });
+            let cursorPos = this.cursor.addCursorPos(item.start);
+            this._insertContent(text, cursorPos);
+            historyRnageList.push({
+                start: originPos,
+                end: {
+                    line: cursorPos.line,
+                    column: cursorPos.column
+                }
+            });
+        });
+        historyRnageList.reverse();
+        let historyObj = {
+            type: Util.command.REPLACE,
+            cursorPos: historyRnageList,
+            text: deleteText
+        }
+        if (!isCommand) { // 新增历史记录
+            this.history.pushHistory(historyObj);
+        } else { // 撤销或重做操作后，更新历史记录
+            this.history.updateHistory(historyObj);
+        }
+    }
     // 获取选中范围内的文本
     getRangeText(start, end) {
         var text = this.htmls[start.line - 1].text;

@@ -127,6 +127,9 @@ export default class {
             if (selectedRange.line && selectedRange.column) {
                 selectedRange = this.checkCursorSelected(selectedRange);
             }
+            if (!selectedRange) {
+                return;
+            }
             let selectedRanges = this.selectedRanges.filter((item) => {
                 if (Util.comparePos(item.start, selectedRange.start) >= 0 &&
                     Util.comparePos(item.end, selectedRange.end) <= 0) {

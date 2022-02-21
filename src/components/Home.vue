@@ -118,6 +118,8 @@
 			@close="onCloseSearch"
 			@next="onSearchNext"
 			@prev="onSearchPrev"
+			@repalce="repalce"
+			@repalce-all="repalceAll"
 			@search="onSearch"
 			ref="search"
 			v-show="searchVisible"
@@ -627,6 +629,16 @@ export default {
                 this.searchCount = 0;
             }
         },
+        repalce(data) {
+            if (data.text && this.fSelecter.selectedRanges.length) {
+                context.replace(data.text, this.fSelecter.selectedRanges);
+            }
+        },
+        repalceAll(data) {
+            if (data.text && this.fSelecter.selectedRanges.length) {
+                context.replace(data.text, this.fSelecter.selectedRanges);
+            }
+        },
         setData(prop, value) {
             if (typeof this[prop] === 'function') {
                 return;
@@ -1100,7 +1112,7 @@ export default {
             this.fSearcher.clearCache();
             this.fSelecter.clearRange();
             this.search(this.fSearcher, this.fSelecter, {
-                text: data.value,
+                text: data.text,
                 wholeWord: data.wholeWord,
                 ignoreCase: data.ignoreCase,
             });

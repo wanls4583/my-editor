@@ -22,10 +22,10 @@
 			</div>
 			<div class="my-editor-search-bottom" style="margin-top:5px" v-if="replaceVisible">
 				<div class="my-editor-search-input">
-					<input ref="input2" type="text" />
+					<input ref="input2" type="text" v-model="replaceText" />
 				</div>
-				<span class="iconfont" style="margin-right:10px" title="Replace(Enter)">&#xed7e;</span>
-				<span class="iconfont" style="margin-right:10px" title="Replace All(Ctrl+Alt+Enter)">&#xed7c;</span>
+				<span @click="replace" class="iconfont" style="margin-right:10px" title="Replace(Enter)">&#xed7e;</span>
+				<span @click="replaceAll" class="iconfont" style="margin-right:10px" title="Replace All(Ctrl+Alt+Enter)">&#xed7c;</span>
 			</div>
 		</div>
 		<div class="my-editor-search-right">
@@ -51,6 +51,7 @@ export default {
     data() {
         return {
             searchText: '',
+            replaceText: '',
             replaceVisible: false,
             wholeWord: false,
             ignoreCase: false
@@ -93,6 +94,12 @@ export default {
         },
         searchPrev() {
             this.$emit('prev');
+        },
+        replace() {
+            this.$emit('repalce', { text: this.replaceText });
+        },
+        replaceAll() {
+            this.$emit('repalceAll', { text: this.replaceText });
         },
         close() {
             this.$emit('close');

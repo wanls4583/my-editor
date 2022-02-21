@@ -22,6 +22,7 @@ export default class {
             'copyLineDown',
             'deleteLineUp',
             'deleteLineDown',
+            'replace',
         ]);
     }
     // 撤销操作
@@ -96,6 +97,10 @@ export default class {
                 break;
             case Util.command.DELETE_UP:
                 this.deleteLineUp(command.cursorPos, true);
+                break;
+            case Util.command.REPLACE:
+                this.clearCursorPos();
+                this.replace(command.text, command.cursorPos, true);
                 break;
         }
     }

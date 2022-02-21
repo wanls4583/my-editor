@@ -255,6 +255,7 @@ Util.command = {
     COPY_DOWN: 'copyLineDown',
     DELETE_UP: 'delteLineUp',
     DELETE_DOWN: 'delteLineDown',
+    REPLACE: 'replace',
 }
 Util.constData = {
     PAIR_START: -1,
