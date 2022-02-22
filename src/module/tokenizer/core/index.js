@@ -32,7 +32,7 @@ export default class {
         }
     }
     initProperties(editor, context) {
-        Util.defineProperties(this, editor, ['startLine', 'maxVisibleLines', 'maxLine', 'renderLine']);
+        Util.defineProperties(this, editor, ['startLine', 'maxVisibleLines', 'maxLine', 'renderLine', '$nextTick']);
         Util.defineProperties(this, context, ['htmls']);
     }
     initRules(rules) {
@@ -166,7 +166,14 @@ export default class {
             return;
         }
         if (nowLine <= this.currentLine) {
-            this.tokenizeLines(nowLine);
+            this.currentLine = nowLine;
+            clearTimeout(this.tokenizeLines.timer);
+            this.$nextTick(() => {
+                if (this.currentLine !== nowLine) {
+                    return;
+                }
+                this.tokenizeLines(nowLine);
+            });
         } else {
             this.tokenizeVisibleLins();
         }
@@ -177,7 +184,14 @@ export default class {
             return;
         }
         if (nowLine <= this.currentLine) {
-            this.tokenizeLines(nowLine);
+            this.currentLine = nowLine;
+            clearTimeout(this.tokenizeLines.timer);
+            this.$nextTick(() => {
+                if (this.currentLine !== nowLine) {
+                    return;
+                }
+                this.tokenizeLines(nowLine);
+            });
         } else {
             this.tokenizeVisibleLins();
         }
@@ -189,14 +203,22 @@ export default class {
         this.tokenizeVisibleLins();
     }
     tokenizeVisibleLins() {
-        let currentLine = this.currentLine;
-        this.tokenizeLines(this.startLine);
-        this.currentLine = currentLine;
+        let tokenizeVisibleLinsId = this.tokenizeVisibleLins.id + 1 || 1;
+        this.tokenizeVisibleLins.id = tokenizeVisibleLinsId;
+        this.$nextTick(() => {
+            if (this.tokenizeVisibleLins.id !== tokenizeVisibleLinsId) {
+                return;
+            }
+            let currentLine = this.currentLine;
+            this.tokenizeLines(this.startLine, this.startLine + this.maxVisibleLines);
+            this.currentLine = currentLine;
+        });
     }
     tokenizeLines(startLine, endLine) {
         let processedLines = 0;
         let processedTime = Date.now();
         endLine = endLine || this.maxLine;
+        endLine = endLine > this.maxLine ? this.maxLine : endLine;
         while (startLine <= endLine) {
             let lineObj = this.htmls[startLine - 1];
             if (!lineObj.tokens) { //文本超过一万时跳过高亮
