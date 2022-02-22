@@ -594,6 +594,19 @@ export default {
             this.$refs.search.search();
             this.$refs.search.focus();
         },
+        // 内容改变后，刷新搜索
+        refreshSearch() {
+            if (this.searchVisible) {
+                let refreshSearchId = this.refreshSearch.id + 1 || 1;
+                this.refreshSearch.id = refreshSearchId;
+                this.$nextTick(() => {
+                    if (this.refreshSearch.id !== refreshSearchId) {
+                        return;
+                    }
+                    this.$refs.search.search();
+                });
+            }
+        },
         // ctrl+d搜索完整单词
         searchWord() {
             if (this.searchVisible) {
@@ -654,18 +667,22 @@ export default {
         },
         replace(data) {
             if (data.text && this.fSelecter.selectedRanges.length) {
-                let selectedRange = this.fSelecter.selectedRanges[this.fSearcher.getNowIndex()];
+                let selectedRange = this.fSelecter.selectedRanges[this.searchNow - 1];
                 context.replace(data.text, [selectedRange]);
-                this.onSearchNext();
-                this.fSelecter.clearRange(selectedRange);
             }
         },
         replaceAll(data) {
             console.time('replaceAll');
             if (data.text && this.fSelecter.selectedRanges.length) {
-                context.replace(data.text, this.fSelecter.selectedRanges);
+                context.replace(data.text, this.fSelecter.selectedRanges.slice().sort((a, b) => {
+                    if (a.start.line === b.start.line) {
+                        return a.start.column - b.start.column;
+                    }
+                    return a.start.line - b.start.line;
+                }));
                 this.searchCount = 0;
             }
+            this.cursor.setCursorPos(this.cursor.multiCursorPos[0]);
             console.timeEnd('replaceAll');
         },
         setData(prop, value) {

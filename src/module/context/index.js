@@ -41,6 +41,7 @@ export default class {
             'setLineWidth',
             'setNowCursorPos',
             'getStrWidth',
+            'refreshSearch',
         ]);
         this.setEditorData = (prop, value) => {
             editor.setData(prop, value);
@@ -171,6 +172,7 @@ export default class {
             this.unFold(nowLine);
         }
         this.cursor.updateCursorPos(cursorPos, newLine, newColumn, true);
+        this.refreshSearch();
         let historyObj = {
             type: Util.command.DELETE,
             cursorPos: {
@@ -327,6 +329,7 @@ export default class {
         this.lint.onDeleteContentAfter(newLine);
         this.tokenizer.onDeleteContentAfter(newLine);
         this.cursor.updateCursorPos(cursorPos, newLine, newColumn, true);
+        this.refreshSearch();
         // 更新最大文本宽度
         if (startObj.width >= this.maxWidthObj.width) {
             this.setEditorData('maxWidthObj', {
@@ -572,7 +575,7 @@ export default class {
     }
     replace(text, ranges, isCommand) {
         let historyRnageList = [];
-        let deleteText = this.getRangeText(ranges[0].start, ranges[0].end);
+        let deleteText = this.getRangeText(ranges.peek().start, ranges.peek().end);
         ranges.slice().reverse().map((item) => {
             let originPos = {
                 line: item.start.line,
@@ -582,7 +585,7 @@ export default class {
                 start: item.start,
                 end: item.end
             });
-            let cursorPos = this.cursor.addCursorPos(item.start);
+            let cursorPos = this.cursor.addCursorPos(item.end);
             this._insertContent(text, cursorPos);
             historyRnageList.push({
                 start: originPos,
@@ -592,7 +595,6 @@ export default class {
                 }
             });
         });
-        historyRnageList.reverse();
         let historyObj = {
             type: Util.command.REPLACE,
             cursorPos: historyRnageList,

@@ -83,8 +83,27 @@ export default class {
             resultIndexMap: resultIndexMap
         };
     }
-    clearCache() {
-        this.cacheData = null;
+    clearCache(now) {
+        let index = now - 1;
+        if (now !== undefined) {
+            let resultCaches = this.cacheData.resultCaches;
+            let indexs = Object.keys(this.cacheData.resultIndexMap);
+            this.cacheData.resultIndexMap = {};
+            resultCaches.splice(index, 1);
+            if (resultCaches.index >= index) {
+                resultCaches.index--;
+            }
+            indexs.map((item) => {
+                if (item >= index) {
+                    item--;
+                }
+                if (item > -1) {
+                    this.cacheData.resultIndexMap[item] = true;
+                }
+            });
+        } else {
+            this.cacheData = null;
+        }
     }
     checkCache(direct) {
         let resultCaches = this.cacheData.resultCaches;
@@ -131,6 +150,25 @@ export default class {
         if (this.cacheData) {
             this.cacheData.resultCaches.index = -1;
             this.cacheData.resultIndexMap = {};
+        }
+    }
+    updateAfterPos(cursorPos, line, column) {
+        if (this.cacheData) {
+            this.cacheData.resultCaches.map((item) => {
+                _updateAfter(item.start);
+                _updateAfter(item.end);
+            });
+        }
+
+        function _updateAfter(item) {
+            if (item != cursorPos) {
+                if (item.line > cursorPos.line) {
+                    item.line += line - cursorPos.line;
+                } else if (item.line === cursorPos.line && item.column > cursorPos.column) {
+                    item.line += line - cursorPos.line;
+                    item.column += column - cursorPos.column;
+                }
+            }
         }
     }
     setNow(cursorPos) {

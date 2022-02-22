@@ -18,7 +18,8 @@ export default class {
     initProperties(editor, context) {
         Util.defineProperties(this, editor, [
             'nowCursorPos',
-            'selecter',
+            'fSelecter',
+            'fSearcher',
             'setNowCursorPos',
             'setCursorRealPos',
             'getColumnByWidth',
@@ -82,10 +83,13 @@ export default class {
         this.multiCursorPos.map((item) => {
             _updateAfter(item);
         });
-        this.selecter.selectedRanges.map((item) => {
+        this.fSelecter.selectedRanges.map((item) => {
             _updateAfter(item.start);
             _updateAfter(item.end);
         });
+        if (this.fSearcher.hasCache()) {
+            this.fSearcher.updateAfterPos(cursorPos, line, column);
+        }
         if (cursorPos.line != line) {
             this.setCursorPosLineMap();
         }
