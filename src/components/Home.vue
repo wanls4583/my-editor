@@ -619,10 +619,10 @@ export default {
                     resultObj.list.map((rangePos) => {
                         selecter.addSelectedRange(rangePos.start, rangePos.end);
                     });
-                    this.searchCount = resultObj.list.length;
                 }
                 if (searcher === this.fSearcher) {
                     this.searchNow = resultObj.now;
+                    this.searchCount = resultObj.list.length;
                 }
                 this.renderSelectedBg();
             } else if (searcher === this.fSearcher && !resultObj) {
