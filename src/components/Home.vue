@@ -681,19 +681,21 @@ export default {
                 this.setNowCursorPos.id = setNowCursorPosId;
                 // 强制滚动使光标处于可见区域
                 this.$nextTick(() => {
-                    if (this.setNowCursorPos.id != setNowCursorPosId || this.forceCursorView === false) {
+                    if (this.setNowCursorPos.id != setNowCursorPosId) {
                         return;
                     }
-                    let line = this.folder.getRelativeLine(nowCursorPos.line);
-                    let top = (line - this.folder.getRelativeLine(this.startLine)) * this.charObj.charHight;
-                    let relTop = line * this.charObj.charHight;
-                    if (relTop > this.scrollTop + this.scrollerArea.height - this.charObj.charHight) {
-                        this.$vScroller.scrollTop = relTop + this.charObj.charHight - this.scrollerArea.height;
-                        this.startLine = Math.floor(this.scrollTop / this.charObj.charHight);
-                        this.startLine++;
-                    } else if (top < 0 || top == 0 && this.top < 0) {
-                        this.$vScroller.scrollTop = (nowCursorPos.line - 1) * this.charObj.charHight;
-                        this.startLine = nowCursorPos.line;
+                    if (this.forceCursorView !== false) {
+                        let line = this.folder.getRelativeLine(nowCursorPos.line);
+                        let top = (line - this.folder.getRelativeLine(this.startLine)) * this.charObj.charHight;
+                        let relTop = line * this.charObj.charHight;
+                        if (relTop > this.scrollTop + this.scrollerArea.height - this.charObj.charHight) {
+                            this.$vScroller.scrollTop = relTop + this.charObj.charHight - this.scrollerArea.height;
+                            this.startLine = Math.floor(this.scrollTop / this.charObj.charHight);
+                            this.startLine++;
+                        } else if (top < 0 || top == 0 && this.top < 0) {
+                            this.$vScroller.scrollTop = (nowCursorPos.line - 1) * this.charObj.charHight;
+                            this.startLine = nowCursorPos.line;
+                        }
                     }
                     this.setCursorRealPos();
                 });
