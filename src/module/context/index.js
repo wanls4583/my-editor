@@ -585,7 +585,7 @@ export default class {
                 start: item.start,
                 end: item.end
             });
-            let cursorPos = this.cursor.addCursorPos(item.end);
+            let cursorPos = this.cursor.addCursorPos(item.start);
             this._insertContent(text, cursorPos);
             historyRnageList.push({
                 start: originPos,
