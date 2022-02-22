@@ -4,10 +4,6 @@
  * @Description: 
  */
 import Util from '@/common/Util';
-let regs = {
-    enter: /\n/g,
-    column: /\n([^\n]+)$/,
-}
 
 export default class {
     constructor(editor, context) {
@@ -78,6 +74,18 @@ export default class {
             result: result
         };
     }
+    cache(option, resultCaches) {
+        let resultIndexMap = {};
+        resultIndexMap[resultCaches.index] = true;
+        this.cacheData = {
+            option: option,
+            resultCaches: resultCaches,
+            resultIndexMap: resultIndexMap
+        };
+    }
+    clearCache() {
+        this.cacheData = null;
+    }
     checkCache(direct) {
         let resultCaches = this.cacheData.resultCaches;
         let resultIndexMap = this.cacheData.resultIndexMap;
@@ -102,28 +110,47 @@ export default class {
     hasCache() {
         return !!this.cacheData;
     }
-    cache(option, resultCaches) {
-        let resultIndexMap = {};
-        resultIndexMap[resultCaches.index] = true;
-        this.cacheData = {
-            option: option,
-            resultCaches: resultCaches,
-            resultIndexMap: resultIndexMap
-        };
-    }
-    clearCache() {
-        this.cacheData = null;
-    }
     next() {
         return this.checkCache();
     }
     prev() {
         return this.checkCache('up');
     }
+    now() {
+        let resultCaches = this.cacheData.resultCaches;
+        return {
+            now: resultCaches.index + 1,
+            list: resultCaches,
+            result: resultCaches[resultCaches.index]
+        }
+    }
+    hasNow() {
+        return this.cacheData && this.cacheData.resultCaches.index > -1;
+    }
+    clearNow() {
+        if (this.cacheData) {
+            this.cacheData.resultCaches.index = -1;
+            this.cacheData.resultIndexMap = {};
+        }
+    }
+    setNow(cursorPos) {
+        let resultCaches = this.cacheData.resultCaches;
+        this.cacheData.resultCaches.index = 0;
+        this.cacheData.resultIndexMap = {
+            0: true
+        };
+        for (let i = 0; i < resultCaches.length; i++) {
+            let item = resultCaches[i];
+            if (Util.comparePos(item.end, cursorPos) >= 0) {
+                this.cacheData.resultCaches.index = i;
+                this.cacheData.resultIndexMap = {
+                    i: true
+                };
+                break;
+            }
+        }
+    }
     getConfig() {
         return Object.assign({}, this.cacheData.option);
-    }
-    getNowIndex() {
-        return this.cacheData.resultCaches.index;
     }
 }

@@ -940,6 +940,7 @@ export default {
             if (e.which != 3) {
                 this.selecter.clearRange();
                 this.searcher.clearCache();
+                this.fSearcher.clearNow();
                 this.renderSelectedBg();
                 if (this.mouseUpTime && Date.now() - this.mouseUpTime < 300) { //双击选中单词
                     this.search();
@@ -1122,7 +1123,16 @@ export default {
         },
         onSearchNext() {
             if (this.fSearcher.hasCache()) {
-                this.search(this.fSearcher, this.fSelecter);
+                if (this.fSearcher.hasNow()) {
+                    this.search(this.fSearcher, this.fSelecter);
+                } else {
+                    let resultObj = null;
+                    this.fSearcher.setNow(this.nowCursorPos);
+                    resultObj = this.fSearcher.now();
+                    this.cursor.setCursorPos(resultObj.result.end);
+                    this.searchNow = resultObj.now;
+                    this.renderSelectedBg();
+                }
             }
         },
         onSearchPrev() {
