@@ -14,7 +14,6 @@ export default class {
         Util.defineProperties(this, editor, [
             'renderSelectedBg',
             'cursor',
-            'multiCursorPos'
         ]);
         Util.defineProperties(this, context, [
             'htmls',
@@ -24,7 +23,7 @@ export default class {
         }
     }
     select(direct, wholeWord) {
-        this.multiCursorPos.map((cursorPos) => {
+        this.cursor.multiCursorPos.map((cursorPos) => {
             let selectedRange = this.checkCursorSelected(cursorPos);
             if (selectedRange) {
                 this.cursor.moveCursor(cursorPos, direct, wholeWord);
@@ -168,8 +167,8 @@ export default class {
             return !item.del && Util.comparePos(item.start, item.end) < 0;
         }));
         if (delCurposMap.size) {
-            let multiCursorPos = this.multiCursorPos.slice();
-            this.multiCursorPos.empty().push(...multiCursorPos.filter((item) => {
+            let multiCursorPos = this.cursor.multiCursorPos.slice();
+            this.cursor.multiCursorPos.empty().push(...multiCursorPos.filter((item) => {
                 if (delCurposMap.has(item.line + ',' + item.column)) {
                     return false;
                 }

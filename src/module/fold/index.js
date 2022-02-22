@@ -11,7 +11,7 @@ export default class {
     }
     initProperties(editor, context) {
         Util.defineProperties(this.editorFunObj, editor, ['unFold']);
-        Util.defineProperties(this, editor, ['selecter', 'multiCursorPos']);
+        Util.defineProperties(this, editor, ['selecter']);
         Util.defineProperties(this, context, ['htmls', 'folds', 'foldMap']);
     }
     onInsertContentBefore(cursorPos) {

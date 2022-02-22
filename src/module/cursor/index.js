@@ -13,14 +13,14 @@ export default class {
     constructor(editor, context) {
         this.initProperties(editor, context);
         this.multiCursorPosLineMap = new Map();
+        this.multiCursorPos = [];
     }
     initProperties(editor, context) {
         Util.defineProperties(this, editor, [
             'nowCursorPos',
-            'multiCursorPos',
             'selecter',
-            'setCursorRealPos',
             'setNowCursorPos',
+            'setCursorRealPos',
             'getColumnByWidth',
             'getStrWidth'
         ]);
@@ -60,7 +60,6 @@ export default class {
         cursorPos.line !== originLine && this.setCursorPosLineMap();
         let posArr = this.multiCursorPosLineMap.get(cursorPos.line) || [];
         let index = posArr.indexOf(cursorPos);
-        this.setCursorRealPos(cursorPos);
         // 过滤重叠光标
         if (posArr[index - 1] && Util.comparePos(posArr[index - 1], cursorPos) === 0) {
             needToDel = posArr[index - 1];
@@ -72,6 +71,11 @@ export default class {
         if (needToDel) {
             index = this.multiCursorPos.indexOf(needToDel);
             this.multiCursorPos.splice(index, 1);
+        }
+        this.setCursorRealPos();
+        if (cursorPos === this.nowCursorPos) {
+            //触发滚动
+            this.setNowCursorPos(this.nowCursorPos);
         }
     }
     updateAfterPos(cursorPos, line, column) {
@@ -120,7 +124,6 @@ export default class {
         });
         this.setCursorPosLineMap();
         this.setNowCursorPos(cursorPos);
-        this.setCursorRealPos(cursorPos);
         return cursorPos;
     }
     // 设置光标
@@ -139,7 +142,6 @@ export default class {
         this.multiCursorPos.push(cursorPos);
         this.setCursorPosLineMap();
         this.setNowCursorPos(cursorPos);
-        this.setCursorRealPos(cursorPos);
     }
     // 设置光标和行号映射
     setCursorPosLineMap() {

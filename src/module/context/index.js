@@ -25,7 +25,6 @@ export default class {
     initProperties(editor) {
         Util.defineProperties(this, editor, [
             'nowCursorPos',
-            'multiCursorPos',
             'maxLine',
             'maxWidthObj',
             'cursor',
@@ -41,7 +40,6 @@ export default class {
             'setMaxWidth',
             'setLineWidth',
             'setNowCursorPos',
-            'setCursorRealPos',
             'getStrWidth',
         ]);
         this.setEditorData = (prop, value) => {
@@ -95,11 +93,11 @@ export default class {
                     this.cursor.updateCursorPos(_cursorPos, cursorPos.line, cursorPos.column);
                 }
             }
-        } else if (this.multiCursorPos.length > 1) {
+        } else if (this.cursor.multiCursorPos.length > 1) {
             let texts = text instanceof Array ? text : text.split(/\r\n|\n/);
             // 多点插入时候，逆序插入
-            let multiCursorPos = this.multiCursorPos.slice().reverse();
-            if (texts.length === this.multiCursorPos.length) {
+            let multiCursorPos = this.cursor.multiCursorPos.slice().reverse();
+            if (texts.length === this.cursor.multiCursorPos.length) {
                 multiCursorPos.map((cursorPos, index) => {
                     let historyObj = this._insertContent(texts[index], cursorPos);
                     historyArr.push(historyObj);
@@ -111,7 +109,7 @@ export default class {
                 });
             }
         } else {
-            historyArr = this._insertContent(text, this.multiCursorPos[0]);
+            historyArr = this._insertContent(text, this.cursor.multiCursorPos[0]);
         }
         this.selecter.clearRange();
         this.renderSelectedBg();
@@ -135,7 +133,6 @@ export default class {
         this.tokenizer.onInsertContentBefore(nowLine);
         this.lint.onInsertContentBefore(nowLine);
         this.folder.onInsertContentBefore(Object.assign({}, originPos));
-        this.fSelecter.clearRange(cursorPos);
         text = text.split(/\r\n|\n/);
         text = text.map((item) => {
             item = {
@@ -166,8 +163,8 @@ export default class {
             line: newLine,
             column: newColumn
         });
-        this.lint.onInsertContentAfter(newLine);
         this.render();
+        this.lint.onInsertContentAfter(newLine);
         this.tokenizer.onInsertContentAfter(newLine);
         this.setLineWidth(text);
         if (this.foldMap.has(nowLine) && text.length > 1) {
@@ -199,12 +196,12 @@ export default class {
                 historyObj.text && historyArr.push(historyObj);
             });
         } else {
-            this.multiCursorPos.map((cursorPos) => {
+            this.cursor.multiCursorPos.map((cursorPos) => {
                 let historyObj = this._deleteContent(cursorPos, keyCode);
                 historyObj.text && historyArr.push(historyObj);
             });
         }
-        this.setNowCursorPos(this.multiCursorPos[0]);
+        this.setNowCursorPos(this.cursor.multiCursorPos[0]);
         this.selecter.clearRange();
         this.renderSelectedBg();
         historyArr = historyArr.length > 1 ? historyArr : historyArr[0];
@@ -271,8 +268,6 @@ export default class {
             }
             newLine = start.line;
             newColumn = start.column;
-            this.selecter.clearRange(selectedRange);
-            this.fSelecter.clearRange(selectedRange);
         } else if (Util.keyCode.DELETE == keyCode) { // 向后删除一个字符
             if (cursorPos.column == text.length) { // 光标处于行尾
                 if (cursorPos.line < this.htmls.length) {
@@ -281,7 +276,7 @@ export default class {
                     this.htmls.splice(cursorPos.line, 1);
                     deleteText = '\n';
                     // 更新后面的的光标位置
-                    this.multiCursorPos.map((item) => {
+                    this.cursor.multiCursorPos.map((item) => {
                         if (item.line > cursorPos.line) {
                             if (item.line === cursorPos.line + 1) {
                                 item.command += cursorPos.column;
@@ -294,7 +289,7 @@ export default class {
                 deleteText = text[cursorPos.column];
                 text = text.slice(0, cursorPos.column) + text.slice(cursorPos.column + 1);
                 // 更新后面的的光标位置
-                this.multiCursorPos.map((item) => {
+                this.cursor.multiCursorPos.map((item) => {
                     if (item.line === cursorPos.line && item.column > cursorPos.column) {
                         item.column--;
                     }
@@ -328,8 +323,8 @@ export default class {
             line: newLine,
             column: newColumn
         });
+        this.render();
         this.lint.onDeleteContentAfter(newLine);
-        this.render(); //必须放在tokenizer前面，renderline(lineId)的时候.obj.num将失效
         this.tokenizer.onDeleteContentAfter(newLine);
         this.cursor.updateCursorPos(cursorPos, newLine, newColumn, true);
         // 更新最大文本宽度
@@ -365,7 +360,7 @@ export default class {
         if (cursorPos) {
             cursorPosList = cursorPos instanceof Array ? cursorPos : [cursorPos];
         } else {
-            that.multiCursorPos.map((item) => {
+            that.cursor.multiCursorPos.map((item) => {
                 if (!prePos || item.line - prePos.line > 1) {
                     item.line > 1 && cursorPosList.push(item);
                     prePos = item;
@@ -418,7 +413,7 @@ export default class {
         if (cursorPos) {
             cursorPosList = cursorPos instanceof Array ? cursorPos : [cursorPos];
         } else {
-            that.multiCursorPos.map((item) => {
+            that.cursor.multiCursorPos.map((item) => {
                 if (!prePos || item.line - prePos.line > 1) {
                     item.line > 1 && cursorPosList.push(item);
                     prePos = item;
@@ -471,7 +466,7 @@ export default class {
         if (cursorPos) {
             cursorPosList = cursorPos instanceof Array ? cursorPos : [cursorPos];
         } else {
-            this.multiCursorPos.map((item) => {
+            this.cursor.multiCursorPos.map((item) => {
                 if (!copyedLineMap[item.line]) {
                     cursorPosList.push(item);
                     copyedLineMap[item.line] = true;
@@ -497,7 +492,6 @@ export default class {
                 column: item.column
             };
         }).reverse();
-        this.setCursorRealPos();
         this.renderSelectedBg();
         let historyObj = {
             type: direct === 'up' ? Util.command.DELETE_DOWN : Util.command.DELETE_UP,
@@ -525,7 +519,7 @@ export default class {
         if (cursorPos) {
             cursorPosList = cursorPos instanceof Array ? cursorPos : [cursorPos];
         } else {
-            this.multiCursorPos.reverse().slice().map((item) => {
+            this.cursor.multiCursorPos.reverse().slice().map((item) => {
                 if (!copyedLineMap[item.line]) {
                     cursorPosList.push(item);
                 }
@@ -557,7 +551,6 @@ export default class {
                 column: item.column
             };
         }).reverse();
-        this.setCursorRealPos();
         this.renderSelectedBg();
         let historyObj = {
             type: direct === 'down' ? Util.command.COPY_UP : Util.command.COPY_DOWN,
@@ -631,7 +624,7 @@ export default class {
     // 获取待复制的文本
     getCopyText(cut) {
         let text = '';
-        this.multiCursorPos.map((cursorPos) => {
+        this.cursor.multiCursorPos.map((cursorPos) => {
             let str = '';
             let selectedRange = this.selecter.checkCursorSelected(cursorPos);
             if (selectedRange) {

@@ -96,10 +96,10 @@ export default {
             this.$emit('prev');
         },
         replace() {
-            this.$emit('repalce', { text: this.replaceText });
+            this.$emit('replace', { text: this.replaceText });
         },
         replaceAll() {
-            this.$emit('repalceAll', { text: this.replaceText });
+            this.$emit('replaceAll', { text: this.replaceText });
         },
         close() {
             this.$emit('close');
