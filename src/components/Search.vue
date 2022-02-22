@@ -72,11 +72,14 @@ export default {
             this.search();
         },
         search() {
-            this.$emit('search', {
-                text: this.searchText,
-                ignoreCase: this.ignoreCase,
-                wholeWord: this.wholeWord
-            });
+            clearTimeout(this.search.timer);
+            this.search.timer = setTimeout(() => {
+                this.$emit('search', {
+                    text: this.searchText,
+                    ignoreCase: this.ignoreCase,
+                    wholeWord: this.wholeWord
+                });
+            }, 100);
         },
         changeCase() {
             this.ignoreCase = !this.ignoreCase;

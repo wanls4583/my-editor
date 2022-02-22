@@ -682,7 +682,6 @@ export default {
                 }));
                 this.searchCount = 0;
             }
-            this.cursor.setCursorPos(this.cursor.multiCursorPos[0]);
             console.timeEnd('replaceAll');
         },
         setData(prop, value) {

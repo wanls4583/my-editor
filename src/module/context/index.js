@@ -574,6 +574,9 @@ export default class {
     replace(text, ranges, isCommand) {
         let historyRnageList = [];
         let deleteText = this.getRangeText(ranges.peek().start, ranges.peek().end);
+        let nowCursorPos = null;
+        this.cursor.setCursorPos(this.nowCursorPos);
+        nowCursorPos = this.nowCursorPos;
         ranges.slice().reverse().map((item) => {
             let originPos = {
                 line: item.start.line,
@@ -594,6 +597,7 @@ export default class {
                 }
             });
         });
+        this.cursor.setCursorPos(nowCursorPos);
         let historyObj = {
             type: Util.command.REPLACE,
             cursorPos: historyRnageList,

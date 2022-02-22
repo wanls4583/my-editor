@@ -55,11 +55,25 @@ export default class {
                     start: start,
                     end: end
                 };
-                if (!result && (!that.nowCursorPos || Util.comparePos(end, that.nowCursorPos) >= 0)) {
-                    result = rangePos;
-                    resultCaches.index = resultCaches.length;
-                }
                 resultCaches.push(rangePos);
+                if (!result && (!that.nowCursorPos || Util.comparePos(end, that.nowCursorPos) >= 0)) {
+                    let prePos = resultCaches[resultCaches.length - 2];
+                    result = rangePos;
+                    resultCaches.index = resultCaches.length - 1;
+                    // 寻找最接近当前光标的区域
+                    if (prePos && that.nowCursorPos) {
+                        let distance1 = that.nowCursorPos.line - prePos.end.line;
+                        let distance2 = end.line - that.nowCursorPos.line;
+                        if (distance1 === distance2) {
+                            distance1 = that.nowCursorPos.column - prePos.end.column;
+                            distance2 = start.column - that.nowCursorPos.column;
+                        }
+                        if (distance2 > distance1) {
+                            result = prePos;
+                            resultCaches.index = resultCaches.index - 2;
+                        }
+                    }
+                }
             }
             preExec = exec;
         }

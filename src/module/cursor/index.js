@@ -98,7 +98,7 @@ export default class {
             if (item != cursorPos) {
                 if (item.line > cursorPos.line) {
                     item.line += line - cursorPos.line;
-                } else if (item.line === cursorPos.line && item.column > cursorPos.column) {
+                } else if (item.line === cursorPos.line && item.column >= cursorPos.column) {
                     item.line += line - cursorPos.line;
                     item.column += column - cursorPos.column;
                 }
