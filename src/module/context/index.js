@@ -112,8 +112,6 @@ export default class {
         } else {
             historyArr = this._insertContent(text, this.cursor.multiCursorPos[0]);
         }
-        this.selecter.clearRange();
-        this.renderSelectedBg();
         if (!commandObj) { // 新增历史记录
             this.history.pushHistory(historyArr);
         } else { // 撤销或重做操作后，更新历史记录
@@ -173,6 +171,7 @@ export default class {
         }
         this.cursor.updateCursorPos(cursorPos, newLine, newColumn, true);
         this.refreshSearch();
+        this.selecter.clearRange();
         let historyObj = {
             type: Util.command.DELETE,
             cursorPos: {
@@ -204,8 +203,6 @@ export default class {
             });
         }
         this.setNowCursorPos(this.cursor.multiCursorPos[0]);
-        this.selecter.clearRange();
-        this.renderSelectedBg();
         historyArr = historyArr.length > 1 ? historyArr : historyArr[0];
         if (!isCommand) { // 新增历史记录
             historyArr && this.history.pushHistory(historyArr);
@@ -330,6 +327,7 @@ export default class {
         this.tokenizer.onDeleteContentAfter(newLine);
         this.cursor.updateCursorPos(cursorPos, newLine, newColumn, true);
         this.refreshSearch();
+        this.selecter.clearRange();
         // 更新最大文本宽度
         if (startObj.width >= this.maxWidthObj.width) {
             this.setEditorData('maxWidthObj', {
@@ -585,6 +583,7 @@ export default class {
                 start: item.start,
                 end: item.end
             });
+            this.cursor.updateAfterPos(item.end, item.start.line, item.start.column);
             let cursorPos = this.cursor.addCursorPos(item.start);
             this._insertContent(text, cursorPos);
             historyRnageList.push({
