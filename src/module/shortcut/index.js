@@ -11,7 +11,6 @@ export default class {
     }
     initProperties(editor, context) {
         Util.defineProperties(this, editor, [
-            'multiCursorPos',
             'nowCursorPos',
             'cursor',
             'selecter',
@@ -164,6 +163,7 @@ export default class {
                     that.cursor.moveCursor(cursorPos, direct, wholeWord);
                 });
             }
+            that.cursor.filterCursorPos();
         }
     }
 }

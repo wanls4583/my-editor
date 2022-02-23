@@ -119,14 +119,15 @@ class Util {
         $(wrap).append($tempDom)
         var dom = $('#' + id)[0];
         var charWidth = dom.clientWidth;
-        if (Util.getStrExactWidth.count > 5) { //避免频繁删除dom导致浏览器卡顿
-            $('.my-editor-temp-text').remove();
-        } else {
-            clearTimeout(Util.getStrExactWidth.timer);
-            Util.getStrExactWidth.timer = setTimeout(() => {
-                $('.my-editor-temp-text').remove();
-            }, 500);
-        }
+        $('.my-editor-temp-text').remove();
+        // if (Util.getStrExactWidth.count > 5) { //避免频繁删除dom导致浏览器卡顿
+        //     $('.my-editor-temp-text').remove();
+        // } else {
+        //     clearTimeout(Util.getStrExactWidth.timer);
+        //     Util.getStrExactWidth.timer = setTimeout(() => {
+        //         $('.my-editor-temp-text').remove();
+        //     }, 500);
+        // }
         return charWidth;
 
         function _splitStr(str) {

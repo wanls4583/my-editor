@@ -61,18 +61,18 @@ export default class {
                     result = rangePos;
                     resultCaches.index = resultCaches.length - 1;
                     // 寻找最接近当前光标的区域
-                    if (prePos && that.nowCursorPos) {
-                        let distance1 = that.nowCursorPos.line - prePos.end.line;
-                        let distance2 = end.line - that.nowCursorPos.line;
-                        if (distance1 === distance2) {
-                            distance1 = that.nowCursorPos.column - prePos.end.column;
-                            distance2 = start.column - that.nowCursorPos.column;
-                        }
-                        if (distance2 > distance1) {
-                            result = prePos;
-                            resultCaches.index = resultCaches.index - 2;
-                        }
-                    }
+                    // if (prePos && that.nowCursorPos) {
+                    //     let distance1 = that.nowCursorPos.line - prePos.end.line;
+                    //     let distance2 = end.line - that.nowCursorPos.line;
+                    //     if (distance1 === distance2) {
+                    //         distance1 = that.nowCursorPos.column - prePos.end.column;
+                    //         distance2 = start.column - that.nowCursorPos.column;
+                    //     }
+                    //     if (distance2 > distance1) {
+                    //         result = prePos;
+                    //         resultCaches.index = resultCaches.index - 2;
+                    //     }
+                    // }
                 }
             }
             preExec = exec;
@@ -164,25 +164,6 @@ export default class {
         if (this.cacheData) {
             this.cacheData.resultCaches.index = -1;
             this.cacheData.resultIndexMap = {};
-        }
-    }
-    updateAfterPos(cursorPos, line, column) {
-        if (this.cacheData) {
-            this.cacheData.resultCaches.map((item) => {
-                _updateAfter(item.start);
-                _updateAfter(item.end);
-            });
-        }
-
-        function _updateAfter(item) {
-            if (item != cursorPos) {
-                if (item.line > cursorPos.line) {
-                    item.line += line - cursorPos.line;
-                } else if (item.line === cursorPos.line && item.column > cursorPos.column) {
-                    item.line += line - cursorPos.line;
-                    item.column += column - cursorPos.column;
-                }
-            }
         }
     }
     setNow(cursorPos) {

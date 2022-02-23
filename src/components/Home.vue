@@ -101,14 +101,7 @@
 			></textarea>
 		</div>
 		<!-- 状态栏 -->
-		<status-bar
-			:column="nowCursorPos.column+1"
-			:height="statusHeight"
-			:language.sync="language"
-			:line="nowCursorPos.line"
-			:tabSize.sync="tabSize"
-			ref="statusBar"
-		></status-bar>
+		<status-bar :column="_nowColumn" :height="statusHeight" :language.sync="language" :line="_nowLine" :tabSize.sync="tabSize" ref="statusBar"></status-bar>
 		<!-- 右键菜单 -->
 		<Menu :checkable="false" :menuList="menuList" :styles="menuStyle" @change="onClickMenu" ref="menu" v-show="menuVisble"></Menu>
 		<tip :content="tipContent" :styles="tipStyle" v-show="tipContent"></tip>
@@ -275,8 +268,14 @@ export default {
         },
         _activeLine() {
             return (num) => {
-                return this.nowCursorPos.line == num;
+                return this.nowCursorPos && this.nowCursorPos.line == num;
             }
+        },
+        _nowLine() {
+            return this.nowCursorPos && this.nowCursorPos.line || 1;
+        },
+        _nowColumn() {
+            return this.nowCursorPos && this.nowCursorPos.column || 0;
         },
         space() {
             return Util.space(this.tabSize);

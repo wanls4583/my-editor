@@ -67,7 +67,7 @@ export default class {
                 if (command instanceof Array) {
                     var text = [];
                     var cursorPos = [];
-                    command.slice().reverse().map((command) => {
+                    command.map((command) => {
                         text.push(command.text);
                         cursorPos.push(command.cursorPos);
                     });
@@ -154,8 +154,9 @@ export default class {
         // 检查两次操作是否可以合并
         function _combCommand(lastCommand, command) {
             if (lastCommand.type === Util.command.DELETE) {
-                lastCommand.cursorPos.line += command.cursorPos.line - command.preCursorPos.line;
-                lastCommand.cursorPos.column += command.cursorPos.column - command.preCursorPos.column;
+                command.preCursorPos.column -= lastCommand.cursorPos.column - lastCommand.preCursorPos.column;
+                lastCommand.preCursorPos = command.preCursorPos;
+                lastCommand.cursorPos = command.cursorPos;
             } else {
                 lastCommand.cursorPos = command.cursorPos;
                 if (command.keyCode === Util.keyCode.DELETE) {
