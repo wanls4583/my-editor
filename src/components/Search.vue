@@ -5,13 +5,15 @@
 -->
 <template>
 	<div @contextmenu.prevent @contextmenu.stop @mousedown.stop @selectstart.stop class="my-editor-search">
-		<span @click="showReplace" class="my-editor-search-left iconfont" title="Toggle Replace mode">&#xe682;</span>
+		<div class="my-editor-search-left">
+			<span @click="showReplace" class="iconfont" title="Toggle Replace mode">&#xe682;</span>
+		</div>
 		<div style="flex-grow:1">
 			<div class="my-editor-search-top">
-				<div class="my-editor-search-input">
-					<input @keydown="onKeyDown" ref="input1" type="text" v-model="searchText" />
-					<span :class="{'my-editor-search-active':ignoreCase}" @click="changeCase" class="my-editor-search-suffix" title="Match Case(Alt+C)">Aa</span>
-					<span :class="{'my-editor-search-active':wholeWord}" @click="changeWhole" class="my-editor-search-suffix iconfont" title="Match Whole Word(Alt+W)">&#xed7d;</span>
+				<div :class="{'active-border':input1Focus}" class="my-editor-search-input">
+					<input @blur="input1Focus=false" @focus="input1Focus=true" @keydown="onKeyDown" ref="input1" type="text" v-model="searchText" />
+					<span :class="{'active-suffix':ignoreCase}" @click="changeCase" class="my-editor-search-suffix" title="Match Case(Alt+C)">Aa</span>
+					<span :class="{'active-suffix':wholeWord}" @click="changeWhole" class="my-editor-search-suffix iconfont" title="Match Whole Word(Alt+W)">&#xed7d;</span>
 				</div>
 				<div v-if="count">
 					<span>{{now}}</span>
@@ -21,16 +23,40 @@
 				<span :style="{color:searchText?'red':'#333'}" v-else>No results</span>
 			</div>
 			<div class="my-editor-search-bottom" style="margin-top:5px" v-if="replaceVisible">
-				<div class="my-editor-search-input">
-					<input ref="input2" type="text" v-model="replaceText" />
+				<div :class="{'active-border':input2Focus}" class="my-editor-search-input">
+					<input @blur="input2Focus=false" @focus="input2Focus=true" ref="input2" type="text" v-model="replaceText" />
 				</div>
-				<span @click="replace" class="iconfont" style="margin-right:10px" title="Replace(Enter)">&#xed7e;</span>
-				<span @click="replaceAll" class="iconfont" style="margin-right:10px" title="Replace All(Ctrl+Alt+Enter)">&#xed7c;</span>
+				<span
+					:class="{'enabled-color':count>0,'disabled-color':count==0}"
+					@click="replace"
+					class="iconfont active-click"
+					style="margin-right:5px"
+					title="Replace(Enter)"
+				>&#xed7e;</span>
+				<span
+					:class="{'enabled-color':count>0,'disabled-color':count==0}"
+					@click="replaceAll"
+					class="iconfont active-click"
+					style="margin-right:5px"
+					title="Replace All(Ctrl+Alt+Enter)"
+				>&#xed7c;</span>
 			</div>
 		</div>
 		<div class="my-editor-search-right">
-			<span @click="searchPrev" class="iconfont" style="margin-right:10px" title="Previous Match(Shift Enter)">&#xe6a9;</span>
-			<span @click="searchNext" class="iconfont" style="margin-right:10px" title="Next Match(Enter)">&#xe6a8;</span>
+			<span
+				:class="{'active-border':searchPrevActive,'enabled-color':count>0,'disabled-color':count==0}"
+				@click="searchPrev"
+				class="iconfont"
+				style="margin-right:5px"
+				title="Previous Match(Shift Enter)"
+			>&#xe6a9;</span>
+			<span
+				:class="{'active-border':searchNextActive,'enabled-color':count>0,'disabled-color':count==0}"
+				@click="searchNext"
+				class="iconfont"
+				style="margin-right:5px"
+				title="Next Match(Enter)"
+			>&#xe6a8;</span>
 			<span @click="close" class="iconfont" title="Close">&#xe69a;</span>
 		</div>
 	</div>
@@ -54,12 +80,26 @@ export default {
             replaceText: '',
             replaceVisible: false,
             wholeWord: false,
-            ignoreCase: false
+            ignoreCase: false,
+            searchPrevActive: false,
+            searchNextActive: false,
+            input1Focus: false,
+            input2Focus: false,
         }
     },
     watch: {
         searchText: function (newVal) {
-            this.search();
+            this.search(100);
+        },
+        wholeWord: function (newVal) {
+            if (newVal) {
+                this.focus();
+            }
+        },
+        ignoreCase: function (newVal) {
+            if (newVal) {
+                this.focus();
+            }
         }
     },
     created() {
@@ -71,7 +111,7 @@ export default {
             }
             this.search();
         },
-        search() {
+        search(delay) {
             clearTimeout(this.search.timer);
             this.search.timer = setTimeout(() => {
                 this.$emit('search', {
@@ -79,7 +119,7 @@ export default {
                     ignoreCase: this.ignoreCase,
                     wholeWord: this.wholeWord
                 });
-            }, 100);
+            }, delay || 0);
         },
         changeCase() {
             this.ignoreCase = !this.ignoreCase;
@@ -93,15 +133,31 @@ export default {
             this.replaceVisible = !this.replaceVisible;
         },
         searchNext() {
+            if (!this.count) {
+                return;
+            }
+            this.searchNextActive = true;
+            this.focus();
             this.$emit('next');
         },
         searchPrev() {
+            if (!this.count) {
+                return;
+            }
+            this.searchPrevActive = true;
+            this.focus();
             this.$emit('prev');
         },
         replace() {
+            if (!this.count) {
+                return;
+            }
             this.$emit('replace', { text: this.replaceText });
         },
         replaceAll() {
+            if (!this.count) {
+                return;
+            }
             this.$emit('replaceAll', { text: this.replaceText });
         },
         close() {
@@ -112,11 +168,22 @@ export default {
                 this.$refs.input1.focus();
             });
         },
+        directBlur() {
+            this.searchPrevActive = false;
+            this.searchNextActive = false;
+        },
         onKeyDown(e) {
-            if (e.keyCode === 13) {
-                this.searchNext();
+            if (!this.count) {
+                return;
             }
-        }
+            if (e.keyCode === 13) {
+                if (this.searchPrevActive || !this.searchNextActive && e.shiftKey) {
+                    this.$emit('prev');
+                } else {
+                    this.$emit('next');
+                }
+            }
+        },
     }
 }
 </script>

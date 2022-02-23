@@ -77,6 +77,9 @@ export default class {
             }
             preExec = exec;
         }
+        if (!resultCaches.length) {
+            return null;
+        }
         if (!result && resultCaches.length) {
             resultCaches.index = 0;
             result = resultCaches[0];

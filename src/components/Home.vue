@@ -661,14 +661,14 @@ export default {
             this.setCursorRealPos();
         },
         replace(data) {
-            if (data.text && this.fSelecter.selectedRanges.length) {
+            if (this.fSelecter.selectedRanges.length) {
                 let selectedRange = this.fSelecter.selectedRanges[this.searchNow - 1];
                 context.replace(data.text, [selectedRange]);
             }
         },
         replaceAll(data) {
             console.time('replaceAll');
-            if (data.text && this.fSelecter.selectedRanges.length) {
+            if (this.fSelecter.selectedRanges.length) {
                 context.replace(data.text, this.fSelecter.selectedRanges.slice().sort((a, b) => {
                     if (a.start.line === b.start.line) {
                         return a.start.column - b.start.column;
@@ -1096,6 +1096,7 @@ export default {
             cancelAnimationFrame(this.selectMoveTimer);
             this.mouseStartObj = null;
             this.mouseUpTime = Date.now();
+            this.$refs.search.directBlur();
         },
         // 左右滚动事件
         onHscroll(e) {

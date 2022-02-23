@@ -612,19 +612,24 @@ export default class {
         let historyObj = null;
         let historyRnageList = [];
         let deleteText = this.getRangeText(ranges.peek().start, ranges.peek().end);
-        this.cursor.setCursorPos(this.nowCursorPos);
         for (let i = ranges.length - 1; i >= 0; i--) {
             let item = ranges[i];
-            this._deleteContent({
+            let end = null;
+            deleteText && this._deleteContent({
                 start: item.start,
                 end: item.end
             });
-            historyObj = this._insertContent(text, item.start);
+            if (text) {
+                historyObj = this._insertContent(text, item.start);
+                end = historyObj.cursorPos;
+            } else {
+                end = item.start;
+            }
             historyRnageList.push({
                 start: item.start,
-                end: historyObj.cursorPos
+                end: end
             });
-            this.cursor.updateAfterPos(item.start, historyObj.cursorPos.line, historyObj.cursorPos.column);
+            !i && this.cursor.setCursorPos(end);
         }
         historyObj = {
             type: Util.command.REPLACE,
