@@ -6,7 +6,7 @@
 <template>
 	<div @contextmenu.prevent @contextmenu.stop @mousedown.stop @selectstart.stop class="my-editor-search">
 		<div class="my-editor-search-left">
-			<span @click="showReplace" class="iconfont" title="Toggle Replace mode">&#xe682;</span>
+			<span @click="showReplace" class="iconfont" style="font-size:14px" title="Toggle Replace mode">{{replaceVisible?'&#xe61a;':'&#xe682;'}}</span>
 		</div>
 		<div style="flex-grow:1">
 			<div class="my-editor-search-top">
@@ -24,7 +24,7 @@
 			</div>
 			<div class="my-editor-search-bottom" style="margin-top:5px" v-if="replaceVisible">
 				<div :class="{'active-border':input2Focus}" class="my-editor-search-input">
-					<input @blur="input2Focus=false" @focus="input2Focus=true" ref="input2" type="text" v-model="replaceText" />
+					<input @blur="input2Focus=false" @focus="input2Focus=true" @keydown="onKeyDown2" ref="input2" type="text" v-model="replaceText" />
 				</div>
 				<span
 					:class="{'enabled-color':count>0,'disabled-color':count==0}"
@@ -181,6 +181,18 @@ export default {
                     this.$emit('prev');
                 } else {
                     this.$emit('next');
+                }
+            }
+        },
+        onKeyDown2(e) {
+            if (!this.count) {
+                return;
+            }
+            if (e.keyCode === 13) {
+                if (e.ctrlKey && e.altKey) {
+                    this.replaceAll();
+                } else {
+                    this.replace();
                 }
             }
         },

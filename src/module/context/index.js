@@ -612,6 +612,7 @@ export default class {
         let historyObj = null;
         let historyRnageList = [];
         let deleteText = this.getRangeText(ranges.peek().start, ranges.peek().end);
+        let direct = ranges.length > 1 && Util.comparePos(ranges[0].start, ranges[1].start) < 0 ? 'asc' : 'desc';
         for (let i = ranges.length - 1; i >= 0; i--) {
             let item = ranges[i];
             let end = null;
@@ -629,7 +630,11 @@ export default class {
                 start: item.start,
                 end: end
             });
-            !i && this.cursor.setCursorPos(end);
+            if (direct === 'asc') {
+                i == 0 && this.cursor.setCursorPos(end);
+            } else {
+                i == ranges.length - 1 && this.cursor.setCursorPos(end);
+            }
         }
         historyObj = {
             type: Util.command.REPLACE,
