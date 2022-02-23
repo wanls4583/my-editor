@@ -92,7 +92,7 @@ export default class {
         return false;
     }
     checkSelectedActive(selectedRange) {
-        let cursorPosList = this.cursor.multiCursorPosLineMap.get(selectedRange.start.line) || [];
+        let cursorPosList = this.cursor.getCursorsByLine(selectedRange.start.line);
         let start = selectedRange.start;
         let end = selectedRange.end;
         if (end.line > start.line) {
@@ -102,7 +102,7 @@ export default class {
                     return item;
                 }
             }
-            cursorPosList = this.cursor.multiCursorPosLineMap.get(selectedRange.end.line) || [];
+            cursorPosList = this.cursor.getCursorsByLine(selectedRange.end.line);
             for (let i = 0; i < cursorPosList.length; i++) {
                 let item = cursorPosList[i];
                 if (Util.comparePos(item, selectedRange.end) === 0) {

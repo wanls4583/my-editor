@@ -731,12 +731,9 @@ export default {
 
             function _setLine(item) {
                 let cursorList = [];
-                if (that.cursor.multiCursorPosLineMap.has(item.num)) {
-                    let posArr = that.cursor.multiCursorPosLineMap.get(item.num);
-                    posArr.map((cursorPos) => {
-                        cursorList.push(_setCursorRealPos(cursorPos));
-                    });
-                }
+                that.cursor.getCursorsByLine(item.num).map((cursorPos) => {
+                    cursorList.push(_setCursorRealPos(cursorPos));
+                });
                 item.cursorList = cursorList;
             }
 

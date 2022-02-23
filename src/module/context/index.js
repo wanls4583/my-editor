@@ -401,7 +401,7 @@ export default class {
                 }
             });
             that._insertContent(nowLineText + '\n' + upLineText, start);
-            that.cursor.multiCursorPosLineMap.get(cursorPos.line).map((item) => {
+            that.cursor.getCursorsByLine(cursorPos.line).map((item) => {
                 that.cursor.updateCursorPos(item, item.line - 1, item.column);
             });
         }
@@ -454,7 +454,7 @@ export default class {
                 }
             });
             that._insertContent(downLineText + '\n' + nowLineText, start);
-            that.cursor.multiCursorPosLineMap.get(cursorPos.line).map((item) => {
+            that.cursor.getCursorsByLine(cursorPos.line).map((item) => {
                 that.cursor.updateCursorPos(item, item.line + 1, item.column);
             });
         }
