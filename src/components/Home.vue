@@ -163,8 +163,6 @@ export default {
             nowCursorPos: {
                 line: 1,
                 column: 0,
-                top: 0,
-                left: 0,
             },
             cursorVisible: true,
             cursorFocus: true,
@@ -177,6 +175,7 @@ export default {
             startLine: 1,
             startToEndToken: null,
             top: 0,
+            textareaLeft: 0,
             scrollLeft: 0,
             scrollTop: 0,
             maxVisibleLines: 1,
@@ -253,12 +252,9 @@ export default {
         _textAreaPos() {
             let left = 0;
             let top = this.top;
-            if (this.cursor.multiCursorPos.length) {
-                let cursorRealPos = this.cursor.multiCursorPos.slice().sort((a, b) => {
-                    return a.top - b.top;
-                })[0];
-                left = Util.getNum(cursorRealPos.left);
-                top = Util.getNum(cursorRealPos.top) + this.top;
+            if (this.nowCursorPos) {
+                top = (this.folder.getRelativeLine(this.nowCursorPos.line) - this.folder.getRelativeLine(this.startLine)) * this.charObj.charHight;
+                left = this.textareaLeft;
                 left -= this.scrollLeft;
                 left = left < this.charObj.charWidth ? this.charObj.charWidth : left;
                 left = left > this.scrollerArea.width - this.charObj.charWidth ? this.scrollerArea.width - this.charObj.charWidth : left;
@@ -768,6 +764,9 @@ export default {
                     } else if (left < that.scrollLeft) {
                         that.$hScroller.scrollLeft = left - 1;
                     }
+                }
+                if (cursorPos === that.nowCursorPos) {
+                    that.textareaLeft = left;
                 }
                 return left + 'px';
             }

@@ -119,15 +119,9 @@ export default class {
             line: cursorPos.line,
             column: cursorPos.column
         };
-        this.multiCursorPos.push(cursorPos);
-        this.multiCursorPos.sort((a, b) => {
-            if (a.line == b.line) {
-                return a.column - b.column;
-            }
-            return a.line - b.line;
-        });
-        this.setCursorPosLineMap();
+        this.multiCursorPos.insert(cursorPos, Util.comparePos);
         this.setNowCursorPos(cursorPos);
+        this.setCursorPosLineMap();
         return cursorPos;
     }
     // 设置光标

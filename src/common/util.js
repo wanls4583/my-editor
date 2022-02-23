@@ -235,6 +235,26 @@ Array.prototype.empty = function () {
     this.length = 0;
     return this;
 }
+Array.prototype.insert = function (item, sort) {
+    if (sort && this.length) {
+        let left = 0,
+            right = this.length - 1;
+        while (left < right) {
+            let mid = Math.floor((left + right) / 2);
+            if (sort(item, this[mid]) > 0) {
+                left = mid + 1;
+            } else {
+                right = mid;
+            }
+        }
+        if (sort(item, this[left]) < 0) {
+            left--;
+        }
+        this.splice(left + 1, 0, item);
+    } else {
+        this.push(item);
+    }
+}
 String.prototype.peek = function (index) {
     if (this.length) {
         return this[this.length - (index || 1)];
