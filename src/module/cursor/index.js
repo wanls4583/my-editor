@@ -119,16 +119,23 @@ export default class {
         while (left < right) {
             let mid = Math.floor((left + right) / 2);
             if (this.multiCursorPos[mid].line == line) {
-                right = mid;
+                left = mid;
+                break;
             } else if (this.multiCursorPos[mid].line > line) {
                 right = mid - 1;
             } else {
                 left = mid + 1;
             }
         }
-        while (left < this.multiCursorPos.length && this.multiCursorPos[left].line === line) {
-            result.push(this.multiCursorPos[left]);
-            left++;
+        let index = left;
+        while (index < this.multiCursorPos.length && this.multiCursorPos[index].line === line) {
+            result.push(this.multiCursorPos[index]);
+            index++;
+        }
+        index = left - 1;
+        while (index >= 0 && this.multiCursorPos[index].line === line) {
+            result.push(this.multiCursorPos[index]);
+            index--;
         }
         return result;
     }
