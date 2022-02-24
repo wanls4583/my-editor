@@ -4,7 +4,6 @@
  * @Description: 
  */
 import Util from '@/common/Util';
-import cursor from '../cursor';
 let regs = {
     word: /[a-zA-Z0-9_]/,
     dWord: Util.fullAngleReg,

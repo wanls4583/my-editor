@@ -396,6 +396,7 @@ body {
         background-color: #eeeeee;
         min-width: auto;
         font-size: 14px;
+        color: #666666;
 
         .bar-item {
             min-width: auto;
@@ -413,11 +414,12 @@ body {
         min-width: 120px;
         background-color: #fff;
         // border-radius: 4px;
-        padding: 10px 0;
-        color: #333333;
+        border: 1px solid #dddddd;
+        color: #666666;
     }
 
     &-menu-group {
+        padding: 5px 0;
         border-bottom: 1px solid #eeeeee;
 
         &:last-child {
@@ -504,6 +506,7 @@ body {
         justify-content: space-between;
         padding: 5px 10px 5px 25px;
         background-color: rgb(243, 243, 243);
+        border: 1px solid #dddddd;
         color: #333;
 
         .iconfont {

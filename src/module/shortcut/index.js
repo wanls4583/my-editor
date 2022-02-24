@@ -79,17 +79,7 @@ export default class {
                     break;
                 case 65: //ctrl+a,全选
                     e.preventDefault();
-                    let end = {
-                        line: this.htmls.length,
-                        column: this.htmls.peek().text.length
-                    };
-                    this.selecter.setSelectedRange({
-                        line: 1,
-                        column: 0
-                    }, end);
-                    this.setEditorData('forceCursorView', false);
-                    this.cursor.setCursorPos(end);
-                    this.renderSelectedBg();
+                    this.selecter.selectAll();
                     break;
                 case 68: //ctrl+d，搜素
                     e.preventDefault();

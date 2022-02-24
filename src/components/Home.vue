@@ -77,11 +77,11 @@
 				</div>
 			</div>
 			<!-- 水平滚动条 -->
-			<div @mousedown.stop @mouseup.stop @scroll="onHscroll" class="my-editor-h-scroller-wrap" ref="hScroller">
+			<div @mousedown.stop @scroll="onHscroll" class="my-editor-h-scroller-wrap" ref="hScroller">
 				<div :style="{width: _hScrollWidth}" class="my-editor-h-scroller"></div>
 			</div>
 			<!-- 垂直滚动条 -->
-			<div @mousedown.stop @mouseup.stop @scroll="onVscroll" class="my-editor-v-scroller-wrap" ref="vScroller">
+			<div @mousedown.stop @scroll="onVscroll" class="my-editor-v-scroller-wrap" ref="vScroller">
 				<div :style="{height: scrollerHeight}" class="my-editor-v-scroller"></div>
 			</div>
 			<!-- 输入框 -->
@@ -99,6 +99,19 @@
 				class="my-editor-textarea"
 				ref="textarea"
 			></textarea>
+			<!-- 搜索框 -->
+			<search-dialog
+				:count="searchCount"
+				:now="searchNow"
+				@close="onCloseSearch"
+				@next="onSearchNext"
+				@prev="onSearchPrev"
+				@replace="replace"
+				@replaceAll="replaceAll"
+				@search="onSearch"
+				ref="search"
+				v-show="searchVisible"
+			></search-dialog>
 		</div>
 		<!-- 顶部菜单栏 -->
 		<menu-bar :height="topBarHeight" ref="menuBar"></menu-bar>
@@ -107,18 +120,6 @@
 		<!-- 右键菜单 -->
 		<Menu :checkable="false" :menuList="menuList" :styles="menuStyle" @change="onClickMenu" ref="menu" v-show="menuVisble"></Menu>
 		<tip :content="tipContent" :styles="tipStyle" v-show="tipContent"></tip>
-		<search-dialog
-			:count="searchCount"
-			:now="searchNow"
-			@close="onCloseSearch"
-			@next="onSearchNext"
-			@prev="onSearchPrev"
-			@replace="replace"
-			@replaceAll="replaceAll"
-			@search="onSearch"
-			ref="search"
-			v-show="searchVisible"
-		></search-dialog>
 	</div>
 </template>
 
@@ -332,6 +333,7 @@ export default {
         this.$hScroller = this.$refs.hScroller;
         this.charObj = Util.getCharWidth(this.$content);
         this.maxVisibleLines = Math.ceil(this.$scroller.clientHeight / this.charObj.charHight) + 1;
+        this.$refs.menuBar.initData(context);
         this.render();
         this.focus();
     },
@@ -583,12 +585,13 @@ export default {
         },
         // ctrl+f打开搜索
         openSearch(replaceMode) {
-            if (this.searchVisible) {
-                return;
-            }
             let obj = {
                 replaceVisible: !!replaceMode
             };
+            if (this.searchVisible) {
+                this.$refs.search.initData(obj);
+                return;
+            }
             this.searchVisible = true;
             this.forceCursorView = false;
             if (this.selecter.selectedRanges.length) {
@@ -677,7 +680,6 @@ export default {
             }
         },
         replaceAll(data) {
-            console.time('replaceAll');
             if (this.fSelecter.selectedRanges.length) {
                 context.replace(data.text, this.fSelecter.selectedRanges.slice().sort((a, b) => {
                     if (a.start.line === b.start.line) {
@@ -687,7 +689,6 @@ export default {
                 }));
                 this.searchCount = 0;
             }
-            console.timeEnd('replaceAll');
         },
         setData(prop, value) {
             if (typeof this[prop] === 'function') {
@@ -1010,6 +1011,15 @@ export default {
             let pos = this.getPosByEvent(e);
             this.cursor.setCursorPos(pos);
             this.focus();
+            if (e.which != 3) {
+                this.selecter.clearRange();
+                this.searcher.clearCache();
+                this.fSearcher.clearNow();
+                this.renderSelectedBg();
+                if (this.mouseUpTime && Date.now() - this.mouseUpTime < 300) { //双击选中单词
+                    this.search();
+                }
+            }
             this.mouseStartObj = {
                 time: Date.now(),
                 start: pos
@@ -1020,15 +1030,6 @@ export default {
             if (this.mouseStartObj && Date.now() - this.mouseStartObj.time > 100 &&
                 Util.comparePos(this.mouseStartObj.start, end) != 0) {
                 return;
-            }
-            if (e.which != 3) {
-                this.selecter.clearRange();
-                this.searcher.clearCache();
-                this.fSearcher.clearNow();
-                this.renderSelectedBg();
-                if (this.mouseUpTime && Date.now() - this.mouseUpTime < 300) { //双击选中单词
-                    this.search();
-                }
             }
         },
         // 鼠标移动事件

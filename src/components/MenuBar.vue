@@ -19,6 +19,7 @@
 	</div>
 </template>
 <script>
+import Util from '@/common/Util';
 import Menu from './Menu';
 export default {
     name: 'StatusBar',
@@ -57,6 +58,11 @@ export default {
                     name: 'Paste',
                     op: 'paste',
                     shortcut: 'Ctrl+V'
+                }],
+                [{
+                    name: 'Delete Line',
+                    op: 'deleteLine',
+                    shortcut: 'Ctrl+Shift+K'
                 }],
                 [{
                     name: 'Find',
@@ -98,6 +104,9 @@ export default {
 
     },
     methods: {
+        initData(context) {
+            this.context = context;
+        },
         showMemu(prop) {
             this.closeAllMenu();
             this[prop] = true;
@@ -107,10 +116,56 @@ export default {
             this.selectionMenuVisible = false;
         },
         onEditMenuChange(item) {
-
+            let $parent = this.$parent;
+            switch (item.op) {
+                case 'undo':
+                    $parent.history.undo();
+                    break;
+                case 'redo':
+                    $parent.history.redo();
+                    break;
+                case 'cut':
+                    Util.writeClipboard(this.context.getCopyText(true));
+                    break;
+                case 'copy':
+                    Util.writeClipboard(this.context.getCopyText());
+                    break;
+                case 'paste':
+                    Util.readClipboard().then((text) => {
+                        this.context.insertContent(text);
+                    });
+                    break;
+                case 'deleteLine':
+                    this.context.deleteLine();
+                    break;
+                case 'find':
+                    $parent.openSearch();
+                    break;
+                case 'replace':
+                    $parent.openSearch(true);
+                    break;
+            }
             this.editMenuVisible = false;
         },
-        onSelectionMenuChange() {
+        onSelectionMenuChange(item) {
+            let $parent = this.$parent;
+            switch (item.op) {
+                case 'selectAll':
+                    $parent.selecter.selectAll();
+                    break;
+                case 'copyLineUp':
+                    this.context.copyLineUp();
+                    break;
+                case 'copyLineDown':
+                    this.context.copyLineDown();
+                    break;
+                case 'moveLineUp':
+                    this.context.moveLineUp();
+                    break;
+                case 'moveLineDown':
+                    this.context.moveLineDown();
+                    break;
+            }
             this.selectionMenuVisible = false;
         }
     }

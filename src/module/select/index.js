@@ -21,6 +21,9 @@ export default class {
         this.setContextData = (prop, value) => {
             context.setData(prop, value);
         }
+        this.setEditorData = (prop, value) => {
+            editor.setData(prop, value);
+        }
     }
     select(direct, wholeWord) {
         this.cursor.multiCursorPos.map((cursorPos) => {
@@ -42,6 +45,19 @@ export default class {
             }
         });
         this.filterSelectedRanges();
+        this.renderSelectedBg();
+    }
+    selectAll() {
+        let end = {
+            line: this.htmls.length,
+            column: this.htmls.peek().text.length
+        };
+        this.setSelectedRange({
+            line: 1,
+            column: 0
+        }, end);
+        this.cursor.setCursorPos(end);
+        this.setEditorData('forceCursorView', false);
         this.renderSelectedBg();
     }
     // 添加选中区域
