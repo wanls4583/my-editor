@@ -189,7 +189,14 @@ export default class {
         if (rangePos) {
             rangeList = rangePos instanceof Array ? rangePos : [rangePos];
         } else {
-            rangeList = this.cursor.multiCursorPos;
+            this.cursor.multiCursorPos.map((item) => {
+                let selectedRange = this.selecter.checkCursorSelected(item);
+                if (selectedRange) {
+                    rangeList.push(selectedRange);
+                } else {
+                    rangeList.push(item);
+                }
+            });
         }
         let prePos = null;
         let preOriginPos = null;
@@ -205,6 +212,9 @@ export default class {
             historyObj && this.history.pushHistory(historyObj);
         } else { // 撤销或重做操作后，更新历史记录
             this.history.updateHistory(historyObj);
+        }
+        if (rangeList[0].start) {
+            this.cursor.clearCursorPos();
             historyArr.map((item) => {
                 this.cursor.addCursorPos(item.cursorPos);
             });
@@ -240,7 +250,7 @@ export default class {
                     rangePos.start.line = prePos.line;
                     rangePos.start.column = prePos.column + rangePos.start.column - preOriginPos.column;
                     if (originRangePos.end.line === originRangePos.start.line) {
-                        rangePos.end.column = rangePos.end.column + rangePos.start.column - originRangePos.start.column;
+                        rangePos.end.column = rangePos.start.column + originRangePos.end.column - originRangePos.start.column;
                     }
                 } else {
                     rangePos.start.line = prePos.line + rangePos.start.line - preOriginPos.line;
@@ -532,7 +542,7 @@ export default class {
         }).reverse();
         this.renderSelectedBg();
         let historyObj = {
-            type: direct === 'up' ? Util.command.DELETE_DOWN : Util.command.DELETE_UP,
+            type: direct === 'up' ? Util.command.DELETE_COPY_DOWN : Util.command.DELETE_COPY_UP,
             cursorPos: historyPosList
         }
         if (!isCommand) { // 新增历史记录
@@ -549,7 +559,7 @@ export default class {
     copyLineDown(cursorPos, isCommand) {
         this.copyLine(cursorPos, isCommand, 'down');
     }
-    deleteLine(cursorPos, isCommand, direct) {
+    deleteCopyLine(cursorPos, isCommand, direct) {
         let copyedLineMap = {};
         let cursorPosList = [];
         let historyPosList = [];
@@ -601,12 +611,43 @@ export default class {
         }
     }
     // 删除上面一行
-    deleteLineUp(cursorPos, isCommand) {
-        this.deleteLine(cursorPos, isCommand, 'up');
+    deleteCopyLineUp(cursorPos, isCommand) {
+        this.deleteCopyLine(cursorPos, isCommand, 'up');
     }
     // 删除下面一行
-    deleteLineDown(cursorPos, isCommand) {
-        this.deleteLine(cursorPos, isCommand, 'down');
+    deleteCopyLineDown(cursorPos, isCommand) {
+        this.deleteCopyLine(cursorPos, isCommand, 'down');
+    }
+    // 删除当前行
+    deleteLine() {
+        let ranges = [];
+        let preItem = null;
+        this.cursor.multiCursorPos.map((item) => {
+            let start = null;
+            if (preItem && item.line === preItem.line) {
+                return;
+            }
+            if (item.line > 1) {
+                start = {
+                    line: item.line - 1,
+                    column: this.htmls[item.line - 2].text.length
+                }
+            } else {
+                start = {
+                    line: item.line,
+                    column: 0
+                }
+            }
+            ranges.push({
+                start: start,
+                end: {
+                    line: item.line,
+                    column: this.htmls[item.line - 1].text.length
+                }
+            });
+            preItem = item;
+        });
+        this.deleteContent(null, ranges);
     }
     replace(text, ranges, isCommand) {
         let historyObj = null;
@@ -667,29 +708,43 @@ export default class {
     // 获取待复制的文本
     getCopyText(cut) {
         let text = '';
-        this.cursor.multiCursorPos.map((cursorPos) => {
-            let str = '';
-            let selectedRange = this.selecter.checkCursorSelected(cursorPos);
+        let preItem = null;
+        let ranges = [];
+        this.cursor.multiCursorPos.map((item) => {
+            let selectedRange = this.selecter.checkCursorSelected(item);
+            let start = null;
             if (selectedRange) {
-                str = this.getRangeText(selectedRange.start, selectedRange.end);
-                if (cut) {
-                    this.deleteContent();
+                ranges.push(selectedRange);
+                return;
+            }
+            if (preItem && item.line === preItem.line) {
+                return;
+            }
+            if (item.line > 1) {
+                start = {
+                    line: item.line - 1,
+                    column: this.htmls[item.line - 2].text.length
                 }
             } else {
-                str = this.htmls[cursorPos.line - 1].text;
-                if (cut) {
-                    str && this.selecter.addSelectedRange({
-                        line: cursorPos.line,
-                        column: 0
-                    }, {
-                        line: cursorPos.line,
-                        column: str.length
-                    });
-                    str && this.deleteContent();
+                start = {
+                    line: item.line,
+                    column: 0
                 }
             }
-            text += '\n' + str;
+            ranges.push({
+                start: start,
+                end: {
+                    line: item.line,
+                    column: this.htmls[item.line - 1].text.length
+                }
+            });
+            preItem = item;
         });
+        ranges.map((item) => {
+            let str = this.getRangeText(item.start, item.end);
+            text = str[0] === '\n' ? text += str : text += '\n' + str;
+        });
+        cut && this.deleteContent(null, ranges);
         return text.slice(1);
     }
     // 获取待搜索的文本

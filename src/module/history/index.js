@@ -20,8 +20,8 @@ export default class {
             'moveLineDown',
             'copyLineUp',
             'copyLineDown',
-            'deleteLineUp',
-            'deleteLineDown',
+            'deleteCopyLineUp',
+            'deleteCopyLineDown',
             'replace',
         ]);
     }
@@ -89,14 +89,14 @@ export default class {
             case Util.command.COPY_DOWN:
                 this.copyLineDown(command.cursorPos, true);
                 break;
-            case Util.command.DELETE_DOWN:
-                this.deleteLineDown(command.cursorPos, true);
+            case Util.command.DELETE_COPY_DOWN:
+                this.deleteCopyLineDown(command.cursorPos, true);
                 break;
             case Util.command.COPY_UP:
                 this.copyLineUp(command.cursorPos, true);
                 break;
-            case Util.command.DELETE_UP:
-                this.deleteLineUp(command.cursorPos, true);
+            case Util.command.DELETE_COPY_UP:
+                this.deleteCopyLineUp(command.cursorPos, true);
                 break;
             case Util.command.REPLACE:
                 this.replace(command.text, command.cursorPos, true);

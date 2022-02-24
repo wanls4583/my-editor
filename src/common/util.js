@@ -274,8 +274,8 @@ Util.command = {
     MOVEDOWN: 'moveLineDown',
     COPY_UP: 'copyLineUp',
     COPY_DOWN: 'copyLineDown',
-    DELETE_UP: 'delteLineUp',
-    DELETE_DOWN: 'delteLineDown',
+    DELETE_COPY_UP: 'deleteCopyLineUp',
+    DELETE_COPY_DOWN: 'deleteCopyLineDown',
     REPLACE: 'replace',
 }
 Util.constData = {

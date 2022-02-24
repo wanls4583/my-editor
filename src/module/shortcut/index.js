@@ -27,6 +27,7 @@ export default class {
             'moveLineDown',
             'copyLineUp',
             'copyLineDown',
+            'deleteLine'
         ]);
         this.setEditorData = (prop, value) => {
             editor.setData(prop, value);
@@ -51,6 +52,9 @@ export default class {
                     break;
                 case 68: //ctrl+shift+d
                     this.copyLineUp();
+                    break;
+                case 75: //ctrl+shift+k
+                    this.deleteLine();
                     break;
             }
             return false;
