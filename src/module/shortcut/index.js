@@ -61,7 +61,7 @@ export default class {
         } else if (e.altKey && e.shiftKey) {
             e.preventDefault();
             switch (e.keyCode) {
-                case 40:
+                case 40: //alt+shift+down
                     this.copyLineDown();
                     break;
             }
@@ -98,6 +98,10 @@ export default class {
                 case 70: //ctrl+f，搜素
                     e.preventDefault();
                     this.openSearch();
+                    break;
+                case 72: //ctrl+h，搜素替换
+                    e.preventDefault();
+                    this.openSearch(true);
                     break;
                 case 90: //ctrl+z，撤销
                 case 122:

@@ -574,11 +574,13 @@ export default {
             }
         },
         // ctrl+f打开搜索
-        openSearch() {
+        openSearch(replaceMode) {
             if (this.searchVisible) {
                 return;
             }
-            let obj = {};
+            let obj = {
+                replaceVisible: !!replaceMode
+            };
             this.searchVisible = true;
             this.forceCursorView = false;
             if (this.selecter.selectedRanges.length) {
