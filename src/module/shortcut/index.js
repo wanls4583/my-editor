@@ -130,6 +130,12 @@ export default class {
                     this.selecter.clearRange();
                     this.renderSelectedBg();
                     break;
+                case 35: //end键
+                    _moveCursor('end');
+                    break;
+                case 36: //home键
+                    _moveCursor('home');
+                    break;
                 case 38: //up arrow
                     _moveCursor('up');
                     this.selecter.clearRange();

@@ -156,7 +156,11 @@ export default class {
         let text = this.htmls[cursorPos.line - 1].text;
         let line = cursorPos.line;
         let column = cursorPos.column;
-        if (direct === 'up') {
+        if (direct === 'home') {
+            column = 0;
+        } else if (direct === 'end') {
+            column = this.htmls[line - 1].text.length;
+        } else if (direct === 'up') {
             if (line > 1) {
                 let width = this.getStrWidth(text, 0, column);
                 line--;
