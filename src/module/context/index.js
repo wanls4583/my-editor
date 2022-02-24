@@ -85,9 +85,21 @@ export default class {
                 cursorPosList.push(this.cursor.addCursorPos(item));
             });
         }
-        let texts = text instanceof Array ? text : text.split(/\r\n|\n/);
+        historyArr = this._insertMultiContent(text, cursorPosList);
+        this.setNowCursorPos(this.cursor.multiCursorPos[0]);
+        historyObj = historyArr.length > 1 ? historyArr : historyArr[0];
+        if (!commandObj) { // 新增历史记录
+            this.history.pushHistory(historyObj);
+        } else { // 撤销或重做操作后，更新历史记录
+            this.history.updateHistory(historyObj);
+        }
+    }
+    _insertMultiContent(text, cursorPosList) {
         let prePos = null;
         let preOriginPos = null;
+        let historyObj = null;
+        let historyArr = [];
+        let texts = text instanceof Array ? text : text.split(/\r\n|\n/);
         cursorPosList.map((cursorPos, index) => {
             let _text = texts.length === this.cursor.multiCursorPos.length ? texts[index] : text;
             let originPos = Object.assign({}, cursorPos);
@@ -106,13 +118,7 @@ export default class {
             prePos = cursorPos;
             preOriginPos = originPos;
         });
-        this.setNowCursorPos(this.cursor.multiCursorPos[0]);
-        historyObj = historyArr.length > 1 ? historyArr : historyArr[0];
-        if (!commandObj) { // 新增历史记录
-            this.history.pushHistory(historyObj);
-        } else { // 撤销或重做操作后，更新历史记录
-            this.history.updateHistory(historyObj);
-        }
+        return historyArr;
     }
     // 插入内容
     _insertContent(text, cursorPos) {
@@ -181,7 +187,6 @@ export default class {
         return historyObj;
     }
     deleteContent(keyCode, rangePos, isCommand) {
-        let that = this;
         let historyArr = [];
         let historyObj = null;
         let rangeList = [];
@@ -197,15 +202,7 @@ export default class {
                 }
             });
         }
-        let prePos = null;
-        let preOriginPos = null;
-        rangeList.map((cursorPos) => {
-            if (cursorPos.start) {
-                _deleteRangePos(cursorPos);
-            } else {
-                _deleteCursorPos(cursorPos);
-            }
-        });
+        historyArr = this._deleteMultiContent(rangeList, keyCode);
         historyObj = historyArr.length > 1 ? historyArr : historyArr[0];
         if (!isCommand) { // 新增历史记录
             historyObj && this.history.pushHistory(historyObj);
@@ -220,6 +217,21 @@ export default class {
         }
         this.setNowCursorPos(this.cursor.multiCursorPos[0]);
         this.cursor.filterCursorPos();
+    }
+    _deleteMultiContent(rangeList, keyCode) {
+        let that = this;
+        let historyArr = [];
+        let historyObj = null;
+        let prePos = null;
+        let preOriginPos = null;
+        rangeList.map((cursorPos) => {
+            if (cursorPos.start) {
+                _deleteRangePos(cursorPos);
+            } else {
+                _deleteCursorPos(cursorPos);
+            }
+        });
+        return historyArr;
 
         function _deleteCursorPos(cursorPos) {
             let originPos = Object.assign({}, cursorPos);
