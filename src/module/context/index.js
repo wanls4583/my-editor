@@ -619,10 +619,15 @@ export default class {
     }
     // 删除当前行
     deleteLine() {
-        let ranges = [];
         let preItem = null;
+        let ranges = [];
         this.cursor.multiCursorPos.map((item) => {
+            let selectedRange = this.selecter.checkCursorSelected(item);
             let start = null;
+            if (selectedRange) {
+                ranges.push(selectedRange);
+                return;
+            }
             if (preItem && item.line === preItem.line) {
                 return;
             }
