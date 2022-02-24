@@ -1,6 +1,6 @@
 <template>
 	<div
-		:style="{'padding-bottom': _statusHeight}"
+		:style="{'padding-top':_topBarHeight,'padding-bottom':_statusHeight}"
 		@contextmenu.prevent="onContextmenu"
 		@mousedown="onClickEditor"
 		@selectstart.prevent
@@ -100,6 +100,8 @@
 				ref="textarea"
 			></textarea>
 		</div>
+		<!-- 顶部菜单栏 -->
+		<menu-bar :height="topBarHeight" ref="menuBar"></menu-bar>
 		<!-- 状态栏 -->
 		<status-bar :column="_nowColumn" :height="statusHeight" :language.sync="language" :line="_nowLine" :tabSize.sync="tabSize" ref="statusBar"></status-bar>
 		<!-- 右键菜单 -->
@@ -130,6 +132,7 @@ import Cursor from '@/module/cursor/index';
 import History from '@/module/history/index';
 import Context from '@/module/context/index';
 import ShortCut from '@/module/shortcut/index';
+import MenuBar from './MenuBar';
 import StatusBar from './StatusBar';
 import SearchDialog from './Search';
 import Menu from './Menu';
@@ -141,6 +144,7 @@ let context = null;
 export default {
     name: 'Home',
     components: {
+        MenuBar,
         StatusBar,
         SearchDialog,
         Menu,
@@ -163,6 +167,7 @@ export default {
             // language: 'JavaScript',
             // language: 'CSS',
             statusHeight: 23,
+            topBarHeight: 28,
             tabSize: 4,
             renderHtmls: [],
             startLine: 1,
@@ -223,6 +228,9 @@ export default {
         },
         _lineHeight() {
             return this.charObj.charHight + 'px';
+        },
+        _topBarHeight() {
+            return this.topBarHeight + 'px';
         },
         _statusHeight() {
             return this.statusHeight + 4 + 'px';
@@ -310,10 +318,10 @@ export default {
         }
     },
     created() {
-        window.editor = this;
-        window.context = context;
         this.initData();
         this.initEvent();
+        window.editor = this;
+        window.context = context;
     },
     mounted() {
         this.$editor = this.$refs.editor;
@@ -991,6 +999,7 @@ export default {
         // 点击编辑器
         onClickEditor() {
             this.$refs.statusBar.closeAllMenu();
+            this.$refs.menuBar.closeAllMenu();
             this.menuVisble = false;
         },
         // 滚动区域鼠标按下事件

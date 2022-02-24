@@ -5,17 +5,17 @@
 -->
 <template>
 	<div :style="{height:height+'px'}" @contextmenu.stop.prevent class="my-editor-status-bar">
-		<div class="my-editor-status-left">
-			<div class="my-editor-status-item">
+		<div class="bar-left">
+			<div class="bar-item">
 				<span>Line {{line}}, Column {{column}}</span>
 			</div>
 		</div>
-		<div class="my-editor-status-right">
-			<div @mousedown.stop="showTabsize" class="my-editor-status-item clickable">
+		<div class="bar-right">
+			<div @mousedown.stop="showTabsize" class="bar-item clickable">
 				<span>Tab Size:{{_tabSize}}</span>
 				<Menu :menuList="tabSizeList" :styles="{right: 0, bottom: height+'px'}" @change="onTabsizeChange" v-show="tabsizeVisible"></Menu>
 			</div>
-			<div @mousedown.stop="showLanguage" class="my-editor-status-item clickable">
+			<div @mousedown.stop="showLanguage" class="bar-item clickable">
 				<span>{{_language}}</span>
 				<Menu :menuList="languageList" :styles="{right: 0, bottom: height+'px'}" @change="onLnaguageChange" v-show="languageVisible"></Menu>
 			</div>
