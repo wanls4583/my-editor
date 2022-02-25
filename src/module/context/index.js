@@ -224,7 +224,7 @@ export default class {
                 _deleteCursorPos(cursorPos);
             }
         });
-        this.filterCursorPos();
+        this.cursor.filterCursorPos();
         return historyArr;
 
         function _deleteCursorPos(cursorPos) {
