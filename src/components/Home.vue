@@ -1032,8 +1032,8 @@ export default {
             if (this.mouseStartObj && Date.now() - this.mouseStartObj.time > 100) {
                 var offset = $(this.$scroller).offset();
                 let end = this.getPosByEvent(e);
-                this.selecter.setSelectedRange(Object.assign({}, this.mouseStartObj.start), end);
                 this.cursor.setCursorPos(end);
+                this.selecter.setSelectedRange(Object.assign({}, this.mouseStartObj.start), end);
                 this.renderSelectedBg();
                 cancelAnimationFrame(this.selectMoveTimer);
                 if (e.clientY > offset.top + this.scrollerArea.height) { //鼠标超出底部区域

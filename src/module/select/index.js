@@ -170,36 +170,33 @@ export default class {
     // 过滤选中区域
     filterSelectedRanges() {
         let direct = this.getRangeByCursorPos(this.selectedRanges[0].start);
-        let delCurposMap = new Map();
+        let delCurpos = [];
         let preRange = this.selectedRanges[0];
         direct = direct && 'left' || 'right';
         for (let i = 1; i < this.selectedRanges.length; i++) {
             let nextRange = this.selectedRanges[i];
             if (Util.comparePos(preRange.end, nextRange) >= 0) { //前后选中区域交叉则合并
+                let startKey = nextRange.start.line + ',' + nextRange.start.column;
+                let endKey = nextRange.end.line + ',' + nextRange.end.column;
                 preRange.end = nextRange.end;
                 nextRange.del = true;
+                this.selectedRangeMap.delete(startKey);
+                this.selectedRangeMap.delete(endKey);
                 if (direct === 'left') {
-                    delCurposMap.set(nextRange.start.line + ',' + nextRange.start.column, true);
+                    delCurpos.push(nextRange.start);
                 } else {
-                    delCurposMap.set(nextRange.end.line + ',' + nextRange.end.column, true);
+                    delCurpos.push(nextRange.end);
                 }
             } else {
                 preRange = nextRange;
             }
         }
-        let selectedRanges = this.selectedRanges.slice();
-        this.selectedRanges.empty();
-        this.selectedRanges.empty().push(...selectedRanges.filter((item) => {
-            return !item.del && Util.comparePos(item.start, item.end) < 0;
-        }));
-        if (delCurposMap.size) {
-            let multiCursorPos = this.cursor.multiCursorPos.slice();
-            this.cursor.multiCursorPos.empty().push(...multiCursorPos.filter((item) => {
-                if (delCurposMap.has(item.line + ',' + item.column)) {
-                    return false;
-                }
-                return true;
-            }));
-        }
+        delCurpos.length && this.cursor.clearCursorPos(delCurpos);
+        this.selectedRanges = this.selectedRanges.filter((item) => {
+            return !item.del;
+        });
+        this.activedRanges = this.activedRanges.filter((item) => {
+            return !item.del;
+        });
     }
 }

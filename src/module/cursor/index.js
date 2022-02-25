@@ -26,17 +26,23 @@ export default class {
         ]);
         Util.defineProperties(this, context, ['htmls']);
     }
-    clearCursorPos(cursorPos) {
-        if (cursorPos) {
-            let index = this.multiCursorPos.indexOf(cursorPos);
-            if (index > -1) {
-                this.multiCursorPos.splice(index, 1);
-                cursorPos.del = true;
-            }
-            return;
+    clearCursorPos(posList) {
+        if (posList) {
+            let posMap = [];
+            posList = posList instanceof Array ? posList : [posList];
+            posList.map((item) => {
+                posMap[item.line + ',' + item.column] = true;
+            });
+            this.multiCursorPos = this.multiCursorPos.filter((item) => {
+                if (posMap[item.line + ',' + item.column]) {
+                    item.del = true;
+                    return false;
+                }
+                return true;
+            });
         }
-        this.multiCursorPos.map((cursorPos) => {
-            cursorPos.del = true;
+        this.multiCursorPos.map((item) => {
+            item.del = true;
         });
         this.multiCursorPos.empty();
         this.setNowCursorPos(null);
