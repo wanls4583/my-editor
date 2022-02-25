@@ -210,7 +210,6 @@ export default class {
             });
         }
         this.setNowCursorPos(this.cursor.multiCursorPos[0]);
-        this.cursor.filterCursorPos();
     }
     _deleteMultiContent(rangeList, keyCode) {
         let that = this;
@@ -225,6 +224,7 @@ export default class {
                 _deleteCursorPos(cursorPos);
             }
         });
+        this.filterCursorPos();
         return historyArr;
 
         function _deleteCursorPos(cursorPos) {
