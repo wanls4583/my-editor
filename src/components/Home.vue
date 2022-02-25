@@ -519,7 +519,6 @@ export default {
             let start = selectedRange.start;
             let end = selectedRange.end;
             let text = context.htmls[start.line - 1].text;
-            let active = false;
             start.left = this.getStrWidth(text, 0, start.column);
             if (start.line == end.line) {
                 start.width = this.getStrWidth(text, start.column, end.column);
@@ -529,8 +528,6 @@ export default {
                 text = context.htmls[end.line - 1].text;
                 end.width = this.getStrWidth(text, 0, end.column);
             }
-            selectedRange.start = start;
-            selectedRange.end = end;
             firstLine = firstLine > start.line + 1 ? firstLine : start.line + 1;
             lastLine = lastLine < end.line - 1 ? lastLine : end.line - 1;
             for (let line = firstLine; line <= lastLine; line++) {
@@ -541,11 +538,10 @@ export default {
                 }
             }
             if (context.renderedLineMap.has(start.line)) {
-                active = selecter.checkSelectedActive(selectedRange);
                 context.renderedLineMap.get(start.line).selectStarts.push({
                     left: start.left,
                     width: start.width,
-                    active: active,
+                    active: selectedRange.active,
                     isFsearch: isFsearch
                 });
             }
@@ -553,7 +549,7 @@ export default {
                 context.renderedLineMap.get(end.line).selectEnds.push({
                     left: end.left,
                     width: end.width,
-                    active: active || selecter.checkSelectedActive(selectedRange),
+                    active: selectedRange.active,
                     isFsearch: isFsearch
                 });
             }
@@ -655,14 +651,12 @@ export default {
             if (resultObj && resultObj.result) {
                 if (!selecter.selectedRanges.length || !this.cursorFocus) {
                     this.cursor.setCursorPos(resultObj.result.end);
+                    selecter.setActive(resultObj.result.end);
                 } else {
                     this.cursor.addCursorPos(resultObj.result.end);
+                    selecter.addActive(resultObj.result.end);
                 }
-                if (!hasCache) {
-                    resultObj.list.map((rangePos) => {
-                        selecter.addSelectedRange(rangePos.start, rangePos.end);
-                    });
-                }
+                !hasCache && selecter.addSelectedRange(resultObj.list);
                 if (searcher === this.fSearcher) {
                     this.searchNow = resultObj.now;
                     this.searchCount = resultObj.list.length;

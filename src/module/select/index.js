@@ -9,6 +9,8 @@ export default class {
     constructor(editor, context) {
         this.initProperties(editor, context);
         this.selectedRanges = [];
+        this.activedRanges = [];
+        this.selectedRangeMap = new Map();
     }
     initProperties(editor, context) {
         Util.defineProperties(this, editor, [
@@ -25,9 +27,53 @@ export default class {
             editor.setData(prop, value);
         }
     }
+    /**
+     * 设置选中区域
+     * @param {Object} start
+     * @param {Object} end
+     */
+    setSelectedRange(start, end) {
+        let same = Util.comparePos(start, end);
+        if (same > 0) {
+            let tmp = start;
+            start = end;
+            end = tmp;
+        } else if (!same) {
+            return;
+        }
+        let active = this.cursor.getCursorsByLineColumn(start.line, start.column) ||
+            this.cursor.getCursorsByLineColumn(end.line, end.column);
+        let selectedRange = {
+            start: Object.assign({}, start),
+            end: Object.assign({}, end),
+            active: !!active
+        };
+        this.clearRange();
+        this.selectedRanges.empty();
+        this.activedRanges.empty();
+        this.selectedRanges.push(selectedRange);
+        active && this.activedRanges.push(selectedRange);
+        this.addRangeMap(selectedRange);
+    }
+    setActive(cursorPos) {
+        let selectedRange = this.getRangeByCursorPos(cursorPos);
+        this.activedRanges.map((item) => {
+            item.active = false;
+        });
+        this.activedRanges.empty();
+        if (selectedRange) {
+            selectedRange.active = true;
+            this.activedRanges.push(selectedRange);
+        }
+    }
+    // 检测光标是否在选中区域范围内
+    getRangeByCursorPos(cursorPos) {
+        let key = cursorPos.line + ',' + cursorPos.column;
+        return this.selectedRangeMap.get(key) || false;
+    }
     select(direct, wholeWord) {
         this.cursor.multiCursorPos.map((cursorPos) => {
-            let selectedRange = this.checkCursorSelected(cursorPos);
+            let selectedRange = this.getRangeByCursorPos(cursorPos);
             if (selectedRange) {
                 this.cursor.moveCursor(cursorPos, direct, wholeWord);
                 if (Util.comparePos(cursorPos, selectedRange.start) < 0 ||
@@ -39,9 +85,15 @@ export default class {
                     selectedRange.end.column = cursorPos.column;
                 }
             } else {
-                let _cursorPos = Object.assign({}, cursorPos);
-                cursorPos = this.cursor.moveCursor(cursorPos, direct, wholeWord);
-                this.addSelectedRange(_cursorPos, cursorPos);
+                let start = Object.assign({}, cursorPos);
+                let end = this.cursor.moveCursor(cursorPos, direct, wholeWord);
+                selectedRange = this.createRange(start, end);
+                if (selectedRange) {
+                    this.addSelectedRange({
+                        start: start,
+                        end: end
+                    });
+                }
             }
         });
         this.filterSelectedRanges();
@@ -60,113 +112,71 @@ export default class {
         this.setEditorData('forceCursorView', false);
         this.renderSelectedBg();
     }
-    // 添加选中区域
-    addSelectedRange(start, end) {
-        let same = Util.comparePos(start, end);
-        if (same > 0) {
-            let tmp = start;
-            start = end;
-            end = tmp;
-        } else if (!same) {
-            return;
+    addRangeMap(selectedRange) {
+        let startkey = selectedRange.start.line + ',' + selectedRange.start.column;
+        let endkey = selectedRange.end.line + ',' + selectedRange.end.column;
+        this.selectedRangeMap.set(startkey, selectedRange);
+        this.selectedRangeMap.set(endkey, selectedRange);
+    }
+    addActive(cursorPos) {
+        let selectedRange = this.getRangeByCursorPos(cursorPos);
+        if (selectedRange && !selectedRange.active) {
+            selectedRange.active = true;
+            this.activedRanges.push(selectedRange);
         }
-        this.selectedRanges.push({
-            start: Object.assign({}, start),
-            end: Object.assign({}, end)
+    }
+    // 添加选中区域
+    addSelectedRange(ranges) {
+        ranges = ranges instanceof Array ? ranges : [ranges];
+        ranges.map((range) => {
+            let active = this.cursor.getCursorsByLineColumn(range.start.line, range.start.column) ||
+                this.cursor.getCursorsByLineColumn(range.end.line, range.end.column);
+            let selectedRange = {
+                start: Object.assign({}, range.start),
+                end: Object.assign({}, range.end),
+                active: !!active
+            };
+            this.selectedRanges.push(selectedRange);
+            active && this.activedRanges.push(selectedRange);
+            this.addRangeMap(selectedRange);
+        });
+        this.selectedRanges.sort((a, b) => {
+            if (a.start.line === b.start.line) {
+                return a.start.column - b.start.column;
+            }
+            return a.start.line - b.start.line;
         });
     }
-    /**
-     * 设置选中区域
-     * @param {Object} start
-     * @param {Object} end
-     */
-    setSelectedRange(start, end) {
+    createRange(start, end) {
         let same = Util.comparePos(start, end);
         if (same > 0) {
             let tmp = start;
             start = end;
             end = tmp;
-        } else if (!same) {
-            return;
         }
-        this.clearRange();
-        this.selectedRanges.empty();
-        this.selectedRanges.push({
+        if (same === 0) {
+            return null;
+        }
+        return {
             start: start,
             end: end
-        });
-    }
-    // 检测光标是否在选中区域范围内
-    checkCursorSelected(cursorPos) {
-        for (let i = 0; i < this.selectedRanges.length; i++) {
-            let selectedRange = this.selectedRanges[i];
-            if (Util.comparePos(cursorPos, selectedRange.start) >= 0 &&
-                Util.comparePos(cursorPos, selectedRange.end) <= 0) {
-                return selectedRange;
-            }
         }
-        return false;
-    }
-    checkSelectedActive(selectedRange) {
-        let cursorPosList = this.cursor.getCursorsByLine(selectedRange.start.line);
-        let start = selectedRange.start;
-        let end = selectedRange.end;
-        if (end.line > start.line) {
-            for (let i = 0; i < cursorPosList.length; i++) {
-                let item = cursorPosList[i];
-                if (Util.comparePos(item, selectedRange.start) === 0) {
-                    return item;
-                }
-            }
-            cursorPosList = this.cursor.getCursorsByLine(selectedRange.end.line);
-            for (let i = 0; i < cursorPosList.length; i++) {
-                let item = cursorPosList[i];
-                if (Util.comparePos(item, selectedRange.end) === 0) {
-                    return item;
-                }
-            }
-        } else {
-            for (let i = 0; i < cursorPosList.length; i++) {
-                let item = cursorPosList[i];
-                if (Util.comparePos(item, selectedRange.start) === 0 ||
-                    Util.comparePos(item, selectedRange.end) === 0) {
-                    return item;
-                }
-            }
-        }
-        return false;
     }
     // 清除选中背景
-    clearRange(selectedRange) {
-        if (selectedRange) {
-            if (selectedRange.line && selectedRange.column) {
-                selectedRange = this.checkCursorSelected(selectedRange);
-            }
-            if (!selectedRange) {
-                return;
-            }
-            let selectedRanges = this.selectedRanges.filter((item) => {
-                if (Util.comparePos(item.start, selectedRange.start) >= 0 &&
-                    Util.comparePos(item.end, selectedRange.end) <= 0) {
-                    return false;
-                }
-                return true;
-            });
-            this.selectedRanges = selectedRanges;
-        } else {
-            this.selectedRanges.empty();
-        }
+    clearRange() {
+        this.selectedRanges.empty();
+        this.selectedRangeMap.clear();
     }
     // 过滤选中区域
     filterSelectedRanges() {
-        let direct = this.checkCursorSelected(this.selectedRanges[0].start);
+        let direct = this.getRangeByCursorPos(this.selectedRanges[0].start);
         let delCurposMap = new Map();
-        let preRnage = this.selectedRanges[0];
+        let preRange = this.selectedRanges[0];
         direct = direct && 'left' || 'right';
         for (let i = 1; i < this.selectedRanges.length; i++) {
             let nextRange = this.selectedRanges[i];
-            if (Util.comparePos(preRnage.end, nextRange) >= 0) { //前后选中区域交叉则合并
-                preRnage.end = nextRange.end;
+            if (Util.comparePos(preRange.end, nextRange) >= 0) { //前后选中区域交叉则合并
+                preRange.end = nextRange.end;
                 nextRange.del = true;
                 if (direct === 'left') {
                     delCurposMap.set(nextRange.start.line + ',' + nextRange.start.column, true);
@@ -174,7 +184,7 @@ export default class {
                     delCurposMap.set(nextRange.end.line + ',' + nextRange.end.column, true);
                 }
             } else {
-                preRnage = nextRange;
+                preRange = nextRange;
             }
         }
         let selectedRanges = this.selectedRanges.slice();

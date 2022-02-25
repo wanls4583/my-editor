@@ -71,13 +71,7 @@ export default class {
         let cursorPosList = [];
         if (!cursorPos) {
             // 如果有选中区域，需要先删除选中区域
-            for (let i = 0; i < this.selecter.selectedRanges.length; i++) {
-                let item = this.selecter.selectedRanges[i];
-                if (this.selecter.checkSelectedActive(item)) {
-                    this.deleteContent();
-                    break;
-                }
-            }
+            this.selecter.selectedRanges.length && this.deleteContent();
             cursorPosList = this.cursor.multiCursorPos;
         } else {
             cursorPos = cursorPos instanceof Array ? cursorPos : [cursorPos];
@@ -194,7 +188,7 @@ export default class {
             rangeList = rangePos instanceof Array ? rangePos : [rangePos];
         } else {
             this.cursor.multiCursorPos.map((item) => {
-                let selectedRange = this.selecter.checkCursorSelected(item);
+                let selectedRange = this.selecter.getRangeByCursorPos(item);
                 if (selectedRange) {
                     rangeList.push(selectedRange);
                 } else {
@@ -283,7 +277,7 @@ export default class {
             selectedRange = cursorPos;
             cursorPos = selectedRange.end;
         } else { //光标在选中范围的边界
-            selectedRange = this.selecter.checkCursorSelected(cursorPos);
+            selectedRange = this.selecter.getRangeByCursorPos(cursorPos);
         }
         let start = null;
         let startObj = this.htmls[cursorPos.line - 1];
@@ -634,7 +628,7 @@ export default class {
         let preItem = null;
         let ranges = [];
         this.cursor.multiCursorPos.map((item) => {
-            let selectedRange = this.selecter.checkCursorSelected(item);
+            let selectedRange = this.selecter.getRangeByCursorPos(item);
             let start = null;
             if (selectedRange) {
                 ranges.push(selectedRange);
@@ -727,7 +721,7 @@ export default class {
         let preItem = null;
         let ranges = [];
         this.cursor.multiCursorPos.map((item) => {
-            let selectedRange = this.selecter.checkCursorSelected(item);
+            let selectedRange = this.selecter.getRangeByCursorPos(item);
             let start = null;
             if (selectedRange) {
                 ranges.push(selectedRange);
@@ -765,7 +759,7 @@ export default class {
     }
     // 获取待搜索的文本
     getToSearchObj() {
-        let selectedRange = this.selecter.checkCursorSelected(this.nowCursorPos);
+        let selectedRange = this.selecter.getRangeByCursorPos(this.nowCursorPos);
         let wholeWord = false;
         let searchText = '';
         if (selectedRange) {

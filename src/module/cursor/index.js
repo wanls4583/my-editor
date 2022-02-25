@@ -43,13 +43,10 @@ export default class {
     }
     // 添加光标
     addCursorPos(cursorPos) {
-        let posArr = this.getCursorsByLine(cursorPos.line);
-        for (let pos of posArr) {
-            // 添加的光标已存在
-            if (Util.comparePos(cursorPos, pos) === 0) {
-                this.setNowCursorPos(pos);
-                return pos;
-            }
+        let pos = this.getCursorsByLineColumn(cursorPos.line, cursorPos.column);
+        if (pos) {
+            this.setNowCursorPos(pos);
+            return pos;
         }
         cursorPos = {
             line: cursorPos.line,
@@ -150,6 +147,27 @@ export default class {
             index--;
         }
         return result;
+    }
+    getCursorsByLineColumn(line, column) {
+        let left = 0;
+        let right = this.multiCursorPos.length - 1;
+        while (left <= right) {
+            let mid = Math.floor((left + right) / 2);
+            let item = this.multiCursorPos[mid];
+            if (item.line == line) {
+                if (item.column === column) {
+                    return item;
+                } else if (item.column > column) {
+                    right = mid - 1;
+                } else {
+                    left = mid + 1;
+                }
+            } else if (item.line > line) {
+                right = mid - 1;
+            } else {
+                left = mid + 1;
+            }
+        }
     }
     // 移动光标
     moveCursor(cursorPos, direct, wholeWord) {

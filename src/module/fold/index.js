@@ -51,7 +51,7 @@ export default class {
         this.onDeleteContentBefore.preCursorPos = cursorPos;
         this.onDeleteContentBefore.maxLine = this.htmls.length;
         this.selecter.selectedRanges.map((selectedRange) => {
-            if (this.selecter.checkSelectedActive(selectedRange)) {
+            if (selectedRange.active) {
                 let start = selectedRange.start;
                 let end = selectedRange.end;
                 for (let line = start.line; line <= end.line; line++) { //删除折叠区域
