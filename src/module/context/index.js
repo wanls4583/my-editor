@@ -221,9 +221,6 @@ export default class {
             historyObj && this.history.pushHistory(historyObj);
         } else { // 撤销或重做操作后，更新历史记录
             this.history.updateHistory(historyObj);
-        }
-        if (rangeList[0].start) {
-            this.cursor.clearCursorPos();
             historyArr.map((item) => {
                 this.cursor.addCursorPos(item.cursorPos);
             });
