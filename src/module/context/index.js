@@ -97,7 +97,7 @@ export default class {
         let texts = text instanceof Array ? text : text.split(/\r\n|\n/);
         command = command && (command instanceof Array ? command : [command]);
         cursorPosList.map((cursorPos, index) => {
-            let _text = texts.length === this.cursor.multiCursorPos.length ? texts[index] : text;
+            let _text = texts.length === cursorPosList.length ? texts[index] : text;
             let originPos = Object.assign({}, cursorPos);
             let margin = command && command[index].margin || 'right';
             let active = command && command[index].active || false;
@@ -414,7 +414,7 @@ export default class {
         };
         return historyObj;
     }
-    moveLineUp(cursorPos, isCommand) {
+    moveLineUp(cursorPos, command) {
         let that = this;
         let cursorPosList = [];
         let historyPosList = [];
@@ -441,7 +441,7 @@ export default class {
             type: Util.command.MOVEDOWN,
             cursorPos: historyPosList
         }
-        if (!isCommand) { // 新增历史记录
+        if (!command) { // 新增历史记录
             this.history.pushHistory(historyObj);
         } else { // 撤销或重做操作后，更新历史记录
             this.history.updateHistory(historyObj);
@@ -467,7 +467,7 @@ export default class {
             });
         }
     }
-    moveLineDown(cursorPos, isCommand) {
+    moveLineDown(cursorPos, command) {
         let that = this;
         let cursorPosList = [];
         let historyPosList = [];
@@ -494,7 +494,7 @@ export default class {
             type: Util.command.MOVEUP,
             cursorPos: historyPosList
         }
-        if (!isCommand) { // 新增历史记录
+        if (!command) { // 新增历史记录
             this.history.pushHistory(historyObj);
         } else { // 撤销或重做操作后，更新历史记录
             this.history.updateHistory(historyObj);
@@ -520,117 +520,124 @@ export default class {
             });
         }
     }
-    copyLine(cursorPos, isCommand, direct) {
-        let copyedLineMap = {};
+    copyLine(cursorPos, command, direct) {
+        let originList = [];
         let cursorPosList = [];
         let historyPosList = [];
+        let prePos = null;
+        let texts = [];
+        let index = 0;
         direct = direct || 'up';
         if (cursorPos) {
-            cursorPosList = cursorPos instanceof Array ? cursorPos : [cursorPos];
+            originList = cursorPos instanceof Array ? cursorPos : [cursorPos];
+            originList = originList.map((item) => {
+                return this.cursor.addCursorPos(item);
+            });
         } else {
-            this.cursor.multiCursorPos.map((item) => {
-                if (!copyedLineMap[item.line]) {
-                    cursorPosList.push(item);
-                    copyedLineMap[item.line] = true;
-                }
-            });
+            originList = this.cursor.multiCursorPos;
         }
-        cursorPosList.slice().reverse().map((cursorPos) => {
-            let text = this.htmls[cursorPos.line - 1].text;
-            cursorPos = this.cursor.addCursorPos(cursorPos);
-            historyPosList.push(cursorPos);
-            this._insertContent('\n' + text, {
-                line: cursorPos.line,
-                column: text.length
-            });
-            this.cursor.updateAfterPos({
-                line: cursorPos.line + (direct === 'up' ? 1 : 0),
-                column: 0
-            }, cursorPos.line + (direct === 'up' ? 2 : 1), 0);
+        originList.map((item) => {
+            if (!prePos || prePos.line !== item.line) {
+                let text = this.htmls[item.line - 1].text;
+                cursorPosList.push({
+                    line: item.line,
+                    column: text.length
+                });
+                texts.push('\n' + text);
+            }
+            prePos = item;
         });
-        historyPosList = historyPosList.map((item) => {
-            return {
-                line: item.line,
-                column: item.column
-            };
-        }).reverse();
-        this.renderSelectedBg();
+        this._insertMultiContent(texts, cursorPosList).map((item) => {
+            let originLine = originList[index].line;
+            let line = direct === 'up' ? item.cursorPos.line - 1 : item.cursorPos.line;
+            while (index < originList.length && originList[index].line === originLine) {
+                originList[index].line = line;
+                historyPosList.push({
+                    line: line,
+                    column: originList[index].column
+                });
+                index++;
+            }
+        });
         let historyObj = {
             type: direct === 'up' ? Util.command.DELETE_COPY_DOWN : Util.command.DELETE_COPY_UP,
             cursorPos: historyPosList
         }
-        if (!isCommand) { // 新增历史记录
+        if (!command) { // 新增历史记录
             this.history.pushHistory(historyObj);
         } else { // 撤销或重做操作后，更新历史记录
             this.history.updateHistory(historyObj);
         }
     }
     // 向上复制一行
-    copyLineUp(cursorPos, isCommand) {
-        this.copyLine(cursorPos, isCommand, 'up');
+    copyLineUp(cursorPos, command) {
+        this.copyLine(cursorPos, command, 'up');
     }
     // 向下复制一行
-    copyLineDown(cursorPos, isCommand) {
-        this.copyLine(cursorPos, isCommand, 'down');
+    copyLineDown(cursorPos, command) {
+        this.copyLine(cursorPos, command, 'down');
     }
-    deleteCopyLine(cursorPos, isCommand, direct) {
-        let copyedLineMap = {};
+    deleteCopyLine(cursorPos, command, direct) {
+        let originList = [];
         let cursorPosList = [];
         let historyPosList = [];
+        let prePos = null;
+        let index = 0;
         direct = direct || 'down';
         if (cursorPos) {
-            cursorPosList = cursorPos instanceof Array ? cursorPos : [cursorPos];
+            originList = cursorPos instanceof Array ? cursorPos : [cursorPos];
+            originList = originList.map((item) => {
+                return this.cursor.addCursorPos(item);
+            });
         } else {
-            this.cursor.multiCursorPos.reverse().slice().map((item) => {
-                if (!copyedLineMap[item.line]) {
-                    cursorPosList.push(item);
-                }
-            });
+            originList = this.cursor.multiCursorPos;
         }
-        cursorPosList.slice().reverse().map((cursorPos) => {
-            let upText = this.htmls[cursorPos.line - (direct === 'down' ? 1 : 2)].text;
-            let downText = this.htmls[cursorPos.line - (direct === 'down' ? 0 : 1)].text;
-            cursorPos = this.cursor.addCursorPos(cursorPos);
-            historyPosList.push(cursorPos);
-            this._deleteContent({
-                start: {
-                    line: cursorPos.line + (direct === 'down' ? 0 : -1),
-                    column: upText.length
-                },
-                end: {
-                    line: cursorPos.line + (direct === 'down' ? 1 : 0),
-                    column: downText.length
-                }
-            });
-            this.cursor.updateAfterPos({
-                line: cursorPos.line + (direct === 'down' ? 1 : 0),
-                column: 0
-            }, cursorPos.line + (direct === 'down' ? 0 : -1), 0);
+        originList.map((item) => {
+            if (!prePos || prePos.line !== item.line) {
+                let upText = this.htmls[item.line - (direct === 'down' ? 1 : 2)].text;
+                let downText = this.htmls[item.line - (direct === 'down' ? 0 : 1)].text;
+                cursorPosList.push({
+                    start: {
+                        line: item.line + (direct === 'down' ? 0 : -1),
+                        column: upText.length
+                    },
+                    end: {
+                        line: item.line + (direct === 'down' ? 1 : 0),
+                        column: downText.length
+                    }
+                });
+            }
+            prePos = item;
         });
-        historyPosList = historyPosList.map((item) => {
-            return {
-                line: item.line,
-                column: item.column
-            };
-        }).reverse();
-        this.renderSelectedBg();
+        this._deleteMultiContent(cursorPosList).map((item) => {
+            let originLine = originList[index].line;
+            let line = item.cursorPos.line;
+            while (index < originList.length && originList[index].line === originLine) {
+                originList[index].line = line;
+                historyPosList.push({
+                    line: line,
+                    column: originList[index].column
+                });
+                index++;
+            }
+        });
         let historyObj = {
             type: direct === 'down' ? Util.command.COPY_UP : Util.command.COPY_DOWN,
             cursorPos: historyPosList
         }
-        if (!isCommand) { // 新增历史记录
+        if (!command) { // 新增历史记录
             this.history.pushHistory(historyObj);
         } else { // 撤销或重做操作后，更新历史记录
             this.history.updateHistory(historyObj);
         }
     }
     // 删除上面一行
-    deleteCopyLineUp(cursorPos, isCommand) {
-        this.deleteCopyLine(cursorPos, isCommand, 'up');
+    deleteCopyLineUp(cursorPos, command) {
+        this.deleteCopyLine(cursorPos, command, 'up');
     }
     // 删除下面一行
-    deleteCopyLineDown(cursorPos, isCommand) {
-        this.deleteCopyLine(cursorPos, isCommand, 'down');
+    deleteCopyLineDown(cursorPos, command) {
+        this.deleteCopyLine(cursorPos, command, 'down');
     }
     // 删除当前行
     deleteLine() {
@@ -668,7 +675,7 @@ export default class {
         });
         this.deleteContent(null, ranges);
     }
-    replace(text, ranges, isCommand) {
+    replace(text, ranges, command) {
         let historyObj = null;
         let historyRnageList = [];
         let deleteText = this.getRangeText(ranges.peek().start, ranges.peek().end);
@@ -701,7 +708,7 @@ export default class {
             cursorPos: historyRnageList,
             text: deleteText
         }
-        if (!isCommand) { // 新增历史记录
+        if (!command) { // 新增历史记录
             this.history.pushHistory(historyObj);
         } else { // 撤销或重做操作后，更新历史记录
             this.history.updateHistory(historyObj);
