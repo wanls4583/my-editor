@@ -66,7 +66,7 @@ export default class {
         }
         this[prop] = value;
     }
-    insertContent(text, cursorPos, commandObj) {
+    insertContent(text, cursorPos, command) {
         let historyArr = [];
         let historyObj = null;
         let cursorPosList = [];
@@ -80,25 +80,27 @@ export default class {
                 cursorPosList.push(this.cursor.addCursorPos(item));
             });
         }
-        historyArr = this._insertMultiContent(text, cursorPosList, commandObj);
+        historyArr = this._insertMultiContent(text, cursorPosList, command);
         this.setNowCursorPos(this.cursor.multiCursorPos[0]);
         historyObj = historyArr.length > 1 ? historyArr : historyArr[0];
-        if (!commandObj) { // 新增历史记录
+        if (!command) { // 新增历史记录
             this.history.pushHistory(historyObj);
         } else { // 撤销或重做操作后，更新历史记录
             this.history.updateHistory(historyObj);
         }
     }
-    _insertMultiContent(text, cursorPosList, commandObj) {
+    _insertMultiContent(text, cursorPosList, command) {
         let prePos = null;
         let preOriginPos = null;
         let historyObj = null;
         let historyArr = [];
         let texts = text instanceof Array ? text : text.split(/\r\n|\n/);
+        command = command && (command instanceof Array ? command : [command]);
         cursorPosList.map((cursorPos, index) => {
             let _text = texts.length === this.cursor.multiCursorPos.length ? texts[index] : text;
             let originPos = Object.assign({}, cursorPos);
-            let margin = 'right';
+            let margin = command && command[index].margin || 'right';
+            let active = command && command[index].active || false;
             if (prePos) {
                 if (preOriginPos.line === cursorPos.line) {
                     cursorPos.line = prePos.line;
@@ -111,15 +113,17 @@ export default class {
             historyArr.push(historyObj);
             prePos = historyObj.cursorPos;
             preOriginPos = originPos;
-            if (commandObj) {
-                margin = commandObj.margin;
-                if (commandObj instanceof Array) {
-                    margin = commandObj[index].margin;
-                }
-            }
+            historyObj.margin = margin;
+            historyObj.active = active;
             if (margin === 'right') {
                 cursorPos.line = historyObj.cursorPos.line;
                 cursorPos.column = historyObj.cursorPos.column;
+            }
+            if (active) {
+                this.selecter.addSelectedRange({
+                    start: historyObj.preCursorPos,
+                    end: historyObj.cursorPos
+                });
             }
         });
         return historyArr;
@@ -170,8 +174,6 @@ export default class {
         });
         this.lint.onInsertContentAfter(newLine);
         this.tokenizer.onInsertContentAfter(newLine);
-        this.selecter.clearRange();
-        this.searcher.clearCache();
         this.refreshSearch();
         this.setLineWidth(text);
         this.render();
@@ -191,7 +193,7 @@ export default class {
         }
         return historyObj;
     }
-    deleteContent(keyCode, rangePos, isCommand) {
+    deleteContent(keyCode, rangePos, command) {
         let historyArr = [];
         let historyObj = null;
         let rangeList = [];
@@ -206,6 +208,7 @@ export default class {
                     } else {
                         selectedRange.margin = 'right';
                     }
+                    selectedRange.active = true;
                     rangeList.push(selectedRange);
                 } else {
                     rangeList.push(item);
@@ -214,7 +217,7 @@ export default class {
         }
         historyArr = this._deleteMultiContent(rangeList, keyCode);
         historyObj = historyArr.length > 1 ? historyArr : historyArr[0];
-        if (!isCommand) { // 新增历史记录
+        if (!command) { // 新增历史记录
             historyObj && this.history.pushHistory(historyObj);
         } else { // 撤销或重做操作后，更新历史记录
             this.history.updateHistory(historyObj);
@@ -409,7 +412,8 @@ export default class {
             },
             text: deleteText,
             keyCode: keyCode,
-            margin: margin
+            margin: margin,
+            active: selectedRange && selectedRange.active
         };
         return historyObj;
     }
@@ -767,6 +771,12 @@ export default class {
     }
     // 获取待搜索的文本
     getToSearchObj() {
+        //存在多个选择范围时，不能执行单词搜索
+        if (this.selecter.selectedRanges.length > 1) {
+            return {
+                text: ''
+            }
+        }
         let selectedRange = this.selecter.getRangeByCursorPos(this.nowCursorPos);
         let wholeWord = false;
         let searchText = '';

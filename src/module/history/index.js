@@ -51,15 +51,19 @@ export default class {
                     var list = command.map((command) => {
                         return {
                             start: command.preCursorPos,
-                            end: command.cursorPos
+                            end: command.cursorPos,
+                            margin: command.margin,
+                            active: command.active,
                         };
                     });
-                    this.deleteContent(Util.keyCode.BACKSPACE, list, true);
+                    this.deleteContent(Util.keyCode.BACKSPACE, list, command);
                 } else {
                     this.deleteContent(Util.keyCode.BACKSPACE, {
                         start: command.preCursorPos,
-                        end: command.cursorPos
-                    }, true);
+                        end: command.cursorPos,
+                        margin: command.margin,
+                        active: command.active,
+                    }, command);
                 }
                 break;
             case Util.command.INSERT:
@@ -78,31 +82,31 @@ export default class {
                 break;
             case Util.command.MOVEUP:
                 this.cursor.clearCursorPos();
-                this.moveLineUp(command.cursorPos, true);
+                this.moveLineUp(command.cursorPos, command);
                 break;
             case Util.command.MOVEDOWN:
                 this.cursor.clearCursorPos();
-                this.moveLineDown(command.cursorPos, true);
+                this.moveLineDown(command.cursorPos, command);
                 break;
             case Util.command.COPY_DOWN:
                 this.cursor.clearCursorPos();
-                this.copyLineDown(command.cursorPos, true);
+                this.copyLineDown(command.cursorPos, command);
                 break;
             case Util.command.DELETE_COPY_DOWN:
                 this.cursor.clearCursorPos();
-                this.deleteCopyLineDown(command.cursorPos, true);
+                this.deleteCopyLineDown(command.cursorPos, command);
                 break;
             case Util.command.COPY_UP:
                 this.cursor.clearCursorPos();
-                this.copyLineUp(command.cursorPos, true);
+                this.copyLineUp(command.cursorPos, command);
                 break;
             case Util.command.DELETE_COPY_UP:
                 this.cursor.clearCursorPos();
-                this.deleteCopyLineUp(command.cursorPos, true);
+                this.deleteCopyLineUp(command.cursorPos, command);
                 break;
             case Util.command.REPLACE:
                 this.cursor.clearCursorPos();
-                this.replace(command.text, command.cursorPos, true);
+                this.replace(command.text, command.cursorPos, command);
                 break;
         }
     }

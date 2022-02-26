@@ -132,8 +132,14 @@ export default class {
             let active = this.cursor.getCursorsByLineColumn(range.start.line, range.start.column) ||
                 this.cursor.getCursorsByLineColumn(range.end.line, range.end.column);
             let selectedRange = {
-                start: Object.assign({}, range.start),
-                end: Object.assign({}, range.end),
+                start: {
+                    line: range.start.line,
+                    column: range.start.column
+                },
+                end: {
+                    line: range.end.line,
+                    column: range.end.column
+                },
                 active: !!active
             };
             this.selectedRanges.push(selectedRange);
