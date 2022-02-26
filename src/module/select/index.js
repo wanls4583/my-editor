@@ -104,11 +104,11 @@ export default class {
             line: this.htmls.length,
             column: this.htmls.peek().text.length
         };
+        this.cursor.setCursorPos(end);
         this.setSelectedRange({
             line: 1,
             column: 0
         }, end);
-        this.cursor.setCursorPos(end);
         this.setEditorData('forceCursorView', false);
         this.renderSelectedBg();
     }

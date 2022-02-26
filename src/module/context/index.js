@@ -79,7 +79,7 @@ export default class {
                 cursorPosList.push(this.cursor.addCursorPos(item));
             });
         }
-        historyArr = this._insertMultiContent(text, cursorPosList);
+        historyArr = this._insertMultiContent(text, cursorPosList, commandObj);
         this.setNowCursorPos(this.cursor.multiCursorPos[0]);
         historyObj = historyArr.length > 1 ? historyArr : historyArr[0];
         if (!commandObj) { // 新增历史记录
@@ -88,7 +88,7 @@ export default class {
             this.history.updateHistory(historyObj);
         }
     }
-    _insertMultiContent(text, cursorPosList) {
+    _insertMultiContent(text, cursorPosList, commandObj) {
         let prePos = null;
         let preOriginPos = null;
         let historyObj = null;
@@ -97,6 +97,7 @@ export default class {
         cursorPosList.map((cursorPos, index) => {
             let _text = texts.length === this.cursor.multiCursorPos.length ? texts[index] : text;
             let originPos = Object.assign({}, cursorPos);
+            let margin = 'right';
             if (prePos) {
                 if (preOriginPos.line === cursorPos.line) {
                     cursorPos.line = prePos.line;
@@ -107,10 +108,18 @@ export default class {
             }
             historyObj = this._insertContent(_text, cursorPos);
             historyArr.push(historyObj);
-            cursorPos.line = historyObj.cursorPos.line;
-            cursorPos.column = historyObj.cursorPos.column;
-            prePos = cursorPos;
+            prePos = historyObj.cursorPos;
             preOriginPos = originPos;
+            if (commandObj) {
+                margin = commandObj.margin;
+                if (commandObj instanceof Array) {
+                    margin = commandObj[index].margin;
+                }
+            }
+            if (margin === 'right') {
+                cursorPos.line = historyObj.cursorPos.line;
+                cursorPos.column = historyObj.cursorPos.column;
+            }
         });
         return historyArr;
     }
@@ -190,6 +199,11 @@ export default class {
             this.cursor.multiCursorPos.map((item) => {
                 let selectedRange = this.selecter.getRangeByCursorPos(item);
                 if (selectedRange) {
+                    if (Util.comparePos(selectedRange.start, item) === 0) {
+                        selectedRange.margin = 'left';
+                    } else {
+                        selectedRange.margin = 'right';
+                    }
                     rangeList.push(selectedRange);
                 } else {
                     rangeList.push(item);
@@ -228,7 +242,10 @@ export default class {
         return historyArr;
 
         function _deleteCursorPos(cursorPos) {
-            let originPos = Object.assign({}, cursorPos);
+            let originPos = {
+                line: cursorPos.line,
+                column: cursorPos.column
+            };
             if (prePos) {
                 if (preOriginPos.line === cursorPos.line) {
                     cursorPos.line = prePos.line;
@@ -239,45 +256,47 @@ export default class {
             }
             historyObj = that._deleteContent(cursorPos, keyCode);
             historyArr.push(historyObj);
-            cursorPos.line = historyObj.cursorPos.line;
-            cursorPos.column = historyObj.cursorPos.column;
-            prePos = cursorPos;
+            prePos = historyObj.cursorPos;
             preOriginPos = originPos;
+            cursorPos.line = prePos.line;
+            cursorPos.column = prePos.column;
         }
 
         function _deleteRangePos(rangePos) {
-            let originRangePos = {
-                start: Object.assign({}, rangePos.start),
-                end: Object.assign({}, rangePos.end)
-            }
+            let start = rangePos.start;
+            let end = rangePos.end;
+            let originPos = {
+                line: end.line,
+                column: end.column
+            };
             if (prePos) {
-                if (preOriginPos.line === rangePos.start.line) {
-                    rangePos.start.line = prePos.line;
-                    rangePos.start.column = prePos.column + rangePos.start.column - preOriginPos.column;
-                    if (originRangePos.end.line === originRangePos.start.line) {
-                        rangePos.end.column = rangePos.start.column + originRangePos.end.column - originRangePos.start.column;
+                let column = start.column;
+                let line = start.line;
+                if (preOriginPos.line === start.line) {
+                    start.line = prePos.line;
+                    start.column = prePos.column + start.column - preOriginPos.column;
+                    if (end.line === line) {
+                        end.column = start.column + end.column - column;
                     }
                 } else {
-                    rangePos.start.line = prePos.line + rangePos.start.line - preOriginPos.line;
-                    rangePos.end.line = rangePos.end.line + rangePos.start.line - originRangePos.start.line;
+                    start.line = prePos.line + start.line - preOriginPos.line;
                 }
+                end.line = end.line + start.line - line;
             }
             historyObj = that._deleteContent(rangePos, keyCode);
             historyArr.push(historyObj);
-            rangePos.end.line = historyObj.cursorPos.line;
-            rangePos.end.column = historyObj.cursorPos.column;
             prePos = historyObj.cursorPos;
-            preOriginPos = originRangePos.end;
+            preOriginPos = originPos;
         }
     }
     // 删除内容
     _deleteContent(cursorPos, keyCode) {
         let selectedRange = null;
+        let margin = keyCode === Util.keyCode.DELETE ? 'left' : 'right';
         if (cursorPos.start && cursorPos.end) { //删除范围内的内容
             selectedRange = cursorPos;
             cursorPos = selectedRange.end;
-        } else { //光标在选中范围的边界
-            selectedRange = this.selecter.getRangeByCursorPos(cursorPos);
+            margin = selectedRange.margin;
         }
         let start = null;
         let startObj = this.htmls[cursorPos.line - 1];
@@ -298,10 +317,6 @@ export default class {
             let endObj = this.htmls[end.line - 1];
             start = selectedRange.start;
             startObj = this.htmls[start.line - 1];
-            originPos = {
-                line: end.line,
-                column: end.column
-            };
             text = startObj.text;
             deleteText = this.getRangeText(selectedRange.start, selectedRange.end);
             if (start.line == 1 && end.line == this.maxLine) { //全选删除
@@ -400,8 +415,9 @@ export default class {
                 line: originPos.line,
                 column: originPos.column
             },
+            text: deleteText,
             keyCode: keyCode,
-            text: deleteText
+            margin: margin
         };
         return historyObj;
     }

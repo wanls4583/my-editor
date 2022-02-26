@@ -67,17 +67,13 @@ export default class {
                 if (command instanceof Array) {
                     var text = [];
                     var cursorPos = [];
-                    command.map((command) => {
-                        text.push(command.text);
-                        cursorPos.push(command.cursorPos);
+                    command.map((item) => {
+                        text.push(item.text);
+                        cursorPos.push(item.cursorPos);
                     });
-                    this.insertContent(text, cursorPos, {
-                        keyCode: command[0].keyCode
-                    });
+                    this.insertContent(text, cursorPos, command);
                 } else {
-                    this.insertContent(command.text, Object.assign({}, command.cursorPos), {
-                        keyCode: command.keyCode
-                    });
+                    this.insertContent(command.text, command.cursorPos, command);
                 }
                 break;
             case Util.command.MOVEUP:
@@ -150,11 +146,19 @@ export default class {
         function _combCheck(lastCommand, command) {
             // 检测是否为连续插入或连续删除
             if (lastCommand && lastCommand.type == command.type &&
-                (lastCommand.type == Util.command.DELETE || lastCommand.type === Util.command.INSERT) &&
                 command.preCursorPos.line == command.cursorPos.line &&
-                Util.comparePos(lastCommand.cursorPos, command.preCursorPos) == 0 &&
                 Date.now() - that.pushHistoryTime < 2000) {
-                return true;
+                if (lastCommand.type == Util.command.DELETE) {
+                    if (Util.comparePos(lastCommand.cursorPos, command.preCursorPos) == 0) {
+                        return true;
+                    }
+                }
+                if (lastCommand.type == Util.command.INSERT) {
+                    if (Util.comparePos(lastCommand.cursorPos, command.preCursorPos) == 0 ||
+                        Util.comparePos(lastCommand.cursorPos, command.cursorPos) == 0) {
+                        return true;
+                    }
+                }
             }
         }
 
