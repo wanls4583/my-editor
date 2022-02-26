@@ -33,6 +33,7 @@ export default class {
             'lint',
             'folder',
             'selecter',
+            'searcher',
             'fSelecter',
             'render',
             'unFold',
@@ -170,6 +171,7 @@ export default class {
         this.lint.onInsertContentAfter(newLine);
         this.tokenizer.onInsertContentAfter(newLine);
         this.selecter.clearRange();
+        this.searcher.clearCache();
         this.refreshSearch();
         this.setLineWidth(text);
         this.render();
@@ -230,7 +232,8 @@ export default class {
         let historyArr = [];
         let historyObj = null;
         let prePos = null;
-        let preOriginPos = null;
+        let lineDelta = 0;
+        let columnDelta = 0;
         rangeList.map((cursorPos) => {
             if (cursorPos.start) {
                 _deleteRangePos(cursorPos);
@@ -242,51 +245,39 @@ export default class {
         return historyArr;
 
         function _deleteCursorPos(cursorPos) {
-            let originPos = {
-                line: cursorPos.line,
-                column: cursorPos.column
-            };
-            if (prePos) {
-                if (preOriginPos.line === cursorPos.line) {
-                    cursorPos.line = prePos.line;
-                    cursorPos.column = prePos.column + cursorPos.column - preOriginPos.column;
-                } else {
-                    cursorPos.line = prePos.line + cursorPos.line - preOriginPos.line;
-                }
+            cursorPos.line -= lineDelta;
+            if (prePos && cursorPos.line === prePos.line) {
+                cursorPos.column -= columnDelta;
+            } else {
+                columnDelta = 0;
             }
             historyObj = that._deleteContent(cursorPos, keyCode);
             historyArr.push(historyObj);
             prePos = historyObj.cursorPos;
-            preOriginPos = originPos;
             cursorPos.line = prePos.line;
             cursorPos.column = prePos.column;
+            columnDelta += historyObj.preCursorPos.column - prePos.column;
         }
 
         function _deleteRangePos(rangePos) {
             let start = rangePos.start;
             let end = rangePos.end;
-            let originPos = {
-                line: end.line,
-                column: end.column
-            };
-            if (prePos) {
-                let column = start.column;
-                let line = start.line;
-                if (preOriginPos.line === start.line) {
-                    start.line = prePos.line;
-                    start.column = prePos.column + start.column - preOriginPos.column;
-                    if (end.line === line) {
-                        end.column = start.column + end.column - column;
-                    }
+            start.line -= lineDelta;
+            end.line -= lineDelta;
+            if (prePos && start.line === prePos.line) {
+                start.column -= columnDelta;
+                if (start.line === end.line) {
+                    end.column -= columnDelta;
                 } else {
-                    start.line = prePos.line + start.line - preOriginPos.line;
+                    columnDelta = 0;
                 }
-                end.line = end.line + start.line - line;
+            } else {
+                columnDelta = 0;
             }
             historyObj = that._deleteContent(rangePos, keyCode);
             historyArr.push(historyObj);
             prePos = historyObj.cursorPos;
-            preOriginPos = originPos;
+            columnDelta += historyObj.preCursorPos.column - prePos.column;
         }
     }
     // 删除内容
@@ -393,6 +384,7 @@ export default class {
         this.lint.onDeleteContentAfter(newLine);
         this.tokenizer.onDeleteContentAfter(newLine);
         this.selecter.clearRange();
+        this.searcher.clearCache();
         this.refreshSearch();
         this.render();
         // 更新最大文本宽度

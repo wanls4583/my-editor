@@ -700,18 +700,16 @@ export default {
                     if (this.setNowCursorPos.id != setNowCursorPosId) {
                         return;
                     }
-                    if (this.forceCursorView !== false) {
-                        let line = this.folder.getRelativeLine(nowCursorPos.line);
-                        let top = (line - this.folder.getRelativeLine(this.startLine)) * this.charObj.charHight;
-                        let relTop = line * this.charObj.charHight;
-                        if (relTop > this.scrollTop + this.scrollerArea.height - this.charObj.charHight) {
-                            this.$vScroller.scrollTop = relTop + this.charObj.charHight - this.scrollerArea.height;
-                            this.startLine = Math.floor(this.scrollTop / this.charObj.charHight);
-                            this.startLine++;
-                        } else if (top < 0 || top == 0 && this.top < 0) {
-                            this.$vScroller.scrollTop = (nowCursorPos.line - 1) * this.charObj.charHight;
-                            this.startLine = nowCursorPos.line;
-                        }
+                    let line = this.folder.getRelativeLine(nowCursorPos.line);
+                    let top = (line - this.folder.getRelativeLine(this.startLine)) * this.charObj.charHight;
+                    let relTop = line * this.charObj.charHight;
+                    if (relTop > this.scrollTop + this.scrollerArea.height - this.charObj.charHight) {
+                        this.$vScroller.scrollTop = relTop + this.charObj.charHight - this.scrollerArea.height;
+                        this.startLine = Math.floor(this.scrollTop / this.charObj.charHight);
+                        this.startLine++;
+                    } else if (top < 0 || top == 0 && this.top < 0) {
+                        this.$vScroller.scrollTop = (nowCursorPos.line - 1) * this.charObj.charHight;
+                        this.startLine = nowCursorPos.line;
                     }
                     this.setCursorRealPos();
                 });
@@ -724,6 +722,7 @@ export default {
             this.setCursorRealPos.id = setCursorRealPosId;
             this.$nextTick(() => {
                 if (this.setCursorRealPos.id !== setCursorRealPosId) {
+                    this.forceCursorView = true;
                     return;
                 }
                 this.renderHtmls.map((item) => {
@@ -1188,8 +1187,8 @@ export default {
             this.shortcut.onKeyDown(e);
         },
         onSearch(data) {
-            this.fSearcher.clearCache();
             this.fSelecter.clearRange();
+            this.fSearcher.clearCache();
             this.search(this.fSearcher, this.fSelecter, {
                 text: data.text,
                 wholeWord: data.wholeWord,
@@ -1219,6 +1218,7 @@ export default {
         onCloseSearch() {
             this.searchVisible = false;
             this.fSelecter.clearRange();
+            this.fSearcher.clearCache();
             this.renderSelectedBg();
             this.focus();
         }

@@ -126,6 +126,7 @@ export default class {
         this.multiCursorPos.empty();
         this.multiCursorPos.push(cursorPos);
         this.setNowCursorPos(cursorPos);
+        return cursorPos;
     }
     getCursorsByLine(line) {
         let left = 0;

@@ -14,6 +14,7 @@ export default class {
             'nowCursorPos',
             'cursor',
             'selecter',
+            'searcher',
             'history',
             'searchWord',
             'openSearch',
@@ -69,13 +70,9 @@ export default class {
             switch (e.keyCode) {
                 case 37: //left arrow
                     _moveCursor('left', true);
-                    this.selecter.clearRange();
-                    this.renderSelectedBg();
                     break;
                 case 39: //right arrow
                     _moveCursor('right', true);
-                    this.selecter.clearRange();
-                    this.renderSelectedBg();
                     break;
                 case 65: //ctrl+a,全选
                     e.preventDefault();
@@ -127,8 +124,6 @@ export default class {
                     break;
                 case 37: //left arrow
                     _moveCursor('left');
-                    this.selecter.clearRange();
-                    this.renderSelectedBg();
                     break;
                 case 35: //end键
                     _moveCursor('end');
@@ -138,8 +133,6 @@ export default class {
                     break;
                 case 38: //up arrow
                     _moveCursor('up');
-                    this.selecter.clearRange();
-                    this.renderSelectedBg();
                     break;
                 case 39: //right arrow
                     _moveCursor('right');
@@ -166,8 +159,12 @@ export default class {
                 that.cursor.multiCursorPos.map((cursorPos) => {
                     that.cursor.moveCursor(cursorPos, direct, wholeWord);
                 });
+                that.cursor.filterCursorPos();
+            } else {
+                that.selecter.clearRange();
+                that.searcher.clearCache();
             }
-            that.cursor.filterCursorPos();
+            that.renderSelectedBg();
         }
     }
 }
