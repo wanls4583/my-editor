@@ -616,45 +616,8 @@ export default {
                     }
                 }
             } else {
-                this.search();
+                this.searcher.search();
             }
-        },
-        search(searcher, selecter, searchObj, direct) {
-            let resultObj = null;
-            let hasCache = false;
-            searcher = searcher || this.searcher;
-            selecter = selecter || this.selecter;
-            hasCache = searcher.hasCache();
-            if (hasCache) {
-                searchObj = searchObj || searcher.getConfig();
-                resultObj = direct === 'up' ? searcher.prev() : searcher.next();
-            } else {
-                searchObj = searchObj || context.getToSearchObj();
-                if (!searchObj.text) {
-                    return;
-                }
-                resultObj = searcher.search(searchObj);
-            }
-            if (resultObj && resultObj.result) {
-                if (!selecter.selectedRanges.length || !this.cursorFocus) {
-                    if (this.cursor.multiCursorPos.length <= 1) {
-                        this.cursor.setCursorPos(resultObj.result.end);
-                    }
-                    selecter.setActive(resultObj.result.end);
-                } else {
-                    this.cursor.addCursorPos(resultObj.result.end);
-                    selecter.addActive(resultObj.result.end);
-                }
-                !hasCache && selecter.addSelectedRange(resultObj.list);
-                if (searcher === this.fSearcher) {
-                    this.searchNow = resultObj.now;
-                    this.searchCount = resultObj.list.length;
-                }
-                this.renderSelectedBg();
-            } else if (searcher === this.fSearcher && !resultObj) {
-                this.searchCount = 0;
-            }
-            this.setCursorRealPos();
         },
         replace(data) {
             if (this.fSelecter.selectedRanges.length) {
@@ -998,7 +961,7 @@ export default {
                 this.fSearcher.clearNow();
                 this.renderSelectedBg();
                 if (this.mouseUpTime && Date.now() - this.mouseUpTime < 300) { //双击选中单词
-                    this.search();
+                    this.searchWord();
                 }
             }
             this.mouseStartObj = {
@@ -1175,31 +1138,28 @@ export default {
             this.shortcut.onKeyDown(e);
         },
         onSearch(data) {
+            let resultObj = null;
             this.fSearcher.clearSearch();
-            this.search(this.fSearcher, this.fSelecter, {
+            resultObj = this.fSearcher.search({
                 text: data.text,
                 wholeWord: data.wholeWord,
                 ignoreCase: data.ignoreCase,
             });
-            this.renderSelectedBg();
+            this.searchNow = resultObj.now;
+            this.searchCount = resultObj.count;
         },
         onSearchNext() {
             if (this.fSearcher.hasCache()) {
-                if (this.fSearcher.hasNow()) {
-                    this.search(this.fSearcher, this.fSelecter);
-                } else {
-                    let resultObj = null;
-                    this.fSearcher.setNow(this.nowCursorPos);
-                    resultObj = this.fSearcher.now();
-                    this.cursor.setCursorPos(resultObj.result.end);
-                    this.searchNow = resultObj.now;
-                    this.renderSelectedBg();
-                }
+                let resultObj = this.fSearcher.search();
+                this.searchNow = resultObj.now;
+                this.searchCount = resultObj.count;
             }
         },
         onSearchPrev() {
             if (this.fSearcher.hasCache()) {
-                this.search(this.fSearcher, this.fSelecter, null, 'up');
+                let resultObj = this.fSearcher.search(null, 'up');
+                this.searchNow = resultObj.now;
+                this.searchCount = resultObj.count;
             }
         },
         onCloseSearch() {

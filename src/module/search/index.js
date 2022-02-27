@@ -13,10 +13,54 @@ export default class {
     }
     initProperties(editor, context) {
         Util.defineProperties(this.editorFun, editor, ['search']);
-        Util.defineProperties(this, editor, ['nowCursorPos', 'cursorFocus', '$nextTick']);
-        Util.defineProperties(this, context, ['htmls']);
+        Util.defineProperties(this, editor, [
+            'nowCursorPos',
+            'cursorFocus',
+            'cursor',
+            '$nextTick',
+            'renderSelectedBg',
+            'setCursorRealPos'
+        ]);
+        Util.defineProperties(this, context, ['htmls', 'getToSearchObj']);
     }
-    search(option) {
+    search(searchObj, direct) {
+        let resultObj = null;
+        let now = 0;
+        let count = 0;
+        let hasCache = this.hasCache();
+        if (hasCache) {
+            resultObj = direct === 'up' ? this.prev() : this.next();
+        } else {
+            searchObj = searchObj || this.getToSearchObj();
+            if (!searchObj.text) {
+                return;
+            }
+            resultObj = this._search(searchObj);
+        }
+        if (resultObj && resultObj.result) {
+            if (!this.selecter.selectedRanges.length || !this.cursorFocus) {
+                if (this.cursor.multiCursorPos.length <= 1) {
+                    this.cursor.setCursorPos(resultObj.result.end);
+                }
+                this.selecter.setActive(resultObj.result.end);
+            } else {
+                this.cursor.addCursorPos(resultObj.result.end);
+                this.selecter.addActive(resultObj.result.end);
+            }
+            if (!hasCache) {
+                this.selecter.addSelectedRange(resultObj.list);
+            }
+            now = resultObj.now;
+            count = resultObj.list.length;
+            this.renderSelectedBg();
+            this.setCursorRealPos();
+        }
+        return {
+            now: now,
+            count: count
+        }
+    }
+    _search(option) {
         let reg = null,
             exec = null,
             preExec = null,
@@ -122,9 +166,6 @@ export default class {
     hasCache() {
         return !!this.cacheData;
     }
-    hasNow() {
-        return this.cacheData && this.cacheData.resultCaches.index > -1;
-    }
     now() {
         let resultCaches = this.cacheData.resultCaches;
         return {
@@ -157,6 +198,9 @@ export default class {
         }
     }
     getFromCache(direct) {
+        if (this.cacheData.resultCaches.index < 0) {
+            this.setNow(this.nowCursorPos);
+        }
         let resultCaches = this.cacheData.resultCaches;
         let resultIndexMap = this.cacheData.resultIndexMap;
         let index = resultCaches.index + (direct === 'up' ? -1 : 1);
@@ -173,8 +217,8 @@ export default class {
         }
         return {
             now: index + 1,
-            list: resultCaches,
-            result: result
+            result: result,
+            list: resultCaches
         }
     }
     getConfig() {
