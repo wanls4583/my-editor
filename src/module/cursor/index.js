@@ -62,16 +62,6 @@ export default class {
         this.setNowCursorPos(cursorPos);
         return cursorPos;
     }
-    // 更新光标位置
-    updateCursorPos(cursorPos, line, column) {
-        cursorPos.line = line;
-        cursorPos.column = column;
-        if (cursorPos === this.nowCursorPos) { //触发滚动
-            this.setNowCursorPos(this.nowCursorPos);
-        } else {
-            this.setCursorRealPos();
-        }
-    }
     // 设置光标
     setCursorPos(cursorPos) {
         cursorPos = {
@@ -139,6 +129,7 @@ export default class {
     }
     // 移动光标
     moveCursor(cursorPos, direct, wholeWord) {
+        let that = this;
         let text = this.htmls[cursorPos.line - 1].text;
         let line = cursorPos.line;
         let column = cursorPos.column;
@@ -167,7 +158,7 @@ export default class {
                 column = text.length;
             }
             if (column === 0) {
-                this.updateCursorPos(cursorPos, line, column);
+                _updateCursorPos(cursorPos, line, column);
                 return {
                     line: line,
                     column: column
@@ -180,7 +171,7 @@ export default class {
                     column--;
                 }
                 if (column == 0) {
-                    this.updateCursorPos(cursorPos, line, column);
+                    _updateCursorPos(cursorPos, line, column);
                     return {
                         line: line,
                         column: column
@@ -213,7 +204,7 @@ export default class {
                 text = this.htmls[line - 1].text;
             }
             if (column == text.length) {
-                this.updateCursorPos(cursorPos, line, column);
+                _updateCursorPos(cursorPos, line, column);
                 return {
                     line: line,
                     column: column
@@ -226,7 +217,7 @@ export default class {
                     column++;
                 }
                 if (column == text.length) {
-                    this.updateCursorPos(cursorPos, line, column);
+                    _updateCursorPos(cursorPos, line, column);
                     return {
                         line: line,
                         column: column
@@ -253,7 +244,17 @@ export default class {
                 column++;
             }
         }
-        this.updateCursorPos(cursorPos, line, column);
+        _updateCursorPos(cursorPos, line, column);
+
+        function _updateCursorPos(cursorPos, line, column) {
+            cursorPos.line = line;
+            cursorPos.column = column;
+            if (cursorPos === that.nowCursorPos) { //触发滚动
+                that.setNowCursorPos(that.nowCursorPos);
+            } else {
+                that.setCursorRealPos();
+            }
+        }
         return {
             line: line,
             column: column
