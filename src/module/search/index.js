@@ -200,6 +200,7 @@ export default class {
     getFromCache(direct) {
         if (this.cacheData.resultCaches.index < 0) {
             this.setNow(this.nowCursorPos);
+            return this.now();
         }
         let resultCaches = this.cacheData.resultCaches;
         let resultIndexMap = this.cacheData.resultIndexMap;
