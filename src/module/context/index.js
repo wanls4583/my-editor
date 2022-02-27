@@ -176,7 +176,7 @@ export default class {
         this.lint.onInsertContentAfter(newLine);
         this.tokenizer.onInsertContentAfter(newLine);
         this.setLineWidth(text);
-        this.render();
+        this.render(true);
         if (this.foldMap.has(nowLine) && text.length > 1) {
             this.unFold(nowLine);
         }
@@ -385,7 +385,7 @@ export default class {
         });
         this.lint.onDeleteContentAfter(newLine);
         this.tokenizer.onDeleteContentAfter(newLine);
-        this.render();
+        this.render(true);
         // 更新最大文本宽度
         if (startObj.width >= this.maxWidthObj.width) {
             this.setEditorData('maxWidthObj', {

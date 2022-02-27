@@ -66,50 +66,11 @@ export default class {
     updateCursorPos(cursorPos, line, column) {
         cursorPos.line = line;
         cursorPos.column = column;
-        this.setCursorRealPos();
         if (cursorPos === this.nowCursorPos) { //触发滚动
             this.setNowCursorPos(this.nowCursorPos);
+        } else {
+            this.setCursorRealPos();
         }
-    }
-    updateAfterPos(cursorPos, line, column) {
-        this.multiCursorPos.map((item) => {
-            if (item != cursorPos) {
-                if (item.line > cursorPos.line) {
-                    item.line += line - cursorPos.line;
-                } else if (item.line === cursorPos.line && item.column >= cursorPos.column) {
-                    item.line += line - cursorPos.line;
-                    item.column += column - cursorPos.column;
-                }
-            }
-        });
-    }
-    updateAllCursorPos(lineDelta, preColumn, nowColumn) {
-        let prePos = null;
-        let columnDelta = nowColumn - preColumn;
-        let column = columnDelta;
-        this.multiCursorPos.map((item) => {
-            let originPos = Object.assign({}, item);
-            if (!lineDelta) {
-                if (prePos && item.line > prePos.line) {
-                    column = columnDelta;
-                }
-                item.column += column;
-                column += columnDelta;
-            } else {
-                item.line += lineDelta;
-                if (lineDelta > 0) {
-                    item.column = nowColumn;
-                } else {
-                    item.column += nowColumn - preColumn;
-                }
-            }
-            if (item === this.nowCursorPos) { //触发滚动
-                this.setNowCursorPos(item);
-            }
-            prePos = originPos;
-            lineDelta += lineDelta;
-        });
-        this.setCursorRealPos();
     }
     // 设置光标
     setCursorPos(cursorPos) {

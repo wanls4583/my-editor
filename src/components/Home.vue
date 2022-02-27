@@ -313,7 +313,6 @@ export default {
             this.setScrollerHeight();
         },
         startLine: function (newVal) {
-            this.forceCursorView = false;
             this.tokenizer.onScroll();
             this.render();
         }
@@ -403,7 +402,7 @@ export default {
             }, 100);
         },
         // 渲染
-        render() {
+        render(forceCursorView) {
             let renderId = this.render.id + 1 || 1;
             this.render.id = renderId;
             this.$nextTick(() => {
@@ -413,7 +412,7 @@ export default {
                 this.renderLine();
                 this.renderSelectedBg();
                 this.$nextTick(() => {
-                    this.setCursorRealPos();
+                    this.setCursorRealPos(forceCursorView);
                     this.scrollerArea = {
                         height: this.$scroller.clientHeight,
                         width: this.$scroller.clientWidth,
@@ -568,7 +567,6 @@ export default {
                         this.cursor.updateCursorPos(cursorPos, line, lineObj.text.length);
                     }
                 });
-                this.forceCursorView = false;
                 this.setScrollerHeight();
                 this.render();
             }
@@ -577,7 +575,6 @@ export default {
         unFold(line) {
             this.focus();
             if (this.folder.unFold(line)) {
-                this.forceCursorView = false;
                 this.setScrollerHeight();
                 this.render();
             }
@@ -655,35 +652,33 @@ export default {
                         return;
                     }
                     let line = this.folder.getRelativeLine(nowCursorPos.line);
-                    let top = (line - this.folder.getRelativeLine(this.startLine)) * this.charObj.charHight;
-                    let relTop = line * this.charObj.charHight;
-                    if (relTop > this.scrollTop + this.scrollerArea.height - this.charObj.charHight) {
-                        this.$vScroller.scrollTop = relTop + this.charObj.charHight - this.scrollerArea.height;
+                    let relTop = (line - this.folder.getRelativeLine(this.startLine)) * this.charObj.charHight;
+                    let top = line * this.charObj.charHight;
+                    if (top > this.scrollTop + this.scrollerArea.height - this.charObj.charHight) {
+                        this.$vScroller.scrollTop = top + this.charObj.charHight - this.scrollerArea.height;
                         this.startLine = Math.floor(this.scrollTop / this.charObj.charHight);
                         this.startLine++;
-                    } else if (top < 0 || top == 0 && this.top < 0) {
+                    } else if (relTop < 0 || relTop == 0 && this.top < 0) {
                         this.$vScroller.scrollTop = (nowCursorPos.line - 1) * this.charObj.charHight;
                         this.startLine = nowCursorPos.line;
                     }
-                    this.setCursorRealPos();
+                    this.setCursorRealPos(true);
                 });
             }
         },
         // 设置真实光标位置
-        setCursorRealPos() {
+        setCursorRealPos(forceCursorView) {
             let that = this;
             let setCursorRealPosId = this.setCursorRealPos.id + 1 || 1;
             this.setCursorRealPos.id = setCursorRealPosId;
             this.$nextTick(() => {
                 if (this.setCursorRealPos.id !== setCursorRealPosId) {
-                    this.forceCursorView = true;
                     return;
                 }
                 this.renderHtmls.map((item) => {
                     _setLine(item);
                 });
                 this.cursorVisible = true;
-                this.forceCursorView = true;
             });
 
             function _setLine(item) {
@@ -702,17 +697,11 @@ export default {
                 }
                 if ($('#line_' + cursorPos.line).length && lineObj.tokens && lineObj.tokens.length) {
                     left = _getExactLeft(cursorPos);
-                    if (left < 0) { //token还没渲染完
-                        setTimeout(() => {
-                            _setCursorRealPos(cursorPos);
-                        });
-                        return;
-                    }
                 } else {
                     left = that.getStrWidthByLine(cursorPos.line, 0, cursorPos.column);
                 }
                 // 强制滚动使光标处于可见区域
-                if (that.forceCursorView !== false && cursorPos === that.nowCursorPos) {
+                if (forceCursorView && cursorPos === that.nowCursorPos) {
                     if (left > that.scrollerArea.width + that.scrollLeft - that.charObj.fullAngleCharWidth) {
                         that.$hScroller.scrollLeft = left + that.charObj.fullAngleCharWidth - that.scrollerArea.width;
                     } else if (left < that.scrollLeft) {
@@ -1060,7 +1049,6 @@ export default {
         onHscroll(e) {
             this.scrollLeft = e.target.scrollLeft;
             this.$scroller.scrollLeft = this.scrollLeft;
-            this.forceCursorView = false;
         },
         // 上下滚动事件
         onVscroll(e) {
