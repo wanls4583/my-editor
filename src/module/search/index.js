@@ -33,7 +33,10 @@ export default class {
         } else {
             searchObj = searchObj || this.getToSearchObj();
             if (!searchObj.text) {
-                return;
+                return {
+                    now: 0,
+                    count: 0
+                };
             }
             resultObj = this._search(searchObj);
         }

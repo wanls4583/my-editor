@@ -503,11 +503,14 @@ export default {
                     item.selectStarts = [];
                     item.selectEnds = [];
                 });
-                this.selecter.selectedRanges.map((selectedRange) => {
-                    this._renderSelectedBg(selectedRange);
-                });
                 this.fSelecter.selectedRanges.map((selectedRange) => {
                     this._renderSelectedBg(selectedRange, true);
+                });
+                this.selecter.selectedRanges.map((selectedRange) => {
+                    // 和搜索框冲突，则不渲染
+                    if (!this.fSelecter.getRangeByCursorPos(selectedRange.start)) {
+                        this._renderSelectedBg(selectedRange);
+                    }
                 });
             });
         },
@@ -581,19 +584,18 @@ export default {
         },
         // ctrl+f打开搜索
         openSearch(replaceMode) {
+            let searchObj = context.getToSearchObj();
             let obj = {
-                replaceVisible: !!replaceMode
+                replaceVisible: !!replaceMode,
+                searchText: searchObj.text,
+                wholeWord: false,
+                ignoreCase: false
             };
-            if (this.searchVisible) {
-                this.$refs.search.initData(obj);
+            if (this.searchVisible && !obj.text) {
                 return;
             }
             this.searchVisible = true;
-            this.forceCursorView = false;
-            if (this.selecter.selectedRanges.length) {
-                let selectedRange = this.selecter.selectedRanges[0];
-                obj.searchText = context.getRangeText(selectedRange.start, selectedRange.end);
-            }
+            this.searcher.clearSearch();
             this.$refs.search.initData(obj);
             this.$refs.search.search();
             this.$refs.search.focus();
