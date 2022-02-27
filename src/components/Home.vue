@@ -109,7 +109,7 @@
 				@replace="replace"
 				@replaceAll="replaceAll"
 				@search="onSearch"
-				ref="search"
+				ref="searchDialog"
 				v-show="searchVisible"
 			></search-dialog>
 		</div>
@@ -596,23 +596,23 @@ export default {
             }
             this.searchVisible = true;
             this.searcher.clearSearch();
-            this.$refs.search.initData(obj);
-            this.$refs.search.search();
-            this.$refs.search.focus();
+            this.$refs.searchDialog.initData(obj);
+            this.$refs.searchDialog.search();
+            this.$refs.searchDialog.focus();
         },
         // ctrl+d搜索完整单词
         searchWord() {
             if (this.searchVisible) {
                 let searchObj = context.getToSearchObj();
                 if (searchObj.text) {
-                    let $search = this.$refs.search;
+                    let $search = this.$refs.searchDialog;
                     if ($search.searchText != searchObj.text || !$search.wholeWord || !$search.ignoreCase) {
-                        this.$refs.search.initData({
+                        this.$refs.searchDialog.initData({
                             searchText: searchObj.text,
                             wholeWord: true,
                             ignoreCase: true
                         });
-                        this.$refs.search.search();
+                        this.$refs.searchDialog.search();
                     } else {
                         this.onSearchNext();
                     }
@@ -1054,7 +1054,7 @@ export default {
             cancelAnimationFrame(this.selectMoveTimer);
             this.mouseStartObj = null;
             this.mouseUpTime = Date.now();
-            this.$refs.search.directBlur();
+            this.$refs.searchDialog.directBlur();
         },
         // 左右滚动事件
         onHscroll(e) {
