@@ -6,11 +6,14 @@
 import Util from '@/common/Util';
 
 export default class {
-    constructor(editor, context) {
+    constructor(editor, context, selecter) {
+        this.selecter = selecter;
+        this.editorFun = {};
         this.initProperties(editor, context);
     }
     initProperties(editor, context) {
-        Util.defineProperties(this, editor, ['selecter', 'nowCursorPos', 'cursorFocus']);
+        Util.defineProperties(this.editorFun, editor, ['search']);
+        Util.defineProperties(this, editor, ['nowCursorPos', 'cursorFocus', '$nextTick']);
         Util.defineProperties(this, context, ['htmls']);
     }
     search(option) {
@@ -81,6 +84,28 @@ export default class {
             result: result
         };
     }
+    // 重新搜索
+    refreshSearch() {
+        if (!this.hasCache()) {
+            return;
+        }
+        let refreshSearchId = this.refreshSearch.id + 1 || 1;
+        this.refreshSearch.id = refreshSearchId;
+        this.$nextTick(() => {
+            if (this.refreshSearch.id !== refreshSearchId) {
+                return;
+            }
+            if (this.cacheData) {
+                let option = this.cacheData.option;
+                this.clearSearch();
+                this.editorFun.search(this, this.selecter, option);
+            }
+        });
+    }
+    clearSearch() {
+        this.selecter.clearRange();
+        this.cacheData = null;
+    }
     cache(option, resultCaches, resultIndexMap) {
         this.cacheData = {
             option: option,
@@ -88,29 +113,50 @@ export default class {
             resultIndexMap: resultIndexMap
         };
     }
-    clearCache(now) {
-        let index = now - 1;
-        if (now !== undefined) {
-            let resultCaches = this.cacheData.resultCaches;
-            let indexs = Object.keys(this.cacheData.resultIndexMap);
+    clearNow() {
+        if (this.cacheData) {
+            this.cacheData.resultCaches.index = -1;
             this.cacheData.resultIndexMap = {};
-            resultCaches.splice(index, 1);
-            if (resultCaches.index >= index) {
-                resultCaches.index--;
-            }
-            indexs.map((item) => {
-                if (item >= index) {
-                    item--;
-                }
-                if (item > -1) {
-                    this.cacheData.resultIndexMap[item] = true;
-                }
-            });
-        } else {
-            this.cacheData = null;
         }
     }
-    checkCache(direct) {
+    hasCache() {
+        return !!this.cacheData;
+    }
+    hasNow() {
+        return this.cacheData && this.cacheData.resultCaches.index > -1;
+    }
+    now() {
+        let resultCaches = this.cacheData.resultCaches;
+        return {
+            now: resultCaches.index + 1,
+            list: resultCaches,
+            result: resultCaches[resultCaches.index]
+        }
+    }
+    next() {
+        return this.getFromCache();
+    }
+    prev() {
+        return this.getFromCache('up');
+    }
+    setNow(cursorPos) {
+        let resultCaches = this.cacheData.resultCaches;
+        this.cacheData.resultCaches.index = 0;
+        this.cacheData.resultIndexMap = {
+            0: true
+        };
+        for (let i = 0; i < resultCaches.length; i++) {
+            let item = resultCaches[i];
+            if (Util.comparePos(item.end, cursorPos) >= 0) {
+                this.cacheData.resultCaches.index = i;
+                this.cacheData.resultIndexMap = {
+                    i: true
+                };
+                break;
+            }
+        }
+    }
+    getFromCache(direct) {
         let resultCaches = this.cacheData.resultCaches;
         let resultIndexMap = this.cacheData.resultIndexMap;
         let index = resultCaches.index + (direct === 'up' ? -1 : 1);
@@ -129,49 +175,6 @@ export default class {
             now: index + 1,
             list: resultCaches,
             result: result
-        }
-    }
-    hasCache() {
-        return !!this.cacheData;
-    }
-    next() {
-        return this.checkCache();
-    }
-    prev() {
-        return this.checkCache('up');
-    }
-    now() {
-        let resultCaches = this.cacheData.resultCaches;
-        return {
-            now: resultCaches.index + 1,
-            list: resultCaches,
-            result: resultCaches[resultCaches.index]
-        }
-    }
-    hasNow() {
-        return this.cacheData && this.cacheData.resultCaches.index > -1;
-    }
-    clearNow() {
-        if (this.cacheData) {
-            this.cacheData.resultCaches.index = -1;
-            this.cacheData.resultIndexMap = {};
-        }
-    }
-    setNow(cursorPos) {
-        let resultCaches = this.cacheData.resultCaches;
-        this.cacheData.resultCaches.index = 0;
-        this.cacheData.resultIndexMap = {
-            0: true
-        };
-        for (let i = 0; i < resultCaches.length; i++) {
-            let item = resultCaches[i];
-            if (Util.comparePos(item.end, cursorPos) >= 0) {
-                this.cacheData.resultCaches.index = i;
-                this.cacheData.resultIndexMap = {
-                    i: true
-                };
-                break;
-            }
         }
     }
     getConfig() {

@@ -136,13 +136,9 @@ export default class {
                     break;
                 case 39: //right arrow
                     _moveCursor('right');
-                    this.selecter.clearRange();
-                    this.renderSelectedBg();
                     break;
                 case 40: //down arrow
                     _moveCursor('down');
-                    this.selecter.clearRange();
-                    this.renderSelectedBg();
                     break;
                 case Util.keyCode.DELETE: //delete
                     this.deleteContent(Util.keyCode.DELETE);
@@ -160,10 +156,8 @@ export default class {
                     that.cursor.moveCursor(cursorPos, direct, wholeWord);
                 });
                 that.cursor.filterCursorPos();
-            } else {
-                that.selecter.clearRange();
-                that.searcher.clearCache();
             }
+            that.searcher.clearSearch();
             that.renderSelectedBg();
         }
     }

@@ -346,10 +346,10 @@ export default {
             this.lint = new Lint(this, context);
             this.folder = new Fold(this, context);
             this.history = new History(this, context);
-            this.searcher = new Search(this, context);
-            this.fSearcher = new Search(this, context);
             this.selecter = new Select(this, context);
+            this.searcher = new Search(this, context, this.selecter);
             this.fSelecter = new Select(this, context);
+            this.fSearcher = new Search(this, context, this.fSelecter);
             this.shortcut = new ShortCut(this, context);
             this.cursor = new Cursor(this, context);
             this.cursor.addCursorPos(this.nowCursorPos);
@@ -597,19 +597,6 @@ export default {
             this.$refs.search.initData(obj);
             this.$refs.search.search();
             this.$refs.search.focus();
-        },
-        // 内容改变后，刷新搜索
-        refreshSearch() {
-            if (this.searchVisible) {
-                let refreshSearchId = this.refreshSearch.id + 1 || 1;
-                this.refreshSearch.id = refreshSearchId;
-                this.$nextTick(() => {
-                    if (this.refreshSearch.id !== refreshSearchId) {
-                        return;
-                    }
-                    this.$refs.search.search();
-                });
-            }
         },
         // ctrl+d搜索完整单词
         searchWord() {
@@ -1005,8 +992,7 @@ export default {
             this.cursor.setCursorPos(pos);
             this.focus();
             if (e.which != 3) {
-                this.selecter.clearRange();
-                this.searcher.clearCache();
+                this.searcher.clearSearch();
                 this.fSearcher.clearNow();
                 this.renderSelectedBg();
                 if (this.mouseUpTime && Date.now() - this.mouseUpTime < 300) { //双击选中单词
@@ -1187,8 +1173,7 @@ export default {
             this.shortcut.onKeyDown(e);
         },
         onSearch(data) {
-            this.fSelecter.clearRange();
-            this.fSearcher.clearCache();
+            this.fSearcher.clearSearch();
             this.search(this.fSearcher, this.fSelecter, {
                 text: data.text,
                 wholeWord: data.wholeWord,
@@ -1217,8 +1202,7 @@ export default {
         },
         onCloseSearch() {
             this.searchVisible = false;
-            this.fSelecter.clearRange();
-            this.fSearcher.clearCache();
+            this.fSearcher.clearSearch();
             this.renderSelectedBg();
             this.focus();
         }

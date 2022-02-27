@@ -35,6 +35,7 @@ export default class {
             'selecter',
             'searcher',
             'fSelecter',
+            'fSearcher',
             'render',
             'unFold',
             'renderSelectedBg',
@@ -42,7 +43,6 @@ export default class {
             'setLineWidth',
             'setNowCursorPos',
             'getStrWidth',
-            'refreshSearch',
         ]);
         this.setEditorData = (prop, value) => {
             editor.setData(prop, value);
@@ -81,13 +81,14 @@ export default class {
             });
         }
         historyArr = this._insertMultiContent(text, cursorPosList, command);
-        this.setNowCursorPos(this.cursor.multiCursorPos[0]);
         historyObj = historyArr.length > 1 ? historyArr : historyArr[0];
         if (!command) { // 新增历史记录
             this.history.pushHistory(historyObj);
         } else { // 撤销或重做操作后，更新历史记录
             this.history.updateHistory(historyObj);
         }
+        this.setNowCursorPos(this.cursor.multiCursorPos[0]);
+        this.fSearcher.refreshSearch();
     }
     _insertMultiContent(text, cursorPosList, command) {
         let prePos = null;
@@ -174,7 +175,6 @@ export default class {
         });
         this.lint.onInsertContentAfter(newLine);
         this.tokenizer.onInsertContentAfter(newLine);
-        this.refreshSearch();
         this.setLineWidth(text);
         this.render();
         if (this.foldMap.has(nowLine) && text.length > 1) {
@@ -226,6 +226,8 @@ export default class {
             });
         }
         this.setNowCursorPos(this.cursor.multiCursorPos[0]);
+        this.searcher.clearSearch();
+        this.fSearcher.refreshSearch();
     }
     _deleteMultiContent(rangeList, keyCode) {
         let that = this;
@@ -383,9 +385,6 @@ export default class {
         });
         this.lint.onDeleteContentAfter(newLine);
         this.tokenizer.onDeleteContentAfter(newLine);
-        this.selecter.clearRange();
-        this.searcher.clearCache();
-        this.refreshSearch();
         this.render();
         // 更新最大文本宽度
         if (startObj.width >= this.maxWidthObj.width) {
@@ -458,6 +457,8 @@ export default class {
         } else { // 撤销或重做操作后，更新历史记录
             this.history.updateHistory(historyObj);
         }
+        this.searcher.refreshSearch();
+        this.fSearcher.refreshSearch();
 
         function _moveLine(cursorPos) {
             let upLine = cursorPos.line - (direct === 'down' ? 0 : 1);
@@ -533,6 +534,8 @@ export default class {
         } else { // 撤销或重做操作后，更新历史记录
             this.history.updateHistory(historyObj);
         }
+        this.searcher.refreshSearch();
+        this.fSearcher.refreshSearch();
     }
     // 删除上面一行
     deleteCopyLineUp(command) {
@@ -596,6 +599,8 @@ export default class {
         } else { // 撤销或重做操作后，更新历史记录
             this.history.updateHistory(historyObj);
         }
+        this.searcher.refreshSearch();
+        this.fSearcher.refreshSearch();
     }
     // 删除当前行
     deleteLine() {
@@ -631,7 +636,9 @@ export default class {
             });
             preItem = item;
         });
+        let searchOption = this.searcher.getConfig();
         this.deleteContent(null, ranges);
+        this.searcher.search(searchOption);
     }
     replace(text, ranges, command) {
         let historyObj = null;
@@ -671,6 +678,8 @@ export default class {
         } else { // 撤销或重做操作后，更新历史记录
             this.history.updateHistory(historyObj);
         }
+        this.searcher.refreshSearch();
+        this.fSearcher.refreshSearch();
     }
     // 获取选中范围内的文本
     getRangeText(start, end) {
