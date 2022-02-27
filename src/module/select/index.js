@@ -171,6 +171,7 @@ export default class {
     // 清除选中背景
     clearRange() {
         this.selectedRanges.empty();
+        this.activedRanges.empty();
         this.selectedRangeMap.clear();
     }
     // 过滤选中区域

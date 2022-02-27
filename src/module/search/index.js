@@ -85,8 +85,8 @@ export default class {
         };
     }
     // 重新搜索
-    refreshSearch() {
-        if (!this.hasCache()) {
+    refreshSearch(option) {
+        if (!this.hasCache() && !option) {
             return;
         }
         let refreshSearchId = this.refreshSearch.id + 1 || 1;
@@ -95,8 +95,8 @@ export default class {
             if (this.refreshSearch.id !== refreshSearchId) {
                 return;
             }
-            if (this.cacheData) {
-                let option = this.cacheData.option;
+            if (this.hasCache() || option) {
+                option = option || this.cacheData.option;
                 this.clearSearch();
                 this.editorFun.search(this, this.selecter, option);
             }
@@ -178,6 +178,9 @@ export default class {
         }
     }
     getConfig() {
+        if (!this.cacheData) {
+            return;
+        }
         return Object.assign({}, this.cacheData.option);
     }
 }

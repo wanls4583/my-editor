@@ -636,9 +636,7 @@ export default class {
             });
             preItem = item;
         });
-        let searchOption = this.searcher.getConfig();
         this.deleteContent(null, ranges);
-        this.searcher.search(searchOption);
     }
     replace(text, ranges, command) {
         let historyObj = null;
