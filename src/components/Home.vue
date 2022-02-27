@@ -637,7 +637,9 @@ export default {
             }
             if (resultObj && resultObj.result) {
                 if (!selecter.selectedRanges.length || !this.cursorFocus) {
-                    this.cursor.setCursorPos(resultObj.result.end);
+                    if (this.cursor.multiCursorPos.length <= 1) {
+                        this.cursor.setCursorPos(resultObj.result.end);
+                    }
                     selecter.setActive(resultObj.result.end);
                 } else {
                     this.cursor.addCursorPos(resultObj.result.end);
