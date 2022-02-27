@@ -82,27 +82,27 @@ export default class {
                 break;
             case Util.command.MOVEUP:
                 this.cursor.clearCursorPos();
-                this.moveLineUp(command.cursorPos, command);
+                this.moveLineUp(command);
                 break;
             case Util.command.MOVEDOWN:
                 this.cursor.clearCursorPos();
-                this.moveLineDown(command.cursorPos, command);
+                this.moveLineDown(command);
                 break;
             case Util.command.COPY_DOWN:
                 this.cursor.clearCursorPos();
-                this.copyLineDown(command.cursorPos, command);
+                this.copyLineDown(command);
                 break;
             case Util.command.DELETE_COPY_DOWN:
                 this.cursor.clearCursorPos();
-                this.deleteCopyLineDown(command.cursorPos, command);
+                this.deleteCopyLineDown(command);
                 break;
             case Util.command.COPY_UP:
                 this.cursor.clearCursorPos();
-                this.copyLineUp(command.cursorPos, command);
+                this.copyLineUp(command);
                 break;
             case Util.command.DELETE_COPY_UP:
                 this.cursor.clearCursorPos();
-                this.deleteCopyLineUp(command.cursorPos, command);
+                this.deleteCopyLineUp(command);
                 break;
             case Util.command.REPLACE:
                 this.cursor.clearCursorPos();

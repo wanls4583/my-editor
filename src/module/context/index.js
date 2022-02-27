@@ -414,31 +414,43 @@ export default class {
         };
         return historyObj;
     }
-    moveLineUp(cursorPos, command) {
+    moveLineUp(command) {
+        this.moveLine(command, 'up');
+    }
+    moveLineDown(command) {
+        this.moveLine(command, 'down');
+    }
+    moveLine(command, direct) {
         let that = this;
         let cursorPosList = [];
         let historyPosList = [];
-        let prePos = null;
-        if (cursorPos) {
-            cursorPosList = cursorPos instanceof Array ? cursorPos : [cursorPos];
+        let index = 0;
+        if (command) {
+            cursorPosList = command.cursorPos;
+            cursorPosList = cursorPosList.map((item) => {
+                return this.cursor.addCursorPos(item);
+            });
         } else {
-            that.cursor.multiCursorPos.map((item) => {
-                if (!prePos || item.line - prePos.line > 1) {
-                    item.line > 1 && cursorPosList.push(item);
-                    prePos = item;
-                }
-            });
+            cursorPosList = this.cursor.multiCursorPos;
         }
-        cursorPosList.map((cursorPos) => {
-            cursorPos = this.cursor.addCursorPos(cursorPos);
-            _moveLineUp(cursorPos);
-            historyPosList.push({
-                line: cursorPos.line,
-                column: cursorPos.column
-            });
-        });
+        while (index < cursorPosList.length) {
+            let line = cursorPosList[index].line;
+            _moveLine(cursorPosList[index]);
+            while (index < cursorPosList.length && cursorPosList[index].line === line) {
+                if (direct === 'down') {
+                    cursorPosList[index].line++;
+                } else {
+                    cursorPosList[index].line--;
+                }
+                historyPosList.push({
+                    line: cursorPosList[index].line,
+                    column: cursorPosList[index].column
+                });
+                index++;
+            }
+        }
         let historyObj = {
-            type: Util.command.MOVEDOWN,
+            type: direct === 'down' ? Util.command.MOVEUP : Util.command.MOVEDOWN,
             cursorPos: historyPosList
         }
         if (!command) { // 新增历史记录
@@ -447,89 +459,42 @@ export default class {
             this.history.updateHistory(historyObj);
         }
 
-        function _moveLineUp(cursorPos) {
-            let upLineText = that.htmls[cursorPos.line - 2].text;
-            let nowLineText = that.htmls[cursorPos.line - 1].text;
+        function _moveLine(cursorPos) {
+            let upLine = cursorPos.line - (direct === 'down' ? 0 : 1);
+            let downLine = upLine + 1;
+            let upText = that.htmls[upLine - 1].text;
+            let downText = that.htmls[downLine - 1].text;
             let start = {
-                line: cursorPos.line - 1,
+                line: upLine,
                 column: 0
             };
             that._deleteContent({
                 start: start,
                 end: {
-                    line: cursorPos.line,
-                    column: nowLineText.length
+                    line: downLine,
+                    column: downText.length
                 }
             });
-            that._insertContent(nowLineText + '\n' + upLineText, start);
-            that.cursor.getCursorsByLine(cursorPos.line).map((item) => {
-                that.cursor.updateCursorPos(item, item.line - 1, item.column);
-            });
+            that._insertContent(downText + '\n' + upText, start);
         }
     }
-    moveLineDown(cursorPos, command) {
-        let that = this;
-        let cursorPosList = [];
-        let historyPosList = [];
-        let prePos = null;
-        if (cursorPos) {
-            cursorPosList = cursorPos instanceof Array ? cursorPos : [cursorPos];
-        } else {
-            that.cursor.multiCursorPos.map((item) => {
-                if (!prePos || item.line - prePos.line > 1) {
-                    item.line > 1 && cursorPosList.push(item);
-                    prePos = item;
-                }
-            });
-        }
-        cursorPosList.map((cursorPos) => {
-            cursorPos = this.cursor.addCursorPos(cursorPos);
-            _moveLineDown(cursorPos);
-            historyPosList.push({
-                line: cursorPos.line,
-                column: cursorPos.column
-            });
-        });
-        let historyObj = {
-            type: Util.command.MOVEUP,
-            cursorPos: historyPosList
-        }
-        if (!command) { // 新增历史记录
-            this.history.pushHistory(historyObj);
-        } else { // 撤销或重做操作后，更新历史记录
-            this.history.updateHistory(historyObj);
-        }
-
-        function _moveLineDown(cursorPos) {
-            let downLineText = that.htmls[cursorPos.line].text;
-            let nowLineText = that.htmls[cursorPos.line - 1].text;
-            let start = {
-                line: cursorPos.line,
-                column: 0
-            };
-            that._deleteContent({
-                start: start,
-                end: {
-                    line: cursorPos.line + 1,
-                    column: downLineText.length
-                }
-            });
-            that._insertContent(downLineText + '\n' + nowLineText, start);
-            that.cursor.getCursorsByLine(cursorPos.line).map((item) => {
-                that.cursor.updateCursorPos(item, item.line + 1, item.column);
-            });
-        }
+    // 向上复制一行
+    copyLineUp(command) {
+        this.copyLine(command, 'up');
     }
-    copyLine(cursorPos, command, direct) {
+    // 向下复制一行
+    copyLineDown(command) {
+        this.copyLine(command, 'down');
+    }
+    copyLine(command, direct) {
         let originList = [];
         let cursorPosList = [];
         let historyPosList = [];
         let prePos = null;
         let texts = [];
         let index = 0;
-        direct = direct || 'up';
-        if (cursorPos) {
-            originList = cursorPos instanceof Array ? cursorPos : [cursorPos];
+        if (command) {
+            originList = command.cursorPos;
             originList = originList.map((item) => {
                 return this.cursor.addCursorPos(item);
             });
@@ -549,7 +514,7 @@ export default class {
         });
         this._insertMultiContent(texts, cursorPosList).map((item) => {
             let originLine = originList[index].line;
-            let line = direct === 'up' ? item.cursorPos.line - 1 : item.cursorPos.line;
+            let line = direct === 'down' ? item.cursorPos.line : item.cursorPos.line - 1;
             while (index < originList.length && originList[index].line === originLine) {
                 originList[index].line = line;
                 historyPosList.push({
@@ -560,7 +525,7 @@ export default class {
             }
         });
         let historyObj = {
-            type: direct === 'up' ? Util.command.DELETE_COPY_DOWN : Util.command.DELETE_COPY_UP,
+            type: direct === 'down' ? Util.command.DELETE_COPY_UP : Util.command.DELETE_COPY_DOWN,
             cursorPos: historyPosList
         }
         if (!command) { // 新增历史记录
@@ -569,23 +534,22 @@ export default class {
             this.history.updateHistory(historyObj);
         }
     }
-    // 向上复制一行
-    copyLineUp(cursorPos, command) {
-        this.copyLine(cursorPos, command, 'up');
+    // 删除上面一行
+    deleteCopyLineUp(command) {
+        this.deleteCopyLine(command, 'up');
     }
-    // 向下复制一行
-    copyLineDown(cursorPos, command) {
-        this.copyLine(cursorPos, command, 'down');
+    // 删除下面一行
+    deleteCopyLineDown(command) {
+        this.deleteCopyLine(command, 'down');
     }
-    deleteCopyLine(cursorPos, command, direct) {
+    deleteCopyLine(command, direct) {
         let originList = [];
         let cursorPosList = [];
         let historyPosList = [];
         let prePos = null;
         let index = 0;
-        direct = direct || 'down';
-        if (cursorPos) {
-            originList = cursorPos instanceof Array ? cursorPos : [cursorPos];
+        if (command) {
+            originList = command.cursorPos;
             originList = originList.map((item) => {
                 return this.cursor.addCursorPos(item);
             });
@@ -594,15 +558,17 @@ export default class {
         }
         originList.map((item) => {
             if (!prePos || prePos.line !== item.line) {
-                let upText = this.htmls[item.line - (direct === 'down' ? 1 : 2)].text;
-                let downText = this.htmls[item.line - (direct === 'down' ? 0 : 1)].text;
+                let upLine = direct === 'down' ? item.line : item.line - 1;
+                let downLine = upLine + 1;
+                let upText = this.htmls[upLine - 1].text;
+                let downText = this.htmls[downLine - 1].text;
                 cursorPosList.push({
                     start: {
-                        line: item.line + (direct === 'down' ? 0 : -1),
+                        line: upLine,
                         column: upText.length
                     },
                     end: {
-                        line: item.line + (direct === 'down' ? 1 : 0),
+                        line: downLine,
                         column: downText.length
                     }
                 });
@@ -630,14 +596,6 @@ export default class {
         } else { // 撤销或重做操作后，更新历史记录
             this.history.updateHistory(historyObj);
         }
-    }
-    // 删除上面一行
-    deleteCopyLineUp(cursorPos, command) {
-        this.deleteCopyLine(cursorPos, command, 'up');
-    }
-    // 删除下面一行
-    deleteCopyLineDown(cursorPos, command) {
-        this.deleteCopyLine(cursorPos, command, 'down');
     }
     // 删除当前行
     deleteLine() {
