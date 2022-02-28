@@ -82,6 +82,7 @@ export default class {
         } else {
             this.cursor.clearCursorPos();
             command.map((item) => {
+                // 多个插入的光标可能相同，这里不能先添加光标
                 cursorPosList.push(item.cursorPos);
             });
         }
