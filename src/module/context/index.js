@@ -222,7 +222,6 @@ export default class {
                     } else {
                         selectedRange.margin = 'right';
                     }
-                    selectedRange.active = true;
                     rangeList.push([selectedRange, item]);
                 } else {
                     rangeList.push(item);
@@ -291,12 +290,13 @@ export default class {
             } else {
                 columnDelta = 0;
             }
+            lineDelta += end.line - start.line;
             historyObj = that._deleteContent(rangePos, keyCode);
             historyObj.text && historyArr.push(historyObj);
             prePos = historyObj.cursorPos;
             cursorPos.line = prePos.line;
             cursorPos.column = prePos.column;
-            columnDelta += historyObj.preCursorPos.column - prePos.column;
+            columnDelta += Math.abs(historyObj.preCursorPos.column - prePos.column);
         }
     }
     // 删除内容
@@ -627,13 +627,11 @@ export default class {
             let selectedRange = this.selecter.getRangeByCursorPos(item);
             let start = null;
             if (selectedRange) {
-                ranges.push(selectedRange);
                 if (Util.comparePos(selectedRange.start, item) === 0) {
                     selectedRange.margin = 'left';
                 } else {
                     selectedRange.margin = 'right';
                 }
-                selectedRange.active = true;
                 ranges.push([selectedRange, item]);
                 return;
             }
