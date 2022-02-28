@@ -66,29 +66,35 @@ export default class {
         }
         this[prop] = value;
     }
-    insertContent(text, cursorPos, command) {
-        let historyArr = [];
-        let historyObj = null;
+    insertContent(text, command) {
+        let historyArr = null;
         let cursorPosList = [];
-        if (!cursorPos) {
+        let serial = false;
+        if (!command) {
             // 如果有选中区域，需要先删除选中区域
-            this.selecter.selectedRanges.length && this.deleteContent();
+            if (this.selecter.activedRanges.length) {
+                let _historyArr = this.deleteContent();
+                // 连续操作标识
+                _historyArr.serial = true;
+                serial = true;
+            }
             cursorPosList = this.cursor.multiCursorPos;
         } else {
-            cursorPos = cursorPos instanceof Array ? cursorPos : [cursorPos];
-            cursorPos.map((item) => {
-                cursorPosList.push(this.cursor.addCursorPos(item));
+            command.map((item) => {
+                cursorPosList.push(this.cursor.addCursorPos(item.cursorPos));
             });
         }
         historyArr = this._insertMultiContent(text, cursorPosList, command);
-        historyObj = historyArr.length > 1 ? historyArr : historyArr[0];
+        historyArr.serial = serial;
         if (!command) { // 新增历史记录
-            this.history.pushHistory(historyObj);
+            this.history.pushHistory(historyArr);
         } else { // 撤销或重做操作后，更新历史记录
-            this.history.updateHistory(historyObj);
+            this.history.updateHistory(historyArr);
+            historyArr.serial = command.serial;
         }
         this.setNowCursorPos(this.cursor.multiCursorPos[0]);
         this.fSearcher.refreshSearch();
+        return historyArr;
     }
     _insertMultiContent(text, cursorPosList, command) {
         let prePos = null;
@@ -96,12 +102,12 @@ export default class {
         let historyObj = null;
         let historyArr = [];
         let texts = text instanceof Array ? text : text.split(/\r\n|\n/);
-        command = command && (command instanceof Array ? command : [command]);
         cursorPosList.map((cursorPos, index) => {
             let _text = texts.length === cursorPosList.length ? texts[index] : text;
             let originPos = Object.assign({}, cursorPos);
-            let margin = command && command[index].margin || 'right';
-            let active = command && command[index].active || false;
+            let commandObj = command && command[index] || {};
+            let margin = commandObj.margin || 'right';
+            let active = commandObj.active || false;
             if (prePos) {
                 if (preOriginPos.line === cursorPos.line) {
                     cursorPos.line = prePos.line;
@@ -193,12 +199,20 @@ export default class {
         }
         return historyObj;
     }
-    deleteContent(keyCode, rangePos, command) {
+    deleteContent(keyCode, command) {
         let historyArr = [];
-        let historyObj = null;
         let rangeList = [];
-        if (rangePos) {
-            rangeList = rangePos instanceof Array ? rangePos : [rangePos];
+        if (command) {
+            rangeList = command.map((item) => {
+                let obj = {
+                    start: item.preCursorPos,
+                    end: item.cursorPos,
+                    margin: item.margin,
+                    active: item.active,
+                }
+                let cursorPos = this.cursor.addCursorPos(obj.margin === 'left' ? obj.start : obj.end);
+                return [obj, cursorPos];
+            });
         } else {
             this.cursor.multiCursorPos.map((item) => {
                 let selectedRange = this.selecter.getRangeByCursorPos(item);
@@ -209,18 +223,18 @@ export default class {
                         selectedRange.margin = 'right';
                     }
                     selectedRange.active = true;
-                    rangeList.push(selectedRange);
+                    rangeList.push([selectedRange, item]);
                 } else {
                     rangeList.push(item);
                 }
             });
         }
         historyArr = this._deleteMultiContent(rangeList, keyCode);
-        historyObj = historyArr.length > 1 ? historyArr : historyArr[0];
         if (!command) { // 新增历史记录
-            historyObj && this.history.pushHistory(historyObj);
+            historyArr.length && this.history.pushHistory(historyArr);
         } else { // 撤销或重做操作后，更新历史记录
-            this.history.updateHistory(historyObj);
+            historyArr.serial = command.serial;
+            this.history.updateHistory(historyArr);
             historyArr.map((item) => {
                 this.cursor.addCursorPos(item.cursorPos);
             });
@@ -228,6 +242,7 @@ export default class {
         this.setNowCursorPos(this.cursor.multiCursorPos[0]);
         this.searcher.clearSearch();
         this.fSearcher.refreshSearch();
+        return historyArr;
     }
     _deleteMultiContent(rangeList, keyCode) {
         let that = this;
@@ -236,11 +251,11 @@ export default class {
         let prePos = null;
         let lineDelta = 0;
         let columnDelta = 0;
-        rangeList.map((cursorPos) => {
-            if (cursorPos.start) {
-                _deleteRangePos(cursorPos);
+        rangeList.map((item) => {
+            if (item instanceof Array) {
+                _deleteRangePos(item[0], item[1]);
             } else {
-                _deleteCursorPos(cursorPos);
+                _deleteCursorPos(item);
             }
         });
         this.cursor.filterCursorPos();
@@ -254,14 +269,14 @@ export default class {
                 columnDelta = 0;
             }
             historyObj = that._deleteContent(cursorPos, keyCode);
-            historyArr.push(historyObj);
+            historyObj.text && historyArr.push(historyObj);
             prePos = historyObj.cursorPos;
             cursorPos.line = prePos.line;
             cursorPos.column = prePos.column;
             columnDelta += historyObj.preCursorPos.column - prePos.column;
         }
 
-        function _deleteRangePos(rangePos) {
+        function _deleteRangePos(rangePos, cursorPos) {
             let start = rangePos.start;
             let end = rangePos.end;
             start.line -= lineDelta;
@@ -277,8 +292,10 @@ export default class {
                 columnDelta = 0;
             }
             historyObj = that._deleteContent(rangePos, keyCode);
-            historyArr.push(historyObj);
+            historyObj.text && historyArr.push(historyObj);
             prePos = historyObj.cursorPos;
+            cursorPos.line = prePos.line;
+            cursorPos.column = prePos.column;
             columnDelta += historyObj.preCursorPos.column - prePos.column;
         }
     }
@@ -611,6 +628,13 @@ export default class {
             let start = null;
             if (selectedRange) {
                 ranges.push(selectedRange);
+                if (Util.comparePos(selectedRange.start, item) === 0) {
+                    selectedRange.margin = 'left';
+                } else {
+                    selectedRange.margin = 'right';
+                }
+                selectedRange.active = true;
+                ranges.push([selectedRange, item]);
                 return;
             }
             if (preItem && item.line === preItem.line) {
@@ -627,16 +651,21 @@ export default class {
                     column: 0
                 }
             }
-            ranges.push({
+            selectedRange = {
                 start: start,
                 end: {
                     line: item.line,
                     column: this.htmls[item.line - 1].text.length
-                }
-            });
+                },
+                margin: 'left',
+                active: false
+            };
+            ranges.push([selectedRange, item]);
             preItem = item;
         });
-        this.deleteContent(null, ranges);
+        this.history.pushHistory(this._deleteMultiContent(ranges));
+        this.searcher.clearSearch();
+        this.fSearcher.refreshSearch();
     }
     replace(text, ranges, command) {
         let historyObj = null;

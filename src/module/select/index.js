@@ -129,6 +129,9 @@ export default class {
     addSelectedRange(ranges) {
         ranges = ranges instanceof Array ? ranges : [ranges];
         ranges.map((range) => {
+            if (this.getRangeByCursorPos(range.start)) {
+                return;
+            }
             let active = this.cursor.getCursorsByLineColumn(range.start.line, range.start.column) ||
                 this.cursor.getCursorsByLineColumn(range.end.line, range.end.column);
             let selectedRange = {

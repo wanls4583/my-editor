@@ -31,6 +31,10 @@ export default class {
             let command = this.history[this.history.index - 1];
             this.doCommand(command);
             this.history.index--;
+            command = this.history[this.history.index - 1];
+            if (command && command.serial) { //连续操作标识
+                this.undo();
+            }
         }
     }
     // 重做操作
@@ -39,6 +43,10 @@ export default class {
             let command = this.history[this.history.index];
             this.history.index++;
             this.doCommand(command);
+            command = this.history[this.history.index];
+            if (command && command.serial) { //连续操作标识
+                this.redo();
+            }
         }
     }
     // 操作命令
@@ -47,37 +55,18 @@ export default class {
         switch (commandType) {
             case Util.command.DELETE:
                 this.cursor.clearCursorPos();
-                if (command instanceof Array) {
-                    var list = command.map((command) => {
-                        return {
-                            start: command.preCursorPos,
-                            end: command.cursorPos,
-                            margin: command.margin,
-                            active: command.active,
-                        };
-                    });
-                    this.deleteContent(Util.keyCode.BACKSPACE, list, command);
-                } else {
-                    this.deleteContent(Util.keyCode.BACKSPACE, {
-                        start: command.preCursorPos,
-                        end: command.cursorPos,
-                        margin: command.margin,
-                        active: command.active,
-                    }, command);
-                }
+                this.deleteContent(Util.keyCode.BACKSPACE, command);
                 break;
             case Util.command.INSERT:
                 this.cursor.clearCursorPos();
                 if (command instanceof Array) {
                     var text = [];
-                    var cursorPos = [];
                     command.map((item) => {
                         text.push(item.text);
-                        cursorPos.push(item.cursorPos);
                     });
-                    this.insertContent(text, cursorPos, command);
+                    this.insertContent(text, command);
                 } else {
-                    this.insertContent(command.text, command.cursorPos, command);
+                    this.insertContent(command.text, command);
                 }
                 break;
             case Util.command.MOVEUP:
