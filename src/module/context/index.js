@@ -100,7 +100,6 @@ export default class {
     }
     _insertMultiContent(text, cursorPosList, command) {
         let prePos = null;
-        let preOriginPos = null;
         let historyObj = null;
         let historyArr = [];
         let texts = text instanceof Array ? text : text.split(/\r\n|\n/);
@@ -108,7 +107,6 @@ export default class {
         let columnDelta = 0;
         cursorPosList.map((cursorPos, index) => {
             let _text = texts.length === cursorPosList.length ? texts[index] : text;
-            let originPos = Object.assign({}, cursorPos);
             let commandObj = command && command[index] || {};
             let margin = commandObj.margin || 'right';
             let active = commandObj.active || false;
@@ -121,7 +119,6 @@ export default class {
             historyObj = this._insertContent(_text, cursorPos);
             historyArr.push(historyObj);
             prePos = historyObj.cursorPos;
-            preOriginPos = originPos;
             historyObj.margin = margin;
             historyObj.active = active;
             lineDelta += historyObj.cursorPos.line - historyObj.preCursorPos.line;
