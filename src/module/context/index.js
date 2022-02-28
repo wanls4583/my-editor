@@ -127,15 +127,14 @@ export default class {
                 cursorPos.line = historyObj.cursorPos.line;
                 cursorPos.column = historyObj.cursorPos.column;
             }
+            if (command) {
+                this.cursor.addCursorPos(cursorPos);
+            }
             if (active) {
                 this.selecter.addSelectedRange({
                     start: historyObj.preCursorPos,
                     end: historyObj.cursorPos
                 });
-            }
-            if (command) {
-                this.cursor.addCursorPos(cursorPos);
-                console.log(cursorPos.line, cursorPos.column);
             }
         });
         return historyArr;
