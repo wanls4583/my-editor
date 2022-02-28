@@ -564,7 +564,8 @@ export default {
                 this.cursor.multiCursorPos.map((cursorPos) => {
                     if (cursorPos.line > line && cursorPos.line < resultFold.end.line) {
                         let lineObj = context.htmls[line - 1];
-                        this.cursor.updateCursorPos(cursorPos, line, lineObj.text.length);
+                        cursorPos.line = line;
+                        cursorPos.column = lineObj.text.length;
                     }
                 });
                 this.setScrollerHeight();
@@ -598,7 +599,7 @@ export default {
             this.$refs.searchDialog.focus();
         },
         // ctrl+d搜索完整单词
-        searchWord() {
+        searchWord(direct) {
             if (this.searchVisible) {
                 let searchObj = context.getToSearchObj();
                 if (searchObj.text) {
@@ -611,11 +612,11 @@ export default {
                         });
                         this.$refs.searchDialog.search();
                     } else {
-                        this.onSearchNext();
+                        direct === 'up' ? this.onSearchPrev() : this.onSearchNext();
                     }
                 }
             } else {
-                this.searcher.search();
+                this.searcher.search(null, direct);
             }
         },
         replace(data) {
@@ -948,9 +949,8 @@ export default {
             this.cursor.setCursorPos(pos);
             this.focus();
             if (e.which != 3) {
-                this.searcher.clearSearch();
                 this.fSearcher.clearNow();
-                this.renderSelectedBg();
+                this.searcher.clearSearch();
                 if (this.mouseUpTime && Date.now() - this.mouseUpTime < 300) { //双击选中单词
                     this.searchWord();
                 }
@@ -975,7 +975,6 @@ export default {
                 let end = this.getPosByEvent(e);
                 this.cursor.setCursorPos(end);
                 this.selecter.setSelectedRange(Object.assign({}, this.mouseStartObj.start), end);
-                this.renderSelectedBg();
                 cancelAnimationFrame(this.selectMoveTimer);
                 if (e.clientY > offset.top + this.scrollerArea.height) { //鼠标超出底部区域
                     _move('down', e.clientY - offset.top - this.scrollerArea.height);
@@ -1022,7 +1021,6 @@ export default {
                     column = column < 0 ? 0 : (column > context.htmls[originLine - 1].text.length ? context.htmls[originLine - 1].text.length : column);
                     that.cursor.setCursorPos({ line: line, column: column });
                     that.selecter.setSelectedRange(that.mouseStartObj.start, { line: line, column: column });
-                    that.renderSelectedBg();
                     that.selectMoveTimer = requestAnimationFrame(() => {
                         _run(autoDirect, speed)
                     });
@@ -1037,7 +1035,6 @@ export default {
                 Util.comparePos(this.mouseStartObj.start, end) != 0) {
                 this.selecter.setSelectedRange(this.mouseStartObj.start, end);
                 this.cursor.setCursorPos(end);
-                this.renderSelectedBg();
             }
             // 停止滚动选中
             cancelAnimationFrame(this.selectMoveTimer);
@@ -1155,7 +1152,6 @@ export default {
         onCloseSearch() {
             this.searchVisible = false;
             this.fSearcher.clearSearch();
-            this.renderSelectedBg();
             this.focus();
         }
     }

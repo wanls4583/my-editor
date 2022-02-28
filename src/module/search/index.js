@@ -15,10 +15,9 @@ export default class {
         Util.defineProperties(this.editorFun, editor, ['search']);
         Util.defineProperties(this, editor, [
             'nowCursorPos',
-            'cursorFocus',
+            'searchVisible',
             'cursor',
             '$nextTick',
-            'renderSelectedBg',
             'setCursorRealPos'
         ]);
         Util.defineProperties(this, context, ['htmls', 'getToSearchObj']);
@@ -41,7 +40,7 @@ export default class {
             resultObj = this._search(searchObj);
         }
         if (resultObj && resultObj.result) {
-            if (!this.selecter.selectedRanges.length || !this.cursorFocus) {
+            if (!this.selecter.selectedRanges.length || this.searchVisible) {
                 if (this.cursor.multiCursorPos.length <= 1) {
                     this.cursor.setCursorPos(resultObj.result.end);
                 }
@@ -55,9 +54,9 @@ export default class {
             }
             now = resultObj.now;
             count = resultObj.list.length;
-            this.renderSelectedBg();
             this.setCursorRealPos();
         }
+
         return {
             now: now,
             count: count
@@ -214,7 +213,7 @@ export default class {
         } else if (index < 0) {
             index = resultCaches.length - 1;
         }
-        if (!resultIndexMap[index] || !this.cursorFocus) {
+        if (!resultIndexMap[index] || this.searchVisible) {
             result = resultCaches[index];
             resultCaches.index = index;
             resultIndexMap[index] = true;

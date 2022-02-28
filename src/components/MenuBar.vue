@@ -91,11 +91,36 @@ export default {
                 }, {
                     name: 'Move Line Up',
                     op: 'moveLineUp',
-                    shortcut: 'Ctrl+Shift+Down'
+                    shortcut: 'Ctrl+Shift+Up'
                 }, {
                     name: 'Move Line Down',
                     op: 'moveLineDown',
                     shortcut: 'Ctrl+Shift+Down'
+                }],
+                [{
+                    name: 'Add Cursor Above',
+                    op: 'addCursorAbove',
+                    shortcut: 'Ctrl+Alt+Up'
+                }, {
+                    name: 'Add Cursor Below',
+                    op: 'addCursorBelow',
+                    shortcut: 'Ctrl+Alt+Down'
+                }, {
+                    name: 'Add Cursor to Line Ends',
+                    op: 'addCursorLineEnds',
+                    shortcut: 'Ctrl+Shift+L'
+                }, {
+                    name: 'Add Next Occurence',
+                    op: 'addNextOccurence',
+                    shortcut: 'Ctrl+D'
+                }, {
+                    name: 'Add Previous Occurence',
+                    op: 'addPrevOccurence',
+                    shortcut: 'Shift+D'
+                }, {
+                    name: 'Select All Occurence',
+                    op: 'selectAllOccurence',
+                    shortcut: 'Ctrl+Shift+D'
                 }]
             ]
         }
@@ -145,6 +170,7 @@ export default {
                     $parent.openSearch(true);
                     break;
             }
+            $parent.focus();
             this.editMenuVisible = false;
         },
         onSelectionMenuChange(item) {
@@ -165,7 +191,26 @@ export default {
                 case 'moveLineDown':
                     this.context.moveLineDown();
                     break;
+                case 'addCursorAbove':
+                    this.cursor.addCursorAbove();
+                    break;
+                case 'addCursorBelow':
+                    this.cursor.addCursorBelow();
+                    break;
+                case 'addCursorLineEnds':
+                    this.cursor.addCursorLineEnds();
+                    break;
+                case 'addNextOccurence':
+                    $parent.searchWord('next');
+                    break;
+                case 'addPrevOccurence':
+                    $parent.searchWord('up');
+                    break;
+                case 'selectAllOccurence':
+                    $parent.selecter.selectAllOccurence();
+                    break;
             }
+            $parent.focus();
             this.selectionMenuVisible = false;
         }
     }

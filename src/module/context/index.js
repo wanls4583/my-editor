@@ -38,7 +38,6 @@ export default class {
             'fSearcher',
             'render',
             'unFold',
-            'renderSelectedBg',
             'setMaxWidth',
             'setLineWidth',
             'setNowCursorPos',

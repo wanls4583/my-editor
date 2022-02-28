@@ -54,6 +54,7 @@ export default class {
         this.selectedRanges.push(selectedRange);
         active && this.activedRanges.push(selectedRange);
         this.addRangeMap(selectedRange);
+        this.renderSelectedBg();
     }
     setActive(cursorPos) {
         let selectedRange = this.getRangeByCursorPos(cursorPos);
@@ -65,6 +66,7 @@ export default class {
             selectedRange.active = true;
             this.activedRanges.push(selectedRange);
         }
+        this.renderSelectedBg();
     }
     // 检测光标是否在选中区域范围内
     getRangeByCursorPos(cursorPos) {
@@ -97,7 +99,6 @@ export default class {
             }
         });
         this.filterSelectedRanges();
-        this.renderSelectedBg();
     }
     selectAll() {
         let end = {
@@ -112,6 +113,15 @@ export default class {
         }, end);
         this.renderSelectedBg();
     }
+    selectAllOccurence() {
+        this.cursor.clearCursorPos();
+        this.activedRanges = this.selectedRanges.slice();
+        this.activedRanges.map((item) => {
+            this.cursor.addCursorPos(item.end);
+            item.active = true;
+        });
+        this.renderSelectedBg();
+    }
     addRangeMap(selectedRange) {
         let startkey = selectedRange.start.line + ',' + selectedRange.start.column;
         let endkey = selectedRange.end.line + ',' + selectedRange.end.column;
@@ -124,6 +134,7 @@ export default class {
             selectedRange.active = true;
             this.activedRanges.push(selectedRange);
         }
+        this.renderSelectedBg();
     }
     // 添加选中区域
     addSelectedRange(ranges) {
@@ -155,6 +166,7 @@ export default class {
             }
             return a.start.line - b.start.line;
         });
+        this.renderSelectedBg();
     }
     createRange(start, end) {
         let same = Util.comparePos(start, end);
@@ -176,6 +188,7 @@ export default class {
         this.selectedRanges.empty();
         this.activedRanges.empty();
         this.selectedRangeMap.clear();
+        this.renderSelectedBg();
     }
     // 过滤选中区域
     filterSelectedRanges() {
@@ -208,5 +221,6 @@ export default class {
         this.activedRanges = this.activedRanges.filter((item) => {
             return !item.del;
         });
+        this.renderSelectedBg();
     }
 }

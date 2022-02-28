@@ -17,12 +17,12 @@ export default class {
     initProperties(editor, context) {
         Util.defineProperties(this, editor, [
             'nowCursorPos',
-            'fSelecter',
-            'fSearcher',
+            'searcher',
+            'selecter',
             'setNowCursorPos',
             'setCursorRealPos',
             'getColumnByWidth',
-            'getStrWidth'
+            'getStrWidth',
         ]);
         Util.defineProperties(this, context, ['htmls']);
     }
@@ -61,6 +61,55 @@ export default class {
         this.multiCursorPos.insert(cursorPos, Util.comparePos);
         this.setNowCursorPos(cursorPos);
         return cursorPos;
+    }
+    addCursorAbove() {
+        this.multiCursorPos.slice().map((item) => {
+            if (item.line > 1) {
+                let maxColumn = this.htmls[item.line - 2].text.length;
+                let column = item.moveColumn !== undefined ? item.moveColumn : item.column;
+                let cursorPos = this.addCursorPos({
+                    line: item.line - 1,
+                    column: column > maxColumn ? maxColumn : column
+                });
+                cursorPos.moveColumn = column;
+                this.setNowCursorPos(cursorPos);
+            }
+        });
+    }
+    addCursorBelow() {
+        this.multiCursorPos.slice().map((item) => {
+            if (item.line < this.htmls.length) {
+                let maxColumn = this.htmls[item.line].text.length;
+                let column = item.moveColumn !== undefined ? item.moveColumn : item.column;
+                let cursorPos = this.addCursorPos({
+                    line: item.line + 1,
+                    column: column > maxColumn ? maxColumn : column
+                });
+                cursorPos.moveColumn = column;
+                this.setNowCursorPos(cursorPos);
+            }
+        });
+    }
+    addCursorLineEnds() {
+        if (this.selecter.activedRanges.length) {
+            this.clearCursorPos();
+            this.selecter.activedRanges.map((item) => {
+                let startLine = item.start.line;
+                let endLine = item.end.line;
+                while (startLine < endLine) {
+                    this.addCursorPos({
+                        line: startLine,
+                        column: this.htmls[startLine - 1].text.length
+                    });
+                    startLine++;
+                }
+                this.setNowCursorPos(this.addCursorPos({
+                    line: endLine,
+                    column: this.htmls[endLine - 1].text.length
+                }));
+            });
+            this.searcher.clearSearch();
+        }
     }
     // 设置光标
     setCursorPos(cursorPos) {

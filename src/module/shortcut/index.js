@@ -18,7 +18,6 @@ export default class {
             'history',
             'searchWord',
             'openSearch',
-            'renderSelectedBg',
         ]);
         Util.defineProperties(this, context, [
             'htmls',
@@ -51,18 +50,33 @@ export default class {
                 case 40: //ctrl+shift+down
                     this.moveLineDown();
                     break;
-                case 68: //ctrl+shift+d
+                case 68: //ctrl+shift+D
                     this.copyLineUp();
                     break;
-                case 75: //ctrl+shift+k
+                case 75: //ctrl+shift+K
                     this.deleteLine();
+                    break;
+                case 76: //ctrl+alt+L
+                    e.preventDefault();
+                    this.cursor.addCursorLineEnds();
                     break;
             }
             return false;
+        } else if (e.ctrlKey && e.altKey) {
+            switch (e.keyCode) {
+                case 38: //ctrl+alt+up
+                    e.preventDefault();
+                    this.cursor.addCursorAbove();
+                    break;
+                case 40: //ctrl+alt+down
+                    e.preventDefault();
+                    this.cursor.addCursorBelow();
+                    break;
+            }
         } else if (e.altKey && e.shiftKey) {
-            e.preventDefault();
             switch (e.keyCode) {
                 case 40: //alt+shift+down
+                    e.preventDefault();
                     this.copyLineDown();
                     break;
             }
@@ -74,28 +88,28 @@ export default class {
                 case 39: //right arrow
                     _moveCursor('right', true);
                     break;
-                case 65: //ctrl+a,全选
+                case 65: //ctrl+A,全选
                     e.preventDefault();
                     this.selecter.selectAll();
                     break;
-                case 68: //ctrl+d，搜素
+                case 68: //ctrl+D，搜素
                     e.preventDefault();
                     this.searchWord();
                     break;
-                case 70: //ctrl+f，搜素
+                case 70: //ctrl+F，搜素
                     e.preventDefault();
                     this.openSearch();
                     break;
-                case 72: //ctrl+h，搜素替换
+                case 72: //ctrl+H，搜素替换
                     e.preventDefault();
                     this.openSearch(true);
                     break;
-                case 90: //ctrl+z，撤销
+                case 90: //ctrl+Z，撤销
                 case 122:
                     e.preventDefault();
                     this.history.undo();
                     break;
-                case 89: //ctrl+y，重做
+                case 89: //ctrl+Y，重做
                 case 121:
                     e.preventDefault();
                     this.history.redo();
@@ -158,7 +172,6 @@ export default class {
                 that.cursor.filterCursorPos();
             }
             that.searcher.clearSearch();
-            that.renderSelectedBg();
         }
     }
 }
