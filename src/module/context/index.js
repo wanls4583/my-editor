@@ -80,8 +80,9 @@ export default class {
             }
             cursorPosList = this.cursor.multiCursorPos;
         } else {
+            this.cursor.clearCursorPos();
             command.map((item) => {
-                cursorPosList.push(this.cursor.addCursorPos(item.cursorPos));
+                cursorPosList.push(item.cursorPos);
             });
         }
         historyArr = this._insertMultiContent(text, cursorPosList, command);
@@ -102,19 +103,19 @@ export default class {
         let historyObj = null;
         let historyArr = [];
         let texts = text instanceof Array ? text : text.split(/\r\n|\n/);
+        let lineDelta = 0;
+        let columnDelta = 0;
         cursorPosList.map((cursorPos, index) => {
             let _text = texts.length === cursorPosList.length ? texts[index] : text;
             let originPos = Object.assign({}, cursorPos);
             let commandObj = command && command[index] || {};
             let margin = commandObj.margin || 'right';
             let active = commandObj.active || false;
-            if (prePos) {
-                if (preOriginPos.line === cursorPos.line) {
-                    cursorPos.line = prePos.line;
-                    cursorPos.column = prePos.column + cursorPos.column - preOriginPos.column;
-                } else {
-                    cursorPos.line = prePos.line + cursorPos.line - preOriginPos.line;
-                }
+            cursorPos.line += lineDelta;
+            if (prePos && cursorPos.line === prePos.line) {
+                cursorPos.column += columnDelta;
+            } else {
+                columnDelta = 0;
             }
             historyObj = this._insertContent(_text, cursorPos);
             historyArr.push(historyObj);
@@ -122,6 +123,8 @@ export default class {
             preOriginPos = originPos;
             historyObj.margin = margin;
             historyObj.active = active;
+            lineDelta += historyObj.cursorPos.line - historyObj.preCursorPos.line;
+            columnDelta += historyObj.cursorPos.column - historyObj.preCursorPos.column;
             if (margin === 'right') {
                 cursorPos.line = historyObj.cursorPos.line;
                 cursorPos.column = historyObj.cursorPos.column;
@@ -131,6 +134,10 @@ export default class {
                     start: historyObj.preCursorPos,
                     end: historyObj.cursorPos
                 });
+            }
+            if (command) {
+                this.cursor.addCursorPos(cursorPos);
+                console.log(cursorPos.line, cursorPos.column);
             }
         });
         return historyArr;
@@ -272,6 +279,7 @@ export default class {
             prePos = historyObj.cursorPos;
             cursorPos.line = prePos.line;
             cursorPos.column = prePos.column;
+            lineDelta += historyObj.preCursorPos.line - prePos.line;
             columnDelta += historyObj.preCursorPos.column - prePos.column;
         }
 
@@ -290,13 +298,13 @@ export default class {
             } else {
                 columnDelta = 0;
             }
-            lineDelta += end.line - start.line;
             historyObj = that._deleteContent(rangePos, keyCode);
             historyObj.text && historyArr.push(historyObj);
             prePos = historyObj.cursorPos;
             cursorPos.line = prePos.line;
             cursorPos.column = prePos.column;
-            columnDelta += Math.abs(historyObj.preCursorPos.column - prePos.column);
+            lineDelta += historyObj.preCursorPos.line - prePos.line;
+            columnDelta += historyObj.preCursorPos.column - prePos.column;
         }
     }
     // 删除内容
@@ -655,7 +663,7 @@ export default class {
                     line: item.line,
                     column: this.htmls[item.line - 1].text.length
                 },
-                margin: 'left',
+                margin: 'right',
                 active: false
             };
             ranges.push([selectedRange, item]);
