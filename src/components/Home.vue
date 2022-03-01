@@ -104,8 +104,8 @@
 				:count="searchCount"
 				:now="searchNow"
 				@close="onCloseSearch"
-				@next="onSearchNext"
-				@prev="onSearchPrev"
+				@next="onSearchNext(false)"
+				@prev="onSearchPrev(false)"
 				@replace="replace"
 				@replaceAll="replaceAll"
 				@search="onSearch"
@@ -1141,14 +1141,20 @@ export default {
             this.searchCount = resultObj.count;
             this.searcher.clearSearch();
         },
-        onSearchNext() {
+        onSearchNext(cursorFocus) {
+            if (cursorFocus !== undefined) {
+                this.cursorFocus = cursorFocus;
+            }
             if (this.fSearcher.hasCache()) {
                 let resultObj = this.fSearcher.search();
                 this.searchNow = resultObj.now;
                 this.searchCount = resultObj.count;
             }
         },
-        onSearchPrev() {
+        onSearchPrev(cursorFocus) {
+            if (cursorFocus !== undefined) {
+                this.cursorFocus = cursorFocus;
+            }
             if (this.fSearcher.hasCache()) {
                 let resultObj = this.fSearcher.search({ direct: 'up' });
                 this.searchNow = resultObj.now;

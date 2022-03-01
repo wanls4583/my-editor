@@ -50,6 +50,7 @@ export default class {
                 if (!this.cursorFocus) {
                     this.cursor.setCursorPos(resultObj.result.end);
                 }
+                console.log(this.cursorFocus);
             } else {
                 this.selecter.addActive(resultObj.result.end);
                 if (this.selecter.getRangeByCursorPos(this.nowCursorPos)) {
@@ -212,7 +213,9 @@ export default class {
         if (!this.selecter.getRangeByCursorPos(this.nowCursorPos) ||
             this.cacheData.resultCaches.index < 0) {
             this.setNow(this.nowCursorPos);
-            return this.now();
+            if (direct !== 'up') {
+                return this.now();
+            }
         }
         let resultCaches = this.cacheData.resultCaches;
         let resultIndexMap = this.cacheData.resultIndexMap;
