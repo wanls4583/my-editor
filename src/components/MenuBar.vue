@@ -121,6 +121,11 @@ export default {
                     name: 'Select All Occurence',
                     op: 'selectAllOccurence',
                     shortcut: 'Ctrl+Shift+D'
+                }],
+                [{
+                    name: 'Switch Alt+Click to Multi-Cursor',
+                    op: 'switchMultiKeyCode',
+                    keyCode: 'ctrl'
                 }]
             ]
         }
@@ -208,6 +213,11 @@ export default {
                     break;
                 case 'selectAllOccurence':
                     $parent.selecter.selectAllOccurence();
+                    break;
+                case 'switchMultiKeyCode':
+                    $parent.cursor.switchMultiKeyCode();
+                    item.keyCode = $parent.cursor.multiKeyCode;
+                    item.name = `Switch ${item.keyCode === 'alt' ? 'Ctrl' : 'Alt'}+Click to Multi-Cursor`;
                     break;
             }
             $parent.focus();

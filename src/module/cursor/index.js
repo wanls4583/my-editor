@@ -14,6 +14,7 @@ export default class {
         this.initProperties(editor, context);
         this.multiCursorPos = [];
         this.cursorPosSet = new Set();
+        this.multiKeyCode = 'ctrl';
     }
     initProperties(editor, context) {
         Util.defineProperties(this, editor, [
@@ -326,5 +327,8 @@ export default class {
             prePos = item;
         });
         this.multiCursorPos = multiCursorPos;
+    }
+    switchMultiKeyCode() {
+        this.multiKeyCode = this.multiKeyCode === 'ctrl' ? 'alt' : 'ctrl';
     }
 }

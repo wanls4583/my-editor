@@ -951,7 +951,8 @@ export default {
                 return;
             }
             let pos = this.getPosByEvent(e);
-            if (e.ctrlKey) {
+            if (e.ctrlKey && this.cursor.multiKeyCode === 'ctrl' ||
+                e.altKey && this.cursor.multiKeyCode === 'alt') {
                 pos = this.cursor.addCursorPos(pos);
             } else {
                 pos = this.cursor.setCursorPos(pos);
