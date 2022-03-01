@@ -191,6 +191,9 @@ export default class {
         this.renderSelectedBg();
     }
     clearActive() {
+        this.activedRanges.map((item)=>{
+            item.active = false;
+        });
         this.activedRanges.empty();
         this.renderSelectedBg();
     }
