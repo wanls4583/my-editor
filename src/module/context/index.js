@@ -742,7 +742,7 @@ export default class {
             let selectedRange = this.selecter.getRangeByCursorPos(item);
             let start = null;
             if (selectedRange) {
-                ranges.push(selectedRange);
+                ranges.push([selectedRange, item]);
                 return;
             }
             if (preItem && item.line === preItem.line) {
@@ -759,20 +759,25 @@ export default class {
                     column: 0
                 }
             }
-            ranges.push({
+            selectedRange = {
                 start: start,
                 end: {
                     line: item.line,
                     column: this.htmls[item.line - 1].text.length
                 }
-            });
+            };
+            ranges.push([selectedRange, item]);
             preItem = item;
         });
         ranges.map((item) => {
-            let str = this.getRangeText(item.start, item.end);
+            let str = this.getRangeText(item[0].start, item[0].end);
             text = str[0] === '\n' ? text += str : text += '\n' + str;
         });
-        cut && this.deleteContent(null, ranges);
+        if (cut) {
+            this.history.pushHistory(this._deleteMultiContent(ranges));
+            this.searcher.clearSearch();
+            this.fSearcher.refreshSearch();
+        }
         return text.slice(1);
     }
     // 获取待搜索的文本
