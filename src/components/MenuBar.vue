@@ -120,7 +120,6 @@ export default {
                 }, {
                     name: 'Select All Occurence',
                     op: 'selectAllOccurence',
-                    shortcut: 'Ctrl+Shift+D'
                 }],
                 [{
                     name: 'Switch Alt+Click to Multi-Cursor',
