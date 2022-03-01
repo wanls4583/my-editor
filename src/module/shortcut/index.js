@@ -15,6 +15,7 @@ export default class {
             'cursor',
             'selecter',
             'searcher',
+            'fSearcher',
             'history',
             'searchWord',
             'openSearch',
@@ -172,6 +173,7 @@ export default class {
                 that.cursor.filterCursorPos();
             }
             that.searcher.clearSearch();
+            that.fSearcher.clearNow();
         }
     }
 }

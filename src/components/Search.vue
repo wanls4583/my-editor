@@ -95,14 +95,10 @@ export default {
             }, 100);
         },
         wholeWord: function (newVal) {
-            if (newVal) {
-                this.focus();
-            }
+            this.search();
         },
         ignoreCase: function (newVal) {
-            if (newVal) {
-                this.focus();
-            }
+            this.search();
         }
     },
     created() {
@@ -130,11 +126,11 @@ export default {
         },
         changeCase() {
             this.ignoreCase = !this.ignoreCase;
-            this.search();
+            this.focus();
         },
         changeWhole() {
             this.wholeWord = !this.wholeWord;
-            this.search();
+            this.focus();
         },
         showReplace() {
             this.replaceVisible = !this.replaceVisible;

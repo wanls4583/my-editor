@@ -12,9 +12,10 @@ export default class {
     }
     initProperties(editor, context) {
         Util.defineProperties(this, editor, [
+            'fSearcher',
+            'searcher',
             'nowCursorPos',
             'cursorFocus',
-            'fSearcher',
             'cursor',
             '$nextTick',
             '$refs',
@@ -45,10 +46,16 @@ export default class {
             resultObj = this._search(config);
         }
         if (resultObj && resultObj.result) {
+            if (!hasCache) {
+                this.selecter.addSelectedRange(resultObj.list);
+            }
             if (this.fSearcher === this) {
-                this.selecter.setActive(resultObj.result.end);
                 if (this.cursorFocus === false) {
+                    this.searcher.clearSearch();
+                    this.selecter.setActive(resultObj.result.end);
                     this.cursor.setCursorPos(resultObj.result.end);
+                } else {
+                    this.clearNow();
                 }
             } else {
                 this.selecter.addActive(resultObj.result.end);
@@ -57,9 +64,6 @@ export default class {
                 } else {
                     this.cursor.setCursorPos(resultObj.result.end);
                 }
-            }
-            if (!hasCache) {
-                this.selecter.addSelectedRange(resultObj.list);
             }
             now = resultObj.now;
             count = resultObj.list.length;
@@ -152,7 +156,9 @@ export default class {
             if (this.hasCache() || config) {
                 config = config || this.cacheData.config;
                 this.clearSearch();
-                this.$refs.searchDialog.search();
+                this.search({
+                    config: config
+                });
             }
         });
     }

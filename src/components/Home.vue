@@ -670,7 +670,6 @@ export default {
             this.searchVisible = true;
             this.cursorFocus = false;
             this.$refs.searchDialog.initData(obj);
-            this.$refs.searchDialog.search();
             this.$refs.searchDialog.focus();
         },
         // ctrl+d搜索完整单词
@@ -680,12 +679,12 @@ export default {
                 if (searchConfig.text) {
                     let $search = this.$refs.searchDialog;
                     if ($search.searchText != searchConfig.text || !$search.wholeWord || !$search.ignoreCase) {
-                        this.$refs.searchDialog.initData({
+                        let config = {
                             searchText: searchConfig.text,
                             wholeWord: true,
                             ignoreCase: true
-                        });
-                        this.$refs.searchDialog.search();
+                        }
+                        $search.initData(config);
                     } else {
                         direct === 'up' ? this.onSearchPrev() : this.onSearchNext();
                     }
@@ -1142,7 +1141,9 @@ export default {
             });
             this.searchNow = resultObj.now;
             this.searchCount = resultObj.count;
-            this.searcher.clearSearch();
+            if (this.cursorFocus === false) {
+                this.searcher.clearSearch();
+            }
         },
         onSearchNext(cursorFocus) {
             if (cursorFocus !== undefined) {
