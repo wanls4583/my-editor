@@ -15,7 +15,7 @@ export default class {
         Util.defineProperties(this.editorFun, editor, ['search']);
         Util.defineProperties(this, editor, [
             'nowCursorPos',
-            'searchVisible',
+            'fSearcher',
             'cursor',
             '$nextTick',
         ]);
@@ -39,7 +39,7 @@ export default class {
             resultObj = this._search(searchObj);
         }
         if (resultObj && resultObj.result) {
-            if (!this.selecter.selectedRanges.length || this.searchVisible) {
+            if (!this.selecter.selectedRanges.length || this.fSearcher === this) {
                 if (this.cursor.multiCursorPos.length <= 1) {
                     this.cursor.setCursorPos(resultObj.result.end);
                 }
@@ -211,7 +211,7 @@ export default class {
         } else if (index < 0) {
             index = resultCaches.length - 1;
         }
-        if (!resultIndexMap[index] || this.searchVisible) {
+        if (!resultIndexMap[index] || this.fSearcher === this) {
             result = resultCaches[index];
             resultCaches.index = index;
             resultIndexMap[index] = true;

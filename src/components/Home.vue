@@ -506,8 +506,13 @@ export default {
                     this._renderSelectedBg(selectedRange, true);
                 });
                 this.selecter.selectedRanges.map((selectedRange) => {
-                    // 和搜索框冲突，则不渲染
-                    if (!this.fSelecter.getRangeByCursorPos(selectedRange.start)) {
+                    let range = this.fSelecter.getRangeByCursorPos(selectedRange.start);
+                    if (this.searchVisible) {
+                        // 优先渲染搜索框的选中范围
+                        if (!range || !range.active) {
+                            this._renderSelectedBg(selectedRange);
+                        }
+                    } else {
                         this._renderSelectedBg(selectedRange);
                     }
                 });
@@ -668,6 +673,7 @@ export default {
         },
         // ctrl+d搜索完整单词
         searchWord(direct) {
+            this.searcher.search(null, direct);
             if (this.searchVisible) {
                 let searchObj = context.getToSearchObj();
                 if (searchObj.text) {
@@ -683,8 +689,6 @@ export default {
                         direct === 'up' ? this.onSearchPrev() : this.onSearchNext();
                     }
                 }
-            } else {
-                this.searcher.search(null, direct);
             }
         },
         replace(data) {

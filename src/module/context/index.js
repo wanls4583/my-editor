@@ -777,12 +777,6 @@ export default class {
     }
     // 获取待搜索的文本
     getToSearchObj() {
-        //存在多个选择范围时，不能执行单词搜索
-        if (this.selecter.selectedRanges.length > 1) {
-            return {
-                text: ''
-            }
-        }
         let selectedRange = this.selecter.getRangeByCursorPos(this.nowCursorPos);
         let wholeWord = false;
         let searchText = '';
