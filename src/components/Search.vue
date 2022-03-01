@@ -89,7 +89,10 @@ export default {
     },
     watch: {
         searchText: function (newVal) {
-            this.search(100);
+            clearTimeout(this.searchTimer);
+            this.searchTimer = setTimeout(() => {
+                this.search();
+            }, 100);
         },
         wholeWord: function (newVal) {
             if (newVal) {
@@ -111,15 +114,19 @@ export default {
             }
             this.search();
         },
-        search(delay) {
-            clearTimeout(this.search.timer);
-            this.search.timer = setTimeout(() => {
+        search() {
+            let searchId = this.search.id || 1;
+            this.search.id = searchId;
+            this.$nextTick(() => {
+                if (this.search.id !== searchId) {
+                    return;
+                }
                 this.$emit('search', {
                     text: this.searchText,
                     ignoreCase: this.ignoreCase,
                     wholeWord: this.wholeWord
                 });
-            }, delay || 0);
+            });
         },
         changeCase() {
             this.ignoreCase = !this.ignoreCase;

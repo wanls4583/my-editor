@@ -47,10 +47,9 @@ export default class {
         if (resultObj && resultObj.result) {
             if (this.fSearcher === this) {
                 this.selecter.setActive(resultObj.result.end);
-                if (!this.cursorFocus) {
+                if (this.cursorFocus === false) {
                     this.cursor.setCursorPos(resultObj.result.end);
                 }
-                console.log(this.cursorFocus);
             } else {
                 this.selecter.addActive(resultObj.result.end);
                 if (this.selecter.getRangeByCursorPos(this.nowCursorPos)) {

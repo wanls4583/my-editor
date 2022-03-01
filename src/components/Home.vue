@@ -658,14 +658,17 @@ export default {
             let searchConfig = context.getToSearchConfig();
             let obj = {
                 replaceVisible: !!replaceMode,
-                searchText: searchConfig.text,
                 wholeWord: false,
                 ignoreCase: false
             };
+            if (searchConfig.text) {
+                obj.searchText = searchConfig.text;
+            }
             if (this.searchVisible && !obj.text) {
                 return;
             }
             this.searchVisible = true;
+            this.cursorFocus = false;
             this.$refs.searchDialog.initData(obj);
             this.$refs.searchDialog.search();
             this.$refs.searchDialog.focus();
@@ -1146,7 +1149,7 @@ export default {
                 this.cursorFocus = cursorFocus;
             }
             if (this.fSearcher.hasCache()) {
-                let resultObj = this.fSearcher.search();
+                let resultObj = this.fSearcher.search({});
                 this.searchNow = resultObj.now;
                 this.searchCount = resultObj.count;
             }
