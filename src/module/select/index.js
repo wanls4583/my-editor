@@ -190,6 +190,10 @@ export default class {
         this.selectedRangeMap.clear();
         this.renderSelectedBg();
     }
+    clearActive() {
+        this.activedRanges.empty();
+        this.renderSelectedBg();
+    }
     // 过滤选中区域
     filterSelectedRanges() {
         let direct = this.getRangeByCursorPos(this.selectedRanges[0].start);

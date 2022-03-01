@@ -776,7 +776,7 @@ export default class {
         return text.slice(1);
     }
     // 获取待搜索的文本
-    getToSearchObj() {
+    getToSearchConfig() {
         let selectedRange = this.selecter.getRangeByCursorPos(this.nowCursorPos);
         let wholeWord = false;
         let searchText = '';

@@ -655,10 +655,10 @@ export default {
         },
         // ctrl+f打开搜索
         openSearch(replaceMode) {
-            let searchObj = context.getToSearchObj();
+            let searchConfig = context.getToSearchConfig();
             let obj = {
                 replaceVisible: !!replaceMode,
-                searchText: searchObj.text,
+                searchText: searchConfig.text,
                 wholeWord: false,
                 ignoreCase: false
             };
@@ -673,12 +673,12 @@ export default {
         // ctrl+d搜索完整单词
         searchWord(direct) {
             if (this.searchVisible) {
-                let searchObj = context.getToSearchObj();
-                if (searchObj.text) {
+                let searchConfig = context.getToSearchConfig();
+                if (searchConfig.text) {
                     let $search = this.$refs.searchDialog;
-                    if ($search.searchText != searchObj.text || !$search.wholeWord || !$search.ignoreCase) {
+                    if ($search.searchText != searchConfig.text || !$search.wholeWord || !$search.ignoreCase) {
                         this.$refs.searchDialog.initData({
-                            searchText: searchObj.text,
+                            searchText: searchConfig.text,
                             wholeWord: true,
                             ignoreCase: true
                         });
@@ -688,7 +688,7 @@ export default {
                     }
                 }
             }
-            this.searcher.search(null, direct);
+            this.searcher.search({ direct: direct });
         },
         replace(data) {
             if (this.fSelecter.selectedRanges.length) {
@@ -1131,9 +1131,11 @@ export default {
             let resultObj = null;
             this.fSearcher.clearSearch();
             resultObj = this.fSearcher.search({
-                text: data.text,
-                wholeWord: data.wholeWord,
-                ignoreCase: data.ignoreCase,
+                config: {
+                    text: data.text,
+                    wholeWord: data.wholeWord,
+                    ignoreCase: data.ignoreCase,
+                }
             });
             this.searchNow = resultObj.now;
             this.searchCount = resultObj.count;
@@ -1148,7 +1150,7 @@ export default {
         },
         onSearchPrev() {
             if (this.fSearcher.hasCache()) {
-                let resultObj = this.fSearcher.search(null, 'up');
+                let resultObj = this.fSearcher.search({ direct: 'up' });
                 this.searchNow = resultObj.now;
                 this.searchCount = resultObj.count;
             }

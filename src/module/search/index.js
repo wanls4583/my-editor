@@ -19,35 +19,44 @@ export default class {
             '$nextTick',
             '$refs',
         ]);
-        Util.defineProperties(this, context, ['htmls', 'getToSearchObj']);
+        Util.defineProperties(this, context, ['htmls', 'getToSearchConfig']);
     }
-    search(searchObj, direct) {
+    search(searchObj) {
         let resultObj = null;
         let now = 0;
         let count = 0;
         let hasCache = this.hasCache();
+        let config = null;
+        searchObj = searchObj || {};
         if (hasCache) {
-            resultObj = direct === 'up' ? this.prev() : this.next();
+            if (searchObj.direct === 'up') {
+                resultObj = this.prev();
+            } else {
+                resultObj = this.next();
+            }
         } else {
-            searchObj = searchObj || this.getToSearchObj();
-            if (!searchObj.text) {
+            config = searchObj && searchObj.config || this.getToSearchConfig();
+            if (!config.text) {
                 return {
                     now: 0,
                     count: 0
                 };
             }
-            resultObj = this._search(searchObj);
+            resultObj = this._search(config);
         }
         if (resultObj && resultObj.result) {
             if (this.fSearcher === this) {
                 this.selecter.setActive(resultObj.result.end);
+                if (!this.cursorFocus) {
+                    this.cursor.setCursorPos(resultObj.result.end);
+                }
             } else {
                 this.selecter.addActive(resultObj.result.end);
-            }
-            if (this.cursorFocus && this.selecter.getRangeByCursorPos(this.nowCursorPos)) {
-                this.cursor.addCursorPos(resultObj.result.end);
-            } else {
-                this.cursor.setCursorPos(resultObj.result.end);
+                if (this.selecter.getRangeByCursorPos(this.nowCursorPos)) {
+                    this.cursor.addCursorPos(resultObj.result.end);
+                } else {
+                    this.cursor.setCursorPos(resultObj.result.end);
+                }
             }
             if (!hasCache) {
                 this.selecter.addSelectedRange(resultObj.list);
@@ -61,7 +70,7 @@ export default class {
             count: count
         }
     }
-    _search(option) {
+    _search(config) {
         let reg = null,
             exec = null,
             preExec = null,
@@ -77,11 +86,11 @@ export default class {
         let text = this.htmls.map((item) => {
             return item.text
         }).join('\n');
-        let strs = option.text.split(/\n/);
-        let regStr = option.text.replace(/\\|\.|\*|\+|\-|\?|\(|\)|\[|\]|{|\}|\^|\$|\~|\!/g, '\\$&');
-        regStr = (option.wholeWord ? '(?:\\b|(?=[^0-9a-zA-Z]))' : '') + regStr + (option.wholeWord ? '(?:\\b|(?=[^0-9a-zA-Z]))' : '');
-        option = option || {};
-        reg = new RegExp('[^\n]*?(' + regStr + ')|[^\n]*?\n', option.ignoreCase ? 'img' : 'mg');
+        let strs = config.text.split(/\n/);
+        let regStr = config.text.replace(/\\|\.|\*|\+|\-|\?|\(|\)|\[|\]|{|\}|\^|\$|\~|\!/g, '\\$&');
+        regStr = (config.wholeWord ? '(?:\\b|(?=[^0-9a-zA-Z]))' : '') + regStr + (config.wholeWord ? '(?:\\b|(?=[^0-9a-zA-Z]))' : '');
+        config = config || {};
+        reg = new RegExp('[^\n]*?(' + regStr + ')|[^\n]*?\n', config.ignoreCase ? 'img' : 'mg');
         while (exec = reg.exec(text)) {
             if (!exec[1]) {
                 line++;
@@ -122,7 +131,7 @@ export default class {
             resultCaches.index = 0;
             result = resultCaches[0];
         }
-        this.cache(option, resultCaches, resultIndexMap);
+        this.cache(config, resultCaches, resultIndexMap);
         return {
             now: resultCaches.index + 1,
             list: resultCaches,
@@ -130,8 +139,8 @@ export default class {
         };
     }
     // 重新搜索
-    refreshSearch(option) {
-        if (!this.hasCache() && !option) {
+    refreshSearch(config) {
+        if (!this.hasCache() && !config) {
             return;
         }
         let refreshSearchId = this.refreshSearch.id + 1 || 1;
@@ -140,8 +149,8 @@ export default class {
             if (this.refreshSearch.id !== refreshSearchId) {
                 return;
             }
-            if (this.hasCache() || option) {
-                option = option || this.cacheData.option;
+            if (this.hasCache() || config) {
+                config = config || this.cacheData.config;
                 this.clearSearch();
                 this.$refs.searchDialog.search();
             }
@@ -151,9 +160,9 @@ export default class {
         this.selecter.clearRange();
         this.cacheData = null;
     }
-    cache(option, resultCaches, resultIndexMap) {
+    cache(config, resultCaches, resultIndexMap) {
         this.cacheData = {
-            option: option,
+            config: config,
             resultCaches: resultCaches,
             resultIndexMap: resultIndexMap
         };
@@ -162,6 +171,7 @@ export default class {
         if (this.cacheData) {
             this.cacheData.resultCaches.index = -1;
             this.cacheData.resultIndexMap = {};
+            this.selecter.clearActive();
         }
     }
     hasCache() {
@@ -199,7 +209,8 @@ export default class {
         }
     }
     getFromCache(direct) {
-        if (this.cacheData.resultCaches.index < 0) {
+        if (!this.selecter.getRangeByCursorPos(this.nowCursorPos) ||
+            this.cacheData.resultCaches.index < 0) {
             this.setNow(this.nowCursorPos);
             return this.now();
         }
@@ -227,6 +238,6 @@ export default class {
         if (!this.cacheData) {
             return;
         }
-        return Object.assign({}, this.cacheData.option);
+        return Object.assign({}, this.cacheData.config);
     }
 }
