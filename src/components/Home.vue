@@ -666,14 +666,12 @@ export default {
                 return;
             }
             this.searchVisible = true;
-            this.searcher.clearSearch();
             this.$refs.searchDialog.initData(obj);
             this.$refs.searchDialog.search();
             this.$refs.searchDialog.focus();
         },
         // ctrl+d搜索完整单词
         searchWord(direct) {
-            this.searcher.search(null, direct);
             if (this.searchVisible) {
                 let searchObj = context.getToSearchObj();
                 if (searchObj.text) {
@@ -684,13 +682,13 @@ export default {
                             wholeWord: true,
                             ignoreCase: true
                         });
-                        this.searcher.clearSearch();
                         this.$refs.searchDialog.search();
                     } else {
                         direct === 'up' ? this.onSearchPrev() : this.onSearchNext();
                     }
                 }
             }
+            this.searcher.search(null, direct);
         },
         replace(data) {
             if (this.fSelecter.selectedRanges.length) {
@@ -1139,6 +1137,7 @@ export default {
             });
             this.searchNow = resultObj.now;
             this.searchCount = resultObj.count;
+            this.searcher.clearSearch();
         },
         onSearchNext() {
             if (this.fSearcher.hasCache()) {

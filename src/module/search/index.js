@@ -15,6 +15,7 @@ export default class {
         Util.defineProperties(this.editorFun, editor, ['search']);
         Util.defineProperties(this, editor, [
             'nowCursorPos',
+            'cursorFocus',
             'fSearcher',
             'cursor',
             '$nextTick',
@@ -39,14 +40,15 @@ export default class {
             resultObj = this._search(searchObj);
         }
         if (resultObj && resultObj.result) {
-            if (!this.selecter.selectedRanges.length || this.fSearcher === this) {
-                if (this.cursor.multiCursorPos.length <= 1) {
-                    this.cursor.setCursorPos(resultObj.result.end);
-                }
+            if (this.fSearcher === this) {
                 this.selecter.setActive(resultObj.result.end);
             } else {
-                this.cursor.addCursorPos(resultObj.result.end);
                 this.selecter.addActive(resultObj.result.end);
+            }
+            if (this.cursorFocus && this.selecter.getRangeByCursorPos(this.nowCursorPos)) {
+                this.cursor.addCursorPos(resultObj.result.end);
+            } else {
+                this.cursor.setCursorPos(resultObj.result.end);
             }
             if (!hasCache) {
                 this.selecter.addSelectedRange(resultObj.list);
