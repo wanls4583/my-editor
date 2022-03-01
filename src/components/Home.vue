@@ -951,7 +951,11 @@ export default {
                 return;
             }
             let pos = this.getPosByEvent(e);
-            this.cursor.setCursorPos(pos);
+            if (e.ctrlKey) {
+                pos = this.cursor.addCursorPos(pos);
+            } else {
+                pos = this.cursor.setCursorPos(pos);
+            }
             this.focus();
             if (e.which != 3) {
                 this.fSearcher.clearNow();
@@ -978,7 +982,8 @@ export default {
             if (this.mouseStartObj && Date.now() - this.mouseStartObj.time > 100) {
                 var offset = $(this.$scroller).offset();
                 let end = this.getPosByEvent(e);
-                this.cursor.setCursorPos(end);
+                this.cursor.clearCursorPos(this.mouseStartObj.start);
+                this.cursor.addCursorPos(end);
                 this.selecter.setSelectedRange(Object.assign({}, this.mouseStartObj.start), end);
                 cancelAnimationFrame(this.selectMoveTimer);
                 if (e.clientY > offset.top + this.scrollerArea.height) { //鼠标超出底部区域
@@ -1039,7 +1044,6 @@ export default {
             if (this.mouseStartObj && Date.now() - this.mouseStartObj.time > 100 &&
                 Util.comparePos(this.mouseStartObj.start, end) != 0) {
                 this.selecter.setSelectedRange(this.mouseStartObj.start, end);
-                this.cursor.setCursorPos(end);
             }
             // 停止滚动选中
             cancelAnimationFrame(this.selectMoveTimer);
