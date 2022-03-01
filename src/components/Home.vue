@@ -684,6 +684,7 @@ export default {
                             wholeWord: true,
                             ignoreCase: true
                         });
+                        this.searcher.clearSearch();
                         this.$refs.searchDialog.search();
                     } else {
                         direct === 'up' ? this.onSearchPrev() : this.onSearchNext();
