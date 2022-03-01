@@ -192,13 +192,13 @@ export default {
                     this.context.moveLineDown();
                     break;
                 case 'addCursorAbove':
-                    this.cursor.addCursorAbove();
+                    $parent.cursor.addCursorAbove();
                     break;
                 case 'addCursorBelow':
-                    this.cursor.addCursorBelow();
+                    $parent.cursor.addCursorBelow();
                     break;
                 case 'addCursorLineEnds':
-                    this.cursor.addCursorLineEnds();
+                    $parent.cursor.addCursorLineEnds();
                     break;
                 case 'addNextOccurence':
                     $parent.searchWord('next');
