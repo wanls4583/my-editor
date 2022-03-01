@@ -8,17 +8,16 @@ import Util from '@/common/Util';
 export default class {
     constructor(editor, context, selecter) {
         this.selecter = selecter;
-        this.editorFun = {};
         this.initProperties(editor, context);
     }
     initProperties(editor, context) {
-        Util.defineProperties(this.editorFun, editor, ['search']);
         Util.defineProperties(this, editor, [
             'nowCursorPos',
             'cursorFocus',
             'fSearcher',
             'cursor',
             '$nextTick',
+            '$refs',
         ]);
         Util.defineProperties(this, context, ['htmls', 'getToSearchObj']);
     }
@@ -144,7 +143,7 @@ export default class {
             if (this.hasCache() || option) {
                 option = option || this.cacheData.option;
                 this.clearSearch();
-                this.editorFun.search(this, this.selecter, option);
+                this.$refs.searchDialog.search();
             }
         });
     }
