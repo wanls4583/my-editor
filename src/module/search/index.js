@@ -18,7 +18,6 @@ export default class {
             'searchVisible',
             'cursor',
             '$nextTick',
-            'setCursorRealPos'
         ]);
         Util.defineProperties(this, context, ['htmls', 'getToSearchObj']);
     }
@@ -54,7 +53,6 @@ export default class {
             }
             now = resultObj.now;
             count = resultObj.list.length;
-            this.setCursorRealPos();
         }
 
         return {

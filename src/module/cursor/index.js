@@ -13,6 +13,7 @@ export default class {
     constructor(editor, context) {
         this.initProperties(editor, context);
         this.multiCursorPos = [];
+        this.cursorPosSet = new Set();
     }
     initProperties(editor, context) {
         Util.defineProperties(this, editor, [
@@ -20,7 +21,7 @@ export default class {
             'searcher',
             'selecter',
             'setNowCursorPos',
-            'setCursorRealPos',
+            'renderCursor',
             'getColumnByWidth',
             'getStrWidth',
         ]);
@@ -35,6 +36,7 @@ export default class {
             });
             this.multiCursorPos = this.multiCursorPos.filter((item) => {
                 if (posMap[item.line + ',' + item.column]) {
+                    this.cursorPosSet.delete(item);
                     item.del = true;
                     return false;
                 }
@@ -45,6 +47,7 @@ export default class {
             item.del = true;
         });
         this.multiCursorPos.empty();
+        this.cursorPosSet.clear();
         this.setNowCursorPos(null);
     }
     // 添加光标
@@ -59,6 +62,7 @@ export default class {
             column: cursorPos.column
         };
         this.multiCursorPos.insert(cursorPos, Util.comparePos);
+        this.cursorPosSet.add(cursorPos);
         this.setNowCursorPos(cursorPos);
         return cursorPos;
     }
@@ -124,9 +128,20 @@ export default class {
             }
         }
         this.multiCursorPos.empty();
+        this.cursorPosSet.clear();
         this.multiCursorPos.push(cursorPos);
+        this.cursorPosSet.add(cursorPos);
         this.setNowCursorPos(cursorPos);
         return cursorPos;
+    }
+    updateCursorPos(cursorPos, line, column) {
+        cursorPos.line = line;
+        cursorPos.column = column;
+        if (cursorPos === this.nowCursorPos) { //触发滚动
+            this.setNowCursorPos(this.nowCursorPos);
+        } else {
+            this.renderCursor();
+        }
     }
     getCursorsByLine(line) {
         let left = 0;
@@ -207,7 +222,7 @@ export default class {
                 column = text.length;
             }
             if (column === 0) {
-                _updateCursorPos(cursorPos, line, column);
+                this.updateCursorPos(cursorPos, line, column);
                 return {
                     line: line,
                     column: column
@@ -220,7 +235,7 @@ export default class {
                     column--;
                 }
                 if (column == 0) {
-                    _updateCursorPos(cursorPos, line, column);
+                    this.updateCursorPos(cursorPos, line, column);
                     return {
                         line: line,
                         column: column
@@ -253,7 +268,7 @@ export default class {
                 text = this.htmls[line - 1].text;
             }
             if (column == text.length) {
-                _updateCursorPos(cursorPos, line, column);
+                this.updateCursorPos(cursorPos, line, column);
                 return {
                     line: line,
                     column: column
@@ -266,7 +281,7 @@ export default class {
                     column++;
                 }
                 if (column == text.length) {
-                    _updateCursorPos(cursorPos, line, column);
+                    this.updateCursorPos(cursorPos, line, column);
                     return {
                         line: line,
                         column: column
@@ -293,17 +308,8 @@ export default class {
                 column++;
             }
         }
-        _updateCursorPos(cursorPos, line, column);
+        this.updateCursorPos(cursorPos, line, column);
 
-        function _updateCursorPos(cursorPos, line, column) {
-            cursorPos.line = line;
-            cursorPos.column = column;
-            if (cursorPos === that.nowCursorPos) { //触发滚动
-                that.setNowCursorPos(that.nowCursorPos);
-            } else {
-                that.setCursorRealPos();
-            }
-        }
         return {
             line: line,
             column: column

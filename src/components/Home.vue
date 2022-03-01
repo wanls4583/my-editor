@@ -411,8 +411,8 @@ export default {
                 }
                 this.renderLine();
                 this.renderSelectedBg();
+                this.renderCursor(forceCursorView);
                 this.$nextTick(() => {
-                    this.setCursorRealPos(forceCursorView);
                     this.scrollerArea = {
                         height: this.$scroller.clientHeight,
                         width: this.$scroller.clientWidth,
@@ -431,8 +431,8 @@ export default {
                     // 高亮完成渲染某一行时，render可能还没完成，导致num没更新，此时跳过
                     if (context.htmls[obj.num - 1] && context.htmls[obj.num - 1].lineId === lineId) {
                         Object.assign(obj, _getObj(item, obj.num));
+                        this.renderCursor();
                     }
-                    this.setCursorRealPos();
                 }
                 return;
             }
@@ -556,6 +556,74 @@ export default {
                 });
             }
         },
+        // 渲染光标
+        renderCursor(forceCursorView) {
+            let that = this;
+            let renderCursorId = this.renderCursor.id + 1 || 1;
+            this.renderCursor.id = renderCursorId;
+            this.$nextTick(() => {
+                if (this.renderCursor.id !== renderCursorId) {
+                    return;
+                }
+                this.renderHtmls.map((item) => {
+                    _setLine(item);
+                });
+                this.cursorVisible = true;
+            });
+
+            function _setLine(item) {
+                let cursorList = [];
+                that.cursor.getCursorsByLine(item.num).map((cursorPos) => {
+                    cursorList.push(_setCursorRealPos(cursorPos));
+                });
+                item.cursorList = cursorList;
+            }
+
+            function _setCursorRealPos(cursorPos) {
+                let left = 0;
+                let lineObj = context.htmls[cursorPos.line - 1];
+                if (cursorPos.del) {
+                    return;
+                }
+                if ($('#line_' + cursorPos.line).length && lineObj.tokens && lineObj.tokens.length) {
+                    left = _getExactLeft(cursorPos);
+                } else {
+                    left = that.getStrWidthByLine(cursorPos.line, 0, cursorPos.column);
+                }
+                // 强制滚动使光标处于可见区域
+                if (forceCursorView && cursorPos === that.nowCursorPos) {
+                    if (left > that.scrollerArea.width + that.scrollLeft - that.charObj.fullAngleCharWidth) {
+                        that.$hScroller.scrollLeft = left + that.charObj.fullAngleCharWidth - that.scrollerArea.width;
+                    } else if (left < that.scrollLeft) {
+                        that.$hScroller.scrollLeft = left - 1;
+                    }
+                }
+                if (cursorPos === that.nowCursorPos) {
+                    that.textareaLeft = left;
+                }
+                return left + 'px';
+            }
+
+            function _getExactLeft(cursorPos) {
+                let lineObj = context.htmls[cursorPos.line - 1];
+                let token = lineObj.tokens[0];
+                for (let i = 1; i < lineObj.tokens.length; i++) {
+                    if (lineObj.tokens[i].column < cursorPos.column) {
+                        token = lineObj.tokens[i];
+                    } else {
+                        break;
+                    }
+                }
+                let $token = $('#line_' + cursorPos.line).
+                    children('.my-editor-code').
+                    children('span[data-column="' + token.column + '"]');
+                if (!$token.length) {
+                    return -1;
+                }
+                let text = token.value.slice(0, cursorPos.column - token.column);
+                return $token[0].offsetLeft + that.getStrWidth(text);
+            }
+        },
         // 折叠行
         foldLine(line) {
             let resultFold = this.folder.foldLine(line);
@@ -663,76 +731,8 @@ export default {
                         this.$vScroller.scrollTop = (nowCursorPos.line - 1) * this.charObj.charHight;
                         this.startLine = nowCursorPos.line;
                     }
-                    this.setCursorRealPos(true);
+                    this.renderCursor(true);
                 });
-            }
-        },
-        // 设置真实光标位置
-        setCursorRealPos(forceCursorView) {
-            let that = this;
-            let setCursorRealPosId = this.setCursorRealPos.id + 1 || 1;
-            this.setCursorRealPos.id = setCursorRealPosId;
-            this.$nextTick(() => {
-                if (this.setCursorRealPos.id !== setCursorRealPosId) {
-                    return;
-                }
-                this.renderHtmls.map((item) => {
-                    _setLine(item);
-                });
-                this.cursorVisible = true;
-            });
-
-            function _setLine(item) {
-                let cursorList = [];
-                that.cursor.getCursorsByLine(item.num).map((cursorPos) => {
-                    cursorList.push(_setCursorRealPos(cursorPos));
-                });
-                item.cursorList = cursorList;
-            }
-
-            function _setCursorRealPos(cursorPos) {
-                let left = 0;
-                let lineObj = context.htmls[cursorPos.line - 1];
-                if (cursorPos.del) {
-                    return;
-                }
-                if ($('#line_' + cursorPos.line).length && lineObj.tokens && lineObj.tokens.length) {
-                    left = _getExactLeft(cursorPos);
-                } else {
-                    left = that.getStrWidthByLine(cursorPos.line, 0, cursorPos.column);
-                }
-                // 强制滚动使光标处于可见区域
-                if (forceCursorView && cursorPos === that.nowCursorPos) {
-                    if (left > that.scrollerArea.width + that.scrollLeft - that.charObj.fullAngleCharWidth) {
-                        that.$hScroller.scrollLeft = left + that.charObj.fullAngleCharWidth - that.scrollerArea.width;
-                    } else if (left < that.scrollLeft) {
-                        that.$hScroller.scrollLeft = left - 1;
-                    }
-                }
-                if (cursorPos === that.nowCursorPos) {
-                    that.textareaLeft = left;
-                }
-                return left + 'px';
-            }
-
-            function _getExactLeft(cursorPos) {
-                let lineObj = context.htmls[cursorPos.line - 1];
-                let token = lineObj.tokens[0];
-                for (let i = 1; i < lineObj.tokens.length; i++) {
-                    if (lineObj.tokens[i].column < cursorPos.column) {
-                        token = lineObj.tokens[i];
-                    } else {
-                        break;
-                    }
-                }
-                let $token = $('#line_' + cursorPos.line).
-                    children('.my-editor-code').
-                    children('span[data-column="' + token.column + '"]');
-                if (!$token.length) {
-                    return -1;
-                }
-                let text = token.value.slice(0, cursorPos.column - token.column);
-                return $token[0].offsetLeft + that.getStrWidth(text);
             }
         },
         // 获取最大宽度
