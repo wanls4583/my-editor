@@ -32,14 +32,15 @@ export default class {
         let key = cursorPos.line + ',' + cursorPos.column;
         return this.selectedRangeMap.get(key) || false;
     }
-    getRangeIndex(range) {
+    getRangeIndex(range, ranges) {
+        ranges = ranges || this.ranges;
         let left = 0;
-        let right = this.ranges.length - 1;
+        let right = ranges.length - 1;
         while (left <= right) {
             let mid = Math.floor((left + right) / 2);
-            let res = Util.comparePos(range.start, this.ranges[mid].start);
+            let res = Util.comparePos(range.start, ranges[mid].start);
             if (res === 0) {
-                return Util.comparePos(range.end, this.ranges[mid].end) == 0 ? mid : -1;
+                return Util.comparePos(range.end, ranges[mid].end) == 0 ? mid : -1;
             } else if (res > 0) {
                 right = mid - 1;
             } else {
@@ -160,40 +161,40 @@ export default class {
                 },
                 active: !!active
             };
-            _orderInsert(range);
-            active && this.activedRanges.push(range);
+            _orderInsert(range, this.ranges);
+            active && _orderInsert(range, this.activedRanges);
             this.addRangeMap(range);
             results.push(range);
         });
         this.renderSelectedBg();
         return ranges instanceof Array ? results : results[0];
 
-        function _orderInsert(item) {
+        function _orderInsert(item, ranges) {
             let left = 0;
-            let right = that.ranges.length - 1;
+            let right = ranges.length - 1;
             let delLength = 0;
             if (right < 0) {
-                that.ranges.push(item);
+                ranges.push(item);
                 return;
             }
             while (left < right) {
                 let mid = Math.floor((left + right) / 2);
-                if (Util.comparePos(item.start, that.ranges[mid].start) > 0) {
+                if (Util.comparePos(item.start, ranges[mid].start) > 0) {
                     left = mid + 1;
                 } else {
                     right = mid;
                 }
             }
-            if (Util.comparePos(item.start, that.ranges[left].start) < 0) {
+            while (left && Util.comparePos(item.start, ranges[left].end) < 0) {
                 left--;
             }
             let index = left;
-            while (index < that.ranges.length &&
-                Util.comparePos(item.end, that.ranges[index].start) > 0) {
+            while (index && index < ranges.length &&
+                Util.comparePos(item.end, ranges[index].start) > 0) {
                 delLength++;
                 index++;
             }
-            that.ranges.splice(left + 1, delLength, item);
+            ranges.splice(left + 1, delLength, item);
         }
     }
     /**
@@ -242,14 +243,16 @@ export default class {
         let start = range.start;
         let end = range.end;
         let same = Util.comparePos(start, end);
-        let index = this.getRangeIndex(target);
+        let index1 = this.getRangeIndex(target);
+        let index2 = this.getRangeIndex(target, this.activedRanges);
         if (same > 0) {
             let tmp = start;
             start = end;
             end = tmp;
         }
         this.deleteRangeMap(target);
-        this.ranges.splice(index, 1);
+        index1 > -1 && this.ranges.splice(index1, 1);
+        index2 > -1 && this.activedRanges.splice(index1, 1);
         target.start = start;
         target.end = end;
         if (Util.comparePos(start, end) !== 0) {
