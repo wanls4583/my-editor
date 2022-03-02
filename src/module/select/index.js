@@ -248,7 +248,7 @@ export default class {
         direct = direct && 'left' || 'right';
         for (let i = 1; i < selectedRanges.length; i++) {
             let nextRange = selectedRanges[i];
-            if (Util.comparePos(preRange.end, nextRange) >= 0) { //前后选中区域交叉则合并
+            if (Util.comparePos(preRange.end, nextRange.start) >= 0) { //前后选中区域交叉则合并
                 let startKey = nextRange.start.line + ',' + nextRange.start.column;
                 let endKey = nextRange.end.line + ',' + nextRange.end.column;
                 preRange.end = nextRange.end;
@@ -271,6 +271,7 @@ export default class {
         this.activedRanges = this.activedRanges.filter((item) => {
             return !item.del;
         });
+        console.log(this.selectedRanges.length)
         this.renderSelectedBg();
     }
 }
