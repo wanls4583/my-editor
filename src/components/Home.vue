@@ -502,29 +502,29 @@ export default {
                     item.selectStarts = [];
                     item.selectEnds = [];
                 });
-                this.fSelecter.selectedRanges.map((selectedRange) => {
-                    this._renderSelectedBg(selectedRange, true);
+                this.fSelecter.ranges.map((range) => {
+                    this._renderSelectedBg(range, true);
                 });
-                this.selecter.selectedRanges.map((selectedRange) => {
-                    let range = this.fSelecter.getRangeByCursorPos(selectedRange.start);
+                this.selecter.ranges.map((range) => {
+                    let _range = this.fSelecter.getRangeByCursorPos(range.start);
                     if (this.searchVisible) {
                         // 优先渲染搜索框的选中范围
-                        if (!range || !range.active) {
-                            this._renderSelectedBg(selectedRange);
+                        if (!_range || !_range.active) {
+                            this._renderSelectedBg(range);
                         }
                     } else {
-                        this._renderSelectedBg(selectedRange);
+                        this._renderSelectedBg(range);
                     }
                 });
             });
         },
         // 渲染选中背景
-        _renderSelectedBg(selectedRange, isFsearch) {
+        _renderSelectedBg(range, isFsearch) {
             let selecter = isFsearch ? this.fSelecter : this.selecter;
             let firstLine = this.renderHtmls[0].num;
             let lastLine = this.renderHtmls.peek().num;
-            let start = selectedRange.start;
-            let end = selectedRange.end;
+            let start = range.start;
+            let end = range.end;
             let text = context.htmls[start.line - 1].text;
             start.left = this.getStrWidth(text, 0, start.column);
             if (start.line == end.line) {
@@ -548,7 +548,7 @@ export default {
                 context.renderedLineMap.get(start.line).selectStarts.push({
                     left: start.left,
                     width: start.width,
-                    active: selectedRange.active,
+                    active: range.active,
                     isFsearch: isFsearch
                 });
             }
@@ -556,7 +556,7 @@ export default {
                 context.renderedLineMap.get(end.line).selectEnds.push({
                     left: end.left,
                     width: end.width,
-                    active: selectedRange.active,
+                    active: range.active,
                     isFsearch: isFsearch
                 });
             }
@@ -693,14 +693,14 @@ export default {
             }
         },
         replace(data) {
-            if (this.fSelecter.selectedRanges.length) {
-                let selectedRange = this.fSelecter.selectedRanges[this.searchNow - 1];
-                context.replace(data.text, [selectedRange]);
+            if (this.fSelecter.ranges.length) {
+                let range = this.fSelecter.ranges[this.searchNow - 1];
+                context.replace(data.text, [range]);
             }
         },
         replaceAll(data) {
-            if (this.fSelecter.selectedRanges.length) {
-                context.replace(data.text, this.fSelecter.selectedRanges.slice().sort((a, b) => {
+            if (this.fSelecter.ranges.length) {
+                context.replace(data.text, this.fSelecter.ranges.slice().sort((a, b) => {
                     if (a.start.line === b.start.line) {
                         return a.start.column - b.start.column;
                     }
@@ -986,12 +986,12 @@ export default {
                 let end = this.getPosByEvent(e);
                 this.cursor.updateCursorPos(this.mouseStartObj.cursorPos, end.line, end.column);
                 if (this.mouseStartObj.preRange) {
-                    this.selecter.updateRange(this.mouseStartObj.preRange, {
+                    this.mouseStartObj.preRange = this.selecter.updateRange(this.mouseStartObj.preRange, {
                         start: this.mouseStartObj.start,
                         end: end
                     });
                 } else {
-                    this.mouseStartObj.preRange = this.selecter.addSelectedRange({
+                    this.mouseStartObj.preRange = this.selecter.addRange({
                         start: this.mouseStartObj.start,
                         end: end
                     });
@@ -1041,7 +1041,7 @@ export default {
                     line = line < 1 ? 1 : (line > context.htmls.length ? context.htmls.length : line);
                     column = column < 0 ? 0 : (column > context.htmls[originLine - 1].text.length ? context.htmls[originLine - 1].text.length : column);
                     that.cursor.setCursorPos({ line: line, column: column });
-                    that.selecter.setSelectedRange(that.mouseStartObj.start, { line: line, column: column });
+                    that.selecter.setRange(that.mouseStartObj.start, { line: line, column: column });
                     that.selectMoveTimer = requestAnimationFrame(() => {
                         _run(autoDirect, speed)
                     });

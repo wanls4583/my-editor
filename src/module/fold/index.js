@@ -50,10 +50,10 @@ export default class {
     onDeleteContentBefore(cursorPos) {
         this.onDeleteContentBefore.preCursorPos = cursorPos;
         this.onDeleteContentBefore.maxLine = this.htmls.length;
-        this.selecter.selectedRanges.map((selectedRange) => {
-            if (selectedRange.active) {
-                let start = selectedRange.start;
-                let end = selectedRange.end;
+        this.selecter.ranges.map((range) => {
+            if (range.active) {
+                let start = range.start;
+                let end = range.end;
                 for (let line = start.line; line <= end.line; line++) { //删除折叠区域
                     this.editorFunObj.unFold(line);
                 }

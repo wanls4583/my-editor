@@ -133,7 +133,7 @@ export default class {
                 this.cursor.updateCursorPos(cursorPos, historyObj.cursorPos.line, historyObj.cursorPos.column);
             }
             if (active) {
-                this.selecter.addSelectedRange({
+                this.selecter.addRange({
                     start: historyObj.preCursorPos,
                     end: historyObj.cursorPos
                 });
@@ -221,14 +221,14 @@ export default class {
             });
         } else {
             this.cursor.multiCursorPos.map((item) => {
-                let selectedRange = this.selecter.getRangeByCursorPos(item);
-                if (selectedRange) {
-                    if (Util.comparePos(selectedRange.start, item) === 0) {
-                        selectedRange.margin = 'left';
+                let range = this.selecter.getRangeByCursorPos(item);
+                if (range) {
+                    if (Util.comparePos(range.start, item) === 0) {
+                        range.margin = 'left';
                     } else {
-                        selectedRange.margin = 'right';
+                        range.margin = 'right';
                     }
-                    rangeList.push([selectedRange, item]);
+                    rangeList.push([range, item]);
                 } else {
                     rangeList.push(item);
                 }
@@ -310,12 +310,12 @@ export default class {
     }
     // 删除内容
     _deleteContent(cursorPos, keyCode) {
-        let selectedRange = null;
+        let range = null;
         let margin = keyCode === Util.keyCode.DELETE ? 'left' : 'right';
         if (cursorPos.start && cursorPos.end) { //删除范围内的内容
-            selectedRange = cursorPos;
-            cursorPos = selectedRange.end;
-            margin = selectedRange.margin;
+            range = cursorPos;
+            cursorPos = range.end;
+            margin = range.margin;
         }
         let start = null;
         let startObj = this.htmls[cursorPos.line - 1];
@@ -331,13 +331,13 @@ export default class {
         this.tokenizer.onDeleteContentBefore(cursorPos.line);
         this.lint.onDeleteContentBefore(cursorPos.line);
         this.folder.onDeleteContentBefore(Object.assign({}, cursorPos));
-        if (selectedRange) { // 删除选中区域
-            let end = selectedRange.end;
+        if (range) { // 删除选中区域
+            let end = range.end;
             let endObj = this.htmls[end.line - 1];
-            start = selectedRange.start;
+            start = range.start;
             startObj = this.htmls[start.line - 1];
             text = startObj.text;
-            deleteText = this.getRangeText(selectedRange.start, selectedRange.end);
+            deleteText = this.getRangeText(range.start, range.end);
             if (start.line == 1 && end.line == this.maxLine) { //全选删除
                 rangeUuid = [this.maxWidthObj.lineId];
                 this.lineIdMap.clear();
@@ -435,7 +435,7 @@ export default class {
             text: deleteText,
             keyCode: keyCode,
             margin: margin,
-            active: selectedRange && selectedRange.active
+            active: range && range.active
         };
         return historyObj;
     }
@@ -634,15 +634,15 @@ export default class {
         let preItem = null;
         let ranges = [];
         this.cursor.multiCursorPos.map((item) => {
-            let selectedRange = this.selecter.getRangeByCursorPos(item);
+            let range = this.selecter.getRangeByCursorPos(item);
             let start = null;
-            if (selectedRange) {
-                if (Util.comparePos(selectedRange.start, item) === 0) {
-                    selectedRange.margin = 'left';
+            if (range) {
+                if (Util.comparePos(range.start, item) === 0) {
+                    range.margin = 'left';
                 } else {
-                    selectedRange.margin = 'right';
+                    range.margin = 'right';
                 }
-                ranges.push([selectedRange, item]);
+                ranges.push([range, item]);
                 return;
             }
             if (preItem && item.line === preItem.line) {
@@ -659,7 +659,7 @@ export default class {
                     column: 0
                 }
             }
-            selectedRange = {
+            range = {
                 start: start,
                 end: {
                     line: item.line,
@@ -668,7 +668,7 @@ export default class {
                 margin: 'right',
                 active: false
             };
-            ranges.push([selectedRange, item]);
+            ranges.push([range, item]);
             preItem = item;
         });
         this.history.pushHistory(this._deleteMultiContent(ranges));
@@ -739,10 +739,10 @@ export default class {
         let preItem = null;
         let ranges = [];
         this.cursor.multiCursorPos.map((item) => {
-            let selectedRange = this.selecter.getRangeByCursorPos(item);
+            let range = this.selecter.getRangeByCursorPos(item);
             let start = null;
-            if (selectedRange) {
-                ranges.push([selectedRange, item]);
+            if (range) {
+                ranges.push([range, item]);
                 return;
             }
             if (preItem && item.line === preItem.line) {
@@ -759,14 +759,14 @@ export default class {
                     column: 0
                 }
             }
-            selectedRange = {
+            range = {
                 start: start,
                 end: {
                     line: item.line,
                     column: this.htmls[item.line - 1].text.length
                 }
             };
-            ranges.push([selectedRange, item]);
+            ranges.push([range, item]);
             preItem = item;
         });
         ranges.map((item) => {
@@ -782,15 +782,15 @@ export default class {
     }
     // 获取待搜索的文本
     getToSearchConfig() {
-        if (this.selecter.selectedRanges.length > 1) {
+        if (this.selecter.ranges.length > 1) {
             return null;
         }
         let wholeWord = false;
         let searchText = '';
-        if (this.selecter.selectedRanges.length) {
-            let selectedRange = this.selecter.getRangeByCursorPos(this.nowCursorPos);
-            if (selectedRange) {
-                searchText = this.getRangeText(selectedRange.start, selectedRange.end)
+        if (this.selecter.ranges.length) {
+            let range = this.selecter.getRangeByCursorPos(this.nowCursorPos);
+            if (range) {
+                searchText = this.getRangeText(range.start, range.end)
             }
         } else {
             searchText = this.getNowWord().text;

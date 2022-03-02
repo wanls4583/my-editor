@@ -47,7 +47,7 @@ export default class {
         }
         if (resultObj && resultObj.result) {
             if (!hasCache) {
-                this.selecter.addSelectedRange(resultObj.list);
+                this.selecter.addRange(resultObj.list);
             }
             if (this.fSearcher === this) {
                 if (this.cursorFocus === false) {
@@ -120,7 +120,7 @@ export default class {
                 };
                 resultCaches.push(rangePos);
                 if (!result && (!that.nowCursorPos || Util.comparePos(end, that.nowCursorPos) >= 0)) {
-                    if (!this.selecter.selectedRanges.length || !this.selecter.getRangeByCursorPos(end)) {
+                    if (!this.selecter.ranges.length || !this.selecter.getRangeByCursorPos(end)) {
                         result = rangePos;
                     }
                     index = resultCaches.length - 1;
