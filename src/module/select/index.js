@@ -27,47 +27,6 @@ export default class {
             editor.setData(prop, value);
         }
     }
-    /**
-     * 设置选中区域
-     * @param {Object} start
-     * @param {Object} end
-     */
-    setSelectedRange(start, end) {
-        let same = Util.comparePos(start, end);
-        if (same > 0) {
-            let tmp = start;
-            start = end;
-            end = tmp;
-        } else if (!same) {
-            return;
-        }
-        let active = this.cursor.getCursorsByLineColumn(start.line, start.column) ||
-            this.cursor.getCursorsByLineColumn(end.line, end.column);
-        let selectedRange = {
-            start: Object.assign({}, start),
-            end: Object.assign({}, end),
-            active: !!active
-        };
-        this.clearRange();
-        this.selectedRanges.empty();
-        this.activedRanges.empty();
-        this.selectedRanges.push(selectedRange);
-        active && this.activedRanges.push(selectedRange);
-        this.addRangeMap(selectedRange);
-        this.renderSelectedBg();
-    }
-    setActive(cursorPos) {
-        let selectedRange = this.getRangeByCursorPos(cursorPos);
-        this.activedRanges.map((item) => {
-            item.active = false;
-        });
-        this.activedRanges.empty();
-        if (selectedRange) {
-            selectedRange.active = true;
-            this.activedRanges.push(selectedRange);
-        }
-        this.renderSelectedBg();
-    }
     // 检测光标是否在选中区域范围内
     getRangeByCursorPos(cursorPos) {
         let key = cursorPos.line + ',' + cursorPos.column;
@@ -128,6 +87,12 @@ export default class {
         this.selectedRangeMap.set(startkey, selectedRange);
         this.selectedRangeMap.set(endkey, selectedRange);
     }
+    deleteRangeMap(selectedRange) {
+        let startkey = selectedRange.start.line + ',' + selectedRange.start.column;
+        let endkey = selectedRange.end.line + ',' + selectedRange.end.column;
+        this.selectedRangeMap.delete(startkey);
+        this.selectedRangeMap.delete(endkey);
+    }
     addActive(cursorPos) {
         let selectedRange = this.getRangeByCursorPos(cursorPos);
         if (selectedRange && !selectedRange.active) {
@@ -138,34 +103,102 @@ export default class {
     }
     // 添加选中区域
     addSelectedRange(ranges) {
-        ranges = ranges instanceof Array ? ranges : [ranges];
-        ranges.map((range) => {
-            if (this.getRangeByCursorPos(range.start)) {
+        let results = [];
+        let list = ranges instanceof Array ? ranges : [ranges];
+        list.map((range) => {
+            let start = range.start;
+            let end = range.end;
+            let same = Util.comparePos(start, end);
+            if (same > 0) {
+                let tmp = start;
+                start = end;
+                end = tmp;
+            } else if (!same) {
                 return;
             }
-            let active = this.cursor.getCursorsByLineColumn(range.start.line, range.start.column) ||
-                this.cursor.getCursorsByLineColumn(range.end.line, range.end.column);
+            if (this.getRangeByCursorPos(start)) {
+                return;
+            }
+            let active = this.cursor.getCursorsByLineColumn(start.line, start.column) ||
+                this.cursor.getCursorsByLineColumn(end.line, end.column);
             let selectedRange = {
                 start: {
-                    line: range.start.line,
-                    column: range.start.column
+                    line: start.line,
+                    column: start.column
                 },
                 end: {
-                    line: range.end.line,
-                    column: range.end.column
+                    line: end.line,
+                    column: end.column
                 },
                 active: !!active
             };
             this.selectedRanges.push(selectedRange);
             active && this.activedRanges.push(selectedRange);
             this.addRangeMap(selectedRange);
+            results.push(selectedRange);
         });
-        this.selectedRanges.sort((a, b) => {
-            if (a.start.line === b.start.line) {
-                return a.start.column - b.start.column;
-            }
-            return a.start.line - b.start.line;
+        this.renderSelectedBg();
+        return ranges instanceof Array ? results : results[0];
+    }
+    /**
+     * 设置选中区域
+     * @param {Object} start
+     * @param {Object} end
+     */
+    setSelectedRange(start, end) {
+        let same = Util.comparePos(start, end);
+        if (same > 0) {
+            let tmp = start;
+            start = end;
+            end = tmp;
+        } else if (!same) {
+            return;
+        }
+        let active = this.cursor.getCursorsByLineColumn(start.line, start.column) ||
+            this.cursor.getCursorsByLineColumn(end.line, end.column);
+        let selectedRange = {
+            start: Object.assign({}, start),
+            end: Object.assign({}, end),
+            active: !!active
+        };
+        this.clearRange();
+        this.selectedRanges.empty();
+        this.activedRanges.empty();
+        this.selectedRanges.push(selectedRange);
+        active && this.activedRanges.push(selectedRange);
+        this.addRangeMap(selectedRange);
+        this.renderSelectedBg();
+        return selectedRange;
+    }
+    setActive(cursorPos) {
+        let selectedRange = this.getRangeByCursorPos(cursorPos);
+        this.activedRanges.map((item) => {
+            item.active = false;
         });
+        this.activedRanges.empty();
+        if (selectedRange) {
+            selectedRange.active = true;
+            this.activedRanges.push(selectedRange);
+        }
+        this.renderSelectedBg();
+    }
+    updateRange(target, selectedRange) {
+        let start = selectedRange.start;
+        let end = selectedRange.end;
+        let same = Util.comparePos(start, end);
+        if (same > 0) {
+            let tmp = start;
+            start = end;
+            end = tmp;
+        } else if (!same) {
+            return;
+        }
+        this.deleteRangeMap(target);
+        target.start.line = start.line;
+        target.start.column = start.column;
+        target.end.line = end.line;
+        target.end.column = end.column;
+        this.addRangeMap(target);
         this.renderSelectedBg();
     }
     createRange(start, end) {
@@ -191,7 +224,7 @@ export default class {
         this.renderSelectedBg();
     }
     clearActive() {
-        this.activedRanges.map((item)=>{
+        this.activedRanges.map((item) => {
             item.active = false;
         });
         this.activedRanges.empty();
@@ -201,10 +234,17 @@ export default class {
     filterSelectedRanges() {
         let direct = this.getRangeByCursorPos(this.selectedRanges[0].start);
         let delCurpos = [];
-        let preRange = this.selectedRanges[0];
+        // 先排序
+        let selectedRanges = this.selectedRanges.slice().sort((a, b) => {
+            if (a.start.line === b.start.line) {
+                return a.start.column - b.start.column;
+            }
+            return a.start.line - b.start.line;
+        });
+        let preRange = selectedRanges[0];
         direct = direct && 'left' || 'right';
-        for (let i = 1; i < this.selectedRanges.length; i++) {
-            let nextRange = this.selectedRanges[i];
+        for (let i = 1; i < selectedRanges.length; i++) {
+            let nextRange = selectedRanges[i];
             if (Util.comparePos(preRange.end, nextRange) >= 0) { //前后选中区域交叉则合并
                 let startKey = nextRange.start.line + ',' + nextRange.start.column;
                 let endKey = nextRange.end.line + ',' + nextRange.end.column;

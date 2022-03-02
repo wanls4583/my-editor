@@ -39,10 +39,14 @@ export default class {
                 if (posMap[item.line + ',' + item.column]) {
                     this.cursorPosSet.delete(item);
                     item.del = true;
+                    if (item === this.nowCursorPos) {
+                        this.setNowCursorPos(null);
+                    }
                     return false;
                 }
                 return true;
             });
+            return;
         }
         this.multiCursorPos.map((item) => {
             item.del = true;
@@ -125,7 +129,7 @@ export default class {
         if (this.multiCursorPos.length == 1) {
             let pos = this.multiCursorPos[0];
             if (Util.comparePos(pos, cursorPos) === 0) {
-                return;
+                return pos;
             }
         }
         this.multiCursorPos.empty();
