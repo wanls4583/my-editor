@@ -126,11 +126,11 @@ export default class {
             historyObj.active = active;
             lineDelta += historyObj.cursorPos.line - historyObj.preCursorPos.line;
             columnDelta += historyObj.cursorPos.column - historyObj.preCursorPos.column;
+            if (command) {
+                cursorPos = this.cursor.addCursorPos(pos);
+            }
             if (margin === 'right') {
                 this.cursor.updateCursorPos(cursorPos, historyObj.cursorPos.line, historyObj.cursorPos.column);
-            }
-            if (command) {
-                this.cursor.addCursorPos(cursorPos);
             }
             if (active) {
                 this.selecter.addSelectedRange({
