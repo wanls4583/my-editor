@@ -782,35 +782,59 @@ export default class {
     }
     // 获取待搜索的文本
     getToSearchConfig() {
-        let selectedRange = this.selecter.getRangeByCursorPos(this.nowCursorPos);
+        if (this.selecter.selectedRanges.length > 1) {
+            return null;
+        }
         let wholeWord = false;
         let searchText = '';
-        if (selectedRange) {
-            searchText = this.getRangeText(selectedRange.start, selectedRange.end);
+        if (this.selecter.selectedRanges.length) {
+            let selectedRange = this.selecter.getRangeByCursorPos(this.nowCursorPos);
+            if (selectedRange) {
+                searchText = this.getRangeText(selectedRange.start, selectedRange.end)
+            }
         } else {
-            let text = this.htmls[this.nowCursorPos.line - 1].text;
-            let str = '';
-            let index = this.nowCursorPos.column;
-            let sReg = regs.word;
-            if (index && text[index - 1].match(regs.dWord)) {
-                sReg = regs.dWord;
-            }
-            while (index > 0 && text[index - 1].match(sReg)) {
-                str = text[index - 1] + str;
-                index--;
-            }
-            index = this.nowCursorPos.column;
-            while (index < text.length && text[index].match(sReg)) {
-                str += text[index];
-                index++;
-            }
+            searchText = this.getNowWord().text;
             wholeWord = true;
-            searchText = str;
         }
         return {
             text: searchText,
             wholeWord: wholeWord,
             ignoreCase: wholeWord,
+        }
+    }
+    getNowWord() {
+        let text = this.htmls[this.nowCursorPos.line - 1].text;
+        let str = '';
+        let index = this.nowCursorPos.column;
+        let sReg = regs.word;
+        let startColumn = index;
+        let endColumn = index;
+        if (index && text[index - 1].match(regs.dWord)) {
+            sReg = regs.dWord;
+        }
+        while (index > 0 && text[index - 1].match(sReg)) {
+            str = text[index - 1] + str;
+            startColumn = index;
+            index--;
+        }
+        index = this.nowCursorPos.column;
+        while (index < text.length && text[index].match(sReg)) {
+            str += text[index];
+            endColumn = index;
+            index++;
+        }
+        return {
+            text: str,
+            range: {
+                start: {
+                    line: this.nowCursorPos.line,
+                    column: startColumn
+                },
+                end: {
+                    line: this.nowCursorPos.line,
+                    column: endColumn
+                }
+            }
         }
     }
 }

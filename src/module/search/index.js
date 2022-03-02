@@ -37,7 +37,7 @@ export default class {
             }
         } else {
             config = searchObj && searchObj.config || this.getToSearchConfig();
-            if (!config.text) {
+            if (!config || !config.text) {
                 return {
                     now: 0,
                     count: 0

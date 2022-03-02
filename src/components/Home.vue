@@ -674,9 +674,10 @@ export default {
         },
         // ctrl+d搜索完整单词
         searchWord(direct) {
+            this.searcher.search({ direct: direct });
             if (this.searchVisible) {
-                let searchConfig = context.getToSearchConfig();
-                if (searchConfig.text) {
+                let searchConfig = this.searcher.getConfig();
+                if (searchConfig && searchConfig.text) {
                     let $search = this.$refs.searchDialog;
                     if ($search.searchText != searchConfig.text || !$search.wholeWord || !$search.ignoreCase) {
                         let config = {
@@ -690,7 +691,6 @@ export default {
                     }
                 }
             }
-            this.searcher.search({ direct: direct });
         },
         replace(data) {
             if (this.fSelecter.selectedRanges.length) {

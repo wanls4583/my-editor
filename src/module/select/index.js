@@ -137,7 +137,7 @@ export default class {
             this.addRangeMap(selectedRange);
             results.push(selectedRange);
         });
-        this.renderSelectedBg();
+        this.filterSelectedRanges();
         return ranges instanceof Array ? results : results[0];
     }
     /**
@@ -232,6 +232,9 @@ export default class {
     }
     // 过滤选中区域
     filterSelectedRanges() {
+        if (!this.selectedRanges.length) {
+            return;
+        }
         let direct = this.getRangeByCursorPos(this.selectedRanges[0].start);
         let delCurpos = [];
         // 先排序
