@@ -52,15 +52,26 @@ export default class {
         this.cursor.multiCursorPos.map((cursorPos) => {
             let range = this.getRangeByCursorPos(cursorPos);
             if (range) {
+                let start = range.start;
+                let end = range.end;
                 this.cursor.moveCursor(cursorPos, direct, wholeWord);
-                if (Util.comparePos(cursorPos, range.start) < 0 ||
-                    Util.comparePos(cursorPos, range.end) <= 0 && direct === 'right') {
-                    range.start.line = cursorPos.line;
-                    range.start.column = cursorPos.column;
+                if (direct === 'left') {
+                    if (Util.comparePos(cursorPos, range.start) < 0) {
+                        start = cursorPos;
+                    } else {
+                        end = cursorPos;
+                    }
                 } else {
-                    range.end.line = cursorPos.line;
-                    range.end.column = cursorPos.column;
+                    if (Util.comparePos(cursorPos, range.end) > 0) {
+                        end = cursorPos;
+                    } else {
+                        start = cursorPos;
+                    }
                 }
+                this.updateRange(range, {
+                    start: start,
+                    end: end
+                });
             } else {
                 let start = Object.assign({}, cursorPos);
                 let end = this.cursor.moveCursor(cursorPos, direct, wholeWord);
@@ -236,17 +247,18 @@ export default class {
             let tmp = start;
             start = end;
             end = tmp;
-        } else if (!same) {
-            return;
         }
         this.deleteRangeMap(target);
         this.ranges.splice(index, 1);
-        range.start = start;
-        range.end = end;
-        target = this.addRange(range);
-        this.addRangeMap(target);
-        this.renderSelectedBg();
-        return target;
+        target.start = start;
+        target.end = end;
+        if (Util.comparePos(start, end) !== 0) {
+            target = this.addRange(target);
+            this.addRangeMap(target);
+            this.renderSelectedBg();
+            return target;
+        }
+        return false;
     }
     createRange(start, end) {
         let same = Util.comparePos(start, end);
