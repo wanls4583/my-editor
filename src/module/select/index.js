@@ -271,7 +271,6 @@ export default class {
         this.activedRanges = this.activedRanges.filter((item) => {
             return !item.del;
         });
-        console.log(this.selectedRanges.length)
         this.renderSelectedBg();
     }
 }
