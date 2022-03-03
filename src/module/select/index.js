@@ -202,7 +202,7 @@ export default class {
                 left--;
             }
             ranges.splice(left + 1, delLength, item);
-            that.cursor.clearCursorPos(delCursors);
+            delCursors.length && that.cursor.clearCursorPos(delCursors);
         }
     }
     /**

@@ -66,12 +66,12 @@ export default class {
             line: cursorPos.line,
             column: cursorPos.column
         };
-        _insertCursor(cursorPos, this.multiCursorPos);
+        _orderInsert(cursorPos, this.multiCursorPos);
         this.cursorPosSet.add(cursorPos);
         this.setNowCursorPos(cursorPos);
         return cursorPos;
 
-        function _insertCursor(item, multiCursorPos) {
+        function _orderInsert(item, multiCursorPos) {
             let left = 0;
             let right = multiCursorPos.length - 1;
             let delLength = 0;
@@ -169,6 +169,7 @@ export default class {
         let index = this.getCursorIndex(cursorPos.line, cursorPos.column);
         let result = null;
         this.multiCursorPos.splice(index, 1);
+        this.cursorPosSet.delete(cursorPos);
         result = this.addCursorPos({
             line: line,
             column: column
