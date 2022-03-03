@@ -170,7 +170,6 @@ export default class {
                 that.cursor.multiCursorPos.map((cursorPos) => {
                     that.cursor.moveCursor(cursorPos, direct, wholeWord);
                 });
-                that.cursor.filterCursorPos();
             }
             that.searcher.clearSearch();
             that.fSearcher.clearNow();

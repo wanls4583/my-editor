@@ -145,9 +145,6 @@ export default class {
             } else if (!same) {
                 return;
             }
-            if (this.getRangeByCursorPos(start)) {
-                return;
-            }
             let active = this.cursor.getCursorsByLineColumn(start.line, start.column) ||
                 this.cursor.getCursorsByLineColumn(end.line, end.column);
             range = {
@@ -173,6 +170,7 @@ export default class {
             let left = 0;
             let right = ranges.length - 1;
             let delLength = 0;
+            let delCursors = [];
             if (right < 0) {
                 ranges.push(item);
                 return;
@@ -185,16 +183,26 @@ export default class {
                     right = mid;
                 }
             }
-            while (left && Util.comparePos(item.start, ranges[left].end) < 0) {
+            if (Util.comparePos(item.start, ranges[left].end) < 0) {
                 left--;
             }
-            let index = left;
-            while (index && index < ranges.length &&
-                Util.comparePos(item.end, ranges[index].start) > 0) {
+            let index = left > -1 ? left : 0;
+            // 删除后面可能交叉的区域
+            while (index < ranges.length && Util.comparePos(item.end, ranges[index].start) > 0) {
+                delCursors.push(ranges[index].start);
+                delCursors.push(ranges[index].end);
                 delLength++;
                 index++;
             }
+            // 删除前面可能交叉的一个区域
+            if (left > -1 && Util.comparePos(item.start, ranges[left].end) < 0) {
+                delCursors.push(ranges[left].start);
+                delCursors.push(ranges[left].end);
+                delLength++;
+                left--;
+            }
             ranges.splice(left + 1, delLength, item);
+            that.cursor.clearCursorPos(delCursors);
         }
     }
     /**

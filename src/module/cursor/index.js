@@ -66,10 +66,36 @@ export default class {
             line: cursorPos.line,
             column: cursorPos.column
         };
-        this.multiCursorPos.insert(cursorPos, Util.comparePos);
+        _insertCursor(cursorPos, this.multiCursorPos);
         this.cursorPosSet.add(cursorPos);
         this.setNowCursorPos(cursorPos);
         return cursorPos;
+
+        function _insertCursor(item, multiCursorPos) {
+            let left = 0;
+            let right = multiCursorPos.length - 1;
+            let delLength = 0;
+            if (right < 0) {
+                multiCursorPos.push(item);
+                return;
+            }
+            while (left < right) {
+                let mid = Math.floor((left + right) / 2);
+                if (Util.comparePos(item, multiCursorPos[mid]) > 0) {
+                    left = mid + 1;
+                } else {
+                    right = mid;
+                }
+            }
+            if (left >= 0 && Util.comparePos(item, multiCursorPos[left]) <= 0) {
+                left--;
+            }
+            // 删除相同的光标
+            if (left < multiCursorPos.length - 1 && Util.comparePos(item, multiCursorPos[left + 1]) == 0) {
+                delLength++;
+            }
+            multiCursorPos.splice(left + 1, delLength, item);
+        }
     }
     addCursorAbove() {
         this.multiCursorPos.slice().map((item) => {
@@ -140,13 +166,19 @@ export default class {
         return cursorPos;
     }
     updateCursorPos(cursorPos, line, column) {
-        cursorPos.line = line;
-        cursorPos.column = column;
+        let index = this.getCursorIndex(cursorPos.line, cursorPos.column);
+        let result = null;
+        this.multiCursorPos.splice(index, 1);
+        result = this.addCursorPos({
+            line: line,
+            column: column
+        });
         if (cursorPos === this.nowCursorPos) { //触发滚动
             this.setNowCursorPos(this.nowCursorPos);
         } else {
             this.renderCursor();
         }
+        return result;
     }
     getCursorsByLine(line) {
         let left = 0;
@@ -176,6 +208,9 @@ export default class {
         return result;
     }
     getCursorsByLineColumn(line, column) {
+        return this.multiCursorPos[this.getCursorIndex(line, column)];
+    }
+    getCursorIndex(line, column) {
         let left = 0;
         let right = this.multiCursorPos.length - 1;
         while (left <= right) {
@@ -183,7 +218,7 @@ export default class {
             let item = this.multiCursorPos[mid];
             if (item.line == line) {
                 if (item.column === column) {
-                    return item;
+                    return mid;
                 } else if (item.column > column) {
                     right = mid - 1;
                 } else {
@@ -319,18 +354,6 @@ export default class {
             line: line,
             column: column
         }
-    }
-    // 过滤重叠光标
-    filterCursorPos() {
-        let multiCursorPos = [];
-        let prePos = null;
-        this.multiCursorPos.map((item) => {
-            if (!prePos || Util.comparePos(item, prePos) !== 0) {
-                multiCursorPos.push(item);
-            }
-            prePos = item;
-        });
-        this.multiCursorPos = multiCursorPos;
     }
     switchMultiKeyCode() {
         this.multiKeyCode = this.multiKeyCode === 'ctrl' ? 'alt' : 'ctrl';
