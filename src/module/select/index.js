@@ -183,25 +183,25 @@ export default class {
                     right = mid;
                 }
             }
-            if (Util.comparePos(item.start, ranges[left].end) < 0) {
-                left--;
+            if (Util.comparePos(item.start, ranges[right].start) > 0) {
+                right++;
             }
-            let index = left > -1 ? left : 0;
+            let index = right;
             // 删除后面可能交叉的区域
-            while (index < ranges.length && Util.comparePos(item.end, ranges[index].start) > 0) {
+            while (ranges[index] && Util.comparePos(item.end, ranges[index].start) > 0) {
                 delCursors.push(ranges[index].start);
                 delCursors.push(ranges[index].end);
                 delLength++;
                 index++;
             }
             // 删除前面可能交叉的一个区域
-            if (left > -1 && Util.comparePos(item.start, ranges[left].end) < 0) {
-                delCursors.push(ranges[left].start);
-                delCursors.push(ranges[left].end);
+            if (ranges[right - 1] && Util.comparePos(item.start, ranges[right - 1].end) < 0) {
+                delCursors.push(ranges[right - 1].start);
+                delCursors.push(ranges[right - 1].end);
                 delLength++;
-                left--;
+                right--;
             }
-            ranges.splice(left + 1, delLength, item);
+            ranges.splice(right, delLength, item);
             delCursors.length && that.cursor.clearCursorPos(delCursors);
         }
     }

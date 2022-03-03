@@ -976,7 +976,13 @@ export default {
             this.focus();
         },
         onScrollerMup(e) {
-
+            let pos = this.getPosByEvent(e);
+            if (e.ctrlKey && this.cursor.multiKeyCode === 'ctrl' ||
+                e.altKey && this.cursor.multiKeyCode === 'alt') {
+                this.cursor.addCursorPos(pos);
+            } else {
+                this.cursor.setCursorPos(pos);
+            }
         },
         // 鼠标移动事件
         onScrollerMmove(e) {
@@ -984,17 +990,19 @@ export default {
             if (this.mouseStartObj && Date.now() - this.mouseStartObj.time > 100) {
                 var offset = $(this.$scroller).offset();
                 let end = this.getPosByEvent(e);
-                this.cursor.updateCursorPos(this.mouseStartObj.cursorPos, end.line, end.column);
-                if (this.mouseStartObj.preRange) {
-                    this.mouseStartObj.preRange = this.selecter.updateRange(this.mouseStartObj.preRange, {
-                        start: this.mouseStartObj.start,
-                        end: end
-                    });
-                } else {
-                    this.mouseStartObj.preRange = this.selecter.addRange({
-                        start: this.mouseStartObj.start,
-                        end: end
-                    });
+                if (Util.comparePos(end, this.mouseStartObj.cursorPos)) {
+                    this.mouseStartObj.cursorPos = this.cursor.updateCursorPos(this.mouseStartObj.cursorPos, end.line, end.column);
+                    if (this.mouseStartObj.preRange) {
+                        this.mouseStartObj.preRange = this.selecter.updateRange(this.mouseStartObj.preRange, {
+                            start: this.mouseStartObj.start,
+                            end: end
+                        });
+                    } else {
+                        this.mouseStartObj.preRange = this.selecter.addRange({
+                            start: this.mouseStartObj.start,
+                            end: end
+                        });
+                    }
                 }
                 cancelAnimationFrame(this.selectMoveTimer);
                 if (e.clientY > offset.top + this.scrollerArea.height) { //鼠标超出底部区域

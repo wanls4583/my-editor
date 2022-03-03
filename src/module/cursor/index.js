@@ -35,6 +35,8 @@ export default class {
             posList.map((item) => {
                 posMap[item.line + ',' + item.column] = true;
             });
+            console.log('del', JSON.stringify(posList));
+            console.log(1, JSON.stringify(this.multiCursorPos));
             this.multiCursorPos = this.multiCursorPos.filter((item) => {
                 if (posMap[item.line + ',' + item.column]) {
                     this.cursorPosSet.delete(item);
@@ -46,6 +48,7 @@ export default class {
                 }
                 return true;
             });
+            console.log(2, JSON.stringify(this.multiCursorPos));
             return;
         }
         this.multiCursorPos.map((item) => {
@@ -168,6 +171,9 @@ export default class {
     updateCursorPos(cursorPos, line, column) {
         let index = this.getCursorIndex(cursorPos.line, cursorPos.column);
         let result = null;
+        if (index < 0) {
+            return null;
+        }
         this.multiCursorPos.splice(index, 1);
         this.cursorPosSet.delete(cursorPos);
         result = this.addCursorPos({
@@ -231,6 +237,7 @@ export default class {
                 left = mid + 1;
             }
         }
+        return -1;
     }
     // 移动光标
     moveCursor(cursorPos, direct, wholeWord) {
