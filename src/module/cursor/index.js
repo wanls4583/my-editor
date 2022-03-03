@@ -35,8 +35,6 @@ export default class {
             posList.map((item) => {
                 posMap[item.line + ',' + item.column] = true;
             });
-            console.log('del', JSON.stringify(posList));
-            console.log(1, JSON.stringify(this.multiCursorPos));
             this.multiCursorPos = this.multiCursorPos.filter((item) => {
                 if (posMap[item.line + ',' + item.column]) {
                     this.cursorPosSet.delete(item);
@@ -48,7 +46,6 @@ export default class {
                 }
                 return true;
             });
-            console.log(2, JSON.stringify(this.multiCursorPos));
             return;
         }
         this.multiCursorPos.map((item) => {

@@ -42,9 +42,9 @@ export default class {
             if (res === 0) {
                 return Util.comparePos(range.end, ranges[mid].end) == 0 ? mid : -1;
             } else if (res > 0) {
-                right = mid - 1;
+                left = mid + 1;
             } else {
-                left = left + 1;
+                right = mid - 1;
             }
         }
         return -1;

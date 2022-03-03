@@ -976,13 +976,7 @@ export default {
             this.focus();
         },
         onScrollerMup(e) {
-            let pos = this.getPosByEvent(e);
-            if (e.ctrlKey && this.cursor.multiKeyCode === 'ctrl' ||
-                e.altKey && this.cursor.multiKeyCode === 'alt') {
-                this.cursor.addCursorPos(pos);
-            } else {
-                this.cursor.setCursorPos(pos);
-            }
+            
         },
         // 鼠标移动事件
         onScrollerMmove(e) {
