@@ -263,7 +263,6 @@ export default class {
                 _deleteCursorPos(item);
             }
         });
-        this.cursor.filterCursorPos();
         return historyArr;
 
         function _deleteCursorPos(cursorPos) {
