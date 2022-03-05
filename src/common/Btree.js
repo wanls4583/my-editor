@@ -45,9 +45,10 @@ class Btree {
         let node = this._search(value, true);
         let link = null;
         let half = Math.floor(this.max / 2) || 1; //m为1时，n应该也为1
+        let result = this.iterator(node, value);
         for (let i = 0; i < node.num; i++) {
             if (this.compare(value, node.dataList[i]) === 0) {
-                return;
+                return result;
             }
         }
         this.size++;
@@ -113,6 +114,7 @@ class Btree {
             }
             node = node.pNode;
         }
+        return result;
 
         // 在i位置插入数据
         function _insert(dataList, linkList, i) {
@@ -274,24 +276,28 @@ class Btree {
      */
     iterator(result, value, compare) {
         let index = 0;
+        let orginIndex = 0;
         compare = compare || this.compare;
         for (let i = 0; i < result.num; i++) {
             let item = result.dataList[i];
             if (compare(value, item) === 0) {
-                index = i - 1;
+                index = i;
+                orginIndex = i;
                 break;
             }
         }
 
         return {
             next: _next,
-            prev: _prev
+            prev: _prev,
+            reset: function() {
+                index = orginIndex;
+            }
         }
 
         function _next() {
-            index++
             if (index < result.num) {
-                return result.dataList[index];
+                return result.dataList[index++];
             } else if (result.next) {
                 result = result.next;
                 index = 0;
@@ -308,6 +314,8 @@ class Btree {
                 result = result.prev;
                 index = result.num - 1;
                 return result.dataList[index];
+            } else {
+                index++;
             }
             return null;
         }

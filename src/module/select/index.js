@@ -6,18 +6,19 @@
 import Util from '@/common/Util';
 import Btree from '@/common/Btree';
 
+const comparator = function (a, b) {
+    let res = Util.comparePos(a.start, b.start);
+    if (res === 0) {
+        return Util.comparePos(a.end, b.end);
+    }
+    return res;
+}
+
 export default class {
     constructor(editor, context) {
         this.initProperties(editor, context);
-        this.ranges = new Btree(_comparator);
-        this.activedRanges = new Btree(_comparator);
-
-        function _comparator(a, b) {
-            if (a.start.line === b.start.line) {
-                return a.start.column - b.start.column;
-            }
-            return a.start.line - b.start.line;
-        }
+        this.ranges = new Btree(comparator);
+        this.activedRanges = new Btree(comparator);
     }
     initProperties(editor, context) {
         Util.defineProperties(this, editor, [
@@ -37,14 +38,11 @@ export default class {
     // 检测光标是否在选中区域范围内
     getRangeByCursorPos(cursorPos) {
         let result = this.ranges.search(cursorPos, (value, item) => {
-            if (value.line == item.start.line && value.column == item.start.column ||
-                value.line == item.end.line && value.column == item.end.column) {
+            if (Util.comparePos(value, item.start) === 0 ||
+                Util.comparePos(value, item.end) === 0) {
                 return 0;
             }
-            if (value.line === item.end.line) {
-                return value.column - item.end.column;
-            }
-            return value.line - item.end.line;
+            return Util.comparePos(value, item.start);
         });
         return result && result.next();
     }
@@ -147,6 +145,7 @@ export default class {
             this.ranges.insert(range);
             active && this.activedRanges.insert(range);;
             results.push(range);
+            this.filterRange(range);
         });
         this.renderSelectedBg();
         return ranges instanceof Array ? results : results[0];
@@ -209,7 +208,31 @@ export default class {
         target.end.line = end.line;
         target.end.column = end.column;
         this.ranges.insert(target);
+        this.filterRange(target);
         this.renderSelectedBg();
+    }
+    filterRange(range) {
+        let it = this.ranges.search(range);
+        let dels = [];
+        let value = it.prev();
+        if (value && Util.comparePos(value.end, range.start) > 0) { //删除前件
+            dels.push(value);
+        }
+        it.reset();
+        it.next();
+        while (value = it.next()) {
+            if (Util.comparePos(range.end, value.start) > 0) {
+                dels.push(value);
+            } else {
+                break;
+            }
+        }
+        dels.map((item) => {
+            this.ranges.delete(item);
+            this.activedRanges.delete(item);
+            this.cursor.clearCursorPos(item.start);
+            this.cursor.clearCursorPos(item.end);
+        });
     }
     createRange(start, end) {
         let same = Util.comparePos(start, end);
