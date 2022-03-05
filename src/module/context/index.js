@@ -77,7 +77,7 @@ export default class {
                 _historyArr.serial = true;
                 serial = true;
             }
-            cursorPosList = this.cursor.multiCursorPos;
+            cursorPosList = this.cursor.multiCursorPos.toArray();
         } else {
             this.cursor.clearCursorPos();
             command.map((item) => {
@@ -93,7 +93,7 @@ export default class {
             this.history.updateHistory(historyArr);
             historyArr.serial = command.serial;
         }
-        this.setNowCursorPos(this.cursor.multiCursorPos[0]);
+        this.setNowCursorPos(this.cursor.multiCursorPos.get(0));
         this.fSearcher.refreshSearch();
         return historyArr;
     }
@@ -220,7 +220,7 @@ export default class {
                 return [obj, cursorPos];
             });
         } else {
-            this.cursor.multiCursorPos.map((item) => {
+            this.cursor.multiCursorPos.forEach((item) => {
                 let range = this.selecter.getRangeByCursorPos(item);
                 if (range) {
                     if (Util.comparePos(range.start, item) === 0) {
@@ -244,7 +244,7 @@ export default class {
                 this.cursor.addCursorPos(item.cursorPos);
             });
         }
-        this.setNowCursorPos(this.cursor.multiCursorPos[0]);
+        this.setNowCursorPos(this.cursor.multiCursorPos.get(0));
         this.searcher.clearSearch();
         this.fSearcher.refreshSearch();
         return historyArr;
@@ -455,7 +455,7 @@ export default class {
                 return this.cursor.addCursorPos(item);
             });
         } else {
-            cursorPosList = this.cursor.multiCursorPos;
+            cursorPosList = this.cursor.multiCursorPos.toArray();
         }
         while (index < cursorPosList.length) {
             let line = cursorPosList[index].line;
@@ -525,7 +525,7 @@ export default class {
                 return this.cursor.addCursorPos(item);
             });
         } else {
-            originList = this.cursor.multiCursorPos;
+            originList = this.cursor.multiCursorPos.toArray();
         }
         originList.map((item) => {
             if (!prePos || prePos.line !== item.line) {
@@ -582,7 +582,7 @@ export default class {
                 return this.cursor.addCursorPos(item);
             });
         } else {
-            originList = this.cursor.multiCursorPos;
+            originList = this.cursor.multiCursorPos.toArray();
         }
         originList.map((item) => {
             if (!prePos || prePos.line !== item.line) {
@@ -632,7 +632,7 @@ export default class {
     deleteLine() {
         let preItem = null;
         let ranges = [];
-        this.cursor.multiCursorPos.map((item) => {
+        this.cursor.multiCursorPos.forEach((item) => {
             let range = this.selecter.getRangeByCursorPos(item);
             let start = null;
             if (range) {
@@ -737,7 +737,7 @@ export default class {
         let text = '';
         let preItem = null;
         let ranges = [];
-        this.cursor.multiCursorPos.map((item) => {
+        this.cursor.multiCursorPos.forEach((item) => {
             let range = this.selecter.getRangeByCursorPos(item);
             let start = null;
             if (range) {

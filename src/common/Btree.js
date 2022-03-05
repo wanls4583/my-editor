@@ -40,6 +40,7 @@ class Btree {
             this.root = node;
             this.head = node;
             this.size++;
+            this.arrayCache = null;
             return;
         }
         let node = this._search(value, true);
@@ -52,6 +53,7 @@ class Btree {
             }
         }
         this.size++;
+        this.arrayCache = null;
         while (node) {
             let linkList = node.linkList;
             let dataList = node.dataList;
@@ -155,6 +157,7 @@ class Btree {
                 this.root = null;
                 return result;
             }
+            this.arrayCache = null;
         }
         while (node && node.num < half && node.pNode) {
             let pNode = node.pNode;
@@ -277,6 +280,7 @@ class Btree {
     iterator(result, value, compare) {
         let index = 0;
         let orginIndex = 0;
+        let originResult = result;
         compare = compare || this.compare;
         for (let i = 0; i < result.num; i++) {
             let item = result.dataList[i];
@@ -290,8 +294,9 @@ class Btree {
         return {
             next: _next,
             prev: _prev,
-            reset: function() {
+            reset: function () {
                 index = orginIndex;
+                result = originResult;
             }
         }
 
@@ -331,16 +336,36 @@ class Btree {
         }
     }
     toArray() {
+        if (this.arrayCache) {
+            return this.arrayCache;
+        }
         let results = [];
         this.forEach((item) => {
-            result.push(item);
+            results.push(item);
         });
+        this.arrayCache = results;
         return results;
+    }
+    get(index) {
+        let node = this.head;
+        let count = -1;
+        while (node) {
+            let dataList = node.dataList;
+            for (let i = 0; i < node.num; i++) {
+                count++;
+                if (count == index) {
+                    return dataList[i];
+                }
+            }
+            node = node.next;
+        }
+        return null;
     }
     empty() {
         this.root = null;
         this.head = null;
         this.size = 0;
+        this.arrayCache = null;
     }
     _search(value, isInsert, compare) {
         let node = this.root;

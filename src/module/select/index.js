@@ -47,7 +47,7 @@ export default class {
         return result && result.next();
     }
     select(direct, wholeWord) {
-        this.cursor.multiCursorPos.map((cursorPos) => {
+        this.cursor.multiCursorPos.forEach((cursorPos) => {
             let range = this.getRangeByCursorPos(cursorPos);
             if (range) {
                 let start = range.start;

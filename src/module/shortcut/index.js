@@ -167,7 +167,7 @@ export default class {
         function _moveCursor(direct, wholeWord) {
             //ctrl+d后，第一次移动光标只是取消选中状态
             if (!that.selecter.getRangeByCursorPos(that.nowCursorPos)) {
-                that.cursor.multiCursorPos.map((cursorPos) => {
+                that.cursor.multiCursorPos.forEach((cursorPos) => {
                     that.cursor.moveCursor(cursorPos, direct, wholeWord);
                 });
             }

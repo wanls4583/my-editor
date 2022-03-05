@@ -368,7 +368,7 @@ export default {
         // 显示光标
         showCursor() {
             this.cursorFocus = true;
-            if (!this.cursor.multiCursorPos.length) {
+            if (!this.cursor.multiCursorPos.size) {
                 this.showCursor.show = false;
                 return;
             }
@@ -634,7 +634,7 @@ export default {
             let resultFold = this.folder.foldLine(line);
             this.focus();
             if (resultFold) {
-                this.cursor.multiCursorPos.map((cursorPos) => {
+                this.cursor.multiCursorPos.forEach((cursorPos) => {
                     if (cursorPos.line > line && cursorPos.line < resultFold.end.line) {
                         let lineObj = context.htmls[line - 1];
                         cursorPos.line = line;

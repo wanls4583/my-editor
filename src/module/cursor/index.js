@@ -4,6 +4,8 @@
  * @Description: 
  */
 import Util from '@/common/Util';
+import Btree from '@/common/Btree';
+
 const regs = {
     word: /[a-zA-Z0-9_]/,
     dWord: Util.fullAngleReg,
@@ -12,8 +14,7 @@ const regs = {
 export default class {
     constructor(editor, context) {
         this.initProperties(editor, context);
-        this.multiCursorPos = [];
-        this.cursorPosSet = new Set();
+        this.multiCursorPos = new Btree(Util.comparePos);
         this.multiKeyCode = 'ctrl';
     }
     initProperties(editor, context) {
@@ -28,31 +29,22 @@ export default class {
         ]);
         Util.defineProperties(this, context, ['htmls']);
     }
-    clearCursorPos(posList) {
-        if (posList) {
-            let posMap = [];
-            posList = posList instanceof Array ? posList : [posList];
-            posList.map((item) => {
-                posMap[item.line + ',' + item.column] = true;
-            });
-            this.multiCursorPos = this.multiCursorPos.filter((item) => {
-                if (posMap[item.line + ',' + item.column]) {
-                    this.cursorPosSet.delete(item);
-                    item.del = true;
-                    if (item === this.nowCursorPos) {
-                        this.setNowCursorPos(null);
-                    }
-                    return false;
+    clearCursorPos(cursorPos) {
+        if (cursorPos) {
+            cursorPos = this.getCursorsByLineColumn(cursorPos.line, cursorPos.column);
+            if (cursorPos) {
+                cursorPos.del = true;
+                this.multiCursorPos.delete(cursorPos);
+                if (cursorPos === this.nowCursorPos) {
+                    this.setNowCursorPos(null);
                 }
-                return true;
-            });
+            }
             return;
         }
-        this.multiCursorPos.map((item) => {
+        this.multiCursorPos.forEach((item) => {
             item.del = true;
         });
         this.multiCursorPos.empty();
-        this.cursorPosSet.clear();
         this.setNowCursorPos(null);
     }
     // 添加光标
@@ -66,39 +58,12 @@ export default class {
             line: cursorPos.line,
             column: cursorPos.column
         };
-        _orderInsert(cursorPos, this.multiCursorPos);
-        this.cursorPosSet.add(cursorPos);
+        this.multiCursorPos.insert(cursorPos);
         this.setNowCursorPos(cursorPos);
         return cursorPos;
-
-        function _orderInsert(item, multiCursorPos) {
-            let left = 0;
-            let right = multiCursorPos.length - 1;
-            let delLength = 0;
-            if (right < 0) {
-                multiCursorPos.push(item);
-                return;
-            }
-            while (left < right) {
-                let mid = Math.floor((left + right) / 2);
-                if (Util.comparePos(item, multiCursorPos[mid]) > 0) {
-                    left = mid + 1;
-                } else {
-                    right = mid;
-                }
-            }
-            if (left >= 0 && Util.comparePos(item, multiCursorPos[left]) <= 0) {
-                left--;
-            }
-            // 删除相同的光标
-            if (left < multiCursorPos.length - 1 && Util.comparePos(item, multiCursorPos[left + 1]) == 0) {
-                delLength++;
-            }
-            multiCursorPos.splice(left + 1, delLength, item);
-        }
     }
     addCursorAbove() {
-        this.multiCursorPos.slice().map((item) => {
+        this.multiCursorPos.toArray().map((item) => {
             if (item.line > 1) {
                 let maxColumn = this.htmls[item.line - 2].text.length;
                 let column = item.moveColumn !== undefined ? item.moveColumn : item.column;
@@ -112,7 +77,7 @@ export default class {
         });
     }
     addCursorBelow() {
-        this.multiCursorPos.slice().map((item) => {
+        this.multiCursorPos.toArray().map((item) => {
             if (item.line < this.htmls.length) {
                 let maxColumn = this.htmls[item.line].text.length;
                 let column = item.moveColumn !== undefined ? item.moveColumn : item.column;
@@ -152,93 +117,60 @@ export default class {
             line: cursorPos.line,
             column: cursorPos.column
         };
-        if (this.multiCursorPos.length == 1) {
-            let pos = this.multiCursorPos[0];
+        if (this.multiCursorPos.size == 1) {
+            let pos = this.multiCursorPos.get(0);
             if (Util.comparePos(pos, cursorPos) === 0) {
                 return pos;
             }
         }
         this.multiCursorPos.empty();
-        this.cursorPosSet.clear();
-        this.multiCursorPos.push(cursorPos);
-        this.cursorPosSet.add(cursorPos);
+        this.multiCursorPos.insert(cursorPos);
         this.setNowCursorPos(cursorPos);
         return cursorPos;
     }
     updateCursorPos(cursorPos, line, column) {
-        let index = this.getCursorIndex(cursorPos.line, cursorPos.column);
-        let result = null;
-        if (index < 0) {
-            return null;
-        }
-        this.multiCursorPos.splice(index, 1);
-        this.cursorPosSet.delete(cursorPos);
-        result = this.addCursorPos({
-            line: line,
-            column: column
-        });
+        this.multiCursorPos.delete(cursorPos);
+        cursorPos.line = line;
+        cursorPos.column = column;
+        this.multiCursorPos.insert(cursorPos);
         if (cursorPos === this.nowCursorPos) { //触发滚动
             this.setNowCursorPos(this.nowCursorPos);
         } else {
             this.renderCursor();
         }
-        return result;
+        return cursorPos;
     }
     getCursorsByLine(line) {
-        let left = 0;
-        let right = this.multiCursorPos.length - 1;
-        let result = [];
-        while (left < right) {
-            let mid = Math.floor((left + right) / 2);
-            if (this.multiCursorPos[mid].line == line) {
-                left = mid;
-                break;
-            } else if (this.multiCursorPos[mid].line > line) {
-                right = mid - 1;
-            } else {
-                left = mid + 1;
+        let results = [];
+        let it = this.multiCursorPos.search(null, (a, b) => {
+            return line - b.line;
+        });
+        let value = null;
+        if (it) {
+            value = it.prev();
+            while (value && value.line === line) {
+                results.push(value);
+                value = it.prev();
+            }
+            results.reverse();
+            it.reset();
+            value = it.next();
+            while (value && value.line === line) {
+                results.push(value);
+                value = it.next();
             }
         }
-        let index = left;
-        while (index < this.multiCursorPos.length && this.multiCursorPos[index].line === line) {
-            result.push(this.multiCursorPos[index]);
-            index++;
-        }
-        index = left - 1;
-        while (index >= 0 && this.multiCursorPos[index].line === line) {
-            result.push(this.multiCursorPos[index]);
-            index--;
-        }
-        return result;
+        return results;
     }
     getCursorsByLineColumn(line, column) {
-        return this.multiCursorPos[this.getCursorIndex(line, column)];
-    }
-    getCursorIndex(line, column) {
-        let left = 0;
-        let right = this.multiCursorPos.length - 1;
-        while (left <= right) {
-            let mid = Math.floor((left + right) / 2);
-            let item = this.multiCursorPos[mid];
-            if (item.line == line) {
-                if (item.column === column) {
-                    return mid;
-                } else if (item.column > column) {
-                    right = mid - 1;
-                } else {
-                    left = mid + 1;
-                }
-            } else if (item.line > line) {
-                right = mid - 1;
-            } else {
-                left = mid + 1;
-            }
-        }
-        return -1;
+        let it = this.multiCursorPos.search({
+            line: line,
+            column: column
+        });
+        return it && it.next();
     }
     // 移动光标
     moveCursor(cursorPos, direct, wholeWord) {
-        let that = this;
         let text = this.htmls[cursorPos.line - 1].text;
         let line = cursorPos.line;
         let column = cursorPos.column;
