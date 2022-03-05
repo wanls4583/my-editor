@@ -980,7 +980,8 @@ export default {
                 var offset = $(this.$scroller).offset();
                 let end = this.getPosByEvent(e);
                 if (Util.comparePos(end, this.mouseStartObj.cursorPos)) {
-                    this.mouseStartObj.cursorPos = this.cursor.updateCursorPos(this.mouseStartObj.cursorPos, end.line, end.column);
+                    this.cursor.clearCursorPos(this.mouseStartObj.cursorPos);
+                    this.mouseStartObj.cursorPos = this.cursor.addCursorPos({ line: end.line, column: end.column });
                     if (this.mouseStartObj.preRange) {
                         this.selecter.updateRange(this.mouseStartObj.preRange, {
                             start: this.mouseStartObj.start,

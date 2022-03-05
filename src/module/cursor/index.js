@@ -133,6 +133,7 @@ export default class {
         cursorPos.line = line;
         cursorPos.column = column;
         this.multiCursorPos.insert(cursorPos);
+        console.log(this.nowCursorPos);
         if (cursorPos === this.nowCursorPos) { //触发滚动
             this.setNowCursorPos(this.nowCursorPos);
         } else {
