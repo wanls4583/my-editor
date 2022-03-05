@@ -23,6 +23,7 @@ class Btree {
         this.max = max || 4;
         this.root = null;
         this.head = null;
+        this.size = 0;
         this.compare = compare || function (a, b) {
             return a - b;
         }
@@ -38,16 +39,18 @@ class Btree {
             node.num++;
             this.root = node;
             this.head = node;
-            return node;
+            this.size++;
+            return;
         }
         let node = this._search(value, true);
         let link = null;
         let half = Math.floor(this.max / 2) || 1; //m为1时，n应该也为1
         for (let i = 0; i < node.num; i++) {
             if (this.compare(value, node.dataList[i]) === 0) {
-                return node;
+                return;
             }
         }
+        this.size++;
         while (node) {
             let linkList = node.linkList;
             let dataList = node.dataList;
@@ -145,6 +148,11 @@ class Btree {
                 }
             }
             node.num--;
+            this.size--;
+            if (!this.size) {
+                this.root = null;
+                return result;
+            }
         }
         while (node && node.num < half && node.pNode) {
             let pNode = node.pNode;
@@ -250,11 +258,12 @@ class Btree {
     /**
      * 查找
      * @param {Any} value 
+     * @param {Function} 自定义查找比较器 
      */
-    search(value) {
-        let result = this._search(value);
+    search(value, compare) {
+        let result = this._search(value, false, compare);
         if (result) {
-            result = this.iterator(result, value);
+            result = this.iterator(result, value, compare);
         }
         return result;
     }
@@ -263,11 +272,12 @@ class Btree {
      * @param {Node} result 
      * @param {Any} value 
      */
-    iterator(result, value) {
+    iterator(result, value, compare) {
         let index = 0;
+        compare = compare || this.compare;
         for (let i = 0; i < result.num; i++) {
             let item = result.dataList[i];
-            if (this.compare(value, item) === 0) {
+            if (compare(value, item) === 0) {
                 index = i - 1;
                 break;
             }
@@ -306,19 +316,32 @@ class Btree {
         let node = this.head;
         while (node) {
             let dataList = node.dataList;
-            dataList.map((item) => {
-                cb(item);
-            });
+            for (let index = 0; index < node.num; index++) {
+                cb(dataList[index]);
+            }
             node = node.next;
         }
     }
-    _search(value, isInsert) {
+    toArray() {
+        let results = [];
+        this.forEach((item) => {
+            result.push(item);
+        });
+        return results;
+    }
+    empty() {
+        this.root = null;
+        this.head = null;
+        this.size = 0;
+    }
+    _search(value, isInsert, compare) {
         let node = this.root;
+        compare = compare || this.compare;
         while (node) {
             let linkList = node.linkList;
             let dataList = node.dataList;
             for (let i = 0; i < node.num; i++) {
-                let res = this.compare(value, dataList[i]);
+                let res = compare(value, dataList[i]);
                 if (res === 0) {
                     if (linkList[i + 1]) { //右侧子节点存放了父节点
                         node = linkList[i + 1];
@@ -327,7 +350,7 @@ class Btree {
                         return node;
                     }
                 } else if (res > 0) {
-                    if (!dataList[i + 1] || this.compare(value, dataList[i + 1]) < 0) { //目标在右侧子树中
+                    if (!dataList[i + 1] || compare(value, dataList[i + 1]) < 0) { //目标在右侧子树中
                         if (linkList[i + 1]) {
                             node = linkList[i + 1];
                             break;

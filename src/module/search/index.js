@@ -120,7 +120,7 @@ export default class {
                 };
                 resultCaches.push(rangePos);
                 if (!result && (!that.nowCursorPos || Util.comparePos(end, that.nowCursorPos) >= 0)) {
-                    if (!this.selecter.ranges.length || !this.selecter.getRangeByCursorPos(end)) {
+                    if (!this.selecter.ranges.size || !this.selecter.getRangeByCursorPos(end)) {
                         result = rangePos;
                     }
                     index = resultCaches.length - 1;
@@ -181,6 +181,9 @@ export default class {
     }
     hasCache() {
         return !!this.cacheData;
+    }
+    now() {
+        return this.cacheData.resultCaches[this.cacheData.index];
     }
     next() {
         return this.getFromCache();

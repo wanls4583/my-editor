@@ -502,10 +502,10 @@ export default {
                     item.selectStarts = [];
                     item.selectEnds = [];
                 });
-                this.fSelecter.ranges.map((range) => {
+                this.fSelecter.ranges.forEach((range) => {
                     this._renderSelectedBg(range, true);
                 });
-                this.selecter.ranges.map((range) => {
+                this.selecter.ranges.forEach((range) => {
                     let _range = this.fSelecter.getRangeByCursorPos(range.start);
                     if (this.searchVisible) {
                         // 优先渲染搜索框的选中范围
@@ -693,19 +693,14 @@ export default {
             }
         },
         replace(data) {
-            if (this.fSelecter.ranges.length) {
-                let range = this.fSelecter.ranges[this.searchNow - 1];
+            if (this.fSelecter.ranges.size) {
+                let range = this.fSearcher.now();
                 context.replace(data.text, [range]);
             }
         },
         replaceAll(data) {
-            if (this.fSelecter.ranges.length) {
-                context.replace(data.text, this.fSelecter.ranges.slice().sort((a, b) => {
-                    if (a.start.line === b.start.line) {
-                        return a.start.column - b.start.column;
-                    }
-                    return a.start.line - b.start.line;
-                }));
+            if (this.fSelecter.ranges.size) {
+                context.replace(data.text, this.fSelecter.ranges.toArray());
                 this.searchCount = 0;
             }
         },
@@ -976,7 +971,7 @@ export default {
             this.focus();
         },
         onScrollerMup(e) {
-            
+
         },
         // 鼠标移动事件
         onScrollerMmove(e) {
@@ -987,7 +982,7 @@ export default {
                 if (Util.comparePos(end, this.mouseStartObj.cursorPos)) {
                     this.mouseStartObj.cursorPos = this.cursor.updateCursorPos(this.mouseStartObj.cursorPos, end.line, end.column);
                     if (this.mouseStartObj.preRange) {
-                        this.mouseStartObj.preRange = this.selecter.updateRange(this.mouseStartObj.preRange, {
+                        this.selecter.updateRange(this.mouseStartObj.preRange, {
                             start: this.mouseStartObj.start,
                             end: end
                         });

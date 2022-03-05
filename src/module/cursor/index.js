@@ -126,9 +126,9 @@ export default class {
         });
     }
     addCursorLineEnds() {
-        if (this.selecter.activedRanges.length) {
+        if (this.selecter.activedRanges.size) {
             this.clearCursorPos();
-            this.selecter.activedRanges.map((item) => {
+            this.selecter.activedRanges.forEach((item) => {
                 let startLine = item.start.line;
                 let endLine = item.end.line;
                 while (startLine < endLine) {

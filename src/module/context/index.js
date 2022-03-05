@@ -71,7 +71,7 @@ export default class {
         let serial = false;
         if (!command) {
             // 如果有选中区域，需要先删除选中区域
-            if (this.selecter.activedRanges.length) {
+            if (this.selecter.activedRanges.size) {
                 let _historyArr = this.deleteContent();
                 // 连续操作标识
                 _historyArr.serial = true;
@@ -781,12 +781,12 @@ export default class {
     }
     // 获取待搜索的文本
     getToSearchConfig() {
-        if (this.selecter.ranges.length > 1) {
+        if (this.selecter.ranges.size > 1) {
             return null;
         }
         let wholeWord = false;
         let searchText = '';
-        if (this.selecter.ranges.length) {
+        if (this.selecter.ranges.size) {
             let range = this.selecter.getRangeByCursorPos(this.nowCursorPos);
             if (range) {
                 searchText = this.getRangeText(range.start, range.end)

@@ -50,7 +50,7 @@ export default class {
     onDeleteContentBefore(cursorPos) {
         this.onDeleteContentBefore.preCursorPos = cursorPos;
         this.onDeleteContentBefore.maxLine = this.htmls.length;
-        this.selecter.ranges.map((range) => {
+        this.selecter.ranges.forEach((range) => {
             if (range.active) {
                 let start = range.start;
                 let end = range.end;
