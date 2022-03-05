@@ -56,17 +56,20 @@
                 node.num++; //关键字数量加1
                 if (node.num > this.m) { //超过了最大限制
                     let newNode = new Node(this.m);
+                    let isPnode = node.linkList[0];
                     value = dataList[n]; //父节点需要插入的值
-                    node.num = n; //关键字数量为最大值的一半
-                    if (node.next) {
-                        node.next.prev = newNode;
+                    if (!isPnode) { //叶子节点更新前后件
+                        if (node.next) {
+                            node.next.prev = newNode;
+                        }
+                        newNode.next = node.next;
+                        node.next = newNode;
+                        newNode.prev = node;
+                        newNode.pNode = node.pNode;
                     }
-                    newNode.next = node.next;
-                    node.next = newNode;
-                    newNode.prev = node;
-                    newNode.pNode = node.pNode;
                     link = newNode;
-                    for (let i = n, j = 0; i < this.m + 1; i++, j++) { //复制数据到新节点
+                    //复制数据到新节点，如果是叶子节点，需要把value留在叶子节点中
+                    for (let i = (isPnode ? n + 1 : n), j = 0; i < node.num; i++, j++) {
                         newNode.dataList[j] = dataList[i];
                         newNode.linkList[j + 1] = linkList[i + 1];
                         if (newNode.linkList[j + 1]) {
@@ -75,6 +78,15 @@
                         dataList[i] = null;
                         linkList[i + 1] = null;
                         newNode.num++;
+                    }
+                    node.num = n; //关键字数量为最大值的一半
+                    if (isPnode) {
+                        node.dataList[node.num] = null;
+                        newNode.linkList[0] = node.linkList[node.num + 1];
+                        if(newNode.linkList[0]) {
+                            newNode.linkList[0].pNode = newNode;
+                        }
+                        node.linkList[node.num + 1] = null;
                     }
                     if (!node.pNode) { //上溢到了根节点
                         this.root = new Node(this.m);
@@ -100,15 +112,18 @@
                 }
                 dataList[i] = value;
                 linkList[i + 1] = link;
+                if (link) {
+                    link.pNode = node;
+                }
             }
         }
         delete(value) {
+            let that = this;
             let node = this._search(value);
             let result = null;
             let n = Math.floor(this.m / 2) || 1;
             if (node) {
                 let dataList = node.dataList;
-                node.num--;
                 for (let i = 0; i < node.num; i++) {
                     if (this.compare(value, dataList[i]) === 0) {
                         result = dataList[i];
@@ -118,6 +133,7 @@
                         break;
                     }
                 }
+                node.num--;
             }
             while (node && node.num < n && node.pNode) {
                 let dataList = node.dataList;
@@ -126,51 +142,101 @@
                 let pIndex = pNode.linkList.indexOf(node);
                 let leftNode = pNode.linkList[pIndex - 1];
                 let rightNode = pNode.linkList[pIndex + 1];
+                let isPnode = node.linkList[0];
                 if (leftNode && leftNode.num > n) { //从左节点借
-
+                    _moveRight(node, 1);
+                    if (!isPnode) {
+                        pNode.dataList[pIndex - 1] = leftNode.dataList[leftNode.num - 1];
+                    }
+                    node.dataList[0] = pNode.dataList[pIndex - 1];
+                    node.linkList[0] = leftNode.linkList[leftNode.num];
+                    if (node.linkList[0]) {
+                        node.linkList[0].pNode = node;
+                    }
+                    pNode.dataList[pIndex - 1] = leftNode.dataList[leftNode.num - 1];
+                    leftNode.dataList[leftNode.num - 1] = null;
+                    leftNode.linkList[leftNode.num] = null;
+                    leftNode.num--;
+                    node.num++;
                 } else if (rightNode && rightNode.num > n) { //从右节点借
-
+                    node.dataList[node.num] = pNode.dataList[pIndex];
+                    node.linkList[node.num + 1] = rightNode.linkList[0];
+                    if (node.linkList[node.num + 1]) {
+                        node.linkList[node.num + 1].pNode = node;
+                    }
+                    if (!isPnode) {
+                        pNode.dataList[pIndex] = rightNode.dataList[1];
+                    } else {
+                        pNode.dataList[pIndex] = rightNode.dataList[0];
+                    }
+                    _moveLeft(rightNode, 1);
+                    rightNode.num--;
+                    node.num++;
                 } else if (rightNode) { //向右合并
-                    let isPnode = node.linkList[0] ? 1 : 0;
-                    for (let i = rightNode.num - 1; i >= 0; i--) { //右移节点
-                        rightNode.dataList[node.num + isPnode + i] = rightNode.dataList[i];
-                        rightNode.linkList[node.num + isPnode + i + 1] = rightNode.linkList[i + 1];
-                    }
-                    rightNode.linkList[node.num + isPnode] = rightNode.linkList[0];
-                    for (let i = 0; i < node.num; i++) { //复制节点到右节点
-                        rightNode.dataList[i] = node.dataList[i];
-                        rightNode.linkList[i + 1] = node.linkList[i + 1];
-                        if (rightNode.linkList[i + 1]) {
-                            rightNode.linkList[i + 1].pNode = rightNode;
-                        }
-                    }
-                    rightNode.linkList[0] = node.linkList[0];
-                    if (rightNode.linkList[0]) {
-                        rightNode.linkList[0].pNode = rightNode;
-                    }
-                    if (isPnode) { //当前节点非叶子节点，父节点下移
-                        rightNode.dataList[node.num] = pNode.dataList[pIndex];
-                    }
-                    for (let i = pIndex; i < pNode.num; i++) { //删除父节点和左域
-                        pNode.dataList[i] = pNode.dataList[i + 1];
-                        pNode.linkList[i] = pNode.linkList[i + 1];
-                    }
-                    pNode.linkList[pNode.num] = null;
-                    rightNode.num += node.num + isPnode;
-                    pNode.num--;
-                    if (this.head === node) {//头结点被删除
-                        this.head = rightNode;
-                    }
-                    if (!pNode.num) { //已经到了根节点
-                        this.root = rightNode;
-                        return result;
-                    }
-                    node = pNode;
-                } else if (node.prev) { //向左合并
-
+                    _join(node.pNode, pIndex, node, rightNode);
+                } else if (leftNode) { //向左合并
+                    _join(node.pNode, pIndex - 1, leftNode, node);
                 }
             }
             return result;
+
+            function _join(pNode, pIndex, leftNode, rightNode) {
+                let isPnode = leftNode.linkList[0] ? 1 : 0;
+                // 右移右节点
+                _moveRight(rightNode, leftNode.num + isPnode);
+                //复制左节点到右节点
+                for (let i = 0; i < leftNode.num; i++) {
+                    rightNode.dataList[i] = leftNode.dataList[i];
+                    rightNode.linkList[i + 1] = leftNode.linkList[i + 1];
+                    if (rightNode.linkList[i + 1]) {
+                        rightNode.linkList[i + 1].pNode = rightNode;
+                    }
+                }
+                rightNode.linkList[0] = leftNode.linkList[0];
+                if (rightNode.linkList[0]) {
+                    rightNode.linkList[0].pNode = rightNode;
+                }
+                if (isPnode) { //当前节点非叶子节点，父节点下移
+                    rightNode.dataList[leftNode.num] = pNode.dataList[pIndex];
+                }
+                _moveLeft(pNode, 1, pIndex); //删除父节点和左域
+                rightNode.num += leftNode.num + isPnode;
+                pNode.num--;
+                if (!isPnode) { //叶子节点更新前后件
+                    if (that.head === leftNode) {//头结点被删除
+                        that.head = rightNode;
+                    } else {
+                        leftNode.prev.next = rightNode;
+                        rightNode.prev = leftNode.prev;
+                    }
+                }
+                if (!pNode.num) { //已经到了根节点
+                    that.root = rightNode;
+                    that.root.pNode = null;
+                    node = null;
+                } else {
+                    node = pNode;
+                }
+            }
+
+            //右移num个节点
+            function _moveRight(target, num) {
+                for (let i = target.num - 1; i >= 0; i--) {
+                    target.dataList[num + i] = target.dataList[i];
+                    target.linkList[num + i + 1] = target.linkList[i + 1];
+                }
+                target.linkList[num] = target.linkList[0];
+            }
+
+            //左移num个节点
+            function _moveLeft(target, num, index) {
+                index = index || 0;
+                for (let i = index; i < target.num; i++) {
+                    target.dataList[i] = target.dataList[i + num];
+                    target.linkList[i] = target.linkList[i + num];
+                }
+                target.linkList[target.num] = target.linkList[target.num + num];
+            }
         }
         search(value) {
             return this._search(value);
@@ -193,7 +259,7 @@
             while (node) {
                 let linkList = node.linkList;
                 let dataList = node.dataList;
-                for (let i = 0; i < this.m; i++) {
+                for (let i = 0; i < node.num; i++) {
                     let res = this.compare(value, dataList[i]);
                     if (res === 0) {
                         if (linkList[i + 1]) { //右侧子节点存放了父节点
@@ -223,31 +289,53 @@
             }
         }
     }
-    let tree = new Btree();
-    for (let i = 20; i >= 11; i--) {
-        tree.insert(i);
+
+    function testAdd() {
+        let tree = new Btree();
+        for (let i = 20; i >= 11; i--) {
+            tree.insert(i);
+        }
+        for (let i = 1; i <= 10; i++) {
+            tree.insert(i);
+        }
+        printTree();
+        console.time();
+        tree = new Btree();
+        for (let i = 1; i <= 1000000; i++) {
+            tree.insert(i);
+        }
+        console.timeEnd();
+        let count = 0;
+        head = tree.search(500);
+        while (head.pNode) {
+            head = head.pNode;
+            count++;
+        }
+        console.log(count);
+        testAdd.tree = tree;
     }
-    for (let i = 1; i <= 10; i++) {
-        tree.insert(i);
+
+    function testDel() {
+        let tree = new Btree();
+        for (let i = 1; i <= 10000; i++) {
+            tree.insert(i);
+        }
+        for (let i = 5; i <= 9995; i++) {
+            tree.delete(i);
+        }
+        testDel.tree = tree;
+        printTree(tree);
     }
-    let head = tree.head;
-    while (head) {
-        console.log(head.dataList);
-        head = head.next;
+
+    function printTree(tree) {
+        let head = tree.head;
+        while (head) {
+            console.log(head.dataList);
+            head = head.next;
+        }
     }
-    console.time();
-    tree = new Btree();
-    for (let i = 1; i <= 1000000; i++) {
-        tree.insert(i);
-    }
-    console.timeEnd();
-    let count = 0;
-    head = tree.search(500);
-    while (head.pNode) {
-        head = head.pNode;
-        count++;
-    }
-    console.log(count);
+
+    testDel();
 </script>
 
 <body>
