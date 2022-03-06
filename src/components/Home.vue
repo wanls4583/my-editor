@@ -443,11 +443,11 @@ export default {
                 let lineObj = context.htmls[startLine - 1];
                 let lineId = lineObj.lineId;
                 let obj = _getObj(lineObj, startLine);
+                let fold = this.folder.getFoldByLine(startLine);
                 this.renderHtmls.push(obj);
                 context.renderedIdMap.set(lineId, obj);
                 context.renderedLineMap.set(startLine, obj);
-                if (context.foldMap.has(startLine)) {
-                    let fold = context.foldMap.get(startLine);
+                if (fold) {
                     startLine = fold.end.line;
                 } else {
                     startLine++;
@@ -466,7 +466,7 @@ export default {
                     tabNum = tabNum && tabNum[0].length || 0;
                     tabNum = tabNum + Math.ceil((spaceNum[0].length - tabNum) / that.tabSize);
                 }
-                if (context.foldMap.has(line)) { //该行已经折叠
+                if (that.folder.getFoldByLine(line)) { //该行已经折叠
                     fold = 'close';
                 } else if (that.folder.getRangeFold(line, true)) { //可折叠
                     fold = 'open';
@@ -927,9 +927,8 @@ export default {
         },
         // 折叠/展开
         onToggleFold(line) {
-            if (context.foldMap.has(line)) {
+            if (this.folder.getFoldByLine(line)) {
                 this.unFold(line);
-                return;
             } else {
                 this.foldLine(line);
             }

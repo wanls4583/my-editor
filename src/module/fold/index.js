@@ -4,161 +4,105 @@
  * @Description: 
  */
 import Util from '@/common/Util';
+import Btree from '@/common/Btree';
+
+const comparator = function (a, b) {
+    return a.start.line - b.start.line;
+}
+
 export default class {
     constructor(editor, context) {
+        this.folds = new Btree(comparator);
         this.editorFunObj = {};
         this.initProperties(editor, context);
     }
     initProperties(editor, context) {
         Util.defineProperties(this.editorFunObj, editor, ['unFold']);
         Util.defineProperties(this, editor, ['selecter']);
-        Util.defineProperties(this, context, ['htmls', 'folds', 'foldMap']);
+        Util.defineProperties(this, context, ['htmls']);
     }
-    onInsertContentBefore(cursorPos) {
-        let nowLine = cursorPos.line;
-        this.onInsertContentBefore.preCursorPos = cursorPos;
-        if (this.folds.length) {
-            let index = this.findFoldIndex(nowLine);
-            let unFolds = [];
-            // 历史记录中操作光标在折叠区
-            while (index < this.folds.length && this.folds[index].start.line < nowLine && this.folds[index].end.line > nowLine) {
-                unFolds.push(this.folds[index].start.line);
-                index++;
+    onInsertContentAfter(preCursorPos, cursorPos) {
+        let folds = this.folds.toArray();
+        let afterIndex = Infinity;
+        // 历史记录中操作光标在折叠区，需要先展开
+        for (let i = 0; i < folds.length; i++) {
+            let fold = folds[i];
+            if (fold.start.line < preCursorPos.line) {
+                if (fold.end.line > preCursorPos.line) {
+                    this.editorFunObj.unFold(fold.start.line);
+                }
+            } else if (fold.start.line > preCursorPos.line) {
+                afterIndex = i;
+                break;
             }
-            unFolds.map((line) => {
-                this.editorFunObj.unFold(line);
-            });
         }
-    }
-    onInsertContentAfter(cursorPos) {
-        let preCursorPos = this.onInsertContentBefore.preCursorPos;
-        this.folds.slice().reverse().map((fold) => {
-            if (fold.start.line > preCursorPos.line) {
-                if (cursorPos.line - preCursorPos.line > 0) {
-                    this.foldMap.delete(fold.start.line);
-                    fold.start.line += cursorPos.line - preCursorPos.line;
-                    fold.end.line += cursorPos.line - preCursorPos.line;
-                    this.foldMap.set(fold.start.line, fold);
-                }
-            } else if (fold.start.line === preCursorPos.line) {
-                if (cursorPos.line - preCursorPos.line > 0) {
-                    this.unFold(fold.start.line);
-                }
+        if (cursorPos.line > preCursorPos.line) {
+            // 更新后面的行号
+            for (let i = afterIndex; i < folds.length; i++) {
+                folds[i].start.line += cursorPos.line - preCursorPos.line;
+                folds[i].end.line += cursorPos.line - preCursorPos.line;
             }
-        });
-    }
-    onDeleteContentBefore(cursorPos) {
-        // this.onDeleteContentBefore.preCursorPos = cursorPos;
-        // this.onDeleteContentBefore.maxLine = this.htmls.length;
-        // this.selecter.ranges.forEach((range) => {
-        //     if (range.active) {
-        //         let start = range.start;
-        //         let end = range.end;
-        //         for (let line = start.line; line <= end.line; line++) { //删除折叠区域
-        //             this.editorFunObj.unFold(line);
-        //         }
-        //     }
-        // });
+        }
     }
     onDeleteContentAfter(preCursorPos, cursorPos) {
-        let nowLine = cursorPos.line;
-        let delLine = preCursorPos.line - cursorPos.line;
-        if (this.folds.length) {
-            let index = this.findFoldIndex(nowLine);
-            let unFolds = [];
-            // 历史记录中操作光标在折叠区
-            while (index < this.folds.length && this.folds[index].start.line < nowLine && this.folds[index].end.line > nowLine) {
-                unFolds.push(this.folds[index].start.line);
-                index++;
-            }
-            unFolds.map((line) => {
-                this.editorFunObj.unFold(line);
-            });
-        }
-        this.folds.slice().reverse().map((fold) => {
-            if (fold.start.line > preCursorPos.line) {
-                if (delLine > 0) {
-                    if (delLine === 1 && preCursorPos.line === nowLine &&
-                        fold.start.line === preCursorPos.line + 1) {
-                        this.unFold(fold.start.line);
-                    } else {
-                        this.foldMap.delete(fold.start.line);
-                        fold.start.line -= delLine;
-                        fold.end.line -= delLine;
-                        this.foldMap.set(fold.start.line, fold);
-                    }
-                }
-            } else if (fold.start.line === preCursorPos.line) {
-                if (delLine > 0) {
-                    this.unFold(fold.start.line);
-                }
-            }
-        });
-    }
-    /**
-     * 寻找第一个包裹nowLine的折叠对象的下标
-     * @param {Number} nowLine 
-     */
-    findFoldIndex(nowLine) {
-        let left = 0;
-        let right = this.folds.length - 1;
-        while (left < right) {
-            let mid = Math.floor((left + right) / 2);
-            let fold = this.folds[mid];
-            if (fold.start.line < nowLine) {
-                if (fold.end.line <= nowLine) {
-                    left = mid + 1;
-                } else {
-                    right = mid;
-                }
-            } else if (fold.start.line == nowLine) {
-                left = mid + 1;
-            } else {
-                right = mid - 1;
+        let folds = this.folds.toArray();
+        let afterIndex = Infinity;
+        for (let i = 0; i < folds.length; i++) {
+            let fold = folds[i];
+            if (fold.start.line < preCursorPos.line && fold.end.line > preCursorPos.line ||
+                fold.start.line < cursorPos.line && fold.end.line > cursorPos.line) {
+                this.editorFunObj.unFold(fold.start.line);
+            } else if (fold.start.line > preCursorPos.line) {
+                afterIndex = i;
+                break;
             }
         }
-        return left;
+        if (preCursorPos.line > cursorPos.line) {
+            // 更新后面的行号
+            for (let i = afterIndex; i < folds.length; i++) {
+                folds[i].start.line += cursorPos.line - preCursorPos.line;
+                folds[i].end.line += cursorPos.line - preCursorPos.line;
+            }
+        }
     }
     // 折叠行
     foldLine(line) {
-        let startLine = line;
         let resultFold = this.getRangeFold(line);
         if (resultFold) {
-            for (let line = resultFold.start.line; line < resultFold.end.line; line++) {
-                if (this.foldMap.has(line)) {
-                    if (this.foldMap.get(line).end.line > resultFold.end.line) {
+            // 避免交叉折叠
+            for (let line = resultFold.start.line + 1; line < resultFold.end.line; line++) {
+                let fold = this.getFoldByLine(line);
+                if (fold) {
+                    if (fold.end.line > resultFold.end.line) {
                         this.unFold(line);
                     }
                 }
             }
-            this.foldMap.set(startLine, resultFold);
-            this.folds.push(resultFold);
-            this.folds.sort((a, b) => {
-                return a.start.line - b.start.line;
-            });
+            this.folds.insert(resultFold);
         }
         return resultFold;
     }
     // 展开折叠行
     unFold(line) {
-        let left = 0;
-        let right = this.folds.length;
-        if (!this.foldMap.has(line)) {
-            return false;
-        }
-        while (left <= right) {
-            let mid = Math.floor((left + right) / 2);
-            if (this.folds[mid].start.line == line) {
-                this.folds.splice(mid, 1);
-                break;
-            } else if (this.folds[mid].start.line > line) {
-                right = mid - 1;
-            } else {
-                left = mid + 1;
+        let fold = this.getFoldByLine(line);
+        fold && this.folds.delete(fold);
+        return fold;
+    }
+    getFoldByLine(line) {
+        let it = this.folds.search(null, (a, b) => {
+            return line - b.start.line;
+        }, true);
+        let value = null;
+        if (it) {
+            while ((value = it.next())) {
+                if (value.start.line === line) {
+                    return value;
+                } else if (value.start.line > line) {
+                    break;
+                }
             }
         }
-        this.foldMap.delete(line);
-        return true;
+        return null;
     }
     /**
      * 获取折叠范围
@@ -223,8 +167,9 @@ export default class {
         let i = 0;
         let lineCount = 1;
         let realLine = 1;
-        while (i < this.folds.length && lineCount < line) {
-            let fold = this.folds[i];
+        let folds = this.folds.toArray();
+        while (i < folds.length && lineCount < line) {
+            let fold = folds[i];
             if (lineCount + fold.start.line - realLine < line) {
                 lineCount += fold.start.line + 1 - realLine;
                 realLine = fold.end.line;
@@ -232,7 +177,7 @@ export default class {
                 break;
             }
             i++;
-            while (i < this.folds.length && this.folds[i].end.line <= fold.end.line) { //多级折叠
+            while (i < folds.length && folds[i].end.line <= fold.end.line) { //多级折叠
                 i++;
             }
         }
@@ -243,15 +188,16 @@ export default class {
     getRelativeLine(line) {
         let relLine = line;
         let i = 0;
-        while (i < this.folds.length) {
-            let fold = this.folds[i];
+        let folds = this.folds.toArray();
+        while (i < folds.length) {
+            let fold = folds[i];
             if (line >= fold.end.line) {
                 relLine -= fold.end.line - fold.start.line - 1;
             } else {
                 break;
             }
             i++;
-            while (i < this.folds.length && this.folds[i].end.line <= fold.end.line) { //多级折叠
+            while (i < folds.length && folds[i].end.line <= fold.end.line) { //多级折叠
                 i++;
             }
         }

@@ -14,11 +14,9 @@ export default class {
     constructor(editor) {
         this.lineId = Number.MIN_SAFE_INTEGER;
         this.htmls = [];
-        this.folds = [];
         this.lineIdMap = new Map(); //htmls的唯一标识对象
         this.renderedIdMap = new Map(); //renderHtmls的唯一标识对象
         this.renderedLineMap = new Map(); //renderHtmls的唯一标识对象
-        this.foldMap = new Map(); //folds的唯一标识对象
         this.initProperties(editor);
         this.initData();
     }
@@ -143,17 +141,12 @@ export default class {
     // 插入内容
     _insertContent(text, cursorPos) {
         let nowLineText = this.htmls[cursorPos.line - 1].text;
-        let originPos = {
-            line: cursorPos.line,
-            column: cursorPos.column
-        };
         let nowColume = cursorPos.column;
         let nowLine = cursorPos.line;
         let newLine = nowLine;
         let newColumn = nowColume;
         this.tokenizer.onInsertContentBefore(nowLine);
         this.lint.onInsertContentBefore(nowLine);
-        this.folder.onInsertContentBefore(Object.assign({}, originPos));
         text = text.split(/\r\n|\n/);
         text = text.map((item) => {
             item = {
@@ -180,15 +173,18 @@ export default class {
         }
         newLine += text.length - 1;
         this.setEditorData('maxLine', this.htmls.length);
+        this.lint.onInsertContentAfter(newLine);
+        this.tokenizer.onInsertContentAfter(newLine);
         this.folder.onInsertContentAfter({
+            line: nowLine,
+            column: nowColume
+        }, {
             line: newLine,
             column: newColumn
         });
-        this.lint.onInsertContentAfter(newLine);
-        this.tokenizer.onInsertContentAfter(newLine);
         this.setLineWidth(text);
         this.render(true);
-        if (this.foldMap.has(nowLine) && text.length > 1) {
+        if (this.folder.getFoldByLine(nowLine) && text.length > 1) {
             this.unFold(nowLine);
         }
         let historyObj = {
@@ -335,7 +331,6 @@ export default class {
         let newColumn = cursorPos.column;
         this.tokenizer.onDeleteContentBefore(cursorPos.line);
         this.lint.onDeleteContentBefore(cursorPos.line);
-        this.folder.onDeleteContentBefore(Object.assign({}, cursorPos));
         if (range) { // 删除选中区域
             let end = range.end;
             let endObj = this.htmls[end.line - 1];
@@ -410,6 +405,8 @@ export default class {
         startObj.folds = null;
         startObj.states = null;
         this.setEditorData('maxLine', this.htmls.length);
+        this.lint.onDeleteContentAfter(newLine);
+        this.tokenizer.onDeleteContentAfter(newLine);
         this.folder.onDeleteContentAfter({
             line: originPos.line,
             column: originPos.column
@@ -417,8 +414,6 @@ export default class {
             line: newLine,
             column: newColumn
         });
-        this.lint.onDeleteContentAfter(newLine);
-        this.tokenizer.onDeleteContentAfter(newLine);
         this.render(true);
         // 更新最大文本宽度
         if (startObj.width >= this.maxWidthObj.width) {

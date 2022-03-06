@@ -263,10 +263,11 @@ class Btree {
     /**
      * 查找
      * @param {Any} value 
-     * @param {Function} 自定义查找比较器 
+     * @param {Function} compare 自定义查找比较器 
+     * @param {Boolean} insert 是否查找查找最近的节点 
      */
-    search(value, compare) {
-        let result = this._search(value, false, compare);
+    search(value, compare, insert) {
+        let result = this._search(value, insert, compare);
         if (result) {
             result = this.iterator(result, value, compare);
         }
