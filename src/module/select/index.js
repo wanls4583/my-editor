@@ -262,4 +262,16 @@ export default class {
         this.activedRanges.empty();
         this.renderSelectedBg();
     }
+    clearInactive() {
+        if (!this.activedRanges.size) {
+            this.clearRange();
+        } else {
+            this.ranges.toArray().map((item) => {
+                if (!item.active) {
+                    this.ranges.delete(item);
+                }
+            });
+            this.renderSelectedBg();
+        }
+    }
 }

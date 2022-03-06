@@ -947,6 +947,7 @@ export default {
             }
             let pos = this.getPosByEvent(e);
             let cursorPos = null;
+            let range = null;
             this.mouseStartObj = {
                 time: Date.now(),
                 start: pos,
@@ -967,7 +968,14 @@ export default {
                     this.searchWord();
                 }
             }
+            range = this.selecter.getRangeByCursorPos(cursorPos);
+            if (range) {
+                this.cursor.clearCursorPos(cursorPos);
+                cursorPos = Util.comparePos(cursorPos, range.start) === 0 ? range.start : range.end;
+                this.cursor.addCursorPos(cursorPos);
+            }
             this.mouseStartObj.cursorPos = cursorPos;
+            this.selecter.clearInactive();
             this.focus();
         },
         onScrollerMup(e) {
