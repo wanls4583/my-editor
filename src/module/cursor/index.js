@@ -129,7 +129,10 @@ export default class {
         return cursorPos;
     }
     updateCursorPos(cursorPos, line, column) {
-        this.multiCursorPos.delete(cursorPos);
+        let pos = this.getCursorsByLineColumn(cursorPos.line, cursorPos.column);
+        if (pos === cursorPos) {
+            this.multiCursorPos.delete(cursorPos);
+        }
         cursorPos.line = line;
         cursorPos.column = column;
         this.multiCursorPos.insert(cursorPos);
