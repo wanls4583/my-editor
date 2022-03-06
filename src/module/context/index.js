@@ -79,7 +79,6 @@ export default class {
             }
             cursorPosList = this.cursor.multiCursorPos.toArray();
         } else {
-            this.cursor.clearCursorPos();
             command.map((item) => {
                 // 多个插入的光标可能相同，这里不能先添加光标
                 cursorPosList.push(item.cursorPos);
@@ -104,6 +103,7 @@ export default class {
         let texts = text instanceof Array ? text : text.split(/\r\n|\n/);
         let lineDelta = 0;
         let columnDelta = 0;
+        this.cursor.clearCursorPos();
         cursorPosList.map((cursorPos, index) => {
             let _text = texts.length === cursorPosList.length ? texts[index] : text;
             let commandObj = command && command[index] || {};
@@ -126,11 +126,10 @@ export default class {
             historyObj.active = active;
             lineDelta += historyObj.cursorPos.line - historyObj.preCursorPos.line;
             columnDelta += historyObj.cursorPos.column - historyObj.preCursorPos.column;
-            if (command) {
-                cursorPos = this.cursor.addCursorPos(pos);
-            }
             if (margin === 'right') {
-                this.cursor.updateCursorPos(cursorPos, historyObj.cursorPos.line, historyObj.cursorPos.column);
+                this.cursor.addCursorPos(historyObj.cursorPos);
+            } else {
+                this.cursor.addCursorPos(historyObj.preCursorPos);
             }
             if (active) {
                 this.selecter.addRange({
@@ -216,7 +215,7 @@ export default class {
                     margin: item.margin,
                     active: item.active,
                 }
-                let cursorPos = this.cursor.addCursorPos(obj.margin === 'left' ? obj.start : obj.end);
+                let cursorPos = obj.margin === 'left' ? obj.start : obj.end;
                 return [obj, cursorPos];
             });
         } else {
@@ -256,6 +255,7 @@ export default class {
         let prePos = null;
         let lineDelta = 0;
         let columnDelta = 0;
+        this.cursor.clearCursorPos();
         rangeList.map((item) => {
             if (item instanceof Array) {
                 _deleteRangePos(item[0], item[1]);
@@ -281,7 +281,10 @@ export default class {
             prePos = historyObj.cursorPos;
             lineDelta += historyObj.preCursorPos.line - prePos.line;
             columnDelta += historyObj.preCursorPos.column - prePos.column;
-            that.cursor.updateCursorPos(cursorPos, prePos.line, prePos.column);
+            that.cursor.addCursorPos({
+                line: prePos.line,
+                column: prePos.column
+            });
         }
 
         function _deleteRangePos(rangePos, cursorPos) {
@@ -304,7 +307,10 @@ export default class {
             prePos = historyObj.cursorPos;
             lineDelta += historyObj.preCursorPos.line - prePos.line;
             columnDelta += historyObj.preCursorPos.column - prePos.column;
-            that.cursor.updateCursorPos(cursorPos, prePos.line, prePos.column);
+            that.cursor.addCursorPos({
+                line: prePos.line,
+                column: prePos.column
+            });
         }
     }
     // 删除内容
@@ -521,9 +527,6 @@ export default class {
         let index = 0;
         if (command) {
             originList = command.cursorPos;
-            originList = originList.map((item) => {
-                return this.cursor.addCursorPos(item);
-            });
         } else {
             originList = this.cursor.multiCursorPos.toArray();
         }
@@ -559,6 +562,10 @@ export default class {
         } else { // 撤销或重做操作后，更新历史记录
             this.history.updateHistory(historyObj);
         }
+        this.cursor.clearCursorPos();
+        historyPosList.map((item) => {
+            this.cursor.addCursorPos(item);
+        });
         this.searcher.refreshSearch();
         this.fSearcher.refreshSearch();
     }
@@ -578,9 +585,6 @@ export default class {
         let index = 0;
         if (command) {
             originList = command.cursorPos;
-            originList = originList.map((item) => {
-                return this.cursor.addCursorPos(item);
-            });
         } else {
             originList = this.cursor.multiCursorPos.toArray();
         }
@@ -625,6 +629,10 @@ export default class {
         } else { // 撤销或重做操作后，更新历史记录
             this.history.updateHistory(historyObj);
         }
+        this.cursor.clearCursorPos();
+        historyPosList.map((item) => {
+            this.cursor.addCursorPos(item);
+        });
         this.searcher.refreshSearch();
         this.fSearcher.refreshSearch();
     }
