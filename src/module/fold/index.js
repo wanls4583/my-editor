@@ -48,22 +48,21 @@ export default class {
         });
     }
     onDeleteContentBefore(cursorPos) {
-        this.onDeleteContentBefore.preCursorPos = cursorPos;
-        this.onDeleteContentBefore.maxLine = this.htmls.length;
-        this.selecter.ranges.forEach((range) => {
-            if (range.active) {
-                let start = range.start;
-                let end = range.end;
-                for (let line = start.line; line <= end.line; line++) { //删除折叠区域
-                    this.editorFunObj.unFold(line);
-                }
-            }
-        });
+        // this.onDeleteContentBefore.preCursorPos = cursorPos;
+        // this.onDeleteContentBefore.maxLine = this.htmls.length;
+        // this.selecter.ranges.forEach((range) => {
+        //     if (range.active) {
+        //         let start = range.start;
+        //         let end = range.end;
+        //         for (let line = start.line; line <= end.line; line++) { //删除折叠区域
+        //             this.editorFunObj.unFold(line);
+        //         }
+        //     }
+        // });
     }
-    onDeleteContentAfter(cursorPos) {
+    onDeleteContentAfter(preCursorPos, cursorPos) {
         let nowLine = cursorPos.line;
-        let preCursorPos = this.onDeleteContentBefore.preCursorPos;
-        let delLine = this.onDeleteContentBefore.maxLine - this.htmls.length;
+        let delLine = preCursorPos.line - cursorPos.line;
         if (this.folds.length) {
             let index = this.findFoldIndex(nowLine);
             let unFolds = [];

@@ -411,6 +411,9 @@ export default class {
         startObj.states = null;
         this.setEditorData('maxLine', this.htmls.length);
         this.folder.onDeleteContentAfter({
+            line: originPos.line,
+            column: originPos.column
+        }, {
             line: newLine,
             column: newColumn
         });

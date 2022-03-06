@@ -99,10 +99,12 @@ export default class {
     }
     selectAllOccurence() {
         this.cursor.clearCursorPos();
-        this.activedRanges = this.ranges.slice();
-        this.activedRanges.forEach((item) => {
+        this.ranges.forEach((item) => {
             this.cursor.addCursorPos(item.end);
-            item.active = true;
+            if (!item.active) {
+                item.active = true;
+                this.activedRanges.insert(item);
+            }
         });
         this.renderSelectedBg();
     }

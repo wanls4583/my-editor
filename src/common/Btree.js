@@ -326,23 +326,23 @@ class Btree {
         }
     }
     forEach(cb) {
-        let node = this.head;
-        while (node) {
-            let dataList = node.dataList;
-            for (let index = 0; index < node.num; index++) {
-                cb(dataList[index]);
-            }
-            node = node.next;
-        }
+        this.toArray().map((item) => {
+            cb(item);
+        });
     }
     toArray() {
         if (this.arrayCache) {
             return this.arrayCache;
         }
         let results = [];
-        this.forEach((item) => {
-            results.push(item);
-        });
+        let node = this.head;
+        while (node) {
+            let dataList = node.dataList;
+            for (let index = 0; index < node.num; index++) {
+                results.push(dataList[index]);
+            }
+            node = node.next;
+        }
         this.arrayCache = results;
         return results;
     }
