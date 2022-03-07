@@ -922,12 +922,6 @@ export default {
                     this.searchWord();
                 }
             }
-            range = this.selecter.getRangeByCursorPos(cursorPos);
-            if (range) {
-                this.cursor.removeCursor(cursorPos);
-                cursorPos = Util.comparePos(cursorPos, range.start) === 0 ? range.start : range.end;
-                this.cursor.addCursorPos(cursorPos);
-            }
             this.mouseStartObj.cursorPos = cursorPos;
             this.selecter.clearInactive();
             this.focus();
