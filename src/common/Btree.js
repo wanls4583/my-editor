@@ -153,11 +153,11 @@ class Btree {
             }
             node.num--;
             this.size--;
+            this.arrayCache = null;
             if (!this.size) {
                 this.root = null;
                 return result;
             }
-            this.arrayCache = null;
         }
         while (node && node.num < half && node.pNode) {
             let pNode = node.pNode;

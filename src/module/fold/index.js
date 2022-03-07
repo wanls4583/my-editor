@@ -74,7 +74,7 @@ export default class {
                 let fold = this.getFoldByLine(line);
                 if (fold) {
                     if (fold.end.line > resultFold.end.line) {
-                        this.unFold(line);
+                        this.editorFunObj.unFold(line);
                     }
                 }
             }
