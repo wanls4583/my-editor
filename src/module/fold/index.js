@@ -31,12 +31,16 @@ export default class {
                 if (fold.end.line > preCursorPos.line) {
                     this.editorFunObj.unFold(fold.start.line);
                 }
-            } else if (fold.start.line > preCursorPos.line) {
+            } else {
                 afterIndex = i;
                 break;
             }
         }
         if (cursorPos.line > preCursorPos.line) {
+            if (folds[afterIndex] && folds[afterIndex].start.line === preCursorPos.line) {
+                this.editorFunObj.unFold(preCursorPos.line);
+                afterIndex++;
+            }
             // 更新后面的行号
             for (let i = afterIndex; i < folds.length; i++) {
                 folds[i].start.line += cursorPos.line - preCursorPos.line;
@@ -49,10 +53,20 @@ export default class {
         let afterIndex = Infinity;
         for (let i = 0; i < folds.length; i++) {
             let fold = folds[i];
-            if (fold.start.line < preCursorPos.line && fold.end.line > preCursorPos.line ||
-                fold.start.line < cursorPos.line && fold.end.line > cursorPos.line) {
-                this.editorFunObj.unFold(fold.start.line);
-            } else if (fold.start.line > preCursorPos.line) {
+            let starLine = fold.start.line;
+            let endLine = fold.end.line;
+            if (starLine <= preCursorPos.line) {
+                if (starLine < preCursorPos.line) {
+                    if (starLine >= cursorPos.line && starLine < preCursorPos.line ||
+                        starLine < cursorPos.line && endLine > cursorPos.line) {
+                        this.editorFunObj.unFold(starLine);
+                    }
+                } else {
+                    if (preCursorPos.line > cursorPos.line) {
+                        this.editorFunObj.unFold(starLine);
+                    }
+                }
+            } else {
                 afterIndex = i;
                 break;
             }
