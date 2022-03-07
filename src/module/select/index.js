@@ -35,7 +35,7 @@ export default class {
             editor.setData(prop, value);
         }
     }
-    // 检测光标是否在选中区域范围内
+    // 检测光标是否在选中区域范围的边界
     getRangeByCursorPos(cursorPos) {
         let result = this.ranges.search(cursorPos, (value, item) => {
             if (Util.comparePos(value, item.start) === 0 ||
@@ -45,6 +45,27 @@ export default class {
             return Util.comparePos(value, item.start);
         });
         return result && result.next();
+    }
+    // 检查光标是否在选中范围内
+    getRangeWithCursorPos(cursorPos) {
+        let it = this.ranges.search(cursorPos, (value, item) => {
+            return Util.comparePos(value, item.start);
+        }, true);
+        if (it) {
+            let value = it.prev();
+            if (value && Util.comparePos(value.end, cursorPos) >= 0) {
+                return value;
+            }
+            it.reset();
+            while (value = it.next()) {
+                if (Util.comparePos(value.start, cursorPos) > 0) {
+                    return false;
+                }
+                if (Util.comparePos(value.end, cursorPos) >= 0) {
+                    return value;
+                }
+            }
+        }
     }
     select(direct, wholeWord) {
         this.cursor.multiCursorPos.forEach((cursorPos) => {
@@ -152,6 +173,18 @@ export default class {
         this.renderSelectedBg();
         return ranges instanceof Array ? results : results[0];
     }
+    removeRange(range) {
+        range = this.ranges.delete(range);
+        if (range) {
+            if (range.active) {
+                range.active = false;
+                this.activedRanges.delete(range);
+            }
+            this.cursor.removeCursor(range.start);
+            this.cursor.removeCursor(range.end);
+            this.renderSelectedBg();
+        }
+    }
     /**
      * 设置选中区域
      * @param {Object} start
@@ -232,8 +265,8 @@ export default class {
         dels.map((item) => {
             this.ranges.delete(item);
             this.activedRanges.delete(item);
-            this.cursor.clearCursorPos(item.start);
-            this.cursor.clearCursorPos(item.end);
+            this.cursor.removeCursor(item.start);
+            this.cursor.removeCursor(item.end);
         });
     }
     createRange(start, end) {

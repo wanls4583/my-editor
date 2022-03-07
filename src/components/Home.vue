@@ -904,6 +904,10 @@ export default {
             }
             if (e.ctrlKey && this.cursor.multiKeyCode === 'ctrl' ||
                 e.altKey && this.cursor.multiKeyCode === 'alt') {
+                let range = this.selecter.getRangeWithCursorPos(pos);
+                if (range) { //删除选中范围
+                    this.selecter.removeRange(range);
+                }
                 cursorPos = this.cursor.addCursorPos(pos);
             } else {
                 cursorPos = this.cursor.setCursorPos(pos);
@@ -920,7 +924,7 @@ export default {
             }
             range = this.selecter.getRangeByCursorPos(cursorPos);
             if (range) {
-                this.cursor.clearCursorPos(cursorPos);
+                this.cursor.removeCursor(cursorPos);
                 cursorPos = Util.comparePos(cursorPos, range.start) === 0 ? range.start : range.end;
                 this.cursor.addCursorPos(cursorPos);
             }
@@ -938,7 +942,7 @@ export default {
                 var offset = $(this.$scroller).offset();
                 let end = this.getPosByEvent(e);
                 if (Util.comparePos(end, this.mouseStartObj.cursorPos)) {
-                    this.cursor.clearCursorPos(this.mouseStartObj.cursorPos);
+                    this.cursor.removeCursor(this.mouseStartObj.cursorPos);
                     this.mouseStartObj.cursorPos = this.cursor.addCursorPos({ line: end.line, column: end.column });
                     if (this.mouseStartObj.preRange) {
                         this.selecter.updateRange(this.mouseStartObj.preRange, {
@@ -951,6 +955,8 @@ export default {
                             end: end
                         });
                     }
+                    // 删除区域范围内的光标
+                    this.cursor.removeCursorInRange(this.mouseStartObj.preRange);
                 }
                 cancelAnimationFrame(this.selectMoveTimer);
                 if (e.clientY > offset.top + this.scrollerArea.height) { //鼠标超出底部区域

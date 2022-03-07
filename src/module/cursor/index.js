@@ -29,24 +29,6 @@ export default class {
         ]);
         Util.defineProperties(this, context, ['htmls']);
     }
-    clearCursorPos(cursorPos) {
-        if (cursorPos) {
-            cursorPos = this.getCursorsByLineColumn(cursorPos.line, cursorPos.column);
-            if (cursorPos) {
-                cursorPos.del = true;
-                this.multiCursorPos.delete(cursorPos);
-                if (cursorPos === this.nowCursorPos) {
-                    this.setNowCursorPos(null);
-                }
-            }
-            return;
-        }
-        this.multiCursorPos.forEach((item) => {
-            item.del = true;
-        });
-        this.multiCursorPos.empty();
-        this.setNowCursorPos(null);
-    }
     // 添加光标
     addCursorPos(cursorPos) {
         let pos = this.getCursorsByLineColumn(cursorPos.line, cursorPos.column);
@@ -142,6 +124,47 @@ export default class {
             this.renderCursor();
         }
         return cursorPos;
+    }
+    removeCursor(cursorPos) {
+        cursorPos = this.getCursorsByLineColumn(cursorPos.line, cursorPos.column);
+        if (cursorPos) {
+            cursorPos.del = true;
+            this.multiCursorPos.delete(cursorPos);
+            if (cursorPos === this.nowCursorPos) {
+                this.setNowCursorPos(null);
+            }
+        }
+        this.renderCursor();
+    }
+    removeCursorInRange(range) {
+        let it = this.multiCursorPos.search(null, (a, b)=>{
+            return Util.comparePos(range.start, b);
+        }, true);
+        if(it) {
+            let value = null;
+            let toDels = [];
+            while(value=it.next()) {
+                let res = Util.comparePos(value, range.end);
+                if(res >= 0) {
+                    break;
+                }
+                if(Util.comparePos(value, range.start) > 0) {
+                    toDels.push(value);
+                }
+            }
+            toDels.map((item)=>{
+                item.del = true;
+                this.multiCursorPos.delete(item);
+            });
+            this.renderCursor();
+        }
+    }
+    clearCursorPos() {
+        this.multiCursorPos.forEach((item) => {
+            item.del = true;
+        });
+        this.multiCursorPos.empty();
+        this.setNowCursorPos(null);
     }
     getCursorsByLine(line) {
         let results = [];
