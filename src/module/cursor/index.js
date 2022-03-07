@@ -133,26 +133,26 @@ export default class {
             if (cursorPos === this.nowCursorPos) {
                 this.setNowCursorPos(null);
             }
+            this.renderCursor();
         }
-        this.renderCursor();
     }
     removeCursorInRange(range) {
-        let it = this.multiCursorPos.search(null, (a, b)=>{
+        let it = this.multiCursorPos.search(null, (a, b) => {
             return Util.comparePos(range.start, b);
         }, true);
-        if(it) {
+        if (it) {
             let value = null;
             let toDels = [];
-            while(value=it.next()) {
+            while (value = it.next()) {
                 let res = Util.comparePos(value, range.end);
-                if(res >= 0) {
+                if (res >= 0) {
                     break;
                 }
-                if(Util.comparePos(value, range.start) > 0) {
+                if (Util.comparePos(value, range.start) > 0) {
                     toDels.push(value);
                 }
             }
-            toDels.map((item)=>{
+            toDels.map((item) => {
                 item.del = true;
                 this.multiCursorPos.delete(item);
             });
