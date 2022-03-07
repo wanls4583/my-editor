@@ -432,6 +432,7 @@ export default {
                     if (context.htmls[obj.num - 1] && context.htmls[obj.num - 1].lineId === lineId) {
                         Object.assign(obj, _getObj(item, obj.num));
                         this.renderCursor();
+                        this.renderSelectedBg();
                     }
                 }
                 return;
@@ -496,6 +497,7 @@ export default {
                     requestAnimationFrame(() => {
                         this.renderSelectedBg();
                     });
+                    return;
                 }
                 this.renderHtmls.map((item) => {
                     item.selected = false;
