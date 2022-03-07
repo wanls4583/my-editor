@@ -77,8 +77,7 @@ export default class {
             }`;
         return Util.createWorker(str);
     }
-    onInsertContentBefore(nowLine) {}
-    onInsertContentAfter(nowLine) {
+    onInsertContentAfter(nowLine, newLine) {
         if (!this.worker) {
             return;
         }
@@ -87,8 +86,7 @@ export default class {
             this.parse();
         }, 300);
     }
-    onDeleteContentBefore(nowLine) {}
-    onDeleteContentAfter(nowLine) {
+    onDeleteContentAfter(nowLine, newLine) {
         if (!this.worker) {
             return;
         }

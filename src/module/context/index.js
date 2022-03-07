@@ -36,8 +36,6 @@ export default class {
             'fSearcher',
             'render',
             'unFold',
-            'setMaxWidth',
-            'setLineWidth',
             'setNowCursorPos',
             'getStrWidth',
         ]);
@@ -141,12 +139,7 @@ export default class {
     // 插入内容
     _insertContent(text, cursorPos) {
         let nowLineText = this.htmls[cursorPos.line - 1].text;
-        let nowColume = cursorPos.column;
-        let nowLine = cursorPos.line;
-        let newLine = nowLine;
-        let newColumn = nowColume;
-        this.tokenizer.onInsertContentBefore(nowLine);
-        this.lint.onInsertContentBefore(nowLine);
+        let newPos = Object.assign({}, cursorPos);
         text = text.split(/\r\n|\n/);
         text = text.map((item) => {
             item = {
@@ -162,41 +155,26 @@ export default class {
             return item;
         });
         if (text.length > 1) { // 插入多行
-            newColumn = text[text.length - 1].text.length;
-            text[0].text = nowLineText.slice(0, nowColume) + text[0].text;
-            text[text.length - 1].text = text[text.length - 1].text + nowLineText.slice(nowColume);
+            newPos.column = text[text.length - 1].text.length;
+            text[0].text = nowLineText.slice(0, cursorPos.column) + text[0].text;
+            text[text.length - 1].text = text[text.length - 1].text + nowLineText.slice(cursorPos.column);
             this.htmls = this.htmls.slice(0, cursorPos.line - 1).concat(text).concat(this.htmls.slice(cursorPos.line));
         } else { // 插入一行
-            newColumn += text[0].text.length;
-            text[0].text = nowLineText.slice(0, nowColume) + text[0].text + nowLineText.slice(cursorPos.column);
+            newPos.column += text[0].text.length;
+            text[0].text = nowLineText.slice(0, cursorPos.column) + text[0].text + nowLineText.slice(cursorPos.column);
             this.htmls.splice(cursorPos.line - 1, 1, text[0]);
         }
-        newLine += text.length - 1;
+        newPos.line += text.length - 1;
         this.setEditorData('maxLine', this.htmls.length);
-        this.lint.onInsertContentAfter(newLine);
-        this.tokenizer.onInsertContentAfter(newLine);
-        this.folder.onInsertContentAfter({
-            line: nowLine,
-            column: nowColume
-        }, {
-            line: newLine,
-            column: newColumn
-        });
+        this.lint.onInsertContentAfter(cursorPos.line, newPos.line);
+        this.tokenizer.onInsertContentAfter(cursorPos.line, newPos.line);
+        this.folder.onInsertContentAfter(Object.assign({}, cursorPos), Object.assign({}, newPos));
         this.setLineWidth(text);
         this.render(true);
-        if (this.folder.getFoldByLine(nowLine) && text.length > 1) {
-            this.unFold(nowLine);
-        }
         let historyObj = {
             type: Util.command.DELETE,
-            cursorPos: {
-                line: newLine,
-                column: newColumn
-            },
-            preCursorPos: {
-                line: nowLine,
-                column: nowColume
-            }
+            cursorPos: Object.assign({}, newPos),
+            preCursorPos: Object.assign({}, cursorPos)
         }
         return historyObj;
     }
@@ -283,7 +261,7 @@ export default class {
             });
         }
 
-        function _deleteRangePos(rangePos, cursorPos) {
+        function _deleteRangePos(rangePos) {
             let start = rangePos.start;
             let end = rangePos.end;
             start.line -= lineDelta;
@@ -322,15 +300,9 @@ export default class {
         let startObj = this.htmls[cursorPos.line - 1];
         let text = startObj.text;
         let deleteText = '';
-        let rangeUuid = [];
-        let originPos = {
-            line: cursorPos.line,
-            column: cursorPos.column
-        };
-        let newLine = cursorPos.line;
-        let newColumn = cursorPos.column;
-        this.tokenizer.onDeleteContentBefore(cursorPos.line);
-        this.lint.onDeleteContentBefore(cursorPos.line);
+        let rangeUuid = [startObj.lineId];
+        let originPos = Object.assign({}, cursorPos);
+        let newPos = Object.assign({}, cursorPos);
         if (range) { // 删除选中区域
             let end = range.end;
             let endObj = this.htmls[end.line - 1];
@@ -359,8 +331,8 @@ export default class {
                 startObj.text += text;
                 this.htmls.splice(start.line, end.line - start.line);
             }
-            newLine = start.line;
-            newColumn = start.column;
+            newPos.line = start.line;
+            newPos.column = start.column;
         } else if (Util.keyCode.DELETE == keyCode) { // 向后删除一个字符
             if (cursorPos.column == text.length) { // 光标处于行尾
                 if (cursorPos.line < this.htmls.length) {
@@ -390,13 +362,13 @@ export default class {
                     text = this.htmls[cursorPos.line - 2].text + text;
                     this.htmls.splice(cursorPos.line - 2, 1);
                     deleteText = '\n';
-                    newLine = cursorPos.line - 1;
-                    newColumn = column;
+                    newPos.line = cursorPos.line - 1;
+                    newPos.column = column;
                 }
             } else {
                 deleteText = text[cursorPos.column - 1];
                 text = text.slice(0, cursorPos.column - 1) + text.slice(cursorPos.column);
-                newColumn = cursorPos.column - 1;
+                newPos.column = cursorPos.column - 1;
             }
             startObj.text = text;
         }
@@ -405,15 +377,9 @@ export default class {
         startObj.folds = null;
         startObj.states = null;
         this.setEditorData('maxLine', this.htmls.length);
-        this.lint.onDeleteContentAfter(newLine);
-        this.tokenizer.onDeleteContentAfter(newLine);
-        this.folder.onDeleteContentAfter({
-            line: originPos.line,
-            column: originPos.column
-        }, {
-            line: newLine,
-            column: newColumn
-        });
+        this.lint.onDeleteContentAfter(originPos.line, newPos.line);
+        this.tokenizer.onDeleteContentAfter(originPos.line, newPos.line);
+        this.folder.onDeleteContentAfter(Object.assign({}, originPos), Object.assign({}, newPos));
         this.render(true);
         // 更新最大文本宽度
         if (startObj.width >= this.maxWidthObj.width) {
@@ -427,20 +393,90 @@ export default class {
         }
         let historyObj = {
             type: Util.command.INSERT,
-            cursorPos: {
-                line: newLine,
-                column: newColumn
-            },
-            preCursorPos: {
-                line: originPos.line,
-                column: originPos.column
-            },
+            cursorPos: Object.assign({}, newPos),
+            preCursorPos: Object.assign({}, originPos),
             text: deleteText,
             keyCode: keyCode,
             margin: margin,
             active: range && range.active
         };
         return historyObj;
+    }
+    // 获取最大宽度
+    setMaxWidth() {
+        let that = this;
+        let index = 0;
+        let startTime = Date.now();
+        let maxWidthObj = {
+            line: context.htmls[0].lineId,
+            width: 0
+        };
+        clearTimeout(this.setMaxWidth.timer);
+        _setMaxWidth();
+
+        function _setMaxWidth() {
+            while (index < context.htmls.length) {
+                let item = context.htmls[index];
+                if (item.width > maxWidthObj.width) {
+                    maxWidthObj = {
+                        lineId: item.lineId,
+                        text: item.text,
+                        width: item.width
+                    }
+                }
+                index++;
+                if (Date.now() - startTime > 20) {
+                    break;;
+                }
+            }
+            if (index < context.htmls.length) {
+                that.setMaxWidth.timer = setTimeout(() => {
+                    _setMaxWidth();
+                }, 20);
+            } else {
+                that.setEditorData('maxWidthObj', maxWidthObj);
+            }
+        }
+    }
+    /**
+     * 设置每行文本的宽度
+     * @param {Array} texts
+     */
+    setLineWidth(texts) {
+        let that = this;
+        let index = 0;
+        let startTime = Date.now();
+        let maxWidthObj = this.maxWidthObj;
+        clearTimeout(this.setLineWidth.timer);
+        _setLineWidth();
+
+        function _setLineWidth() {
+            while (index < texts.length) {
+                let lineObj = texts[index];
+                if (context.lineIdMap.has(lineObj.lineId)) {
+                    let width = that.getStrWidth(lineObj.text);
+                    lineObj.width = width;
+                    if (width > maxWidthObj.width) {
+                        maxWidthObj = {
+                            lineId: lineObj.lineId,
+                            text: lineObj.text,
+                            width: width
+                        }
+                    }
+                }
+                index++;
+                if (Date.now() - startTime > 20) {
+                    break;
+                }
+            }
+            if (index < texts.length) {
+                that.setLineWidth.timer = setTimeout(() => {
+                    _setLineWidth();
+                }, 20);
+            } else {
+                that.setEditorData('maxWidthObj', maxWidthObj);
+            }
+        }
     }
     moveLineUp(command) {
         this.moveLine(command, 'up');

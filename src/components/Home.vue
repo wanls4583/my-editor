@@ -307,7 +307,7 @@ export default {
         tabSize: function (newVal) {
             this.render();
             this.maxWidthObj = { lineId: null, text: '', width: 0 };
-            this.setLineWidth(context.htmls);
+            context.setLineWidth(context.htmls);
         },
         maxLine: function (newVal) {
             this.setScrollerHeight();
@@ -733,57 +733,6 @@ export default {
                     }
                     this.renderCursor(true);
                 });
-            }
-        },
-        // 获取最大宽度
-        setMaxWidth() {
-            let maxWidthObj = { line: context.htmls[0].lineId, width: 0 };
-            context.htmls.map((item) => {
-                if (item.width > maxWidthObj.width) {
-                    maxWidthObj = {
-                        lineId: item.lineId,
-                        text: item.text,
-                        width: item.width
-                    }
-                }
-            });
-            this.maxWidthObj = maxWidthObj;
-        },
-        /**
-         * 设置每行文本的宽度
-         * @param {Array} texts
-         */
-        setLineWidth(texts) {
-            let index = 0;
-            let that = this;
-            let startTime = Date.now();
-            clearTimeout(this.setLineWidth.timer);
-            _setLineWidth();
-
-            function _setLineWidth() {
-                while (index < texts.length) {
-                    let lineObj = texts[index];
-                    if (context.lineIdMap.has(lineObj.lineId)) {
-                        let width = that.getStrWidth(lineObj.text);
-                        lineObj.width = width;
-                        if (width > that.maxWidthObj.width) {
-                            that.maxWidthObj = {
-                                lineId: lineObj.lineId,
-                                text: lineObj.text,
-                                width: width
-                            }
-                        }
-                    }
-                    index++;
-                    if (Date.now() - startTime > 20) {
-                        break;
-                    }
-                }
-                if (index < texts.length) {
-                    that.setLineWidth.timer = setTimeout(() => {
-                        _setLineWidth();
-                    }, 20);
-                }
             }
         },
         // 设置滚动区域真实高度

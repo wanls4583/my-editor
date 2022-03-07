@@ -157,11 +157,7 @@ export default class {
             return this.getStartRegex(rule.end, -1);
         }
     }
-    onInsertContentBefore(nowLine) {
-        this.onInsertContentBefore.nowLine = nowLine;
-    }
-    onInsertContentAfter(nowLine) {
-        nowLine = this.onInsertContentBefore.nowLine;
+    onInsertContentAfter(nowLine, newLine) {
         if (this.language == 'plain') {
             return;
         }
@@ -178,19 +174,18 @@ export default class {
             this.tokenizeVisibleLins();
         }
     }
-    onDeleteContentBefore(nowLine) {}
-    onDeleteContentAfter(nowLine) {
+    onDeleteContentAfter(nowLine, newLine) {
         if (this.language == 'plain') {
             return;
         }
-        if (nowLine <= this.currentLine) {
-            this.currentLine = nowLine;
+        if (newLine <= this.currentLine) {
+            this.currentLine = newLine;
             clearTimeout(this.tokenizeLines.timer);
             this.$nextTick(() => {
-                if (this.currentLine !== nowLine) {
+                if (this.currentLine !== newLine) {
                     return;
                 }
-                this.tokenizeLines(nowLine);
+                this.tokenizeLines(newLine);
             });
         } else {
             this.tokenizeVisibleLins();
