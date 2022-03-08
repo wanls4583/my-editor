@@ -137,9 +137,7 @@ export default class {
         }
     }
     removeCursorInRange(range) {
-        let it = this.multiCursorPos.search(null, (a, b) => {
-            return Util.comparePos(range.start, b);
-        }, true);
+        let it = this.multiCursorPos.search(range.start, null, true);
         if (it) {
             let value = null;
             let toDels = [];
@@ -168,22 +166,18 @@ export default class {
     }
     getCursorsByLine(line) {
         let results = [];
-        let it = this.multiCursorPos.search(null, (a, b) => {
-            return line - b.line;
-        });
         let value = null;
+        let it = this.multiCursorPos.search({
+            line: line,
+            column: 0
+        }, null, true);
         if (it) {
-            value = it.prev();
-            while (value && value.line === line) {
-                results.push(value);
-                value = it.prev();
-            }
-            results.reverse();
-            it.reset();
-            value = it.next();
-            while (value && value.line === line) {
-                results.push(value);
-                value = it.next();
+            while (value = it.next()) {
+                if (value.line === line) {
+                    results.push(value);
+                } else if (value.line > line) {
+                    break;
+                }
             }
         }
         return results;

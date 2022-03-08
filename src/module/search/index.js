@@ -60,6 +60,7 @@ export default class {
             } else {
                 this.selecter.addActive(resultObj.result.end);
                 if (this.selecter.getRangeByCursorPos(this.nowCursorPos)) {
+                    this.cursor.removeCursor(resultObj.result.start);
                     this.cursor.addCursorPos(resultObj.result.end);
                 } else {
                     this.cursor.setCursorPos(resultObj.result.end);

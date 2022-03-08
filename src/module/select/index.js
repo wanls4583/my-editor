@@ -48,8 +48,8 @@ export default class {
     }
     // 检查光标是否在选中范围内
     getRangeWithCursorPos(cursorPos) {
-        let it = this.ranges.search(cursorPos, (value, item) => {
-            return Util.comparePos(value, item.start);
+        let it = this.ranges.search(null, (a, item) => {
+            return Util.comparePos(cursorPos, item.start);
         }, true);
         if (it) {
             let value = it.prev();

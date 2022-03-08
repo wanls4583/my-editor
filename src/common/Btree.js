@@ -141,6 +141,7 @@ class Btree {
         if (node) {
             let dataList = node.dataList;
             let index = this.findIndex(node, value);
+            result = dataList[index];
             for (let i = index; i < node.num; i++) { //前移元素
                 dataList[i] = dataList[i + 1];
             }
@@ -224,6 +225,7 @@ class Btree {
             if (!isPnode) { //叶子节点更新前后件
                 if (that.head === leftNode) { //头结点被删除
                     that.head = rightNode;
+                    that.head.prev = null;
                 } else {
                     leftNode.prev.next = rightNode;
                     rightNode.prev = leftNode.prev;
