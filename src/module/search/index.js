@@ -168,8 +168,16 @@ export default class {
             }
         });
     }
-    clearSearch() {
-        this.selecter.clearRange();
+    /**
+     * 清除搜索
+     * @param {Boolean} retainActive 是否保留活动的选中区域 
+     */
+    clearSearch(retainActive) {
+        if (retainActive) {
+            this.selecter.clearInactive();
+        } else {
+            this.selecter.clearRange();
+        }
         this.cacheData = null;
     }
     clearNow() {

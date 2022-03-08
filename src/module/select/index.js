@@ -177,7 +177,6 @@ export default class {
         range = this.ranges.delete(range);
         if (range) {
             if (range.active) {
-                range.active = false;
                 this.activedRanges.delete(range);
             }
             this.cursor.removeCursor(range.start);

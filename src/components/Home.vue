@@ -923,7 +923,7 @@ export default {
                 }
             }
             this.mouseStartObj.cursorPos = cursorPos;
-            this.selecter.clearInactive();
+            this.searcher.clearSearch(true);
             this.focus();
         },
         onScrollerMup(e) {
