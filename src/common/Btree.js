@@ -47,10 +47,8 @@ class Btree {
         let link = null;
         let half = Math.floor(this.max / 2) || 1; //m为1时，n应该也为1
         let result = this.iterator(node, value);
-        for (let i = 0; i < node.num; i++) {
-            if (this.compare(value, node.dataList[i]) === 0) {
-                return result;
-            }
+        if (this.findIndex(node, value) > -1) { //value已经存在，直接返回
+            return result;
         }
         this.size++;
         this.arrayCache = null;
@@ -142,14 +140,9 @@ class Btree {
         let half = Math.floor(this.max / 2) || 1;
         if (node) {
             let dataList = node.dataList;
-            for (let i = 0; i < node.num; i++) {
-                if (this.compare(value, dataList[i]) === 0) {
-                    result = dataList[i];
-                    for (let j = i; j < node.num; j++) { //前移元素
-                        dataList[j] = dataList[j + 1];
-                    }
-                    break;
-                }
+            let index = this.findIndex(node, value);
+            for (let i = index; i < node.num; i++) { //前移元素
+                dataList[i] = dataList[i + 1];
             }
             node.num--;
             this.size--;
@@ -167,11 +160,14 @@ class Btree {
             let isPnode = node.linkList[0];
             if (leftNode && leftNode.num > half) { //从左节点借
                 _moveRight(node, 1);
-                if (!isPnode) {
+                if (isPnode) {
+                    node.dataList[0] = pNode.dataList[pIndex - 1];
+                    node.linkList[0] = leftNode.linkList[leftNode.num];
                     pNode.dataList[pIndex - 1] = leftNode.dataList[leftNode.num - 1];
+                } else {
+                    node.dataList[0] = leftNode.dataList[leftNode.num - 1];
+                    pNode.dataList[pIndex - 1] = node.dataList[0];
                 }
-                node.dataList[0] = pNode.dataList[pIndex - 1];
-                node.linkList[0] = leftNode.linkList[leftNode.num];
                 if (node.linkList[0]) {
                     node.linkList[0].pNode = node;
                 }
@@ -181,15 +177,16 @@ class Btree {
                 leftNode.num--;
                 node.num++;
             } else if (rightNode && rightNode.num > half) { //从右节点借
-                node.dataList[node.num] = pNode.dataList[pIndex];
-                node.linkList[node.num + 1] = rightNode.linkList[0];
+                if (isPnode) {
+                    node.dataList[node.num] = pNode.dataList[pIndex];
+                    node.linkList[node.num + 1] = rightNode.linkList[0];
+                    pNode.dataList[pIndex] = rightNode.dataList[0];
+                } else {
+                    node.dataList[node.num] = rightNode.dataList[0];
+                    pNode.dataList[pIndex] = rightNode.dataList[1];
+                }
                 if (node.linkList[node.num + 1]) {
                     node.linkList[node.num + 1].pNode = node;
-                }
-                if (!isPnode) {
-                    pNode.dataList[pIndex] = rightNode.dataList[1];
-                } else {
-                    pNode.dataList[pIndex] = rightNode.dataList[0];
                 }
                 _moveLeft(rightNode, 1);
                 rightNode.num--;
@@ -272,6 +269,18 @@ class Btree {
             result = this.iterator(result, value, compare);
         }
         return result;
+    }
+    /**
+     * @param {Node} node 
+     * @param {Any} value 
+     */
+    findIndex(node, value) {
+        for (let i = 0; i < node.num; i++) {
+            if (this.compare(value, node.dataList[i]) === 0) {
+                return i;
+            }
+        }
+        return -1;
     }
     /**
      * 把搜索结果封装成迭代器
