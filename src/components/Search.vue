@@ -6,14 +6,20 @@
 <template>
 	<div @contextmenu.prevent @contextmenu.stop @mousedown.stop @selectstart.stop class="my-editor-search">
 		<div class="my-editor-search-left">
-			<span @click="showReplace" class="iconfont" style="font-size:14px" title="Toggle Replace mode">{{replaceVisible?'&#xe61a;':'&#xe682;'}}</span>
+			<span
+				:class="{'icon-down1':replaceVisible,'icon-right':!replaceVisible}"
+				@click="showReplace"
+				class="iconfont"
+				style="font-size:14px"
+				title="Toggle Replace mode"
+			></span>
 		</div>
 		<div style="flex-grow:1">
 			<div class="my-editor-search-top">
 				<div :class="{'active-border':input1Focus}" class="my-editor-search-input">
 					<input @blur="input1Focus=false" @focus="input1Focus=true" @keydown="onKeyDown" ref="input1" type="text" v-model="searchText" />
 					<span :class="{'active-suffix':ignoreCase}" @click="changeCase" class="my-editor-search-suffix" title="Match Case(Alt+C)">Aa</span>
-					<span :class="{'active-suffix':wholeWord}" @click="changeWhole" class="my-editor-search-suffix iconfont" title="Match Whole Word(Alt+W)">&#xed7d;</span>
+					<span :class="{'active-suffix':wholeWord}" @click="changeWhole" class="my-editor-search-suffix iconfont icon-whole-word" title="Match Whole Word(Alt+W)"></span>
 				</div>
 				<div v-if="count">
 					<span>{{now}}</span>
@@ -29,35 +35,35 @@
 				<span
 					:class="{'enabled-color':count>0,'disabled-color':count==0}"
 					@click="replace"
-					class="iconfont active-click"
+					class="iconfont icon-replace active-click"
 					style="margin-right:5px"
 					title="Replace(Enter)"
-				>&#xed7e;</span>
+				></span>
 				<span
 					:class="{'enabled-color':count>0,'disabled-color':count==0}"
 					@click="replaceAll"
-					class="iconfont active-click"
+					class="iconfont icon-replace-all active-click"
 					style="margin-right:5px"
 					title="Replace All(Ctrl+Alt+Enter)"
-				>&#xed7c;</span>
+				></span>
 			</div>
 		</div>
 		<div class="my-editor-search-right">
 			<span
 				:class="{'active-border':searchPrevActive,'enabled-color':count>0,'disabled-color':count==0}"
 				@click="searchPrev"
-				class="iconfont"
+				class="iconfont icon-up"
 				style="margin-right:5px"
 				title="Previous Match(Shift Enter)"
-			>&#xe6a9;</span>
+			></span>
 			<span
 				:class="{'active-border':searchNextActive,'enabled-color':count>0,'disabled-color':count==0}"
 				@click="searchNext"
-				class="iconfont"
+				class="iconfont icon-down"
 				style="margin-right:5px"
 				title="Next Match(Enter)"
-			>&#xe6a8;</span>
-			<span @click="close" class="iconfont" title="Close">&#xe69a;</span>
+			></span>
+			<span @click="close" class="iconfont icon-close1" title="Close"></span>
 		</div>
 	</div>
 </template>

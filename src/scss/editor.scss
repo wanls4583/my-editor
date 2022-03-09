@@ -1,18 +1,4 @@
-@font-face {
-    font-family: 'iconfont';
-    /* Project id 3194546 */
-    src: url('//at.alicdn.com/t/font_3194546_p6polausbn.woff2?t=1645417099699') format('woff2'),
-        url('//at.alicdn.com/t/font_3194546_p6polausbn.woff?t=1645417099699') format('woff'),
-        url('//at.alicdn.com/t/font_3194546_p6polausbn.ttf?t=1645417099699') format('truetype');
-}
-
-.iconfont {
-    font-family: "iconfont" !important;
-    font-size: 16px;
-    font-style: normal;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-}
+@import url('//at.alicdn.com/t/font_3194546_cpfh66mcsua.css');
 
 * {
     box-sizing: border-box;
