@@ -322,6 +322,21 @@ export default {
         this.initEvent();
         window.editor = this;
         window.context = context;
+        // var require = require || window.parent.require;
+        // var shell = require('electron').shell;
+        // var remote = require('@electron/remote');
+        // let win = remote.getCurrentWindow();
+        // let options = {
+        //     title: '标题',
+        //     defaultPath: this.filePath,
+        //     properties: ['openFile', 'openDirectory', 'multiSelections']
+        // };
+        // remote.dialog.showOpenDialog(win, options).then(result => {
+        //     console.log(result.canceled)
+        //     console.log(result.filePaths)
+        // }).catch(err => {
+        //     console.log(err)
+        // })
     },
     mounted() {
         this.$editor = this.$refs.editor;

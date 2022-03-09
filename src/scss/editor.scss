@@ -391,6 +391,7 @@ body {
     }
 
     &-top-bar {
+        -webkit-app-region: drag;
         top: 0;
         bottom: auto;
         background-color: #eeeeee;
@@ -399,6 +400,7 @@ body {
         color: #666666;
 
         .bar-item {
+            -webkit-app-region: no-drag;
             min-width: auto;
             padding: 0 10px;
         }
