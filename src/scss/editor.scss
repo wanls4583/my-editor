@@ -28,11 +28,48 @@ body {
         position: relative;
         width: 100%;
         height: 100%;
+        overflow: hidden;
+        font-size: 13px;
+    }
+
+    &-side-bar {
+        float: left;
+        width: 300px;
+        height: 100%;
+        background-color: #eeeeee;
+        color: #666666;
+
+        .side-item {
+            position: relative;
+            white-space: nowrap;
+
+            .side-item-title {
+                display: flex;
+                align-items: center;
+                line-height: 20px;
+                padding: 5px 10px 5px 0;
+
+                &:hover {
+                    background-color: rgba(0, 0, 0, 0.1);
+                    cursor: pointer;
+                }
+
+                &.active {
+                    background-color: #0098fb;
+                    color: #fff;
+                }
+            }
+        }
+    }
+
+    &-side-title {
+        padding-left: 20px;
+        height: 40px;
+        line-height: 40px;
     }
 
     &-wrap {
         position: relative;
-        width: 100%;
         height: 100%;
         overflow: hidden;
         padding-bottom: 4px;
@@ -350,9 +387,8 @@ body {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        background-color: rgb(171, 177, 186);
+        background-color: #dddddd;
         color: #333333;
-        font-size: 12px;
 
         .bar-left {
             height: 100%;
@@ -377,7 +413,7 @@ body {
                 cursor: pointer;
 
                 &:hover {
-                    background-color: #c2cbd8;
+                    background-color: rgba(0, 0, 0, 0.1);
                 }
             }
         }
@@ -387,9 +423,8 @@ body {
         -webkit-app-region: drag;
         top: 0;
         bottom: auto;
-        background-color: #eeeeee;
+        background-color: #dddddd;
         min-width: auto;
-        font-size: 14px;
         color: #666666;
 
         .bar-item {
@@ -429,13 +464,12 @@ body {
         justify-content: space-between;
         padding-left: 25px;
         padding-right: 10px;
-        font-size: 12px;
-        line-height: 18px;
+        line-height: 20px;
         white-space: nowrap;
         min-width: 80px;
 
         &:hover {
-            background-color: #c2cbd8;
+            background-color: rgba(0, 0, 0, 0.1);
             cursor: pointer;
         }
 
@@ -591,7 +625,6 @@ body {
             padding: 0 5px;
             border-style: none;
             outline: none;
-            font-size: 14px;
             color: #666666;
         }
     }

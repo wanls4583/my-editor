@@ -5,6 +5,8 @@
 -->
 <template>
 	<div :style="{'padding-top':_topBarHeight,'padding-bottom':_statusHeight}" @mousedown="onClickEditor" class="my-editor-window" ref="window">
+		<!-- 侧边栏 -->
+		<side-bar ref="side-bar"></side-bar>
 		<!-- 编辑区 -->
 		<editor :height="topBarHeight" ref="editor"></editor>
 		<!-- 顶部菜单栏 -->
@@ -17,16 +19,18 @@
 import Editor from './Editor.vue';
 import MenuBar from './MenuBar';
 import StatusBar from './StatusBar';
+import SideBar from './SideBar.vue';
 export default {
     components: {
         Editor,
         MenuBar,
-        StatusBar
+        StatusBar,
+        SideBar
     },
     data() {
         return {
-            statusHeight: 23,
-            topBarHeight: 28,
+            statusHeight: 30,
+            topBarHeight: 35,
         }
     },
     computed: {
