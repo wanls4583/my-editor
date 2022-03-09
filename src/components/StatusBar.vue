@@ -12,11 +12,11 @@
 		</div>
 		<div class="bar-right">
 			<div @mousedown.stop="showTabsize" class="bar-item clickable">
-				<span>Tab Size:{{_tabSize}}</span>
+				<span>Tab Size:{{tabSize}}</span>
 				<Menu :menuList="tabSizeList" :styles="{right: 0, bottom: height+'px'}" @change="onTabsizeChange" v-show="tabsizeVisible"></Menu>
 			</div>
 			<div @mousedown.stop="showLanguage" class="bar-item clickable">
-				<span>{{_language}}</span>
+				<span>{{language}}</span>
 				<Menu :menuList="languageList" :styles="{right: 0, bottom: height+'px'}" @change="onLnaguageChange" v-show="languageVisible"></Menu>
 			</div>
 		</div>
@@ -31,30 +31,16 @@ export default {
             type: Number,
             default: 25
         },
-        line: {
-            type: Number,
-            default: 1
-        },
-        column: {
-            type: Number,
-            default: 1
-        },
-        language: {
-            type: String,
-            default: 'JavaScript'
-        },
-        tabSize: {
-            type: Number,
-            default: 4
-        }
     },
     components: {
         Menu
     },
     data() {
         return {
-            _tabSize: 0,
-            _language: '',
+            line: 1,
+            column: 0,
+            tabSize: 4,
+            language: 'JavaScript',
             tabsizeVisible: false,
             languageVisible: false,
             tabSizeList: [[]],
@@ -68,17 +54,19 @@ export default {
                 size: i
             });
         }
-        this._tabSize = this.tabSize;
-        this._language = this.language;
         this.setDefault();
     },
     methods: {
+        initData($editor, context) {
+            this.$editor = $editor;
+            this.context = context;
+        },
         setDefault() {
             this.tabSizeList[0].map((item) => {
-                item.checked = item.size == this._tabSize;
+                item.checked = item.size == this.tabSize;
             });
             this.languageList[0].map((item) => {
-                item.checked = item.name == this._language;
+                item.checked = item.name == this.language;
             });
         },
         showTabsize() {
@@ -96,16 +84,16 @@ export default {
             this.tabsizeVisible = false;
         },
         onTabsizeChange(item) {
-            if (this._tabSize != item.size) {
-                this._tabSize = item.size;
-                this.$emit('update:tabSize', item.size);
+            if (this.tabSize != item.size) {
+                this.tabSize = item.size;
+                this.$editor.tabSize = item.size;
             }
             this.tabsizeVisible = false;
         },
         onLnaguageChange(item) {
-            if (this._language != item.name) {
-                this._language = item.name;
-                this.$emit('update:language', item.name);
+            if (this.language != item.name) {
+                this.language = item.name;
+                this.$editor.language = item.name;
             }
             this.languageVisible = false;
         }

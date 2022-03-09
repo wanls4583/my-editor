@@ -1,21 +1,21 @@
 import Vue from 'vue'
 import Router from 'vue-router'
-import Home from './components/Home.vue';
+import Window from './components/Window.vue';
 
 Vue.use(Router)
 
 var router = new Router({
     routes: [{
-            path: '/home',
-            name: 'Home',
-            component: Home,
+            path: '/',
+            name: 'Window',
+            component: Window,
             meta: {
                 title: 'my-editor'
             }
         },
         {
             path: '*',
-            redirect: '/home'
+            redirect: '/'
         }
     ]
 })

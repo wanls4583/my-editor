@@ -1,13 +1,5 @@
 <template>
-	<div
-		:style="{'padding-top':_topBarHeight,'padding-bottom':_statusHeight}"
-		@contextmenu.prevent="onContextmenu"
-		@mousedown="onClickEditor"
-		@selectstart.prevent
-		@wheel.prevent="onWheel"
-		class="my-editor-wrap"
-		ref="editor"
-	>
+	<div @contextmenu.prevent="onContextmenu" @selectstart.prevent @wheel.prevent="onWheel" class="my-editor-wrap" ref="editor">
 		<!-- 行号 -->
 		<div :style="{top: _numTop}" class="my-editor-nums">
 			<!-- 占位行号，避免行号宽度滚动时变化 -->
@@ -113,10 +105,6 @@
 				v-show="searchVisible"
 			></search-dialog>
 		</div>
-		<!-- 顶部菜单栏 -->
-		<menu-bar :height="topBarHeight" ref="menuBar"></menu-bar>
-		<!-- 状态栏 -->
-		<status-bar :column="_nowColumn" :height="statusHeight" :language.sync="language" :line="_nowLine" :tabSize.sync="tabSize" ref="statusBar"></status-bar>
 		<!-- 右键菜单 -->
 		<Menu :checkable="false" :menuList="menuList" :styles="menuStyle" @change="onClickMenu" ref="menu" v-show="menuVisble"></Menu>
 		<tip :content="tipContent" :styles="tipStyle" v-show="tipContent"></tip>
@@ -133,8 +121,6 @@ import Cursor from '@/module/cursor/index';
 import History from '@/module/history/index';
 import Context from '@/module/context/index';
 import ShortCut from '@/module/shortcut/index';
-import MenuBar from './MenuBar';
-import StatusBar from './StatusBar';
 import SearchDialog from './Search';
 import Menu from './Menu';
 import Tip from './Tip';
@@ -143,10 +129,8 @@ import $ from 'jquery';
 let context = null;
 
 export default {
-    name: 'Home',
+    name: 'Editor',
     components: {
-        MenuBar,
-        StatusBar,
         SearchDialog,
         Menu,
         Tip,
@@ -167,8 +151,6 @@ export default {
             language: 'HTML',
             // language: 'JavaScript',
             // language: 'CSS',
-            statusHeight: 23,
-            topBarHeight: 28,
             tabSize: 4,
             renderHtmls: [],
             startLine: 1,
@@ -229,12 +211,6 @@ export default {
         },
         _lineHeight() {
             return this.charObj.charHight + 'px';
-        },
-        _topBarHeight() {
-            return this.topBarHeight + 'px';
-        },
-        _statusHeight() {
-            return this.statusHeight + 4 + 'px';
         },
         _cursorVisible() {
             return this.cursorVisible && this.cursorFocus ? 'visible' : 'hidden';
@@ -315,6 +291,18 @@ export default {
         startLine: function (newVal) {
             this.tokenizer.onScroll();
             this.render();
+        },
+        nowCursorPos: {
+            handler: function (newVal) {
+                if (newVal) {
+                    this.$parent.$statusBar.line = newVal.line;
+                    this.$parent.$statusBar.column = newVal.column;
+                } else {
+                    this.$parent.$statusBar.line = '?';
+                    this.$parent.$statusBar.column = '?';
+                }
+            },
+            deep: true
         }
     },
     created() {
@@ -347,7 +335,6 @@ export default {
         this.$hScroller = this.$refs.hScroller;
         this.charObj = Util.getCharWidth(this.$content);
         this.maxVisibleLines = Math.ceil(this.$scroller.clientHeight / this.charObj.charHight) + 1;
-        this.$refs.menuBar.initData(context);
         this.render();
         this.focus();
     },
@@ -839,6 +826,9 @@ export default {
                 }
             }
         },
+        getContext() {
+            return context;
+        },
         // 右键菜单事件
         onContextmenu(e) {
             let menuWidth = 0;
@@ -899,12 +889,6 @@ export default {
                 this.foldLine(line);
             }
         },
-        // 点击编辑器
-        onClickEditor() {
-            this.$refs.statusBar.closeAllMenu();
-            this.$refs.menuBar.closeAllMenu();
-            this.menuVisble = false;
-        },
         // 滚动区域鼠标按下事件
         onScrollerMdown(e) {
             if (e.which == 3) { //右键
@@ -947,26 +931,8 @@ export default {
         // 鼠标移动事件
         onScrollerMmove(e) {
             let that = this;
+            let offset = $(this.$scroller).offset();
             if (this.mouseStartObj && Date.now() - this.mouseStartObj.time > 100) {
-                var offset = $(this.$scroller).offset();
-                let end = this.getPosByEvent(e);
-                if (Util.comparePos(end, this.mouseStartObj.cursorPos)) {
-                    this.cursor.removeCursor(this.mouseStartObj.cursorPos);
-                    this.mouseStartObj.cursorPos = this.cursor.addCursorPos({ line: end.line, column: end.column });
-                    if (this.mouseStartObj.preRange) {
-                        this.selecter.updateRange(this.mouseStartObj.preRange, {
-                            start: this.mouseStartObj.start,
-                            end: end
-                        });
-                    } else {
-                        this.mouseStartObj.preRange = this.selecter.addRange({
-                            start: this.mouseStartObj.start,
-                            end: end
-                        });
-                    }
-                    // 删除区域范围内的光标
-                    this.cursor.removeCursorInRange(this.mouseStartObj.preRange);
-                }
                 cancelAnimationFrame(this.selectMoveTimer);
                 if (e.clientY > offset.top + this.scrollerArea.height) { //鼠标超出底部区域
                     _move('down', e.clientY - offset.top - this.scrollerArea.height);
@@ -976,6 +942,25 @@ export default {
                     _move('left', offset.left - e.clientX);
                 } else if (e.clientX > offset.left + this.scrollerArea.width) { //鼠标超出右边区域
                     _move('right', e.clientX - offset.left - this.scrollerArea.width);
+                } else {
+                    let end = this.getPosByEvent(e);
+                    if (Util.comparePos(end, this.mouseStartObj.cursorPos)) {
+                        this.cursor.removeCursor(this.mouseStartObj.cursorPos);
+                        this.mouseStartObj.cursorPos = this.cursor.addCursorPos({ line: end.line, column: end.column });
+                        if (this.mouseStartObj.preRange) {
+                            this.selecter.updateRange(this.mouseStartObj.preRange, {
+                                start: this.mouseStartObj.start,
+                                end: end
+                            });
+                        } else {
+                            this.mouseStartObj.preRange = this.selecter.addRange({
+                                start: this.mouseStartObj.start,
+                                end: end
+                            });
+                        }
+                        // 删除区域范围内的光标
+                        this.cursor.removeCursorInRange(this.mouseStartObj.preRange);
+                    }
                 }
             }
             function _move(autoDirect, speed) {
@@ -1011,8 +996,8 @@ export default {
                     }
                     line = line < 1 ? 1 : (line > context.htmls.length ? context.htmls.length : line);
                     column = column < 0 ? 0 : (column > context.htmls[originLine - 1].text.length ? context.htmls[originLine - 1].text.length : column);
-                    that.cursor.setCursorPos({ line: line, column: column });
-                    that.selecter.setRange(that.mouseStartObj.start, { line: line, column: column });
+                    that.mouseStartObj.cursorPos = that.cursor.setCursorPos({ line: line, column: column });
+                    that.mouseStartObj.preRange = that.selecter.setRange(that.mouseStartObj.start, { line: line, column: column });
                     that.selectMoveTimer = requestAnimationFrame(() => {
                         _run(autoDirect, speed)
                     });

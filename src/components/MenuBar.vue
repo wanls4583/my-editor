@@ -133,8 +133,9 @@ export default {
 
     },
     methods: {
-        initData(context) {
-            this.context = context;
+        initData($editor) {
+            this.$editor = $editor;
+            this.context = $editor.getContext();
         },
         showMemu(prop) {
             this.closeAllMenu();
@@ -145,13 +146,12 @@ export default {
             this.selectionMenuVisible = false;
         },
         onEditMenuChange(item) {
-            let $parent = this.$parent;
             switch (item.op) {
                 case 'undo':
-                    $parent.history.undo();
+                    this.$editor.history.undo();
                     break;
                 case 'redo':
-                    $parent.history.redo();
+                    this.$editor.history.redo();
                     break;
                 case 'cut':
                     Util.writeClipboard(this.context.getCopyText(true));
@@ -168,20 +168,19 @@ export default {
                     this.context.deleteLine();
                     break;
                 case 'find':
-                    $parent.openSearch();
+                    this.$editor.openSearch();
                     break;
                 case 'replace':
-                    $parent.openSearch(true);
+                    this.$editor.openSearch(true);
                     break;
             }
-            $parent.focus();
+            this.$editor.focus();
             this.editMenuVisible = false;
         },
         onSelectionMenuChange(item) {
-            let $parent = this.$parent;
             switch (item.op) {
                 case 'selectAll':
-                    $parent.selecter.selectAll();
+                    this.$editor.selecter.selectAll();
                     break;
                 case 'copyLineUp':
                     this.context.copyLineUp();
@@ -196,30 +195,30 @@ export default {
                     this.context.moveLineDown();
                     break;
                 case 'addCursorAbove':
-                    $parent.cursor.addCursorAbove();
+                    this.$editor.cursor.addCursorAbove();
                     break;
                 case 'addCursorBelow':
-                    $parent.cursor.addCursorBelow();
+                    this.$editor.cursor.addCursorBelow();
                     break;
                 case 'addCursorLineEnds':
-                    $parent.cursor.addCursorLineEnds();
+                    this.$editor.cursor.addCursorLineEnds();
                     break;
                 case 'addNextOccurence':
-                    $parent.searchWord('next');
+                    this.$editor.searchWord('next');
                     break;
                 case 'addPrevOccurence':
-                    $parent.searchWord('up');
+                    this.$editor.searchWord('up');
                     break;
                 case 'selectAllOccurence':
-                    $parent.selecter.selectAllOccurence();
+                    this.$editor.selecter.selectAllOccurence();
                     break;
                 case 'switchMultiKeyCode':
-                    $parent.cursor.switchMultiKeyCode();
-                    item.keyCode = $parent.cursor.multiKeyCode;
+                    this.$editor.cursor.switchMultiKeyCode();
+                    item.keyCode = this.$editor.cursor.multiKeyCode;
                     item.name = `Switch ${item.keyCode === 'alt' ? 'Ctrl' : 'Alt'}+Click to Multi-Cursor`;
                     break;
             }
-            $parent.focus();
+            this.$editor.focus();
             this.selectionMenuVisible = false;
         }
     }
