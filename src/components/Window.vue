@@ -6,7 +6,7 @@
 <template>
 	<div :style="{'padding-top':_topBarHeight,'padding-bottom':_statusHeight}" @mousedown="onClickEditor" class="my-editor-window" ref="window">
 		<!-- 侧边栏 -->
-		<side-bar ref="side-bar"></side-bar>
+		<side-bar ref="sideBar"></side-bar>
 		<!-- 编辑区 -->
 		<editor :height="topBarHeight" ref="editor"></editor>
 		<!-- 顶部菜单栏 -->
@@ -53,6 +53,8 @@ export default {
         onClickEditor() {
             this.$refs.statusBar.closeAllMenu();
             this.$refs.menuBar.closeAllMenu();
+            this.$refs.sideBar.closeAllMenu();
+            this.$refs.editor.closeAllMenu();
             this.$editor.menuVisble = false;
         },
     }

@@ -106,7 +106,7 @@
 			></search-dialog>
 		</div>
 		<!-- 右键菜单 -->
-		<Menu :checkable="false" :menuList="menuList" :styles="menuStyle" @change="onClickMenu" ref="menu" v-show="menuVisble"></Menu>
+		<Menu :checkable="false" :menuList="menuList" :styles="menuStyle" @change="onClickMenu" ref="menu" v-show="menuVisible"></Menu>
 		<tip :content="tipContent" :styles="tipStyle" v-show="tipContent"></tip>
 	</div>
 </template>
@@ -191,7 +191,7 @@ export default {
                 left: '0px'
             },
             errorMap: {},
-            menuVisble: false,
+            menuVisible: false,
             searchVisible: false,
             tipContent: false,
             tipContent: '',
@@ -310,21 +310,6 @@ export default {
         this.initEvent();
         window.editor = this;
         window.context = context;
-        // var require = require || window.parent.require;
-        // var shell = require('electron').shell;
-        // var remote = require('@electron/remote');
-        // let win = remote.getCurrentWindow();
-        // let options = {
-        //     title: '标题',
-        //     defaultPath: this.filePath,
-        //     properties: ['openFile', 'openDirectory', 'multiSelections']
-        // };
-        // remote.dialog.showOpenDialog(win, options).then(result => {
-        //     console.log(result.canceled)
-        //     console.log(result.filePaths)
-        // }).catch(err => {
-        //     console.log(err)
-        // })
     },
     mounted() {
         this.$editor = this.$refs.editor;
@@ -633,6 +618,9 @@ export default {
                 return $token[0].offsetLeft + that.getStrWidth(text);
             }
         },
+        closeAllMenu() {
+            this.menuVisible = false;
+        },
         // 折叠行
         foldLine(line) {
             let resultFold = this.folder.foldLine(line);
@@ -835,7 +823,7 @@ export default {
             let menuHeight = 0;
             let $editor = $(this.$editor);
             let offset = $editor.offset();
-            this.menuVisble = true;
+            this.menuVisible = true;
             this.$nextTick(() => {
                 menuWidth = this.$refs.menu.$el.clientWidth;
                 menuHeight = this.$refs.menu.$el.clientHeight;
@@ -865,7 +853,7 @@ export default {
                     });
                     break;
             }
-            this.menuVisble = false;
+            this.menuVisible = false;
             this.focus();
         },
         // 提示图标hover事件

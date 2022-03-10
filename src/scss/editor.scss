@@ -33,11 +33,41 @@ body {
     }
 
     &-side-bar {
+        position: relative;
         float: left;
         width: 300px;
         height: 100%;
         background-color: #eeeeee;
         color: #666666;
+
+        .side-bar-title {
+            padding-left: 20px;
+            height: 40px;
+            line-height: 40px;
+        }
+
+        .side-tree-warp {
+            position: absolute;
+            top: 40px;
+            bottom: 0;
+            left: 0;
+            right: 5px;
+            overflow: auto;
+
+            &::-webkit-scrollbar {
+                width: 8px;
+            }
+
+            &::-webkit-scrollbar {
+                height: 8px;
+            }
+
+            &::-webkit-scrollbar-thumb,
+            &::-webkit-scrollbar-thumb {
+                border-radius: 4px;
+                background-color: rgba(0, 0, 0, 0.2);
+            }
+        }
 
         .side-item {
             position: relative;
@@ -60,12 +90,6 @@ body {
                 }
             }
         }
-    }
-
-    &-side-title {
-        padding-left: 20px;
-        height: 40px;
-        line-height: 40px;
     }
 
     &-wrap {

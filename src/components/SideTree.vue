@@ -7,18 +7,19 @@
 	<div class="side-tree">
 		<div @click.stop="onClickItem(item)" class="side-item" v-for="item in list">
 			<template v-if="item.type==='dir'">
-				<div :class="{'active':item.active}" :style="{'padding-left':_paddingLeft}" class="side-item-title">
+				<div :class="{'active':item.active}" :style="{'padding-left':_paddingLeft}" @contextmenu.stop.prevent class="side-item-title">
 					<span class="left-icon iconfont icon-down1" v-if="item.open"></span>
 					<span class="left-icon iconfont icon-right" v-else></span>
 					<span class="side-item-text" style="margin-left:4px">{{item.name}}</span>
 				</div>
-				<side-tree :deep="deep+1" :list="item.children" v-if="item.open"></side-tree>
+				<side-tree :deep="deep+1" :list="item.children" v-show="item.open"></side-tree>
 			</template>
-			<div :class="{'active':item.active}" :style="{'padding-left':_paddingLeft}" class="side-item-title" v-else>{{item.name}}</div>
+			<div :class="{'active':item.active}" :style="{'padding-left':_paddingLeft}" @contextmenu.stop.prevent class="side-item-title" v-else>{{item.name}}</div>
 		</div>
 	</div>
 </template>
 <script>
+const require = require || window.parent.require;
 export default {
     name: 'SideTree',
     props: {
@@ -45,13 +46,62 @@ export default {
     methods: {
         onClickItem(item) {
             this.inActive(this.rootList);
-            item.open = !item.open;
             item.active = true;
+            if (item.type === 'dir') {
+                item.open = !item.open;
+                if (!item.loaded) {
+                    this.readdir(item.path).then((data) => {
+                        item.children = data;
+                        item.loaded = true;
+                    });
+                }
+            } else {
+                console.log('open file:' + item.path);
+            }
         },
         inActive(list) {
             list.map(item => {
                 item.active = false;
                 item.children && this.inActive(item.children);
+            });
+        },
+        readdir(dirPath) {
+            const fs = require('fs')
+            const path = require('path');
+            return new Promise((resolve) => {
+                let results = [];
+                // 异步读取目录内容
+                fs.readdir(dirPath, { encoding: 'utf8' }, (err, files) => {
+                    if (err) { throw err }
+                    files.map((item, index) => {
+                        let fullPath = path.join(dirPath, item);
+                        fs.stat(fullPath, (err, data) => {
+                            if (data.isFile()) {
+                                results.push({
+                                    name: item,
+                                    type: 'file',
+                                    path: fullPath,
+                                    parentPath: dirPath,
+                                    active: false,
+                                    children: []
+                                });
+                            } else {
+                                results.push({
+                                    name: item,
+                                    type: 'dir',
+                                    path: fullPath,
+                                    parentPath: dirPath,
+                                    active: false,
+                                    children: [],
+                                    open: false
+                                });
+                            }
+                            if (index === files.length - 1) {
+                                resolve(results);
+                            }
+                        });
+                    });
+                });
             });
         }
     }
