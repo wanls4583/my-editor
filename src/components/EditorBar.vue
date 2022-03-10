@@ -50,28 +50,10 @@ export default {
     },
     methods: {
         onClickItem(item) {
-            if (!item.active) {
-                this.editorList.map((item) => {
-                    item.active = false;
-                });
-                item.active = true;
-                this.$emit('change', item.id);
-            }
+            this.$emit('change', item.id);
         },
         onClose(item) {
-            let index = -1;
-            for (let i = 0; i < this.editorList.length; i++) {
-                let _item = this.editorList[i];
-                if (_item.id === item.id) {
-                    index = i;
-                }
-            }
-            this.editorList.splice(index, 1);
-            if (item.active) {
-                index++;
-                index = index >= this.editorList.length ? this.editorList.length - 1 : index;
-                this.$emit('change', this.editorList[index] && this.editorList[index].id || null);
-            }
+            this.$emit('close', item.id);
         },
         onContextmenu(e) {
             this.menuVisible = true;

@@ -129,13 +129,13 @@ export default {
             ]
         }
     },
-    inject: ['getNowEditor'],
+    inject: ['getNowEditor', 'getNowContext'],
     created() {
 
     },
     mounted() {
         this.editor = this.getNowEditor();
-        this.context = this.editor && this.editor.getContext();
+        this.context = this.getNowContext();
     },
     methods: {
         showMemu(prop) {

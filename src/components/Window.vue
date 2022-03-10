@@ -7,12 +7,12 @@
 	<div :style="{'padding-top':_topBarHeight,'padding-bottom':_statusHeight}" @mousedown="onClickEditor" class="my-editor-window" ref="window">
 		<!-- 侧边栏 -->
 		<side-bar ref="sideBar"></side-bar>
-		<div class="my-editor-right-wrap">
+		<div @contextmenu.prevent="onContextmenu" class="my-editor-right-wrap" ref="rightWrap">
 			<!-- tab栏 -->
-			<editor-bar :editorList="editorList" @change="onChangeTab" ref="editorBar"></editor-bar>
+			<editor-bar :editorList="editorList" @change="onChangeTab" @close="onCloseTab" ref="editorBar"></editor-bar>
 			<!-- 编辑区 -->
 			<template v-for="item in editorList">
-				<editor :height="topBarHeight" :id="item.id" :ref="'editor'+item.id" v-show="item.id===nowId"></editor>
+				<editor :active="item.active" :id="item.id" :key="item.id" :ref="'editor'+item.id" v-show="item.active"></editor>
 			</template>
 		</div>
 		<!-- 顶部菜单栏 -->
@@ -27,6 +27,8 @@ import Editor from './Editor.vue';
 import MenuBar from './MenuBar';
 import StatusBar from './StatusBar';
 import SideBar from './SideBar.vue';
+window.myEditorContext = {};
+
 export default {
     components: {
         Editor,
@@ -40,18 +42,13 @@ export default {
             statusHeight: 30,
             topBarHeight: 35,
             nowId: 1,
+            idCount: 1,
             editorList: [{
                 id: 1,
                 name: 'Untitled1',
                 path: '',
                 saved: false,
                 active: true
-            }, {
-                id: 2,
-                name: 'Untitled2',
-                path: '',
-                saved: true,
-                active: false
             }]
         }
     },
@@ -68,14 +65,18 @@ export default {
             getNowEditor: () => {
                 return this.$refs[`editor${this.nowId}`][0];
             },
+            getNowContext: () => {
+                return window.myEditorContext[this.nowId];
+            },
         }
     },
     mounted() {
-        this.$editorBar = this.$refs.editorBar;
-        this.$menuBar = this.$refs.menuBar;
-        this.$statusBar = this.$refs.statusBar;
+
     },
     methods: {
+        onContextmenu(e) {
+
+        },
         // 点击编辑器
         onClickEditor() {
             this.$refs.statusBar.closeAllMenu();
@@ -88,7 +89,36 @@ export default {
             }
         },
         onChangeTab(id) {
-            this.nowId = id;
+            let tab = this.getTabById(id);
+            if (tab && !tab.active) {
+                this.editorList.map((item) => {
+                    item.active = false;
+                });
+                tab.active = true;
+                this.nowId = id;
+            }
+        },
+        onCloseTab(id) {
+            let tab = this.getTabById(id);
+            let index = this.editorList.indexOf(tab);
+            this.editorList.splice(index, 1);
+            if (tab.active) {
+                tab.active = false;
+                tab = this.editorList[index] || this.editorList[index - 1];
+                if (tab) {
+                    tab.active = true;
+                    this.nowId = tab.id;
+                } else {
+                    this.nowId = null;
+                }
+            }
+        },
+        getTabById(id) {
+            for (let i = 0; i < this.editorList.length; i++) {
+                if (this.editorList[i].id === id) {
+                    return this.editorList[i];
+                }
+            }
         }
     }
 }

@@ -1,7 +1,7 @@
 <template>
 	<div @contextmenu.prevent="onContextmenu" @selectstart.prevent @wheel.prevent="onWheel" class="my-editor-wrap" ref="editor">
 		<!-- 行号 -->
-		<div :style="{top: _numTop}" class="my-editor-nums">
+		<div :style="{top: _numTop}" class="my-editor-nums" v-if="active">
 			<!-- 占位行号，避免行号宽度滚动时变化 -->
 			<div class="my-editor-num" style="visibility:hidden">{{maxLine}}</div>
 			<div
@@ -29,7 +29,7 @@
 		</div>
 		<div :style="{'box-shadow': _leftShadow}" class="my-editor-content-wrap">
 			<!-- 可滚动区域 -->
-			<div @mousedown="onScrollerMdown" @mouseup="onScrollerMup" class="my-editor-content-scroller" ref="scroller">
+			<div @mousedown="onScrollerMdown" @mouseup="onScrollerMup" class="my-editor-content-scroller" ref="scroller" v-if="active">
 				<!-- 内如区域 -->
 				<div :style="{top: _top, minWidth: _contentMinWidth}" @selectend.prevent="onSelectend" class="my-editor-content" ref="content">
 					<div
@@ -126,7 +126,6 @@ import Menu from './Menu';
 import Tip from './Tip';
 import Util from '@/common/Util';
 import $ from 'jquery';
-window.myEditorContext = {};
 
 export default {
     name: 'Editor',
@@ -138,6 +137,10 @@ export default {
     props: {
         id: {
             type: Number
+        },
+        active: {
+            type: Boolean,
+            default: false
         }
     },
     data() {
@@ -225,8 +228,8 @@ export default {
         },
         _contentMinWidth() {
             let width = 0;
-            if (this.$content) {
-                width = Util.getStrExactWidth(this.maxWidthObj.text, this.tabSize, this.$content);
+            if (this.$refs.content) {
+                width = Util.getStrExactWidth(this.maxWidthObj.text, this.tabSize, this.$refs.content);
                 width += this.charObj.fullAngleCharWidth;
             }
             width = this.scrollerArea.width > width ? this.scrollerArea.width : width;
@@ -303,14 +306,17 @@ export default {
         nowCursorPos: {
             handler: function (newVal) {
                 if (newVal) {
-                    this.$parent.$statusBar.line = newVal.line;
-                    this.$parent.$statusBar.column = newVal.column;
+                    this.$parent.$refs.statusBar.line = newVal.line;
+                    this.$parent.$refs.statusBar.column = newVal.column;
                 } else {
-                    this.$parent.$statusBar.line = '?';
-                    this.$parent.$statusBar.column = '?';
+                    this.$parent.$refs.statusBar.line = '?';
+                    this.$parent.$refs.statusBar.column = '?';
                 }
             },
             deep: true
+        },
+        active: function () {
+            this.showEditor();
         }
     },
     created() {
@@ -318,16 +324,7 @@ export default {
         this.initEvent();
     },
     mounted() {
-        this.$editor = this.$refs.editor;
-        this.$scroller = this.$refs.scroller;
-        this.$content = this.$refs.content;
-        this.$textarea = this.$refs.textarea;
-        this.$vScroller = this.$refs.vScroller;
-        this.$hScroller = this.$refs.hScroller;
-        this.charObj = Util.getCharWidth(this.$content);
-        this.maxVisibleLines = Math.ceil(this.$scroller.clientHeight / this.charObj.charHight) + 1;
-        this.render();
-        this.focus();
+        this.showEditor();
     },
     methods: {
         // 初始化数据
@@ -349,14 +346,24 @@ export default {
         // 初始化文档事件
         initEvent() {
             $(document).on('mousemove', (e) => {
-                this.onScrollerMmove(e);
+                this.active && this.onScrollerMmove(e);
             });
             $(document).on('mouseup', (e) => {
-                this.onDocumentMouseUp(e);
+                this.active && this.onDocumentMouseUp(e);
             });
             $(window).on('resize', (e) => {
-                this.render();
+                this.active && this.render();
             });
+        },
+        showEditor() {
+            if (this.active) {
+                this.$nextTick(() => {
+                    this.charObj = Util.getCharWidth(this.$refs.content);
+                    this.maxVisibleLines = Math.ceil(this.$refs.scroller.clientHeight / this.charObj.charHight) + 1;
+                    this.render();
+                    this.focus();
+                });
+            }
         },
         // 显示光标
         showCursor() {
@@ -387,10 +394,10 @@ export default {
         },
         // 聚焦
         focus() {
-            this.$textarea.focus();
+            this.$refs.textarea.focus();
             setTimeout(() => {
                 setTimeout(() => {
-                    this.$textarea.focus();
+                    this.$refs.textarea.focus();
                 }, 100);
             }, 100);
         },
@@ -407,8 +414,8 @@ export default {
                 this.renderCursor(forceCursorView);
                 this.$nextTick(() => {
                     this.scrollerArea = {
-                        height: this.$scroller.clientHeight,
-                        width: this.$scroller.clientWidth,
+                        height: this.$refs.scroller.clientHeight,
+                        width: this.$refs.scroller.clientWidth,
                     }
                 });
             });
@@ -593,9 +600,9 @@ export default {
                 // 强制滚动使光标处于可见区域
                 if (forceCursorView && cursorPos === that.nowCursorPos) {
                     if (left > that.scrollerArea.width + that.scrollLeft - that.charObj.fullAngleCharWidth) {
-                        that.$hScroller.scrollLeft = left + that.charObj.fullAngleCharWidth - that.scrollerArea.width;
+                        that.$refs.hScroller.scrollLeft = left + that.charObj.fullAngleCharWidth - that.scrollerArea.width;
                     } else if (left < that.scrollLeft) {
-                        that.$hScroller.scrollLeft = left - 1;
+                        that.$refs.hScroller.scrollLeft = left - 1;
                     }
                 }
                 if (cursorPos === that.nowCursorPos) {
@@ -722,11 +729,11 @@ export default {
                     let relTop = (line - this.folder.getRelativeLine(this.startLine)) * this.charObj.charHight;
                     let top = line * this.charObj.charHight;
                     if (top > this.scrollTop + this.scrollerArea.height - this.charObj.charHight) {
-                        this.$vScroller.scrollTop = top + this.charObj.charHight - this.scrollerArea.height;
+                        this.$refs.vScroller.scrollTop = top + this.charObj.charHight - this.scrollerArea.height;
                         this.startLine = Math.floor(this.scrollTop / this.charObj.charHight);
                         this.startLine++;
                     } else if (relTop < 0 || relTop == 0 && this.top < 0) {
-                        this.$vScroller.scrollTop = (nowCursorPos.line - 1) * this.charObj.charHight;
+                        this.$refs.vScroller.scrollTop = (nowCursorPos.line - 1) * this.charObj.charHight;
                         this.startLine = nowCursorPos.line;
                     }
                     this.renderCursor(true);
@@ -777,7 +784,7 @@ export default {
             if ($target.attr('data-line') || $target.attr('data-column')) {
                 return _getExactPos(e);
             }
-            let $scroller = $(this.$scroller);
+            let $scroller = $(this.$refs.scroller);
             let offset = $scroller.offset();
             let column = 0;
             let clientX = e.clientX < 0 ? 0 : e.clientX;
@@ -820,14 +827,11 @@ export default {
                 }
             }
         },
-        getContext() {
-            return this.myContext;
-        },
         // 右键菜单事件
         onContextmenu(e) {
             let menuWidth = 0;
             let menuHeight = 0;
-            let $editor = $(this.$editor);
+            let $editor = $(this.$refs.editor);
             let offset = $editor.offset();
             this.menuVisible = true;
             this.$nextTick(() => {
@@ -853,7 +857,7 @@ export default {
                     Util.writeClipboard(this.myContext.getCopyText(menu.op === 'cut'));
                     break;
                 case 'paste':
-                    this.$textarea.focus();
+                    this.$refs.textarea.focus();
                     Util.readClipboard().then((text) => {
                         this.myContext.insertContent(text);
                     });
@@ -864,7 +868,7 @@ export default {
         },
         // 提示图标hover事件
         onIconMouseOver(line, e) {
-            let $editor = $(this.$editor);
+            let $editor = $(this.$refs.editor);
             let offset = $editor.offset();
             this.tipStyle = {
                 left: e.clientX - offset.left + 10 + 'px',
@@ -925,7 +929,7 @@ export default {
         // 鼠标移动事件
         onScrollerMmove(e) {
             let that = this;
-            let offset = $(this.$scroller).offset();
+            let offset = $(this.$refs.scroller).offset();
             if (this.mouseStartObj && Date.now() - this.mouseStartObj.time > 100) {
                 cancelAnimationFrame(this.selectMoveTimer);
                 if (e.clientY > offset.top + this.scrollerArea.height) { //鼠标超出底部区域
@@ -988,8 +992,8 @@ export default {
                             column = originColumn + column;
                             break;
                     }
-                    line = line < 1 ? 1 : (line > this.myContext.htmls.length ? this.myContext.htmls.length : line);
-                    column = column < 0 ? 0 : (column > this.myContext.htmls[originLine - 1].text.length ? this.myContext.htmls[originLine - 1].text.length : column);
+                    line = line < 1 ? 1 : (line > that.myContext.htmls.length ? that.myContext.htmls.length : line);
+                    column = column < 0 ? 0 : (column > that.myContext.htmls[originLine - 1].text.length ? that.myContext.htmls[originLine - 1].text.length : column);
                     that.mouseStartObj.cursorPos = that.cursor.setCursorPos({ line: line, column: column });
                     that.mouseStartObj.preRange = that.selecter.setRange(that.mouseStartObj.start, { line: line, column: column });
                     that.selectMoveTimer = requestAnimationFrame(() => {
@@ -1009,7 +1013,7 @@ export default {
         // 左右滚动事件
         onHscroll(e) {
             this.scrollLeft = e.target.scrollLeft;
-            this.$scroller.scrollLeft = this.scrollLeft;
+            this.$refs.scroller.scrollLeft = this.scrollLeft;
         },
         // 上下滚动事件
         onVscroll(e) {
@@ -1022,8 +1026,8 @@ export default {
         },
         // 滚动滚轮
         onWheel(e) {
-            this.$vScroller.scrollTop = this.scrollTop + e.deltaY;
-            this.$hScroller.scrollLeft = this.scrollLeft + e.deltaX;
+            this.$refs.vScroller.scrollTop = this.scrollTop + e.deltaY;
+            this.$refs.hScroller.scrollLeft = this.scrollLeft + e.deltaX;
         },
         // 中文输入开始
         onCompositionstart() {
@@ -1033,10 +1037,10 @@ export default {
         // 中文输入结束
         onCompositionend() {
             if (this.compositionstart) {
-                let text = this.$textarea.value || '';
+                let text = this.$refs.textarea.value || '';
                 if (text) {
                     this.myContext.insertContent(text);
-                    this.$textarea.value = '';
+                    this.$refs.textarea.value = '';
                 }
             }
             //避免有些浏览器compositionend在input事件之前触发的bug
@@ -1047,10 +1051,10 @@ export default {
         // 输入事件
         onInput() {
             if (!this.compositionstart) {
-                let text = this.$textarea.value || '';
+                let text = this.$refs.textarea.value || '';
                 if (text) {
                     this.myContext.insertContent(text);
-                    this.$textarea.value = '';
+                    this.$refs.textarea.value = '';
                 }
             }
         },
