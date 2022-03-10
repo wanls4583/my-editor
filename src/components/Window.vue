@@ -4,7 +4,7 @@
  * @Description: 
 -->
 <template>
-	<div :style="{'padding-top':_topBarHeight,'padding-bottom':_statusHeight}" @mousedown="onClickEditor" class="my-editor-window" ref="window">
+	<div :style="{'padding-top':_topBarHeight,'padding-bottom':_statusHeight}" @mousedown="onWindMouseDown" class="my-editor-window" ref="window">
 		<!-- 侧边栏 -->
 		<side-bar ref="sideBar"></side-bar>
 		<div @contextmenu.prevent="onContextmenu" class="my-editor-right-wrap" ref="rightWrap">
@@ -78,7 +78,7 @@ export default {
 
         },
         // 点击编辑器
-        onClickEditor() {
+        onWindMouseDown() {
             this.$refs.statusBar.closeAllMenu();
             this.$refs.menuBar.closeAllMenu();
             this.$refs.sideBar.closeAllMenu();
