@@ -7,14 +7,21 @@
 	<div class="side-tree">
 		<div @click.stop="onClickItem(item)" class="side-item" v-for="item in list">
 			<template v-if="item.type==='dir'">
-				<div :class="{'active':item.active}" :style="{'padding-left':_paddingLeft}" @contextmenu.stop.prevent class="side-item-title">
+				<div :class="{'active':item.active}" :style="{'padding-left':_paddingLeft}" :title="item.path" @contextmenu.stop.prevent class="side-item-title">
 					<span class="left-icon iconfont icon-down1" v-if="item.open"></span>
 					<span class="left-icon iconfont icon-right" v-else></span>
 					<span class="side-item-text" style="margin-left:4px">{{item.name}}</span>
 				</div>
 				<side-tree :deep="deep+1" :list="item.children" v-show="item.open"></side-tree>
 			</template>
-			<div :class="{'active':item.active}" :style="{'padding-left':_paddingLeft}" @contextmenu.stop.prevent class="side-item-title" v-else>{{item.name}}</div>
+			<div
+				:class="{'active':item.active}"
+				:style="{'padding-left':_paddingLeft}"
+				:title="item.path"
+				@contextmenu.stop.prevent
+				class="side-item-title"
+				v-else
+			>{{item.name}}</div>
 		</div>
 	</div>
 </template>

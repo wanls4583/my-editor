@@ -47,6 +47,7 @@ export default {
             languageList: [[{ name: 'JavaScript' }, { name: 'HTML' }, { name: 'CSS' }]]
         }
     },
+    inject: ['getEditor', 'getContext'],
     created() {
         for (let i = 1; i <= 8; i++) {
             this.tabSizeList[0].push({
@@ -56,11 +57,10 @@ export default {
         }
         this.setDefault();
     },
+    mounted() {
+        this.editor = this.getEditor();
+    },
     methods: {
-        initData($editor, context) {
-            this.$editor = $editor;
-            this.context = context;
-        },
         setDefault() {
             this.tabSizeList[0].map((item) => {
                 item.checked = item.size == this.tabSize;
@@ -86,14 +86,14 @@ export default {
         onTabsizeChange(item) {
             if (this.tabSize != item.size) {
                 this.tabSize = item.size;
-                this.$editor.tabSize = item.size;
+                this.editor.tabSize = item.size;
             }
             this.tabsizeVisible = false;
         },
         onLnaguageChange(item) {
             if (this.language != item.name) {
                 this.language = item.name;
-                this.$editor.language = item.name;
+                this.editor.language = item.name;
             }
             this.languageVisible = false;
         }

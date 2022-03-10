@@ -41,12 +41,20 @@ export default {
             return this.statusHeight + 'px';
         },
     },
+    provide() {
+        return {
+            getEditor: () => {
+                return this.$refs.editor;
+            },
+            getContext: () => {
+                return this.$refs.editor.getContext();
+            }
+        }
+    },
     mounted() {
         this.$editor = this.$refs.editor;
         this.$menuBar = this.$refs.menuBar;
         this.$statusBar = this.$refs.statusBar;
-        this.$refs.menuBar.initData(this.$editor);
-        this.$refs.statusBar.initData(this.$editor);
     },
     methods: {
         // 点击编辑器
