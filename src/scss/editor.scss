@@ -17,7 +17,12 @@ body {
     height: 100%;
 }
 
+
 .my-editor {
+    &-hover-bg:hover {
+        background-color: rgba(0, 0, 0, 0.1);
+    }
+
     &-center {
         display: flex;
         align-items: center;
@@ -25,6 +30,7 @@ body {
     }
 
     &-window {
+        display: flex;
         position: relative;
         width: 100%;
         height: 100%;
@@ -33,8 +39,8 @@ body {
     }
 
     &-side-bar {
+        flex-shrink: 0;
         position: relative;
-        float: left;
         width: 300px;
         height: 100%;
         background-color: #eeeeee;
@@ -88,6 +94,69 @@ body {
                     background-color: #0098fb;
                     color: #fff;
                 }
+            }
+        }
+    }
+
+    &-right-wrap {
+        flex-grow: 1;
+        position: relative;
+        padding-top: 40px;
+        height: 100%;
+        background-color: rgb(109, 109, 105);
+        overflow: hidden;
+    }
+
+    &-right-bar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 40px;
+        display: flex;
+        align-items: center;
+
+        .bar-item {
+            position: relative;
+            display: flex;
+            align-items: center;
+            line-height: 40px;
+            padding-left: 15px;
+            padding-right: 40px;
+            color: #fff;
+            cursor: pointer;
+
+            &.active {
+                background-color: #272822;
+            }
+
+            .bar-icon {
+                position: absolute;
+                top: 0;
+                right: 0;
+                height: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 40px;
+                font-size: 12px;
+
+                &:hover {
+                    .bar-close-icon {
+                        display: block !important;
+                    }
+
+                    .bar-dot {
+                        display: none !important;
+                    }
+                }
+            }
+
+            .bar-dot {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                background-color: yellowgreen;
             }
         }
     }

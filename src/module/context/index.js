@@ -408,15 +408,15 @@ export default class {
         let index = 0;
         let startTime = Date.now();
         let maxWidthObj = {
-            line: context.htmls[0].lineId,
+            line: this.htmls[0].lineId,
             width: 0
         };
         clearTimeout(this.setMaxWidth.timer);
         _setMaxWidth();
 
         function _setMaxWidth() {
-            while (index < context.htmls.length) {
-                let item = context.htmls[index];
+            while (index < that.htmls.length) {
+                let item = that.htmls[index];
                 if (item.width > maxWidthObj.width) {
                     maxWidthObj = {
                         lineId: item.lineId,
@@ -429,7 +429,7 @@ export default class {
                     break;;
                 }
             }
-            if (index < context.htmls.length) {
+            if (index < that.htmls.length) {
                 that.setMaxWidth.timer = setTimeout(() => {
                     _setMaxWidth();
                 }, 20);
@@ -453,7 +453,7 @@ export default class {
         function _setLineWidth() {
             while (index < texts.length) {
                 let lineObj = texts[index];
-                if (context.lineIdMap.has(lineObj.lineId)) {
+                if (that.lineIdMap.has(lineObj.lineId)) {
                     let width = that.getStrWidth(lineObj.text);
                     lineObj.width = width;
                     if (width > maxWidthObj.width) {

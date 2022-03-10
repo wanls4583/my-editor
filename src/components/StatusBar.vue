@@ -40,14 +40,14 @@ export default {
             line: 1,
             column: 0,
             tabSize: 4,
-            language: 'JavaScript',
+            language: 'HTML',
             tabsizeVisible: false,
             languageVisible: false,
             tabSizeList: [[]],
             languageList: [[{ name: 'JavaScript' }, { name: 'HTML' }, { name: 'CSS' }]]
         }
     },
-    inject: ['getEditor', 'getContext'],
+    inject: ['getNowEditor'],
     created() {
         for (let i = 1; i <= 8; i++) {
             this.tabSizeList[0].push({
@@ -58,7 +58,7 @@ export default {
         this.setDefault();
     },
     mounted() {
-        this.editor = this.getEditor();
+        this.editor = this.getNowEditor();
     },
     methods: {
         setDefault() {

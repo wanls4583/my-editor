@@ -126,7 +126,7 @@ import Menu from './Menu';
 import Tip from './Tip';
 import Util from '@/common/Util';
 import $ from 'jquery';
-let context = null;
+window.myEditorContext = {};
 
 export default {
     name: 'Editor',
@@ -134,6 +134,11 @@ export default {
         SearchDialog,
         Menu,
         Tip,
+    },
+    props: {
+        id: {
+            type: Number
+        }
     },
     data() {
         return {
@@ -264,11 +269,14 @@ export default {
         },
         space() {
             return Util.space(this.tabSize);
+        },
+        myContext() {
+            return window.myEditorContext[this.id];
         }
     },
     watch: {
         language: function (newVal) {
-            context.htmls.map((lineObj) => {
+            this.myContext.htmls.map((lineObj) => {
                 lineObj.tokens = null;
                 lineObj.folds = null;
                 lineObj.states = null;
@@ -283,7 +291,7 @@ export default {
         tabSize: function (newVal) {
             this.render();
             this.maxWidthObj = { lineId: null, text: '', width: 0 };
-            context.setLineWidth(context.htmls);
+            this.myContext.setLineWidth(this.myContext.htmls);
         },
         maxLine: function (newVal) {
             this.setScrollerHeight();
@@ -308,8 +316,6 @@ export default {
     created() {
         this.initData();
         this.initEvent();
-        window.editor = this;
-        window.context = context;
     },
     mounted() {
         this.$editor = this.$refs.editor;
@@ -326,18 +332,18 @@ export default {
     methods: {
         // 初始化数据
         initData() {
-            context = new Context(this);
-            this.maxWidthObj.lineId = context.htmls[0].lineId;
-            this.tokenizer = new Tokenizer(this, context);
-            this.lint = new Lint(this, context);
-            this.folder = new Fold(this, context);
-            this.history = new History(this, context);
-            this.selecter = new Select(this, context);
-            this.searcher = new Search(this, context, this.selecter);
-            this.fSelecter = new Select(this, context);
-            this.fSearcher = new Search(this, context, this.fSelecter);
-            this.shortcut = new ShortCut(this, context);
-            this.cursor = new Cursor(this, context);
+            window.myEditorContext[this.id] = new Context(this);
+            this.maxWidthObj.lineId = this.myContext.htmls[0].lineId;
+            this.tokenizer = new Tokenizer(this, this.myContext);
+            this.lint = new Lint(this, this.myContext);
+            this.folder = new Fold(this, this.myContext);
+            this.history = new History(this, this.myContext);
+            this.selecter = new Select(this, this.myContext);
+            this.searcher = new Search(this, this.myContext, this.selecter);
+            this.fSelecter = new Select(this, this.myContext);
+            this.fSearcher = new Search(this, this.myContext, this.fSelecter);
+            this.shortcut = new ShortCut(this, this.myContext);
+            this.cursor = new Cursor(this, this.myContext);
             this.cursor.addCursorPos(this.nowCursorPos);
         },
         // 初始化文档事件
@@ -412,11 +418,11 @@ export default {
             let that = this;
             // 只更新一行
             if (lineId) {
-                if (context.renderedIdMap.has(lineId)) {
-                    let item = context.lineIdMap.get(lineId);
-                    let obj = context.renderedIdMap.get(lineId);
+                if (this.myContext.renderedIdMap.has(lineId)) {
+                    let item = this.myContext.lineIdMap.get(lineId);
+                    let obj = this.myContext.renderedIdMap.get(lineId);
                     // 高亮完成渲染某一行时，render可能还没完成，导致num没更新，此时跳过
-                    if (context.htmls[obj.num - 1] && context.htmls[obj.num - 1].lineId === lineId) {
+                    if (this.myContext.htmls[obj.num - 1] && this.myContext.htmls[obj.num - 1].lineId === lineId) {
                         Object.assign(obj, _getObj(item, obj.num));
                         this.renderCursor();
                         this.renderSelectedBg();
@@ -424,17 +430,17 @@ export default {
                 }
                 return;
             }
-            context.renderedIdMap.clear();
-            context.renderedLineMap.clear();
+            this.myContext.renderedIdMap.clear();
+            this.myContext.renderedLineMap.clear();
             this.renderHtmls = [];
-            for (let i = 0, startLine = this.startLine; i < this.maxVisibleLines && startLine <= context.htmls.length; i++) {
-                let lineObj = context.htmls[startLine - 1];
+            for (let i = 0, startLine = this.startLine; i < this.maxVisibleLines && startLine <= this.myContext.htmls.length; i++) {
+                let lineObj = this.myContext.htmls[startLine - 1];
                 let lineId = lineObj.lineId;
                 let obj = _getObj(lineObj, startLine);
                 let fold = this.folder.getFoldByLine(startLine);
                 this.renderHtmls.push(obj);
-                context.renderedIdMap.set(lineId, obj);
-                context.renderedLineMap.set(startLine, obj);
+                this.myContext.renderedIdMap.set(lineId, obj);
+                this.myContext.renderedLineMap.set(startLine, obj);
                 if (fold) {
                     startLine = fold.end.line;
                 } else {
@@ -514,35 +520,35 @@ export default {
             let lastLine = this.renderHtmls.peek().num;
             let start = range.start;
             let end = range.end;
-            let text = context.htmls[start.line - 1].text;
+            let text = this.myContext.htmls[start.line - 1].text;
             start.left = this.getStrWidth(text, 0, start.column);
             if (start.line == end.line) {
                 start.width = this.getStrWidth(text, start.column, end.column);
             } else {
                 start.width = this.getStrWidth(text, start.column);
                 end.left = 0;
-                text = context.htmls[end.line - 1].text;
+                text = this.myContext.htmls[end.line - 1].text;
                 end.width = this.getStrWidth(text, 0, end.column);
             }
             firstLine = firstLine > start.line + 1 ? firstLine : start.line + 1;
             lastLine = lastLine < end.line - 1 ? lastLine : end.line - 1;
             for (let line = firstLine; line <= lastLine; line++) {
-                if (context.renderedLineMap.has(line)) {
-                    let lineObj = context.renderedLineMap.get(line);
+                if (this.myContext.renderedLineMap.has(line)) {
+                    let lineObj = this.myContext.renderedLineMap.get(line);
                     lineObj.selected = true;
                     lineObj.isFsearch = isFsearch;
                 }
             }
-            if (context.renderedLineMap.has(start.line)) {
-                context.renderedLineMap.get(start.line).selectStarts.push({
+            if (this.myContext.renderedLineMap.has(start.line)) {
+                this.myContext.renderedLineMap.get(start.line).selectStarts.push({
                     left: start.left,
                     width: start.width,
                     active: range.active,
                     isFsearch: isFsearch
                 });
             }
-            if (end.line > start.line && context.renderedLineMap.has(end.line)) {
-                context.renderedLineMap.get(end.line).selectEnds.push({
+            if (end.line > start.line && this.myContext.renderedLineMap.has(end.line)) {
+                this.myContext.renderedLineMap.get(end.line).selectEnds.push({
                     left: end.left,
                     width: end.width,
                     active: range.active,
@@ -575,7 +581,7 @@ export default {
 
             function _setCursorRealPos(cursorPos) {
                 let left = 0;
-                let lineObj = context.htmls[cursorPos.line - 1];
+                let lineObj = that.myContext.htmls[cursorPos.line - 1];
                 if (cursorPos.del) {
                     return;
                 }
@@ -599,7 +605,7 @@ export default {
             }
 
             function _getExactLeft(cursorPos) {
-                let lineObj = context.htmls[cursorPos.line - 1];
+                let lineObj = that.myContext.htmls[cursorPos.line - 1];
                 let token = lineObj.tokens[0];
                 for (let i = 1; i < lineObj.tokens.length; i++) {
                     if (lineObj.tokens[i].column < cursorPos.column) {
@@ -628,7 +634,7 @@ export default {
             if (resultFold) {
                 this.cursor.multiCursorPos.forEach((cursorPos) => {
                     if (cursorPos.line > line && cursorPos.line < resultFold.end.line) {
-                        let lineObj = context.htmls[line - 1];
+                        let lineObj = this.myContext.htmls[line - 1];
                         cursorPos.line = line;
                         cursorPos.column = lineObj.text.length;
                     }
@@ -647,7 +653,7 @@ export default {
         },
         // ctrl+f打开搜索
         openSearch(replaceMode) {
-            let searchConfig = context.getToSearchConfig();
+            let searchConfig = this.myContext.getToSearchConfig();
             let obj = {
                 replaceVisible: !!replaceMode,
                 wholeWord: false,
@@ -687,12 +693,12 @@ export default {
         replace(data) {
             if (this.fSelecter.ranges.size) {
                 let range = this.fSearcher.now();
-                context.replace(data.text, [range]);
+                this.myContext.replace(data.text, [range]);
             }
         },
         replaceAll(data) {
             if (this.fSelecter.ranges.size) {
-                context.replace(data.text, this.fSelecter.ranges.toArray());
+                this.myContext.replace(data.text, this.fSelecter.ranges.toArray());
                 this.searchCount = 0;
             }
         },
@@ -729,7 +735,7 @@ export default {
         },
         // 设置滚动区域真实高度
         setScrollerHeight() {
-            let maxLine = context.htmls.length;
+            let maxLine = this.myContext.htmls.length;
             maxLine = this.folder.getRelativeLine(maxLine);
             this.scrollerHeight = maxLine * this.charObj.charHight + 'px';
         },
@@ -742,7 +748,7 @@ export default {
         },
         // 获取行对应的文本在浏览器中的宽度
         getStrWidthByLine(line, start, end) {
-            return this.getStrWidth(context.htmls[line - 1].text, start, end);
+            return this.getStrWidth(this.myContext.htmls[line - 1].text, start, end);
         },
         // 根据文本宽度计算当前列号
         getColumnByWidth(text, offsetX) {
@@ -778,11 +784,11 @@ export default {
             let clientY = e.clientY < 0 ? 0 : e.clientY;
             let line = Math.ceil((clientY + this.scrollTop - offset.top) / this.charObj.charHight) || 1;
             line = this.folder.getRealLine(line);
-            if (line > context.htmls.length) {
-                line = context.htmls.length;
-                column = context.htmls[line - 1].text.length;
+            if (line > this.myContext.htmls.length) {
+                line = this.myContext.htmls.length;
+                column = this.myContext.htmls[line - 1].text.length;
             } else {
-                column = this.getColumnByWidth(context.htmls[line - 1].text, clientX + this.scrollLeft - offset.left);
+                column = this.getColumnByWidth(this.myContext.htmls[line - 1].text, clientX + this.scrollLeft - offset.left);
             }
             return {
                 line: line,
@@ -796,7 +802,7 @@ export default {
                 if (!line) {
                     line = $target.parent().attr('data-line') - 0;
                 }
-                let lineObj = context.htmls[line - 1];
+                let lineObj = that.myContext.htmls[line - 1];
                 if (!column) {
                     column = lineObj.text.length;
                 } else {
@@ -815,7 +821,7 @@ export default {
             }
         },
         getContext() {
-            return context;
+            return this.myContext;
         },
         // 右键菜单事件
         onContextmenu(e) {
@@ -844,12 +850,12 @@ export default {
             switch (menu.op) {
                 case 'cut':
                 case 'copy':
-                    Util.writeClipboard(context.getCopyText(menu.op === 'cut'));
+                    Util.writeClipboard(this.myContext.getCopyText(menu.op === 'cut'));
                     break;
                 case 'paste':
                     this.$textarea.focus();
                     Util.readClipboard().then((text) => {
-                        context.insertContent(text);
+                        this.myContext.insertContent(text);
                     });
                     break;
             }
@@ -982,8 +988,8 @@ export default {
                             column = originColumn + column;
                             break;
                     }
-                    line = line < 1 ? 1 : (line > context.htmls.length ? context.htmls.length : line);
-                    column = column < 0 ? 0 : (column > context.htmls[originLine - 1].text.length ? context.htmls[originLine - 1].text.length : column);
+                    line = line < 1 ? 1 : (line > this.myContext.htmls.length ? this.myContext.htmls.length : line);
+                    column = column < 0 ? 0 : (column > this.myContext.htmls[originLine - 1].text.length ? this.myContext.htmls[originLine - 1].text.length : column);
                     that.mouseStartObj.cursorPos = that.cursor.setCursorPos({ line: line, column: column });
                     that.mouseStartObj.preRange = that.selecter.setRange(that.mouseStartObj.start, { line: line, column: column });
                     that.selectMoveTimer = requestAnimationFrame(() => {
@@ -998,7 +1004,7 @@ export default {
             cancelAnimationFrame(this.selectMoveTimer);
             this.mouseStartObj = null;
             this.mouseUpTime = Date.now();
-            this.$refs.searchDialog.directBlur();
+            this.$refs.searchDialog && this.$refs.searchDialog.directBlur();
         },
         // 左右滚动事件
         onHscroll(e) {
@@ -1029,7 +1035,7 @@ export default {
             if (this.compositionstart) {
                 let text = this.$textarea.value || '';
                 if (text) {
-                    context.insertContent(text);
+                    this.myContext.insertContent(text);
                     this.$textarea.value = '';
                 }
             }
@@ -1043,7 +1049,7 @@ export default {
             if (!this.compositionstart) {
                 let text = this.$textarea.value || '';
                 if (text) {
-                    context.insertContent(text);
+                    this.myContext.insertContent(text);
                     this.$textarea.value = '';
                 }
             }
@@ -1052,12 +1058,12 @@ export default {
         onCopy(e) {
             let mime = window.clipboardData ? "Text" : "text/plain";
             let clipboardData = e.clipboardData || window.clipboardData;
-            clipboardData.setData(mime, context.getCopyText());
+            clipboardData.setData(mime, this.myContext.getCopyText());
         },
         onCut(e) {
             let mime = window.clipboardData ? "Text" : "text/plain";
             let clipboardData = e.clipboardData || window.clipboardData;
-            clipboardData.setData(mime, context.getCopyText(true));
+            clipboardData.setData(mime, this.myContext.getCopyText(true));
         },
         // 粘贴事件
         onPaste(e) {
@@ -1065,7 +1071,7 @@ export default {
             let clipboardData = e.clipboardData || window.clipboardData;
             let copyText = '';
             copyText = clipboardData.getData(mime);
-            context.insertContent(copyText);
+            this.myContext.insertContent(copyText);
         },
         // 获得焦点
         onFocus() {
