@@ -28,7 +28,7 @@ const tplStrReg = {
 // 正则字面量
 const regexp = {
     start: /(?<=^|[\(\{\[\;\,\:\?\!\+\-\*\%\=\>\<\&\|]\s*?)\//,
-    end: /(?<=(?:\\[\s\S]|[^\\])+?)\/(?:i|m|g|im|mi|ig|gi|mg|gm|img|igm|mig|mgi|gim|gmi)?|$/i,
+    end: /(?<=[^\\](?:(?:\\\\)+?|[^\\]))\/(?:i|m|g|im|mi|ig|gi|mg|gm|img|igm|mig|mgi|gim|gmi)?|$/i,
     childRule: {
         rules: [{
             regex: /\\b/,
