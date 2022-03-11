@@ -1,4 +1,4 @@
-const variable = `[\\$_a-zA-Z][\\$_a-zA-Z0-9]*?`
+const variable = `[\\$_a-zA-Z][\\$_a-zA-Z0-9]*`
 const strValid = function (e) {
     let value = e.value;
     if (e.side === 'end' && value[0] === '\\' && value.length % 2 === 0) {
