@@ -1,0 +1,73 @@
+.my-editor {
+    &-dialog {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        min-width: 300px;
+        transform: translate(-50%, -50%);
+        background-color: #ffffff;
+        border: 1px solid #cccccc;
+        border-radius: 8px;
+        box-shadow: 1px 1px 50px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+        user-select: none;
+
+        .dialog-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 30px;
+            padding-left: 10px;
+
+            .dialog-close {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 30px;
+                height: 30px;
+                cursor: pointer;
+
+                &:hover {
+                    background-color: red;
+                    color: #ffffff;
+                }
+            }
+        }
+
+        .dialog-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .dialog-btns {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            background-color: #eeeeee;
+
+            .dialog-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                height: 22px;
+                margin-left: 10px;
+                padding: 0 10px;
+                border: 1px solid #999999;
+                font-size: 12px;
+                border-radius: 4px;
+                cursor: pointer;
+
+                &:hover {
+                    border-color: #0098fb;
+                }
+
+                &:first-child {
+                    margin-left: 0;
+                }
+            }
+        }
+    }
+}

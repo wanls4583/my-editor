@@ -19,6 +19,7 @@
 		<menu-bar :height="topBarHeight" ref="menuBar"></menu-bar>
 		<!-- 状态栏 -->
 		<status-bar :height="statusHeight" ref="statusBar"></status-bar>
+		<!-- <Dialog content="测试内容" title="测试"></Dialog> -->
 	</div>
 </template>
 <script>
@@ -27,6 +28,7 @@ import Editor from './Editor.vue';
 import MenuBar from './MenuBar';
 import StatusBar from './StatusBar';
 import SideBar from './SideBar.vue';
+import Dialog from './Dialog.vue';
 const require = require || window.parent.require;
 window.myEditorContext = {};
 
@@ -36,7 +38,8 @@ export default {
         EditorBar,
         MenuBar,
         StatusBar,
-        SideBar
+        SideBar,
+        Dialog,
     },
     data() {
         return {
