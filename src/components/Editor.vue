@@ -329,7 +329,8 @@ export default {
     methods: {
         // 初始化数据
         initData() {
-            window.myEditorContext[this.id] = new Context(this);
+            this.editorId = this.id;
+            window.myEditorContext[this.editorId] = new Context(this);
             this.maxWidthObj.lineId = this.myContext.htmls[0].lineId;
             this.tokenizer = new Tokenizer(this, this.myContext);
             this.lint = new Lint(this, this.myContext);

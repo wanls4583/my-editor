@@ -38,7 +38,7 @@ export default {
             default: 1
         }
     },
-    inject: ['rootList'],
+    inject: ['rootList', 'openFile'],
     data() {
         return {
         }
@@ -63,7 +63,7 @@ export default {
                     });
                 }
             } else {
-                console.log('open file:' + item.path);
+                this.openFile(Object.assign({}, item));
             }
         },
         inActive(list) {

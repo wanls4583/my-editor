@@ -22,6 +22,7 @@ export default class {
     }
     initProperties(editor) {
         Util.defineProperties(this, editor, [
+            'editorId',
             'nowCursorPos',
             'maxLine',
             'maxWidthObj',
@@ -38,6 +39,7 @@ export default class {
             'unFold',
             'setNowCursorPos',
             'getStrWidth',
+            '$emit'
         ]);
         this.setEditorData = (prop, value) => {
             editor.setData(prop, value);
@@ -171,6 +173,7 @@ export default class {
         this.folder.onInsertContentAfter(Object.assign({}, cursorPos), Object.assign({}, newPos));
         this.setLineWidth(text);
         this.render(true);
+        this.$emit('change', this.editorId);
         let historyObj = {
             type: Util.command.DELETE,
             cursorPos: Object.assign({}, newPos),
@@ -381,6 +384,7 @@ export default class {
         this.tokenizer.onDeleteContentAfter(originPos.line, newPos.line);
         this.folder.onDeleteContentAfter(Object.assign({}, originPos), Object.assign({}, newPos));
         this.render(true);
+        this.$emit('change', this.editorId);
         // 更新最大文本宽度
         if (startObj.width >= this.maxWidthObj.width) {
             this.setEditorData('maxWidthObj', {

@@ -12,7 +12,7 @@
 			<editor-bar :editorList="editorList" @change="onChangeTab" @close="onCloseTab" ref="editorBar"></editor-bar>
 			<!-- 编辑区 -->
 			<template v-for="item in editorList">
-				<editor :active="item.active" :id="item.id" :key="item.id" :ref="'editor'+item.id" v-show="item.active"></editor>
+				<editor :active="item.active" :id="item.id" :key="item.id" :ref="'editor'+item.id" @change="onFileChange" v-show="item.active"></editor>
 			</template>
 		</div>
 		<!-- 顶部菜单栏 -->
@@ -27,6 +27,7 @@ import Editor from './Editor.vue';
 import MenuBar from './MenuBar';
 import StatusBar from './StatusBar';
 import SideBar from './SideBar.vue';
+const require = require || window.parent.require;
 window.myEditorContext = {};
 
 export default {
@@ -41,15 +42,10 @@ export default {
         return {
             statusHeight: 30,
             topBarHeight: 35,
-            nowId: 1,
+            nowId: null,
             idCount: 1,
-            editorList: [{
-                id: 1,
-                name: 'Untitled1',
-                path: '',
-                saved: false,
-                active: true
-            }]
+            titleCount: 1,
+            editorList: []
         }
     },
     computed: {
@@ -63,15 +59,18 @@ export default {
     provide() {
         return {
             getNowEditor: () => {
-                return this.$refs[`editor${this.nowId}`][0];
+                return this.getNowEditor();
             },
             getNowContext: () => {
-                return window.myEditorContext[this.nowId];
+                return this.getNowContext();
             },
+            openFile: (fileObj) => {
+                this.openFile(fileObj);
+            }
         }
     },
     mounted() {
-
+        window.test = this;
     },
     methods: {
         onContextmenu(e) {
@@ -84,8 +83,8 @@ export default {
             this.$refs.sideBar.closeAllMenu();
             this.$refs.editorBar.closeAllMenu();
             if (this.nowId) {
-                this.$refs[`editor${this.nowId}`][0].closeAllMenu();
-                this.$refs[`editor${this.nowId}`][0].menuVisble = false;
+                this.getNowEditor().closeAllMenu();
+                this.getNowEditor().menuVisble = false;
             }
         },
         onChangeTab(id) {
@@ -96,12 +95,14 @@ export default {
                 });
                 tab.active = true;
                 this.nowId = id;
+                this.changStatus();
             }
         },
         onCloseTab(id) {
             let tab = this.getTabById(id);
             let index = this.editorList.indexOf(tab);
             this.editorList.splice(index, 1);
+            window.myEditorContext[id] = null;
             if (tab.active) {
                 tab.active = false;
                 tab = this.editorList[index] || this.editorList[index - 1];
@@ -113,13 +114,81 @@ export default {
                 }
             }
         },
+        openFile(fileObj) {
+            const fs = require('fs');
+            let tab = fileObj && this.getTabByPath(fileObj.path);
+            if (!tab) {
+                let index = -1;
+                let name = fileObj && fileObj.name || `Untitled${this.titleCount++}`;
+                if (this.editorList.length) {
+                    tab = this.getTabById(this.nowId);
+                    index = this.editorList.indexOf(tab);
+                }
+                tab = {
+                    id: this.idCount++,
+                    name: name,
+                    path: fileObj && fileObj.path || '',
+                    saved: true,
+                    active: false
+                }
+                this.editorList.splice(index + 1, 0, tab);
+            }
+            this.onChangeTab(tab.id);
+            if (fileObj) {
+                fs.readFile(fileObj.path, { encoding: 'utf8' }, (err, data) => {
+                    if (err) {
+                        throw err;
+                    }
+                    this.getNowContext().insertContent(data);
+                    tab.saved = true;
+                });
+            }
+        },
+        onFileChange(id) {
+            let tab = this.getTabById(id);
+            tab.saved = false;
+        },
+        changStatus() {
+            let changStatusId = this.changStatus.id || 1;
+            this.changStatus.id = changStatusId;
+            this.$nextTick(() => {
+                if (this.changStatus.id !== changStatusId) {
+                    return;
+                }
+                let editor = this.getNowEditor();
+                let statusBar = this.$refs.statusBar;
+                statusBar.language = editor.language;
+                statusBar.tabSize = editor.tabSize;
+                if (editor.nowCursorPos) {
+                    statusBar.line = editor.nowCursorPos.line;
+                    statusBar.column = editor.nowCursorPos.column;
+                } else {
+                    statusBar.line = '?';
+                    statusBar.column = '?';
+                }
+            });
+        },
         getTabById(id) {
             for (let i = 0; i < this.editorList.length; i++) {
                 if (this.editorList[i].id === id) {
                     return this.editorList[i];
                 }
             }
-        }
+        },
+        getTabByPath(path) {
+            for (let i = 0; i < this.editorList.length; i++) {
+                if (this.editorList[i].path === path) {
+                    return this.editorList[i];
+                }
+            }
+        },
+        getNowEditor() {
+            let editor = this.$refs[`editor${this.nowId}`];
+            return editor && editor[0];
+        },
+        getNowContext() {
+            return window.myEditorContext[this.nowId];
+        },
     }
 }
 </script>>

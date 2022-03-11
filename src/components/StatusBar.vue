@@ -47,6 +47,16 @@ export default {
             languageList: [[{ name: 'JavaScript' }, { name: 'HTML' }, { name: 'CSS' }]]
         }
     },
+    watch: {
+        tabSize(newVal) {
+            console.log(newVal)
+        }
+    },
+    computed: {
+        editor() {
+            return this.getNowEditor();
+        }
+    },
     inject: ['getNowEditor'],
     created() {
         for (let i = 1; i <= 8; i++) {
@@ -58,7 +68,6 @@ export default {
         this.setDefault();
     },
     mounted() {
-        this.editor = this.getNowEditor();
     },
     methods: {
         setDefault() {

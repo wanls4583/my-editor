@@ -22,7 +22,7 @@
 import Util from '@/common/Util';
 import Menu from './Menu';
 export default {
-    name: 'StatusBar',
+    name: 'MenuBar',
     props: {
         height: {
             type: Number,
@@ -129,13 +129,18 @@ export default {
             ]
         }
     },
+    computed: {
+        editor() {
+            return this.getNowEditor();
+        },
+        context() {
+            return this.getNowContext();
+        }
+    },
     inject: ['getNowEditor', 'getNowContext'],
     created() {
-
     },
     mounted() {
-        this.editor = this.getNowEditor();
-        this.context = this.getNowContext();
     },
     methods: {
         showMemu(prop) {
