@@ -68,10 +68,15 @@ body {
                 height: 8px;
             }
 
-            &::-webkit-scrollbar-thumb,
             &::-webkit-scrollbar-thumb {
-                border-radius: 4px;
-                background-color: rgba(0, 0, 0, 0.2);
+                background-color: transparent;
+            }
+
+            &:hover {
+                &::-webkit-scrollbar-thumb {
+                    border-radius: 4px;
+                    background-color: rgba(0, 0, 0, 0.2);
+                }
             }
         }
 

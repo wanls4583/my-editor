@@ -89,7 +89,7 @@ export default {
                 if (!result.canceled && result.filePaths) {
                     result.filePaths.map((item) => {
                         this.list.push({
-                            name: item.match(/[^\\\\/]+$/)[0],
+                            name: item.match(/[^\\\/]+$/)[0],
                             path: item,
                             type: 'dir',
                             active: false,
