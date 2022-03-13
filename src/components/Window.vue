@@ -12,14 +12,22 @@
 			<editor-bar :editorList="editorList" @change="onChangeTab" @close="onCloseTab" ref="editorBar"></editor-bar>
 			<!-- 编辑区 -->
 			<template v-for="item in editorList">
-				<editor :active="item.active" :id="item.id" :key="item.id" :ref="'editor'+item.id" @change="onFileChange" v-show="item.active"></editor>
+				<editor
+					:active="item.active"
+					:id="item.id"
+					:key="item.id"
+					:ref="'editor'+item.id"
+					@change="onFileChange(item.id)"
+					@save="onSaveFile(item.id)"
+					v-show="item.active"
+				></editor>
 			</template>
 		</div>
 		<!-- 顶部菜单栏 -->
 		<menu-bar :height="topBarHeight" ref="menuBar"></menu-bar>
 		<!-- 状态栏 -->
 		<status-bar :height="statusHeight" ref="statusBar"></status-bar>
-		<!-- <Dialog content="测试内容" title="测试"></Dialog> -->
+		<Dialog :btns="dialogBtns" :content="dialogContent" :title="dialogTilte" @close="onDialogClose" v-show="dialogVisible"></Dialog>
 	</div>
 </template>
 <script>
@@ -48,7 +56,11 @@ export default {
             nowId: null,
             idCount: 1,
             titleCount: 1,
-            editorList: []
+            editorList: [],
+            dialogTilte: '',
+            dialogContent: '',
+            dialogVisible: false,
+            dialogBtns: []
         }
     },
     computed: {
@@ -92,28 +104,55 @@ export default {
         },
         onChangeTab(id) {
             let tab = this.getTabById(id);
-            if (tab && !tab.active) {
+            if (!tab.active) {
                 this.editorList.map((item) => {
                     item.active = false;
                 });
                 tab.active = true;
                 this.nowId = id;
                 this.changStatus();
+            } else {
+                this.getNowEditor().focus();
             }
         },
         onCloseTab(id) {
             let tab = this.getTabById(id);
             let index = this.editorList.indexOf(tab);
-            this.editorList.splice(index, 1);
-            window.myEditorContext[id] = null;
-            if (tab.active) {
-                tab.active = false;
-                tab = this.editorList[index] || this.editorList[index - 1];
-                if (tab) {
-                    tab.active = true;
-                    this.nowId = tab.id;
-                } else {
-                    this.nowId = null;
+            if (!tab.saved) {
+                this.showDialog({
+                    content: '文件尚未保存，是否先保存文件？',
+                    cancel: true,
+                    btns: [{
+                        name: '保存',
+                        callback: () => {
+                            this.writeFile(tab.path, window.myEditorContext[id].getAllText());
+                            _closeTab.call(this);
+                            this.onDialogClose();
+                        }
+                    }, {
+                        name: '不保存',
+                        callback: () => {
+                            _closeTab.call(this);
+                            this.onDialogClose();
+                        }
+                    }]
+                });
+            } else {
+                _closeTab.call(this);
+            }
+
+            function _closeTab() {
+                this.editorList.splice(index, 1);
+                window.myEditorContext[id] = null;
+                if (tab.active) {
+                    tab.active = false;
+                    tab = this.editorList[index] || this.editorList[index - 1];
+                    if (tab) {
+                        tab.active = true;
+                        this.nowId = tab.id;
+                    } else {
+                        this.nowId = null;
+                    }
                 }
             }
         },
@@ -137,19 +176,40 @@ export default {
                 this.editorList.splice(index + 1, 0, tab);
             }
             this.onChangeTab(tab.id);
-            if (fileObj) {
+            if (fileObj && !tab.loaded) {
                 fs.readFile(fileObj.path, { encoding: 'utf8' }, (err, data) => {
                     if (err) {
                         throw err;
                     }
                     this.getNowContext().insertContent(data);
                     tab.saved = true;
+                    tab.loaded = true;
                 });
             }
         },
         onFileChange(id) {
             let tab = this.getTabById(id);
             tab.saved = false;
+        },
+        onSaveFile(id) {
+            let tab = this.getTabById(id);
+            if (!tab.saved) {
+                this.writeFile(tab.path, window.myEditorContext[id].getAllText());
+                tab.saved = true;
+            }
+        },
+        onDialogClose() {
+            this.dialogVisible = false;
+        },
+        showDialog(option) {
+            this.dialogTilte = option.title || '';
+            this.dialogContent = option.content || '';
+            this.dialogBtns = option.btns;
+            this.dialogVisible = true;
+        },
+        writeFile(path, text) {
+            let fs = require('fs');
+            fs.writeFileSync(path, text, { encoding: 'utf-8' });
         },
         changStatus() {
             let changStatusId = this.changStatus.id || 1;

@@ -19,6 +19,7 @@ export default class {
             'history',
             'searchWord',
             'openSearch',
+            '$emit',
         ]);
         Util.defineProperties(this, context, [
             'htmls',
@@ -104,6 +105,9 @@ export default class {
                 case 72: //ctrl+H，搜素替换
                     e.preventDefault();
                     this.openSearch(true);
+                    break;
+                case 83: //ctrl+s 保存
+                    this.$emit('save');
                     break;
                 case 90: //ctrl+Z，撤销
                 case 122:

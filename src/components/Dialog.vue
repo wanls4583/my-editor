@@ -7,7 +7,7 @@
 	<div :style="styles" @mousedown.stop class="my-editor-dialog">
 		<div class="dialog-title">
 			<div v-html="title"></div>
-			<span class="dialog-close iconfont icon-close1"></span>
+			<span @click="onClose" class="dialog-close iconfont icon-close1"></span>
 		</div>
 		<div class="dialog-content">
 			<div>
@@ -16,7 +16,7 @@
 		</div>
 		<div class="dialog-btns">
 			<div @click="onClickBtn(item)" class="dialog-btn" v-for="item in btns">{{item.name}}</div>
-			<div @click="onClose" class="dialog-btn">取消</div>
+			<div @click="onClose()" class="dialog-btn">取消</div>
 		</div>
 	</div>
 </template>
@@ -37,7 +37,7 @@ export default {
     },
     methods: {
         onClickBtn(item) {
-            this.$emit(item.event);
+            item.callback();
         },
         onClose() {
             this.$emit('close');
