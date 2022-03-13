@@ -83,33 +83,45 @@ export default {
                     files.map((item, index) => {
                         let fullPath = path.join(dirPath, item);
                         fs.stat(fullPath, (err, data) => {
-                            if (data.isFile()) {
-                                results.push({
-                                    name: item,
-                                    type: 'file',
-                                    path: fullPath,
-                                    parentPath: dirPath,
-                                    active: false,
-                                    children: []
-                                });
-                            } else {
-                                results.push({
-                                    name: item,
-                                    type: 'dir',
-                                    path: fullPath,
-                                    parentPath: dirPath,
-                                    active: false,
-                                    children: [],
-                                    open: false
-                                });
+                            let obj = {
+                                name: item,
+                                path: fullPath,
+                                parentPath: dirPath,
+                                active: false,
+                                children: []
                             }
+                            if (data.isFile()) {
+                                obj.type = 'file';
+                            } else {
+                                obj.type = 'dir';
+                                obj.open = false;
+                            }
+                            results.push(obj);
                             if (index === files.length - 1) {
-                                resolve(results);
+                                resolve(this.sortFiles(results));
                             }
                         });
                     });
                 });
             });
+        },
+        sortFiles(results) {
+            results.sort((a, b) => {
+                if (a.type == b.type) {
+                    if (a.name > b.name) {
+                        return 1;
+                    }
+                    if (a.name < b.name) {
+                        return -1;
+                    }
+                    return 0;
+                }
+                if (a.type == 'dir') {
+                    return -1;
+                }
+                return 1;
+            });
+            return results;
         }
     }
 }
