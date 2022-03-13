@@ -5,10 +5,10 @@
 -->
 <template>
 	<div @contextmenu.prevent="onContextmenu" @selectstart.prevent class="my-editor-right-bar" ref="rightBar">
-		<div :class="{'active':item.active}" @click="onClickItem(item)" class="bar-item my-editor-hover-bg" v-for="item in editorList">
+		<div :class="{'active':item.active}" :title="item.path" @click="onClickItem(item)" class="bar-item my-editor-hover-bg" v-for="item in editorList">
 			<span class="bar-text">{{item.name}}</span>
-			<div @click.stop="onClose(item)" class="bar-icon">
-				<span class="bar-close-icon iconfont icon-close1" title="close" v-show="item.saved"></span>
+			<div class="bar-icon">
+				<span @click.stop="onClose(item)" class="bar-close-icon iconfont icon-close1" title="close" v-show="item.saved"></span>
 				<span class="bar-dot" v-show="!item.saved"></span>
 			</div>
 		</div>
