@@ -326,6 +326,9 @@ export default {
     mounted() {
         this.showEditor();
     },
+    destroyed() {
+        this.unbindEvent();
+    },
     methods: {
         // 初始化数据
         initData() {

@@ -143,7 +143,6 @@ export default {
 
             function _closeTab() {
                 this.editorList.splice(index, 1);
-                this.$refs[`editor${tab.id}`][0].unbindEvent();
                 window.myEditorContext[id] = null;
                 if (tab.active) {
                     tab.active = false;
