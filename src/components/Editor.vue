@@ -346,15 +346,23 @@ export default {
         },
         // 初始化文档事件
         initEvent() {
-            $(document).on('mousemove', (e) => {
+            this.initEvent.fn1 = (e) => {
                 this.active && this.onScrollerMmove(e);
-            });
-            $(document).on('mouseup', (e) => {
+            };
+            this.initEvent.fn2 = (e) => {
                 this.active && this.onDocumentMouseUp(e);
-            });
-            $(window).on('resize', (e) => {
+            };
+            this.initEvent.fn3 = (e) => {
                 this.active && this.render();
-            });
+            };
+            $(document).on('mousemove', this.initEvent.fn1);
+            $(document).on('mouseup', this.initEvent.fn2);
+            $(window).on('resize', this.initEvent.fn3);
+        },
+        unbindEvent() {
+            $(document).unbind('mousemove', this.initEvent.fn1);
+            $(document).unbind('mouseup', this.initEvent.fn2);
+            $(window).unbind('resize', this.initEvent.fn3);
         },
         showEditor() {
             if (this.active) {

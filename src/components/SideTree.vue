@@ -107,15 +107,6 @@ export default {
         },
         sortFiles(results) {
             results.sort((a, b) => {
-                if (a.type == b.type) {
-                    if (a.name > b.name) {
-                        return 1;
-                    }
-                    if (a.name < b.name) {
-                        return -1;
-                    }
-                    return 0;
-                }
                 if (a.type == 'dir') {
                     return -1;
                 }
