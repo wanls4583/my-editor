@@ -12,17 +12,17 @@
 				<span class="bar-dot" v-show="!item.saved"></span>
 			</div>
 		</div>
-		<Menu :checkable="false" :menuList="menuList" :styles="menuStyle" @change="onMenuChange" ref="menu" v-show="menuVisible"></Menu>
+		<editor-bar-menu ref="editorBarMenu"></editor-bar-menu>
 	</div>
 </template>
 <script>
 import $ from 'jquery';
-import Menu from './Menu';
+import EditorBarMenu from './EditorBarMenu';
 
 export default {
     name: 'EditorBar',
     components: {
-        Menu
+        EditorBarMenu
     },
     props: {
         editorList: {
@@ -32,13 +32,6 @@ export default {
     data() {
         return {
             list: [],
-            menuList: [
-            ],
-            menuVisible: false,
-            menuStyle: {
-                left: '10px',
-                top: '40px'
-            }
         }
     },
     provide() {
@@ -56,27 +49,10 @@ export default {
             this.$emit('close', item.id);
         },
         onContextmenu(e) {
-            this.menuVisible = true;
-            let $rightBar = $(this.$refs.rightBar);
-            this.$nextTick(() => {
-                let offset = $rightBar.offset();
-                let menuWidth = this.$refs.menu.$el.clientWidth;
-                if (menuWidth + e.clientX > offset.left + $rightBar[0].clientWidth) {
-                    this.menuStyle.left = e.clientX - offset.left - menuWidth + 'px';
-                } else {
-                    this.menuStyle.left = e.clientX - offset.left + 'px';
-                }
-                this.menuStyle.top = e.clientY - offset.top + 'px';
-            });
-        },
-        onMenuChange(item) {
-            switch (item.op) {
-
-            }
-            this.menuVisible = false;
+            this.$refs.editorBarMenu.show(e);
         },
         closeAllMenu() {
-            this.menuVisible = false;
+            this.$refs.editorBarMenu.hide();
         },
     }
 }

@@ -152,6 +152,10 @@ export default {
             this.selectionMenuVisible = false;
         },
         onEditMenuChange(item) {
+            if (!this.editor) {
+                this.editMenuVisible = false;
+                return;
+            }
             switch (item.op) {
                 case 'undo':
                     this.editor.history.undo();
@@ -184,6 +188,10 @@ export default {
             this.editMenuVisible = false;
         },
         onSelectionMenuChange(item) {
+            if (!this.editor) {
+                this.selectionMenuVisible = false;
+                return;
+            }
             switch (item.op) {
                 case 'selectAll':
                     this.editor.selecter.selectAll();

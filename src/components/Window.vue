@@ -22,7 +22,7 @@
 					v-show="item.active"
 				></editor>
 			</template>
-			<Menu :checkable="false" :menuList="menuList" :styles="menuStyle" @change="onMenuChange" ref="menu" v-show="menuVisible"></Menu>
+			<window-menu ref="winMenu"></window-menu>
 		</div>
 		<!-- 顶部菜单栏 -->
 		<menu-bar :height="topBarHeight" ref="menuBar"></menu-bar>
@@ -38,7 +38,7 @@ import MenuBar from './MenuBar';
 import StatusBar from './StatusBar';
 import SideBar from './SideBar.vue';
 import Dialog from './Dialog.vue';
-import Menu from './Menu.vue';
+import WindowMenu from './WindowMenu.vue';
 import $ from 'jquery';
 
 const require = require || window.parent.require;
@@ -55,7 +55,7 @@ export default {
         StatusBar,
         SideBar,
         Dialog,
-        Menu,
+        WindowMenu,
     },
     data() {
         return {
@@ -69,22 +69,6 @@ export default {
             dialogContent: '',
             dialogVisible: false,
             dialogBtns: [],
-            menuList: [
-                [{
-                    name: 'New File',
-                    op: 'newFile',
-                    shortcut: 'Ctrl+N'
-                }, {
-                    name: 'Open File',
-                    op: 'openFile',
-                    shortcut: 'Ctrl+O'
-                }]
-            ],
-            menuVisible: false,
-            menuStyle: {
-                left: '50%',
-                top: '50%'
-            }
         }
     },
     computed: {
@@ -103,8 +87,8 @@ export default {
             getNowContext: () => {
                 return this.getNowContext();
             },
-            openFile: (fileObj) => {
-                this.openFile(fileObj);
+            openFile: (fileObj, choseFile) => {
+                this.openFile(fileObj, choseFile);
             }
         }
     },
@@ -113,38 +97,11 @@ export default {
     },
     methods: {
         onContextmenu(e) {
-            this.menuVisible = true;
-            let $rightWrap = $(this.$refs.rightWrap);
-            this.$nextTick(() => {
-                let offset = $rightWrap.offset();
-                let menuWidth = this.$refs.menu.$el.clientWidth;
-                let menuHeight = this.$refs.menu.$el.clientHeight;
-                if (menuHeight + e.clientY > offset.top + $rightWrap[0].clientHeight) {
-                    this.menuStyle.top = e.clientY - offset.top - menuHeight + 'px';
-                } else {
-                    this.menuStyle.top = e.clientY - offset.top + 'px';
-                }
-                if (menuWidth + e.clientX > offset.left + $rightWrap[0].clientWidth) {
-                    this.menuStyle.left = e.clientX - offset.left - menuWidth + 'px';
-                } else {
-                    this.menuStyle.left = e.clientX - offset.left + 'px';
-                }
-            });
-        },
-        onMenuChange(item) {
-            switch (item.op) {
-                case 'newFile':
-                    this.openFile();
-                    break;
-                case 'openFile':
-                    this.openFile(null, true);
-                    break;
-            }
-            this.menuVisible = false;
+            // this.$refs.winMenu.show(e);
         },
         // 点击编辑器
         onWindMouseDown() {
-            this.closeAllMenu();
+            this.$refs.winMenu.hide();
             this.$refs.statusBar.closeAllMenu();
             this.$refs.menuBar.closeAllMenu();
             this.$refs.sideBar.closeAllMenu();
@@ -219,9 +176,11 @@ export default {
                 }
                 if (choseFile) { //从资源管理器中选择文件
                     this.choseFile().then((results) => {
-                        tab = results[0];
-                        this.editorList = this.editorList.slice(0, index).concat(results).concat(this.editorList.slice(index));
-                        _done.call(this);
+                        if (results) {
+                            tab = results[0];
+                            this.editorList = this.editorList.slice(0, index).concat(results).concat(this.editorList.slice(index));
+                            _done.call(this);
+                        }
                     });
                 } else {
                     tab = {
@@ -337,9 +296,6 @@ export default {
                     statusBar.column = '?';
                 }
             });
-        },
-        closeAllMenu() {
-            this.menuVisible = false;
         },
         getTabById(id) {
             for (let i = 0; i < this.editorList.length; i++) {
