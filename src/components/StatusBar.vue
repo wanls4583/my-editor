@@ -6,16 +6,16 @@
 <template>
 	<div :style="{height:height+'px'}" @contextmenu.stop.prevent class="my-editor-status-bar">
 		<div class="bar-left">
-			<div class="bar-item">
+			<div class="bar-item" v-if="editor">
 				<span>Line {{line}}, Column {{column}}</span>
 			</div>
 		</div>
 		<div class="bar-right">
-			<div @mousedown.stop="showTabsize" class="bar-item clickable">
+			<div @mousedown.stop="showTabsize" class="bar-item clickable" v-if="editor">
 				<span>Tab Size:{{tabSize}}</span>
 				<Menu :menuList="tabSizeList" :styles="{right: 0, bottom: height+'px'}" @change="onTabsizeChange" v-show="tabsizeVisible"></Menu>
 			</div>
-			<div @mousedown.stop="showLanguage" class="bar-item clickable">
+			<div @mousedown.stop="showLanguage" class="bar-item clickable" v-if="editor">
 				<span>{{language}}</span>
 				<Menu :menuList="languageList" :styles="{right: 0, bottom: height+'px'}" @change="onLnaguageChange" v-show="languageVisible"></Menu>
 			</div>
@@ -55,7 +55,7 @@ export default {
     computed: {
         editor() {
             return this.getNowEditor();
-        }
+        },
     },
     inject: ['getNowEditor'],
     created() {

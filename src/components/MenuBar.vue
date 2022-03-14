@@ -50,7 +50,7 @@ export default {
                 [{
                     name: 'Open File',
                     op: 'openFile',
-                    shortcut: 'Ctrl+o'
+                    shortcut: 'Ctrl+O'
                 }, {
                     name: 'Open Folder',
                     op: 'openFolder',

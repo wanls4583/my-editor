@@ -54,7 +54,6 @@ export default {
     methods: {
         onClickItem(item) {
             if (!item.active) {
-                console.log(this);
                 if (preActiveItem) {
                     preActiveItem.active = false;
                 }
