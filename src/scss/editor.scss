@@ -88,8 +88,7 @@ body {
             .side-item-title {
                 display: flex;
                 align-items: center;
-                line-height: 20px;
-                padding: 5px 10px 5px 0;
+                height: 30px;
 
                 &:hover {
                     background-color: rgba(0, 0, 0, 0.1);

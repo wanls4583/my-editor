@@ -27,6 +27,7 @@
 </template>
 <script>
 const require = require || window.parent.require;
+let preActiveItem = null;
 export default {
     name: 'SideTree',
     props: {
@@ -52,18 +53,26 @@ export default {
     },
     methods: {
         onClickItem(item) {
-            this.inActive(this.getRootList());
-            item.active = true;
-            if (item.type === 'dir') {
-                item.open = !item.open;
-                if (!item.loaded) {
-                    this.readdir(item.path).then((data) => {
-                        item.children = data;
-                        item.loaded = true;
-                    });
+            if (!item.active) {
+                console.log(this);
+                if (preActiveItem) {
+                    preActiveItem.active = false;
                 }
-            } else {
-                this.openFile(item);
+                item.active = true;
+                preActiveItem = item;
+                if (item.type === 'dir') {
+                    item.open = !item.open;
+                    if (!item.loaded) {
+                        this.readdir(item.path).then((data) => {
+                            item.children = data;
+                            item.loaded = true;
+                        });
+                    }
+                } else {
+                    this.openFile(item);
+                }
+            } else if (item.type === 'dir') {
+                item.open = !item.open;
             }
         },
         inActive(list) {
