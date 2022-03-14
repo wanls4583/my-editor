@@ -20,6 +20,25 @@ export default {
     data() {
         return {
             menuList: [
+                [{
+                    name: 'Close',
+                    op: 'close',
+                    shortcut: 'Ctrl+F4'
+                }, {
+                    name: 'Close to the Left',
+                    op: 'closeToLeft',
+                }, {
+                    name: 'Close to the Right',
+                    op: 'closeToRight',
+                }, {
+                    name: 'Close Saved',
+                    op: 'closeSaved',
+                    shortcut: 'Ctrl+K U'
+                }, {
+                    name: 'Close All',
+                    op: 'closeAll',
+                    shortcut: 'Ctrl+K W'
+                }]
             ],
             menuVisible: false,
             menuStyle: {
@@ -31,7 +50,8 @@ export default {
     mounted() {
     },
     methods: {
-        show(e) {
+        show(e, id) {
+            this.tabId = id;
             this.menuVisible = true;
             let $parent = $(this.$refs.wrap).parent();
             this.$nextTick(() => {
@@ -47,7 +67,21 @@ export default {
         },
         onMenuChange(item) {
             switch (item.op) {
-
+                case 'close':
+                    this.$parent.$emit('close', this.tabId);
+                    break;
+                case 'closeToLeft':
+                    this.$parent.$emit('close-to-left', this.tabId);
+                    break;
+                case 'closeToRight':
+                    this.$parent.$emit('close-to-right', this.tabId);
+                    break;
+                case 'closeSaved':
+                    this.$parent.$emit('close-saved', this.tabId);
+                    break;
+                case 'closeAll':
+                    this.$parent.$emit('close-all', this.tabId);
+                    break;
             }
             this.menuVisible = false;
         },

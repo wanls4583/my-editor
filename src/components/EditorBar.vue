@@ -4,11 +4,18 @@
  * @Description: 
 -->
 <template>
-	<div @contextmenu.prevent.stop="onContextmenu" @selectstart.prevent class="my-editor-right-bar" ref="rightBar">
-		<div :class="{'active':item.active}" :title="item.path" @click="onClickItem(item)" class="bar-item my-editor-hover-bg" v-for="item in editorList">
+	<div @selectstart.prevent class="my-editor-right-bar" ref="rightBar">
+		<div
+			:class="{'active':item.active}"
+			:title="item.path"
+			@click="onClickItem(item.id)"
+			@contextmenu.prevent.stop="onContextmenu($event, item.id)"
+			class="bar-item my-editor-hover-bg"
+			v-for="item in editorList"
+		>
 			<span class="bar-text">{{item.name}}</span>
 			<div class="bar-icon">
-				<span @click.stop="onClose(item)" class="bar-close-icon iconfont icon-close1" title="close" v-show="item.saved"></span>
+				<span @click.stop="onClose(item.id)" class="bar-close-icon iconfont icon-close1" title="close" v-show="item.saved"></span>
 				<span class="bar-dot" v-show="!item.saved"></span>
 			</div>
 		</div>
@@ -42,14 +49,14 @@ export default {
     mounted() {
     },
     methods: {
-        onClickItem(item) {
-            this.$emit('change', item.id);
+        onClickItem(id) {
+            this.$emit('change', id);
         },
-        onClose(item) {
-            this.$emit('close', item.id);
+        onClose(id) {
+            this.$emit('close', id);
         },
-        onContextmenu(e) {
-            // this.$refs.editorBarMenu.show(e);
+        onContextmenu(e, id) {
+            this.$refs.editorBarMenu.show(e, id);
         },
         closeAllMenu() {
             this.$refs.editorBarMenu.hide();

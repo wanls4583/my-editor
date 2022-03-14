@@ -9,7 +9,17 @@
 		<side-bar ref="sideBar"></side-bar>
 		<div @contextmenu.prevent.stop="onContextmenu" class="my-editor-right-wrap" ref="rightWrap">
 			<!-- tab栏 -->
-			<editor-bar :editorList="editorList" @change="onChangeTab" @close="onCloseTab" ref="editorBar" v-show="editorList.length"></editor-bar>
+			<editor-bar
+				:editorList="editorList"
+				@change="onChangeTab"
+				@close="onCloseTab"
+				@close-all="onCloseAll"
+				@close-saved="onCloseSaved"
+				@close-to-left="onCloseToLeft"
+				@close-to-right="onCloseToRight"
+				ref="editorBar"
+				v-show="editorList.length"
+			></editor-bar>
 			<!-- 编辑区 -->
 			<template v-for="item in editorList">
 				<editor
@@ -178,6 +188,42 @@ export default {
                     } else {
                         this.nowId = null;
                     }
+                }
+            }
+        },
+        onCloseAll() {
+            this.editorList = this.editorList.filter((item) => {
+                return !item.saved;
+            });
+            this.editorList.map((item) => {
+                this.onCloseTab(item.id);
+            });
+            this.nowId = null;
+        },
+        onCloseSaved() {
+            this.editorList.slice().map((item) => {
+                if (item.saved) {
+                    this.onCloseTab(item.id);
+                }
+            });
+        },
+        onCloseToLeft(id) {
+            let tab = null;
+            while (tab = this.editorList[0]) {
+                if (tab.id !== id) {
+                    this.onCloseTab(tab.id);
+                } else {
+                    break;
+                }
+            }
+        },
+        onCloseToRight(id) {
+            let tab = null;
+            while (tab = this.editorList.peek()) {
+                if (tab.id !== id) {
+                    this.onCloseTab(tab.id);
+                } else {
+                    break;
                 }
             }
         },

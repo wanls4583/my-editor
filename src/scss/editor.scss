@@ -59,14 +59,10 @@ body {
             bottom: 0;
             left: 0;
             right: 0;
-            overflow: auto;
+            overflow: overlay;
 
             &::-webkit-scrollbar {
                 width: 8px;
-            }
-
-            &::-webkit-scrollbar {
-                height: 8px;
             }
 
             &::-webkit-scrollbar-thumb {
@@ -120,6 +116,22 @@ body {
         display: flex;
         align-items: center;
         background-color: rgb(109, 109, 105);
+        overflow: overlay;
+
+        &::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background-color: transparent;
+        }
+
+        &:hover {
+            &::-webkit-scrollbar-thumb {
+                border-radius: 6px;
+                background-color: rgba(0, 0, 0, 0.2);
+            }
+        }
 
         .bar-item {
             position: relative;
