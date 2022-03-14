@@ -4,7 +4,7 @@
  * @Description: 
 -->
 <template>
-	<div @contextmenu.prevent="onContextmenu" @selectstart.prevent class="my-editor-right-bar" ref="rightBar">
+	<div @contextmenu.prevent.stop="onContextmenu" @selectstart.prevent class="my-editor-right-bar" ref="rightBar">
 		<div :class="{'active':item.active}" :title="item.path" @click="onClickItem(item)" class="bar-item my-editor-hover-bg" v-for="item in editorList">
 			<span class="bar-text">{{item.name}}</span>
 			<div class="bar-icon">

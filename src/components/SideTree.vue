@@ -63,7 +63,7 @@ export default {
                     });
                 }
             } else {
-                this.openFile(Object.assign({}, item));
+                this.openFile(item);
             }
         },
         inActive(list) {

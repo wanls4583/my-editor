@@ -109,7 +109,6 @@ body {
         position: relative;
         padding-top: 40px;
         height: 100%;
-        background-color: rgb(109, 109, 105);
         overflow: hidden;
     }
 
@@ -121,6 +120,7 @@ body {
         height: 40px;
         display: flex;
         align-items: center;
+        background-color: rgb(109, 109, 105);
 
         .bar-item {
             position: relative;
@@ -540,9 +540,8 @@ body {
     &-menu {
         position: absolute;
         z-index: 99;
-        min-width: 120px;
+        min-width: 200px;
         background-color: #fff;
-        // border-radius: 4px;
         border: 1px solid #dddddd;
         color: #666666;
     }

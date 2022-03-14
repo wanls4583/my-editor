@@ -4,7 +4,7 @@
  * @Description: 
 -->
 <template>
-	<div @contextmenu.prevent="onContextmenu" @selectstart.prevent class="my-editor-side-bar" ref="sideBar">
+	<div @contextmenu.prevent.stop="onContextmenu" @selectstart.prevent class="my-editor-side-bar" ref="sideBar">
 		<div class="side-bar-title">OPEN FILES</div>
 		<div class="side-tree-warp">
 			<div style="width:100%;overflow:hidden">
@@ -18,6 +18,8 @@
 import SideTree from './SideTree';
 import Menu from './Menu';
 import $ from 'jquery';
+const require = require || window.parent.require;
+const remote = require('@electron/remote');
 
 export default {
     components: {
@@ -77,30 +79,49 @@ export default {
             this.menuVisible = false;
         },
         choseFolder() {
-            var require = require || window.parent.require;
-            var remote = require('@electron/remote');
             let win = remote.getCurrentWindow();
             let options = {
-                title: '标题',
-                defaultPath: this.filePath,
+                title: '选择文件夹',
                 properties: ['openDirectory', 'multiSelections']
             };
-            remote.dialog.showOpenDialog(win, options).then(result => {
+            return remote.dialog.showOpenDialog(win, options).then(result => {
+                let results = [];
                 if (!result.canceled && result.filePaths) {
                     result.filePaths.map((item) => {
-                        this.list.push({
+                        let obj = {
                             name: item.match(/[^\\\/]+$/)[0],
                             path: item,
                             type: 'dir',
                             active: false,
                             open: false,
                             children: []
-                        })
+                        };
+                        this.list.push(obj);
+                        results.push(Object.assign({}, obj));
                     });
+                    this.sortList();
+                    return results;
                 }
             }).catch(err => {
                 console.log(err)
             })
+        },
+        sortList() {
+            this.list.sort((a, b) => {
+                if (a.type === b.type) {
+                    if (a.name === b.name) {
+                        return 0;
+                    } else if (a.name > b.name) {
+                        return 1
+                    } else {
+                        return -1;
+                    }
+                }
+                if (a.type === 'dir') {
+                    return -1;
+                }
+                return 1;
+            });
         }
     }
 }

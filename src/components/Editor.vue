@@ -1,5 +1,5 @@
 <template>
-	<div @contextmenu.prevent="onContextmenu" @selectstart.prevent @wheel.prevent="onWheel" class="my-editor-wrap" ref="editor">
+	<div @contextmenu.prevent.stop="onContextmenu" @selectstart.prevent @wheel.prevent="onWheel" class="my-editor-wrap" ref="editor">
 		<!-- 行号 -->
 		<div :style="{top: _numTop}" class="my-editor-nums" v-if="active">
 			<!-- 占位行号，避免行号宽度滚动时变化 -->
