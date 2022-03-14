@@ -25,15 +25,6 @@ export default {
     data() {
         return {
             menuList: [
-                [{
-                    name: 'New File',
-                    op: 'newFile',
-                    shortcut: 'Ctrl+N'
-                }, {
-                    name: 'Open File',
-                    op: 'openFile',
-                    shortcut: 'Ctrl+O'
-                }]
             ],
             menuVisible: false,
             menuStyle: {
@@ -42,18 +33,12 @@ export default {
             }
         }
     },
-    inject: ['openFile'],
     created() {
     },
     methods: {
         onMenuChange(item) {
             switch (item.op) {
-                case 'newFile':
-                    this.openFile();
-                    break;
-                case 'openFile':
-                    this.openFile(null, true);
-                    break;
+
             }
             this.menuVisible = false;
         },

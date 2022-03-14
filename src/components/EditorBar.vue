@@ -49,7 +49,7 @@ export default {
             this.$emit('close', item.id);
         },
         onContextmenu(e) {
-            this.$refs.editorBarMenu.show(e);
+            // this.$refs.editorBarMenu.show(e);
         },
         closeAllMenu() {
             this.$refs.editorBarMenu.hide();

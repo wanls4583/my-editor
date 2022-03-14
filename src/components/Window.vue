@@ -28,7 +28,16 @@
 		<menu-bar :height="topBarHeight" ref="menuBar"></menu-bar>
 		<!-- 状态栏 -->
 		<status-bar :height="statusHeight" ref="statusBar"></status-bar>
-		<Dialog :btns="dialogBtns" :content="dialogContent" :title="dialogTilte" @close="onDialogClose" v-show="dialogVisible"></Dialog>
+		<Dialog
+			:btns="dialogBtns"
+			:content="dialogContent"
+			:icon="this.dialogIcon"
+			:icon-color="this.dialogIconColor"
+			:overlay="true"
+			:title="dialogTilte"
+			@close="onDialogClose"
+			v-show="dialogVisible"
+		></Dialog>
 	</div>
 </template>
 <script>
@@ -69,6 +78,8 @@ export default {
             dialogContent: '',
             dialogVisible: false,
             dialogBtns: [],
+            dialogIcon: '',
+            dialogIconColor: '',
         }
     },
     computed: {
@@ -89,6 +100,9 @@ export default {
             },
             openFile: (fileObj, choseFile) => {
                 this.openFile(fileObj, choseFile);
+            },
+            openFolder: () => {
+                this.openFolder();
             }
         }
     },
@@ -131,6 +145,8 @@ export default {
                 this.showDialog({
                     content: '文件尚未保存，是否先保存文件？',
                     cancel: true,
+                    icon: 'icon-warnfill',
+                    iconColor: 'rgba(255,196,0)',
                     btns: [{
                         name: '保存',
                         callback: () => {
@@ -162,52 +178,6 @@ export default {
                     } else {
                         this.nowId = null;
                     }
-                }
-            }
-        },
-        openFile(fileObj, choseFile) {
-            let tab = fileObj && this.getTabByPath(fileObj.path);
-            if (!tab) {
-                let index = -1;
-                let name = fileObj && fileObj.name || `Untitled${this.titleCount++}`;
-                if (this.editorList.length) {
-                    tab = this.getTabById(this.nowId);
-                    index = this.editorList.indexOf(tab);
-                }
-                if (choseFile) { //从资源管理器中选择文件
-                    this.choseFile().then((results) => {
-                        if (results) {
-                            tab = results[0];
-                            this.editorList = this.editorList.slice(0, index).concat(results).concat(this.editorList.slice(index));
-                            _done.call(this);
-                        }
-                    });
-                } else {
-                    tab = {
-                        id: this.idCount++,
-                        name: name,
-                        path: fileObj && fileObj.path || '',
-                        saved: true,
-                        active: false
-                    }
-                    this.editorList.splice(index + 1, 0, tab);
-                    _done.call(this);
-                }
-            } else {
-                _done.call(this);
-            }
-
-            function _done() {
-                this.onChangeTab(tab.id);
-                if (tab && tab.path && !tab.loaded) {
-                    fs.readFile(tab.path, { encoding: 'utf8' }, (err, data) => {
-                        if (err) {
-                            throw err;
-                        }
-                        this.getNowContext().insertContent(data);
-                        tab.saved = true;
-                        tab.loaded = true;
-                    });
                 }
             }
         },
@@ -243,6 +213,106 @@ export default {
         onDialogClose() {
             this.dialogVisible = false;
         },
+        openFolder() {
+            this.choseFolder().then((results) => {
+                if (results) {
+                    this.$refs.sideBar.list = results;
+                    this.editorList = [];
+                    this.nowId = null;
+                }
+            });
+        },
+        choseFolder() {
+            let win = remote.getCurrentWindow();
+            let options = {
+                title: '选择文件夹',
+                properties: ['openDirectory', 'multiSelections']
+            };
+            return remote.dialog.showOpenDialog(win, options).then(result => {
+                let results = [];
+                if (!result.canceled && result.filePaths) {
+                    result.filePaths.map((item) => {
+                        let obj = {
+                            name: item.match(/[^\\\/]+$/)[0],
+                            path: item,
+                            type: 'dir',
+                            active: false,
+                            open: false,
+                            children: []
+                        };
+                        results.push(Object.assign({}, obj));
+                    });
+                    return results;
+                }
+            }).catch(err => {
+                console.log(err)
+            })
+        },
+        openFile(fileObj, choseFile) {
+            let tab = fileObj && this.getTabByPath(fileObj.path);
+            if (!tab) {
+                let index = -1;
+                let name = fileObj && fileObj.name || `Untitled${this.titleCount++}`;
+                if (this.editorList.length) {
+                    tab = this.getTabById(this.nowId);
+                    index = this.editorList.indexOf(tab);
+                }
+                if (choseFile) { //从资源管理器中选择文件
+                    this.choseFile().then((results) => {
+                        if (results) {
+                            tab = results[0];
+                            this.editorList = this.editorList.slice(0, index).concat(results).concat(this.editorList.slice(index));
+                            _done.call(this);
+                        }
+                    });
+                } else {
+                    tab = {
+                        id: this.idCount++,
+                        name: name,
+                        path: fileObj && fileObj.path || '',
+                        saved: true,
+                        active: false
+                    }
+                    this.editorList.splice(index + 1, 0, tab);
+                    _done.call(this);
+                }
+            } else {
+                _done.call(this);
+            }
+
+            function _done() {
+                this.$nextTick(() => {
+                    if (tab && tab.path && !tab.loaded) {
+                        let fileType = tab.name.match(/\.[^\.]+?$/i);
+                        let language = 'plain';
+                        fileType = fileType && fileType[0].toLowerCase().slice(1) || '';
+                        switch (fileType) {
+                            case 'html':
+                            case 'xml':
+                            case 'vue':
+                                language = 'HTML';
+                                break;
+                            case 'js':
+                                language = 'JavaScript';
+                                break;
+                            case 'css':
+                                language = 'CSS';
+                                break;
+                        }
+                        this.getEditor(tab.id).language = language;
+                        fs.readFile(tab.path, { encoding: 'utf8' }, (err, data) => {
+                            if (err) {
+                                throw err;
+                            }
+                            this.getContext(tab.id).insertContent(data);
+                            tab.saved = true;
+                            tab.loaded = true;
+                        });
+                    }
+                    this.onChangeTab(tab.id);
+                });
+            }
+        },
         choseFile() {
             let win = remote.getCurrentWindow();
             let options = {
@@ -268,11 +338,30 @@ export default {
                 console.log(err)
             })
         },
+        sortFileList() {
+            this.list.sort((a, b) => {
+                if (a.type === b.type) {
+                    if (a.name === b.name) {
+                        return 0;
+                    } else if (a.name > b.name) {
+                        return 1
+                    } else {
+                        return -1;
+                    }
+                }
+                if (a.type === 'dir') {
+                    return -1;
+                }
+                return 1;
+            });
+        },
         showDialog(option) {
             this.dialogTilte = option.title || '';
             this.dialogContent = option.content || '';
             this.dialogBtns = option.btns;
             this.dialogVisible = true;
+            this.dialogIconColor = option.iconColor || '';
+            this.dialogIcon = option.icon || '';
         },
         writeFile(path, text) {
             fs.writeFileSync(path, text, { encoding: 'utf-8' });
@@ -311,12 +400,18 @@ export default {
                 }
             }
         },
-        getNowEditor() {
-            let editor = this.$refs[`editor${this.nowId}`];
+        getEditor(id) {
+            let editor = this.$refs[`editor${id}`];
             return editor && editor[0];
         },
+        getNowEditor() {
+            return this.getEditor(this.nowId);
+        },
+        getContext(id) {
+            return window.myEditorContext[id];
+        },
         getNowContext() {
-            return window.myEditorContext[this.nowId];
+            return this.getContext(this.nowId);
         },
     }
 }

@@ -6,6 +6,10 @@
 <template>
 	<div :style="{height:height+'px'}" @contextmenu.stop.prevent class="my-editor-top-bar">
 		<div class="bar-left">
+			<div @mousedown.stop="showMemu('fileMenuVisible')" class="bar-item clickable">
+				<span>File</span>
+				<Menu :checkable="false" :menuList="fileMenuList" :styles="{left: 0, top: height+'px'}" @change="onFileMenuChange" v-show="fileMenuVisible"></Menu>
+			</div>
 			<div @mousedown.stop="showMemu('editMenuVisible')" class="bar-item clickable">
 				<span>Edit</span>
 				<Menu :checkable="false" :menuList="editMenuList" :styles="{left: 0, top: height+'px'}" @change="onEditMenuChange" v-show="editMenuVisible"></Menu>
@@ -34,8 +38,24 @@ export default {
     },
     data() {
         return {
+            fileMenuVisible: false,
             editMenuVisible: false,
             selectionMenuVisible: false,
+            fileMenuList: [
+                [{
+                    name: 'New File',
+                    op: 'newFile',
+                    shortcut: 'Ctrl+N'
+                }],
+                [{
+                    name: 'Open File',
+                    op: 'openFile',
+                    shortcut: 'Ctrl+o'
+                }, {
+                    name: 'Open Folder',
+                    op: 'openFolder',
+                }]
+            ],
             editMenuList: [
                 [{
                     name: 'Undo',
@@ -137,7 +157,7 @@ export default {
             return this.getNowContext();
         }
     },
-    inject: ['getNowEditor', 'getNowContext'],
+    inject: ['getNowEditor', 'getNowContext', 'openFile', 'openFolder'],
     created() {
     },
     mounted() {
@@ -148,8 +168,23 @@ export default {
             this[prop] = true;
         },
         closeAllMenu() {
+            this.fileMenuVisible = false;
             this.editMenuVisible = false;
             this.selectionMenuVisible = false;
+        },
+        onFileMenuChange(item) {
+            switch (item.op) {
+                case 'newFile':
+                    this.openFile();
+                    break;
+                case 'openFile':
+                    this.openFile(null, true);
+                    break;
+                case 'openFolder':
+                    this.openFolder();
+                    break;
+            }
+            this.fileMenuVisible = false;
         },
         onEditMenuChange(item) {
             if (!this.editor) {
@@ -234,7 +269,7 @@ export default {
             }
             this.editor.focus();
             this.selectionMenuVisible = false;
-        }
+        },
     }
 }
 </script>

@@ -5,7 +5,7 @@
 -->
 <template>
 	<div @contextmenu.prevent.stop="onContextmenu" @selectstart.prevent class="my-editor-side-bar" ref="sideBar">
-		<div class="side-bar-title"></div>
+		<div class="side-bar-title">EXPLORER</div>
 		<div class="side-tree-warp">
 			<div style="width:100%;overflow:hidden">
 				<side-tree :list="list"></side-tree>
@@ -30,7 +30,9 @@ export default {
     },
     provide() {
         return {
-            rootList: this.list,
+            getRootList: () => {
+                return this.list;
+            },
         }
     },
     mounted() {

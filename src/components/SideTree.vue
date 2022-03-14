@@ -38,7 +38,7 @@ export default {
             default: 1
         }
     },
-    inject: ['rootList', 'openFile'],
+    inject: ['getRootList', 'openFile'],
     data() {
         return {
         }
@@ -52,7 +52,7 @@ export default {
     },
     methods: {
         onClickItem(item) {
-            this.inActive(this.rootList);
+            this.inActive(this.getRootList());
             item.active = true;
             if (item.type === 'dir') {
                 item.open = !item.open;
@@ -98,14 +98,14 @@ export default {
                             }
                             results.push(obj);
                             if (index === files.length - 1) {
-                                resolve(this.sortFiles(results));
+                                resolve(this.sortFileList(results));
                             }
                         });
                     });
                 });
             });
         },
-        sortFiles(results) {
+        sortFileList(results) {
             results.sort((a, b) => {
                 if (a.type == 'dir') {
                     return -1;

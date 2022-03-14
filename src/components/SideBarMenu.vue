@@ -22,10 +22,6 @@ export default {
         return {
             list: [],
             menuList: [
-                [{
-                    name: 'Add Folder to Workspace',
-                    op: 'addFolder'
-                }]
             ],
             menuVisible: false,
             menuStyle: {
@@ -61,60 +57,13 @@ export default {
         },
         onMenuChange(item) {
             switch (item.op) {
-                case 'addFolder':
-                    this.choseFolder();
-                    break;
+
             }
             this.menuVisible = false;
         },
         hide() {
             this.menuVisible = false;
         },
-        choseFolder() {
-            let win = remote.getCurrentWindow();
-            let options = {
-                title: '选择文件夹',
-                properties: ['openDirectory', 'multiSelections']
-            };
-            return remote.dialog.showOpenDialog(win, options).then(result => {
-                let results = [];
-                if (!result.canceled && result.filePaths) {
-                    result.filePaths.map((item) => {
-                        let obj = {
-                            name: item.match(/[^\\\/]+$/)[0],
-                            path: item,
-                            type: 'dir',
-                            active: false,
-                            open: false,
-                            children: []
-                        };
-                        this.list.push(obj);
-                        results.push(Object.assign({}, obj));
-                    });
-                    this.sortList();
-                    return results;
-                }
-            }).catch(err => {
-                console.log(err)
-            })
-        },
-        sortList() {
-            this.list.sort((a, b) => {
-                if (a.type === b.type) {
-                    if (a.name === b.name) {
-                        return 0;
-                    } else if (a.name > b.name) {
-                        return 1
-                    } else {
-                        return -1;
-                    }
-                }
-                if (a.type === 'dir') {
-                    return -1;
-                }
-                return 1;
-            });
-        }
     }
 }
 </script>
