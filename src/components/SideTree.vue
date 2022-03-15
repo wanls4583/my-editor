@@ -36,7 +36,7 @@ export default {
     data() {
         return {
             itemHeight: 30,
-            itemPadding: 20,
+            itemPadding: 16,
             openedList: [],
             renderList: [],
             startLine: 1,
@@ -125,6 +125,7 @@ export default {
                 item.active = true;
                 preActiveItem = item;
                 if (item.type === 'dir') {
+                    item.open = !item.open;
                     if (!item.loaded) {
                         this.readdir(item.path).then((data) => {
                             item.children = data;
@@ -140,29 +141,27 @@ export default {
                 } else {
                     this.openFile(item);
                 }
-            } else {
+            } else if (item.type === 'dir') {
+                item.open = !item.open;
                 _changOpen.call(this, item);
             }
 
             function _changOpen(item) {
-                if (item.type === 'dir') {
-                    item.open = !item.open;
-                    if (item.children.length) {
-                        if (item.open) {
-                            let index = this.openedList.indexOf(item);
-                            this.openedList = this.openedList.slice(0, index + 1)
-                                .concat(this.getRenderList(item.children, item.deep))
-                                .concat(this.openedList.slice(index + 1));
-                        } else {
-                            let index = this.openedList.indexOf(item) + 1;
-                            let endIn = index;
-                            while (endIn < this.openedList.length && this.openedList[endIn].parentPath != item.parentPath) {
-                                endIn++;
-                            }
-                            this.openedList.splice(index, endIn - index);
+                if (item.children.length) {
+                    if (item.open) {
+                        let index = this.openedList.indexOf(item);
+                        this.openedList = this.openedList.slice(0, index + 1)
+                            .concat(this.getRenderList(item.children, item.deep))
+                            .concat(this.openedList.slice(index + 1));
+                    } else {
+                        let index = this.openedList.indexOf(item) + 1;
+                        let endIn = index;
+                        while (endIn < this.openedList.length && this.openedList[endIn].parentPath != item.parentPath) {
+                            endIn++;
                         }
-                        this.render();
+                        this.openedList.splice(index, endIn - index);
                     }
+                    this.render();
                 }
             }
         },
