@@ -116,6 +116,12 @@ export default {
             }
         }
     },
+    created() {
+        remote.getCurrentWindow().on('resize', () => {
+            let editor = this.getNowEditor();
+            editor && editor.showEditor();
+        });
+    },
     mounted() {
         window.test = this;
     },

@@ -355,17 +355,12 @@ export default {
             this.initEvent.fn2 = (e) => {
                 this.active && this.onDocumentMouseUp(e);
             };
-            this.initEvent.fn3 = (e) => {
-                this.active && this.render();
-            };
             $(document).on('mousemove', this.initEvent.fn1);
             $(document).on('mouseup', this.initEvent.fn2);
-            $(window).on('resize', this.initEvent.fn3);
         },
         unbindEvent() {
             $(document).unbind('mousemove', this.initEvent.fn1);
             $(document).unbind('mouseup', this.initEvent.fn2);
-            $(window).unbind('resize', this.initEvent.fn3);
         },
         showEditor() {
             if (this.active) {
