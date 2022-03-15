@@ -6,20 +6,37 @@
 <template>
 	<div :style="{height:height+'px'}" @contextmenu.stop.prevent class="my-editor-top-bar">
 		<div class="bar-left">
-			<div @mousedown.stop="showMemu('fileMenuVisible')" class="bar-item clickable">
+			<div @mousedown.stop="showMemu('fileMenuVisible')" class="bar-item my-editor-clickable">
 				<span>File</span>
 				<Menu :checkable="false" :menuList="fileMenuList" :styles="{left: 0, top: height+'px'}" @change="onFileMenuChange" v-show="fileMenuVisible"></Menu>
 			</div>
-			<div @mousedown.stop="showMemu('editMenuVisible')" class="bar-item clickable">
+			<div @mousedown.stop="showMemu('editMenuVisible')" class="bar-item my-editor-clickable">
 				<span>Edit</span>
 				<Menu :checkable="false" :menuList="editMenuList" :styles="{left: 0, top: height+'px'}" @change="onEditMenuChange" v-show="editMenuVisible"></Menu>
 			</div>
-			<div @mousedown.stop="showMemu('selectionMenuVisible')" class="bar-item clickable">
+			<div @mousedown.stop="showMemu('selectionMenuVisible')" class="bar-item my-editor-clickable">
 				<span>Selection</span>
 				<Menu :checkable="false" :menuList="selectionMenuList" :styles="{left: 0, top: height+'px'}" @change="onSelectionMenuChange" v-show="selectionMenuVisible"></Menu>
 			</div>
 		</div>
-		<div class="bar-right"></div>
+		<div class="bar-right">
+			<!-- 最小化 -->
+			<div @click="onMinimize" class="bar-item my-editor-clickable" style="width:35px;height:35px">
+				<span class="iconfont icon-zuixiaohua"></span>
+			</div>
+			<!-- 还原最大化 -->
+			<div @click="onUnmaximize" class="bar-item my-editor-clickable" style="width:35px;height:35px" v-if="maximize">
+				<span class="iconfont icon-huanyuan"></span>
+			</div>
+			<!-- 最大化 -->
+			<div @click="onMaximize" class="bar-item my-editor-clickable" style="width:35px;height:35px" v-else>
+				<span class="iconfont icon-zuidahua"></span>
+			</div>
+			<!-- 最小化 -->
+			<div @click="onClose" class="bar-item my-editor-clickable-danger" style="width:35px;height:35px">
+				<span class="iconfont icon-close" style="font-size:18px"></span>
+			</div>
+		</div>
 	</div>
 </template>
 <script>
@@ -27,6 +44,9 @@ import Util from '@/common/Util';
 import Menu from './Menu';
 import ShortCut from '@/module/shortcut/menu-bar';
 import $ from 'jquery';
+const require = require || window.parent.require;
+const remote = require('@electron/remote');
+const currentWindow = remote.getCurrentWindow();
 
 export default {
     name: 'MenuBar',
@@ -44,6 +64,7 @@ export default {
             fileMenuVisible: false,
             editMenuVisible: false,
             selectionMenuVisible: false,
+            maximize: false,
             fileMenuList: [
                 [{
                     name: 'New File',
@@ -169,6 +190,7 @@ export default {
         });
     },
     mounted() {
+        this.maximize = currentWindow.isMaximized();
     },
     methods: {
         showMemu(prop) {
@@ -179,6 +201,24 @@ export default {
             this.fileMenuVisible = false;
             this.editMenuVisible = false;
             this.selectionMenuVisible = false;
+        },
+        // 最小化
+        onMinimize() {
+            currentWindow.minimize();
+        },
+        // 最大化
+        onMaximize() {
+            currentWindow.maximize();
+            this.maximize = true;
+        },
+        // 最大化
+        onUnmaximize() {
+            currentWindow.unmaximize();
+            this.maximize = false;
+        },
+        // 关闭窗口
+        onClose() {
+            currentWindow.close();
         },
         onFileMenuChange(item) {
             switch (item.op) {

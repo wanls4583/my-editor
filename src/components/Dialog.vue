@@ -9,7 +9,7 @@
 		<div :style="styles" @mousedown.stop class="my-editor-dialog">
 			<div class="dialog-title">
 				<div v-html="title"></div>
-				<span @click="onClose" class="dialog-close iconfont icon-close1"></span>
+				<span @click="onClose" class="dialog-close iconfont icon-close"></span>
 			</div>
 			<div class="dialog-content">
 				<span :class="[icon]" :style="{'color':iconColor}" class="iconfont" style="margin-right:5px;font-size:30px" v-if="icon"></span>

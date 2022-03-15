@@ -63,7 +63,7 @@
 				style="margin-right:5px"
 				title="Next Match(Enter)"
 			></span>
-			<span @click="close" class="iconfont icon-close1" title="Close"></span>
+			<span @click="close" class="iconfont icon-close" title="Close"></span>
 		</div>
 	</div>
 </template>

@@ -1,4 +1,4 @@
-@import url('//at.alicdn.com/t/font_3194546_g8a17zfecgw.css');
+@import url('//at.alicdn.com/t/font_3194546_n6rvd8e8sup.css');
 @import 'dialog';
 
 * {
@@ -20,8 +20,21 @@ body {
 
 
 .my-editor {
-    &-hover-bg:hover {
-        background-color: rgba(0, 0, 0, 0.1);
+    &-clickable {
+        cursor: pointer;
+
+        &:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+    }
+
+    &-clickable-danger {
+        cursor: pointer;
+
+        &:hover {
+            background-color: red;
+            color: white;
+        }
     }
 
     &-center {
@@ -523,14 +536,6 @@ body {
             justify-content: center;
             padding: 0 20px;
             min-width: 120px;
-
-            &.clickable {
-                cursor: pointer;
-
-                &:hover {
-                    background-color: rgba(0, 0, 0, 0.1);
-                }
-            }
         }
     }
 

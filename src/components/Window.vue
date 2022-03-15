@@ -62,6 +62,7 @@ import $ from 'jquery';
 
 const require = require || window.parent.require;
 const remote = require('@electron/remote');
+const currentWindow = remote.getCurrentWindow();
 const fs = require('fs');
 
 window.myEditorContext = {};
@@ -117,7 +118,7 @@ export default {
         }
     },
     created() {
-        remote.getCurrentWindow().on('resize', () => {
+        currentWindow.on('resize', () => {
             let editor = this.getNowEditor();
             editor && editor.showEditor();
         });

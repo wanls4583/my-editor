@@ -11,12 +11,12 @@
 				:title="item.path"
 				@click="onClickItem(item.id)"
 				@contextmenu.prevent.stop="onContextmenu($event, item.id)"
-				class="bar-item my-editor-hover-bg"
+				class="bar-item my-editor-clickable"
 				v-for="item in editorList"
 			>
 				<span class="bar-text">{{item.name}}</span>
 				<div class="bar-icon">
-					<span @click.stop="onClose(item.id)" class="bar-close-icon iconfont icon-close1" title="close" v-show="item.saved"></span>
+					<span @click.stop="onClose(item.id)" class="bar-close-icon iconfont icon-close" title="close" v-show="item.saved"></span>
 					<span class="bar-dot" v-show="!item.saved"></span>
 				</div>
 			</div>

@@ -11,11 +11,11 @@
 			</div>
 		</div>
 		<div class="bar-right">
-			<div @mousedown.stop="showTabsize" class="bar-item clickable" v-if="editor">
+			<div @mousedown.stop="showTabsize" class="bar-item my-editor-clickable" v-if="editor">
 				<span>Tab Size:{{tabSize}}</span>
 				<Menu :menuList="tabSizeList" :styles="{right: 0, bottom: height+'px'}" @change="onTabsizeChange" v-show="tabsizeVisible"></Menu>
 			</div>
-			<div @mousedown.stop="showLanguage" class="bar-item clickable" v-if="editor">
+			<div @mousedown.stop="showLanguage" class="bar-item my-editor-clickable" v-if="editor">
 				<span>{{language}}</span>
 				<Menu :menuList="languageList" :styles="{right: 0, bottom: height+'px'}" @change="onLnaguageChange" v-show="languageVisible"></Menu>
 			</div>
