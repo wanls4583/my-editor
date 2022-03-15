@@ -149,7 +149,10 @@ export default {
             }
         },
         onCloseTab(id) {
-            let tab = this.getTabById(id);
+            if (!this.nowId) {
+                return;
+            }
+            let tab = this.getTabById(id || this.nowId);
             let index = this.editorList.indexOf(tab);
             if (!tab.saved) {
                 this.showDialog({
@@ -209,6 +212,7 @@ export default {
         },
         onCloseToLeft(id) {
             let tab = null;
+            id = id || this.nowId;
             while (tab = this.editorList[0]) {
                 if (tab.id !== id) {
                     this.onCloseTab(tab.id);
@@ -219,6 +223,7 @@ export default {
         },
         onCloseToRight(id) {
             let tab = null;
+            id = id || this.nowId;
             while (tab = this.editorList.peek()) {
                 if (tab.id !== id) {
                     this.onCloseTab(tab.id);

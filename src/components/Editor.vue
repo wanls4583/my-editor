@@ -120,7 +120,7 @@ import Select from '@/module/select/index';
 import Cursor from '@/module/cursor/index';
 import History from '@/module/history/index';
 import Context from '@/module/context/index';
-import ShortCut from '@/module/shortcut/index';
+import ShortCut from '@/module/shortcut/editor';
 import SearchDialog from './Search';
 import Menu from './Menu';
 import Tip from './Tip';

@@ -5,26 +5,29 @@
 -->
 <template>
 	<div @selectstart.prevent class="my-editor-right-bar" ref="rightBar">
-		<div
-			:class="{'active':item.active}"
-			:title="item.path"
-			@click="onClickItem(item.id)"
-			@contextmenu.prevent.stop="onContextmenu($event, item.id)"
-			class="bar-item my-editor-hover-bg"
-			v-for="item in editorList"
-		>
-			<span class="bar-text">{{item.name}}</span>
-			<div class="bar-icon">
-				<span @click.stop="onClose(item.id)" class="bar-close-icon iconfont icon-close1" title="close" v-show="item.saved"></span>
-				<span class="bar-dot" v-show="!item.saved"></span>
+		<div class="bar-scroller">
+			<div
+				:class="{'active':item.active}"
+				:title="item.path"
+				@click="onClickItem(item.id)"
+				@contextmenu.prevent.stop="onContextmenu($event, item.id)"
+				class="bar-item my-editor-hover-bg"
+				v-for="item in editorList"
+			>
+				<span class="bar-text">{{item.name}}</span>
+				<div class="bar-icon">
+					<span @click.stop="onClose(item.id)" class="bar-close-icon iconfont icon-close1" title="close" v-show="item.saved"></span>
+					<span class="bar-dot" v-show="!item.saved"></span>
+				</div>
 			</div>
 		</div>
 		<editor-bar-menu ref="editorBarMenu"></editor-bar-menu>
 	</div>
 </template>
 <script>
-import $ from 'jquery';
 import EditorBarMenu from './EditorBarMenu';
+import ShortCut from '@/module/shortcut/editor-bar';
+import $ from 'jquery';
 
 export default {
     name: 'EditorBar',
@@ -45,6 +48,12 @@ export default {
         return {
             rootList: this.list,
         }
+    },
+    created() {
+        this.shortcut = new ShortCut(this);
+        $(window).on('keydown', (e) => {
+            this.shortcut.onKeyDown(e);
+        });
     },
     mounted() {
     },

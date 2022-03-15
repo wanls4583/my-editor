@@ -113,23 +113,28 @@ body {
         left: 0;
         width: 100%;
         height: 40px;
-        display: flex;
-        align-items: center;
         background-color: rgb(109, 109, 105);
-        overflow: overlay;
 
-        &::-webkit-scrollbar {
-            height: 6px;
-        }
+        .bar-scroller {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            height: 40px;
+            overflow: overlay;
 
-        &::-webkit-scrollbar-thumb {
-            background-color: transparent;
-        }
+            &::-webkit-scrollbar {
+                height: 6px;
+            }
 
-        &:hover {
             &::-webkit-scrollbar-thumb {
-                border-radius: 6px;
-                background-color: rgba(0, 0, 0, 0.2);
+                background-color: transparent;
+            }
+
+            &:hover {
+                &::-webkit-scrollbar-thumb {
+                    border-radius: 6px;
+                    background-color: rgba(0, 0, 0, 0.2);
+                }
             }
         }
 
@@ -541,6 +546,12 @@ body {
             -webkit-app-region: no-drag;
             min-width: auto;
             padding: 0 10px;
+        }
+    }
+
+    &-status-bar {
+        .my-editor-menu {
+            min-width: 120px;
         }
     }
 

@@ -5,7 +5,8 @@
  */
 const {
     BrowserWindow,
-    app
+    app,
+    Menu
 } = require('electron');
 
 const main = require('@electron/remote/main');
@@ -29,10 +30,12 @@ function createWindow(name, url, type) {
     } else {
         win.loadFile(url);
     }
+    win.webContents.openDevTools();
     return win;
 }
 app.whenReady().then(() => {
     main.initialize();
+    Menu.setApplicationMenu(null); //去掉默认菜单和快捷键
     initEvent();
     createWindow('', 'http://localhost:8080/#/home', 'remote').show();
 })

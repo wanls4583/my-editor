@@ -25,6 +25,9 @@
 <script>
 import Util from '@/common/Util';
 import Menu from './Menu';
+import ShortCut from '@/module/shortcut/menu-bar';
+import $ from 'jquery';
+
 export default {
     name: 'MenuBar',
     props: {
@@ -54,6 +57,7 @@ export default {
                 }, {
                     name: 'Open Folder',
                     op: 'openFolder',
+                    shortcut: 'Ctrl+K Ctrl+O'
                 }]
             ],
             editMenuList: [
@@ -159,6 +163,10 @@ export default {
     },
     inject: ['getNowEditor', 'getNowContext', 'openFile', 'openFolder'],
     created() {
+        this.shortcut = new ShortCut(this);
+        $(window).on('keydown', (e) => {
+            this.shortcut.onKeyDown(e);
+        });
     },
     mounted() {
     },
