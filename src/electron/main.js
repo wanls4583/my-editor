@@ -30,7 +30,7 @@ function createWindow(name, url, type) {
     } else {
         win.loadFile(url);
     }
-    // win.webContents.openDevTools();
+    win.webContents.openDevTools();
     return win;
 }
 app.whenReady().then(() => {

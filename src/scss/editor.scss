@@ -90,6 +90,16 @@ body {
             }
         }
 
+        .side-tree {
+            position: relative;
+        }
+
+        .side-tree-content {
+            position: absolute;
+            left: 0;
+            width: 100%;
+        }
+
         .side-item {
             position: relative;
             white-space: nowrap;

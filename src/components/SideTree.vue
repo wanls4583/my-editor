@@ -4,24 +4,21 @@
  * @Description: 
 -->
 <template>
-	<div class="side-tree">
-		<div @click.stop="onClickItem(item)" class="side-item" v-for="item in list">
-			<template v-if="item.type==='dir'">
-				<div :class="{'active':item.active}" :style="{'padding-left':_paddingLeft}" :title="item.path" @contextmenu.stop.prevent class="side-item-title">
-					<span class="left-icon iconfont icon-down1" v-if="item.open"></span>
-					<span class="left-icon iconfont icon-right" v-else></span>
-					<span class="side-item-text" style="margin-left:4px">{{item.name}}</span>
+	<div @scroll="onScroll" class="side-tree-warp" ref="wrap">
+		<div style="width:100%;overflow:hidden">
+			<div :style="{height:_scrollHeight}" class="side-tree">
+				<div :style="{top:_top}" class="side-tree-content">
+					<div @click.stop="onClickItem(item)" class="side-item" v-for="item in renderList">
+						<div :class="{'active':item.active}" :style="{'padding-left':_paddingLeft(item)}" :title="item.path" @contextmenu.stop.prevent class="side-item-title">
+							<template v-if="item.type==='dir'">
+								<span class="left-icon iconfont icon-down1" v-if="item.open"></span>
+								<span class="left-icon iconfont icon-right" v-else></span>
+							</template>
+							<span class="side-item-text" style="margin-left:4px">{{item.name}}</span>
+						</div>
+					</div>
 				</div>
-				<side-tree :deep="deep+1" :list="item.children" v-show="item.open"></side-tree>
-			</template>
-			<div
-				:class="{'active':item.active}"
-				:style="{'padding-left':_paddingLeft}"
-				:title="item.path"
-				@contextmenu.stop.prevent
-				class="side-item-title"
-				v-else
-			>{{item.name}}</div>
+			</div>
 		</div>
 	</div>
 </template>
@@ -34,51 +31,49 @@ export default {
         list: {
             type: Array
         },
-        deep: {
-            type: Number,
-            default: 1
-        }
     },
-    inject: ['getRootList', 'openFile'],
+    inject: ['openFile'],
     data() {
         return {
+            itemHeight: 30,
+            itemPadding: 20,
+            openedList: [],
+            renderList: [],
+            startLine: 1,
+            maxVisibleLines: 100,
         }
     },
     computed: {
-        _paddingLeft() {
-            return this.deep * 20 + 'px';
+        _top() {
+            return (this.startLine - 1) * this.itemHeight + 'px';
         },
-    },
-    mounted() {
-    },
-    methods: {
-        onClickItem(item) {
-            if (!item.active) {
-                if (preActiveItem) {
-                    preActiveItem.active = false;
-                }
-                item.active = true;
-                preActiveItem = item;
-                if (item.type === 'dir') {
-                    item.open = !item.open;
-                    if (!item.loaded) {
-                        this.readdir(item.path).then((data) => {
-                            item.children = data;
-                            item.loaded = true;
-                        });
-                    }
-                } else {
-                    this.openFile(item);
-                }
-            } else if (item.type === 'dir') {
-                item.open = !item.open;
+        _scrollHeight() {
+            return this.openedList.length * this.itemHeight + 'px';
+        },
+        _paddingLeft() {
+            return function (item) {
+                return item.deep * this.itemPadding + 'px';
             }
         },
-        inActive(list) {
-            list.map(item => {
-                item.active = false;
-                item.children && this.inActive(item.children);
-            });
+    },
+    watch: {
+        list() {
+            this.openedList = [];
+            this.renderList = [];
+            this.openedList = this.getRenderList(this.list, 0);
+            this.render();
+        }
+    },
+    created() {
+        this.openedList = this.getRenderList(this.list, 0);
+    },
+    mounted() {
+        this.maxVisibleLines = Math.ceil(this.$refs.wrap.clientHeight / this.itemHeight) + 1;
+        this.render();
+    },
+    methods: {
+        render() {
+            this.renderList = this.openedList.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines);
         },
         readdir(dirPath) {
             const fs = require('fs')
@@ -121,6 +116,75 @@ export default {
                 return 1;
             });
             return results;
+        },
+        onClickItem(item) {
+            if (!item.active) {
+                if (preActiveItem) {
+                    preActiveItem.active = false;
+                }
+                item.active = true;
+                preActiveItem = item;
+                if (item.type === 'dir') {
+                    if (!item.loaded) {
+                        this.readdir(item.path).then((data) => {
+                            item.children = data;
+                            item.loaded = true;
+                            data.map((_item) => {
+                                _item.deep = item.deep + 1;
+                            });
+                            _changOpen.call(this, item);
+                        });
+                    } else {
+                        _changOpen.call(this, item);
+                    }
+                } else {
+                    this.openFile(item);
+                }
+            } else {
+                _changOpen.call(this, item);
+            }
+
+            function _changOpen(item) {
+                if (item.type === 'dir') {
+                    item.open = !item.open;
+                    if (item.children.length) {
+                        if (item.open) {
+                            let index = this.openedList.indexOf(item);
+                            this.openedList = this.openedList.slice(0, index + 1)
+                                .concat(this.getRenderList(item.children, item.deep))
+                                .concat(this.openedList.slice(index + 1));
+                        } else {
+                            let index = this.openedList.indexOf(item) + 1;
+                            let endIn = index;
+                            while (endIn < this.openedList.length && this.openedList[endIn].parentPath != item.parentPath) {
+                                endIn++;
+                            }
+                            this.openedList.splice(index, endIn - index);
+                        }
+                        this.render();
+                    }
+                }
+            }
+        },
+        getRenderList(list, deep) {
+            let results = [];
+            _loopList(list, deep);
+            return results;
+
+            function _loopList(list, deep) {
+                list.map((item) => {
+                    item.deep = deep + 1;
+                    results.push(item);
+                    if (item.open && item.children.length) {
+                        _loopList(item.children, item.deep);
+                    }
+                });
+            }
+        },
+        onScroll(e) {
+            let scrollTop = e.target.scrollTop;
+            this.startLine = Math.floor(scrollTop / this.itemHeight) + 1;
+            this.render();
         }
     }
 }
