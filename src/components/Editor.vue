@@ -731,9 +731,15 @@ export default {
                     }
                     let height = this.folder.getRelativeLine(nowCursorPos.line) * this.charObj.charHight;
                     if (height > this.scrollTop + this.scrollerArea.height) {
-                        this.$refs.scroller.scrollTop = height - this.scrollerArea.height;
+                        requestAnimationFrame(() => {
+                            this.setStartLine(height - this.scrollerArea.height);
+                            this.$refs.scroller.scrollTop = height - this.scrollerArea.height;
+                        });
                     } else if (nowCursorPos.line <= this.startLine) {
-                        this.$refs.scroller.scrollTop = (nowCursorPos.line - 1) * this.charObj.charHight;
+                        requestAnimationFrame(() => {
+                            this.startLine = nowCursorPos.line;
+                            this.$refs.scroller.scrollTop = (nowCursorPos.line - 1) * this.charObj.charHight;
+                        });
                     }
                     this.renderCursor(true);
                 });
@@ -744,6 +750,13 @@ export default {
             let maxLine = this.myContext.htmls.length;
             maxLine = this.folder.getRelativeLine(maxLine);
             this.contentHeight = maxLine * this.charObj.charHight + 'px';
+        },
+        setStartLine(scrollTop) {
+            let startLine = 1;
+            startLine = Math.floor(scrollTop / this.charObj.charHight);
+            startLine++;
+            this.startLine = this.folder.getRealLine(startLine);
+            this.top = -scrollTop % this.charObj.charHight;
         },
         setErrorMap(errorMap) {
             this.errorMap = errorMap;
@@ -986,13 +999,9 @@ export default {
         },
         // 左右滚动事件
         onScroll(e) {
-            let startLine = 1;
+            this.setStartLine(e.target.scrollTop);
             this.scrollTop = e.target.scrollTop;
             this.scrollLeft = e.target.scrollLeft;
-            startLine = Math.floor(this.scrollTop / this.charObj.charHight);
-            startLine++;
-            this.startLine = this.folder.getRealLine(startLine);
-            this.top = -this.scrollTop % this.charObj.charHight;
             this.$refs.scroller.scrollLeft = this.scrollLeft;
         },
         // 滚动滚轮
