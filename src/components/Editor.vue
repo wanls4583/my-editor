@@ -731,14 +731,8 @@ export default {
                     }
                     let height = this.folder.getRelativeLine(nowCursorPos.line) * this.charObj.charHight;
                     if (height > this.scrollTop + this.scrollerArea.height) {
-                        let scrollTop = height - this.scrollerArea.height;
-                        this.startLine = Math.floor(scrollTop / this.charObj.charHight);
-                        this.startLine++;
-                        this.startLine = this.folder.getRealLine(startLine);
-                        this.top = -scrollTop % this.charObj.charHight;
-                        this.$refs.scroller.scrollTop = scrollTop;
+                        this.$refs.scroller.scrollTop = height - this.scrollerArea.height;
                     } else if (nowCursorPos.line <= this.startLine) {
-                        this.startLine = nowCursorPos.line;
                         this.$refs.scroller.scrollTop = (nowCursorPos.line - 1) * this.charObj.charHight;
                     }
                     this.renderCursor(true);

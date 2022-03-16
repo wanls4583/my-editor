@@ -291,10 +291,9 @@ body {
 
     &-content {
         position: relative;
-        float: left;
-        height: 1000000px;
         padding-right: 2px;
         cursor: text;
+        overflow: hidden;
 
         &-wrap {
             position: relative;
