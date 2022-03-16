@@ -29,68 +29,69 @@
 		</div>
 		<div :style="{'box-shadow': _leftShadow}" class="my-editor-content-wrap">
 			<!-- 可滚动区域 -->
-			<div @mousedown="onScrollerMdown" @mouseup="onScrollerMup" class="my-editor-content-scroller" ref="scroller" v-if="active">
+			<div @scroll="onScroll" class="my-editor-scroller" ref="scroller">
 				<!-- 内如区域 -->
-				<div :style="{top: _top, minWidth: _contentMinWidth}" @selectend.prevent="onSelectend" class="my-editor-content" ref="content">
-					<div
-						:class="{active: _activeLine(line.num)}"
-						:data-line="line.num"
-						:id="'line_'+line.num"
-						:key="line.num"
-						:style="{height:_lineHeight, 'line-height':_lineHeight}"
-						class="my-editor-line"
-						v-for="line in renderHtmls"
-					>
-						<!-- my-editor-select-bg为选中状态 -->
+				<div
+					:style="{minWidth: _contentMinWidth, height: contentHeight}"
+					@mousedown="onContentMdown"
+					@mousemove="onContentMmove"
+					@selectend.prevent="onSelectend"
+					class="my-editor-content"
+					ref="content"
+				>
+					<div :style="{top: _top}" class="my-editor-render" v-if="active">
 						<div
-							:class="[line.selected ? 'my-editor-select-bg my-editor-select-active' : '', line.isFsearch ? 'my-editor-select-f' : '', line.fold == 'close' ? 'fold-close' : '']"
+							:class="{active: _activeLine(line.num)}"
 							:data-line="line.num"
-							class="my-editor-code"
-							v-html="line.html"
-						></div>
-						<!-- 选中时的首行背景 -->
-						<div
-							:class="{'my-editor-select-active': range.active,'my-editor-select-f': range.isFsearch}"
-							:style="{left: range.left + 'px', width: range.width + 'px'}"
-							class="my-editor-line-bg my-editor-select-bg"
-							v-for="range in line.selectStarts"
-						></div>
-						<!-- 选中时的末行背景 -->
-						<div
-							:class="{'my-editor-select-active': range.active,'my-editor-select-f': range.isFsearch}"
-							:style="{left: range.left + 'px', width: range.width + 'px'}"
-							class="my-editor-line-bg my-editor-select-bg"
-							v-for="range in line.selectEnds"
-						></div>
-						<span :style="{left: _tabLineLeft(tab)}" class="my-editor-tab-line" v-for="tab in line.tabNum"></span>
-						<!-- 模拟光标 -->
-						<div :style="{height: _lineHeight, left: left, visibility: _cursorVisible}" class="my-editor-cursor" style="top:0px" v-for="left in line.cursorList"></div>
+							:id="'line_'+line.num"
+							:key="line.num"
+							:style="{height:_lineHeight, 'line-height':_lineHeight}"
+							class="my-editor-line"
+							v-for="line in renderHtmls"
+						>
+							<!-- my-editor-select-bg为选中状态 -->
+							<div
+								:class="[line.selected ? 'my-editor-select-bg my-editor-select-active' : '', line.isFsearch ? 'my-editor-select-f' : '', line.fold == 'close' ? 'fold-close' : '']"
+								:data-line="line.num"
+								class="my-editor-code"
+								v-html="line.html"
+							></div>
+							<!-- 选中时的首行背景 -->
+							<div
+								:class="{'my-editor-select-active': range.active,'my-editor-select-f': range.isFsearch}"
+								:style="{left: range.left + 'px', width: range.width + 'px'}"
+								class="my-editor-line-bg my-editor-select-bg"
+								v-for="range in line.selectStarts"
+							></div>
+							<!-- 选中时的末行背景 -->
+							<div
+								:class="{'my-editor-select-active': range.active,'my-editor-select-f': range.isFsearch}"
+								:style="{left: range.left + 'px', width: range.width + 'px'}"
+								class="my-editor-line-bg my-editor-select-bg"
+								v-for="range in line.selectEnds"
+							></div>
+							<span :style="{left: _tabLineLeft(tab)}" class="my-editor-tab-line" v-for="tab in line.tabNum"></span>
+							<!-- 模拟光标 -->
+							<div :style="{height: _lineHeight, left: left, visibility: _cursorVisible}" class="my-editor-cursor" style="top:0px" v-for="left in line.cursorList"></div>
+						</div>
 					</div>
+					<!-- 输入框 -->
+					<textarea
+						:style="{top: _textAreaPos.top, left: _textAreaPos.left}"
+						@blur="onBlur"
+						@compositionend="onCompositionend"
+						@compositionstart="onCompositionstart"
+						@copy.prevent="onCopy"
+						@cut.prevent="onCut"
+						@focus="onFocus"
+						@input="onInput"
+						@keydown="onKeyDown"
+						@paste.prevent="onPaste"
+						class="my-editor-textarea"
+						ref="textarea"
+					></textarea>
 				</div>
 			</div>
-			<!-- 水平滚动条 -->
-			<div @mousedown.stop @scroll="onHscroll" class="my-editor-h-scroller-wrap" ref="hScroller">
-				<div :style="{width: _hScrollWidth}" class="my-editor-h-scroller"></div>
-			</div>
-			<!-- 垂直滚动条 -->
-			<div @mousedown.stop @scroll="onVscroll" class="my-editor-v-scroller-wrap" ref="vScroller">
-				<div :style="{height: scrollerHeight}" class="my-editor-v-scroller"></div>
-			</div>
-			<!-- 输入框 -->
-			<textarea
-				:style="{top: _textAreaPos.top, left: _textAreaPos.left}"
-				@blur="onBlur"
-				@compositionend="onCompositionend"
-				@compositionstart="onCompositionstart"
-				@copy.prevent="onCopy"
-				@cut.prevent="onCut"
-				@focus="onFocus"
-				@input="onInput"
-				@keydown="onKeyDown"
-				@paste.prevent="onPaste"
-				class="my-editor-textarea"
-				ref="textarea"
-			></textarea>
 			<!-- 搜索框 -->
 			<search-dialog
 				:count="searchCount"
@@ -164,12 +165,12 @@ export default {
             startLine: 1,
             startToEndToken: null,
             top: 0,
-            textareaLeft: 0,
+            cursorLeft: 0,
             scrollLeft: 0,
             scrollTop: 0,
             maxVisibleLines: 1,
             maxLine: 1,
-            scrollerHeight: 'auto',
+            contentHeight: '100%',
             scrollerArea: {},
             maxWidthObj: {
                 lineId: null,
@@ -215,7 +216,7 @@ export default {
             return this.scrollLeft ? '17px 0 16px -16px rgba(0, 0, 0, 0.8) inset' : 'none';
         },
         _top() {
-            return this.top + 'px';
+            return (this.startLine - 1) * this.charObj.charHight + 'px';
         },
         _lineHeight() {
             return this.charObj.charHight + 'px';
@@ -236,17 +237,13 @@ export default {
             return width + 'px';
         },
         _textAreaPos() {
-            let left = 0;
+            let left = this.cursorLeft;
             let top = this.top;
             if (this.nowCursorPos) {
-                top = (this.folder.getRelativeLine(this.nowCursorPos.line) - this.folder.getRelativeLine(this.startLine)) * this.charObj.charHight;
-                left = this.textareaLeft;
-                left -= this.scrollLeft;
-                left = left < this.charObj.charWidth ? this.charObj.charWidth : left;
-                left = left > this.scrollerArea.width - this.charObj.charWidth ? this.scrollerArea.width - this.charObj.charWidth : left;
-                top += this.charObj.charHight;
-                if (top > this.scrollerArea.height - 2 * this.charObj.charHight) {
-                    top = this.scrollerArea.height - 2 * this.charObj.charHight;
+                let line = this.nowCursorPos.line < this.startLine ? this.startLine : this.nowCursorPos.line;
+                top = this.folder.getRelativeLine(line) * this.charObj.charHight;
+                if (top > this.scrollTop + this.scrollerArea.height - 2 * this.charObj.charHight) {
+                    top = this.scrollTop + this.scrollerArea.height - 2 * this.charObj.charHight;
                 }
             }
             return {
@@ -297,7 +294,7 @@ export default {
             this.myContext.setLineWidth(this.myContext.htmls);
         },
         maxLine: function (newVal) {
-            this.setScrollerHeight();
+            this.setContentHeight();
         },
         startLine: function (newVal) {
             this.tokenizer.onScroll();
@@ -350,7 +347,7 @@ export default {
         // 初始化文档事件
         initEvent() {
             this.initEvent.fn1 = (e) => {
-                this.active && this.onScrollerMmove(e);
+                this.active && this.onDocumentMmove(e);
             };
             this.initEvent.fn2 = (e) => {
                 this.active && this.onDocumentMouseUp(e);
@@ -607,13 +604,13 @@ export default {
                 // 强制滚动使光标处于可见区域
                 if (forceCursorView && cursorPos === that.nowCursorPos) {
                     if (left > that.scrollerArea.width + that.scrollLeft - that.charObj.fullAngleCharWidth) {
-                        that.$refs.hScroller.scrollLeft = left + that.charObj.fullAngleCharWidth - that.scrollerArea.width;
+                        that.$refs.scroller.scrollLeft = left + that.charObj.fullAngleCharWidth - that.scrollerArea.width;
                     } else if (left < that.scrollLeft) {
-                        that.$refs.hScroller.scrollLeft = left - 1;
+                        that.$refs.scroller.scrollLeft = left - 1;
                     }
                 }
                 if (cursorPos === that.nowCursorPos) {
-                    that.textareaLeft = left;
+                    that.cursorLeft = left;
                 }
                 return left + 'px';
             }
@@ -653,7 +650,7 @@ export default {
                         cursorPos.column = lineObj.text.length;
                     }
                 });
-                this.setScrollerHeight();
+                this.setContentHeight();
                 this.render();
             }
         },
@@ -661,7 +658,7 @@ export default {
         unFold(line) {
             this.focus();
             if (this.folder.unFold(line)) {
-                this.setScrollerHeight();
+                this.setContentHeight();
                 this.render();
             }
         },
@@ -732,15 +729,13 @@ export default {
                     if (this.setNowCursorPos.id != setNowCursorPosId) {
                         return;
                     }
-                    let line = this.folder.getRelativeLine(nowCursorPos.line);
-                    let relTop = (line - this.folder.getRelativeLine(this.startLine)) * this.charObj.charHight;
-                    let top = line * this.charObj.charHight;
+                    let top = this.folder.getRelativeLine(nowCursorPos.line) * this.charObj.charHight;
                     if (top > this.scrollTop + this.scrollerArea.height - this.charObj.charHight) {
-                        this.$refs.vScroller.scrollTop = top + this.charObj.charHight - this.scrollerArea.height;
+                        this.$refs.scroller.scrollTop = top + this.charObj.charHight - this.scrollerArea.height;
                         this.startLine = Math.floor(this.scrollTop / this.charObj.charHight);
                         this.startLine++;
-                    } else if (relTop < 0 || relTop == 0 && this.top < 0) {
-                        this.$refs.vScroller.scrollTop = (nowCursorPos.line - 1) * this.charObj.charHight;
+                    } else if (nowCursorPos.line <= this.startLine) {
+                        this.$refs.scroller.scrollTop = (nowCursorPos.line - 1) * this.charObj.charHight;
                         this.startLine = nowCursorPos.line;
                     }
                     this.renderCursor(true);
@@ -748,10 +743,10 @@ export default {
             }
         },
         // 设置滚动区域真实高度
-        setScrollerHeight() {
+        setContentHeight() {
             let maxLine = this.myContext.htmls.length;
             maxLine = this.folder.getRelativeLine(maxLine);
-            this.scrollerHeight = maxLine * this.charObj.charHight + 'px';
+            this.contentHeight = maxLine * this.charObj.charHight + 'px';
         },
         setErrorMap(errorMap) {
             this.errorMap = errorMap;
@@ -786,52 +781,27 @@ export default {
         },
         // 根据鼠标事件对象获取行列坐标
         getPosByEvent(e) {
-            let that = this;
             let $target = $(e.target);
-            if ($target.attr('data-line') || $target.attr('data-column')) {
-                return _getExactPos(e);
-            }
-            let $scroller = $(this.$refs.scroller);
-            let offset = $scroller.offset();
-            let column = 0;
-            let clientX = e.clientX < 0 ? 0 : e.clientX;
-            let clientY = e.clientY < 0 ? 0 : e.clientY;
-            let line = Math.ceil((clientY + this.scrollTop - offset.top) / this.charObj.charHight) || 1;
-            line = this.folder.getRealLine(line);
-            if (line > this.myContext.htmls.length) {
+            let line = ($target.attr('data-line') || $target.parent().attr('data-line')) - 0;
+            let column = $target.attr('data-column');
+            if (!line) {
                 line = this.myContext.htmls.length;
-                column = this.myContext.htmls[line - 1].text.length;
+            }
+            let lineObj = this.myContext.htmls[line - 1];
+            if (!column) {
+                column = lineObj.text.length;
             } else {
-                column = this.getColumnByWidth(this.myContext.htmls[line - 1].text, clientX + this.scrollLeft - offset.left);
+                column = column - 0;
+                for (let i = 0; i < lineObj.tokens.length; i++) {
+                    if (lineObj.tokens[i].column == column) {
+                        column += this.getColumnByWidth(lineObj.tokens[i].value, e.offsetX);
+                        break;
+                    }
+                }
             }
             return {
                 line: line,
                 column: column
-            }
-
-            function _getExactPos(e) {
-                let $target = $(e.target);
-                let line = $target.attr('data-line') - 0;
-                let column = $target.attr('data-column');
-                if (!line) {
-                    line = $target.parent().attr('data-line') - 0;
-                }
-                let lineObj = that.myContext.htmls[line - 1];
-                if (!column) {
-                    column = lineObj.text.length;
-                } else {
-                    column = column - 0;
-                    for (let i = 0; i < lineObj.tokens.length; i++) {
-                        if (lineObj.tokens[i].column == column) {
-                            column += that.getColumnByWidth(lineObj.tokens[i].value, e.offsetX);
-                            break;
-                        }
-                    }
-                }
-                return {
-                    line: line,
-                    column: column
-                }
             }
         },
         // 右键菜单事件
@@ -894,8 +864,8 @@ export default {
                 this.foldLine(line);
             }
         },
-        // 滚动区域鼠标按下事件
-        onScrollerMdown(e) {
+        // 内容区域鼠标按下事件
+        onContentMdown(e) {
             if (e.which == 3) { //右键
                 return;
             }
@@ -930,11 +900,30 @@ export default {
             this.searcher.clearSearch(true);
             this.focus();
         },
-        onScrollerMup(e) {
-
+        onContentMmove(e) {
+            let end = this.getPosByEvent(e);
+            if (this.mouseStartObj && Date.now() - this.mouseStartObj.time > 100) {
+                if (Util.comparePos(end, this.mouseStartObj.cursorPos)) {
+                    this.cursor.removeCursor(this.mouseStartObj.cursorPos);
+                    this.mouseStartObj.cursorPos = this.cursor.addCursorPos({ line: end.line, column: end.column });
+                    if (this.mouseStartObj.preRange) {
+                        this.selecter.updateRange(this.mouseStartObj.preRange, {
+                            start: this.mouseStartObj.start,
+                            end: end
+                        });
+                    } else {
+                        this.mouseStartObj.preRange = this.selecter.addRange({
+                            start: this.mouseStartObj.start,
+                            end: end
+                        });
+                    }
+                    // 删除区域范围内的光标
+                    this.cursor.removeCursorInRange(this.mouseStartObj.preRange);
+                }
+            }
         },
         // 鼠标移动事件
-        onScrollerMmove(e) {
+        onDocumentMmove(e) {
             let that = this;
             let offset = $(this.$refs.scroller).offset();
             if (this.mouseStartObj && Date.now() - this.mouseStartObj.time > 100) {
@@ -947,25 +936,6 @@ export default {
                     _move('left', offset.left - e.clientX);
                 } else if (e.clientX > offset.left + this.scrollerArea.width) { //鼠标超出右边区域
                     _move('right', e.clientX - offset.left - this.scrollerArea.width);
-                } else {
-                    let end = this.getPosByEvent(e);
-                    if (Util.comparePos(end, this.mouseStartObj.cursorPos)) {
-                        this.cursor.removeCursor(this.mouseStartObj.cursorPos);
-                        this.mouseStartObj.cursorPos = this.cursor.addCursorPos({ line: end.line, column: end.column });
-                        if (this.mouseStartObj.preRange) {
-                            this.selecter.updateRange(this.mouseStartObj.preRange, {
-                                start: this.mouseStartObj.start,
-                                end: end
-                            });
-                        } else {
-                            this.mouseStartObj.preRange = this.selecter.addRange({
-                                start: this.mouseStartObj.start,
-                                end: end
-                            });
-                        }
-                        // 删除区域范围内的光标
-                        this.cursor.removeCursorInRange(this.mouseStartObj.preRange);
-                    }
                 }
             }
             function _move(autoDirect, speed) {
@@ -1018,23 +988,20 @@ export default {
             this.$refs.searchDialog && this.$refs.searchDialog.directBlur();
         },
         // 左右滚动事件
-        onHscroll(e) {
-            this.scrollLeft = e.target.scrollLeft;
-            this.$refs.scroller.scrollLeft = this.scrollLeft;
-        },
-        // 上下滚动事件
-        onVscroll(e) {
+        onScroll(e) {
             let startLine = 1;
             this.scrollTop = e.target.scrollTop;
+            this.scrollLeft = e.target.scrollLeft;
             startLine = Math.floor(this.scrollTop / this.charObj.charHight);
             startLine++;
             this.startLine = this.folder.getRealLine(startLine);
             this.top = -this.scrollTop % this.charObj.charHight;
+            this.$refs.scroller.scrollLeft = this.scrollLeft;
         },
         // 滚动滚轮
         onWheel(e) {
-            this.$refs.vScroller.scrollTop = this.scrollTop + e.deltaY;
-            this.$refs.hScroller.scrollLeft = this.scrollLeft + e.deltaX;
+            this.$refs.scroller.scrollTop = this.scrollTop + e.deltaY;
+            this.$refs.scroller.scrollLeft = this.scrollLeft + e.deltaX;
         },
         // 中文输入开始
         onCompositionstart() {

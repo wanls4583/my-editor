@@ -259,6 +259,36 @@ body {
         }
     }
 
+    &-scroller {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+
+        &::-webkit-scrollbar {
+            border-radius: 4px;
+            background-color: rgb(76, 77, 72);
+            box-shadow: 0 0 20px rgba(0, 0, 0, .2);
+        }
+
+        &::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        &::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            border-radius: 4px;
+            background-color: rgb(115, 116, 112);
+        }
+
+        &::-webkit-scrollbar-corner {
+            background-color: #272822;
+        }
+    }
+
     &-content {
         position: relative;
         float: left;
@@ -271,13 +301,12 @@ body {
             height: 100%;
             overflow: hidden;
         }
+    }
 
-        &-scroller {
-            position: relative;
-            height: 100%;
-            overflow: hidden;
-            margin-right: 17px;
-        }
+    &-render {
+        position: absolute;
+        left: 0;
+        width: 100%;
     }
 
     &-line {
@@ -394,55 +423,6 @@ body {
         border-style: none;
         outline: none;
         opacity: 0;
-    }
-
-    &-v-scroller-wrap {
-        position: absolute;
-        z-index: 1;
-        top: 0;
-        bottom: 17px;
-        right: 0;
-        width: 17px;
-        overflow: auto;
-    }
-
-    &-h-scroller-wrap {
-        position: absolute;
-        z-index: 1;
-        bottom: 0;
-        left: 0;
-        right: 17px;
-        height: 17px;
-        overflow: auto;
-    }
-
-    &-v-scroller {
-        width: 100%;
-    }
-
-    &-h-scroller {
-        height: 100%;
-    }
-
-    &-h-scroller-wrap::-webkit-scrollbar,
-    &-v-scroller-wrap::-webkit-scrollbar {
-        border-radius: 4px;
-        background-color: rgb(76, 77, 72);
-        box-shadow: 0 0 20px rgba(0, 0, 0, .2);
-    }
-
-    &-v-scroller-wrap::-webkit-scrollbar {
-        width: 8px;
-    }
-
-    &-h-scroller-wrap::-webkit-scrollbar {
-        height: 8px;
-    }
-
-    &-h-scroller-wrap::-webkit-scrollbar-thumb,
-    &-v-scroller-wrap::-webkit-scrollbar-thumb {
-        border-radius: 4px;
-        background-color: rgb(115, 116, 112);
     }
 
     // 折叠标记-begin
