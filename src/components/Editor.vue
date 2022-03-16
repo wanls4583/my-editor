@@ -729,14 +729,17 @@ export default {
                     if (this.setNowCursorPos.id != setNowCursorPosId) {
                         return;
                     }
-                    let top = this.folder.getRelativeLine(nowCursorPos.line) * this.charObj.charHight;
-                    if (top > this.scrollTop + this.scrollerArea.height - this.charObj.charHight) {
-                        this.$refs.scroller.scrollTop = top + this.charObj.charHight - this.scrollerArea.height;
-                        this.startLine = Math.floor(this.scrollTop / this.charObj.charHight);
+                    let height = this.folder.getRelativeLine(nowCursorPos.line) * this.charObj.charHight;
+                    if (height > this.scrollTop + this.scrollerArea.height) {
+                        let scrollTop = height - this.scrollerArea.height;
+                        this.startLine = Math.floor(scrollTop / this.charObj.charHight);
                         this.startLine++;
+                        this.startLine = this.folder.getRealLine(startLine);
+                        this.top = -scrollTop % this.charObj.charHight;
+                        this.$refs.scroller.scrollTop = scrollTop;
                     } else if (nowCursorPos.line <= this.startLine) {
-                        this.$refs.scroller.scrollTop = (nowCursorPos.line - 1) * this.charObj.charHight;
                         this.startLine = nowCursorPos.line;
+                        this.$refs.scroller.scrollTop = (nowCursorPos.line - 1) * this.charObj.charHight;
                     }
                     this.renderCursor(true);
                 });
