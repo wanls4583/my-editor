@@ -16,7 +16,7 @@
 				<Menu :menuList="tabSizeList" :styles="{right: 0, bottom: height+'px'}" @change="onTabsizeChange" v-show="tabsizeVisible"></Menu>
 			</div>
 			<div @mousedown.stop="showLanguage" class="bar-item my-editor-clickable" v-if="editor">
-				<span>{{language}}</span>
+				<span>{{_language}}</span>
 				<Menu :menuList="languageList" :styles="{right: 0, bottom: height+'px'}" @change="onLnaguageChange" v-show="languageVisible"></Menu>
 			</div>
 		</div>
@@ -40,11 +40,17 @@ export default {
             line: 1,
             column: 0,
             tabSize: 4,
-            language: 'HTML',
+            language: '',
             tabsizeVisible: false,
             languageVisible: false,
             tabSizeList: [[]],
-            languageList: [[{ name: 'JavaScript' }, { name: 'HTML' }, { name: 'CSS' }]]
+            languageMap: {},
+            languageList: [[
+                { name: 'JavaScript', value: 'JavaScript' },
+                { name: 'HTML', value: 'HTML' },
+                { name: 'CSS', value: 'CSS' },
+                { name: 'Plain Text', value: '' }
+            ]]
         }
     },
     watch: {
@@ -56,6 +62,9 @@ export default {
         editor() {
             return this.getNowEditor();
         },
+        _language() {
+            return this.languageMap[this.language];
+        }
     },
     inject: ['getNowEditor'],
     created() {
@@ -67,6 +76,11 @@ export default {
         }
         this.setDefault();
     },
+    created() {
+        this.languageList[0].forEach((item) => {
+            this.languageMap[item.value] = item.name;
+        });
+    },
     mounted() {
     },
     methods: {
@@ -75,7 +89,7 @@ export default {
                 item.checked = item.size == this.tabSize;
             });
             this.languageList[0].forEach((item) => {
-                item.checked = item.name == this.language;
+                item.checked = item.value == this.language;
             });
         },
         showTabsize() {
@@ -101,8 +115,8 @@ export default {
         },
         onLnaguageChange(item) {
             if (this.language != item.name) {
-                this.language = item.name;
-                this.editor.language = item.name;
+                this.language = item.value;
+                this.editor.language = item.value;
             }
             this.languageVisible = false;
         }

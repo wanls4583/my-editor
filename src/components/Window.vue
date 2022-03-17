@@ -342,7 +342,7 @@ export default {
                 this.$nextTick(() => {
                     if (tab && tab.path && !tab.loaded) {
                         let fileType = tab.name.match(/\.[^\.]+?$/i);
-                        let language = 'plain';
+                        let language = '';
                         fileType = fileType && fileType[0].toLowerCase().slice(1) || '';
                         switch (fileType) {
                             case 'html':

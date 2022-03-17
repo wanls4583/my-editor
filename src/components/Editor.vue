@@ -157,9 +157,7 @@ export default {
             },
             cursorVisible: true,
             cursorFocus: true,
-            language: 'HTML',
-            // language: 'JavaScript',
-            // language: 'CSS',
+            language: '',
             tabSize: 4,
             renderHtmls: [],
             startLine: 1,
@@ -284,9 +282,11 @@ export default {
             });
             this.render();
             this.tokenizer.initLanguage(newVal);
-            this.tokenizer.tokenizeVisibleLins();
-            this.tokenizer.tokenizeLines(1);
             this.lint.initLanguage(newVal);
+            if (newVal) {
+                this.tokenizer.tokenizeVisibleLins();
+                this.tokenizer.tokenizeLines(1);
+            }
         },
         tabSize: function (newVal) {
             this.render();
