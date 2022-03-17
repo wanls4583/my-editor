@@ -115,6 +115,7 @@
 <script>
 import Tokenizer from '@/module/tokenizer/core/index';
 import Lint from '@/module/lint/core/index';
+import Autocomplete from '@/module/autocomplete/core/index';
 import Fold from '@/module/fold/index';
 import Search from '@/module/search/index';
 import Select from '@/module/select/index';
@@ -281,12 +282,11 @@ export default {
                 lineObj.html = '';
             });
             this.render();
-            this.tokenizer.initLanguage(newVal);
             this.lint.initLanguage(newVal);
-            if (newVal) {
-                this.tokenizer.tokenizeVisibleLins();
-                this.tokenizer.tokenizeLines(1);
-            }
+            this.autocomplete.initLanguage(newVal);
+            this.tokenizer.initLanguage(newVal);
+            this.tokenizer.tokenizeVisibleLins();
+            this.tokenizer.tokenizeLines(1);
         },
         tabSize: function (newVal) {
             this.render();
@@ -334,6 +334,7 @@ export default {
             this.maxWidthObj.lineId = this.myContext.htmls[0].lineId;
             this.tokenizer = new Tokenizer(this, this.myContext);
             this.lint = new Lint(this, this.myContext);
+            this.autocomplete = new Autocomplete(this, this.myContext);
             this.folder = new Fold(this, this.myContext);
             this.history = new History(this, this.myContext);
             this.selecter = new Select(this, this.myContext);
@@ -1020,6 +1021,7 @@ export default {
                 let text = this.$refs.textarea.value || '';
                 if (text) {
                     this.myContext.insertContent(text);
+                    this.autocomplete.search();
                     this.$refs.textarea.value = '';
                 }
             }
@@ -1034,6 +1036,7 @@ export default {
                 let text = this.$refs.textarea.value || '';
                 if (text) {
                     this.myContext.insertContent(text);
+                    this.autocomplete.search();
                     this.$refs.textarea.value = '';
                 }
             }

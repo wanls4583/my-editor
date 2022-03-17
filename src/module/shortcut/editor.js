@@ -15,6 +15,7 @@ export default class {
             'cursor',
             'selecter',
             'searcher',
+            'autocomplete',
             'fSearcher',
             'history',
             'searchWord',
@@ -161,9 +162,11 @@ export default class {
                     break;
                 case Util.keyCode.DELETE: //delete
                     this.deleteContent(Util.keyCode.DELETE);
+                    this.autocomplete.search();
                     break;
-                case Util.keyCode.BACKSPACE: //backspace
+                    case Util.keyCode.BACKSPACE: //backspace
                     this.deleteContent(Util.keyCode.BACKSPACE);
+                    this.autocomplete.search();
                     break;
             }
         }

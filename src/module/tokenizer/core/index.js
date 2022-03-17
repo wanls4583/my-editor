@@ -175,9 +175,6 @@ export default class {
         }
     }
     onDeleteContentAfter(nowLine, newLine) {
-        if (this.language == 'plain') {
-            return;
-        }
         if (newLine <= this.currentLine) {
             this.currentLine = newLine;
             clearTimeout(this.tokenizeLines.timer);
@@ -192,9 +189,6 @@ export default class {
         }
     }
     onScroll() {
-        if (this.language == 'plain') {
-            return;
-        }
         this.tokenizeVisibleLins();
     }
     tokenizeVisibleLins() {
@@ -221,7 +215,7 @@ export default class {
                 lineObj.tokens = data.tokens;
                 lineObj.folds = data.folds;
                 lineObj.html = data.tokens.map((item) => {
-                    let rule = this.ruleIdMap[item.ruleId];
+                    let rule = this.ruleIdMap && this.ruleIdMap[item.ruleId];
                     if (rule && typeof rule.value === 'function') {
                         return rule.value(item.value);
                     } else {
@@ -260,12 +254,11 @@ export default class {
         let newStates = [];
         let states = (line > 1 && this.htmls[line - 2].states || []).slice(0);
         let lineObj = this.htmls[line - 1];
-        let regex = this.getRegex(states);
         let resultObj = {
             tokens: [],
             folds: []
         }
-        if (lineObj.text.length > 10000) {
+        if (lineObj.text.length > 10000 || this.language == 'plain') {
             return {
                 tokens: this.splitLongToken([{
                     type: 'plain',
@@ -276,6 +269,7 @@ export default class {
                 states: states
             }
         }
+        let regex = this.getRegex(states);
         while (match = regex.exec(lineObj.text)) {
             let token = null;
             let fold = null;
