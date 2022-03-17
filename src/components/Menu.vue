@@ -45,7 +45,7 @@ export default {
             if (item.disabled) {
                 return;
             }
-            group.map((item) => {
+            group.forEach((item) => {
                 item.checked = false;
             });
             item.checked = true;

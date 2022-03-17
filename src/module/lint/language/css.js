@@ -123,7 +123,7 @@ export default function () {
         this.column = 0;
         this.input = '';
         this.bracketsMap = new Map();
-        brackets.map((item) => {
+        brackets.forEach((item) => {
             this.bracketsMap.set(item, true);
         });
     }

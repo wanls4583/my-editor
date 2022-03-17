@@ -71,10 +71,10 @@ export default {
     },
     methods: {
         setDefault() {
-            this.tabSizeList[0].map((item) => {
+            this.tabSizeList[0].forEach((item) => {
                 item.checked = item.size == this.tabSize;
             });
-            this.languageList[0].map((item) => {
+            this.languageList[0].forEach((item) => {
                 item.checked = item.name == this.language;
             });
         },

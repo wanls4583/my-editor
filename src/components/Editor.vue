@@ -276,7 +276,7 @@ export default {
     },
     watch: {
         language: function (newVal) {
-            this.myContext.htmls.map((lineObj) => {
+            this.myContext.htmls.forEach((lineObj) => {
                 lineObj.tokens = null;
                 lineObj.folds = null;
                 lineObj.states = null;
@@ -503,7 +503,7 @@ export default {
                     });
                     return;
                 }
-                this.renderHtmls.map((item) => {
+                this.renderHtmls.forEach((item) => {
                     item.selected = false;
                     item.selectStarts = [];
                     item.selectEnds = [];
@@ -576,7 +576,7 @@ export default {
                 if (this.renderCursor.id !== renderCursorId) {
                     return;
                 }
-                this.renderHtmls.map((item) => {
+                this.renderHtmls.forEach((item) => {
                     _setLine(item);
                 });
                 this.cursorVisible = true;
@@ -584,7 +584,7 @@ export default {
 
             function _setLine(item) {
                 let cursorList = [];
-                that.cursor.getCursorsByLine(item.num).map((cursorPos) => {
+                that.cursor.getCursorsByLine(item.num).forEach((cursorPos) => {
                     cursorList.push(_setCursorRealPos(cursorPos));
                 });
                 item.cursorList = cursorList;

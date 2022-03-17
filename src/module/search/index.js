@@ -20,7 +20,7 @@ export default class {
             '$nextTick',
             '$refs',
         ]);
-        Util.defineProperties(this, context, ['htmls', 'getToSearchConfig']);
+        Util.defineProperties(this, context, ['htmls', 'getToSearchConfig', 'getAllText']);
     }
     search(searchObj) {
         let resultObj = null;
@@ -89,9 +89,7 @@ export default class {
             line = 1,
             column = 0,
             index = 0;
-        let text = this.htmls.map((item) => {
-            return item.text
-        }).join('\n');
+        let text = this.getAllText();
         let strs = config.text.split(/\n/);
         let regStr = config.text.replace(/\\|\.|\*|\+|\-|\?|\(|\)|\[|\]|{|\}|\^|\$|\~|\!/g, '\\$&');
         regStr = (config.wholeWord ? '(?:\\b|(?=[^0-9a-zA-Z]))' : '') + regStr + (config.wholeWord ? '(?:\\b|(?=[^0-9a-zA-Z]))' : '');

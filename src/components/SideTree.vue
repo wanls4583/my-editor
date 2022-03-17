@@ -83,7 +83,7 @@ export default {
                 // 异步读取目录内容
                 fs.readdir(dirPath, { encoding: 'utf8' }, (err, files) => {
                     if (err) { throw err }
-                    files.map((item, index) => {
+                    files.forEach((item, index) => {
                         let fullPath = path.join(dirPath, item);
                         fs.stat(fullPath, (err, data) => {
                             let obj = {
@@ -130,7 +130,7 @@ export default {
                         this.readdir(item.path).then((data) => {
                             item.children = data;
                             item.loaded = true;
-                            data.map((_item) => {
+                            data.forEach((_item) => {
                                 _item.deep = item.deep + 1;
                             });
                             _changOpen.call(this, item);
@@ -171,7 +171,7 @@ export default {
             return results;
 
             function _loopList(list, deep) {
-                list.map((item) => {
+                list.forEach((item) => {
                     item.deep = deep + 1;
                     results.push(item);
                     if (item.open && item.children.length) {

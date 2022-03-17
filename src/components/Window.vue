@@ -145,7 +145,7 @@ export default {
         onChangeTab(id) {
             let tab = this.getTabById(id);
             if (!tab.active) {
-                this.editorList.map((item) => {
+                this.editorList.forEach((item) => {
                     item.active = false;
                 });
                 tab.active = true;
@@ -205,13 +205,13 @@ export default {
             this.editorList = this.editorList.filter((item) => {
                 return !item.saved;
             });
-            this.editorList.map((item) => {
+            this.editorList.forEach((item) => {
                 this.onCloseTab(item.id);
             });
             this.nowId = null;
         },
         onCloseSaved() {
-            this.editorList.slice().map((item) => {
+            this.editorList.slice().forEach((item) => {
                 if (item.saved) {
                     this.onCloseTab(item.id);
                 }
@@ -289,7 +289,7 @@ export default {
             return remote.dialog.showOpenDialog(win, options).then(result => {
                 let results = [];
                 if (!result.canceled && result.filePaths) {
-                    result.filePaths.map((item) => {
+                    result.filePaths.forEach((item) => {
                         let obj = {
                             name: item.match(/[^\\\/]+$/)[0],
                             path: item,
@@ -380,7 +380,7 @@ export default {
             return remote.dialog.showOpenDialog(win, options).then(result => {
                 let results = [];
                 if (!result.canceled && result.filePaths) {
-                    result.filePaths.map((item) => {
+                    result.filePaths.forEach((item) => {
                         let obj = {
                             id: this.idCount++,
                             name: item.match(/[^\\\/]+$/)[0],

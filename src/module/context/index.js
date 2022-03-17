@@ -76,7 +76,7 @@ export default class {
             }
             cursorPosList = this.cursor.multiCursorPos.toArray();
         } else {
-            command.map((item) => {
+            command.forEach((item) => {
                 // 多个插入的光标可能相同，这里不能先添加光标
                 cursorPosList.push(item.cursorPos);
             });
@@ -101,7 +101,7 @@ export default class {
         let lineDelta = 0;
         let columnDelta = 0;
         this.cursor.clearCursorPos();
-        cursorPosList.map((cursorPos, index) => {
+        cursorPosList.forEach((cursorPos, index) => {
             let _text = texts.length === cursorPosList.length ? texts[index] : text;
             let commandObj = command && command[index] || {};
             let margin = commandObj.margin || 'right';
@@ -215,7 +215,7 @@ export default class {
         } else { // 撤销或重做操作后，更新历史记录
             historyArr.serial = command.serial;
             this.history.updateHistory(historyArr);
-            historyArr.map((item) => {
+            historyArr.forEach((item) => {
                 this.cursor.addCursorPos(item.cursorPos);
             });
         }
@@ -232,7 +232,7 @@ export default class {
         let lineDelta = 0;
         let columnDelta = 0;
         this.cursor.clearCursorPos();
-        rangeList.map((item) => {
+        rangeList.forEach((item) => {
             if (item instanceof Array) {
                 _deleteRangePos(item[0], item[1]);
             } else {
@@ -567,7 +567,7 @@ export default class {
         } else {
             originList = this.cursor.multiCursorPos.toArray();
         }
-        originList.map((item) => {
+        originList.forEach((item) => {
             if (!prePos || prePos.line !== item.line) {
                 let text = this.htmls[item.line - 1].text;
                 cursorPosList.push({
@@ -578,7 +578,7 @@ export default class {
             }
             prePos = item;
         });
-        this._insertMultiContent(texts, cursorPosList).map((item) => {
+        this._insertMultiContent(texts, cursorPosList).forEach((item) => {
             let originLine = originList[index].line;
             let line = direct === 'down' ? item.cursorPos.line : item.cursorPos.line - 1;
             while (index < originList.length && originList[index].line === originLine) {
@@ -600,7 +600,7 @@ export default class {
             this.history.updateHistory(historyObj);
         }
         this.cursor.clearCursorPos();
-        historyPosList.map((item) => {
+        historyPosList.forEach((item) => {
             this.cursor.addCursorPos(item);
         });
         this.searcher.refreshSearch();
@@ -625,7 +625,7 @@ export default class {
         } else {
             originList = this.cursor.multiCursorPos.toArray();
         }
-        originList.map((item) => {
+        originList.forEach((item) => {
             if (!prePos || prePos.line !== item.line) {
                 let upLine = direct === 'down' ? item.line : item.line - 1;
                 let downLine = upLine + 1;
@@ -645,7 +645,7 @@ export default class {
             }
             prePos = item;
         });
-        this._deleteMultiContent(cursorPosList).map((item) => {
+        this._deleteMultiContent(cursorPosList).forEach((item) => {
             let originLine = originList[index].line;
             let line = item.cursorPos.line;
             while (index < originList.length && originList[index].line === originLine) {
@@ -667,7 +667,7 @@ export default class {
             this.history.updateHistory(historyObj);
         }
         this.cursor.clearCursorPos();
-        historyPosList.map((item) => {
+        historyPosList.forEach((item) => {
             this.cursor.addCursorPos(item);
         });
         this.searcher.refreshSearch();
@@ -813,7 +813,7 @@ export default class {
             ranges.push([range, item]);
             preItem = item;
         });
-        ranges.map((item) => {
+        ranges.forEach((item) => {
             let str = this.getRangeText(item[0].start, item[0].end);
             text = str[0] === '\n' ? text += str : text += '\n' + str;
         });

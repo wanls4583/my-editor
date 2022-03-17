@@ -161,19 +161,19 @@ export default function () {
         this.binaryOperatorMap = {};
         this.keywordsMap = new Map();
         this.bracketsMap = new Map();
-        assignOperator.map((item) => {
+        assignOperator.forEach((item) => {
             this.assignOperatorMap[item] = true;
         });
-        unitOperator.map((item) => {
+        unitOperator.forEach((item) => {
             this.unitOperatorMap[item] = true;
         });
-        binaryOperator.map((item) => {
+        binaryOperator.forEach((item) => {
             this.binaryOperatorMap[item] = true;
         });
-        keywords.map((item) => {
+        keywords.forEach((item) => {
             this.keywordsMap.set(item, true);
         });
-        brackets.map((item) => {
+        brackets.forEach((item) => {
             this.bracketsMap.set(item, true);
         });
     }

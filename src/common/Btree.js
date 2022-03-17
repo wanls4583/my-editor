@@ -338,9 +338,10 @@ class Btree {
         }
     }
     forEach(cb) {
-        this.toArray().map((item) => {
-            cb(item);
-        });
+        let arr = this.toArray();
+        for (let i = 0; i < arr.length; i++) {
+            cb(arr[i], i);
+        }
     }
     toArray() {
         if (this.arrayCache) {

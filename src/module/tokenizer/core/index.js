@@ -47,7 +47,7 @@ export default class {
         this.ruleIdMap = {};
         this.regexMap = {};
         this.rules = Util.deepAssign({}, rules);
-        this.rules.rules.map((item) => {
+        this.rules.rules.forEach((item) => {
             this.setRuleId(item);
         });
         this.languageMap[this.language] = {
@@ -71,7 +71,7 @@ export default class {
             rule.end.endBy = rule.ruleId;
         }
         if (rule.childRule && rule.childRule.rules) {
-            rule.childRule.rules.map((_item) => {
+            rule.childRule.rules.forEach((_item) => {
                 !_item.ruleId && this.setRuleId(_item);
             });
             rule.rules = rule.childRule.rules;
@@ -110,10 +110,10 @@ export default class {
             index--;
         }
         regexs.reverse();
-        rule.rules && rule.rules.map((item) => {
+        rule.rules && rule.rules.forEach((item) => {
             regexs.push(this.getStartRegex(item));
         });
-        regexs.map((item) => {
+        regexs.forEach((item) => {
             let side = item.side === -1 ? 'start' : 'end';
             if (!sourceMap[item.ruleId] || sourceMap[item.ruleId] !== side) {
                 sources.push(`?<${side}_${item.ruleId}>${item.regex.source}`);
@@ -364,7 +364,7 @@ export default class {
     }
     splitLongToken(tokens) {
         let result = [];
-        tokens.map((token) => {
+        tokens.forEach((token) => {
             if (token.value.length > 100) { //将文本数量大于100的token分隔
                 let startCol = token.column;
                 let count = Math.floor(token.value.length / 100);

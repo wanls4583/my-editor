@@ -141,7 +141,7 @@ export default class {
     addRange(ranges) {
         let results = [];
         let list = ranges instanceof Array ? ranges : [ranges];
-        list.map((range) => {
+        list.forEach((range) => {
             let start = range.start;
             let end = range.end;
             let same = Util.comparePos(start, end);
@@ -261,7 +261,7 @@ export default class {
                 break;
             }
         }
-        dels.map((item) => {
+        dels.forEach((item) => {
             this.ranges.delete(item);
             this.activedRanges.delete(item);
             this.cursor.removeCursor(item.start);
@@ -300,7 +300,7 @@ export default class {
         if (!this.activedRanges.size) {
             this.clearRange();
         } else {
-            this.ranges.toArray().map((item) => {
+            this.ranges.forEach((item) => {
                 if (!item.active) {
                     this.ranges.delete(item);
                 }

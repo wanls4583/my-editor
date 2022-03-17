@@ -213,7 +213,7 @@ class Util {
     }
     static defineProperties(target, context, properties) {
         let result = {};
-        properties.map((property) => {
+        properties.forEach((property) => {
             result[property] = {
                 get: function () {
                     if (typeof context[property] == 'function') {

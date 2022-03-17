@@ -61,7 +61,7 @@ export default class {
                 this.cursor.clearCursorPos();
                 if (command instanceof Array) {
                     var text = [];
-                    command.map((item) => {
+                    command.forEach((item) => {
                         text.push(item.text);
                     });
                     this.insertContent(text, command);
@@ -176,7 +176,7 @@ export default class {
     updateHistory(command) {
         let index = this.history.index;
         if (command instanceof Array) {
-            command.map((item, _index) => {
+            command.forEach((item, _index) => {
                 item.keyCode = this.history[index - 1][_index].keyCode;
             });
         } else {

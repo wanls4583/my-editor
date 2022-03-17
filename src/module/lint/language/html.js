@@ -94,7 +94,7 @@ function htmlLint() {
             pos.index += exec[1].length;
             if (exec[2]) {
                 let r = parseFun(exec[2]);
-                r.map((item) => {
+                r.forEach((item) => {
                     if (item.line == 1) {
                         item.column += pos.column;
                     }

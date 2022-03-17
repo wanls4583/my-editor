@@ -14,7 +14,7 @@ export default class {
         this.initLanguage(editor.language);
     }
     initProperties(editor, context) {
-        Util.defineProperties(this, context, ['htmls', ]);
+        Util.defineProperties(this, context, ['htmls', 'getAllText']);
         Util.defineProperties(this, editor, ['setErrorMap']);
     }
     initLanguage(language) {
@@ -96,9 +96,7 @@ export default class {
         }, 300);
     }
     parse() {
-        let text = this.htmls.map((item) => {
-            return item.text;
-        }).join('\n');
+        let text = this.getAllText();
         this.parseId++;
         this.worker.postMessage({
             text: text,

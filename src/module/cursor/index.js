@@ -45,7 +45,7 @@ export default class {
         return cursorPos;
     }
     addCursorAbove() {
-        this.multiCursorPos.toArray().map((item) => {
+        this.multiCursorPos.forEach((item) => {
             if (item.line > 1) {
                 let maxColumn = this.htmls[item.line - 2].text.length;
                 let column = item.moveColumn !== undefined ? item.moveColumn : item.column;
@@ -59,7 +59,7 @@ export default class {
         });
     }
     addCursorBelow() {
-        this.multiCursorPos.toArray().map((item) => {
+        this.multiCursorPos.forEach((item) => {
             if (item.line < this.htmls.length) {
                 let maxColumn = this.htmls[item.line].text.length;
                 let column = item.moveColumn !== undefined ? item.moveColumn : item.column;
@@ -150,7 +150,7 @@ export default class {
                     toDels.push(value);
                 }
             }
-            toDels.map((item) => {
+            toDels.forEach((item) => {
                 item.del = true;
                 this.multiCursorPos.delete(item);
             });
