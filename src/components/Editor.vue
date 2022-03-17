@@ -312,8 +312,12 @@ export default {
             },
             deep: true
         },
-        active: function () {
-            this.showEditor();
+        active: function (newVal) {
+            if (newVal) {
+                this.showEditor();
+            } else {
+                this.autocomplete.clearSearch();
+            }
         }
     },
     created() {

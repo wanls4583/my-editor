@@ -40,7 +40,7 @@ export default class {
         if (!this.worker) {
             return;
         }
-        this.worker.onmessage = function (e) {
+        this.worker.onmessage = (e) => {
             let parseId = e.data.parseId;
             let errors = e.data.errors;
             let index = 0;

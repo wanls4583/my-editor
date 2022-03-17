@@ -5,6 +5,7 @@
  */
 import Util from '@/common/Util';
 import jsSearcher from '../language/javascript';
+import htmlSearcher from '../language/html';
 const regs = {
     word: /(?:^|\b)[$_a-zA-Z][$_a-zA-Z0-9]*$/
 }
@@ -18,7 +19,7 @@ export default class {
     }
     initProperties(editor, context) {
         Util.defineProperties(this, context, ['htmls', 'getAllText']);
-        Util.defineProperties(this, editor, ['cursor']);
+        Util.defineProperties(this, editor, ['cursor', 'tokenizer']);
     }
     initLanguage(language) {
         let that = this;
@@ -28,16 +29,17 @@ export default class {
         this.language = language;
         this.worker && this.worker.terminate();
         this.worker = null;
-        // switch (language) {
-        //     case 'JavaScript':
-        //         this.worker = this.createWorker(jsSearcher);
-        //         break;
-        // }
-        this.worker = this.createWorker(jsSearcher);
+        switch (language) {
+            case 'JavaScript':
+                this.worker = this.createWorker(jsSearcher);
+                break;
+            case 'HTML':
+                this.worker = this.createWorker(htmlSearcher);
+        }
         if (!this.worker) {
             return;
         }
-        this.worker.onmessage = function (e) {
+        this.worker.onmessage = (e) => {
             let searcherId = e.data.searcherId;
             let results = e.data.results;
             if (that.searcherId != searcherId) {
@@ -84,11 +86,20 @@ export default class {
                 preWord = word;
             }
             let text = this.getAllText();
+            let type = '';
             this.searcherId++;
+            if (this.language == 'HTML') {
+                let states = this.htmls[multiCursorPos[0].line - 1].states;
+                if (states && states.length == 1 && this.tokenizer.ruleIdMap[states[0]].ruleName == 'script') {
+                    //在<script>标签里
+                    type = 'script';
+                }
+            }
             this.worker.postMessage({
                 word: preWord,
                 text: text,
-                searcherId: this.searcherId
+                searcherId: this.searcherId,
+                type: type
             });
         }
     }

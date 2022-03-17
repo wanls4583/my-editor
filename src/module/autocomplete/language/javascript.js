@@ -74,8 +74,6 @@ export default function () {
         let score = 0;
         let preChar = '';
         let preFinded = false;
-        let firstCharFinded = false;
-        let firstChar = this.word[0];
         let targetMap = {};
         let count = 0;
         let indexs = [];
@@ -86,49 +84,39 @@ export default function () {
         for (let i = 0; i < target.length; i++) {
             let char = target[i];
             preFinded = false;
-            if (firstCharFinded) {
-                if (this.wordMap[char]) {
-                    if (targetMap[char]) {
-                        if (targetMap[char] < this.wordMap[char]) {
-                            targetMap[char]++;
-                            indexs.push(i);
-                            if (char === '_' || char === '$') { //检测到连接符+10分
-                                score += 10;
-                            } else if (_humpCheck.call(this, preChar, char)) { //检测到驼峰命名+10分
-                                score += 10;
-                            } else if (preFinded) { //检测到连续匹配
-                                score += 5;
-                            }
-                            if (_complete.call(this, char)) {
-                                return result;
-                            }
-                            preFinded = true;
-                        } else {
-                            //检测到字符不匹配-1分
-                            score--;
-                            preFinded = false;
-                        }
-                    } else {
-                        targetMap[char] = 1;
+            if (this.wordMap[char]) {
+                if (targetMap[char]) {
+                    if (targetMap[char] < this.wordMap[char]) {
+                        targetMap[char]++;
                         indexs.push(i);
+                        if (char === '_' || char === '$') { //检测到连接符+10分
+                            score += 10;
+                        } else if (_humpCheck.call(this, preChar, char)) { //检测到驼峰命名+10分
+                            score += 10;
+                        } else if (preFinded) { //检测到连续匹配
+                            score += 5;
+                        }
                         if (_complete.call(this, char)) {
                             return result;
                         }
+                        preFinded = true;
+                    } else {
+                        //检测到字符不匹配-1分
+                        score--;
                     }
                 } else {
-                    //检测到字符不匹配-1分
+                    targetMap[char] = 1;
+                    indexs.push(i);
+                    if (_complete.call(this, char)) {
+                        return result;
+                    }
+                }
+            } else {
+                if (!count && score > -9) { //检测到前三个首字符不匹配-3分
+                    score -= 3;
+                } else { //检测到字符不匹配-1分
                     score--;
                 }
-            } else if (firstChar === char) {
-                firstCharFinded = true;
-                preFinded = true;
-                targetMap[char] = 1;
-                indexs.push(i);
-                if (_complete.call(this, char)) {
-                    return result;
-                }
-            } else if (score > -9) { //检测到首字符不匹配-3分
-                score -= 3;
             }
             preChar = char;
         }
