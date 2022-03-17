@@ -75,8 +75,6 @@ export default {
             });
         }
         this.setDefault();
-    },
-    created() {
         this.languageList[0].forEach((item) => {
             this.languageMap[item.value] = item.name;
         });
