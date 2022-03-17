@@ -95,7 +95,7 @@ export default class {
     clearSearch() {
         this.searcherId++;
         this.results = [];
-        this.worker.postMessage({
+        this.worker && this.worker.postMessage({
             cmd: 'stop'
         });
     }
