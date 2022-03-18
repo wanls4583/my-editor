@@ -5,8 +5,10 @@
         min-width: 200px;
         background-color: rgb(76, 77, 72);
         color: #cccccc;
+        user-select: none;
 
         .match-char {
+            font-weight: bold;
             color: #ffffff;
         }
 
