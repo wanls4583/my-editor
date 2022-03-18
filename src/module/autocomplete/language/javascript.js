@@ -28,9 +28,13 @@ export default function () {
         this.wordMap = {};
         this.word = word;
         this.searcherId = searcherId;
+        this.towMap = {};
         for (let i = 0; i < word.length; i++) {
             let cahr = word[i];
             this.wordMap[cahr] = this.wordMap[cahr] ? this.wordMap[cahr] + 1 : 1;
+            if (i > 0) {
+                this.towMap[word[i - 1] + word[i]] = true;
+            }
         }
         this.wordLength = Object.keys(this.wordMap).length;
     }
@@ -72,44 +76,54 @@ export default function () {
 
     Searcher.prototype.match = function (target) {
         let score = 0;
-        let preChar = '';
+        let preFinedChar = '';
+        let preFinedOriginChar = '';
         let preFinded = false;
         let targetMap = {};
         let count = 0;
         let indexs = [];
         let result = null;
+        let _target = target.toLowerCase();
         if (this.word === target) {
             return;
         }
         for (let i = 0; i < target.length; i++) {
-            let char = target[i];
-            preFinded = false;
-            if (this.wordMap[char]) {
-                if (targetMap[char]) {
-                    if (targetMap[char] < this.wordMap[char]) {
-                        targetMap[char]++;
-                        indexs.push(i);
-                        if (char === '_' || char === '$') { //检测到连接符+10分
-                            score += 10;
-                        } else if (_humpCheck.call(this, preChar, char)) { //检测到驼峰命名+10分
-                            score += 10;
-                        } else if (preFinded) { //检测到连续匹配
-                            score += 5;
-                        }
-                        if (_complete.call(this, char)) {
-                            return result;
-                        }
-                        preFinded = true;
-                    } else {
-                        //检测到字符不匹配-1分
-                        score--;
-                    }
-                } else {
-                    targetMap[char] = 1;
+            let originChar = target[i];
+            let char = _target[i];
+            if (this.wordMap[char] &&
+                //保证前后字符顺序最多只出现一个位置颠倒且颠倒的两个字符必须相邻
+                (
+                    !preFinedChar ||
+                    this.towMap[preFinedChar + char] ||
+                    this.towMap[char + preFinedChar] && preFinded
+                )
+            ) {
+                if (!targetMap[char] || targetMap[char] < this.wordMap[char]) {
+                    targetMap[char] = targetMap[char] ? targetMap[char] + 1 : 1;
                     indexs.push(i);
+                    if (char === '_' || char === '$') { //检测到连接符+10分
+                        score += 10;
+                    } else if (preFinded) { //检测到连续匹配
+                        score += 5;
+                        if (this.towMap[preFinedChar + char]) { //连续匹配且顺序正确
+                            score += 1;
+                            if (_humpCheck.call(this, preFinedOriginChar, originChar) && preFinded) { //检测到驼峰命名+10分
+                                score += 5;
+                            }
+                        }
+                    }
                     if (_complete.call(this, char)) {
                         return result;
                     }
+                    if (!this.towMap[char + preFinedChar]) {
+                        preFinedChar = char;
+                        preFinedOriginChar = originChar;
+                    }
+                    preFinded = true;
+                } else {
+                    //检测到字符不匹配-1分
+                    score--;
+                    preFinded = char === preFinedChar;
                 }
             } else {
                 if (!count && score > -9) { //检测到前三个首字符不匹配-3分
@@ -117,8 +131,8 @@ export default function () {
                 } else { //检测到字符不匹配-1分
                     score--;
                 }
+                preFinded = char === preFinedChar;
             }
-            preChar = char;
         }
 
         // 检查驼峰命名
