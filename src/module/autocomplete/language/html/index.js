@@ -92,7 +92,9 @@ function htmlSearcher() {
             });
         } else {
             this._search(regs.js, this.searchJs.fn, this.liveText);
-            this._search(regs.js, this.searchJs.fn, this.text);
+            if (this.liveText != this.text) {
+                this._search(regs.js, this.searchJs.fn, this.text);
+            }
         }
     }
 

@@ -169,7 +169,9 @@ export default function () {
                 searcher.text = option.text || searcher.text;
                 searcher.reset(option.word, option.searcherId);
                 searcher.search(option.liveText);
-                searcher.search(searcher.text);
+                if (option.liveText != searcher.text) {
+                    searcher.search(searcher.text);
+                }
             }
         }
     }
