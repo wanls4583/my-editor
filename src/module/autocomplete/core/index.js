@@ -19,7 +19,7 @@ export default class {
     }
     initProperties(editor, context) {
         Util.defineProperties(this, context, ['htmls', 'getAllText']);
-        Util.defineProperties(this, editor, ['cursor', 'tokenizer']);
+        Util.defineProperties(this, editor, ['cursor', 'tokenizer', 'setAutoTip']);
     }
     initLanguage(language) {
         let that = this;
@@ -51,7 +51,7 @@ export default class {
                     return b.score - a.score;
                 }).slice(0, 10);
             }
-            console.log(results);
+            this.setAutoTip([results]);
         }
         this.search();
     }
@@ -73,7 +73,7 @@ export default class {
         clearTimeout(this.searchTimer);
         this.searchTimer = setTimeout(() => {
             _search.call(this);
-        }, 300);
+        }, 100);
 
         function _search() {
             let multiCursorPos = this.cursor.multiCursorPos.toArray();

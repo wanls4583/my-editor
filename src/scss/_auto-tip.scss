@@ -1,0 +1,38 @@
+.my-editor {
+    &-auto {
+        position: absolute;
+        z-index: 99;
+        min-width: 200px;
+        background-color: rgb(76, 77, 72);
+        color: #fff;
+
+        .match-char {
+            font-weight: bold;
+        }
+
+        .active {
+            background-color: rgba(0, 0, 0, .2);
+        }
+    }
+
+    &-auto-item {
+        position: relative;
+        display: flex;
+        align-items: center;
+        height: 25px;
+        padding-right: 10px;
+        white-space: nowrap;
+        cursor: pointer;
+
+        &:hover {
+            background-color: rgba(0, 0, 0, .2);
+        }
+    }
+
+    &-auto-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 25px;
+    }
+}

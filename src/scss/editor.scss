@@ -1,5 +1,7 @@
 @import url('//at.alicdn.com/t/font_3194546_n6rvd8e8sup.css');
 @import 'dialog';
+@import 'menu';
+@import 'auto-tip';
 
 * {
     box-sizing: border-box;
@@ -557,79 +559,6 @@ body {
     }
 
     // 状态栏-end
-
-    // 面板-begin
-
-    &-menu {
-        position: absolute;
-        z-index: 99;
-        min-width: 200px;
-        background-color: #fff;
-        border: 1px solid #dddddd;
-        color: #666666;
-    }
-
-    &-menu-group {
-        padding: 5px 0;
-        border-bottom: 1px solid #eeeeee;
-
-        &:last-child {
-            border-bottom: none;
-        }
-    }
-
-    &-menu-item {
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding-left: 25px;
-        padding-right: 10px;
-        line-height: 20px;
-        white-space: nowrap;
-        min-width: 80px;
-
-        &:hover {
-            background-color: rgba(0, 0, 0, 0.1);
-            cursor: pointer;
-        }
-
-        &:last-child {
-            .my-editor-menu-content {
-                border-bottom: none;
-            }
-        }
-
-        &.checked:before {
-            content: '√';
-            position: absolute;
-            top: 5px;
-            left: 10px;
-        }
-
-        &.disabled {
-
-            &:hover {
-                background-color: transparent;
-                cursor: auto;
-            }
-
-            .my-editor-menu-content,
-            .my-editor-menu-shortcut {
-                color: #999999;
-            }
-        }
-    }
-
-    &-menu-content {
-        padding: 5px 0;
-    }
-
-    &-menu-shortcut {
-        margin-left: 20px;
-    }
-
-    // 面板-end
 
     // 提示-begin
 

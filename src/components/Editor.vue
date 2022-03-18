@@ -90,6 +90,7 @@
 						class="my-editor-textarea"
 						ref="textarea"
 					></textarea>
+					<auto-tip :styles="autoTipStyle" :tipList="autoTipList" @change="onClickAuto" ref="autoTip" v-show="autoTipVisivle"></auto-tip>
 				</div>
 			</div>
 			<!-- 搜索框 -->
@@ -125,6 +126,7 @@ import Context from '@/module/context/index';
 import ShortCut from '@/module/shortcut/editor';
 import SearchDialog from './Search';
 import Menu from './Menu';
+import AutoTip from './AutoTip';
 import Tip from './Tip';
 import Util from '@/common/Util';
 import $ from 'jquery';
@@ -134,6 +136,7 @@ export default {
     components: {
         SearchDialog,
         Menu,
+        AutoTip,
         Tip,
     },
     props: {
@@ -198,11 +201,16 @@ export default {
                 top: '0px',
                 left: '0px'
             },
+            autoTipStyle: {
+                top: '0px',
+                left: '0px'
+            },
             errorMap: {},
+            autoTipList: [],
+            tipContent: null,
             menuVisible: false,
+            autoTipVisivle: false,
             searchVisible: false,
-            tipContent: false,
-            tipContent: '',
             searchNow: 1,
             searchCount: 0
         }
@@ -578,7 +586,7 @@ export default {
             let renderCursorId = this.renderCursor.id + 1 || 1;
             this.renderCursor.id = renderCursorId;
             this.$nextTick(() => {
-                if (this.renderCursor.id !== renderCursorId) {
+                if (this.renderCursor.id !== renderCursorId || !this.renderHtmls.length) {
                     return;
                 }
                 this.renderHtmls.forEach((item) => {
@@ -601,11 +609,12 @@ export default {
                 if (cursorPos.del) {
                     return;
                 }
-                if ($('#line_' + cursorPos.line).length && lineObj.tokens && lineObj.tokens.length) {
-                    left = _getExactLeft(cursorPos);
-                } else {
-                    left = that.getStrWidthByLine(cursorPos.line, 0, cursorPos.column);
-                }
+                // if ($('#line_' + cursorPos.line).length && lineObj.tokens && lineObj.tokens.length) {
+                //     left = that.getExactLeft(cursorPos);
+                // } else {
+                //     left = that.getStrWidthByLine(cursorPos.line, 0, cursorPos.column);
+                // }
+                left = that.getExactLeft(cursorPos);
                 // 强制滚动使光标处于可见区域
                 if (forceCursorView && cursorPos === that.nowCursorPos) {
                     if (left > that.scrollerArea.width + that.scrollLeft - that.charObj.fullAngleCharWidth) {
@@ -619,29 +628,11 @@ export default {
                 }
                 return left + 'px';
             }
-
-            function _getExactLeft(cursorPos) {
-                let lineObj = that.myContext.htmls[cursorPos.line - 1];
-                let token = lineObj.tokens[0];
-                for (let i = 1; i < lineObj.tokens.length; i++) {
-                    if (lineObj.tokens[i].column < cursorPos.column) {
-                        token = lineObj.tokens[i];
-                    } else {
-                        break;
-                    }
-                }
-                let $token = $('#line_' + cursorPos.line).
-                    children('.my-editor-code').
-                    children('span[data-column="' + token.column + '"]');
-                if (!$token.length) {
-                    return -1;
-                }
-                let text = token.value.slice(0, cursorPos.column - token.column);
-                return $token[0].offsetLeft + that.getStrWidth(text);
-            }
         },
         closeAllMenu() {
             this.menuVisible = false;
+            this.autoTipVisivle = false;
+            this.autocomplete.clearSearch();
         },
         // 折叠行
         foldLine(line) {
@@ -766,6 +757,14 @@ export default {
         setErrorMap(errorMap) {
             this.errorMap = errorMap;
         },
+        setAutoTip(results) {
+            this.autoTipVisivle = true;
+            this.autoTipList = results;
+            this.$nextTick(() => {
+                this.autoTipStyle.top = this.folder.getRelativeLine(this.nowCursorPos.line) * this.charObj.charHight + 'px';
+                this.autoTipStyle.left = this.getExactLeft(this.nowCursorPos) + 'px';
+            });
+        },
         // 获取文本在浏览器中的宽度
         getStrWidth(str, start, end) {
             return Util.getStrWidth(str, this.charObj.charWidth, this.charObj.fullAngleCharWidth, this.tabSize, start, end);
@@ -819,6 +818,29 @@ export default {
                 column: column
             }
         },
+        // 获取光标真实位置
+        getExactLeft(cursorPos) {
+            let lineObj = this.myContext.htmls[cursorPos.line - 1];
+            if (!lineObj.tokens || !lineObj.tokens.length) {
+                return 0;
+            }
+            let token = lineObj.tokens[0];
+            for (let i = 1; i < lineObj.tokens.length; i++) {
+                if (lineObj.tokens[i].column < cursorPos.column) {
+                    token = lineObj.tokens[i];
+                } else {
+                    break;
+                }
+            }
+            let $token = $('#line_' + cursorPos.line).
+                children('.my-editor-code').
+                children('span[data-column="' + token.column + '"]');
+            if (!$token.length) {
+                return 0;
+            }
+            let text = token.value.slice(0, cursorPos.column - token.column);
+            return $token[0].offsetLeft + this.getStrWidth(text);
+        },
         // 右键菜单事件
         onContextmenu(e) {
             let menuWidth = 0;
@@ -858,6 +880,10 @@ export default {
             this.menuVisible = false;
             this.focus();
         },
+        // 选中自动提示
+        onClickAuto(item) {
+            this.autoTipVisivle = false;
+        },
         // 提示图标hover事件
         onIconMouseOver(line, e) {
             let $editor = $(this.$refs.editor);
@@ -869,7 +895,7 @@ export default {
             this.tipContent = this.errorMap[line];
         },
         onIconMouseLeave() {
-            this.tipContent = '';
+            this.tipContent = null;
         },
         // 折叠/展开
         onToggleFold(line) {
