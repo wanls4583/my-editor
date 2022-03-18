@@ -20,7 +20,7 @@ export default class {
     }
     initProperties(editor, context) {
         Util.defineProperties(this, context, ['htmls', 'getAllText']);
-        Util.defineProperties(this, editor, ['cursor', 'tokenizer', 'setAutoTip']);
+        Util.defineProperties(this, editor, ['cursor', 'tokenizer', 'setAutoTip', 'showAutoTip']);
     }
     initLanguage(language) {
         let that = this;
@@ -51,8 +51,8 @@ export default class {
                 this.results = this.results.sort((a, b) => {
                     return b.score - a.score;
                 }).slice(0, 10);
+                this.setAutoTip(this.results);
             }
-            this.setAutoTip(results);
         }
     }
     createWorker(mod) {
@@ -70,11 +70,12 @@ export default class {
             return;
         }
         this.clearSearch();
+        this.showAutoTip();
         clearTimeout(this.timer);
         this.timer = setTimeout(() => { //等待tokenize完成
             _search.call(this);
             this.preSearchTime = Date.now();
-        });
+        }, 100);
 
         function _search() {
             let multiCursorPos = this.cursor.multiCursorPos.toArray();

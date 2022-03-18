@@ -722,6 +722,9 @@ export default {
             let index = this.$refs.autoTip.getActiveIndex();
             this.onClickAuto(this.autoTipList[index]);
         },
+        showAutoTip() {
+            clearTimeout(this.setAutoTip.hideTimer);
+        },
         setData(prop, value) {
             if (typeof this[prop] === 'function') {
                 return;
@@ -771,32 +774,30 @@ export default {
             this.errorMap = errorMap;
         },
         setAutoTip(results) {
-            clearTimeout(this.setAutoTip.timer);
+            clearTimeout(this.setAutoTip.hideTimer);
             if (results && results.length) {
                 results.forEach((item) => {
                     item.active = false;
                 });
                 this.autoTipList = results;
                 this.autoTipList[0].active = true;
-                this.$nextTick(() => {
-                    let width = this.$refs.autoTip.clientWidth;
-                    let height = this.$refs.autoTip.clientHeight;
-                    this.autoTipStyle.top = this.folder.getRelativeLine(this.nowCursorPos.line) * this.charObj.charHight;
-                    this.autoTipStyle.left = this.getExactLeft(this.nowCursorPos);
-                    if (this.autoTipStyle.top + height > Util.getNum(this._top) + this.$refs.render.clientHeight) {
-                        this.autoTipStyle.top -= height + this.charObj.charHight;
-                    }
-                    if (this.autoTipStyle.left + width > this.scrollLeft + this.scrollerArea.width) {
-                        this.autoTipStyle.left -= width;
-                    }
-                    this.autoTipStyle.top += 'px';
-                    this.autoTipStyle.left += 'px';
-                });
+                let width = this.$refs.autoTip.clientWidth;
+                let height = this.$refs.autoTip.clientHeight;
+                this.autoTipStyle.top = this.folder.getRelativeLine(this.nowCursorPos.line) * this.charObj.charHight;
+                this.autoTipStyle.left = this.getExactLeft(this.nowCursorPos);
+                if (this.autoTipStyle.top + height > Util.getNum(this._top) + this.$refs.render.clientHeight) {
+                    this.autoTipStyle.top -= height + this.charObj.charHight;
+                }
+                if (this.autoTipStyle.left + width > this.scrollLeft + this.scrollerArea.width) {
+                    this.autoTipStyle.left -= width;
+                }
+                this.autoTipStyle.top += 'px';
+                this.autoTipStyle.left += 'px';
             } else {
                 //内容改变时会触发setAutoTip(null)
-                this.setAutoTip.timer = setTimeout(() => {
+                this.setAutoTip.hideTimer = setTimeout(() => {
                     this.autoTipList = null;
-                }, 100);
+                }, 0);
             }
         },
         // 获取文本在浏览器中的宽度

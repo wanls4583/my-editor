@@ -157,7 +157,7 @@ export default class {
                     _moveCursor('home');
                     break;
                 case 38: //up arrow
-                    if (this.autoTipList) {
+                    if (this.autoTipList && this.autoTipList.length) {
                         that.prevAutoTip();
                     } else {
                         _moveCursor('up');
@@ -167,7 +167,7 @@ export default class {
                     _moveCursor('right');
                     break;
                 case 40: //down arrow
-                    if (this.autoTipList) {
+                    if (this.autoTipList && this.autoTipList.length) {
                         that.nextAutoTip();
                     } else {
                         _moveCursor('down');
@@ -175,7 +175,7 @@ export default class {
                     break;
                 case 13:
                 case 100: //enter
-                    if (this.autoTipList) {
+                    if (this.autoTipList && this.autoTipList.length) {
                         e.preventDefault();
                         this.selectAutoTip();
                     }

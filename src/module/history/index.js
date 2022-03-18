@@ -140,7 +140,7 @@ export default class {
             // 检测是否为连续插入或连续删除
             if ((command.type == Util.command.DELETE || command.type == Util.command.INSERT) &&
                 lastCommand && lastCommand.type == command.type &&
-                command.preCursorPos.line == command.cursorPos.line &&
+                lastCommand.preCursorPos.line == command.cursorPos.line &&
                 Date.now() - that.pushHistoryTime < 2000) {
                 if (lastCommand.type == Util.command.DELETE) {
                     if (Util.comparePos(lastCommand.cursorPos, command.preCursorPos) == 0) {
