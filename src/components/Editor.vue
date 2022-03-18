@@ -90,7 +90,7 @@
 						class="my-editor-textarea"
 						ref="textarea"
 					></textarea>
-					<auto-tip :styles="autoTipStyle" :tipList="autoTipList" @change="onClickAuto" ref="autoTip" v-show="autoTipList"></auto-tip>
+					<auto-tip :styles="autoTipStyle" :tipList="autoTipList" @change="onClickAuto" ref="autoTip"></auto-tip>
 				</div>
 			</div>
 			<!-- 搜索框 -->
