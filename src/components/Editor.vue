@@ -39,7 +39,7 @@
 					class="my-editor-content"
 					ref="content"
 				>
-					<div :style="{top: _top}" class="my-editor-render" v-if="active">
+					<div :style="{top: _top}" class="my-editor-render" ref="render" v-if="active">
 						<div
 							:class="{active: _activeLine(line.num)}"
 							:data-line="line.num"
@@ -90,7 +90,7 @@
 						class="my-editor-textarea"
 						ref="textarea"
 					></textarea>
-					<auto-tip :styles="autoTipStyle" :tipList="autoTipList" @change="onClickAuto" ref="autoTip" v-show="autoTipVisivle"></auto-tip>
+					<auto-tip :styles="autoTipStyle" :tipList="autoTipList" @change="onClickAuto" ref="autoTip" v-show="autoTipList"></auto-tip>
 				</div>
 			</div>
 			<!-- 搜索框 -->
@@ -209,7 +209,6 @@ export default {
             autoTipList: [],
             tipContent: null,
             menuVisible: false,
-            autoTipVisivle: false,
             searchVisible: false,
             searchNow: 1,
             searchCount: 0
@@ -223,7 +222,7 @@ export default {
             return this.scrollLeft ? '17px 0 16px -16px rgba(0, 0, 0, 0.8) inset' : 'none';
         },
         _top() {
-            return (this.startLine - 1) * this.charObj.charHight + 'px';
+            return (this.folder.getRelativeLine(this.startLine) - 1) * this.charObj.charHight + 'px';
         },
         _lineHeight() {
             return this.charObj.charHight + 'px';
@@ -408,6 +407,7 @@ export default {
             clearTimeout(this.curserTimer);
             this.showCursor.show = false;
             this.cursorFocus = false;
+            this.closeAllMenu();
         },
         // 聚焦
         focus() {
@@ -631,7 +631,7 @@ export default {
         },
         closeAllMenu() {
             this.menuVisible = false;
-            this.autoTipVisivle = false;
+            this.autoTipList = null;
             this.autocomplete.clearSearch();
         },
         // 折叠行
@@ -734,7 +734,7 @@ export default {
                     } else if (nowCursorPos.line <= this.startLine) {
                         requestAnimationFrame(() => {
                             this.startLine = nowCursorPos.line;
-                            this.$refs.scroller.scrollTop = (nowCursorPos.line - 1) * this.charObj.charHight;
+                            this.$refs.scroller.scrollTop = (this.folder.getRelativeLine(nowCursorPos.line) - 1) * this.charObj.charHight;
                         });
                     }
                     this.renderCursor(true);
@@ -758,11 +758,20 @@ export default {
             this.errorMap = errorMap;
         },
         setAutoTip(results) {
-            this.autoTipVisivle = true;
             this.autoTipList = results;
             this.$nextTick(() => {
-                this.autoTipStyle.top = this.folder.getRelativeLine(this.nowCursorPos.line) * this.charObj.charHight + 'px';
-                this.autoTipStyle.left = this.getExactLeft(this.nowCursorPos) + 'px';
+                let width = this.$refs.autoTip.clientWidth;
+                let height = this.$refs.autoTip.clientHeight;
+                this.autoTipStyle.top = this.folder.getRelativeLine(this.nowCursorPos.line) * this.charObj.charHight;
+                this.autoTipStyle.left = this.getExactLeft(this.nowCursorPos);
+                if (this.autoTipStyle.top + height > Util.getNum(this._top) + this.$refs.render.clientHeight) {
+                    this.autoTipStyle.top -= height + this.charObj.charHight;
+                }
+                if (this.autoTipStyle.left + width > this.scrollLeft + this.scrollerArea.width) {
+                    this.autoTipStyle.left -= width;
+                }
+                this.autoTipStyle.top += 'px';
+                this.autoTipStyle.left += 'px';
             });
         },
         // 获取文本在浏览器中的宽度
@@ -861,6 +870,7 @@ export default {
                 } else {
                     this.menuStyle.left = e.clientX - offset.left + 'px';
                 }
+                this.focus();
             });
         },
         // 选中菜单
@@ -882,7 +892,23 @@ export default {
         },
         // 选中自动提示
         onClickAuto(item) {
-            this.autoTipVisivle = false;
+            let word = this.autocomplete.getNowWord(this.nowCursorPos);
+            let ranges = [];
+            this.cursor.multiCursorPos.forEach((item) => {
+                ranges.push({
+                    start: {
+                        line: item.line,
+                        column: item.column - word.length
+                    },
+                    end: {
+                        line: item.line,
+                        column: item.column
+                    }
+                });
+            });
+            this.myContext.replace(item.result, ranges);
+            this.autoTipList = null;
+            this.focus();
         },
         // 提示图标hover事件
         onIconMouseOver(line, e) {

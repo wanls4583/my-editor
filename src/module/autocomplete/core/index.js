@@ -14,6 +14,7 @@ export default class {
     constructor(editor, context) {
         this.searcherId = 1;
         this.results = [];
+        this.preSearchTime = 0;
         this.initProperties(editor, context);
         this.initLanguage(editor.language);
     }
@@ -53,7 +54,6 @@ export default class {
             }
             this.setAutoTip([results]);
         }
-        this.search();
     }
     createWorker(mod) {
         var funStr = mod.toString().replace(/^[^\)]+?\)/, '');
@@ -70,10 +70,11 @@ export default class {
             return;
         }
         this.clearSearch();
-        clearTimeout(this.searchTimer);
-        this.searchTimer = setTimeout(() => {
+        clearTimeout(this.timer);
+        this.timer = setTimeout(() => { //等待tokenize完成
             _search.call(this);
-        }, 100);
+            this.preSearchTime = Date.now();
+        });
 
         function _search() {
             let multiCursorPos = this.cursor.multiCursorPos.toArray();
@@ -81,11 +82,11 @@ export default class {
             for (let i = 0; i < multiCursorPos.length; i++) {
                 let word = this.getNowWord(multiCursorPos[i]);
                 if (!word || preWord && word !== preWord) {
+                    this.setAutoTip(null);
                     return;
                 }
                 preWord = word;
             }
-            let text = this.getAllText();
             let type = '';
             this.searcherId++;
             if (this.language == 'HTML') {
@@ -97,7 +98,7 @@ export default class {
             }
             this.worker.postMessage({
                 word: preWord,
-                text: text,
+                text: Date.now() - this.preSearchTime > 1000 ? this.getAllText() : '',
                 searcherId: this.searcherId,
                 type: type
             });

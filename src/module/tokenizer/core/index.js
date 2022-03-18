@@ -158,9 +158,6 @@ export default class {
         }
     }
     onInsertContentAfter(nowLine, newLine) {
-        if (this.language == 'plain') {
-            return;
-        }
         if (nowLine <= this.currentLine) {
             this.currentLine = nowLine;
             clearTimeout(this.tokenizeLines.timer);

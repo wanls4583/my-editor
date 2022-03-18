@@ -17,7 +17,7 @@ function htmlSearcher() {
     function Searcher() {}
 
     Searcher.prototype.reset = function (option) {
-        this.text = option.text;
+        this.text = option.text || this.text;
         this.word = option.word;
         this.searcherId = option.searcherId;
         this.searchType = option.type;

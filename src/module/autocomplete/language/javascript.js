@@ -45,6 +45,7 @@ export default function () {
         let count = 0;
         let startTime = Date.now();
         let doneMap = {};
+        this.text = text;
         while (exec = regs.word.exec(text)) {
             let result = this.match(exec[0]);
             if (!doneMap[exec[0]]) {
@@ -167,7 +168,7 @@ export default function () {
             clearTimeout(searcher.timer);
             if (option.cmd != 'stop') {
                 searcher.reset(option.word, option.searcherId);
-                searcher.search(option.text);
+                searcher.search(option.text || searcher.text);
             }
         }
     }
