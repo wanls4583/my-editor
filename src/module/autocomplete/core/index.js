@@ -88,6 +88,7 @@ export default class {
                 preWord = word;
             }
             let type = '';
+            let textObj = this.getSearchText(Date.now() - this.preSearchTime > 1000); //1秒不传递新文本，复用已经传过去的文本
             this.searcherId++;
             if (this.language == 'HTML') {
                 let states = this.htmls[multiCursorPos[0].line - 1].states;
@@ -98,7 +99,8 @@ export default class {
             }
             this.worker.postMessage({
                 word: preWord,
-                text: Date.now() - this.preSearchTime > 500 ? this.getAllText() : '', //避免频繁传递大文本
+                text: textObj.text,
+                liveText: textObj.liveText,
                 searcherId: this.searcherId,
                 type: type
             });
@@ -116,10 +118,32 @@ export default class {
         text = text.slice(0, cursorPos.column);
         text = regs.word.exec(text);
         text = text && text[0];
-        if (this.preCursorPos && this.preCursorPos.line != cursorPos.line) {
-            this.preSearchTime = 0;
-        }
-        this.preCursorPos = cursorPos;
         return text;
+    }
+    getSearchText(refresh) {
+        let lineMap = {};
+        let obj = {
+            liveText: '',
+            text: ''
+        }
+        obj.liveText = this.cursor.multiCursorPos.toArray().map((item) => {
+            if (lineMap[item.line]) {
+                return '';
+            } else {
+                lineMap[item.line] = true;
+                return this.htmls[item.line - 1].text;
+            }
+        }).join('\n');
+        if (refresh) {
+            obj.text = this.htmls.map((item, index) => {
+                if (lineMap[index + 1]) {
+                    return '';
+                } else {
+                    return this.htmls[index].text;
+                }
+            }).join('\n');
+            obj.text = obj.text || obj.liveText;
+        }
+        return obj;
     }
 }

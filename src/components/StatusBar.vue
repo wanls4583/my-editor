@@ -78,6 +78,18 @@ export default {
     mounted() {
     },
     methods: {
+        setLanguage(language) {
+            this.language = language;
+        },
+        setTabsize(tabSize) {
+            this.tabSize = tabSize;
+        },
+        setLine(line) {
+            this.line = line;
+        },
+        setColumn(column) {
+            this.column = column;
+        },
         showTabsize() {
             let visible = this.tabsizeVisible;
             this.closeAllMenu();

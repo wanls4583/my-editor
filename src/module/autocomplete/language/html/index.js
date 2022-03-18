@@ -18,6 +18,7 @@ function htmlSearcher() {
 
     Searcher.prototype.reset = function (option) {
         this.text = option.text || this.text;
+        this.liveText = option.liveText;
         this.word = option.word;
         this.searcherId = option.searcherId;
         this.searchType = option.type;
@@ -90,7 +91,8 @@ function htmlSearcher() {
                 cmd: cmd
             });
         } else {
-            this._search(regs.js, this.searchJs.fn);
+            this._search(regs.js, this.searchJs.fn, this.liveText);
+            this._search(regs.js, this.searchJs.fn, this.text);
         }
     }
 
@@ -110,14 +112,13 @@ function htmlSearcher() {
 
     }
 
-    Searcher.prototype._search = function (reg, searchFn) {
+    Searcher.prototype._search = function (reg, searchFn, text) {
         let exec = null;
         let pos = {
             line: 1,
             column: 0,
             index: 0
         }
-        let text = this.text;
         let result = [];
         while (exec = reg.exec(text)) {
             this.setLineColumn(text.slice(0, exec.index), pos);

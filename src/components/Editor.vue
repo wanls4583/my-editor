@@ -309,12 +309,13 @@ export default {
         },
         nowCursorPos: {
             handler: function (newVal) {
+                let statusBar = this.$parent.$refs.statusBar;
                 if (newVal) {
-                    this.$parent.$refs.statusBar.line = newVal.line;
-                    this.$parent.$refs.statusBar.column = newVal.column;
+                    statusBar.setLine(newVal.line);
+                    statusBar.setLine(newVal.column);
                 } else {
-                    this.$parent.$refs.statusBar.line = '?';
-                    this.$parent.$refs.statusBar.column = '?';
+                    statusBar.setLine('?');
+                    statusBar.setLine('?');
                 }
             },
             deep: true

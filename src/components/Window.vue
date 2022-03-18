@@ -433,14 +433,14 @@ export default {
                 }
                 let editor = this.getNowEditor();
                 let statusBar = this.$refs.statusBar;
-                statusBar.language = editor.language;
-                statusBar.tabSize = editor.tabSize;
+                statusBar.setLanguage(editor.language);
+                statusBar.setTabsize(editor.tabSize);
                 if (editor.nowCursorPos) {
-                    statusBar.line = editor.nowCursorPos.line;
-                    statusBar.column = editor.nowCursorPos.column;
+                    statusBar.setLine(editor.nowCursorPos.line);
+                    statusBar.setColumn(editor.nowCursorPos.column);
                 } else {
-                    statusBar.line = '?';
-                    statusBar.column = '?';
+                    statusBar.setLine('?');
+                    statusBar.setColumn('?');
                 }
             });
         },
