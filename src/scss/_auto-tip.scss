@@ -3,9 +3,10 @@
         position: absolute;
         z-index: 99;
         min-width: 200px;
-        background-color: rgb(76, 77, 72);
         color: #cccccc;
         user-select: none;
+        background-color: rgb(76, 77, 72);
+        box-shadow: rgba(0, 0, 0, 0.8) 0 0 10px;
 
         .match-char {
             font-weight: bold;

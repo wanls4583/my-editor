@@ -98,7 +98,7 @@ export default class {
             }
             this.worker.postMessage({
                 word: preWord,
-                text: Date.now() - this.preSearchTime > 1000 ? this.getAllText() : '',
+                text: Date.now() - this.preSearchTime > 1000 ? this.getAllText() : '', //避免频繁传递大文本
                 searcherId: this.searcherId,
                 type: type
             });
@@ -116,6 +116,10 @@ export default class {
         text = text.slice(0, cursorPos.column);
         text = regs.word.exec(text);
         text = text && text[0];
+        if (this.preCursorPos && this.preCursorPos.line != cursorPos.line) {
+            this.preSearchTime = 0;
+        }
+        this.preCursorPos = cursorPos;
         return text;
     }
 }
