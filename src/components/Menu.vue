@@ -32,13 +32,22 @@ export default {
         checkable: {
             type: Boolean,
             default: true
+        },
+        value: {
+            type: [Number, String]
         }
     },
     data() {
         return {
         }
     },
+    watch: {
+        value(newVal) {
+            this.setChecked(newVal);
+        }
+    },
     created() {
+        this.setChecked(this.value);
     },
     methods: {
         onClick(item, group) {
@@ -50,6 +59,13 @@ export default {
             });
             item.checked = true;
             this.$emit('change', item);
+        },
+        setChecked(value) {
+            this.menuList.forEach((group) => {
+                group.forEach((item) => {
+                    item.checked = item.value == value;
+                });
+            });
         }
     }
 }

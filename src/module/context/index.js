@@ -37,6 +37,7 @@ export default class {
             'render',
             'unFold',
             'setNowCursorPos',
+            'setAutoTip',
             'getStrWidth',
             '$emit'
         ]);
@@ -173,6 +174,7 @@ export default class {
         this.setLineWidth(text);
         this.render(true);
         this.$emit('change');
+        this.setAutoTip(null);
         let historyObj = {
             type: Util.command.DELETE,
             cursorPos: Object.assign({}, newPos),
@@ -384,6 +386,7 @@ export default class {
         this.folder.onDeleteContentAfter(Object.assign({}, originPos), Object.assign({}, newPos));
         this.render(true);
         this.$emit('change');
+        this.setAutoTip(null);
         // 更新最大文本宽度
         if (startObj.width >= this.maxWidthObj.width) {
             this.setEditorData('maxWidthObj', {

@@ -197,7 +197,7 @@ export default {
             if (!this.count) {
                 return;
             }
-            if (e.keyCode === 13) {
+            if (e.keyCode === 13 || e.keyCode === 100) {
                 if (e.ctrlKey && e.altKey) {
                     this.replaceAll();
                 } else {

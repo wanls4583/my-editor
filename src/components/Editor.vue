@@ -709,6 +709,18 @@ export default {
                 this.searchCount = 0;
             }
         },
+        // 上一个提示
+        prevAutoTip() {
+            this.$refs.autoTip.prev();
+        },
+        // 下一个提示
+        nextAutoTip() {
+            this.$refs.autoTip.next();
+        },
+        selectAutoTip() {
+            let index = this.$refs.autoTip.getActiveIndex();
+            this.onClickAuto(this.autoTipList[index]);
+        },
         setData(prop, value) {
             if (typeof this[prop] === 'function') {
                 return;
@@ -758,21 +770,33 @@ export default {
             this.errorMap = errorMap;
         },
         setAutoTip(results) {
-            this.autoTipList = results;
-            this.$nextTick(() => {
-                let width = this.$refs.autoTip.clientWidth;
-                let height = this.$refs.autoTip.clientHeight;
-                this.autoTipStyle.top = this.folder.getRelativeLine(this.nowCursorPos.line) * this.charObj.charHight;
-                this.autoTipStyle.left = this.getExactLeft(this.nowCursorPos);
-                if (this.autoTipStyle.top + height > Util.getNum(this._top) + this.$refs.render.clientHeight) {
-                    this.autoTipStyle.top -= height + this.charObj.charHight;
-                }
-                if (this.autoTipStyle.left + width > this.scrollLeft + this.scrollerArea.width) {
-                    this.autoTipStyle.left -= width;
-                }
-                this.autoTipStyle.top += 'px';
-                this.autoTipStyle.left += 'px';
-            });
+            clearTimeout(this.setAutoTip.timer);
+            if (results && results.length) {
+                results.forEach((item) => {
+                    item.active = false;
+                });
+                this.autoTipList = results;
+                this.autoTipList[0].active = true;
+                this.$nextTick(() => {
+                    let width = this.$refs.autoTip.clientWidth;
+                    let height = this.$refs.autoTip.clientHeight;
+                    this.autoTipStyle.top = this.folder.getRelativeLine(this.nowCursorPos.line) * this.charObj.charHight;
+                    this.autoTipStyle.left = this.getExactLeft(this.nowCursorPos);
+                    if (this.autoTipStyle.top + height > Util.getNum(this._top) + this.$refs.render.clientHeight) {
+                        this.autoTipStyle.top -= height + this.charObj.charHight;
+                    }
+                    if (this.autoTipStyle.left + width > this.scrollLeft + this.scrollerArea.width) {
+                        this.autoTipStyle.left -= width;
+                    }
+                    this.autoTipStyle.top += 'px';
+                    this.autoTipStyle.left += 'px';
+                });
+            } else {
+                //内容改变时会触发setAutoTip(null)
+                this.setAutoTip.timer = setTimeout(() => {
+                    this.autoTipList = null;
+                }, 100);
+            }
         },
         // 获取文本在浏览器中的宽度
         getStrWidth(str, start, end) {

@@ -5,12 +5,10 @@
 -->
 <template>
 	<div :style="styles" @mousedown.stop class="my-editor-auto">
-		<div class="my-editor-auto-group" v-for="group in tipList">
-			<div :class="{active: item.active}" @mousedown="onClick(item, group)" class="my-editor-auto-item" v-for="item in group">
-				<div class="my-editor-auto-icon"></div>
-				<div class="my-editor-auto-content">
-					<span v-html="_html(item)"></span>
-				</div>
+		<div :class="{active: item.active}" @mousedown="onClick(item)" class="my-editor-auto-item" v-for="item in tipList">
+			<div class="my-editor-auto-icon"></div>
+			<div class="my-editor-auto-content">
+				<span v-html="_html(item)"></span>
 			</div>
 		</div>
 	</div>
@@ -48,12 +46,29 @@ export default {
     created() {
     },
     methods: {
-        onClick(item, group) {
-            group.forEach((item) => {
-                item.checked = false;
-            });
-            item.checked = true;
+        onClick(item) {
             this.$emit('change', item);
+        },
+        prev() {
+            let index = this.getActiveIndex();
+            this.tipList[index].active = false;
+            index = index - 1;
+            index = index < 0 ? this.tipList.length - 1 : index;
+            this.tipList[index].active = true;
+        },
+        next() {
+            let index = this.getActiveIndex();
+            this.tipList[index].active = false;
+            index = index + 1;
+            index = index > this.tipList.length - 1 ? 0 : index;
+            this.tipList[index].active = true;
+        },
+        getActiveIndex() {
+            for (let i = 0; i < this.tipList.length; i++) {
+                if (this.tipList[i].active) {
+                    return i;
+                }
+            }
         }
     }
 }

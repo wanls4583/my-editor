@@ -13,11 +13,11 @@
 		<div class="bar-right">
 			<div @mousedown.stop="showTabsize" class="bar-item my-editor-clickable" v-if="editor">
 				<span>Tab Size:{{tabSize}}</span>
-				<Menu :menuList="tabSizeList" :styles="{right: 0, bottom: height+'px'}" @change="onTabsizeChange" v-show="tabsizeVisible"></Menu>
+				<Menu :menuList="tabSizeList" :styles="{right: 0, bottom: height+'px'}" :value="tabSize" @change="onTabsizeChange" v-show="tabsizeVisible"></Menu>
 			</div>
 			<div @mousedown.stop="showLanguage" class="bar-item my-editor-clickable" v-if="editor">
 				<span>{{_language}}</span>
-				<Menu :menuList="languageList" :styles="{right: 0, bottom: height+'px'}" @change="onLnaguageChange" v-show="languageVisible"></Menu>
+				<Menu :menuList="languageList" :styles="{right: 0, bottom: height+'px'}" :value="language" @change="onLnaguageChange" v-show="languageVisible"></Menu>
 			</div>
 		</div>
 	</div>
@@ -49,14 +49,11 @@ export default {
                 { name: 'JavaScript', value: 'JavaScript' },
                 { name: 'HTML', value: 'HTML' },
                 { name: 'CSS', value: 'CSS' },
-                { name: 'Plain Text', value: '' }
+                { name: 'Plain Text', value: '', checked: true }
             ]]
         }
     },
     watch: {
-        tabSize(newVal) {
-            console.log(newVal)
-        }
     },
     computed: {
         editor() {
@@ -71,10 +68,9 @@ export default {
         for (let i = 1; i <= 8; i++) {
             this.tabSizeList[0].push({
                 name: `Tab Width：${i}`,
-                size: i
+                value: i
             });
         }
-        this.setDefault();
         this.languageList[0].forEach((item) => {
             this.languageMap[item.value] = item.name;
         });
@@ -82,14 +78,6 @@ export default {
     mounted() {
     },
     methods: {
-        setDefault() {
-            this.tabSizeList[0].forEach((item) => {
-                item.checked = item.size == this.tabSize;
-            });
-            this.languageList[0].forEach((item) => {
-                item.checked = item.value == this.language;
-            });
-        },
         showTabsize() {
             let visible = this.tabsizeVisible;
             this.closeAllMenu();
@@ -105,9 +93,9 @@ export default {
             this.tabsizeVisible = false;
         },
         onTabsizeChange(item) {
-            if (this.tabSize != item.size) {
-                this.tabSize = item.size;
-                this.editor.tabSize = item.size;
+            if (this.tabSize != item.value) {
+                this.tabSize = item.value;
+                this.editor.tabSize = item.value;
             }
             this.tabsizeVisible = false;
         },

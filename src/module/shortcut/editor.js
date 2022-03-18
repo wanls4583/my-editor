@@ -18,6 +18,11 @@ export default class {
             'autocomplete',
             'fSearcher',
             'history',
+            'autoTipList',
+            'setAutoTip',
+            'prevAutoTip',
+            'nextAutoTip',
+            'selectAutoTip',
             'searchWord',
             'openSearch',
             '$emit',
@@ -152,19 +157,34 @@ export default class {
                     _moveCursor('home');
                     break;
                 case 38: //up arrow
-                    _moveCursor('up');
+                    if (this.autoTipList) {
+                        that.prevAutoTip();
+                    } else {
+                        _moveCursor('up');
+                    }
                     break;
                 case 39: //right arrow
                     _moveCursor('right');
                     break;
                 case 40: //down arrow
-                    _moveCursor('down');
+                    if (this.autoTipList) {
+                        that.nextAutoTip();
+                    } else {
+                        _moveCursor('down');
+                    }
+                    break;
+                case 13:
+                case 100: //enter
+                    if (this.autoTipList) {
+                        e.preventDefault();
+                        this.selectAutoTip();
+                    }
                     break;
                 case Util.keyCode.DELETE: //delete
                     this.deleteContent(Util.keyCode.DELETE);
                     this.autocomplete.search();
                     break;
-                    case Util.keyCode.BACKSPACE: //backspace
+                case Util.keyCode.BACKSPACE: //backspace
                     this.deleteContent(Util.keyCode.BACKSPACE);
                     this.autocomplete.search();
                     break;
@@ -178,6 +198,7 @@ export default class {
                     that.cursor.moveCursor(cursorPos, direct, wholeWord);
                 });
             }
+            that.setAutoTip(null); //取消自动提示
             that.searcher.clearSearch();
             that.fSearcher.clearNow();
         }

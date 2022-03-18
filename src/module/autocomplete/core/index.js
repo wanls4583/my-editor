@@ -52,7 +52,7 @@ export default class {
                     return b.score - a.score;
                 }).slice(0, 10);
             }
-            this.setAutoTip([results]);
+            this.setAutoTip(results);
         }
     }
     createWorker(mod) {
@@ -98,7 +98,7 @@ export default class {
             }
             this.worker.postMessage({
                 word: preWord,
-                text: Date.now() - this.preSearchTime > 1000 ? this.getAllText() : '', //避免频繁传递大文本
+                text: Date.now() - this.preSearchTime > 500 ? this.getAllText() : '', //避免频繁传递大文本
                 searcherId: this.searcherId,
                 type: type
             });
