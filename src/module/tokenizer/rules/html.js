@@ -65,7 +65,6 @@ const scriptStart = {
     start: /\<(?=script\b)/,
     end: /\>/,
     token: tagToken,
-    ruleName: 'scriptStart',
     childRule: {
         rules: attrRules
     }
@@ -75,7 +74,6 @@ const scriptEnd = {
     start: /\<\/(?=script\>)/,
     end: /\>/,
     token: tagToken,
-    ruleName: 'scriptEnd',
     childRule: {
         rules: [{
             regex: /(?<=\<\/?)\w+\b/,
@@ -90,7 +88,6 @@ const styleStart = {
     start: /\<(?=style\b)/,
     end: /\>/,
     token: tagToken,
-    ruleName: 'styleStart',
     childRule: {
         rules: attrRules
     }
@@ -100,7 +97,6 @@ const styleEnd = {
     start: /\<\/(?=style\s*?\>)/,
     end: /\>/,
     token: tagToken,
-    ruleName: 'styleEnd',
     childRule: {
         rules: [{
             regex: /(?<=\<\/?)\w+\b/,
@@ -151,6 +147,7 @@ export default {
     }, {
         start: /\<\/?(?=\w+\b)/,
         end: /\/?\>/,
+        ruleName: 'attr',
         token: tagToken,
         childRule: {
             rules: attrRules
