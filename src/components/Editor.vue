@@ -1,78 +1,78 @@
 <template>
-	<div @contextmenu.prevent.stop="onContextmenu" @selectstart.prevent @wheel.prevent="onWheel" class="my-editor-wrap" ref="editor">
+	<div @contextmenu.prevent.stop="onContextmenu" @selectstart.prevent @wheel.prevent="onWheel" class="my-wrap" ref="editor">
 		<!-- 行号 -->
-		<div :style="{top: _numTop}" class="my-editor-nums" v-if="active">
+		<div :style="{top: _numTop}" class="my-nums" v-if="active">
 			<!-- 占位行号，避免行号宽度滚动时变化 -->
-			<div class="my-editor-num" style="visibility:hidden">{{maxLine}}</div>
+			<div class="my-num" style="visibility:hidden">{{maxLine}}</div>
 			<div
-				:class="{'my-editor-num-active': _activeLine(line.num)}"
+				:class="{'my-num-active': _activeLine(line.num)}"
 				:key="line.num"
 				:style="{height:_lineHeight, 'line-height':_lineHeight}"
-				class="my-editor-num"
+				class="my-num"
 				v-for="line in renderHtmls"
 			>
 				<span
-					:class="[errorMap[line.num]?'my-editor-icon-error':'']"
+					:class="[errorMap[line.num]?'my-icon-error':'']"
 					@mouseleave="onIconMouseLeave"
 					@mouseover="onIconMouseOver(line.num, $event)"
-					class="my-editor-icon my-editor-center"
+					class="my-icon my-center"
 				></span>
 				<span>{{line.num}}</span>
 				<!-- 折叠图标 -->
 				<span
-					:class="[line.fold=='open'?'my-editor-fold-open':'my-editor-fold-close']"
+					:class="[line.fold=='open'?'my-fold-open':'my-fold-close']"
 					@click="onToggleFold(line.num)"
-					class="my-editor-fold my-editor-center"
+					class="my-fold my-center"
 					v-if="line.fold"
 				></span>
 			</div>
 		</div>
-		<div :style="{'box-shadow': _leftShadow}" class="my-editor-content-wrap">
+		<div :style="{'box-shadow': _leftShadow}" class="my-content-wrap">
 			<!-- 可滚动区域 -->
-			<div @scroll="onScroll" class="my-editor-scroller" ref="scroller">
+			<div @scroll="onScroll" class="my-scroller" ref="scroller">
 				<!-- 内如区域 -->
 				<div
 					:style="{minWidth: _contentMinWidth, height: contentHeight}"
 					@mousedown="onContentMdown"
 					@mousemove="onContentMmove"
 					@selectend.prevent="onSelectend"
-					class="my-editor-content"
+					class="my-content"
 					ref="content"
 				>
-					<div :style="{top: _top}" class="my-editor-render" ref="render" v-if="active">
+					<div :style="{top: _top}" class="my-render" ref="render" v-if="active">
 						<div
 							:class="{active: _activeLine(line.num)}"
 							:data-line="line.num"
 							:id="'line_'+line.num"
 							:key="line.num"
 							:style="{height:_lineHeight, 'line-height':_lineHeight}"
-							class="my-editor-line"
+							class="my-line"
 							v-for="line in renderHtmls"
 						>
-							<!-- my-editor-select-bg为选中状态 -->
+							<!-- my-select-bg为选中状态 -->
 							<div
-								:class="[line.selected ? 'my-editor-select-bg my-editor-select-active' : '', line.isFsearch ? 'my-editor-select-f' : '', line.fold == 'close' ? 'fold-close' : '']"
+								:class="[line.selected ? 'my-select-bg my-select-active' : '', line.isFsearch ? 'my-select-f' : '', line.fold == 'close' ? 'fold-close' : '']"
 								:data-line="line.num"
-								class="my-editor-code"
+								class="my-code"
 								v-html="line.html"
 							></div>
 							<!-- 选中时的首行背景 -->
 							<div
-								:class="{'my-editor-select-active': range.active,'my-editor-select-f': range.isFsearch}"
+								:class="{'my-select-active': range.active,'my-select-f': range.isFsearch}"
 								:style="{left: range.left + 'px', width: range.width + 'px'}"
-								class="my-editor-line-bg my-editor-select-bg"
+								class="my-line-bg my-select-bg"
 								v-for="range in line.selectStarts"
 							></div>
 							<!-- 选中时的末行背景 -->
 							<div
-								:class="{'my-editor-select-active': range.active,'my-editor-select-f': range.isFsearch}"
+								:class="{'my-select-active': range.active,'my-select-f': range.isFsearch}"
 								:style="{left: range.left + 'px', width: range.width + 'px'}"
-								class="my-editor-line-bg my-editor-select-bg"
+								class="my-line-bg my-select-bg"
 								v-for="range in line.selectEnds"
 							></div>
-							<span :style="{left: _tabLineLeft(tab)}" class="my-editor-tab-line" v-for="tab in line.tabNum"></span>
+							<span :style="{left: _tabLineLeft(tab)}" class="my-tab-line" v-for="tab in line.tabNum"></span>
 							<!-- 模拟光标 -->
-							<div :style="{height: _lineHeight, left: left, visibility: _cursorVisible}" class="my-editor-cursor" style="top:0px" v-for="left in line.cursorList"></div>
+							<div :style="{height: _lineHeight, left: left, visibility: _cursorVisible}" class="my-cursor" style="top:0px" v-for="left in line.cursorList"></div>
 						</div>
 					</div>
 					<!-- 输入框 -->
@@ -87,7 +87,7 @@
 						@input="onInput"
 						@keydown="onKeyDown"
 						@paste.prevent="onPaste"
-						class="my-editor-textarea"
+						class="my-textarea"
 						ref="textarea"
 					></textarea>
 					<auto-tip :styles="autoTipStyle" :tipList="autoTipList" @change="onClickAuto" ref="autoTip"></auto-tip>
@@ -774,6 +774,7 @@ export default {
             this.errorMap = errorMap;
         },
         setAutoTip(results) {
+            console.log(results)
             clearTimeout(this.setAutoTip.hideTimer);
             if (results && results.length) {
                 results.forEach((item) => {
@@ -868,7 +869,7 @@ export default {
                 }
             }
             let $token = $('#line_' + cursorPos.line).
-                children('.my-editor-code').
+                children('.my-code').
                 children('span[data-column="' + token.column + '"]');
             if (!$token.length) {
                 return 0;

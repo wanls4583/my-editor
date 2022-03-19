@@ -1,0 +1,109 @@
+.my {
+    &-search {
+        position: absolute;
+        top: 0;
+        right: 20px;
+        z-index: 98;
+        width: 500px;
+        display: flex;
+        justify-content: space-between;
+        padding: 5px 10px 5px 25px;
+        background-color: rgb(243, 243, 243);
+        border: 1px solid #dddddd;
+        color: #333;
+
+        .iconfont {
+            display: inline-block;
+            width: 22px;
+            height: 22px;
+            line-height: 22px;
+            font-size: 18px;
+            text-align: center;
+            color: #000;
+            cursor: pointer;
+        }
+
+        .active-border {
+            border: 1px solid #0098fb;
+        }
+
+        .active-click:active {
+            border: 1px solid #0098fb;
+        }
+
+        .disabled-color {
+            color: #999999;
+
+            &:active {
+                border: none;
+            }
+        }
+
+        .enable-color {
+            color: #000000;
+        }
+
+        .my-search-suffix {
+            width: 22px;
+            height: 22px;
+            line-height: 22px;
+            text-align: center;
+            margin-right: 4px;
+            color: #999999;
+            cursor: pointer;
+
+            &:hover {
+                color: #333;
+            }
+
+            &.active-suffix {
+                background-color: rgb(204, 233, 252);
+                color: #000;
+            }
+        }
+    }
+
+
+    &-search-left {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 25px;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+
+    &-search-right,
+    &-search-top,
+    &-search-bottom {
+        display: flex;
+        align-items: center;
+        height: 30px;
+    }
+
+    &-search-input {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 280px;
+        margin-right: 5px;
+        background-color: #fff;
+
+        input {
+            flex-grow: 1;
+            height: 30px;
+            line-height: 30px;
+            padding: 0 5px;
+            border-style: none;
+            outline: none;
+            color: #666666;
+        }
+    }
+
+    &-no-results {
+        color: red;
+    }
+}

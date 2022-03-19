@@ -54,8 +54,8 @@ class Util {
         var str2 = '一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一';
         var id1 = 'char-width-' + Util.getUUID();
         var id2 = 'char-width-' + Util.getUUID();
-        var $tempDom = $(`<div class="my-editor-line">
-        <div class="my-editor-code"><span id="${id1}">${str1}</span><span id="${id2}">${str2}</span></div>
+        var $tempDom = $(`<div class="my-line">
+        <div class="my-code"><span id="${id1}">${str1}</span><span id="${id2}">${str2}</span></div>
         </div>`);
         $(wrap).append($tempDom)
         var dom = $('#' + id1)[0];
@@ -113,19 +113,19 @@ class Util {
             return 0;
         }
         var id = 'str-width-' + Util.getUUID();
-        var $tempDom = $(`<div class="my-editor-line my-editor-temp-text" style="visibility:hidden">
-        <div class="my-editor-code" id="${id}">${_splitStr(str)}</div>
+        var $tempDom = $(`<div class="my-line my-temp-text" style="visibility:hidden">
+        <div class="my-code" id="${id}">${_splitStr(str)}</div>
         </div>`);
         $(wrap).append($tempDom)
         var dom = $('#' + id)[0];
         var charWidth = dom.clientWidth;
-        $('.my-editor-temp-text').remove();
+        $('.my-temp-text').remove();
         // if (Util.getStrExactWidth.count > 5) { //避免频繁删除dom导致浏览器卡顿
-        //     $('.my-editor-temp-text').remove();
+        //     $('.my-temp-text').remove();
         // } else {
         //     clearTimeout(Util.getStrExactWidth.timer);
         //     Util.getStrExactWidth.timer = setTimeout(() => {
-        //         $('.my-editor-temp-text').remove();
+        //         $('.my-temp-text').remove();
         //     }, 500);
         // }
         return charWidth;

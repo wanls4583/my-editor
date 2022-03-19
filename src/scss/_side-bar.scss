@@ -1,0 +1,77 @@
+.my {
+    &-side-bar {
+        flex-shrink: 0;
+        position: relative;
+        width: 300px;
+        height: 100%;
+        background-color: #eeeeee;
+        color: #666666;
+
+        .side-bar-title {
+            padding-left: 16px;
+            height: 40px;
+            line-height: 40px;
+        }
+
+        .side-tree {
+            position: relative;
+
+            &-warp {
+                position: absolute;
+                top: 40px;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                overflow: overlay;
+
+                &::-webkit-scrollbar {
+                    width: 8px;
+                }
+
+                &::-webkit-scrollbar-thumb {
+                    background-color: transparent;
+                }
+
+                &:hover {
+                    &::-webkit-scrollbar-thumb {
+                        border-radius: 4px;
+                        background-color: rgba(0, 0, 0, 0.2);
+                    }
+                }
+            }
+
+            &-content {
+                position: absolute;
+                left: 0;
+                width: 100%;
+            }
+        }
+
+        .side-item {
+            position: relative;
+            white-space: nowrap;
+
+            &-title {
+                display: flex;
+                align-items: center;
+                height: 30px;
+                padding-right: 10px;
+
+                &:hover {
+                    background-color: rgba(0, 0, 0, 0.1);
+                    cursor: pointer;
+                }
+
+                &.active {
+                    background-color: #0098fb;
+                    color: #fff;
+                }
+            }
+
+            &-text {
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+        }
+    }
+}

@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import App from './App.vue'
 import router from './router'
-import './scss/editor.scss'
+import './scss/index.scss'
 import './scss/highlight/js.scss';
 import './scss/highlight/html.scss';
 import './scss/highlight/css.scss';

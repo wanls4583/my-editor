@@ -4,10 +4,10 @@
  * @Description: 
 -->
 <template>
-	<div :style="{'padding-top':_topBarHeight,'padding-bottom':_statusHeight}" @mousedown="onWindMouseDown" class="my-editor-window" ref="window">
+	<div :style="{'padding-top':_topBarHeight,'padding-bottom':_statusHeight}" @mousedown="onWindMouseDown" class="my-window" ref="window">
 		<!-- 侧边栏 -->
 		<side-bar ref="sideBar"></side-bar>
-		<div @contextmenu.prevent.stop="onContextmenu" class="my-editor-right-wrap" ref="rightWrap">
+		<div @contextmenu.prevent.stop="onContextmenu" class="my-right-wrap" ref="rightWrap">
 			<!-- tab栏 -->
 			<editor-bar
 				:editorList="editorList"

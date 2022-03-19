@@ -1,0 +1,148 @@
+.my {
+    &-wrap {
+        position: relative;
+        height: 100%;
+        overflow: hidden;
+        padding-bottom: 4px;
+        background-color: #272822;
+        color: #f8f8f2;
+        font-style: normal;
+        font-variant-ligatures: normal;
+        font-variant-caps: normal;
+        font-variant-numeric: normal;
+        font-variant-east-asian: normal;
+        font-weight: normal;
+        font-stretch: normal;
+        font-size: 14px;
+        line-height: 1.5em;
+        letter-spacing: 0px;
+        font-family: Consolas, "Courier New", monospace;
+        user-select: none;
+        -webkit-tap-highlight-color: rgab(0, 0, 0, 0);
+    }
+
+    &-nums {
+        position: relative;
+        float: left;
+        overflow: hidden;
+
+        &:hover {
+            .my-fold {
+                opacity: 1;
+            }
+        }
+    }
+
+    &-num {
+        position: relative;
+        padding: 0 20px;
+        color: #999999;
+        text-align: right;
+
+        &-active {
+            background-color: #3e3d32;
+            color: #fff;
+        }
+    }
+
+    &-scroller {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+
+        &::-webkit-scrollbar {
+            border-radius: 4px;
+            background-color: rgb(76, 77, 72);
+            box-shadow: 0 0 20px rgba(0, 0, 0, .2);
+        }
+
+        &::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        &::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            border-radius: 4px;
+            background-color: rgb(115, 116, 112);
+        }
+
+        &::-webkit-scrollbar-corner {
+            background-color: #272822;
+        }
+    }
+
+    &-content {
+        position: relative;
+        min-height: 100%;
+        padding-right: 2px;
+        cursor: text;
+        overflow-y: hidden;
+
+        &-wrap {
+            position: relative;
+            height: 100%;
+            overflow: hidden;
+        }
+    }
+
+    &-render {
+        position: absolute;
+        left: 0;
+        width: 100%;
+    }
+
+    &-cursor {
+        position: absolute;
+        left: 0;
+        z-index: 2;
+        width: 2px;
+        background-color: #fff;
+    }
+
+    &-textarea {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: -1;
+        width: 1px;
+        padding: 0;
+        border-style: none;
+        outline: none;
+        opacity: 0;
+    }
+
+    &-icon {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 20px;
+        height: 100%;
+
+        &-error::before {
+            content: "×";
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            border: 1px solid red;
+            color: red;
+        }
+    }
+
+    &-tip {
+        position: absolute;
+        z-index: 99;
+        min-width: 120px;
+        background-color: #fff;
+        border-radius: 4px;
+        padding: 5px 10px;
+        color: #666666;
+        line-height: 1.2em;
+    }
+}

@@ -5,8 +5,8 @@
 -->
 <template>
 	<div>
-		<div class="my-editor-dialog-overlay" v-if="overlay"></div>
-		<div :style="styles" @mousedown.stop class="my-editor-dialog">
+		<div class="my-dialog-overlay" v-if="overlay"></div>
+		<div :style="styles" @mousedown.stop class="my-dialog">
 			<div class="dialog-title">
 				<div v-html="title"></div>
 				<span @click="onClose" class="dialog-close iconfont icon-close"></span>

@@ -1,0 +1,71 @@
+@import url('//at.alicdn.com/t/font_3194546_n6rvd8e8sup.css');
+@import 'auto-tip';
+@import 'code';
+@import 'dialog';
+@import 'editor';
+@import 'folder';
+@import 'menu';
+@import 'right-bar';
+@import 'search';
+@import 'side-bar';
+@import 'top-status-bar';
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    width: 100;
+    height: 100%;
+}
+
+#app {
+    width: 100;
+    height: 100%;
+}
+
+
+.my {
+    &-clickable {
+        cursor: pointer;
+
+        &:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+    }
+
+    &-clickable-danger {
+        cursor: pointer;
+
+        &:hover {
+            background-color: red;
+            color: white;
+        }
+    }
+
+    &-center {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    &-window {
+        display: flex;
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        font-size: 13px;
+    }
+
+    &-right-wrap {
+        flex-grow: 1;
+        position: relative;
+        padding-top: 40px;
+        height: 100%;
+        overflow: hidden;
+    }
+}

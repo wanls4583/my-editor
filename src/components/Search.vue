@@ -4,8 +4,8 @@
  * @Description: 
 -->
 <template>
-	<div @contextmenu.prevent @contextmenu.stop @mousedown.stop @selectstart.stop class="my-editor-search">
-		<div class="my-editor-search-left">
+	<div @contextmenu.prevent @contextmenu.stop @mousedown.stop @selectstart.stop class="my-search">
+		<div class="my-search-left">
 			<span
 				:class="{'icon-down1':replaceVisible,'icon-right':!replaceVisible}"
 				@click="showReplace"
@@ -15,11 +15,11 @@
 			></span>
 		</div>
 		<div style="flex-grow:1">
-			<div class="my-editor-search-top">
-				<div :class="{'active-border':input1Focus}" class="my-editor-search-input">
+			<div class="my-search-top">
+				<div :class="{'active-border':input1Focus}" class="my-search-input">
 					<input @blur="input1Focus=false" @focus="input1Focus=true" @keydown="onKeyDown" ref="input1" type="text" v-model="searchText" />
-					<span :class="{'active-suffix':ignoreCase}" @click="changeCase" class="my-editor-search-suffix" title="Match Case(Alt+C)">Aa</span>
-					<span :class="{'active-suffix':wholeWord}" @click="changeWhole" class="my-editor-search-suffix iconfont icon-whole-word" title="Match Whole Word(Alt+W)"></span>
+					<span :class="{'active-suffix':ignoreCase}" @click="changeCase" class="my-search-suffix" title="Match Case(Alt+C)">Aa</span>
+					<span :class="{'active-suffix':wholeWord}" @click="changeWhole" class="my-search-suffix iconfont icon-whole-word" title="Match Whole Word(Alt+W)"></span>
 				</div>
 				<div v-if="count">
 					<span>{{now}}</span>
@@ -28,8 +28,8 @@
 				</div>
 				<span :style="{color:searchText?'red':'#333'}" v-else>No results</span>
 			</div>
-			<div class="my-editor-search-bottom" style="margin-top:5px" v-if="replaceVisible">
-				<div :class="{'active-border':input2Focus}" class="my-editor-search-input">
+			<div class="my-search-bottom" style="margin-top:5px" v-if="replaceVisible">
+				<div :class="{'active-border':input2Focus}" class="my-search-input">
 					<input @blur="input2Focus=false" @focus="input2Focus=true" @keydown="onKeyDown2" ref="input2" type="text" v-model="replaceText" />
 				</div>
 				<span
@@ -48,7 +48,7 @@
 				></span>
 			</div>
 		</div>
-		<div class="my-editor-search-right">
+		<div class="my-search-right">
 			<span
 				:class="{'active-border':searchPrevActive,'enabled-color':count>0,'disabled-color':count==0}"
 				@click="searchPrev"

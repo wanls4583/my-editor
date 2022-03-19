@@ -4,10 +4,10 @@
  * @Description: 
 -->
 <template>
-	<div :style="styles" @mousedown.stop class="my-editor-auto">
-		<div :class="{active: item.active}" @mousedown="onClick(item)" class="my-editor-auto-item" v-for="item in tipList">
-			<div class="my-editor-auto-icon"></div>
-			<div class="my-editor-auto-content">
+	<div :style="styles" @mousedown.stop class="my-auto">
+		<div :class="{active: item.active}" @mousedown="onClick(item)" class="my-auto-item" v-for="item in tipList">
+			<div class="my-auto-icon"></div>
+			<div class="my-auto-content">
 				<span v-html="_html(item)"></span>
 			</div>
 		</div>
@@ -41,6 +41,11 @@ export default {
                 });
                 return html + item.result.slice(index);
             }
+        }
+    },
+    watch: {
+        tipList(newVal) {
+            console.log(1, JSON.stringify(newVal));
         }
     },
     created() {

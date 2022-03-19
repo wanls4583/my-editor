@@ -4,7 +4,7 @@
  * @Description: 
 -->
 <template>
-	<div :style="styles" @mousedown.stop class="my-editor-tip">
+	<div :style="styles" @mousedown.stop class="my-tip">
 		<div v-html="content"></div>
 	</div>
 </template>

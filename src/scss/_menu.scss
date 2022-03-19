@@ -1,4 +1,4 @@
-.my-editor {
+.my {
     &-menu {
         position: absolute;
         z-index: 99;
@@ -35,7 +35,7 @@
         }
 
         &:last-child {
-            .my-editor-menu-content {
+            .my-menu-content {
                 border-bottom: none;
             }
         }
@@ -54,8 +54,8 @@
                 cursor: auto;
             }
 
-            .my-editor-menu-content,
-            .my-editor-menu-shortcut {
+            .my-menu-content,
+            .my-menu-shortcut {
                 color: #999999;
             }
         }

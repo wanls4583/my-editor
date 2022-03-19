@@ -4,16 +4,16 @@
  * @Description: 
 -->
 <template>
-	<div :style="styles" @mousedown.stop class="my-editor-menu">
-		<div class="my-editor-menu-group" v-for="group in menuList">
+	<div :style="styles" @mousedown.stop class="my-menu">
+		<div class="my-menu-group" v-for="group in menuList">
 			<div
 				:class="{checked: checkable && item.checked, disabled: item.disabled}"
 				@mousedown="onClick(item, group)"
-				class="my-editor-menu-item"
+				class="my-menu-item"
 				v-for="item in group"
 			>
-				<div class="my-editor-menu-content">{{item.name}}</div>
-				<div class="my-editor-menu-shortcut" v-if="item.shortcut">{{item.shortcut}}</div>
+				<div class="my-menu-content">{{item.name}}</div>
+				<div class="my-menu-shortcut" v-if="item.shortcut">{{item.shortcut}}</div>
 			</div>
 		</div>
 	</div>

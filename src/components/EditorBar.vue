@@ -4,14 +4,14 @@
  * @Description: 
 -->
 <template>
-	<div @selectstart.prevent class="my-editor-right-bar" ref="rightBar">
+	<div @selectstart.prevent class="my-right-bar" ref="rightBar">
 		<div class="bar-scroller">
 			<div
 				:class="{'active':item.active}"
 				:title="item.path"
 				@click="onClickItem(item.id)"
 				@contextmenu.prevent.stop="onContextmenu($event, item.id)"
-				class="bar-item my-editor-clickable"
+				class="bar-item my-clickable"
 				v-for="item in editorList"
 			>
 				<span class="bar-text">{{item.name}}</span>
