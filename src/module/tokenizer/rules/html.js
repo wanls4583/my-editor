@@ -137,12 +137,12 @@ export default {
     rules: [{
         start: scriptStart,
         end: scriptEnd,
-        ruleName: 'script',
+        ruleName: 'JavaScript',
         childRule: jsRules
     }, {
         start: styleStart,
         end: styleEnd,
-        ruleName: 'css',
+        ruleName: 'CSS',
         childRule: cssRules
     }, {
         start: /\<\/?(?=\w+\b)/,

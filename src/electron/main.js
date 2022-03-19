@@ -6,16 +6,24 @@
 const {
     BrowserWindow,
     app,
-    Menu
+    Menu,
 } = require('electron');
-
 const main = require('@electron/remote/main');
 const wins = {};
 
-function createWindow(name, url, type) {
+let mainWin = null;
+
+global.shareObject = {
+    globalData: {
+        contexts: {}
+    }
+}
+
+function createWindow(name, url, type, parent) {
     const win = new BrowserWindow({
-        frame: false,
+        // frame: false,
         show: false,
+        parent: parent,
         webPreferences: {
             nodeIntegration: true,
             enableRemoteModule: true,
@@ -36,9 +44,12 @@ function createWindow(name, url, type) {
 app.whenReady().then(() => {
     main.initialize();
     Menu.setApplicationMenu(null); //去掉默认菜单和快捷键
+    mainWin = createWindow('main', 'http://localhost:8080/', 'remote');
+    mainWin.show();
     initEvent();
-    createWindow('', 'http://localhost:8080/#/home', 'remote').show();
-})
+}).catch((err) => {
+    console.log(err);
+});
 
 function initEvent() {
     app.on('activate', function () {

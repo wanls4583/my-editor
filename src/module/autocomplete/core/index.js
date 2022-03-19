@@ -4,82 +4,36 @@
  * @Description: 
  */
 import Util from '@/common/Util';
-import jsSearcher from '../language/javascript';
-import htmlSearcher from '../language/html';
+import JsSearcher from '../language/javascript';
+import HtmlSearcher from '../language/html';
+
 const regs = {
     word: /(?:^|\b)[$_a-zA-Z][$_a-zA-Z0-9]*$/
 }
 
 export default class {
     constructor(editor, context) {
-        this.searcherId = 1;
-        this.results = [];
+        this.searcherId = 0;
         this.preSearchTime = 0;
+        this.editor = editor;
+        this.context = context;
         this.initProperties(editor, context);
-        this.initLanguage(editor.language);
     }
     initProperties(editor, context) {
-        Util.defineProperties(this, context, ['htmls', 'getAllText']);
-        Util.defineProperties(this, editor, ['cursor', 'tokenizer', 'setAutoTip', 'showAutoTip']);
-    }
-    initLanguage(language) {
-        let that = this;
-        if (this.language === language) {
-            return;
-        }
-        this.language = language;
-        this.worker && this.worker.terminate();
-        this.worker = null;
-        switch (language) {
-            case 'JavaScript':
-                this.worker = this.createWorker(jsSearcher);
-                break;
-            case 'HTML':
-                this.worker = this.createWorker(htmlSearcher);
-        }
-        if (!this.worker) {
-            return;
-        }
-        this.worker.onmessage = (e) => {
-            let searcherId = e.data.searcherId;
-            let results = e.data.results;
-            if (that.searcherId != searcherId) {
-                return;
-            }
-            if (results) {
-                this.results = this.results.concat(results);
-                this.results = this.results.sort((a, b) => {
-                    return b.score - a.score;
-                }).slice(0, 10);
-                this.setAutoTip(this.results);
-            }
-        }
-    }
-    createWorker(mod) {
-        var funStr = mod.toString().replace(/^[^\)]+?\)/, '');
-        var str =
-            `function fun()${funStr}
-            let searcher = fun();
-            self.onmessage = function(e) {
-                searcher.search(e.data);
-            }`;
-        return Util.createWorker(str);
+        Util.defineProperties(this, editor, ['language', 'cursor', 'tokenizer', 'setAutoTip']);
+        Util.defineProperties(this, context, ['htmls']);
     }
     search() {
-        if (!this.worker) {
-            return;
-        }
-        this.clearSearch();
-        this.showAutoTip();
-        clearTimeout(this.timer);
-        this.timer = setTimeout(() => { //等待tokenize完成
+        clearTimeout(this.searchTimer);
+        this.searchTimer = setTimeout(() => {
             _search.call(this);
-            this.preSearchTime = Date.now();
-        }, 100);
+        });
 
         function _search() {
             let multiCursorPos = this.cursor.multiCursorPos.toArray();
             let preWord = '';
+            let type = '';
+            this.clearSearch();
             for (let i = 0; i < multiCursorPos.length; i++) {
                 let word = this.getNowWord(multiCursorPos[i]);
                 if (!word || preWord && word !== preWord) {
@@ -88,31 +42,45 @@ export default class {
                 }
                 preWord = word;
             }
-            let type = '';
-            let textObj = this.getSearchText(Date.now() - this.preSearchTime > 1000); //1秒不传递新文本，复用已经传过去的文本
             this.searcherId++;
             if (this.language == 'HTML') {
-                let states = this.htmls[multiCursorPos[0].line - 1].states;
-                if (states && states.length == 1 && this.tokenizer.ruleIdMap[states[0]].ruleName == 'script') {
+                let states = this.htmls[multiCursorPos[0].line - 1].states || [];
+                states = states.map((item) => {
+                    return this.tokenizer.ruleIdMap[item].ruleName
+                });
+                if (states.indexOf('JavaScript') > -1) {
                     //在<script>标签里
-                    type = 'script';
+                    type = 'JavaScript';
+                } else if (states.indexOf('CSS') > -1) {
+                    //在<style>标签里
+                    type = 'CSS';
                 }
             }
-            this.worker.postMessage({
+            this.searcher = this.getSearcher(type);
+            this.searcher && this.searcher.search({
                 word: preWord,
-                text: textObj.text,
-                liveText: textObj.liveText,
-                searcherId: this.searcherId,
-                type: type
+                searcherId: this.searcherId
             });
         }
     }
     clearSearch() {
+        this.searcher && this.searcher.stop();
         this.searcherId++;
-        this.results = [];
-        this.worker && this.worker.postMessage({
-            cmd: 'stop'
-        });
+    }
+    getSearcher(type) {
+        let language = type || this.language;
+        let searcher = null;
+        switch (language) {
+            case 'JavaScript':
+                this.jsSearcher = this.jsSearcher || new JsSearcher(this.editor, this.context);
+                searcher = this.jsSearcher;
+                break;
+            case 'HTML':
+                this.htmlSearcher = this.htmlSearcher || new HtmlSearcher(this.editor, this.context);
+                searcher = this.htmlSearcher;
+                break;
+        }
+        return searcher;
     }
     getNowWord(cursorPos) {
         let text = this.htmls[cursorPos.line - 1].text;
@@ -120,31 +88,5 @@ export default class {
         text = regs.word.exec(text);
         text = text && text[0];
         return text;
-    }
-    getSearchText(refresh) {
-        let lineMap = {};
-        let obj = {
-            liveText: '',
-            text: ''
-        }
-        obj.liveText = this.cursor.multiCursorPos.toArray().map((item) => {
-            if (lineMap[item.line]) {
-                return '';
-            } else {
-                lineMap[item.line] = true;
-                return this.htmls[item.line - 1].text;
-            }
-        }).join('\n');
-        if (refresh) {
-            obj.text = this.htmls.map((item, index) => {
-                if (lineMap[index + 1]) {
-                    return '';
-                } else {
-                    return this.htmls[index].text;
-                }
-            }).join('\n');
-            obj.text = obj.text || obj.liveText;
-        }
-        return obj;
     }
 }

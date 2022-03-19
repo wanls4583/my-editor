@@ -3,28 +3,26 @@
  * @Date: 2022-03-17 15:29:26
  * @Description: 
  */
-export default function () {
-    Array.prototype.peek = function (index) {
-        if (this.length) {
-            return this[this.length - (index || 1)];
-        }
-    }
-    Array.prototype._isArray = true;
-    String.prototype.peek = function (index) {
-        if (this.length) {
-            return this[this.length - (index || 1)];
-        }
-    }
-    const regs = {
-        word: /(?:^|\b)[$_a-zA-Z][$_a-zA-Z0-9]*(?:$|\b)/mg
-    }
+import Util from '@/common/Util';
 
-    function Searcher() {
+const regs = {
+    word: /(?:^|\b)[$_a-zA-Z][$_a-zA-Z0-9]*(?:$|\b)/mg
+}
+
+class Searcher {
+    constructor(editor, context) {
         this.wordMap = null;
         this.searcherId = null;
+        this.initProperties(editor, context);
     }
-
-    Searcher.prototype.reset = function (word, searcherId) {
+    initProperties(editor, context) {
+        Util.defineProperties(this, editor, ['language', 'tokenizer', 'autocomplete', 'setAutoTip']);
+        Util.defineProperties(this, context, ['htmls']);
+    }
+    reset(word, searcherId) {
+        this.startTime = Date.now();
+        this.nowIndex = 0;
+        this.preResults = [];
         this.wordMap = {};
         this.word = word;
         this.searcherId = searcherId;
@@ -38,43 +36,74 @@ export default function () {
         }
         this.wordLength = Object.keys(this.wordMap).length;
     }
-
-    Searcher.prototype.search = function (text) {
+    stop() {
+        clearTimeout(this.timer);
+    }
+    search(option) {
+        clearTimeout(this.searchTimer);
+        this.reset(option.word, option.searcherId);
+        this._search();
+    }
+    _search() {
         let exec = null;
         let results = [];
         let count = 0;
         let startTime = Date.now();
         let doneMap = {};
-        while (exec = regs.word.exec(text)) {
-            let result = this.match(exec[0]);
-            if (!doneMap[exec[0]]) {
-                if (result) {
-                    results.push({
-                        result: exec[0],
-                        indexs: result.indexs,
-                        score: result.score
-                    });
+        for (let i = this.nowIndex; i < this.htmls.length; i++) {
+            let pass = this.language === 'JavaScript';
+            let lineObj = this.htmls[i];
+            let states = lineObj.states;
+            if (!pass && states) {
+                for (let j = 0; j < states.length; j++) {
+                    if (this.tokenizer.ruleIdMap[states[j]].ruleName === 'js') {
+                        pass = true;
+                        break;
+                    }
                 }
-                doneMap[exec[0]] = true;
             }
-            count++;
-            if (count % 100 === 0 && Date.now() - startTime > 100) {
-                this.timer = setTimeout(() => {
-                    this.search(text);
+            if (pass && lineObj.text.length < 10000) { //大于10000个字符，跳过该行
+                _run.call(this, lineObj.text);
+            }
+            if (++count % 100 == 0 && Date.now() - startTime > 20) {
+                this.searchTimer = setTimeout(() => {
+                    this.nowIndex = i + 1;
+                    this._search();
                 });
                 break;
             }
         }
-        results = results.sort((a, b) => {
-            return b.score - a.score;
-        }).slice(0, 10);
-        self.postMessage({
-            results: results,
-            searcherId: this.searcherId
-        });
-    }
+        _send.call(this);
 
-    Searcher.prototype.match = function (target) {
+        function _run(text) {
+            while (exec = regs.word.exec(text)) {
+                let result = this.match(exec[0]);
+                if (!doneMap[exec[0]]) {
+                    if (result) {
+                        results.push({
+                            result: exec[0],
+                            indexs: result.indexs,
+                            score: result.score
+                        });
+                    }
+                    doneMap[exec[0]] = true;
+                }
+            }
+            regs.word.lastIndex = 0;
+        }
+
+        function _send() {
+            if (this.autocomplete.searcherId === this.searcherId) {
+                results = results.concat(this.preResults);
+                results = results.sort((a, b) => {
+                    return b.score - a.score;
+                }).slice(0, 10);
+                this.setAutoTip(results);
+                this.preResults = results;
+            }
+        }
+    }
+    match(target) {
         let score = 0;
         let preFinedChar = '';
         let preFinedOriginChar = '';
@@ -159,20 +188,6 @@ export default function () {
             }
         }
     }
-
-    let searcher = new Searcher();
-
-    return {
-        search: function (option) {
-            clearTimeout(searcher.timer);
-            if (option.cmd != 'stop') {
-                searcher.text = option.text || searcher.text;
-                searcher.reset(option.word, option.searcherId);
-                searcher.search(option.liveText);
-                if (option.liveText != searcher.text) {
-                    searcher.search(searcher.text);
-                }
-            }
-        }
-    }
 }
+
+export default Searcher;

@@ -44,9 +44,8 @@ export default {
         }
     },
     watch: {
-        tipList(newVal) {
-            console.log(1, JSON.stringify(newVal));
-        }
+        // tipList(newVal) {
+        // }
     },
     created() {
     },

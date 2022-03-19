@@ -19,12 +19,7 @@
 				></span>
 				<span>{{line.num}}</span>
 				<!-- 折叠图标 -->
-				<span
-					:class="[line.fold=='open'?'my-fold-open':'my-fold-close']"
-					@click="onToggleFold(line.num)"
-					class="my-fold my-center"
-					v-if="line.fold"
-				></span>
+				<span :class="[line.fold=='open'?'my-fold-open':'my-fold-close']" @click="onToggleFold(line.num)" class="my-fold my-center" v-if="line.fold"></span>
 			</div>
 		</div>
 		<div :style="{'box-shadow': _leftShadow}" class="my-content-wrap">
@@ -130,6 +125,10 @@ import AutoTip from './AutoTip';
 import Tip from './Tip';
 import Util from '@/common/Util';
 import $ from 'jquery';
+const require = require || window.parent.require;
+const remote = require('@electron/remote');
+const globalData = remote.getGlobal('shareObject').globalData;
+const contexts = globalData.contexts;
 
 export default {
     name: 'Editor',
@@ -277,7 +276,7 @@ export default {
             return Util.space(this.tabSize);
         },
         myContext() {
-            return window.myEditorContext[this.id];
+            return contexts[this.id];
         }
     },
     watch: {
@@ -290,7 +289,6 @@ export default {
             });
             this.render();
             this.lint.initLanguage(newVal);
-            this.autocomplete.initLanguage(newVal);
             this.tokenizer.initLanguage(newVal);
             this.tokenizer.tokenizeVisibleLins();
             this.tokenizer.tokenizeLines(1);
@@ -342,7 +340,7 @@ export default {
         // 初始化数据
         initData() {
             this.editorId = this.id;
-            window.myEditorContext[this.editorId] = new Context(this);
+            contexts[this.editorId] = new Context(this);
             this.maxWidthObj.lineId = this.myContext.htmls[0].lineId;
             this.tokenizer = new Tokenizer(this, this.myContext);
             this.lint = new Lint(this, this.myContext);
@@ -722,9 +720,6 @@ export default {
             let index = this.$refs.autoTip.getActiveIndex();
             this.onClickAuto(this.autoTipList[index]);
         },
-        showAutoTip() {
-            clearTimeout(this.setAutoTip.hideTimer);
-        },
         setData(prop, value) {
             if (typeof this[prop] === 'function') {
                 return;
@@ -774,7 +769,6 @@ export default {
             this.errorMap = errorMap;
         },
         setAutoTip(results) {
-            console.log(results)
             clearTimeout(this.setAutoTip.hideTimer);
             if (results && results.length) {
                 results.forEach((item) => {

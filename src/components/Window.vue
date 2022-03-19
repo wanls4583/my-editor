@@ -61,11 +61,11 @@ import WindowMenu from './WindowMenu.vue';
 import $ from 'jquery';
 
 const require = require || window.parent.require;
+const fs = require('fs');
 const remote = require('@electron/remote');
 const currentWindow = remote.getCurrentWindow();
-const fs = require('fs');
-
-window.myEditorContext = {};
+const globalData = remote.getGlobal('shareObject').globalData;
+const contexts = globalData.contexts;
 
 export default {
     components: {
@@ -170,7 +170,7 @@ export default {
                     btns: [{
                         name: '保存',
                         callback: () => {
-                            this.writeFile(tab.path, window.myEditorContext[id].getAllText());
+                            this.writeFile(tab.path, contexts[id].getAllText());
                             _closeTab.call(this);
                             this.onDialogClose();
                         }
@@ -188,7 +188,7 @@ export default {
 
             function _closeTab() {
                 this.editorList.splice(index, 1);
-                window.myEditorContext[id] = null;
+                contexts[id] = null;
                 if (tab.active) {
                     tab.active = false;
                     tab = this.editorList[index] || this.editorList[index - 1];
@@ -247,7 +247,7 @@ export default {
             let tab = this.getTabById(id);
             if (!tab.saved) {
                 if (tab.path) {
-                    this.writeFile(tab.path, window.myEditorContext[id].getAllText());
+                    this.writeFile(tab.path, contexts[id].getAllText());
                     tab.saved = true;
                 } else {
                     let win = remote.getCurrentWindow();
@@ -259,7 +259,7 @@ export default {
                         if (!result.canceled && result.filePath) {
                             tab.path = result.filePath;
                             tab.name = tab.path.match(/[^\\\/]+$/)[0];
-                            this.writeFile(tab.path, window.myEditorContext[id].getAllText());
+                            this.writeFile(tab.path, contexts[id].getAllText());
                             tab.saved = true;
                         }
                     }).catch(err => {
@@ -466,7 +466,7 @@ export default {
             return this.getEditor(this.nowId);
         },
         getContext(id) {
-            return window.myEditorContext[id];
+            return contexts[id];
         },
         getNowContext() {
             return this.getContext(this.nowId);

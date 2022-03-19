@@ -7,6 +7,7 @@ import './scss/highlight/html.scss';
 import './scss/highlight/css.scss';
 
 Vue.config.productionTip = false
+window.contexts = {};
 
 new Vue({
   router,
