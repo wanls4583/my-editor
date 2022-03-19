@@ -21,7 +21,7 @@ global.shareObject = {
 
 function createWindow(name, url, type, parent) {
     const win = new BrowserWindow({
-        // frame: false,
+        frame: false,
         show: false,
         parent: parent,
         webPreferences: {
