@@ -31,9 +31,9 @@ export default class {
             let command = this.history[this.history.index - 1];
             this.doCommand(command);
             this.history.index--;
-            command = this.history[this.history.index - 1];
-            if (command && command.serial) { //连续操作标识
-                this.undo();
+            if (command.serial) { //连续操作标识
+                command = this.history[this.history.index - 1];
+                command && command.serial && this.undo();
             }
         }
     }
@@ -43,9 +43,9 @@ export default class {
             let command = this.history[this.history.index];
             this.history.index++;
             this.doCommand(command);
-            command = this.history[this.history.index];
-            if (command && command.serial) { //连续操作标识
-                this.redo();
+            if (command.serial) { //连续操作标识
+                command = this.history[this.history.index];
+                command && command.serial && this.redo();
             }
         }
     }

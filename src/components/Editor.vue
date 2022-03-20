@@ -744,8 +744,10 @@ export default {
                         });
                     } else if (nowCursorPos.line <= this.startLine) {
                         requestAnimationFrame(() => {
-                            this.startLine = nowCursorPos.line;
-                            this.$refs.scroller.scrollTop = (this.folder.getRelativeLine(nowCursorPos.line) - 1) * this.charObj.charHight;
+                            if (nowCursorPos.line <= this.startLine) { //此时this.startLine可能已经通过onScrll而改变
+                                this.startLine = nowCursorPos.line;
+                                this.$refs.scroller.scrollTop = (this.folder.getRelativeLine(nowCursorPos.line) - 1) * this.charObj.charHight;
+                            }
                         });
                     }
                     this.renderCursor(true);
