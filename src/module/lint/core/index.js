@@ -44,13 +44,25 @@ export default class {
         }
         this.worker.onmessage = (e) => {
             let parseId = e.data.parseId;
-            let errors = e.data.result.errors;
-            let index = 0;
+            let result = e.data.result;
             let errorMap = {};
-            if (that.parseId != parseId || !errors) {
+            if (that.parseId != parseId || !result) {
                 that.setErrorMap(errorMap);
                 return;
             }
+            if (result instanceof Array) {
+                result.forEach((item) => {
+                    item.errors && _formatError(errorMap, item.errors);
+                });
+            } else {
+                result.errors && _formatError(errorMap, result.errors);
+            }
+            that.setErrorMap(errorMap);
+        }
+        this.parse();
+
+        function _formatError(errorMap, errors) {
+            let index = 0;
             while (index < errors.length) {
                 let line = errors[index].line;
                 let arr = [];
@@ -61,9 +73,7 @@ export default class {
                 line = line || that.htmls.length;
                 errorMap[line] = arr.join('<br>');
             }
-            that.setErrorMap(errorMap);
         }
-        this.parse();
     }
     createWorker(mod) {
         var funStr = mod.toString().replace(/^[^\)]+?\)/, '');

@@ -94,13 +94,13 @@ function htmlLint() {
             pos.index += exec[1].length;
             if (exec[2]) {
                 let r = parseFun(exec[2]);
-                r.forEach((item) => {
+                r.errors && r.errors.forEach((item) => {
                     if (item.line == 1) {
                         item.column += pos.column;
                     }
                     item.line += pos.line - 1;
                 });
-                result = result.concat(r);
+                result.push(r);
             }
             this.setLineColumn(exec[0].slice(exec[1].length), pos);
             pos.index += exec[0].slice(exec[1].length).length;
@@ -136,12 +136,6 @@ function htmlLint() {
             let result = null;
             parser.reset(text);
             result = parser.parse();
-            result.sort((a, b) => {
-                if (a.line === b.line) {
-                    return a.column - b.column;
-                }
-                return a.line - b.line;
-            });
             return result;
         }
     }
