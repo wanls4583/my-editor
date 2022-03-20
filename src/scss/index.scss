@@ -1,4 +1,4 @@
-@import url('//at.alicdn.com/t/font_3194546_n6rvd8e8sup.css');
+@import url('//at.alicdn.com/t/font_3194546_987z3mbxv99.css');
 @import 'auto-tip';
 @import 'code';
 @import 'dialog';
@@ -44,6 +44,22 @@ body {
             background-color: red;
             color: white;
         }
+    }
+
+    &-icon-error {
+        width: 14px;
+        height: 14px;
+        background: url(@/assets/image/error.svg);
+        background-size: contain;
+        background-position: center;
+    }
+
+    &-icon-warn {
+        width: 14px;
+        height: 14px;
+        background: url(@/assets/image/warn.svg);
+        background-size: contain;
+        background-position: center;
     }
 
     &-center {

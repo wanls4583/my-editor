@@ -11,12 +11,9 @@
 				class="my-num"
 				v-for="line in renderHtmls"
 			>
-				<span
-					:class="[errorMap[line.num]?'my-icon-error':'']"
-					@mouseleave="onIconMouseLeave"
-					@mouseover="onIconMouseOver(line.num, $event)"
-					class="my-icon my-center"
-				></span>
+				<span @mouseleave="onIconMouseLeave" @mouseover="onIconMouseOver(line.num, $event)" class="my-line-icon my-center">
+					<i class="my-icon-error" style="margin-top:-2px" v-if="errorMap[line.num]"></i>
+				</span>
 				<span>{{line.num}}</span>
 				<!-- 折叠图标 -->
 				<span :class="[line.fold=='open'?'my-fold-open':'my-fold-close']" @click="onToggleFold(line.num)" class="my-fold my-center" v-if="line.fold"></span>

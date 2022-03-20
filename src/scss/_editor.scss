@@ -35,7 +35,7 @@
 
     &-num {
         position: relative;
-        padding: 0 20px;
+        padding: 0 20px 0 25px;
         color: #999999;
         text-align: right;
 
@@ -113,26 +113,6 @@
         border-style: none;
         outline: none;
         opacity: 0;
-    }
-
-    &-icon {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 20px;
-        height: 100%;
-
-        &-error::before {
-            content: "×";
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            border: 1px solid red;
-            color: red;
-        }
     }
 
     &-tip {

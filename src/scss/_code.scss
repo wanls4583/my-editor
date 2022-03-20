@@ -27,6 +27,17 @@
         }
     }
 
+    &-line-icon {
+        position: absolute;
+        top: 0;
+        left: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 25px;
+        height: 100%;
+    }
+
     &-line-bg {
         position: absolute;
         top: 0;

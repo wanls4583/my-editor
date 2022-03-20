@@ -12,7 +12,7 @@
 				<span @click="onClose" class="dialog-close iconfont icon-close"></span>
 			</div>
 			<div class="dialog-content">
-				<span :class="[icon]" :style="{'color':iconColor}" class="iconfont" style="margin-right:5px;font-size:30px" v-if="icon"></span>
+				<span :class="[icon]" style="margin-right:5px;width:30px;height:30px;" v-if="icon"></span>
 				<div>
 					<div v-html="content"></div>
 				</div>

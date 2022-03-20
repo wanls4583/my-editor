@@ -165,7 +165,7 @@ export default {
                 this.showDialog({
                     content: '文件尚未保存，是否先保存文件？',
                     cancel: true,
-                    icon: 'icon-warnfill',
+                    icon: 'my-icon-warn',
                     iconColor: 'rgba(255,196,0)',
                     btns: [{
                         name: '保存',
