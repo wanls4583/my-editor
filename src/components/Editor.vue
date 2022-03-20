@@ -101,7 +101,7 @@
 		</div>
 		<!-- 右键菜单 -->
 		<Menu :checkable="false" :menuList="menuList" :styles="menuStyle" @change="onClickMenu" ref="menu" v-show="menuVisible"></Menu>
-		<tip :content="tipContent" :styles="tipStyle" v-show="tipContent"></tip>
+		<tip :content="tipContent" :styles="tipStyle" ref="tip" v-show="tipContent"></tip>
 	</div>
 </template>
 
@@ -157,9 +157,10 @@ export default {
             },
             cursorVisible: true,
             cursorFocus: true,
+            language: 'HTML',
             // language: 'JavaScript',
             // language: 'CSS',
-            language: '',
+            // language: '',
             tabSize: 4,
             renderHtmls: [],
             startLine: 1,
@@ -933,12 +934,19 @@ export default {
         // 提示图标hover事件
         onIconMouseOver(line, e) {
             let $editor = $(this.$refs.editor);
+            let $tip = $(this.$refs.tip.$el);
             let offset = $editor.offset();
-            this.tipStyle = {
-                left: e.clientX - offset.left + 10 + 'px',
-                top: e.clientY - offset.top + 10 + 'px'
-            }
+            let top = e.clientY - offset.top + 10;
             this.tipContent = this.errorMap[line];
+            this.$nextTick(() => {
+                if (top + $tip[0].clientHeight > this.scrollerArea.height) {
+                    top = this.scrollerArea.height - $tip[0].clientHeight;
+                }
+                this.tipStyle = {
+                    left: e.clientX - offset.left + 10 + 'px',
+                    top: top + 'px'
+                }
+            });
         },
         onIconMouseLeave() {
             this.tipContent = null;
@@ -988,8 +996,8 @@ export default {
             this.focus();
         },
         onContentMmove(e) {
-            let end = this.getPosByEvent(e);
             if (this.mouseStartObj && Date.now() - this.mouseStartObj.time > 100) {
+                let end = this.getPosByEvent(e);
                 if (Util.comparePos(end, this.mouseStartObj.cursorPos)) {
                     this.cursor.removeCursor(this.mouseStartObj.cursorPos);
                     this.mouseStartObj.cursorPos = this.cursor.addCursorPos({ line: end.line, column: end.column });

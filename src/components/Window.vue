@@ -125,6 +125,7 @@ export default {
     },
     mounted() {
         window.test = this;
+        this.openFile();
     },
     methods: {
         onContextmenu(e) {
