@@ -42,17 +42,18 @@ export default class {
         }
         this.worker.onmessage = (e) => {
             let parseId = e.data.parseId;
-            let errors = e.data.errors;
+            let errors = e.data.result.errors;
             let index = 0;
             let errorMap = {};
-            if (that.parseId != parseId) {
+            if (that.parseId != parseId || !errors) {
+                that.setErrorMap(errorMap);
                 return;
             }
             while (index < errors.length) {
                 let line = errors[index].line;
                 let arr = [];
                 while (index < errors.length && errors[index].line === line) {
-                    arr.push(errors[index].error);
+                    arr.push(errors[index].reason);
                     index++;
                 }
                 line = line || that.htmls.length;
@@ -69,9 +70,9 @@ export default class {
             let parser = fun();
             self.onmessage = function(e) {
                 var parseId = e.data.parseId;
-                var errors = parser.parse(e.data.text);
+                var result = parser.parse(e.data.text);
                 self.postMessage({
-                    errors: errors,
+                    result: result,
                     parseId: parseId
                 });
             }`;

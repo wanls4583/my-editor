@@ -160,6 +160,8 @@ export default {
             },
             cursorVisible: true,
             cursorFocus: true,
+            // language: 'JavaScript',
+            // language: 'CSS',
             language: '',
             tabSize: 4,
             renderHtmls: [],
