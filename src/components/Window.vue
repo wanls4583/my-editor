@@ -170,9 +170,10 @@ export default {
                     btns: [{
                         name: '保存',
                         callback: () => {
-                            this.writeFile(tab.path, contexts[id].getAllText());
-                            _closeTab.call(this);
-                            this.onDialogClose();
+                            this.onSaveFile(id).then(() => {
+                                _closeTab.call(this);
+                                this.onDialogClose();
+                            });
                         }
                     }, {
                         name: '不保存',
@@ -249,6 +250,7 @@ export default {
                 if (tab.path) {
                     this.writeFile(tab.path, contexts[id].getAllText());
                     tab.saved = true;
+                    return Promise.resolve();
                 } else {
                     let win = remote.getCurrentWindow();
                     let options = {
@@ -261,10 +263,10 @@ export default {
                             tab.name = tab.path.match(/[^\\\/]+$/)[0];
                             this.writeFile(tab.path, contexts[id].getAllText());
                             tab.saved = true;
+                        } else {
+                            return Promise.reject();
                         }
-                    }).catch(err => {
-                        console.log(err)
-                    })
+                    });
                 }
             }
         },

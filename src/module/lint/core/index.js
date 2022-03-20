@@ -7,6 +7,8 @@ import Util from '@/common/Util';
 import htmlLint from '../language/html';
 import jsLint from '../language/javascript';
 import cssLint from '../language/css';
+import config from '@/config';
+
 export default class {
     constructor(editor, context) {
         this.parseId = 1;
@@ -66,8 +68,8 @@ export default class {
     createWorker(mod) {
         var funStr = mod.toString().replace(/^[^\)]+?\)/, '');
         var str =
-            `function fun()${funStr}
-            let parser = fun();
+            `function fun(hostname)${funStr}
+            var parser = fun('${config.webWorkerHost}');
             self.onmessage = function(e) {
                 var parseId = e.data.parseId;
                 var result = parser.parse(e.data.text);

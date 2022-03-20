@@ -3,8 +3,8 @@
  * @Date: 2022-03-20 14:20:17
  * @Description: 
  */
-export default function () {
-    importScripts("http://localhost:8080/lib/jshint.js");
+export default function (hostname) {
+    importScripts(`${hostname}/lib/jshint.js`);
     return {
         parse: function (text) {
             var option = {

@@ -3,8 +3,8 @@
  * @Date: 2022-03-20 16:44:03
  * @Description: 
  */
-export default function () {
-    importScripts("http://localhost:8080/lib/csslint.js");
+export default function (hostname) {
+    importScripts(`${hostname}/lib/csslint.js`);
     return {
         parse: function (text) {
             var option = {}
