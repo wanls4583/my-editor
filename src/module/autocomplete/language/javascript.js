@@ -56,7 +56,7 @@ class Searcher {
             let states = lineObj.states;
             if (!pass && states) {
                 for (let j = 0; j < states.length; j++) {
-                    if (this.tokenizer.ruleIdMap[states[j]].ruleName === 'js') {
+                    if (this.tokenizer.ruleIdMap[states[j]].ruleName === 'JavaScript') {
                         pass = true;
                         break;
                     }
