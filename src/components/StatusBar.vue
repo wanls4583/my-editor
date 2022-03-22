@@ -107,14 +107,14 @@ export default {
         onTabsizeChange(item) {
             if (this.tabSize != item.value) {
                 this.tabSize = item.value;
-                this.editor.tabSize = item.value;
+                this.getNowEditor().tabSize = item.value;
             }
             this.tabsizeVisible = false;
         },
         onLnaguageChange(item) {
             if (this.language != item.name) {
                 this.language = item.value;
-                this.editor.language = item.value;
+                this.getNowEditor().language = item.value;
             }
             this.languageVisible = false;
         }

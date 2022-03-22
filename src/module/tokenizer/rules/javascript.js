@@ -73,7 +73,7 @@ const rules = [
         regex: /\b(?:continue|break|switch|case|do|while|else|for|if|new|return|from|import|export|default|with|throw|try|catch|finally)\b/,
         token: 'keyword.control.js'
     }, {
-        regex: /\b(?:\+|\-|\*|\/|\=|\!|>|<|\&|\||\?|typeof|in|new)\b/,
+        regex: /\+|\-|\*|\/|\=|\!|>|<|\&|\||\?|typeof|in|new/,
         token: 'keyword.operator.js'
     }, {
         regex: /\b[A-Z][\\$_a-zA-Z0-9]*?(?=\.)/, //Token.

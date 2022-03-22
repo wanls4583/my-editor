@@ -44,7 +44,7 @@ const attrRules = [{
     foldName: tagFoldName,
     foldType: 1
 }, {
-    regex: /\s[a-zA-Z][a-zA-Z-]*/,
+    regex: /\b[a-zA-Z][a-zA-Z-]*/,
     token: 'entity.other.attribute-name.html'
 }, {
     start: /(?<=style\s*?\=\s*?)'/,
