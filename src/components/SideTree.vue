@@ -23,7 +23,7 @@
 	</div>
 </template>
 <script>
-const require = require || window.parent.require;
+const require = window.require || window.parent.require || function(){};
 let preActiveItem = null;
 export default {
     name: 'SideTree',

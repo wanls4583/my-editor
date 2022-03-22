@@ -122,7 +122,7 @@ import AutoTip from './AutoTip';
 import Tip from './Tip';
 import Util from '@/common/Util';
 import $ from 'jquery';
-const require = require || window.parent.require;
+const require = window.require || window.parent.require || function(){};
 const remote = require('@electron/remote');
 const globalData = remote.getGlobal('shareObject').globalData;
 const contexts = globalData.contexts;

@@ -44,7 +44,7 @@ import Util from '@/common/Util';
 import Menu from './Menu';
 import ShortCut from '@/module/shortcut/menu-bar';
 import $ from 'jquery';
-const require = require || window.parent.require;
+const require = window.require || window.parent.require || function(){};
 const remote = require('@electron/remote');
 const currentWindow = remote.getCurrentWindow();
 

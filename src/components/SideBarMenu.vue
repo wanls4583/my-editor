@@ -11,7 +11,7 @@
 <script>
 import Menu from './Menu';
 import $ from 'jquery';
-const require = require || window.parent.require;
+const require = window.require || window.parent.require || function(){};
 const remote = require('@electron/remote');
 
 export default {

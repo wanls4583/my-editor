@@ -279,7 +279,6 @@ export default class {
                 side = ruleId.split('_')[0];
                 ruleId = ruleId.split('_')[1] - 0;
                 rule = this.ruleIdMap[ruleId];
-                // side = this.getSide(rule, states, side);
                 if (preEnd < match.index) { //普通文本
                     let value = lineObj.text.slice(preEnd, match.index);
                     resultObj.tokens.push({
@@ -312,8 +311,10 @@ export default class {
                 preEnd = match.index + match[0].length;
                 break;
             }
-            if (!match[0]) { //考虑/^$/的情况
-                break;
+            if (!match[0]) { //有些规则可能没有结果，只是标识进入某一个规则块，例如：start: /(?<=\:)/
+                if (match.index == preEnd) { //考虑/^$/的情况，避免死循环
+                    break;
+                }
             }
             if (!valid) { //跳过当前无效结果
                 continue;
@@ -381,19 +382,6 @@ export default class {
         });
         return result;
     }
-    // getSide(rule, states) {
-    //     let index = states.length - 1;
-    //     if (states.indexOf(rule.ruleId) == -1) {
-    //         return 'start';
-    //     }
-    //     while (index >= 0 && states[index] != rule.ruleId) {
-    //         if (this.ruleIdMap[states[index]].level > rule.level) {
-    //             return 'start';
-    //         }
-    //         index--
-    //     }
-    //     return 'end';
-    // }
     /**
      * 获取折叠标记对象
      * @param {Object} rule 规则对象

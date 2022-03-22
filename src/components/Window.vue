@@ -60,7 +60,7 @@ import Dialog from './Dialog.vue';
 import WindowMenu from './WindowMenu.vue';
 import $ from 'jquery';
 
-const require = require || window.parent.require;
+const require = window.require || window.parent.require || function(){};
 const fs = require('fs');
 const remote = require('@electron/remote');
 const currentWindow = remote.getCurrentWindow();

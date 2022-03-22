@@ -7,64 +7,88 @@ import jsRules from './javascript.js';
 import cssRules from './css.js';
 
 const styleRules = [{
-    regex: /(?<=\:(?:\s*?\w+?\s*?){0,})\d+/,
-    token: 'html-style-number'
+    regex: /[a-zA-Z][^;\:\s\}]*?(?=\s*?\:)/,
+    token: 'support.type.property-name.css'
 }, {
-    regex: /(?<=\:\s*?\d+)px\b/,
-    token: 'html-style-px'
+    regex: /\:/,
+    token: 'punctuation.separator.key-value.css'
 }, {
-    regex: /(?<=(?:\;|'|")\s*?)[^\<\>\:\;'"]+/,
-    token: 'html-style-name'
+    start: /(?<=\:\s*)/,
+    end: /(?=\;|'|")/,
+    childRule: [{
+        regex: /(?:\d+(?:\.\d*)?|\.\d+)/,
+        token: 'constant.numeric.css'
+    }, {
+        regex: /\b(?:px|%)/,
+        token: 'keyword.other.unit.css'
+    }, {
+        regex: /\#[a-zA-Z0-9]+/,
+        token: 'constant.other.color.rgb-value.css'
+    }, {
+        regex: /(?<=[\s\:])[a-zA-Z][a-zA-Z0-9\-]*/,
+        token: 'support.constant.property-value.css'
+    }]
 }, {
-    regex: /(?<=\:\s*?)[^\<\>\:\;'"]+/,
-    token: 'html-style-value'
+    regex: /\;/,
+    token: 'punctuation.terminator.rule.css'
 }];
 
 const attrRules = [{
+    regex: /(?<=\<)[a-zA-Z][a-zA-Z0-9\-]*/,
+    token: 'entity.name.tag.html',
+    foldName: tagFoldName,
+    foldType: -1
+}, {
+    regex: /(?<=\<\/)[a-zA-Z][a-zA-Z0-9\-]*/,
+    token: 'entity.name.tag.html',
+    foldName: tagFoldName,
+    foldType: 1
+}, {
+    regex: /\s[a-zA-Z][a-zA-Z-]*/,
+    token: 'entity.other.attribute-name.html'
+}, {
     start: /(?<=style\s*?\=\s*?)'/,
-    end: /'/,
-    token: 'xml-attr-value',
-    ruleName: 'style',
+    end: /(?<=(?:[^\\]|^)(?:\\\\)*)'/,
+    ruleName: 'Style',
     level: 1,
     childRule: {
         rules: styleRules
     }
 }, {
     start: /(?<=style\s*?\=\s*?)"/,
-    end: /"/,
-    token: 'xml-attr-value',
-    ruleName: 'style',
+    end: /(?<=(?:[^\\]|^)(?:\\\\)*)"/,
+    ruleName: 'Style',
     level: 1,
     childRule: {
         rules: styleRules
     }
 }, {
-    start: /(?<=\=\s*?)"/,
-    end: /"/,
-    level: 1,
-    token: 'xml-attr-value'
+    start: /'/,
+    end: /(?<=(?:[^\\]|^)(?:\\\\)*)'/,
+    token: 'string.quoted.single.html'
 }, {
-    start: /(?<=\=\s*?)'/,
-    end: /'/,
-    level: 1,
-    token: 'xml-attr-value'
-}, {
-    regex: /(?<=\<\/?)\w+\b/,
-    token: 'xml-tag-name',
+    start: /"/,
+    end: /(?<=(?:[^\\]|^)(?:\\\\)*)"/,
+    token: 'string.quoted.double.html'
+}];
+
+const endTatAttrRules = [{
+    regex: /(?<=\<)[a-zA-Z][a-zA-Z0-9\-]*/,
+    token: 'entity.name.tag.html',
     foldName: tagFoldName,
-    foldType: tagFoldType
+    foldType: -1
 }, {
-    regex: /(?<=\=)\s*?[^\<\>\s\'\"]+\b/,
-    token: 'xml-attr-value'
-}, {
-    regex: /\b[^'"=\s\>\<]+\b/,
-    token: 'xml-attr-name'
+    regex: /(?<=\<\/)[a-zA-Z][a-zA-Z0-9\-]*/,
+    token: 'entity.name.tag.html',
+    foldName: tagFoldName,
+    foldType: 1
 }];
 
 const scriptStart = {
     start: /\<(?=script\b)/,
     end: /\>/,
-    token: tagToken,
+    token: 'punctuation.definition.tag.html',
+    ruleName: 'Attribute',
     childRule: {
         rules: attrRules
     }
@@ -73,21 +97,17 @@ const scriptStart = {
 const scriptEnd = {
     start: /\<\/(?=script\>)/,
     end: /\>/,
-    token: tagToken,
+    token: 'punctuation.definition.tag.html',
     childRule: {
-        rules: [{
-            regex: /(?<=\<\/?)\w+\b/,
-            token: 'xml-tag-name',
-            foldName: tagFoldName,
-            foldType: tagFoldType
-        }]
+        rules: endTatAttrRules
     }
 }
 
 const styleStart = {
     start: /\<(?=style\b)/,
     end: /\>/,
-    token: tagToken,
+    token: 'punctuation.definition.tag.html',
+    ruleName: 'Attribute',
     childRule: {
         rules: attrRules
     }
@@ -96,26 +116,9 @@ const styleStart = {
 const styleEnd = {
     start: /\<\/(?=style\s*?\>)/,
     end: /\>/,
-    token: tagToken,
+    token: 'punctuation.definition.tag.html',
     childRule: {
-        rules: [{
-            regex: /(?<=\<\/?)\w+\b/,
-            token: 'xml-tag-name',
-            foldName: tagFoldName,
-            foldType: tagFoldType
-        }]
-    }
-}
-
-function tagToken(e) {
-    if (e.side == 'start') {
-        if (e.value[1] == '/') {
-            return 'xml-end-tag-open';
-        } else {
-            return 'xml-tag-open';
-        }
-    } else if (e.side === 'end') {
-        return 'xml-tag-close';
+        rules: endTatAttrRules
     }
 }
 
@@ -124,13 +127,6 @@ function tagFoldName(e) {
         return '';
     }
     return e.value;
-}
-
-function tagFoldType(e) {
-    if (e.text[e.index - 1] == '/') {
-        return 1;
-    }
-    return -1;
 }
 
 export default {
@@ -145,17 +141,17 @@ export default {
         ruleName: 'CSS',
         childRule: cssRules
     }, {
-        start: /\<\/?(?=\w+\b)/,
+        start: /\<\/?(?=[a-zA-Z][a-zA-Z0-9\-]*)/,
         end: /\/?\>/,
-        ruleName: 'attr',
-        token: tagToken,
+        token: 'punctuation.definition.tag.html',
+        ruleName: 'Attribute',
         childRule: {
             rules: attrRules
         }
     }, {
         start: /\<\!\-\-/,
         end: /\-\-\>/,
-        token: 'xml-comment',
+        token: 'comment.block.html',
         foldName: 'xml-comment'
     }]
 }
