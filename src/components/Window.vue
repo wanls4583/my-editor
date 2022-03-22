@@ -59,6 +59,7 @@ import SideBar from './SideBar.vue';
 import Dialog from './Dialog.vue';
 import WindowMenu from './WindowMenu.vue';
 import Context from '@/module/context/index';
+import Theme from '@/module/theme';
 import $ from 'jquery';
 
 const require = window.require || window.parent.require || function () { };
@@ -129,6 +130,8 @@ export default {
                 editor && editor.showEditor();
             });
         }
+        this.theme = new Theme();
+        this.theme.loadXml('/theme/Monokai.tmTheme');
     },
     mounted() {
         window.test = this;
@@ -263,7 +266,7 @@ export default {
         },
         onSaveFile(id) {
             let tab = this.getTabById(id);
-            if (!this.mode === 'web') {
+            if (this.mode === 'web') {
                 return Promise.resolve();
             }
             if (!tab.saved) {
