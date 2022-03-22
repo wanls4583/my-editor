@@ -6,7 +6,7 @@
 <template>
 	<div :style="{'padding-top':_topBarHeight,'padding-bottom':_statusHeight}" @mousedown="onWindMouseDown" class="my-window" ref="window">
 		<!-- 侧边栏 -->
-		<side-bar ref="sideBar"></side-bar>
+		<side-bar ref="sideBar" v-if="mode==='app'"></side-bar>
 		<div @contextmenu.prevent.stop="onContextmenu" class="my-right-wrap" ref="rightWrap">
 			<!-- tab栏 -->
 			<editor-bar
@@ -58,14 +58,13 @@ import StatusBar from './StatusBar';
 import SideBar from './SideBar.vue';
 import Dialog from './Dialog.vue';
 import WindowMenu from './WindowMenu.vue';
+import Context from '@/module/context/index';
 import $ from 'jquery';
 
-const require = window.require || window.parent.require || function(){};
+const require = window.require || window.parent.require || function () { };
 const fs = require('fs');
 const remote = require('@electron/remote');
-const currentWindow = remote.getCurrentWindow();
-const globalData = remote.getGlobal('shareObject').globalData;
-const contexts = globalData.contexts;
+const contexts = Context.contexts;
 
 export default {
     components: {
@@ -91,6 +90,7 @@ export default {
             dialogBtns: [],
             dialogIcon: '',
             dialogIconColor: '',
+            mode: remote ? 'app' : 'mode'
         }
     },
     computed: {
@@ -118,10 +118,17 @@ export default {
         }
     },
     created() {
-        currentWindow.on('resize', () => {
-            let editor = this.getNowEditor();
-            editor && editor.showEditor();
-        });
+        if (this.mode === 'app') {
+            remote.getCurrentWindow().on('resize', () => {
+                let editor = this.getNowEditor();
+                editor && editor.showEditor();
+            });
+        } else {
+            $(window).on('resize', () => {
+                let editor = this.getNowEditor();
+                editor && editor.showEditor();
+            });
+        }
     },
     mounted() {
         window.test = this;
@@ -136,8 +143,10 @@ export default {
             this.$refs.winMenu.hide();
             this.$refs.statusBar.closeAllMenu();
             this.$refs.menuBar.closeAllMenu();
-            this.$refs.sideBar.closeAllMenu();
             this.$refs.editorBar.closeAllMenu();
+            if (this.mode === 'app') {
+                this.$refs.sideBar.closeAllMenu();
+            }
             if (this.nowId) {
                 this.getNowEditor().closeAllMenu();
                 this.getNowEditor().menuVisble = false;
@@ -171,10 +180,15 @@ export default {
                     btns: [{
                         name: '保存',
                         callback: () => {
-                            this.onSaveFile(id).then(() => {
+                            if (this.mode === 'app') {
+                                this.onSaveFile(id).then(() => {
+                                    _closeTab.call(this);
+                                    this.onDialogClose();
+                                });
+                            } else {
                                 _closeTab.call(this);
                                 this.onDialogClose();
-                            });
+                            }
                         }
                     }, {
                         name: '不保存',
@@ -200,6 +214,8 @@ export default {
                     } else {
                         this.nowId = null;
                     }
+                } else {
+                    this.getNowEditor().focus();
                 }
             }
         },
@@ -247,6 +263,9 @@ export default {
         },
         onSaveFile(id) {
             let tab = this.getTabById(id);
+            if (!this.mode === 'web') {
+                return Promise.resolve();
+            }
             if (!tab.saved) {
                 if (tab.path) {
                     this.writeFile(tab.path, contexts[id].getAllText());

@@ -10,7 +10,7 @@ let regs = {
     space: /\s/
 }
 
-export default class {
+class Context {
     constructor(editor) {
         this.lineId = Number.MIN_SAFE_INTEGER;
         this.htmls = [];
@@ -890,3 +890,6 @@ export default class {
         }).join('\n');
     }
 }
+Context.contexts = {};
+
+export default Context;

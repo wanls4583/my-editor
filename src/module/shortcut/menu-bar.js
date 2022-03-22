@@ -21,18 +21,22 @@ export default class {
                 this.pressK = false;
                 switch (e.keyCode) {
                     case 79: //Ctrl+O
+                        e.preventDefault();
                         this.openFolder();
                         break;
                 }
             } else {
                 switch (e.keyCode) {
                     case 75: //Ctrl+K
+                        e.preventDefault();
                         this.pressK = true;
                         break;
                     case 78: //Ctrl+N
+                        e.preventDefault();
                         this.openFile();
                         break;
                     case 79: //Ctrl+O
+                        e.preventDefault();
                         this.openFile(null, true);
                         break;
                 }

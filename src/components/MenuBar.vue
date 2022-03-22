@@ -19,7 +19,7 @@
 				<Menu :checkable="false" :menuList="selectionMenuList" :styles="{left: 0, top: height+'px'}" @change="onSelectionMenuChange" v-show="selectionMenuVisible"></Menu>
 			</div>
 		</div>
-		<div class="bar-right">
+		<div class="bar-right" v-if="mode==='app'">
 			<!-- 最小化 -->
 			<div @click="onMinimize" class="bar-item my-clickable" style="width:35px;height:35px">
 				<span class="iconfont icon-zuixiaohua"></span>
@@ -44,9 +44,9 @@ import Util from '@/common/Util';
 import Menu from './Menu';
 import ShortCut from '@/module/shortcut/menu-bar';
 import $ from 'jquery';
-const require = window.require || window.parent.require || function(){};
+const require = window.require || window.parent.require || function () { };
 const remote = require('@electron/remote');
-const currentWindow = remote.getCurrentWindow();
+const currentWindow = remote && remote.getCurrentWindow();
 
 export default {
     name: 'MenuBar',
@@ -65,20 +65,12 @@ export default {
             editMenuVisible: false,
             selectionMenuVisible: false,
             maximize: false,
+            mode: remote ? 'app' : 'web',
             fileMenuList: [
                 [{
                     name: 'New File',
                     op: 'newFile',
                     shortcut: 'Ctrl+N'
-                }],
-                [{
-                    name: 'Open File',
-                    op: 'openFile',
-                    shortcut: 'Ctrl+O'
-                }, {
-                    name: 'Open Folder',
-                    op: 'openFolder',
-                    shortcut: 'Ctrl+K Ctrl+O'
                 }]
             ],
             editMenuList: [
@@ -184,13 +176,26 @@ export default {
     },
     inject: ['getNowEditor', 'getNowContext', 'openFile', 'openFolder'],
     created() {
+        if (this.mode === 'app') {
+            this.fileMenuList.push([{
+                name: 'Open File',
+                op: 'openFile',
+                shortcut: 'Ctrl+O'
+            }, {
+                name: 'Open Folder',
+                op: 'openFolder',
+                shortcut: 'Ctrl+K Ctrl+O'
+            }]);
+        }
         this.shortcut = new ShortCut(this);
         $(window).on('keydown', (e) => {
             this.shortcut.onKeyDown(e);
         });
     },
     mounted() {
-        this.maximize = currentWindow.isMaximized();
+        if (this.mode === 'app') {
+            this.maximize = currentWindow.isMaximized();
+        }
     },
     methods: {
         showMemu(prop) {
