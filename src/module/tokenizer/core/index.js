@@ -300,9 +300,11 @@ export default class {
                 if (typeof rule.valid === 'function') {
                     valid = rule.valid({
                         index: match.index,
-                        text: lineObj.text,
                         value: match[0],
-                        side: side
+                        line: line,
+                        getText: (line) => {
+                            return this.htmls[line - 1] && this.htmls[line - 1].text;
+                        }
                     });
                     if (!valid) {
                         break;
