@@ -70,10 +70,13 @@ const rules = [
         token: 'storage.type.js'
     },
     {
-        regex: /\b(?:continue|break|switch|case|do|while|else|for|if|new|return|from|import|export|default|with|throw|try|catch|finally)\b/,
+        regex: /\b(?:continue|break|switch|case|do|while|else|for|if|new|return|from|import|export|default|module|with|throw|try|catch|finally)\b/,
         token: 'keyword.control.js'
     }, {
-        regex: /\+|\-|\*|\/|\=|\!|>|<|\&|\||\?|typeof|in|new/,
+        regex: /\+|\-|\*|\/|\=|\!|>|<|\&|\||\?/,
+        token: 'keyword.operator.js'
+    }, {
+        regex: /\b(?:typeof|in|new)\b/,
         token: 'keyword.operator.js'
     }, {
         regex: /\b[A-Z][\\$_a-zA-Z0-9]*?(?=\.)/, //Token.
@@ -90,10 +93,12 @@ const rules = [
     }, {
         regex: new RegExp(`(?<=\\bfunction\\s+?)${variable}`), //ie. function test
         token: 'entity.name.function.js'
-    }, {
-        regex: new RegExp(`(${variable})(?=\\()`), //ie. test(),.test()
-        token: 'entity.name.function.js'
-    }, {
+    },
+    // {
+    //     regex: new RegExp(`(${variable})(?=\\()`), //ie. test(),.test()
+    //     token: 'entity.name.function.js'
+    // },
+    {
         regex: /(\{)|(\[)|(\()/,
         foldType: -1,
         foldName: ['js-braces', 'js-bracket', 'js-paren']
@@ -105,8 +110,11 @@ const rules = [
         regex: /(?<=\.)(?:toString|valueOf|toLocaleString|hasOwnProperty|isPrototypeOf|propertyIsEnumerable)\b/,
         token: 'support.function.js'
     }, {
-        regex: /(?<=\.)(?:prototype|window|document|module|exports)\b/,
-        token: 'support.variable.js'
+        regex: /(?<=\.)(?:prototype|exports)\b/,
+        token: 'support.type.js'
+    }, {
+        regex: /\b(?:window|document)\b/,
+        token: 'support.class.js'
     }, {
         regex: /\bthis\b|\bself\b/,
         token: 'variable.language.js'

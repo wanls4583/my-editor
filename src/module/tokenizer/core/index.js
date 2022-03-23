@@ -271,6 +271,7 @@ export default class {
             let token = null;
             let fold = null;
             let valid = true;
+            let end = false;
             let side = '';
             for (let ruleId in match.groups) {
                 if (match.groups[ruleId] == undefined) {
@@ -292,6 +293,9 @@ export default class {
                         })
                     });
                     preEnd = match.index;
+                } else if (match.index == preEnd && !match[0]) { //考虑/^$/的情况，避免死循环
+                    end = true;
+                    break;
                 }
                 if (typeof rule.valid === 'function') {
                     valid = rule.valid({
@@ -304,19 +308,18 @@ export default class {
                         break;
                     }
                 }
-                fold = this.getFold(rule, match, states, resultObj, lineObj.text);
-                token = this.getToken(rule, match, states, newStates, resultObj, lineObj.text, side);
-                resultObj.tokens.push(token);
-                fold && resultObj.folds.push(fold);
+                if (match[0]) { //有些规则可能没有结果，只是标识进入某一个规则块，例如：start: /(?<=\:)/
+                    fold = this.getFold(rule, match, states, resultObj, lineObj.text);
+                    token = this.getToken(rule, match, states, newStates, resultObj, lineObj.text, side);
+                    resultObj.tokens.push(token);
+                    fold && resultObj.folds.push(fold);
+                }
                 preEnd = match.index + match[0].length;
                 break;
             }
-            if (!match[0]) { //有些规则可能没有结果，只是标识进入某一个规则块，例如：start: /(?<=\:)/
-                if (match.index == preEnd) { //考虑/^$/的情况，避免死循环
-                    break;
-                }
-            }
-            if (!valid) { //跳过当前无效结果
+            if (end) { //结束循环
+                break;
+            } else if (!valid) { //跳过当前无效结果
                 continue;
             }
             lastIndex = regex.lastIndex;

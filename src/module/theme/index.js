@@ -37,7 +37,10 @@ export default class {
         let cssText = '';
         data.settings.forEach((item) => {
             if (item.scope) {
-                cssText += `.${item.scope}{`;
+                let selector = item.scope.replace(/\s/g, '').split(',').map((_item) => {
+                    return '.' + _item;
+                }).join(',');
+                cssText += `${selector}{`;
                 for (let property in item.settings) {
                     cssText += `${propertyMap[property]}:${item.settings[property]};`;
                 }
