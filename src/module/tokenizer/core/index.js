@@ -289,7 +289,7 @@ export default class {
                             rule: this.ruleIdMap[states.peek()],
                             index: preEnd,
                             value: value,
-                            text: lineObj.text
+                            line: line
                         })
                     });
                     preEnd = match.index;
@@ -310,7 +310,7 @@ export default class {
                 }
                 if (match[0]) { //有些规则可能没有结果，只是标识进入某一个规则块，例如：start: /(?<=\:)/
                     fold = this.getFold(rule, match, states, resultObj, lineObj.text);
-                    token = this.getToken(rule, match, states, newStates, resultObj, lineObj.text, side);
+                    token = this.getToken(rule, match, states, newStates, resultObj, line, side);
                     resultObj.tokens.push(token);
                     fold && resultObj.folds.push(fold);
                 }
@@ -334,7 +334,7 @@ export default class {
                 type: this.getTokenType({
                     rule: this.ruleIdMap[states.peek()],
                     value: lineObj.text,
-                    text: lineObj.text
+                    line: line
                 })
             });
         } else if (preEnd < lineObj.text.length) { //文本末尾
@@ -346,7 +346,7 @@ export default class {
                     rule: this.ruleIdMap[states.peek()],
                     index: preEnd,
                     value: value,
-                    text: lineObj.text
+                    line: line
                 })
             });
         }
@@ -392,11 +392,12 @@ export default class {
      * @param {Array} states 状态栈
      * @param {Array} newStates 当前行的新增状态栈
      * @param {Object} resultObj 结果对象
-     * @param {String} text 当前行文本
+     * @param {Number} line 当前行
      * @param {String} side 开始/结束标记
      */
-    getToken(rule, match, states, newStates, resultObj, text, side) {
+    getToken(rule, match, states, newStates, resultObj, line, side) {
         let result = match[0];
+        let text = this.htmls[line - 1].text;
         let token = {
             ruleId: rule.ruleId,
             value: result,
@@ -433,7 +434,7 @@ export default class {
             rule: rule,
             index: match.index,
             value: token.value,
-            text: text,
+            line: line,
             side: side
         });
         return token;
@@ -452,15 +453,17 @@ export default class {
     getTokenType(option) {
         let rule = option.rule;
         let index = option.index || 0;
-        let value = option.value || option.text;
-        let text = option.text;
+        let value = option.value;
+        let line = option.line;
         let side = option.side;
         let type = '';
         let param = {
             value: value,
             index: index,
-            text: text,
-            side: side
+            line: line,
+            getText: (line) => {
+                return this.htmls[line - 1] && this.htmls[line - 1].text;
+            }
         };
         if (!rule) {
             return 'plain';
