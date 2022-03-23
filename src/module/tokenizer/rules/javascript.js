@@ -70,25 +70,32 @@ const rules = [
     {
         regex: /\b(?:continue|break|switch|case|do|while|else|for|if|new|return|from|import|export|default|module|with|throw|try|catch|finally)\b/,
         token: 'keyword.control.js'
-    }, {
+    },
+    {
         regex: /\+|\-|\*|\/|\=|\!|>|<|\&|\||\?/,
         token: 'keyword.operator.js'
-    }, {
+    },
+    {
         regex: /\b(?:typeof|in|new)\b/,
         token: 'keyword.operator.js'
-    }, {
+    },
+    {
         regex: /\b[A-Z][\\$_a-zA-Z0-9]*?(?=\.)/, //Token.
         token: 'entity.name.class.js'
-    }, {
+    },
+    {
         regex: new RegExp(`(?<=\\bnew\\s+?)${variable}(?=\\s*?\\()`), //ie. new Test()
         token: 'entity.name.class.js'
-    }, {
+    },
+    {
         regex: new RegExp(`(?<=\\s*?class\\s*?)${variable}(?=\\s*?\\{)`), //ie. calss Test{}
         token: 'entity.name.class.js'
-    }, {
+    },
+    {
         regex: new RegExp(`(${variable})\\s*?(?=\\([^\\(\\)]*?\\)\\s*?\\{)`), //ie. test(){}
         token: 'entity.name.function.js'
-    }, {
+    },
+    {
         regex: new RegExp(`(?<=\\bfunction\\s+?)${variable}`), //ie. function test
         token: 'entity.name.function.js'
     },
@@ -97,31 +104,62 @@ const rules = [
         token: 'variable.other.function.js'
     },
     {
-        regex: /(\{)|(\[)|(\()/,
-        foldType: -1,
-        foldName: ['js-braces', 'js-bracket', 'js-paren']
-    }, {
-        regex: /(\})|(\])|(\))/,
-        foldType: 1,
-        foldName: ['js-braces', 'js-bracket', 'js-paren']
-    }, {
+        regex: /\{/,
+        foldName: 'js-braces',
+        foldType: -1
+    },
+    {
+        regex: /\[/,
+        foldName: 'js-bracket',
+        foldType: -1
+    },
+    {
+        regex: /\(/,
+        foldName: 'js-paren',
+        foldType: -1
+    },
+    {
+        regex: /\}/,
+        foldName: 'js-braces',
+        foldType: 1
+    },
+    {
+        regex: /\]/,
+        foldName: 'js-bracket',
+        foldType: 1
+    },
+    {
+        regex: /\)/,
+        foldName: 'js-paren',
+        foldType: 1
+    },
+    {
         regex: /(?<=\.)(?:toString|valueOf|toLocaleString|hasOwnProperty|isPrototypeOf|propertyIsEnumerable)\b/,
         token: 'support.function.js'
-    }, {
+    },
+    {
         regex: /(?<=\.)(?:prototype|exports)\b/,
         token: 'support.constant.js'
-    }, {
+    },
+    {
         regex: /\b(?:window|document)\b/,
         token: 'support.class.js'
-    }, {
+    },
+    {
         regex: /\bthis\b|\bself\b/,
         token: 'variable.language.js'
-    }, {
+    },
+    {
         regex: /\b(?:\d+|0[xX][a-zA-Z0-9]+)\b/,
         token: 'constant.numeric.js'
-    }, {
+    },
+    {
         regex: /\b(?:undefined|null|true|false|NaN)\b/,
         token: 'constant.language.js'
+    },
+    {
+        regex: /[\$\_a-zA-Z][\$\_a-zA-Z0-9]*/,
+        token: 'variable.other'
     }
 ];
 tplStrChild.rules = rules;

@@ -434,7 +434,6 @@ export default class {
             index: match.index,
             value: token.value,
             text: text,
-            match: match,
             side: side
         });
         return token;
@@ -455,31 +454,24 @@ export default class {
         let index = option.index || 0;
         let value = option.value || option.text;
         let text = option.text;
-        let match = option.match;
         let side = option.side;
         let type = '';
+        let param = {
+            value: value,
+            index: index,
+            text: text,
+            side: side
+        };
         if (!rule) {
             return 'plain';
         }
         if (typeof rule.token == 'function') {
-            type = rule.token({
-                value: value,
-                index: index,
-                text: text,
-                side: side
-            });
-        } else if (rule.token instanceof Array) {
-            let expIndex = match && this.getChildExpIndex(match) || -1;
-            if (expIndex > -1) {
-                type = rule.token[expIndex];
-            } else {
-                type = rule.token.join('.');
-            }
+            type = rule.token(param);
         } else {
             if (side === 'start' && rule.startToken) {
-                type = rule.startToken
+                type = typeof rule.startToken === 'function' ? rule.startToken(param) : rule.startToken;
             } else if (side === 'end' && rule.endToken) {
-                type = rule.endToken;
+                type = typeof rule.endToken === 'function' ? rule.endToken(param) : rule.endToken;
             } else {
                 type = rule.token;
             }
@@ -554,15 +546,7 @@ export default class {
      */
     getFoldName(rule, match, text, side) {
         let foldName = '';
-        if (rule.foldName instanceof Array) {
-            if (rule.start && rule.end) {
-                foldName = side == 'start' ? rule.foldName[0] : rule.foldName[1];
-            } else {
-                let expIndex = this.getChildExpIndex(match);
-                expIndex = expIndex == -1 ? 0 : expIndex;
-                foldName = rule.foldName[expIndex];
-            }
-        } else if (typeof rule.foldName === 'function') {
+        if (typeof rule.foldName === 'function') {
             foldName = rule.foldName({
                 value: match[0],
                 text: text,
@@ -583,15 +567,7 @@ export default class {
      */
     getFoldType(rule, match, text, side) {
         let foldType = '';
-        if (rule.foldType instanceof Array) {
-            if (rule.start && rule.end) {
-                foldType = side == 'start' ? rule.foldType[0] : rule.foldType[1];
-            } else {
-                let expIndex = this.getChildExpIndex(match);
-                expIndex = expIndex == -1 ? 0 : expIndex;
-                foldType = rule.foldType[expIndex];
-            }
-        } else if (typeof rule.foldType === 'function') {
+        if (typeof rule.foldType === 'function') {
             foldType = rule.foldType({
                 value: match[0],
                 text: text,
@@ -604,35 +580,6 @@ export default class {
             foldType = rule.foldType;
         }
         return foldType;
-    }
-    /**
-     * 获取子表达式索引位置
-     * @param {Array} match 正则exec结果
-     */
-    getChildExpIndex(match) {
-        if (match.childExpIndex !== undefined) {
-            return match.childExpIndex;
-        }
-        let captures = match.slice(1);
-        let hasChildExp = captures.filter((item) => {
-            return item
-        }).length > 1;
-        if (hasChildExp) { //正则里有子表达式
-            for (let i = 0; i < captures.length; i++) {
-                if (captures[i] != undefined) {
-                    captures = captures.slice(i + 1);
-                    break;
-                }
-            }
-            for (let i = 0; i < captures.length; i++) {
-                if (captures[i] != undefined) {
-                    match.childExpIndex = i;
-                    return i;
-                }
-            }
-        }
-        match.childExpIndex = -1;
-        return -1;
     }
     getRegex(states, preRuleId) {
         let preRule = this.ruleIdMap[preRuleId];
