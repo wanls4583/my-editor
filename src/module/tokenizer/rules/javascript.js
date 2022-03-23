@@ -84,10 +84,6 @@ const rules = [
         token: 'entity.name.class.js'
     },
     {
-        regex: new RegExp(`(?<=\\bnew\\s+?)${variable}(?=\\s*?\\()`), //ie. new Test()
-        token: 'entity.name.class.js'
-    },
-    {
         regex: new RegExp(`(?<=\\s*?class\\s*?)${variable}(?=\\s*?\\{)`), //ie. calss Test{}
         token: 'entity.name.class.js'
     },
