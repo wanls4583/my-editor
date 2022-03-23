@@ -92,12 +92,8 @@ const rules = [
         token: 'support.constant.js'
     },
     {
-        regex: new RegExp(`(?<=\\s*?class\\s*?)${variable}(?=\\s*?\\{)`), //ie. calss Test{}
+        regex: new RegExp(`(?<=\\s*?class\\s*?)${variable}`), //ie. calss Test{}
         token: 'entity.name.class.js'
-    },
-    {
-        regex: new RegExp(`${variable}\\s*?(?=\\([^\\(\\)]*?\\)\\s*?\\{)`), //ie. test(){}
-        token: 'entity.name.function.js'
     },
     {
         regex: new RegExp(`(?<=\\bfunction\\s+?)${variable}`), //ie. function test
@@ -108,7 +104,7 @@ const rules = [
         token: 'variable.function.js'
     },
     {
-        start: new RegExp(`(?<=\\bfunction\\s+?${variable})\\(`),
+        start: new RegExp(`(?<=\\bfunction\\s+?(${variable})?)\\(`),
         end: /\)/,
         childRule: {
             rules: [{
