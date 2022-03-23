@@ -88,7 +88,7 @@ const rules = [
         token: 'entity.name.class.js'
     },
     {
-        regex: new RegExp(`(${variable})\\s*?(?=\\([^\\(\\)]*?\\)\\s*?\\{)`), //ie. test(){}
+        regex: new RegExp(`${variable}\\s*?(?=\\([^\\(\\)]*?\\)\\s*?\\{)`), //ie. test(){}
         token: 'entity.name.function.js'
     },
     {
@@ -96,8 +96,18 @@ const rules = [
         token: 'entity.name.function.js'
     },
     {
-        regex: new RegExp(`(${variable})(?=\\()`), //ie. test(),.test()
+        regex: new RegExp(`(?<!new\\s*)${variable}(?=\\()`), //ie. test(),.test()
         token: 'variable.function.js'
+    },
+    {
+        start: new RegExp(`(?<=\\bfunction\\s+?${variable})\\(`),
+        end: /\)/,
+        childRule: {
+            rules: [{
+                regex: new RegExp(`${variable}`),
+                token: 'variable.parameter'
+            }]
+        }
     },
     {
         regex: /\{/,

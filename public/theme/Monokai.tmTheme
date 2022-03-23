@@ -84,13 +84,26 @@
 		</dict>
 		<dict>
 			<key>name</key>
-			<string>Variable</string>
+			<string>Function call</string>
 			<key>scope</key>
-			<string>variable</string>
+			<string>variable.function</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#66D9EF</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Variable.language</string>
+			<key>scope</key>
+			<string>variable.language</string>
 			<key>settings</key>
 			<dict>
 				<key>fontStyle</key>
-				<string></string>
+				<string>italic</string>
+				<key>foreground</key>
+				<string>hsl(32, 98%, 56%)</string>
 			</dict>
 		</dict>
 		<dict>
