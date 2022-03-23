@@ -456,7 +456,7 @@ export default class {
         let value = option.value || option.text;
         let text = option.text;
         let match = option.match;
-        let side = option.side || (rule && rule.start && rule.end ? 'start' : '');
+        let side = option.side;
         let type = '';
         if (!rule) {
             return 'plain';
@@ -469,22 +469,20 @@ export default class {
                 side: side
             });
         } else if (rule.token instanceof Array) {
-            if (rule.start && rule.end) {
-                if (side == 'start') {
-                    type = rule.token[0];
-                } else {
-                    type = rule.token[1];
-                }
+            let expIndex = match && this.getChildExpIndex(match) || -1;
+            if (expIndex > -1) {
+                type = rule.token[expIndex];
             } else {
-                let expIndex = match && this.getChildExpIndex(match) || -1;
-                if (expIndex > -1) {
-                    type = rule.token[expIndex];
-                } else {
-                    type = rule.token.join('.');
-                }
+                type = rule.token.join('.');
             }
         } else {
-            type = rule.token;
+            if (side === 'start' && rule.startToken) {
+                type = rule.startToken
+            } else if (side === 'end' && rule.endToken) {
+                type = rule.endToken;
+            } else {
+                type = rule.token;
+            }
         }
         return type;
     }

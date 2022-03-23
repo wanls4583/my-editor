@@ -17,30 +17,28 @@ const braces = {
         rules: [
             comment,
             {
-                regex: /[a-zA-Z][^;\:\s\}]*?(?=\s*?\:)/,
+                regex: /[a-zA-Z_][a-zA-Z-]*?(?=\s*?\:)/,
                 token: 'support.type.property-name.css'
             }, {
-                regex: /\:/,
-                token: 'punctuation.separator.key-value.css'
-            }, {
-                start: /(?<=\:\s*)/,
-                end: /(?=\;|$)/,
-                childRule: [{
-                    regex: /(?:\d+(?:\.\d*)?|\.\d+)/,
-                    token: 'constant.numeric.css'
-                }, {
-                    regex: /\b(?:px|%)/,
-                    token: 'keyword.other.unit.css'
-                }, {
-                    regex: /\#[a-zA-Z0-9]+/,
-                    token: 'constant.other.color.rgb-value.css'
-                }, {
-                    regex: /(?<=[\s\:])[a-zA-Z][a-zA-Z0-9\-]*/,
-                    token: 'support.constant.property-value.css'
-                }]
-            }, {
-                regex: /\;/,
-                token: 'punctuation.terminator.rule.css'
+                start: /\:/,
+                end: /\;|$/,
+                startToken: 'punctuation.separator.key-value.css',
+                endToken: 'punctuation.terminator.rule.css',
+                childRule: {
+                    rules: [{
+                        regex: /\b(?:\d+(?:\.\d*)?|\.\d+)/,
+                        token: 'constant.numeric.css'
+                    }, {
+                        regex: /(?<=\d)(?:px|%)/,
+                        token: 'keyword.other.unit.css'
+                    }, {
+                        regex: /\#[a-zA-Z0-9]+/,
+                        token: 'constant.other.color.rgb-value.css'
+                    }, {
+                        regex: /[^\s\:\;\{\}]+/,
+                        token: 'support.constant.property-value.css'
+                    }]
+                }
             }
         ]
     }
@@ -61,7 +59,7 @@ export default {
             regex: /\.[a-zA-Z][a-zA-Z0-9\-]*/,
             token: 'entity.other.attribute-name.class.css'
         }, {
-            regex: /(?<=\:)[^\s\,\:]+/,
+            regex: /(?<=\:)[^\{\}\,\:]+/,
             token: 'entity.other.attribute-name.pseudo-element.css'
         }
     ]

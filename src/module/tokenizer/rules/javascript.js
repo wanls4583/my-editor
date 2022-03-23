@@ -13,7 +13,6 @@ const rules = [
         start: /`/,
         end: /(?<=[^\\](?:\\\\)*)`|^`/,
         token: 'string.quoted.other',
-        plainToken: 'string.quoted.other',
         foldName: 'js-string',
         childRule: {
             rules: [{
@@ -57,7 +56,6 @@ const rules = [
         start: /(?<=^|[\(\{\[\;\,\:\?\!\+\-\*\%\=\>\<\&\|]\s*?)\//,
         end: /(?<=[^\\](?:\\\\)*)\/|$/,
         token: 'string.regexp.js',
-        plainToken: 'string.regexp.js',
         childRule: {
             rules: [{
                 regex: /\\[\s\S]/,
@@ -94,10 +92,10 @@ const rules = [
         regex: new RegExp(`(?<=\\bfunction\\s+?)${variable}`), //ie. function test
         token: 'entity.name.function.js'
     },
-    // {
-    //     regex: new RegExp(`(${variable})(?=\\()`), //ie. test(),.test()
-    //     token: 'entity.name.function.js'
-    // },
+    {
+        regex: new RegExp(`(${variable})(?=\\()`), //ie. test(),.test()
+        token: 'variable.other.function.js'
+    },
     {
         regex: /(\{)|(\[)|(\()/,
         foldType: -1,
