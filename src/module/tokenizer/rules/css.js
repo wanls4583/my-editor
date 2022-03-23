@@ -26,7 +26,7 @@ const braces = {
                 endToken: 'punctuation.terminator.rule.css',
                 childRule: {
                     rules: [{
-                        regex: /\b(?:\d+(?:\.\d*)?|\.\d+)/,
+                        regex: /[\-\+]?\b(?:\d+(?:\.\d*)?|\.\d+)/,
                         token: 'constant.numeric.css'
                     }, {
                         regex: /(?<=\d)(?:px|%)/,

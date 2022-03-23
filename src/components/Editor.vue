@@ -828,7 +828,11 @@ export default {
             let line = ($target.attr('data-line') || $target.parent().attr('data-line')) - 0;
             let column = $target.attr('data-column');
             if (!line) {
-                line = this.myContext.htmls.length;
+                if (e.target === this.$refs.content) {
+                    line = this.myContext.htmls.length;
+                } else { //移动到了区域外
+                    return null;
+                }
             }
             let lineObj = this.myContext.htmls[line - 1];
             if (!column) {
@@ -997,7 +1001,7 @@ export default {
         onContentMmove(e) {
             if (this.mouseStartObj && Date.now() - this.mouseStartObj.time > 100) {
                 let end = this.getPosByEvent(e);
-                if (Util.comparePos(end, this.mouseStartObj.cursorPos)) {
+                if (end && Util.comparePos(end, this.mouseStartObj.cursorPos)) {
                     this.cursor.removeCursor(this.mouseStartObj.cursorPos);
                     this.mouseStartObj.cursorPos = this.cursor.addCursorPos({ line: end.line, column: end.column });
                     if (this.mouseStartObj.preRange) {

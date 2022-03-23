@@ -16,7 +16,7 @@ const styleRules = [{
     endToken: 'punctuation.terminator.rule.css',
     childRule: {
         rules: [{
-            regex: /(?:\d+(?:\.\d*)?|\.\d+)/,
+            regex: /[\-\+]?(?:\d+(?:\.\d*)?|\.\d+)/,
             token: 'constant.numeric.css'
         }, {
             regex: /(?<=\d)(?:px|%)/,
