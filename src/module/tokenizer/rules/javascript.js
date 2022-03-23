@@ -111,7 +111,7 @@ const rules = [
         token: 'support.function.js'
     }, {
         regex: /(?<=\.)(?:prototype|exports)\b/,
-        token: 'support.type.js'
+        token: 'support.constant.js'
     }, {
         regex: /\b(?:window|document)\b/,
         token: 'support.class.js'
