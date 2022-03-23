@@ -101,7 +101,7 @@ const rules = [
     },
     {
         regex: new RegExp(`(${variable})(?=\\()`), //ie. test(),.test()
-        token: 'variable.other.function.js'
+        token: 'variable.function.js'
     },
     {
         regex: /\{/,
