@@ -298,20 +298,13 @@ export default class {
                     break;
                 }
                 if (typeof rule.valid === 'function') {
-                    valid = rule.valid({
-                        index: match.index,
-                        value: match[0],
-                        line: line,
-                        getText: (line) => {
-                            return this.htmls[line - 1] && this.htmls[line - 1].text;
-                        }
-                    });
+                    valid = rule.valid(this.getFunParam(match.index, match[0], line));
                     if (!valid) {
                         break;
                     }
                 }
                 if (match[0]) { //有些规则可能没有结果，只是标识进入某一个规则块，例如：start: /(?<=\:)/
-                    fold = this.getFold(rule, match, states, resultObj, lineObj.text);
+                    fold = this.getFold(rule, match, states, resultObj, line);
                     token = this.getToken(rule, match, states, newStates, resultObj, line, side);
                     resultObj.tokens.push(token);
                     fold && resultObj.folds.push(fold);
@@ -459,14 +452,7 @@ export default class {
         let line = option.line;
         let side = option.side;
         let type = '';
-        let param = {
-            value: value,
-            index: index,
-            line: line,
-            getText: (line) => {
-                return this.htmls[line - 1] && this.htmls[line - 1].text;
-            }
-        };
+        let param = this.getFunParam(index, value, line)
         if (!rule) {
             return 'plain';
         }
@@ -489,9 +475,9 @@ export default class {
      * @param {Object} match 正则结果对象
      * @param {Array} states 状态栈
      * @param {Object} resultObj 结果对象
-     * @param {String} text 当前行文本
+     * @param {Number} line 当前行
      */
-    getFold(rule, match, states, resultObj, text) {
+    getFold(rule, match, states, resultObj, line) {
         let result = match[0];
         let side = '';
         let fold = null;
@@ -515,12 +501,12 @@ export default class {
             };
         }
         if (fold) {
-            let foldName = this.getFoldName(rule, match, text, side);
+            let foldName = this.getFoldName(rule, match, line);
             if (!foldName) { //没有折叠名称无效
                 return null;
             }
             fold.name = foldName;
-            fold.type = this.getFoldType(rule, match, text, side);
+            fold.type = this.getFoldType(rule, match, line, side);
             if (fold.type == 1) {
                 fold = _checkFold(resultObj, fold);
             }
@@ -546,18 +532,12 @@ export default class {
      * 获取折叠名称[唯一标识]
      * @param {Object} rule 规则对象
      * @param {Object} match 正则执行后的结果对象
-     * @param {String} text 当前行的文本
-     * @param {String} side 开始/结束标记
+     * @param {Number} line 当前行
      */
-    getFoldName(rule, match, text, side) {
+    getFoldName(rule, match, line) {
         let foldName = '';
         if (typeof rule.foldName === 'function') {
-            foldName = rule.foldName({
-                value: match[0],
-                text: text,
-                index: match.index,
-                side: side
-            });
+            foldName = rule.foldName(this.getFunParam(match.index, match[0], line));
         } else {
             foldName = rule.foldName;
         }
@@ -567,18 +547,13 @@ export default class {
      * 获取折叠类型[-1:首,1:尾]
      * @param {Object} rule 规则对象
      * @param {Object} match 正则执行后的结果对象
-     * @param {String} text 当前行的文本
+     * @param {Number} line 当前行
      * @param {String} side 开始/结束标记
      */
-    getFoldType(rule, match, text, side) {
+    getFoldType(rule, match, line, side) {
         let foldType = '';
         if (typeof rule.foldType === 'function') {
-            foldType = rule.foldType({
-                value: match[0],
-                text: text,
-                index: match.index,
-                side: side
-            });
+            foldType = rule.foldType(this.getFunParam(match.index, match[0], line));
         } else if (rule.start && rule.end) {
             foldType = side == 'start' ? -1 : 1;
         } else {
@@ -599,5 +574,23 @@ export default class {
             states.push(preRule.startBy);
         }
         return this.getCombRegex(states);
+    }
+    getFunParam(index, value, line) {
+        return {
+            index: index,
+            value: value,
+            line: line,
+            getLineText: (line) => {
+                return this.htmls[line - 1] && this.htmls[line - 1].text;
+            },
+            getLineTokens: (line) => {
+                return this.htmls[line - 1] && this.htmls[line - 1].tokens && this.htmls[line - 1].tokens.map((item) => {
+                    return {
+                        type: item.type,
+                        value: item.value
+                    };
+                });
+            }
+        }
     }
 }

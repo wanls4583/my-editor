@@ -1,5 +1,10 @@
 const variable = `[\\$_a-zA-Z][\\$_a-zA-Z0-9]*`
 const tplStrChild = {};
+const leftParen = /^\s*\(/;
+const rightParen = /\)/;
+const parenParam = /\,|[\$_a-zA-Z][\$_a-zA-Z0-9]/;
+const leftBraces = /^\s*\{/;
+const space = /\s/g
 const rules = [
     //字符串``
     {
@@ -92,10 +97,6 @@ const rules = [
         token: 'entity.name.function.js'
     },
     {
-        regex: new RegExp(`(?<!new\\s*)${variable}(?=\\()`), //ie. test(),.test()
-        token: 'variable.function.js'
-    },
-    {
         start: new RegExp(`(?<=\\bfunction\\s+?(${variable})?)\\(`),
         end: /\)/,
         childRule: {
@@ -160,11 +161,64 @@ const rules = [
         token: 'constant.language.js'
     },
     {
+        regex: /[\$\_a-zA-Z][\$\_a-zA-Z0-9]*(?=\(|$)/,
+        token: functionCheck
+    },
+    {
         regex: /[\$\_a-zA-Z][\$\_a-zA-Z0-9]*/,
         token: 'variable.other'
     }
 ];
 tplStrChild.rules = rules;
+
+function functionCheck(e) {
+    let line = e.line - 1;
+    let text = e.getLineText(line);
+    while (text === '') { //去除前面无效空行
+        line--;
+        text = e.getLineText(line);
+    }
+    if (text && text.slice(-8) === 'function') { //前面有function关键字声明
+        return 'entity.name.function.js';
+    } else {
+        line = e.line;
+        text = e.getLineText(line).slice(e.index + e.value.length);
+        while (text === '') { //去除后面无效空行
+            line++;
+            text = e.getLineText(line);
+        };
+        if (text) {
+            let exec = leftParen.exec(text);
+            if (exec) { //标识符后面有'('
+                let preText = text.slice(0, exec.index).replace(space, '');
+                if (preText && preText != ',') { //前面有内容，不满足属性函数(){}
+                    return 'variable.function.js';
+                }
+                text = text.slice(exec.index + exec[0].length);
+                while (text !== undefined && !(exec = rightParen.exec(text))) {
+                    if (text === '' || parenParam.exec(text)) { //满足函数声明参数条件
+                        line++;
+                        text = e.getLineText(line);
+                    } else { //不满足，则认定为函数执行
+                        return 'variable.function.js';
+                    }
+                }
+                if (exec) { //'('后面有')'
+                    text = text.slice(exec.index + exec[0].length);
+                    while (text === '') { //去除后面无效空行
+                        line++;
+                        text = e.getLineText(line);
+                    }
+                    if (text && leftBraces.exec(text)) { //')'后面为'{'，认定为函数声明
+                        return 'entity.name.function.js';
+                    }
+                }
+                return 'variable.function.js';
+            }
+        }
+    }
+    return 'variable.other';
+}
 
 export default {
     rules: rules
