@@ -80,8 +80,16 @@ const rules = [
         token: 'keyword.operator.js'
     },
     {
-        regex: /\b[A-Z][\\$_a-zA-Z0-9]*?(?=\.)/, //Token.
-        token: 'entity.name.class.js'
+        regex: /\b[A-Z][a-zA-Z0-9]*?(?=\.)/, //Token.
+        token: 'support.class.js'
+    },
+    {
+        regex: /\b(?:String|Number|Boolean|Array|Object|Map|Set|Date|Function|Promise|Proxy|RegExp|Error)\b/,
+        token: 'support.class.js'
+    },
+    {
+        regex: /\b(?:Math|JSON)\b/,
+        token: 'support.constant.js'
     },
     {
         regex: new RegExp(`(?<=\\s*?class\\s*?)${variable}(?=\\s*?\\{)`), //ie. calss Test{}
@@ -160,7 +168,7 @@ const rules = [
         token: 'constant.numeric.js'
     },
     {
-        regex: /\b(?:undefined|null|true|false|NaN)\b/,
+        regex: /\b(?:undefined|null|true|false|NaN|Infinity|globalThis)\b/,
         token: 'constant.language.js'
     },
     {
