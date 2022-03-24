@@ -103,9 +103,10 @@ export default class {
             resultStates.push(states[index]);
             states = resultStates;
         }
-        index = states.length - 1;
+        index = states.length - 2;
         rule = states.length && this.ruleIdMap[states.peek()] || this.rules;
-        while (index >= 0 && this.ruleIdMap[states[index]].level >= rule.level) {
+        states.length && regexs.push(this.getEndRegex(rule));
+        while (index >= 0 && !this.ruleIdMap[states[index + 1]].prior) {
             regexs.push(this.getEndRegex(this.ruleIdMap[states[index]]));
             index--;
         }
@@ -248,6 +249,7 @@ export default class {
         let rule = null;
         let lastIndex = 0;
         let preEnd = 0;
+        let preMatch = null;
         let newStates = [];
         let states = (line > 1 && this.htmls[line - 2].states || []).slice(0);
         let lineObj = this.htmls[line - 1];
@@ -293,25 +295,25 @@ export default class {
                         })
                     });
                     preEnd = match.index;
-                } else if (match.index == preEnd && !match[0]) { //考虑/^$/的情况，避免死循环
+                } else if (!match[0] && preMatch && !preMatch[0]) { //考虑/^$/的情况，避免死循环
                     end = true;
                     break;
                 }
                 if (typeof rule.valid === 'function') {
-                    valid = rule.valid(this.getFunParam(match.index, match[0], line));
-                    if (!valid) {
-                        break;
-                    }
+                    valid = rule.valid(this.getFunParam(match.index, match[0], line, side));
                 }
-                if (match[0]) { //有些规则可能没有结果，只是标识进入某一个规则块，例如：start: /(?<=\:)/
-                    fold = this.getFold(rule, match, states, resultObj, line);
-                    token = this.getToken(rule, match, states, newStates, resultObj, line, side);
-                    resultObj.tokens.push(token);
-                    fold && resultObj.folds.push(fold);
+                if (!valid) {
+                    break;
                 }
+                fold = this.getFold(rule, match, resultObj, line, side);
+                token = this.getToken(rule, match, states, newStates, resultObj, line, side);
+                //有些规则可能没有结果，只是标识进入某一个规则块，例如：start: /(?<=\:)/
+                token.value && resultObj.tokens.push(token);
+                fold && resultObj.folds.push(fold);
                 preEnd = match.index + match[0].length;
                 break;
             }
+            preMatch = match;
             if (end) { //结束循环
                 break;
             } else if (!valid) { //跳过当前无效结果
@@ -473,19 +475,14 @@ export default class {
      * 获取折叠标记对象
      * @param {Object} rule 规则对象
      * @param {Object} match 正则结果对象
-     * @param {Array} states 状态栈
      * @param {Object} resultObj 结果对象
      * @param {Number} line 当前行
+     * @param {String} side 开始/结束标记
      */
-    getFold(rule, match, states, resultObj, line) {
+    getFold(rule, match, resultObj, line, side) {
         let result = match[0];
-        let side = '';
         let fold = null;
         if (rule.start && rule.end) { //多行token被匹配
-            side = 'start';
-            if (states.indexOf(rule.ruleId) > -1) {
-                side = 'end';
-            }
             if (rule.foldName) { //多行匹配可折叠
                 fold = {
                     start: match.index,
@@ -575,11 +572,12 @@ export default class {
         }
         return this.getCombRegex(states);
     }
-    getFunParam(index, value, line) {
+    getFunParam(index, value, line, side) {
         return {
             index: index,
             value: value,
             line: line,
+            side: side,
             getLineText: (line) => {
                 return this.htmls[line - 1] && this.htmls[line - 1].text;
             },
