@@ -55,6 +55,10 @@ const storageType = {
     regex: /\b(?:var|let|const|class|function)\b/,
     token: 'storage.type.js'
 };
+const storageArrowType = {
+    regex: /\=\>/,
+    token: 'storage.type.js'
+};
 const entityClass = {
     regex: new RegExp(`(?<=\\s*?class\\s*?)${variable}`), //ie. calss Test{}
     token: 'entity.name.class.js'
@@ -112,7 +116,7 @@ const variableOhter = {
     regex: /[\$\_a-zA-Z][\$\_a-zA-Z0-9]*/,
     token: 'variable.other.js'
 };
-const entityFunction = [{
+const aboutFunction = [{
         start: /(?<=function\s*?)[\$\_a-zA-Z][\$\_a-zA-Z0-9]*/,
         end: /(?<=\})/,
         startToken: 'entity.name.function',
@@ -122,6 +126,14 @@ const entityFunction = [{
         start: /(?=\([^\(]*?\)\s*\=\>)/,
         end: /(?<=\})/,
         childRule: functionChild
+    },
+    {
+        regex: /[\$\_a-zA-Z][\$\_a-zA-Z0-9]*\s*(?=\()/,
+        token: 'variable.function'
+    },
+    {
+        regex: /[\$\_a-zA-Z][\$\_a-zA-Z0-9]*\s*(?=\=\>)/,
+        token: 'variable.parameter'
     }
 ];
 const objectStmt = {
@@ -166,9 +178,10 @@ const rules = [
     // 正则表达式
     regExpression,
     storageType,
+    storageArrowType,
     keyword,
     entityClass,
-    ...entityFunction,
+    ...aboutFunction,
     ...operator,
     ...supportClass,
     ...supportConstant,
@@ -199,6 +212,7 @@ functionChild.rules = [{
             }]
         }
     },
+    storageArrowType,
     blockStmt
 ];
 
