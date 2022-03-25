@@ -188,11 +188,11 @@ const rules = [
     variableLanguage,
     constantNumeric,
     constantLanguage,
-    blockStmt,
     parenStmt,
     bracketStmt,
     variableOhter,
-    objectStmt, //必须放到最后
+    objectStmt, //必须放到倒数第二
+    blockStmt, //必须放到倒数第一
 ];
 
 tplStrChild.rules = rules;
@@ -219,6 +219,7 @@ objectChild.rules = [{
     start: /\{/,
     end: /\}/,
     prior: true,
+    foldName: 'js-braces',
     childRule: {
         rules: [
             inlineComment,
