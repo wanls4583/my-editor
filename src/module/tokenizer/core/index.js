@@ -249,6 +249,7 @@ export default class {
         let rule = null;
         let lastIndex = 0;
         let preEnd = 0;
+        let preMatch = null;
         let newStates = [];
         let states = (line > 1 && this.htmls[line - 2].states || []).slice(0);
         let lineObj = this.htmls[line - 1];
@@ -307,21 +308,19 @@ export default class {
                 preEnd = match.index + match[0].length;
                 break;
             }
-            if (!match[0]) {
-                //有些规则可能没有结果，只是标识进入某一个规则块，
-                // 例如：start: /(?=\?)/，需要后移lastIndex，否则将有可能死循环
-                if (match.index < lineObj.text.length - 1) {
-                    regex.lastIndex = match.index + 1;
-                } else {
-                    break;
-                }
-            } else if (!valid) { //跳过当前无效结果
+            if (!match[0] && side === 'start' && preMatch && !preMatch[0]) {
+                // 有些规则可能没有结果，只是标识进入某一个规则块，
+                // 如果其子规则也有该规则，则会进入死循环
+                break;
+            }
+            if (!valid) { //跳过当前无效结果
                 continue;
             }
             lastIndex = regex.lastIndex;
             regex.lastIndex = 0;
             regex = this.getRegex(states, rule.ruleId);
             regex.lastIndex = lastIndex;
+            preMatch = match;
         }
         if (!resultObj.tokens.length && states.length) { // 整行被多行token包裹
             resultObj.tokens.push({

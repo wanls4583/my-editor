@@ -3,11 +3,6 @@ const tplStrChild = {};
 const objectChild = {};
 const functionChild = {};
 const blockChild = {};
-const regs = {
-    objectLeftBraces: /(?:^|\b(?:default|import|export|return)\b|(?<!\=)\<|[\(\[\;\,\:\?\!\+\-\*\%\=\<\&\|])\s*\{$/,
-    rightParen: /\)/,
-    arrow: /\=\>/
-}
 const tplStr = {
     start: /`/,
     end: /(?<=[^\\](?:\\\\)*)`|^`/,
@@ -118,11 +113,17 @@ const variableOhter = {
     token: 'variable.other.js'
 };
 const entityFunction = [{
-    start: /(?<=function\s*?)[\$\_a-zA-Z][\$\_a-zA-Z0-9]*/,
-    end: /(?<=\})/,
-    startToken: 'entity.name.function',
-    childRule: functionChild,
-}];
+        start: /(?<=function\s*?)[\$\_a-zA-Z][\$\_a-zA-Z0-9]*/,
+        end: /(?<=\})/,
+        startToken: 'entity.name.function',
+        childRule: functionChild,
+    },
+    {
+        start: /(?=\([^\(]*?\)\s*\=\>)/,
+        end: /(?<=\})/,
+        childRule: functionChild
+    }
+];
 const objectStmt = {
     start: /(?<=\b(?:default|import|export|return)\s*|(?<!\=)\<|[\(\[\;\,\:\?\!\+\-\*\%\=\<\&\|]\s*)\{/,
     end: /\}/,
@@ -204,23 +205,49 @@ functionChild.rules = [{
 objectChild.rules = [
     inlineComment,
     blockComment,
+    tplStr,
+    singleStr,
+    doubleStr,
+    constantNumeric,
+    // 箭头函数，:function、:()=>
     {
-        start: /[\$\_a-zA-Z0-9'"`]+(?=\:)/,
-        end: /\,|(?=\})/,
-        prior: true,
-        startToken: 'variable.other.property.js',
-        childRule: {
-            rules: rules
-        }
+        regex: /[\$\_a-zA-Z][\$\_a-zA-Z0-9]*(?=\s*\:\s*(?:function|\((?=[^\(]*?\=\>)))/,
+        token: 'entity.name.function'
     },
-    // 属性函数
+    // 属性函数，test(){}
     {
         start: /(?<=^\s*|\,\s*)[\$\_a-zA-Z][\$\_a-zA-Z0-9]*\s*(?=\()/,
         end: /\,|(?=\})/,
         prior: true,
         startToken: 'entity.name.function',
         childRule: functionChild
-    }
+    },
+    {
+        start: /\[/,
+        end: /\]/,
+        prior: true,
+        token: 'variable.other.property.js',
+        childRule: {
+            rules: [
+                tplStr,
+                singleStr,
+                doubleStr,
+                constantNumeric
+            ]
+        }
+    },
+    {
+        regex: /[\$\_a-zA-Z][\$\_a-zA-Z0-9]*/,
+        token: 'variable.other.property.js'
+    },
+    {
+        start: /\:/,
+        end: /\,|(?=\})/,
+        prior: true,
+        childRule: {
+            rules: rules
+        }
+    },
 ];
 
 export default {
