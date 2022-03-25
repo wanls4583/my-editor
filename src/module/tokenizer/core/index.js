@@ -249,7 +249,7 @@ export default class {
         let rule = null;
         let lastIndex = 0;
         let preEnd = 0;
-        let preMatch = null;
+        let preRule = null;
         let newStates = [];
         let states = (line > 1 && this.htmls[line - 2].states || []).slice(0);
         let lineObj = this.htmls[line - 1];
@@ -308,7 +308,7 @@ export default class {
                 preEnd = match.index + match[0].length;
                 break;
             }
-            if (!match[0] && side === 'start' && preMatch && !preMatch[0]) {
+            if (!match[0] && side === 'start' && preRule && preRule.ruleId === rule.ruleId) {
                 // 有些规则可能没有结果，只是标识进入某一个规则块，
                 // 如果其子规则也有该规则，则会进入死循环
                 break;
@@ -320,7 +320,7 @@ export default class {
             regex.lastIndex = 0;
             regex = this.getRegex(states, rule.ruleId);
             regex.lastIndex = lastIndex;
-            preMatch = match;
+            preRule = rule;
         }
         if (!resultObj.tokens.length && states.length) { // 整行被多行token包裹
             resultObj.tokens.push({

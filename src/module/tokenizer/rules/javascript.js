@@ -68,7 +68,7 @@ const keyword = {
     token: 'keyword.control.js'
 };
 const operator = [{
-        regex: /\+|\-|\*|\/|\=|\!|>|<|\&|\||\?/,
+        regex: /\!|\+|\-|\*|\/|\%|\&|\||\~|\>|\<|\=|\?/,
         token: 'keyword.operator.js'
     },
     {
@@ -137,10 +137,9 @@ const aboutFunction = [{
     }
 ];
 const objectStmt = {
-    start: /(?<=\b(?:default|import|export|return)\s*|(?<!\=)\<|[\(\[\;\,\:\?\!\+\-\*\%\=\<\&\|]\s*)\{/,
-    end: /\}/,
+    start: /(?<=\b(?:default|import|export|return|typeof|in|new)\s*|(?<!\=)\>|[\(\[\;\,\:\!\+\-\*\/\%\&\|\~\<\=\?]\s*)/,
+    end: /(?=[^\{\s])/,
     prior: true,
-    foldName: 'js-braces',
     childRule: objectChild
 };
 const blockStmt = {
@@ -189,11 +188,11 @@ const rules = [
     variableLanguage,
     constantNumeric,
     constantLanguage,
-    objectStmt,
     blockStmt,
     parenStmt,
     bracketStmt,
-    variableOhter
+    variableOhter,
+    objectStmt, //必须放到最后
 ];
 
 tplStrChild.rules = rules;
@@ -216,53 +215,60 @@ functionChild.rules = [{
     blockStmt
 ];
 
-objectChild.rules = [
-    inlineComment,
-    blockComment,
-    tplStr,
-    singleStr,
-    doubleStr,
-    constantNumeric,
-    // 箭头函数，:function、:()=>
-    {
-        regex: /[\$\_a-zA-Z][\$\_a-zA-Z0-9]*(?=\s*\:\s*(?:function|\((?=[^\(]*?\=\>)))/,
-        token: 'entity.name.function'
-    },
-    // 属性函数，test(){}
-    {
-        start: /(?<=^\s*|\,\s*)[\$\_a-zA-Z][\$\_a-zA-Z0-9]*\s*(?=\()/,
-        end: /\,|(?=\})/,
-        prior: true,
-        startToken: 'entity.name.function',
-        childRule: functionChild
-    },
-    {
-        start: /\[/,
-        end: /\]/,
-        prior: true,
-        token: 'variable.other.property.js',
-        childRule: {
-            rules: [
-                tplStr,
-                singleStr,
-                doubleStr,
-                constantNumeric
-            ]
-        }
-    },
-    {
-        regex: /[\$\_a-zA-Z][\$\_a-zA-Z0-9]*/,
-        token: 'variable.other.property.js'
-    },
-    {
-        start: /\:/,
-        end: /\,|(?=\})/,
-        prior: true,
-        childRule: {
-            rules: rules
-        }
-    },
-];
+objectChild.rules = [{
+    start: /\{/,
+    end: /\}/,
+    prior: true,
+    childRule: {
+        rules: [
+            inlineComment,
+            blockComment,
+            tplStr,
+            singleStr,
+            doubleStr,
+            constantNumeric,
+            // 箭头函数，:function、:()=>
+            {
+                regex: /[\$\_a-zA-Z][\$\_a-zA-Z0-9]*(?=\s*\:\s*(?:function|\((?=[^\(]*?\=\>)))/,
+                startToken: 'entity.name.function'
+            },
+            // 属性函数，test(){}
+            {
+                start: /(?<=(?:^|\,|\{)\s*)[\$\_a-zA-Z][\$\_a-zA-Z0-9]*\s*(?=\()/,
+                end: /\,|(?=\})/,
+                prior: true,
+                startToken: 'entity.name.function',
+                childRule: functionChild
+            },
+            {
+                start: /\[/,
+                end: /\]/,
+                prior: true,
+                token: 'variable.other.property.js',
+                childRule: {
+                    rules: [
+                        tplStr,
+                        singleStr,
+                        doubleStr,
+                        constantNumeric
+                    ]
+                }
+            },
+            {
+                regex: /[\$\_a-zA-Z][\$\_a-zA-Z0-9]*/,
+                token: 'variable.other.property.js'
+            },
+            {
+                start: /\:/,
+                end: /\,|(?=\})/,
+                prior: true,
+                childRule: {
+                    rules: rules
+                }
+            },
+        ]
+    }
+}];
 
 export default {
     rules: rules
