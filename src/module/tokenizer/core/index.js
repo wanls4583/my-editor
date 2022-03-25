@@ -249,7 +249,6 @@ export default class {
         let rule = null;
         let lastIndex = 0;
         let preEnd = 0;
-        let preMatch = null;
         let newStates = [];
         let states = (line > 1 && this.htmls[line - 2].states || []).slice(0);
         let lineObj = this.htmls[line - 1];
@@ -273,7 +272,6 @@ export default class {
             let token = null;
             let fold = null;
             let valid = true;
-            let end = false;
             let side = '';
             for (let ruleId in match.groups) {
                 if (match.groups[ruleId] == undefined) {
@@ -295,9 +293,6 @@ export default class {
                         })
                     });
                     preEnd = match.index;
-                } else if (!match[0] && preMatch && !preMatch[0]) { //考虑/^$/的情况，避免死循环
-                    end = true;
-                    break;
                 }
                 if (typeof rule.valid === 'function') {
                     valid = rule.valid(this.getFunParam(match.index, match[0], line, side));
@@ -307,15 +302,19 @@ export default class {
                 }
                 fold = this.getFold(rule, match, resultObj, line, side);
                 token = this.getToken(rule, match, states, newStates, resultObj, line, side);
-                //有些规则可能没有结果，只是标识进入某一个规则块，例如：start: /(?<=\:)/
                 token.value && resultObj.tokens.push(token);
                 fold && resultObj.folds.push(fold);
                 preEnd = match.index + match[0].length;
                 break;
             }
-            preMatch = match;
-            if (end) { //结束循环
-                break;
+            if (!match[0]) {
+                //有些规则可能没有结果，只是标识进入某一个规则块，
+                // 例如：start: /(?=\?)/，需要后移lastIndex，否则将有可能死循环
+                if (match.index < lineObj.text.length - 1) {
+                    regex.lastIndex = match.index + 1;
+                } else {
+                    break;
+                }
             } else if (!valid) { //跳过当前无效结果
                 continue;
             }

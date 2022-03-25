@@ -223,48 +223,6 @@ objectChild.rules = [
     }
 ];
 
-function arrowFunCheck(e) {
-    if (e.side === 'end') {
-        return true;
-    }
-    let line = e.line;
-    let text = e.getLineText(line).slice(e.index + 1);
-    while (text === '') {
-        line++;
-        text = e.getLineText(line);
-    }
-    if (text) {
-        let exec = regs.rightParen.exec(text);
-        if (exec) {
-            text = text.slice(exec.index + exec[0].length);
-            while (text === '') {
-                line++;
-                text = e.getLineText(line);
-            }
-            if (text && regs.arrow.exec(text)) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-function objectCheck(e) {
-    if (e.side === 'end') {
-        return true;
-    }
-    let line = e.line;
-    let text = e.getLineText(line).slice(0, e.index);
-    while (text === '') { //去除前面无效空行
-        line--;
-        text = e.getLineText(line);
-    }
-    if (text && regs.objectLeftBraces.exec(text)) {
-        return true;
-    }
-    return false;
-}
-
 export default {
     rules: rules
 }
