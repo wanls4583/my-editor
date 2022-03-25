@@ -1025,19 +1025,22 @@ export default {
             let that = this;
             let offset = $(this.$refs.scroller).offset();
             if (this.mouseStartObj && Date.now() - this.mouseStartObj.time > 100) {
+                let line = Math.ceil((this.scrollTop + e.clientY - offset.top) / this.charObj.charHight);
+                line = line < 1 ? 1 : line;
+                line = line > this.maxLine ? this.maxLine : line;
                 cancelAnimationFrame(this.selectMoveTimer);
                 if (e.clientY > offset.top + this.scrollerArea.height) { //鼠标超出底部区域
                     _move('down', e.clientY - offset.top - this.scrollerArea.height);
                 } else if (e.clientY < offset.top) { //鼠标超出顶部区域
                     _move('up', offset.top - e.clientY);
                 } else if (e.clientX < offset.left) { //鼠标超出左边区域
-                    _move('left', offset.left - e.clientX);
+                    _move('left', offset.left - e.clientX, line);
                 } else if (e.clientX > offset.left + this.scrollerArea.width) { //鼠标超出右边区域
-                    _move('right', e.clientX - offset.left - this.scrollerArea.width);
+                    _move('right', e.clientX - offset.left - this.scrollerArea.width, line);
                 }
             }
-            function _move(autoDirect, speed) {
-                let originLine = that.nowCursorPos.line;
+            function _move(autoDirect, speed, line) {
+                let originLine = line || that.nowCursorPos.line;
                 let originColumn = that.nowCursorPos.column;
                 let count = 0; // 累计滚动距离
                 _run(autoDirect, speed);
@@ -1050,11 +1053,13 @@ export default {
                             count += speed;
                             line = Math.floor(count / that.charObj.charHight);
                             line = originLine - line;
+                            column = 0;
                             break;
                         case 'down':
                             count += speed;
                             line = Math.floor(count / that.charObj.charHight);
                             line = originLine + line;
+                            column = 0;
                             break;
                         case 'left':
                             count += speed;
