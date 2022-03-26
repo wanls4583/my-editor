@@ -46,7 +46,7 @@ export default class {
             if (this.language == 'HTML') {
                 let states = this.htmls[multiCursorPos[0].line - 1].states || [];
                 states = states.map((item) => {
-                    return this.tokenizer.ruleIdMap[item].ruleName
+                    return this.tokenizer.ruleIdMap[item].name
                 });
                 if (states.indexOf('JavaScript') > -1) {
                     //在<script>标签里
