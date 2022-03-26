@@ -1,12 +1,12 @@
 const variable = `[\\$_a-zA-Z][\\$_a-zA-Z0-9]*`
+const noScape = '(?:[^\\\\]|^)(?:\\\\\\\\)*';
 
 const functionChild = [{
-        start: /\(/,
-        end: /\)/,
-        prior: true,
+        start: '\\(',
+        end: '\\)',
         foldName: 'js-paren',
         rules: [{
-            regex: /[\$\_a-zA-Z][\$\_a-zA-Z0-9]*/,
+            regex: `${variable}`,
             token: 'variable.parameter'
         }]
     },
@@ -20,15 +20,14 @@ const rule = {
         //字符串``
         {
             name: 'tplStr',
-            start: /`/,
-            end: /(?<=[^\\](?:\\\\)*)`|^`/,
+            start: '`',
+            end: `(?<=${noScape})\``,
             token: 'string.quoted.other',
             foldName: 'js-string',
             rules: [{
-                start: /\$\{/,
-                end: /\}/,
+                start: '\\$\\{',
+                end: '\\}',
                 foldName: 'js-string-expr',
-                prior: true,
                 rules: 'JavaScript'
             }]
         },
@@ -36,7 +35,7 @@ const rule = {
         {
             name: 'singleStr',
             start: /'/,
-            end: /(?<=(?:[^\\]|^)(?:\\\\)*)(?:'|$)/,
+            end: `(?<=${noScape})(?:'|$)`,
             token: 'string.quoted.single.js',
             foldName: 'js-single-string'
         },
@@ -44,31 +43,31 @@ const rule = {
         {
             name: 'doubleStr',
             start: /"/,
-            end: /(?<=(?:[^\\]|^)(?:\\\\)*)(?:"|$)/,
+            end: `(?<=${noScape})(?:"|$)`,
             token: 'string.quoted.double.js',
             foldName: 'js-double-string'
         },
         //多行注释
         {
             name: 'blockComment',
-            start: /\/\*/,
-            end: /\*\//,
+            start: '\\/\\*',
+            end: '\\*\\/',
             token: 'comment.block.js',
             foldName: 'js-comment'
         },
         // 单行注释
         {
             name: 'inlineComment',
-            regex: /\/\/[\s\S]*$/,
+            regex: '\\/\\/[\\s\\S]*$',
             token: 'comment.line.double-slash.js'
         },
         // 正则表达式
         {
-            start: /(?<=^|[\(\{\[\;\,\:\?\!\+\-\*\%\=\>\<\&\|]\s*?)\//,
-            end: /(?<=[^\\](?:\\\\)*)\/|$/,
+            start: '(?<=^|[\\(\\[\\{\\;\\,\\:\\!\\+\\-\\*\\/\\%\\&\\|\\~\\<\\=\\?]\\s*?)\\/',
+            end: `(?<=${noScape})(?:\/|$)`,
             token: 'string.regexp.js',
             rules: [{
-                regex: /\\[\s\S]/,
+                regex: '\\\\[\\s\\S]',
                 token: 'constant.character.escape.js'
             }]
         },
@@ -78,108 +77,104 @@ const rule = {
         },
         {
             name: 'storageArrowType',
-            regex: /\=\>/,
+            regex: '\\=\\>',
             token: 'storage.type.js'
         },
         {
-            regex: /\b(?:continue|break|switch|case|do|while|else|for|if|new|return|from|import|export|default|module|with|throw|try|catch|finally)\b/,
+            regex: '\\b(?:continue|break|switch|case|do|while|else|for|if|new|return|from|import|export|default|module|with|throw|try|catch|finally)\\b',
             token: 'keyword.control.js'
         },
         {
-            regex: new RegExp(`(?<=\\s*?class\\s*?)${variable}`), //ie. calss Test{}
+            regex: `(?<=\\s*?class\\s*?)${variable}`, //ie. calss Test{}
             token: 'entity.name.class.js'
         },
         {
-            regex: /(?<=\.)(?:toString|valueOf|toLocaleString|hasOwnProperty|isPrototypeOf|propertyIsEnumerable)\b/,
+            regex: '(?<=\\.)(?:toString|valueOf|toLocaleString|hasOwnProperty|isPrototypeOf|propertyIsEnumerable)\b',
             token: 'support.function.js'
         },
         {
-            regex: /\b[A-Z][a-zA-Z0-9]*?(?=\.)/, //Token.
+            regex: '\\b[A-Z][a-zA-Z0-9]*?(?=\\.)', //Token.
             token: 'support.class.js'
         },
         {
-            regex: /\b(?:String|Number|Boolean|Array|Object|Map|Set|Date|Function|Promise|Proxy|RegExp|Error)\b/,
+            regex: '\\b(?:String|Number|Boolean|Array|Object|Map|Set|Date|Function|Promise|Proxy|RegExp|Error)\\b',
             token: 'support.class.js'
         },
         {
-            regex: /\b(?:window|document)\b/,
+            regex: '\\b(?:window|document)\\b',
             token: 'support.class.js'
         },
         {
-            regex: /\b(?:Math|JSON)\b/,
+            regex: '\\b(?:Math|JSON)\\b',
             token: 'support.constant.js'
         }, {
-            regex: /(?<=\.)(?:prototype|exports)\b/,
+            regex: '(?<=\\.)(?:prototype|exports)\\b',
             token: 'support.constant.js'
         },
         {
-            start: /(?<=function\s*?)[\$\_a-zA-Z][\$\_a-zA-Z0-9]*/,
-            end: /(?<=\})/,
+            start: `(?<=function\\s*?)${variable}`,
+            end: '(?<=\\})',
             startToken: 'entity.name.function',
             rules: functionChild
         },
         {
-            start: /(?=\([^\(]*?\)\s*\=\>)/,
-            end: /(?<=\})/,
+            start: '(?=\\([^\\(]*?\\)\\s*\\=\\>)',
+            end: '(?<=\\})',
             rules: functionChild
         },
         {
-            regex: /[\$\_a-zA-Z][\$\_a-zA-Z0-9]*\s*(?=\()/,
+            regex: `${variable}\\s*(?=\\()`,
             token: 'variable.function'
         },
         {
-            regex: /[\$\_a-zA-Z][\$\_a-zA-Z0-9]*\s*(?=\=\>)/,
+            regex: `${variable}\\s*(?=\\=\\>)`,
             token: 'variable.parameter'
         },
         {
-            regex: /\!|\+|\-|\*|\/|\%|\&|\||\~|\>|\<|\=|\?/,
+            regex: '\\!|\\+|\\-|\\*|\\/|\\%|\\&|\\||\\~|\\>|\\<|\\=|\\?',
             token: 'keyword.operator.js'
         },
         {
-            regex: /\b(?:typeof|in|new)\b/,
+            regex: '\\b(?:typeof|in|new)\\b',
             token: 'keyword.operator.js'
         },
         {
-            regex: /\bthis\b|\bself\b/,
+            regex: '\\bthis\\b|\\bself\\b',
             token: 'variable.language.js'
         },
         {
             name: 'constantNumeric',
-            regex: /\b(?:\d+|0[xX][a-zA-Z0-9]+)\b/,
+            regex: '\\b(?:\\d+|0[xX][a-zA-Z0-9]+)\\b',
             token: 'constant.numeric.js'
         },
         {
-            regex: /\b(?:undefined|null|true|false|NaN|Infinity|globalThis)\b/,
+            regex: '\\b(?:undefined|null|true|false|NaN|Infinity|globalThis)\\b',
             token: 'constant.language.js'
         },
         {
-            start: /\(/,
-            end: /\)/,
-            prior: true,
+            start: '\\(',
+            end: '\\)',
             foldName: 'js-paren',
             rules: 'JavaScript'
         },
         {
-            start: /\[/,
-            end: /\]/,
-            prior: true,
+            start: '\\[',
+            end: '\\]',
             foldName: 'js-bracket',
             rules: 'JavaScript'
         },
         {
-            regex: /[\$\_a-zA-Z][\$\_a-zA-Z0-9]*/,
+            regex: `${variable}`,
             token: 'variable.other.js'
         },
         //必须放到blockStmt前面
         {
             name: 'objectStmt',
-            start: /(?<=\b(?:default|import|export|return|typeof|in|new)\s*|(?<!\=)\>|[\(\[\;\,\:\!\+\-\*\/\%\&\|\~\<\=\?]\s*)/,
-            end: /(?=[^\{\s])/,
-            prior: true,
+            start: '(?<=\\b(?:default|import|export|return|typeof|in|new)\\s*|(?<!\\=)\\>|[\\(\\[\\;\\,\\:\\!\\+\\-\\*\\/\\%\\&\\|\\~\\<\\=\\?]\\s*)',
+            end: '(?=[^\\{\\s])',
             rules: [{
-                start: /\{/,
-                end: /\}/,
-                prior: true,
+                start: '\\{',
+                end: '\\}',
                 foldName: 'js-braces',
                 rules: [
                     'inlineComment',
@@ -190,21 +185,19 @@ const rule = {
                     'constantNumeric',
                     // 箭头函数，:function、:()=>
                     {
-                        regex: /[\$\_a-zA-Z][\$\_a-zA-Z0-9]*(?=\s*\:\s*(?:function|\((?=[^\(]*?\=\>)))/,
+                        regex: `${variable}(?=\\s*\\:\\s*(?:function|\\((?=[^\\(]*?\\=\\>)))`,
                         startToken: 'entity.name.function'
                     },
                     // 属性函数，test(){}
                     {
-                        start: /(?<=(?:^|\,|\{)\s*)[\$\_a-zA-Z][\$\_a-zA-Z0-9]*\s*(?=\()/,
-                        end: /\,|(?=\})/,
-                        prior: true,
+                        start: `(?<=(?:^|\\,|\\{)\\s*)${variable}\\s*(?=\\()`,
+                        end: '\\,|(?=\\})',
                         startToken: 'entity.name.function',
                         rules: functionChild
                     },
                     {
-                        start: /\[/,
-                        end: /\]/,
-                        prior: true,
+                        start: '\\[',
+                        end: '\\]',
                         token: 'variable.other.property.js',
                         rules: [
                             'tplStr',
@@ -214,13 +207,12 @@ const rule = {
                         ]
                     },
                     {
-                        regex: /[\$\_a-zA-Z][\$\_a-zA-Z0-9]*/,
+                        regex: `${variable}`,
                         token: 'variable.other.property.js'
                     },
                     {
-                        start: /\:/,
-                        end: /\,|(?=\})/,
-                        prior: true,
+                        start: '\\:',
+                        end: '\\,|(?=\\})',
                         rules: 'JavaScript'
                     },
                 ]
@@ -229,9 +221,8 @@ const rule = {
         //必须放到倒数第一
         {
             name: 'blockStmt',
-            start: /\{/,
-            end: /\}/,
-            prior: true,
+            start: '\\{',
+            end: '\\}',
             foldName: 'js-braces',
             rules: 'JavaScript'
         },

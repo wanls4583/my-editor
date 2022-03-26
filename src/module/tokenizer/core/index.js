@@ -85,6 +85,8 @@ export default class {
             if (typeof start === 'object' && !(start instanceof RegExp)) {
                 this.setRuleId(start);
                 start.startBy = rule.ruleId;
+            } else if (typeof rule.start === 'string') {
+                rule.start = new RegExp(rule.start);
             }
         }
         if (rule.end) {
@@ -92,14 +94,24 @@ export default class {
             if (typeof end === 'object' && !(end instanceof RegExp)) {
                 this.setRuleId(end);
                 end.endBy = rule.ruleId;
+            } else if (typeof rule.end === 'string') {
+                rule.end = new RegExp(rule.end);
             }
         }
         if (rule.rules) {
             let rules = this.getRule(rule.rules);
             if (rules) {
                 rules = rules instanceof Array ? rules : rules.rules;
-                rules.forEach((_item) => {
-                    typeof _item === 'object' && !_item.ruleId && this.setRuleId(_item);
+                rules = rules.map((_item) => {
+                    if (typeof _item.regex === 'string') {
+                        _item.regex = new RegExp(_item.regex);
+                    } else {
+                        _item = this.getRule(_item);
+                    }
+                    if (!_item.ruleId) {
+                        this.setRuleId(_item);
+                    }
+                    return _item;
                 });
             }
             rule.rules = rules;
@@ -135,12 +147,12 @@ export default class {
             states = resultStates;
         }
         if (states.length > 0) {
-            index = states.length - 2;
-            rule = states.length && this.ruleIdMap[states.peek()];
+            rule = this.ruleIdMap[states.peek()];
             states.length && regexs.push(this.getEndRegex(rule));
-            while (index >= 0 && !this.ruleIdMap[states[index + 1]].prior) {
-                regexs.push(this.getEndRegex(this.ruleIdMap[states[index]]));
-                index--;
+            for (let i = 0; i < states.length - 1; i++) {
+                if (this.ruleIdMap[states[i]].prior) { //可以提前结束子规则块
+                    regexs.push(this.getEndRegex(this.ruleIdMap[states[i]]));
+                }
             }
             regexs.reverse();
         } else {

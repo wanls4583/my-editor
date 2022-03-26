@@ -3,32 +3,33 @@
  * @Date: 2021-12-24 16:08:20
  * @Description: 
  */
+const attrName = '[a-zA-Z][a-zA-Z0-9\\-]*';
+
 const braces = {
-    start: /\{/,
-    end: /\}/,
-    prior: true,
+    start: '\\{',
+    end: '\\}',
     foldName: 'css-braces',
     rules: [
         'comment',
         {
-            regex: /[a-zA-Z_][a-zA-Z-]*?(?=\s*?\:)/,
+            regex: '[a-zA-Z_][a-zA-Z-]*?(?=\\s*?\\:)',
             token: 'support.type.property-name.css'
         }, {
-            start: /\:/,
-            end: /\;|$/,
+            start: '\\:',
+            end: '\\;|$',
             startToken: 'punctuation.separator.key-value.css',
             endToken: 'punctuation.terminator.rule.css',
             rules: [{
-                regex: /[\-\+]?\b(?:\d+(?:\.\d*)?|\.\d+)/,
+                regex: '[\\-\\+]?\\b(?:\\d+(?:\\.\\d*)?|\\.\\d+)',
                 token: 'constant.numeric.css'
             }, {
-                regex: /(?<=\d)(?:px|%)/,
+                regex: '(?<=\\d)(?:px|%)',
                 token: 'keyword.other.unit.css'
             }, {
-                regex: /\#[a-zA-Z0-9]+/,
+                regex: '\\#[a-zA-Z0-9]+',
                 token: 'constant.other.color.rgb-value.css'
             }, {
-                regex: /[^\s\:\;\{\}]+/,
+                regex: '[^\\s\\:\\;\\{\\}]+',
                 token: 'support.constant.property-value.css'
             }]
         }
@@ -41,22 +42,22 @@ export default {
         braces,
         {
             name: 'comment',
-            start: /\/\*/,
-            end: /\*\//,
+            start: '\\/\\*',
+            end: '\\*\\/',
             token: 'comment.block.css',
             foldName: 'css-comment'
         },
         {
-            regex: /[a-zA-Z][a-zA-Z0-9\-]*/,
+            regex: `${attrName}`,
             token: 'entity.name.tag.css'
         }, {
-            regex: /\#[a-zA-Z][a-zA-Z0-9\-]*/,
+            regex: `\\#${attrName}`,
             token: 'entity.other.attribute-name.id.css'
         }, {
-            regex: /\.[a-zA-Z][a-zA-Z0-9\-]*/,
+            regex: `\\.${attrName}`,
             token: 'entity.other.attribute-name.class.css'
         }, {
-            regex: /(?<=\:)[^\{\}\,\:]+/,
+            regex: '(?<=\\:)[^\\{\\}\\,\\:]+',
             token: 'entity.other.attribute-name.pseudo-element.css'
         }
     ]
