@@ -154,7 +154,6 @@ export default class {
                     regexs.push(this.getEndRegex(this.ruleIdMap[states[i]]));
                 }
             }
-            regexs.reverse();
         } else {
             rule = this.rule;
         }

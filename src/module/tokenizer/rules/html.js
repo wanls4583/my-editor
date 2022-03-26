@@ -111,7 +111,6 @@ const scriptStart = {
 const scriptEnd = {
     start: `\\<\\/(?=script\\>)`,
     end: `\\>`,
-    prior: true,
     startToken: 'punctuation.definition.tag.open.html',
     endToken: 'punctuation.definition.tag.end.html',
     rules: endTatAttrRules
@@ -129,7 +128,6 @@ const styleStart = {
 const styleEnd = {
     start: `\\<\\/(?=style\\s*?\\>)`,
     end: `\\>`,
-    prior: true,
     startToken: 'punctuation.definition.tag.open.html',
     endToken: 'punctuation.definition.tag.end.html',
     rules: endTatAttrRules
@@ -147,11 +145,13 @@ export default {
     rules: [{
         start: scriptStart,
         end: scriptEnd,
+        prior: true,
         name: jsRule.name,
         rules: jsRule.rules
     }, {
         start: styleStart,
         end: styleEnd,
+        prior: true,
         name: cssRule.name,
         rules: cssRule.rules
     }, {

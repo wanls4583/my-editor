@@ -85,10 +85,6 @@ const rule = {
             token: 'keyword.control.js'
         },
         {
-            regex: `(?<=\\s*?class\\s*?)${variable}`, //ie. calss Test{}
-            token: 'entity.name.class.js'
-        },
-        {
             regex: '(?<=\\.)(?:toString|valueOf|toLocaleString|hasOwnProperty|isPrototypeOf|propertyIsEnumerable)\b',
             token: 'support.function.js'
         },
@@ -116,6 +112,31 @@ const rule = {
             end: '(?<=\\})',
             startToken: 'entity.name.function',
             rules: functionChild
+        },
+        {
+            start: `(?<=\\s*?class\\s*?)(?:${variable})?`, //ie. calss Test{},
+            end: '(?=[^\\{\\s])',
+            startToken: 'entity.name.class.js',
+            rules: [{
+                start: '\\{',
+                end: '\\}',
+                foldName: 'js-braces',
+                rules: [
+                    'inlineComment',
+                    'blockComment',
+                    {
+                        regex: '\\b(?:static|private|public|protected)\\b',
+                        token: 'storage.modifier.js'
+                    },
+                    // 属性函数，test(){}
+                    {
+                        start: `${variable}`,
+                        end: '(?<=\\})',
+                        startToken: 'entity.name.function',
+                        rules: functionChild
+                    },
+                ]
+            }]
         },
         {
             start: '(?=\\([^\\(]*?\\)\\s*\\=\\>)',
@@ -167,9 +188,8 @@ const rule = {
             regex: `${variable}`,
             token: 'variable.other.js'
         },
-        //必须放到blockStmt前面
+        //对象字面量必须放到blockStmt前面
         {
-            name: 'objectStmt',
             start: '(?<=\\b(?:default|import|export|return|typeof|in|new)\\s*|(?<!\\=)\\>|[\\(\\[\\;\\,\\:\\!\\+\\-\\*\\/\\%\\&\\|\\~\\<\\=\\?]\\s*)',
             end: '(?=[^\\{\\s])',
             rules: [{
