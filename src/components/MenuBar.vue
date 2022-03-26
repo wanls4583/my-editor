@@ -4,7 +4,7 @@
  * @Description: 
 -->
 <template>
-	<div :style="{height:height+'px'}" @contextmenu.stop.prevent class="my-top-bar">
+	<div :style="{height:height+'px'}" @contextmenu.stop.prevent class="my-top-bar my-border-shadow">
 		<div class="bar-left">
 			<div @mousedown.stop="showMemu('fileMenuVisible')" class="bar-item my-clickable">
 				<span>File</span>

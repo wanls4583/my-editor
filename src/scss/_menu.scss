@@ -20,19 +20,10 @@
 
     &-menu-item {
         position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding-left: 25px;
-        padding-right: 10px;
-        line-height: 20px;
+        padding: 5px 10px 5px 25px;
         white-space: nowrap;
         min-width: 80px;
-
-        &:hover {
-            background-color: rgba(0, 0, 0, 0.1);
-            cursor: pointer;
-        }
+        min-height: 30px;
 
         &:last-child {
             .my-menu-content {
@@ -54,7 +45,7 @@
                 cursor: auto;
             }
 
-            .my-menu-content,
+            .my-menu-title,
             .my-menu-shortcut {
                 color: #999999;
             }
@@ -62,7 +53,8 @@
     }
 
     &-menu-content {
-        padding: 5px 0;
+        font-size: 12px;
+        color: #999999;
     }
 
     &-menu-shortcut {

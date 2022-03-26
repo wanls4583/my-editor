@@ -4,7 +4,7 @@
  * @Description: 
 -->
 <template>
-	<div @selectstart.prevent class="my-right-bar" ref="rightBar">
+	<div @selectstart.prevent class="my-right-bar my-border-shadow" ref="rightBar">
 		<div class="bar-scroller">
 			<div
 				:class="{'active':item.active}"

@@ -4,7 +4,7 @@
  * @Description: 
 -->
 <template>
-	<div :style="{height:height+'px'}" @contextmenu.stop.prevent class="my-status-bar">
+	<div :style="{height:height+'px'}" @contextmenu.stop.prevent class="my-status-bar my-border-shadow">
 		<div class="bar-left">
 			<div class="bar-item" v-if="editor">
 				<span>Line {{line}}, Column {{column}}</span>

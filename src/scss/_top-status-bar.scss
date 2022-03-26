@@ -9,9 +9,8 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        background-color: #dddddd;
-        color: #333333;
         user-select: none;
+        background-color: #ffffff;
 
         .bar-left {
             height: 100%;
@@ -38,9 +37,7 @@
         -webkit-app-region: drag;
         top: 0;
         bottom: auto;
-        background-color: #dddddd;
         min-width: auto;
-        color: #666666;
 
         .bar-item {
             -webkit-app-region: no-drag;

@@ -5,7 +5,7 @@
 -->
 <template>
 	<div :style="styles" @mousedown.stop class="my-auto">
-		<div :class="{active: item.active}" @mousedown="onClick(item)" class="my-auto-item" v-for="item in tipList">
+		<div :class="{active: item.active}" @mousedown="onClick(item)" class="my-auto-item my-clickable" v-for="item in tipList">
 			<div class="my-auto-icon"></div>
 			<div class="my-auto-content">
 				<span v-html="_html(item)"></span>

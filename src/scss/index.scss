@@ -46,6 +46,10 @@ body {
         }
     }
 
+    &-border-shadow {
+        box-shadow: 0 0 8px rgba(0, 0, 0, .1);
+    }
+
     &-icon-error {
         width: 14px;
         height: 14px;
@@ -66,6 +70,12 @@ body {
         display: flex;
         align-items: center;
         justify-content: center;
+    }
+
+    &-center-between {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
     }
 
     &-window {
