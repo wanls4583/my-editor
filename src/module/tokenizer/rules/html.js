@@ -3,8 +3,8 @@
  * @Date: 2021-12-10 09:31:38
  * @Description: 
  */
-import jsRules from './javascript.js';
-import cssRules from './css.js';
+import jsRule from './javascript.js';
+import cssRule from './css.js';
 
 const styleRules = [{
     regex: /[a-zA-Z_][a-zA-Z-]*?(?=\s*?\:)/,
@@ -14,27 +14,25 @@ const styleRules = [{
     end: /\;/,
     startToken: 'punctuation.separator.key-value.css',
     endToken: 'punctuation.terminator.rule.css',
-    childRule: {
-        rules: [{
-            regex: /[\-\+]?(?:\d+(?:\.\d*)?|\.\d+)/,
-            token: 'constant.numeric.css'
-        }, {
-            regex: /(?<=\d)(?:px|%)/,
-            token: 'keyword.other.unit.css'
-        }, {
-            regex: /\#[a-zA-Z0-9]+/,
-            token: 'constant.other.color.rgb-value.css'
-        }, {
-            regex: /[^\s\:\;\{\}'"]+/,
-            token: 'support.constant.property-value.css'
-        }, {
-            regex: /\b"[^"]*?"\b/,
-            token: 'support.constant.property-value.string.quoted.double.css'
-        }, {
-            regex: /\b'[^']*?'\b/,
-            token: 'support.constant.property-value.string.quoted.single.css'
-        }]
-    }
+    rules: [{
+        regex: /[\-\+]?(?:\d+(?:\.\d*)?|\.\d+)/,
+        token: 'constant.numeric.css'
+    }, {
+        regex: /(?<=\d)(?:px|%)/,
+        token: 'keyword.other.unit.css'
+    }, {
+        regex: /\#[a-zA-Z0-9]+/,
+        token: 'constant.other.color.rgb-value.css'
+    }, {
+        regex: /[^\s\:\;\{\}'"]+/,
+        token: 'support.constant.property-value.css'
+    }, {
+        regex: /\b"[^"]*?"\b/,
+        token: 'support.constant.property-value.string.quoted.double.css'
+    }, {
+        regex: /\b'[^']*?'\b/,
+        token: 'support.constant.property-value.string.quoted.single.css'
+    }]
 }];
 
 const attrRules = [{
@@ -57,22 +55,18 @@ const attrRules = [{
         end: /(?<=(?:[^\\]|^)(?:\\\\)*)'/,
         startToken: 'string.quoted.single.html',
         endToken: 'string.quoted.single.html',
-        ruleName: 'Style',
+        name: 'Style',
         level: 1,
-        childRule: {
-            rules: styleRules
-        }
+        rules: styleRules
     },
     {
         start: /(?<=\sstyle\s*?\=\s*?)"/,
         end: /(?<=(?:[^\\]|^)(?:\\\\)*)"/,
         startToken: 'string.quoted.double.html',
         endToken: 'string.quoted.double.html',
-        ruleName: 'Style',
+        name: 'Style',
         level: 1,
-        childRule: {
-            rules: styleRules
-        }
+        rules: styleRules
     },
     {
         start: /'/,
@@ -105,10 +99,8 @@ const scriptStart = {
     end: /\>/,
     startToken: 'punctuation.definition.tag.open.html',
     endToken: 'punctuation.definition.tag.end.html',
-    ruleName: 'Attribute',
-    childRule: {
-        rules: attrRules
-    }
+    name: 'Attribute',
+    rules: attrRules
 }
 
 const scriptEnd = {
@@ -116,9 +108,7 @@ const scriptEnd = {
     end: /\>/,
     startToken: 'punctuation.definition.tag.open.html',
     endToken: 'punctuation.definition.tag.end.html',
-    childRule: {
-        rules: endTatAttrRules
-    }
+    rules: endTatAttrRules
 }
 
 const styleStart = {
@@ -126,10 +116,8 @@ const styleStart = {
     end: /\>/,
     startToken: 'punctuation.definition.tag.open.html',
     endToken: 'punctuation.definition.tag.end.html',
-    ruleName: 'Attribute',
-    childRule: {
-        rules: attrRules
-    }
+    name: 'Attribute',
+    rules: attrRules
 }
 
 const styleEnd = {
@@ -137,9 +125,7 @@ const styleEnd = {
     end: /\>/,
     startToken: 'punctuation.definition.tag.open.html',
     endToken: 'punctuation.definition.tag.end.html',
-    childRule: {
-        rules: endTatAttrRules
-    }
+    rules: endTatAttrRules
 }
 
 function tagFoldName(e) {
@@ -150,25 +136,24 @@ function tagFoldName(e) {
 }
 
 export default {
+    name: 'HTML',
     rules: [{
         start: scriptStart,
         end: scriptEnd,
-        ruleName: 'JavaScript',
-        childRule: jsRules
+        name: jsRule.name,
+        rules: jsRule.rules
     }, {
         start: styleStart,
         end: styleEnd,
-        ruleName: 'CSS',
-        childRule: cssRules
+        name: cssRule.name,
+        rules: cssRule.rules
     }, {
         start: /\<\/?(?=[a-zA-Z][a-zA-Z0-9\-]*)/,
         end: /\/?\>/,
         startToken: 'punctuation.definition.tag.open.html',
         endToken: 'punctuation.definition.tag.end.html',
-        ruleName: 'Attribute',
-        childRule: {
-            rules: attrRules
-        }
+        name: 'Attribute',
+        rules: attrRules
     }, {
         start: /\<\!\-\-/,
         end: /\-\-\>/,

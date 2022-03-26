@@ -3,9 +3,9 @@
  * @Date: 2021-12-15 11:39:41
  * @Description: 
  */
-import jsRules from '@/module/tokenizer/rules/javascript.js';
-import htmlRules from '@/module/tokenizer/rules/html.js';
-import cssRules from '@/module/tokenizer/rules/css.js';
+import jsRule from '@/module/tokenizer/rules/javascript.js';
+import htmlRule from '@/module/tokenizer/rules/html.js';
+import cssRule from '@/module/tokenizer/rules/css.js';
 import Util from '@/common/Util';
 export default class {
     constructor(editor, context) {
@@ -19,13 +19,13 @@ export default class {
         clearTimeout(this.tokenizeLines.timer);
         switch (language) {
             case 'JavaScript':
-                this.initRules(jsRules);
+                this.initRules(jsRule);
                 break;
             case 'HTML':
-                this.initRules(htmlRules);
+                this.initRules(htmlRule);
                 break;
             case 'CSS':
-                this.initRules(cssRules);
+                this.initRules(cssRule);
                 break;
             default:
                 this.language = 'plain';
@@ -35,26 +35,44 @@ export default class {
         Util.defineProperties(this, editor, ['startLine', 'maxVisibleLines', 'maxLine', 'renderLine', '$nextTick']);
         Util.defineProperties(this, context, ['htmls']);
     }
-    initRules(rules) {
+    initRules(rule) {
         if (this.languageMap[this.language]) {
             let obj = this.languageMap[this.language];
-            this.rules = obj.rules;
+            this.rule = obj.rule;
             this.ruleIdMap = obj.ruleIdMap;
+            this.ruleNameMap = obj.ruleNameMap;
             this.regexMap = obj.regexMap;
             return;
         }
         this.ruleId = 1;
         this.ruleIdMap = {};
+        this.ruleNameMap = {
+            unnamed: true
+        };
         this.regexMap = {};
-        this.rules = Util.deepAssign({}, rules);
-        this.rules.rules.forEach((item) => {
-            this.setRuleId(item);
-        });
+        rule = Util.deepAssign({}, rule);
+        this.setRuleNameMap(rule);
+        this.setRuleId(rule);
+        this.rule = rule;
         this.languageMap[this.language] = {
-            rules: this.rules,
+            rule: this.rule,
             ruleIdMap: this.ruleIdMap,
+            ruleNameMap: this.ruleNameMap,
             regexMap: this.regexMap
         };
+    }
+    setRuleNameMap(rule) {
+        if (rule.name) {
+            this.ruleNameMap[rule.name] = rule;
+        }
+        rule.name = rule.name || 'unnamed';
+        if (rule.rules instanceof Array) {
+            rule.rules.forEach((_item) => {
+                if (typeof _item === 'object' && (!_item.name || !this.ruleNameMap[_item.name])) {
+                    this.setRuleNameMap(_item);
+                }
+            });
+        }
     }
     setRuleId(rule) {
         // 每个规则生成一个唯一标识
@@ -62,25 +80,38 @@ export default class {
         rule.level = rule.level || 0;
         rule.token = rule.token || '';
         this.ruleIdMap[rule.ruleId] = rule;
-        if (typeof rule.start === 'object' && !(rule.start instanceof RegExp)) {
-            this.setRuleId(rule.start);
-            rule.start.startBy = rule.ruleId;
+        if (rule.start) {
+            let start = this.getRule(rule.start);
+            if (typeof start === 'object' && !(start instanceof RegExp)) {
+                this.setRuleId(start);
+                start.startBy = rule.ruleId;
+            }
         }
-        if (typeof rule.end === 'object' && !(rule.end instanceof RegExp)) {
-            this.setRuleId(rule.end);
-            rule.end.endBy = rule.ruleId;
+        if (rule.end) {
+            let end = this.getRule(rule.end);
+            if (typeof end === 'object' && !(end instanceof RegExp)) {
+                this.setRuleId(end);
+                end.endBy = rule.ruleId;
+            }
         }
-        if (rule.childRule && rule.childRule.rules) {
-            rule.childRule.rules.forEach((_item) => {
-                !_item.ruleId && this.setRuleId(_item);
-            });
-            rule.rules = rule.childRule.rules;
+        if (rule.rules) {
+            let rules = this.getRule(rule.rules);
+            if (rules) {
+                rules = rules instanceof Array ? rules : rules.rules;
+                rules.forEach((_item) => {
+                    typeof _item === 'object' && !_item.ruleId && this.setRuleId(_item);
+                });
+            }
+            rule.rules = rules;
         }
+    }
+    getRule(rule) {
+        return typeof rule === 'string' ? this.ruleNameMap[rule] : rule;
     }
     // 组合正则表达式
     getCombRegex(states) {
         states = states || [];
-        let statesKey = states + '' || '0';
+        let statesKey = states + '' || '1';
         let sources = [];
         let sourceMap = {};
         let regexs = [];
@@ -103,14 +134,18 @@ export default class {
             resultStates.push(states[index]);
             states = resultStates;
         }
-        index = states.length - 2;
-        rule = states.length && this.ruleIdMap[states.peek()] || this.rules;
-        states.length && regexs.push(this.getEndRegex(rule));
-        while (index >= 0 && !this.ruleIdMap[states[index + 1]].prior) {
-            regexs.push(this.getEndRegex(this.ruleIdMap[states[index]]));
-            index--;
+        if (states.length > 0) {
+            index = states.length - 2;
+            rule = states.length && this.ruleIdMap[states.peek()];
+            states.length && regexs.push(this.getEndRegex(rule));
+            while (index >= 0 && !this.ruleIdMap[states[index + 1]].prior) {
+                regexs.push(this.getEndRegex(this.ruleIdMap[states[index]]));
+                index--;
+            }
+            regexs.reverse();
+        } else {
+            rule = this.rule;
         }
-        regexs.reverse();
         rule.rules && rule.rules.forEach((item) => {
             regexs.push(this.getStartRegex(item));
         });
@@ -125,37 +160,43 @@ export default class {
         return this.regexMap[statesKey];
     }
     getStartRegex(rule) {
+        let start = null;
+        rule = this.getRule(rule);
+        start = this.getRule(rule.start);
         if (rule.regex instanceof RegExp) {
             return {
                 ruleId: rule.ruleId,
                 regex: rule.regex,
                 side: -1
             }
-        } else if (rule.start instanceof RegExp) {
+        } else if (start instanceof RegExp) {
             return {
                 ruleId: rule.ruleId,
-                regex: rule.start,
+                regex: start,
                 side: -1
             };
-        } else if (rule.start.startBy) {
-            return this.getStartRegex(rule.start);
+        } else if (start.startBy) {
+            return this.getStartRegex(start);
         }
     }
     getEndRegex(rule, side) {
+        let end = null;
+        rule = this.getRule(rule);
+        end = this.getRule(rule.end);
         if (rule.regex instanceof RegExp) {
             return {
                 ruleId: rule.ruleId,
                 regex: rule.regex,
                 side: side || 1
             }
-        } else if (rule.end instanceof RegExp) {
+        } else if (end instanceof RegExp) {
             return {
                 ruleId: rule.ruleId,
-                regex: rule.end,
+                regex: end,
                 side: side || 1
             };
-        } else if (rule.end.endBy) {
-            return this.getStartRegex(rule.end, -1);
+        } else if (end.endBy) {
+            return this.getStartRegex(end, -1);
         }
     }
     onInsertContentAfter(nowLine, newLine) {
@@ -250,6 +291,7 @@ export default class {
         let lastIndex = 0;
         let preEnd = 0;
         let preRule = null;
+        let preIndex = 0;
         let newStates = [];
         let states = (line > 1 && this.htmls[line - 2].states || []).slice(0);
         let lineObj = this.htmls[line - 1];
@@ -308,7 +350,8 @@ export default class {
                 preEnd = match.index + match[0].length;
                 break;
             }
-            if (!match[0] && side === 'start' && preRule && preRule.ruleId === rule.ruleId) {
+            if (!match[0] && side === 'start' && preIndex === match.index &&
+                preRule && preRule.ruleId === rule.ruleId) {
                 // 有些规则可能没有结果，只是标识进入某一个规则块，
                 // 如果其子规则也有该规则，则会进入死循环
                 break;
@@ -321,6 +364,7 @@ export default class {
             regex = this.getRegex(states, rule.ruleId);
             regex.lastIndex = lastIndex;
             preRule = rule;
+            preIndex = match.index;
         }
         if (!resultObj.tokens.length && states.length) { // 整行被多行token包裹
             resultObj.tokens.push({
