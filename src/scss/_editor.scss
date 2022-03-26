@@ -37,9 +37,7 @@
         color: #999999;
         text-align: right;
 
-        &-active {
-            background-color: rgba(0, 0, 0, 0.1);
-        }
+        &-active {}
     }
 
     &-scroller {
@@ -48,9 +46,15 @@
         height: 100%;
         overflow: auto;
 
+        &::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+            background-color: transparent;
+        }
+
         &::-webkit-scrollbar-thumb {
             border-radius: 4px;
-            background-color: rgb(115, 116, 112);
+            background-color: rgba(0, 0, 0, 0.2);
         }
     }
 
@@ -102,7 +106,6 @@
         background-color: #fff;
         border-radius: 4px;
         padding: 5px 10px;
-        color: #666666;
         line-height: 1.2em;
     }
 }

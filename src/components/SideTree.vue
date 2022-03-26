@@ -8,7 +8,7 @@
 		<div style="width:100%;overflow:hidden">
 			<div :style="{height:_scrollHeight}" class="side-tree">
 				<div :style="{top:_top}" class="side-tree-content">
-					<div @click.stop="onClickItem(item)" class="side-item" v-for="item in renderList">
+					<div @click.stop="onClickItem(item)" class="side-item my-clickable" v-for="item in renderList">
 						<div :class="{'active':item.active}" :style="{'padding-left':_paddingLeft(item)}" :title="item.path" @contextmenu.stop.prevent class="side-item-title">
 							<template v-if="item.type==='dir'">
 								<span class="left-icon iconfont icon-down1" v-if="item.open"></span>
@@ -23,7 +23,7 @@
 	</div>
 </template>
 <script>
-const require = window.require || window.parent.require || function(){};
+const require = window.require || window.parent.require || function () { };
 let preActiveItem = null;
 export default {
     name: 'SideTree',

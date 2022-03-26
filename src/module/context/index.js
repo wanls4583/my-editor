@@ -829,7 +829,7 @@ class Context {
     }
     // 获取待搜索的文本
     getToSearchConfig() {
-        if (this.selecter.ranges.size > 1) {
+        if (this.selecter.activedRanges.size > 1) {
             return null;
         }
         let wholeWord = false;

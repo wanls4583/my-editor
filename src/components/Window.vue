@@ -131,7 +131,7 @@ export default {
             });
         }
         this.theme = new Theme();
-        this.theme.loadXml('/theme/Monokai.tmTheme');
+        this.theme.loadXml('/theme/mihdan.tmTheme');
     },
     mounted() {
         window.test = this;
