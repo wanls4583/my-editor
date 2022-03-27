@@ -131,7 +131,8 @@ export default {
             });
         }
         this.theme = new Theme();
-        this.theme.loadXml('/theme/mihdan.tmTheme');
+        // this.theme.loadXml('/theme/dark-monokai.tmTheme');
+        this.theme.loadXml('/theme/light-amiga-rebel.tmTheme');
     },
     mounted() {
         window.test = this;

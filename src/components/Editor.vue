@@ -5,7 +5,7 @@
 			<!-- 占位行号，避免行号宽度滚动时变化 -->
 			<div class="my-num" style="visibility:hidden">{{maxLine}}</div>
 			<div
-				:class="{'my-num-active': _activeLine(line.num)}"
+				:class="{'active': _activeLine(line.num)}"
 				:key="line.num"
 				:style="{height:_lineHeight, 'line-height':_lineHeight}"
 				class="my-num"
@@ -43,21 +43,21 @@
 						>
 							<!-- my-select-bg为选中状态 -->
 							<div
-								:class="[line.selected ? 'my-select-bg my-select-active' : '', line.isFsearch ? 'my-select-f' : '', line.fold == 'close' ? 'fold-close' : '']"
+								:class="[line.selected ? 'my-select-bg active' : '', line.isFsearch ? 'my-search-bg' : '', line.fold == 'close' ? 'fold-close' : '']"
 								:data-line="line.num"
 								class="my-code"
 								v-html="line.html"
 							></div>
 							<!-- 选中时的首行背景 -->
 							<div
-								:class="{'my-select-active': range.active,'my-select-f': range.isFsearch}"
+								:class="{'active': range.active,'my-search-bg': range.isFsearch}"
 								:style="{left: range.left + 'px', width: range.width + 'px'}"
 								class="my-line-bg my-select-bg"
 								v-for="range in line.selectStarts"
 							></div>
 							<!-- 选中时的末行背景 -->
 							<div
-								:class="{'my-select-active': range.active,'my-select-f': range.isFsearch}"
+								:class="{'active': range.active,'my-search-bg': range.isFsearch}"
 								:style="{left: range.left + 'px', width: range.width + 'px'}"
 								class="my-line-bg my-select-bg"
 								v-for="range in line.selectEnds"

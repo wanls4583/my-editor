@@ -34,10 +34,12 @@
     &-num {
         position: relative;
         padding: 0 20px 0 25px;
-        color: #999999;
         text-align: right;
+        opacity: 0.6;
 
-        &-active {}
+        &.active {
+            opacity: 1;
+        }
     }
 
     &-scroller {
@@ -49,12 +51,12 @@
         &::-webkit-scrollbar {
             width: 8px;
             height: 8px;
-            background-color: transparent;
+            border-radius: 4px;
         }
 
         &::-webkit-scrollbar-thumb {
             border-radius: 4px;
-            background-color: rgba(0, 0, 0, 0.2);
+            background-color: rgba(200, 200, 200, 0.8);
         }
     }
 

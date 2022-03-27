@@ -3,28 +3,6 @@
         position: relative;
         z-index: 1;
         white-space: nowrap;
-
-        &.active::before {
-            content: "";
-            position: absolute;
-            left: 0;
-            top: 0;
-            z-index: -1;
-            width: 100%;
-            height: 1px;
-            background-color: #eeeeee;
-        }
-
-        &.active::after {
-            content: "";
-            position: absolute;
-            left: 0;
-            bottom: 0;
-            z-index: -1;
-            width: 100%;
-            height: 1px;
-            background-color: #eeeeee;
-        }
     }
 
     &-line-icon {
@@ -46,24 +24,21 @@
     }
 
     &-select-bg {
-        background-color: rgb(173, 214, 255);
+        border: 1px solid rgb(173, 214, 255);
+
+        &.active {
+            border: none;
+            background-color: rgb(173, 214, 255);
+        }
     }
 
-    &-select-active {
-        background-color: rgb(173, 214, 255);
-    }
 
-    &-select-f {
-        background-color: rgb(250, 201, 171);
+    &-search-bg {
+        border: 1px solid rgb(250, 201, 171);
 
-        &.my-select-active::after {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.1);
+        &.active {
+            border: none;
+            background-color: rgb(250, 201, 171);
         }
     }
 

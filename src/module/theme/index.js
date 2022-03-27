@@ -35,16 +35,29 @@ export default class {
     }
     parseCss(data) {
         let cssText = '';
-        data.settings.forEach((item) => {
+        let editorColor = data.settings[0].settings;
+        let background = editorColor.background || '#fff';
+        let foreground = editorColor.foreground || '#000';
+        let caret = editorColor.foreground || '#000';
+        let lineHighlight = editorColor.lineHighlight || background;
+        let selection = editorColor.selection || 'rgba(0,0,0,0.1)';
+        cssText += `.my-wrap{background-color:${background};color:${foreground};}\n`;
+        cssText += `.my-cursor{background-color:${caret};}\n`;
+        cssText += `.my-num.active{background-color:${lineHighlight};}\n`;
+        cssText += `.my-select-bg,.my-search-bg{border:1px solid ${foreground};}\n`;
+        cssText += `.my-select-bg.active,.my-search-bg.active{background-color:${selection};}\n`;
+        cssText += `.my-scroller::-webkit-scrollbar-corner{background-color:${background};}\n`;
+        cssText += `.my-right-bar .bar-item.active{background-color:${background};color:${foreground}}`;
+        data.settings.slice(1).forEach((item) => {
             if (item.scope) {
                 let selector = item.scope.replace(/\s/g, '').split(',').map((_item) => {
                     return '.' + _item;
                 }).join(',');
                 cssText += `${selector}{`;
                 for (let property in item.settings) {
-                    cssText += `${propertyMap[property]}:${item.settings[property]};`;
+                    cssText += `${propertyMap[property]}:${item.settings[property]};\n`;
                 }
-                cssText += `}`;
+                cssText += `}\n`;
             }
         });
         return cssText;
