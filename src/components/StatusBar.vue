@@ -4,20 +4,22 @@
  * @Description: 
 -->
 <template>
-	<div :style="{height:height+'px'}" @contextmenu.stop.prevent class="my-status-bar">
-		<div class="bar-left">
-			<div class="bar-item" v-if="editor">
-				<span>Line {{line}}, Column {{column}}</span>
+	<div :style="{height:height+'px'}" @contextmenu.stop.prevent class="my-status-bar my-width-100 my-light-bg">
+		<div class="my-height-100 my-center-between my-light-bg">
+			<div class="bar-left">
+				<div class="bar-item" v-if="editor">
+					<span>Line {{line}}, Column {{column}}</span>
+				</div>
 			</div>
-		</div>
-		<div class="bar-right">
-			<div @mousedown.stop="showTabsize" class="bar-item my-clickable" v-if="editor">
-				<span>Tab Size:{{tabSize}}</span>
-				<Menu :menuList="tabSizeList" :styles="{right: 0, bottom: height+'px'}" :value="tabSize" @change="onTabsizeChange" v-show="tabsizeVisible"></Menu>
-			</div>
-			<div @mousedown.stop="showLanguage" class="bar-item my-clickable" v-if="editor">
-				<span>{{_language}}</span>
-				<Menu :menuList="languageList" :styles="{right: 0, bottom: height+'px'}" :value="language" @change="onLnaguageChange" v-show="languageVisible"></Menu>
+			<div class="bar-right">
+				<div @mousedown.stop="showTabsize" class="bar-item my-clickable" v-if="editor">
+					<span>Tab Size:{{tabSize}}</span>
+					<Menu :menuList="tabSizeList" :styles="{right: 0, bottom: height+'px'}" :value="tabSize" @change="onTabsizeChange" v-show="tabsizeVisible"></Menu>
+				</div>
+				<div @mousedown.stop="showLanguage" class="bar-item my-clickable" v-if="editor">
+					<span>{{_language}}</span>
+					<Menu :menuList="languageList" :styles="{right: 0, bottom: height+'px'}" :value="language" @change="onLnaguageChange" v-show="languageVisible"></Menu>
+				</div>
 			</div>
 		</div>
 	</div>

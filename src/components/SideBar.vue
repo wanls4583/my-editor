@@ -5,9 +5,11 @@
 -->
 <template>
 	<div @contextmenu.prevent.stop="onContextmenu" @selectstart.prevent class="my-side-bar" ref="sideBar">
-		<div class="side-bar-title">EXPLORER</div>
-		<side-tree :list="list"></side-tree>
-		<SideBarMenu ref="sideBarMenu"></SideBarMenu>
+		<div class="my-height-100 my-light-bg">
+			<div class="side-bar-title">EXPLORER</div>
+			<side-tree :list="list"></side-tree>
+			<SideBarMenu ref="sideBarMenu"></SideBarMenu>
+		</div>
 	</div>
 </template>
 <script>

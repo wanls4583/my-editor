@@ -4,19 +4,21 @@
  * @Description: 
 -->
 <template>
-	<div :style="styles" @mousedown.stop class="my-menu">
-		<div class="my-menu-group" v-for="group in menuList">
-			<div
-				:class="{checked: checkable && item.checked, disabled: item.disabled}"
-				@mousedown="onClick(item, group)"
-				class="my-menu-item my-center-between my-clickable"
-				v-for="item in group"
-			>
-				<div class="my-center-between">
-					<div class="my-menu-title">{{item.name}}</div>
-					<div class="my-menu-shortcut" v-if="item.shortcut">{{item.shortcut}}</div>
+	<div :style="styles" @mousedown.stop class="my-menu my-light-bg">
+		<div class="my-light-bg">
+			<div class="my-menu-group" v-for="group in menuList">
+				<div
+					:class="{checked: checkable && item.checked, disabled: item.disabled}"
+					@mousedown="onClick(item, group)"
+					class="my-menu-item my-center-between my-clickable"
+					v-for="item in group"
+				>
+					<div class="my-center-between">
+						<div class="my-menu-title">{{item.name}}</div>
+						<div class="my-menu-shortcut" v-if="item.shortcut">{{item.shortcut}}</div>
+					</div>
+					<div class="my-menu-content"></div>
 				</div>
-				<div class="my-menu-content"></div>
 			</div>
 		</div>
 	</div>

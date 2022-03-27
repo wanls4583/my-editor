@@ -35,10 +35,16 @@
         position: relative;
         padding: 0 20px 0 25px;
         text-align: right;
-        opacity: 0.6;
+
+        .num {
+            opacity: 0.6;
+        }
 
         &.active {
-            opacity: 1;
+            .num {
+                opacity: 1;
+                font-weight: bold;
+            }
         }
     }
 

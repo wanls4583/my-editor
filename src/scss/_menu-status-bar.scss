@@ -1,16 +1,11 @@
 .my {
 
     &-status-bar,
-    &-top-bar {
+    &-menu-bar {
         position: absolute;
         bottom: 0;
         z-index: 99;
-        width: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
         user-select: none;
-        background-color: rgb(221, 221, 221);
 
         .bar-left {
             height: 100%;
@@ -33,7 +28,7 @@
         }
     }
 
-    &-top-bar {
+    &-menu-bar {
         -webkit-app-region: drag;
         top: 0;
         bottom: auto;

@@ -35,20 +35,48 @@ export default class {
     }
     parseCss(data) {
         let cssText = '';
+        let globalSettings = data.globalSettings;
         let editorColor = data.settings[0].settings;
         let background = editorColor.background || '#fff';
         let foreground = editorColor.foreground || '#000';
         let caret = editorColor.foreground || '#000';
-        let lineHighlight = editorColor.lineHighlight || background;
+        let lineHighlight = editorColor.lineHighlight || 'rgba(0,0,0,0.1)';
         let selection = editorColor.selection || 'rgba(0,0,0,0.1)';
-        cssText += `.my-right-wrap{background-color:${background};color:${foreground};}\n`;
+        cssText += `.my-window{background-color:${background};color:${foreground};}\n`;
+        cssText += `.my-auto,.my-tip,.my-menu{background-color:${background};color:${foreground};}\n`;
+        cssText += `.my-editor-bar .bar-item.active{background-color:${background};color:${foreground}}\n`;
         cssText += `.my-cursor{background-color:${caret};}\n`;
-        cssText += `.my-num.active{background-color:${lineHighlight};}\n`;
+        cssText += `.my-line.active::before,.my-line.active::after{background-color:${lineHighlight}}\n`;
+        cssText += `.my-tab-line{border-left:1px solid ${lineHighlight};}\n`;
         cssText += `.my-select-bg,.my-search-bg{border:1px solid ${foreground};}\n`;
         cssText += `.my-select-bg.active,.my-search-bg.active{background-color:${selection};}\n`;
         cssText += `.my-scroller::-webkit-scrollbar-corner{background-color:${background};}\n`;
-        cssText += `.my-right-bar .bar-item.active{background-color:${background};color:${foreground}}`;
-        cssText += `.my-auto,.my-tip{background-color:${background};color:${foreground};}\n`;
+        if (globalSettings) {
+            let menu = globalSettings.menu;
+            let menuBar = globalSettings.menuBar;
+            let statusBar = globalSettings.statusBar;
+            let sideBar = globalSettings.sideBar;
+            if (menu) {
+                cssText += `.my-menu .my-light-bg{\n`;
+                cssText += _joinStyle(menu);
+                cssText += `}\n`;
+            }
+            if (menuBar) {
+                cssText += `.my-menu-bar .my-light-bg{\n`;
+                cssText += _joinStyle(menuBar);
+                cssText += `}\n`;
+            }
+            if (statusBar) {
+                cssText += `.my-status-bar .my-light-bg{\n`;
+                cssText += _joinStyle(statusBar);
+                cssText += `}\n`;
+            }
+            if (sideBar) {
+                cssText += `.my-sider-bar .my-light-bg{\n`;
+                cssText += _joinStyle(sideBar);
+                cssText += `}\n`;
+            }
+        }
         data.settings.slice(1).forEach((item) => {
             if (item.scope) {
                 let selector = item.scope.replace(/\s/g, '').split(',').map((_item) => {
@@ -62,6 +90,17 @@ export default class {
             }
         });
         return cssText;
+
+        function _joinStyle(option) {
+            let text = '';
+            if (option.background) {
+                text += `background-color:${option.background};`;
+            }
+            if (option.foreground) {
+                text += `color:${option.foreground};`;
+            }
+            return text;
+        }
     }
     parseXmlString(xmlStr) {
         let domParser = new DOMParser();

@@ -1,5 +1,5 @@
 .my {
-    &-right-bar {
+    &-editor-bar {
         position: absolute;
         top: 0;
         left: 0;
@@ -9,8 +9,6 @@
         .bar-scroller {
             display: flex;
             align-items: center;
-            width: 100%;
-            height: 40px;
             overflow: overlay;
 
             &::-webkit-scrollbar {
@@ -39,9 +37,6 @@
             cursor: pointer;
 
             &.active {
-                background-color: #ffffff;
-                color: #333333;
-
                 .bar-close-icon {
                     display: block;
                 }

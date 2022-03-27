@@ -4,37 +4,39 @@
  * @Description: 
 -->
 <template>
-	<div :style="{height:height+'px'}" @contextmenu.stop.prevent class="my-top-bar">
-		<div class="bar-left">
-			<div @mousedown.stop="showMemu('fileMenuVisible')" class="bar-item my-clickable">
-				<span>File</span>
-				<Menu :checkable="false" :menuList="fileMenuList" :styles="{left: 0, top: height+'px'}" @change="onFileMenuChange" v-show="fileMenuVisible"></Menu>
+	<div :style="{height:height+'px'}" @contextmenu.stop.prevent class="my-menu-bar my-width-100 my-light-bg">
+		<div class="my-height-100 my-center-between my-light-bg">
+			<div class="bar-left">
+				<div @mousedown.stop="showMemu('fileMenuVisible')" class="bar-item my-clickable">
+					<span>File</span>
+					<Menu :checkable="false" :menuList="fileMenuList" :styles="{left: 0, top: height+'px'}" @change="onFileMenuChange" v-show="fileMenuVisible"></Menu>
+				</div>
+				<div @mousedown.stop="showMemu('editMenuVisible')" class="bar-item my-clickable">
+					<span>Edit</span>
+					<Menu :checkable="false" :menuList="editMenuList" :styles="{left: 0, top: height+'px'}" @change="onEditMenuChange" v-show="editMenuVisible"></Menu>
+				</div>
+				<div @mousedown.stop="showMemu('selectionMenuVisible')" class="bar-item my-clickable">
+					<span>Selection</span>
+					<Menu :checkable="false" :menuList="selectionMenuList" :styles="{left: 0, top: height+'px'}" @change="onSelectionMenuChange" v-show="selectionMenuVisible"></Menu>
+				</div>
 			</div>
-			<div @mousedown.stop="showMemu('editMenuVisible')" class="bar-item my-clickable">
-				<span>Edit</span>
-				<Menu :checkable="false" :menuList="editMenuList" :styles="{left: 0, top: height+'px'}" @change="onEditMenuChange" v-show="editMenuVisible"></Menu>
-			</div>
-			<div @mousedown.stop="showMemu('selectionMenuVisible')" class="bar-item my-clickable">
-				<span>Selection</span>
-				<Menu :checkable="false" :menuList="selectionMenuList" :styles="{left: 0, top: height+'px'}" @change="onSelectionMenuChange" v-show="selectionMenuVisible"></Menu>
-			</div>
-		</div>
-		<div class="bar-right" v-if="mode==='app'">
-			<!-- 最小化 -->
-			<div @click="onMinimize" class="bar-item my-clickable" style="width:35px;height:35px">
-				<span class="iconfont icon-zuixiaohua"></span>
-			</div>
-			<!-- 还原最大化 -->
-			<div @click="onUnmaximize" class="bar-item my-clickable" style="width:35px;height:35px" v-if="maximize">
-				<span class="iconfont icon-huanyuan"></span>
-			</div>
-			<!-- 最大化 -->
-			<div @click="onMaximize" class="bar-item my-clickable" style="width:35px;height:35px" v-else>
-				<span class="iconfont icon-zuidahua"></span>
-			</div>
-			<!-- 最小化 -->
-			<div @click="onClose" class="bar-item my-clickable-danger" style="width:35px;height:35px">
-				<span class="iconfont icon-close" style="font-size:18px"></span>
+			<div class="bar-right" v-if="mode==='app'">
+				<!-- 最小化 -->
+				<div @click="onMinimize" class="bar-item my-clickable" style="width:35px;height:35px">
+					<span class="iconfont icon-zuixiaohua"></span>
+				</div>
+				<!-- 还原最大化 -->
+				<div @click="onUnmaximize" class="bar-item my-clickable" style="width:35px;height:35px" v-if="maximize">
+					<span class="iconfont icon-huanyuan"></span>
+				</div>
+				<!-- 最大化 -->
+				<div @click="onMaximize" class="bar-item my-clickable" style="width:35px;height:35px" v-else>
+					<span class="iconfont icon-zuidahua"></span>
+				</div>
+				<!-- 最小化 -->
+				<div @click="onClose" class="bar-item my-clickable-danger" style="width:35px;height:35px">
+					<span class="iconfont icon-close" style="font-size:18px"></span>
+				</div>
 			</div>
 		</div>
 	</div>
