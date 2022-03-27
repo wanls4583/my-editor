@@ -12,6 +12,9 @@ Vue.prototype.$http = axios.create({
     'Content-Type': 'application/json; charset=utf-8'
   }
 });
+window.globalData = {
+  nowTheme: '/theme/dark-monokai.tmTheme'
+};
 window.contexts = {};
 
 new Vue({

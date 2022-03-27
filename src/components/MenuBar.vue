@@ -19,6 +19,16 @@
 					<span>Selection</span>
 					<Menu :checkable="false" :menuList="selectionMenuList" :styles="{left: 0, top: height+'px'}" @change="onSelectionMenuChange" v-show="selectionMenuVisible"></Menu>
 				</div>
+				<div @mousedown.stop="showMemu('preferenceMenuVisible')" class="bar-item my-clickable">
+					<span>Preference</span>
+					<Menu
+						:checkable="false"
+						:menuList="preferenceMenuList"
+						:styles="{left: 0, top: height+'px'}"
+						@change="onPreferenceMenuChange"
+						v-show="preferenceMenuVisible"
+					></Menu>
+				</div>
 			</div>
 			<div class="bar-right" v-if="mode==='app'">
 				<!-- 最小化 -->
@@ -66,6 +76,7 @@ export default {
             fileMenuVisible: false,
             editMenuVisible: false,
             selectionMenuVisible: false,
+            preferenceMenuVisible: false,
             maximize: false,
             mode: remote ? 'app' : 'web',
             fileMenuList: [
@@ -165,6 +176,14 @@ export default {
                     op: 'switchMultiKeyCode',
                     keyCode: 'ctrl'
                 }]
+            ],
+            preferenceMenuList: [
+                [
+                    {
+                        name: 'Color Theme',
+                        op: 'changeTheme'
+                    }
+                ]
             ]
         }
     },
@@ -208,6 +227,7 @@ export default {
             this.fileMenuVisible = false;
             this.editMenuVisible = false;
             this.selectionMenuVisible = false;
+            this.preferenceMenuVisible = false;
         },
         // 最小化
         onMinimize() {
@@ -325,6 +345,15 @@ export default {
             this.editor.focus();
             this.selectionMenuVisible = false;
         },
+        onPreferenceMenuChange(item) {
+            switch (item.op) {
+                case 'changeTheme':
+                    this.$emit('change', item);
+                    break;
+            }
+            this.editor.focus();
+            this.preferenceMenuVisible = false;
+        }
     }
 }
 </script>

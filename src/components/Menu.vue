@@ -4,7 +4,7 @@
  * @Description: 
 -->
 <template>
-	<div :style="styles" @mousedown.stop class="my-menu my-light-bg">
+	<div :style="styles" @mousedown.stop class="my-menu my-light-bg" v-show="visible">
 		<div class="my-light-bg">
 			<div class="my-menu-group" v-for="group in menuList">
 				<div
@@ -17,7 +17,7 @@
 						<div class="my-menu-title">{{item.name}}</div>
 						<div class="my-menu-shortcut" v-if="item.shortcut">{{item.shortcut}}</div>
 					</div>
-					<div class="my-menu-content"></div>
+					<div class="my-menu-content">{{item.content}}</div>
 				</div>
 			</div>
 		</div>
@@ -44,6 +44,17 @@ export default {
     },
     data() {
         return {
+        }
+    },
+    computed: {
+        visible() {
+            let visible = false;
+            for (let i = 0; i < this.menuList.length; i++) {
+                if (this.menuList[i].length) {
+                    return true;
+                }
+            }
+            return false;
         }
     },
     watch: {

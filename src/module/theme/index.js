@@ -43,7 +43,7 @@ export default class {
         let lineHighlight = editorColor.lineHighlight || 'rgba(0,0,0,0.1)';
         let selection = editorColor.selection || 'rgba(0,0,0,0.1)';
         cssText += `.my-window{background-color:${background};color:${foreground};}\n`;
-        cssText += `.my-auto,.my-tip,.my-menu{background-color:${background};color:${foreground};}\n`;
+        cssText += `.my-auto,.my-tip,.my-menu,.my-cmd-panel{background-color:${background};color:${foreground};}\n`;
         cssText += `.my-editor-bar .bar-item.active{background-color:${background};color:${foreground}}\n`;
         cssText += `.my-cursor{background-color:${caret};}\n`;
         cssText += `.my-line.active::before,.my-line.active::after{background-color:${lineHighlight}}\n`;

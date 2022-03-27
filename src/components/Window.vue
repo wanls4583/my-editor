@@ -35,9 +35,10 @@
 			<window-menu ref="winMenu"></window-menu>
 		</div>
 		<!-- 顶部菜单栏 -->
-		<menu-bar :height="topBarHeight" ref="menuBar"></menu-bar>
+		<menu-bar :height="topBarHeight" @change="onMenuChange" ref="menuBar"></menu-bar>
 		<!-- 状态栏 -->
 		<status-bar :height="statusHeight" ref="statusBar"></status-bar>
+		<cmd-panel :menuList="cmdMenuList" :visible.sync="cmdVisible"></cmd-panel>
 		<Dialog
 			:btns="dialogBtns"
 			:content="dialogContent"
@@ -58,6 +59,7 @@ import StatusBar from './StatusBar';
 import SideBar from './SideBar.vue';
 import Dialog from './Dialog.vue';
 import WindowMenu from './WindowMenu.vue';
+import CmdPanel from './CmdPanel.vue';
 import Context from '@/module/context/index';
 import Theme from '@/module/theme';
 import $ from 'jquery';
@@ -76,6 +78,7 @@ export default {
         SideBar,
         Dialog,
         WindowMenu,
+        CmdPanel,
     },
     data() {
         return {
@@ -85,6 +88,8 @@ export default {
             idCount: 1,
             titleCount: 1,
             editorList: [],
+            cmdMenuList: [],
+            cmdVisible: false,
             dialogTilte: '',
             dialogContent: '',
             dialogVisible: false,
@@ -131,8 +136,7 @@ export default {
             });
         }
         this.theme = new Theme();
-        this.theme.loadXml('/theme/dark-monokai.tmTheme');
-        // this.theme.loadXml('/theme/light-amiga-rebel.tmTheme');
+        this.theme.loadXml(window.globalData.nowTheme);
     },
     mounted() {
         window.test = this;
@@ -155,6 +159,7 @@ export default {
                 this.getNowEditor().closeAllMenu();
                 this.getNowEditor().menuVisble = false;
             }
+            this.cmdVisible = false;
         },
         onChangeTab(id) {
             let tab = this.getTabById(id);
@@ -259,6 +264,29 @@ export default {
                 } else {
                     break;
                 }
+            }
+        },
+        onMenuChange(item) {
+            switch (item.op) {
+                case 'changeTheme':
+                    this.cmdMenuList = [[{
+                        op: 'changeTheme',
+                        name: 'Dark Monokai',
+                        value: 'Dark Monokai',
+                        path: '/theme/dark-monokai.tmTheme',
+                    }, {
+                        op: 'changeTheme',
+                        name: 'Light Amiga Rebel',
+                        value: 'Light Amiga Rebel',
+                        path: '/theme/light-amiga-rebel.tmTheme'
+                    }]];
+                    this.cmdMenuList[0].forEach((item) => {
+                        if (window.globalData.nowTheme === item.path) {
+                            item.checked = true;
+                        }
+                    });
+                    this.cmdVisible = true;
+                    break;
             }
         },
         onFileChange(id) {
