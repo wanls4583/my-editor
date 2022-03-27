@@ -43,7 +43,7 @@
 				<key>invisibles</key>
 				<string>#bbbbbb</string>
 				<key>lineHighlight</key>
-				<string>#bbbbbb</string>
+				<string>rgba(0,0,0,0.1)</string>
 				<key>selection</key>
 				<string>rgb(173,215,255)</string>
 			</dict>
@@ -145,6 +145,17 @@
 			<dict>
 				<key>foreground</key>
 				<string>#cc7734</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Property Name</string>
+			<key>scope</key>
+			<string>support.type</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#ff0000</string>
 			</dict>
 		</dict>
 		<dict>
