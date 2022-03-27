@@ -48,6 +48,7 @@ export default class {
         cssText += `.my-select-bg.active,.my-search-bg.active{background-color:${selection};}\n`;
         cssText += `.my-scroller::-webkit-scrollbar-corner{background-color:${background};}\n`;
         cssText += `.my-right-bar .bar-item.active{background-color:${background};color:${foreground}}`;
+        cssText += `.my-auto,.my-tip{background-color:${background};color:${foreground};}\n`;
         data.settings.slice(1).forEach((item) => {
             if (item.scope) {
                 let selector = item.scope.replace(/\s/g, '').split(',').map((_item) => {

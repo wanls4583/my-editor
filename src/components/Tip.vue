@@ -5,7 +5,9 @@
 -->
 <template>
 	<div :style="styles" @mousedown.stop class="my-tip">
-		<div v-html="content"></div>
+		<div class="my-tip-content my-light-bg">
+			<div v-html="content"></div>
+		</div>
 	</div>
 </template>
 <script>
