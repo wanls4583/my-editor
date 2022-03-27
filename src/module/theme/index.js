@@ -41,7 +41,7 @@ export default class {
         let caret = editorColor.foreground || '#000';
         let lineHighlight = editorColor.lineHighlight || background;
         let selection = editorColor.selection || 'rgba(0,0,0,0.1)';
-        cssText += `.my-wrap{background-color:${background};color:${foreground};}\n`;
+        cssText += `.my-right-wrap{background-color:${background};color:${foreground};}\n`;
         cssText += `.my-cursor{background-color:${caret};}\n`;
         cssText += `.my-num.active{background-color:${lineHighlight};}\n`;
         cssText += `.my-select-bg,.my-search-bg{border:1px solid ${foreground};}\n`;

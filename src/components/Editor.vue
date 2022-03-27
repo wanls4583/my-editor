@@ -82,7 +82,7 @@
 						class="my-textarea"
 						ref="textarea"
 					></textarea>
-					<auto-tip :styles="autoTipStyle" :tipList="autoTipList" @change="onClickAuto" ref="autoTip"></auto-tip>
+					<auto-tip :styles="autoTipStyle" :tipList="autoTipList" @change="onClickAuto" ref="autoTip" v-show="autoTipList&&autoTipList.length"></auto-tip>
 				</div>
 			</div>
 			<!-- 搜索框 -->
@@ -198,8 +198,8 @@ export default {
                 left: '0px'
             },
             autoTipStyle: {
-                top: '0px',
-                left: '0px'
+                top: '50%',
+                left: '50%'
             },
             errorMap: {},
             autoTipList: [],
