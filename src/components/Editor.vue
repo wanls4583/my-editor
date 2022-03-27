@@ -1040,7 +1040,8 @@ export default {
                 }
             }
             function _move(autoDirect, speed, line) {
-                let originLine = line || that.nowCursorPos.line;
+                let originLine = line || that.folder.getRelativeLine(that.nowCursorPos.line);
+                let originRealLine = line ? that.folder.getRealLine(line) : that.nowCursorPos.line;
                 let originColumn = that.nowCursorPos.column;
                 let count = 0; // 累计滚动距离
                 _run(autoDirect, speed);
@@ -1059,7 +1060,6 @@ export default {
                             count += speed;
                             line = Math.floor(count / that.charObj.charHight);
                             line = originLine + line;
-                            column = 0;
                             break;
                         case 'left':
                             count += speed;
@@ -1072,8 +1072,13 @@ export default {
                             column = originColumn + column;
                             break;
                     }
-                    line = line < 1 ? 1 : (line > that.myContext.htmls.length ? that.myContext.htmls.length : line);
-                    column = column < 0 ? 0 : (column > that.myContext.htmls[originLine - 1].text.length ? that.myContext.htmls[originLine - 1].text.length : column);
+                    line = that.folder.getRealLine(line);
+                    line = line < 1 ? 1 : (line > that.maxLine ? that.maxLine : line);
+                    if (autoDirect === 'down') {
+                        column = that.myContext.htmls[line - 1].text.length;
+                    } else {
+                        column = column < 0 ? 0 : (column > that.myContext.htmls[line - 1].text.length ? that.myContext.htmls[line - 1].text.length : column);
+                    }
                     that.mouseStartObj.cursorPos = that.cursor.setCursorPos({ line: line, column: column });
                     that.mouseStartObj.preRange = that.selecter.setRange(that.mouseStartObj.start, { line: line, column: column });
                     that.selectMoveTimer = requestAnimationFrame(() => {
