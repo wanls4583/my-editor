@@ -8,6 +8,8 @@ const attrName = '[a-zA-Z][a-zA-Z0-9\\-]*';
 const braces = {
     start: '\\{',
     end: '\\}',
+    startToken: 'punctuation.braces.open.css',
+    endToken: 'punctuation.braces.close.css',
     foldName: 'css-braces',
     rules: [
         'comment',

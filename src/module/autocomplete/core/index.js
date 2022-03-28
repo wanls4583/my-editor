@@ -6,9 +6,11 @@
 import Util from '@/common/Util';
 import JsSearcher from '../language/javascript';
 import HtmlSearcher from '../language/html';
+import CssSearcher from '../language/css';
 
 const regs = {
-    word: /(?:^|\b)[$_a-zA-Z][$_a-zA-Z0-9]*$/
+    'JavaScript': /(?:^|\b)[$_a-zA-Z][$_a-zA-Z0-9]*$/,
+    'CSS': /[^\s\;\,\:\{\}\+\*\~]+$/,
 }
 
 export default class {
@@ -34,15 +36,6 @@ export default class {
             let preWord = '';
             let type = '';
             this.clearSearch();
-            for (let i = 0; i < multiCursorPos.length; i++) {
-                let word = this.getNowWord(multiCursorPos[i]);
-                if (!word || preWord && word !== preWord) {
-                    this.setAutoTip(null);
-                    return;
-                }
-                preWord = word;
-            }
-            this.searcherId++;
             if (this.language == 'HTML') {
                 let states = this.htmls[multiCursorPos[0].line - 1].states || [];
                 states = states.map((item) => {
@@ -56,10 +49,20 @@ export default class {
                     type = 'CSS';
                 }
             }
+            for (let i = 0; i < multiCursorPos.length; i++) {
+                let word = this.getNowWord(multiCursorPos[i], type);
+                if (!word || preWord && word !== preWord) {
+                    this.setAutoTip(null);
+                    return;
+                }
+                preWord = word;
+            }
+            this.searcherId++;
             this.searcher = this.getSearcher(type);
             this.searcher && this.searcher.search({
                 word: preWord,
-                searcherId: this.searcherId
+                searcherId: this.searcherId,
+                cursorPos: multiCursorPos[0]
             });
         }
     }
@@ -79,13 +82,18 @@ export default class {
                 this.htmlSearcher = this.htmlSearcher || new HtmlSearcher(this.editor, this.context);
                 searcher = this.htmlSearcher;
                 break;
+            case 'CSS':
+                this.cssSearcher = this.cssSearcher || new CssSearcher(this.editor, this.context);
+                searcher = this.cssSearcher;
+                break;
         }
         return searcher;
     }
-    getNowWord(cursorPos) {
+    getNowWord(cursorPos, type) {
         let text = this.htmls[cursorPos.line - 1].text;
         text = text.slice(0, cursorPos.column);
-        text = regs.word.exec(text);
+        type = type || this.language;
+        text = regs[type].exec(text);
         text = text && text[0];
         return text;
     }

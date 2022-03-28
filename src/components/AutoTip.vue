@@ -86,4 +86,10 @@ export default {
 .icon-class {
     color: gold;
 }
+.icon-property {
+    color: lightskyblue;
+}
+.icon-value {
+    color: lightblue;
+}
 </style>
