@@ -7,7 +7,7 @@
 	<div :style="styles" @mousedown.stop class="my-auto">
 		<div class="my-light-bg">
 			<div :class="{active: item.active}" @mousedown="onClick(item)" class="my-auto-item" v-for="item in tipList">
-				<div class="my-auto-icon"></div>
+				<div :class="[item.icon]" class="my-auto-icon iconfont"></div>
 				<div class="my-auto-content">
 					<span v-html="_html(item)"></span>
 				</div>
@@ -79,3 +79,11 @@ export default {
     }
 }
 </script>
+<style lang="scss" scoped>
+.icon-function {
+    color: #a6e22e;
+}
+.icon-class {
+    color: gold;
+}
+</style>

@@ -18,7 +18,7 @@
 
     &-menu-item {
         position: relative;
-        padding: 5px 10px 5px 25px;
+        padding: 5px 10px 5px 10px;
         white-space: nowrap;
         min-width: 80px;
         min-height: 30px;
@@ -29,11 +29,8 @@
             }
         }
 
-        &.checked:before {
-            content: '√';
-            position: absolute;
-            top: 5px;
-            left: 10px;
+        &.checked {
+            background-color: rgba(0, 0, 0, 0.1);
         }
 
         &.disabled {

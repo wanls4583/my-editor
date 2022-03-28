@@ -38,7 +38,7 @@
 		<menu-bar :height="topBarHeight" @change="onMenuChange" ref="menuBar"></menu-bar>
 		<!-- 状态栏 -->
 		<status-bar :height="statusHeight" ref="statusBar"></status-bar>
-		<cmd-panel :menuList="cmdMenuList" :visible.sync="cmdVisible"></cmd-panel>
+		<cmd-panel :menuList="cmdMenuList" :value="cmdValue" :visible.sync="cmdVisible"></cmd-panel>
 		<Dialog
 			:btns="dialogBtns"
 			:content="dialogContent"
@@ -90,6 +90,7 @@ export default {
             editorList: [],
             cmdMenuList: [],
             cmdVisible: false,
+            cmdValue: '',
             dialogTilte: '',
             dialogContent: '',
             dialogVisible: false,
@@ -272,20 +273,14 @@ export default {
                     this.cmdMenuList = [[{
                         op: 'changeTheme',
                         name: 'Dark Monokai',
-                        value: 'Dark Monokai',
-                        path: '/theme/dark-monokai.tmTheme',
+                        value: '/theme/dark-monokai.tmTheme',
                     }, {
                         op: 'changeTheme',
                         name: 'Light Amiga Rebel',
-                        value: 'Light Amiga Rebel',
-                        path: '/theme/light-amiga-rebel.tmTheme'
+                        value: '/theme/light-amiga-rebel.tmTheme'
                     }]];
-                    this.cmdMenuList[0].forEach((item) => {
-                        if (window.globalData.nowTheme === item.path) {
-                            item.checked = true;
-                        }
-                    });
                     this.cmdVisible = true;
+                    this.cmdValue = window.globalData.nowTheme;
                     break;
             }
         },

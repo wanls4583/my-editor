@@ -505,6 +505,10 @@ class Context {
         }
         while (index < cursorPosList.length) {
             let line = cursorPosList[index].line;
+            if (line === 1 && direct === 'up' || line === this.maxLine && direct === 'down') {
+                index++;
+                continue;
+            }
             _moveLine(cursorPosList[index]);
             while (index < cursorPosList.length && cursorPosList[index].line === line) {
                 if (direct === 'down') {
@@ -518,6 +522,9 @@ class Context {
                 });
                 index++;
             }
+        }
+        if (!historyPosList.length) {
+            return;
         }
         let historyObj = {
             type: direct === 'down' ? Util.command.MOVEUP : Util.command.MOVEDOWN,

@@ -7,7 +7,7 @@ const functionChild = [{
         foldName: 'js-paren',
         rules: [{
             regex: `${variable}`,
-            token: 'variable.parameter'
+            token: 'variable.parameter.js'
         }]
     },
     'storageArrowType',
@@ -110,7 +110,7 @@ const rule = {
         {
             start: `(?<=function\\s*?)${variable}`,
             end: '(?<=\\})',
-            startToken: 'entity.name.function',
+            startToken: 'entity.name.function.js',
             rules: functionChild
         },
         {
@@ -132,7 +132,7 @@ const rule = {
                     {
                         start: `${variable}`,
                         end: '(?<=\\})',
-                        startToken: 'entity.name.function',
+                        startToken: 'entity.name.function.js',
                         rules: functionChild
                     },
                 ]
@@ -145,11 +145,11 @@ const rule = {
         },
         {
             regex: `${variable}\\s*(?=\\()`,
-            token: 'variable.function'
+            token: 'variable.function.js'
         },
         {
             regex: `${variable}\\s*(?=\\=\\>)`,
-            token: 'variable.parameter'
+            token: 'variable.parameter.js'
         },
         {
             regex: '\\!|\\+|\\-|\\*|\\/|\\%|\\&|\\||\\~|\\>|\\<|\\=|\\?',
@@ -206,13 +206,13 @@ const rule = {
                     // 箭头函数，:function、:()=>
                     {
                         regex: `${variable}(?=\\s*\\:\\s*(?:function|\\((?=[^\\(]*?\\=\\>)))`,
-                        startToken: 'entity.name.function'
+                        startToken: 'entity.name.function.js'
                     },
                     // 属性函数，test(){}
                     {
                         start: `(?<=(?:^|\\,|\\{)\\s*)${variable}\\s*(?=\\()`,
                         end: '\\,|(?=\\})',
-                        startToken: 'entity.name.function',
+                        startToken: 'entity.name.function.js',
                         rules: functionChild
                     },
                     {

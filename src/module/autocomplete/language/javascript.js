@@ -5,8 +5,25 @@
  */
 import Util from '@/common/Util';
 
-const regs = {
-    word: /(?:^|\b)[$_a-zA-Z][$_a-zA-Z0-9]*(?:$|\b)/mg
+const variableMap = {
+    'entity.name.function.js': true,
+    'entity.name.class.js': true,
+    'variable.function.js': true,
+    'variable.class.js': true,
+    'variable.parameter.js': true,
+    'variable.language.js': true,
+    'variable.other.js': true,
+    'support.function.js': true,
+    'support.class.js': true,
+    'support.constant.js': true,
+    'constant.language.js': true,
+}
+
+const iconMap = {
+    'entity.name.function.js': 'icon-function',
+    'entity.name.class.js': 'icon-class',
+    'support.function.js': 'icon-function',
+    'support.class.js': 'icon-class',
 }
 
 class Searcher {
@@ -34,7 +51,6 @@ class Searcher {
         this._search();
     }
     _search() {
-        let exec = null;
         let results = [];
         let count = 0;
         let startTime = Date.now();
@@ -52,7 +68,7 @@ class Searcher {
                 }
             }
             if (pass && lineObj.text.length < 10000) { //大于10000个字符，跳过该行
-                _run.call(this, lineObj.text);
+                _run.call(this, lineObj.tokens || []);
             }
             if (++count % 100 == 0 && Date.now() - startTime > 20) {
                 this.searchTimer = setTimeout(() => {
@@ -64,21 +80,32 @@ class Searcher {
         }
         _send.call(this);
 
-        function _run(text) {
-            while (exec = regs.word.exec(text)) {
-                let result = Util.fuzzyMatch(this.word, exec[0]);
-                if (!doneMap[exec[0]]) {
-                    if (result) {
-                        results.push({
-                            result: exec[0],
-                            indexs: result.indexs,
-                            score: result.score
-                        });
+        function _run(tokens) {
+            tokens.forEach((item) => {
+                if (variableMap[item.type]) {
+                    if (doneMap[item.value]) {
+                        if (typeof doneMap[item.value] === 'object') {
+                            doneMap[item.value].icon = doneMap[item.value].icon || iconMap[item.type];
+                        }
+                    } else {
+                        let value = item.value.replace(/\s/g, '');
+                        let result = Util.fuzzyMatch(this.word, value);
+                        if (result) {
+                            let obj = {
+                                result: value,
+                                type: item.type,
+                                icon: iconMap[item.type] || '',
+                                indexs: result.indexs,
+                                score: result.score
+                            };
+                            results.push(obj);
+                            doneMap[item.value] = obj;
+                        } else {
+                            doneMap[item.value] = true;
+                        }
                     }
-                    doneMap[exec[0]] = true;
                 }
-            }
-            regs.word.lastIndex = 0;
+            });
         }
 
         function _send() {

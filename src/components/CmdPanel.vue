@@ -9,7 +9,7 @@
 			<div class="my-cmd-search">
 				<input type="text" v-model="searchText" />
 			</div>
-			<Menu :checkable="true" :menuList="_menuList" @change="onChange" style="position:relative"></Menu>
+			<Menu :checkable="true" :menuList="_menuList" :value="value" @change="onChange" style="position:relative"></Menu>
 		</div>
 	</div>
 </template>
@@ -26,6 +26,9 @@ export default {
         menuList: {
             type: Array,
             default: []
+        },
+        value: {
+            type: [Number, String]
         },
         visible: Boolean
     },
@@ -54,7 +57,7 @@ export default {
         searchMenu() {
             if (this.searchText) {
                 let menu = this.menuList[0].filter((item) => {
-                    return Util.fuzzyMatch(this.searchText, item.value);
+                    return Util.fuzzyMatch(this.searchText, item.name);
                 });
                 this._menuList = [menu];
             } else {
@@ -64,8 +67,8 @@ export default {
         onChange(item) {
             switch (item.op) {
                 case 'changeTheme':
-                    this.theme.loadXml(item.path);
-                    window.globalData.nowTheme = item.path;
+                    this.theme.loadXml(item.value);
+                    window.globalData.nowTheme = item.value;
                     break;
             }
             this.$emit('update:visible', false);
