@@ -5,6 +5,8 @@
  */
 import Util from '@/common/Util';
 
+const wordReg = /(?:^|\b)[$_a-zA-Z][$_a-zA-Z0-9]*$/;
+
 const variableMap = {
     'entity.name.function.js': true,
     'entity.name.class.js': true,
@@ -32,14 +34,14 @@ class Searcher {
         this.initProperties(editor, context);
     }
     initProperties(editor, context) {
-        Util.defineProperties(this, editor, ['language', 'tokenizer', 'autocomplete', 'setAutoTip']);
+        Util.defineProperties(this, editor, ['language', 'cursor', 'tokenizer', 'autocomplete', 'setAutoTip']);
         Util.defineProperties(this, context, ['htmls']);
     }
-    reset(word, searcherId) {
+    reset(searcherId) {
         this.startTime = Date.now();
         this.nowIndex = 0;
         this.preResults = [];
-        this.word = word;
+        this.word = this.getNowWord();
         this.searcherId = searcherId;
     }
     stop() {
@@ -47,8 +49,8 @@ class Searcher {
     }
     search(option) {
         clearTimeout(this.searchTimer);
-        this.reset(option.word, option.searcherId);
-        this._search();
+        this.reset(option.searcherId);
+        this.word && this._search();
     }
     _search() {
         let results = [];
@@ -93,6 +95,7 @@ class Searcher {
                         if (result) {
                             let obj = {
                                 result: value,
+                                word: this.word,
                                 type: item.type,
                                 icon: iconMap[item.type] || '',
                                 indexs: result.indexs,
@@ -117,6 +120,28 @@ class Searcher {
                 this.setAutoTip(results);
                 this.preResults = results;
             }
+        }
+    }
+    getNowWord() {
+        let preWord = '';
+        let multiCursorPos = this.cursor.multiCursorPos.toArray();
+        for (let i = 0; i < multiCursorPos.length; i++) {
+            let word = _getWord.call(this, multiCursorPos[i]);
+            if (!word || preWord && word !== preWord) {
+                this.word = '';
+                this.setAutoTip(null);
+                return '';
+            }
+            preWord = word;
+        }
+        return preWord;
+
+        function _getWord(cursorPos) {
+            let text = this.htmls[cursorPos.line - 1].text;
+            text = text.slice(0, cursorPos.column);
+            text = wordReg.exec(text);
+            text = text && text[0];
+            return text;
         }
     }
 }

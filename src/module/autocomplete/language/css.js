@@ -6,6 +6,8 @@
 import Util from '@/common/Util';
 import CssData from '@/data/browsers.css-data.js';
 
+const wordReg = /[^\s\;\,\:\{\}\+\*\~]+$/;
+
 const selectorMap = {
     'entity.name.tag.css': true,
     'entity.other.attribute-name.id.css': true,
@@ -22,7 +24,7 @@ class Searcher {
         this.initCssData();
     }
     initProperties(editor, context) {
-        Util.defineProperties(this, editor, ['language', 'tokenizer', 'autocomplete', 'setAutoTip']);
+        Util.defineProperties(this, editor, ['language', 'cursor', 'tokenizer', 'autocomplete', 'setAutoTip']);
         Util.defineProperties(this, context, ['htmls']);
     }
     initCssData() {
@@ -33,20 +35,19 @@ class Searcher {
             this.propertyMap[item.name] = item;
         });
     }
-    reset(word, searcherId, cursorPos) {
+    reset(searcherId) {
         this.startTime = Date.now();
         this.nowIndex = 0;
         this.preResults = [];
-        this.word = word;
+        this.word = this.getNowWord();
         this.searcherId = searcherId;
-        this.cursorPos = cursorPos;
     }
     stop() {
         clearTimeout(this.timer);
     }
     search(option) {
         clearTimeout(this.searchTimer);
-        this.reset(option.word, option.searcherId, option.cursorPos);
+        this.reset(option.searcherId);
         this._search();
     }
     _search() {
@@ -55,13 +56,16 @@ class Searcher {
         let startTime = Date.now();
         let doneMap = {};
         let nowToken = _getType.call(this);
-        if (nowToken.type === 'property') {
-            _findProperty.call(this);
+        if (nowToken.type === 'value') {
+            _findValue.call(this);
             _send.call(this);
             return;
         }
-        if (nowToken.type === 'value') {
-            _findValue.call(this);
+        if (!this.word) { //单词为空直接返回
+            return;
+        }
+        if (nowToken.type === 'property') {
+            _findProperty.call(this);
             _send.call(this);
             return;
         }
@@ -107,6 +111,7 @@ class Searcher {
                         if (result) {
                             let obj = {
                                 result: value,
+                                word: this.word,
                                 type: item.type,
                                 icon: iconMap[item.type] || '',
                                 indexs: result.indexs,
@@ -128,6 +133,7 @@ class Searcher {
                 if (result) {
                     let obj = {
                         result: item,
+                        word: this.word,
                         type: 'punctuation.terminator.rule.css',
                         icon: 'icon-property',
                         indexs: result.indexs,
@@ -141,19 +147,33 @@ class Searcher {
         function _findValue() {
             let property = nowToken.property;
             if (this.propertyMap[property] && this.propertyMap[property].values) {
-                this.propertyMap[property].values.forEach((item) => {
-                    let result = Util.fuzzyMatch(this.word, item.name);
-                    if (result) {
-                        let obj = {
+                if (this.word) {
+                    this.propertyMap[property].values.forEach((item) => {
+                        let result = Util.fuzzyMatch(this.word, item.name);
+                        if (result) {
+                            let obj = {
+                                result: item.name,
+                                word: this.word,
+                                type: 'support.constant.property-value.css',
+                                icon: 'icon-value',
+                                indexs: result.indexs,
+                                score: result.score
+                            };
+                            results.push(obj);
+                        }
+                    });
+                } else { //单词为空，列出所有可选值
+                    this.propertyMap[property].values.forEach((item) => {
+                        results.push({
                             result: item.name,
+                            word: '',
                             type: 'support.constant.property-value.css',
                             icon: 'icon-value',
-                            indexs: result.indexs,
-                            score: result.score
-                        };
-                        results.push(obj);
-                    }
-                });
+                            indexs: [],
+                            score: 0
+                        });
+                    });
+                }
             }
         }
 
@@ -213,6 +233,29 @@ class Searcher {
                 line--;
             }
             return 'selector';
+        }
+    }
+    getNowWord() {
+        let preWord = '';
+        let multiCursorPos = this.cursor.multiCursorPos.toArray();
+        this.cursorPos = multiCursorPos[0];
+        for (let i = 0; i < multiCursorPos.length; i++) {
+            let word = _getWord.call(this, multiCursorPos[i]);
+            if (!word || preWord && word !== preWord) {
+                this.word = '';
+                this.setAutoTip(null);
+                return;
+            }
+            preWord = word;
+        }
+        return preWord;
+
+        function _getWord(cursorPos) {
+            let text = this.htmls[cursorPos.line - 1].text;
+            text = text.slice(0, cursorPos.column);
+            text = wordReg.exec(text);
+            text = text && text[0];
+            return text;
         }
     }
 }

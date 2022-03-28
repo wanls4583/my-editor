@@ -154,9 +154,9 @@ export default {
             },
             cursorVisible: true,
             cursorFocus: true,
-            // language: 'HTML',
+            language: 'HTML',
             // language: 'JavaScript',
-            language: 'CSS',
+            // language: 'CSS',
             // language: '',
             tabSize: 4,
             renderHtmls: [],
@@ -916,8 +916,8 @@ export default {
         },
         // 选中自动提示
         onClickAuto(item) {
-            let word = this.autocomplete.getNowWord(this.nowCursorPos);
             let ranges = [];
+            let word = item.word || '';
             this.cursor.multiCursorPos.forEach((item) => {
                 ranges.push({
                     start: {

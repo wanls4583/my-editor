@@ -8,11 +8,6 @@ import JsSearcher from '../language/javascript';
 import HtmlSearcher from '../language/html';
 import CssSearcher from '../language/css';
 
-const regs = {
-    'JavaScript': /(?:^|\b)[$_a-zA-Z][$_a-zA-Z0-9]*$/,
-    'CSS': /[^\s\;\,\:\{\}\+\*\~]+$/,
-}
-
 export default class {
     constructor(editor, context) {
         this.searcherId = 0;
@@ -22,7 +17,7 @@ export default class {
         this.initProperties(editor, context);
     }
     initProperties(editor, context) {
-        Util.defineProperties(this, editor, ['language', 'cursor', 'tokenizer', 'setAutoTip']);
+        Util.defineProperties(this, editor, ['language', 'tokenizer', 'setAutoTip']);
         Util.defineProperties(this, context, ['htmls']);
     }
     search() {
@@ -32,8 +27,6 @@ export default class {
         });
 
         function _search() {
-            let multiCursorPos = this.cursor.multiCursorPos.toArray();
-            let preWord = '';
             let type = '';
             this.clearSearch();
             if (this.language == 'HTML') {
@@ -49,20 +42,10 @@ export default class {
                     type = 'CSS';
                 }
             }
-            for (let i = 0; i < multiCursorPos.length; i++) {
-                let word = this.getNowWord(multiCursorPos[i], type);
-                if (!word || preWord && word !== preWord) {
-                    this.setAutoTip(null);
-                    return;
-                }
-                preWord = word;
-            }
             this.searcherId++;
             this.searcher = this.getSearcher(type);
             this.searcher && this.searcher.search({
-                word: preWord,
-                searcherId: this.searcherId,
-                cursorPos: multiCursorPos[0]
+                searcherId: this.searcherId
             });
         }
     }
@@ -88,13 +71,5 @@ export default class {
                 break;
         }
         return searcher;
-    }
-    getNowWord(cursorPos, type) {
-        let text = this.htmls[cursorPos.line - 1].text;
-        text = text.slice(0, cursorPos.column);
-        type = type || this.language;
-        text = regs[type].exec(text);
-        text = text && text[0];
-        return text;
     }
 }
