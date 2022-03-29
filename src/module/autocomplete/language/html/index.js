@@ -29,7 +29,7 @@ class Searcher {
                     result: this.word,
                     word: this.word,
                     type: 'tag.html',
-                    icon: 'icon-emmet',
+                    icon: 'icon-property',
                     indexs: [],
                     score: 0
                 }]);

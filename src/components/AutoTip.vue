@@ -45,10 +45,6 @@ export default {
             }
         }
     },
-    watch: {
-        // tipList(newVal) {
-        // }
-    },
     created() {
     },
     methods: {
@@ -91,8 +87,5 @@ export default {
 }
 .icon-value {
     color: lightblue;
-}
-.icon-emmet {
-    color: #F92672;
 }
 </style>
