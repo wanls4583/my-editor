@@ -4,10 +4,14 @@
  * @Description: 
  */
 import Util from '@/common/Util';
+import HtmlData from '@/data/browsers.html-data';
+
 const regs = {
-    word: /[^\s]+$/,
-    emmet: /^[a-zA-Z][a-zA-Z0-9\-]*(?:\*\d+)?(?:[\>\+][a-zA-Z][a-zA-Z0-9\-]*(?:\*\d+)?)*$/,
-    paremEmmet: /\([a-zA-Z][a-zA-Z0-9\-]*(?:\*\d+)?(?:[\>\+][a-zA-Z][a-zA-Z0-9\-]*(?:\*\d+)?)*\)/g,
+    word: /^[a-zA-Z][a-zA-Z0-9]*$/,
+    emmetChar: /\w/,
+    emmetWord: /[^\s]+$/,
+    emmet: /^[a-zA-Z][a-zA-Z0-9\-]*(?:[\.\#][^\.\#\>\<\+\*\(\)]*)*(?:\*\d+)?(?:[\>\+][a-zA-Z][a-zA-Z0-9\-]*(?:[\.\#][^\.\#\>\<\+\*\(\)]*)*(?:\*\d+)?)*$/,
+    paremEmmet: /\([a-zA-Z][a-zA-Z0-9\-]*(?:[\.\#][^\.\#\>\<\+\*\(\)]*)*(?:\*\d+)?(?:[\>\+][a-zA-Z][a-zA-Z0-9\-]*(?:[\.\#][^\.\#\>\<\+\*\(\)]*)*(?:\*\d+)?)*\)/g,
     invalidEmmetParen: /\)\>/,
 }
 
@@ -16,10 +20,17 @@ class Searcher {
         this.editor = editor;
         this.context = context;
         this.initProperties(editor, context);
+        this.initTagData();
     }
     initProperties(editor, context) {
         Util.defineProperties(this, editor, ['cursor', 'setAutoTip']);
         Util.defineProperties(this, context, ['htmls']);
+    }
+    initTagData() {
+        this.tagMap = {};
+        HtmlData.tags.forEach((item) => {
+            this.tagMap[item.name] = item;
+        });
     }
     search() {
         let tokenType = _getType.call(this);
@@ -53,9 +64,16 @@ class Searcher {
                             if (tokens[i].type === 'punctuation.definition.tag.end.html' ||
                                 tokens[i].type === 'punctuation.definition.comment.close.html') {
                                 result.type = 'tag';
-                                result.column = tokens[i].column + tokens[i].value.length;
+                                if (line === cursorPos.line && !result.column) {
+                                    result.column = tokens[i].column + tokens[i].value.length;
+                                }
                                 return result;
-                            } else if (tokens[i].type !== 'plain') {
+                            } else if (tokens[i].type === 'plain') {
+                                if (line === cursorPos.line && !result.column &&
+                                    tokens[i].column + tokens[i].value.length < result.column) {
+                                    result.column = tokens[i].column + tokens[i].value.length;
+                                }
+                            } else {
                                 result.type = tokens[i].type;
                                 return result;
                             }
@@ -82,22 +100,35 @@ class Searcher {
     }
     getNowWord(start) {
         let multiCursorPos = this.cursor.multiCursorPos.toArray();
-        let cursorPos = multiCursorPos[0];
-        let text = this.htmls[cursorPos.line - 1].text.slice(start, cursorPos.column);
-        let word = text.match(regs.word);
-        if (word) {
-            word = word[0];
-            for (let i = 1; i < multiCursorPos.length; i++) {
-                let _cursorPos = multiCursorPos[i];
-                let _word = this.htmls[_cursorPos.line - 1].text.slice(_cursorPos.column - word.length, _cursorPos.column)
-                if (!_word || _word !== word) {
-                    this.setAutoTip(null);
-                    return '';
+        let line = multiCursorPos[0].line;
+        let column = multiCursorPos[0].column;
+        let text = this.htmls[line - 1].text;
+        if ((!column || text[column - 1].match(/\w/)) &&
+            (column === text.length || !text[column].match(regs.emmetChar))) { //当前光标位置必须处于单词边界
+            text = text.slice(start, column)
+            let word = text.match(regs.emmetWord);
+            if (word) {
+                word = word[0];
+                if (regs.word.test(word)) { //单个单词，判断是否为html标签名
+                    if (!this.tagMap[word]) {
+                        this.setAutoTip(null);
+                        return '';
+                    }
                 }
-            }
+                for (let i = 1; i < multiCursorPos.length; i++) {
+                    let _cursorPos = multiCursorPos[i];
+                    let _word = this.htmls[_cursorPos.line - 1].text.slice(_cursorPos.column - word.length, _cursorPos.column)
+                    if (!_word || _word !== word) {
+                        this.setAutoTip(null);
+                        return '';
+                    }
+                }
 
+            }
+            return word;
         }
-        return word;
+        this.setAutoTip(null);
+        return '';
     }
 }
 

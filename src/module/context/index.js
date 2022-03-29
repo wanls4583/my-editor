@@ -7,8 +7,8 @@ import Util from '@/common/Util';
 
 const regs = {
     word: /[a-zA-Z0-9_]/,
-    emmetWord: /^[^\+\>\*\(\)]+/,
-    emmetAttr: /^[\.\#]([a-zA-Z][a-zA-Z\-]*)/,
+    emmetWord: /^[a-zA-Z][a-zA-Z0-9\-]*/,
+    emmetAttr: /^[\.\#]([^\.\#\>\<\+\*\(\)]*)/,
     emmetNum: /^\*(\d+)/,
     dWord: Util.fullAngleReg,
     space: /\s/
