@@ -6,11 +6,14 @@
 <template>
 	<div :style="styles" @mousedown.stop class="my-auto">
 		<div class="my-light-bg">
-			<div :class="{active: item.active}" @mousedown="onClick(item)" class="my-auto-item" v-for="item in tipList">
-				<div :class="[item.icon]" class="my-auto-icon iconfont"></div>
-				<div class="my-auto-content">
-					<span v-html="_html(item)"></span>
+			<div :class="{active: item.active}" @mousedown="onClick(item)" class="my-auto-item my-center-between" v-for="item in tipList">
+				<div class="my-center-between">
+					<div :class="[item.icon]" class="my-auto-icon my-center-center iconfont"></div>
+					<div class="my-auto-content">
+						<span v-html="_html(item)"></span>
+					</div>
 				</div>
+				<div class="my-auto-desc">{{item.desc}}</div>
 			</div>
 		</div>
 	</div>

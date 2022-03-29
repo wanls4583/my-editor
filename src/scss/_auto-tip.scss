@@ -13,8 +13,6 @@
 
     &-auto-item {
         position: relative;
-        display: flex;
-        align-items: center;
         height: 25px;
         padding-right: 10px;
         white-space: nowrap;
@@ -27,9 +25,11 @@
     }
 
     &-auto-icon {
-        display: flex;
-        align-items: center;
-        justify-content: center;
         width: 25px;
+    }
+
+    &-auto-desc {
+        opacity: 0.6;
+        margin-left: 50px;
     }
 }

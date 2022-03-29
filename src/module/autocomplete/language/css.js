@@ -112,6 +112,7 @@ class Searcher {
                             let obj = {
                                 result: value,
                                 word: this.word,
+                                desc: 'CSS Selector',
                                 type: item.type,
                                 icon: iconMap[item.type] || '',
                                 indexs: result.indexs,
@@ -134,6 +135,7 @@ class Searcher {
                     let obj = {
                         result: item,
                         word: this.word,
+                        desc: 'CSS Property Name',
                         type: 'property-name.css',
                         icon: 'icon-property',
                         indexs: result.indexs,
@@ -154,6 +156,7 @@ class Searcher {
                             let obj = {
                                 result: item.name,
                                 word: this.word,
+                                desc: 'CSS Property Value',
                                 type: 'property-value.css',
                                 icon: 'icon-value',
                                 indexs: result.indexs,
@@ -167,6 +170,7 @@ class Searcher {
                         results.push({
                             result: item.name,
                             word: '',
+                            desc: 'CSS Property Value',
                             type: 'property-value.css',
                             icon: 'icon-value',
                             indexs: [],

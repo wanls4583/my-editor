@@ -930,7 +930,7 @@ export default {
                     }
                 });
             });
-            this.myContext.replace(item.result, ranges);
+            this.myContext.replaceTip(item, ranges);
             this.autoTipList = null;
             this.focus();
         },
