@@ -33,20 +33,34 @@ class Searcher {
         });
     }
     search() {
+        let emmetExpr = this.getEmmetExpr();
+        if (emmetExpr) {
+            this.setAutoTip([{
+                result: emmetExpr.word,
+                word: emmetExpr.word,
+                lookahead: emmetExpr.lookahead,
+                desc: 'Emmet Abbreviation',
+                type: 'tag.html',
+                icon: 'icon-property',
+                indexs: [],
+                score: 0
+            }]);
+        }
+    }
+    checkEmmetValid(text) {
+        let _text = '';
+        if (regs.invalidEmmetParen.exec(text)) {
+            return false;
+        }
+        while (text !== (_text = text.replace(regs.paremEmmet, 'a'))) {
+            text = _text;
+        }
+        return !!regs.emmet.exec(text);
+    }
+    getEmmetExpr() {
         let tokenType = _getType.call(this);
         if (tokenType.type === 'tag') {
-            this.word = this.getNowWord(tokenType.column);
-            if (this.word && this.checkEmmetValid(this.word)) {
-                this.setAutoTip([{
-                    result: this.word,
-                    word: this.word,
-                    desc: 'Emmet Abbreviation',
-                    type: 'tag.html',
-                    icon: 'icon-property',
-                    indexs: [],
-                    score: 0
-                }]);
-            }
+            return this.getNowWord(tokenType.column);
         }
 
         function _getType() {
@@ -85,34 +99,27 @@ class Searcher {
             return result;
         }
     }
-    stop() {
-
-    }
-    checkEmmetValid(text) {
-        let _text = '';
-        if (regs.invalidEmmetParen.exec(text)) {
-            return false;
-        }
-        while (text !== (_text = text.replace(regs.paremEmmet, 'a'))) {
-            text = _text;
-        }
-        return !!regs.emmet.exec(text);
-    }
     getNowWord(start) {
         let multiCursorPos = this.cursor.multiCursorPos.toArray();
         let line = multiCursorPos[0].line;
         let column = multiCursorPos[0].column;
         let text = this.htmls[line - 1].text;
-        if ((!column || text[column - 1].match(/\w/)) &&
+        if (text[column - 1] === ')' || (!column || text[column - 1].match(/\w/)) &&
             (column === text.length || !text[column].match(regs.emmetChar))) { //当前光标位置必须处于单词边界
-            text = text.slice(start, column)
-            let word = text.match(regs.emmetWord);
-            if (word) {
+            let word = text.slice(start, column).match(regs.emmetWord);
+            let lookahead = 0;
+            while (word && !this.checkEmmetValid(word[0]) && text[column] === ')') {
+                column++;
+                lookahead++;
+                word = text.slice(start, column).match(regs.emmetWord);
+            }
+            if (word && this.checkEmmetValid(word[0])) {
+                column = start + word.index;
                 word = word[0];
                 if (regs.word.test(word)) { //单个单词，判断是否为html标签名
                     if (!this.tagMap[word]) {
                         this.setAutoTip(null);
-                        return '';
+                        return null;
                     }
                 }
                 for (let i = 1; i < multiCursorPos.length; i++) {
@@ -120,15 +127,17 @@ class Searcher {
                     let _word = this.htmls[_cursorPos.line - 1].text.slice(_cursorPos.column - word.length, _cursorPos.column)
                     if (!_word || _word !== word) {
                         this.setAutoTip(null);
-                        return '';
+                        return null;
                     }
                 }
-
+                return {
+                    word: word,
+                    lookahead: lookahead
+                };
             }
-            return word;
         }
         this.setAutoTip(null);
-        return '';
+        return null;
     }
 }
 

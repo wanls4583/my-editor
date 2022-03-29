@@ -51,7 +51,7 @@ export default class {
         }
     }
     clearSearch() {
-        this.searcher && this.searcher.stop();
+        this.searcher && this.searcher.stop && this.searcher.stop();
         this.searcherId++;
     }
     getSearcher(type) {
