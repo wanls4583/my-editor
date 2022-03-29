@@ -17,7 +17,7 @@ export default class {
         this.initProperties(editor, context);
     }
     initProperties(editor, context) {
-        Util.defineProperties(this, editor, ['language', 'tokenizer', 'setAutoTip']);
+        Util.defineProperties(this, editor, ['language', 'cursor', 'tokenizer', 'setAutoTip']);
         Util.defineProperties(this, context, ['htmls']);
     }
     search() {
@@ -30,6 +30,7 @@ export default class {
             let type = '';
             this.clearSearch();
             if (this.language == 'HTML') {
+                let multiCursorPos = this.cursor.multiCursorPos.toArray();
                 let states = this.htmls[multiCursorPos[0].line - 1].states || [];
                 states = states.map((item) => {
                     return this.tokenizer.ruleIdMap[item].name

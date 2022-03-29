@@ -134,7 +134,7 @@ class Searcher {
                     let obj = {
                         result: item,
                         word: this.word,
-                        type: 'punctuation.terminator.rule.css',
+                        type: 'property-name.css',
                         icon: 'icon-property',
                         indexs: result.indexs,
                         score: result.score
@@ -154,7 +154,7 @@ class Searcher {
                             let obj = {
                                 result: item.name,
                                 word: this.word,
-                                type: 'support.constant.property-value.css',
+                                type: 'property-value.css',
                                 icon: 'icon-value',
                                 indexs: result.indexs,
                                 score: result.score
@@ -167,7 +167,7 @@ class Searcher {
                         results.push({
                             result: item.name,
                             word: '',
-                            type: 'support.constant.property-value.css',
+                            type: 'property-value.css',
                             icon: 'icon-value',
                             indexs: [],
                             score: 0
@@ -194,7 +194,7 @@ class Searcher {
                 let tokens = this.htmls[line - 1].tokens;
                 if (tokens) {
                     for (let i = tokens.length - 1; i >= 0; i--) {
-                        if (line < this.cursorPos.line || tokens[i].column <= this.cursorPos.column) {
+                        if (line < this.cursorPos.line || tokens[i].column < this.cursorPos.column) {
                             if (tokens[i].type === 'punctuation.separator.key-value.css') {
                                 if (line < this.cursorPos.line) {
                                     return {

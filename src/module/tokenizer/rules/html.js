@@ -164,6 +164,8 @@ export default {
     }, {
         start: `\\<\\!\\-\\-`,
         end: `\\-\\-\\>`,
+        startToken: 'punctuation.definition.comment.open.html',
+        endToken: 'punctuation.definition.comment.close.html',
         token: 'comment.block.html',
         foldName: 'xml-comment'
     }]
