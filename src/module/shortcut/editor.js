@@ -145,7 +145,11 @@ export default class {
             switch (e.keyCode) {
                 case 9: //tab键
                     e.preventDefault();
-                    this.insertContent('\t');
+                    if (this.autoTipList && this.autoTipList.length) {
+                        this.selectAutoTip();
+                    } else {
+                        this.insertContent('\t');
+                    }
                     break;
                 case 37: //left arrow
                     _moveCursor('left');
