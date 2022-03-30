@@ -8,13 +8,41 @@
 <dict>
 	<key>name</key>
 	<string>Monokai</string>
+	<key>globalSettings</key>
+	<dict>
+		<key>window</key>
+		<dict>
+			<key>foreground</key>
+			<string>rgb(205,205,205)</string>
+		</dict>
+		<key>menuBar</key>
+		<dict>
+			<key>background</key>
+			<string>rgb(60,60,60)</string>
+		</dict>
+		<key>statusBar</key>
+		<dict>
+			<key>background</key>
+			<string>rgb(60,60,60)</string>
+		</dict>
+		<key>sideBar</key>
+		<dict>
+			<key>background</key>
+			<string>rgb(37,37,37)</string>
+		</dict>
+		<key>editorBar</key>
+		<dict>
+			<key>background</key>
+			<string>rgb(45,45,45)</string>
+		</dict>
+	</dict>
 	<key>settings</key>
 	<array>
 		<dict>
 			<key>settings</key>
 			<dict>
 				<key>background</key>
-				<string>rgb(40,41,35)</string>
+				<string>rgb(30,30,30)</string>
 				<key>caret</key>
 				<string>#F8F8F0</string>
 				<key>foreground</key>

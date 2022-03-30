@@ -51,10 +51,17 @@ export default class {
         cssText += `.my-select-bg.active,.my-search-bg.active{background-color:${selection};}\n`;
         cssText += `.my-scroller::-webkit-scrollbar-corner{background-color:${background};}\n`;
         if (globalSettings) {
+            let window = globalSettings.window;
             let menu = globalSettings.menu;
             let menuBar = globalSettings.menuBar;
             let statusBar = globalSettings.statusBar;
             let sideBar = globalSettings.sideBar;
+            let editorBar = globalSettings.editorBar;
+            if (window) {
+                cssText += `.my-window{\n`;
+                cssText += _joinStyle(window);
+                cssText += `}\n`;
+            }
             if (menu) {
                 cssText += `.my-menu .my-light-bg{\n`;
                 cssText += _joinStyle(menu);
@@ -71,8 +78,13 @@ export default class {
                 cssText += `}\n`;
             }
             if (sideBar) {
-                cssText += `.my-sider-bar .my-light-bg{\n`;
+                cssText += `.my-side-bar .my-light-bg{\n`;
                 cssText += _joinStyle(sideBar);
+                cssText += `}\n`;
+            }
+            if (editorBar) {
+                cssText += `.my-editor-bar .my-light-bg{\n`;
+                cssText += _joinStyle(editorBar);
                 cssText += `}\n`;
             }
         }
@@ -91,14 +103,11 @@ export default class {
         return cssText;
 
         function _joinStyle(option) {
-            let text = '';
-            if (option.background) {
-                text += `background-color:${option.background};`;
+            let cssText = '';
+            for (let property in option) {
+                cssText += `${propertyMap[property]}:${option[property]};\n`;
             }
-            if (option.foreground) {
-                text += `color:${option.foreground};`;
-            }
-            return text;
+            return cssText;
         }
     }
     parseXmlString(xmlStr) {
