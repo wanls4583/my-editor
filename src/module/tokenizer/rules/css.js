@@ -7,9 +7,15 @@ import CssData from '@/data/browsers.css-data.js';
 const properties = [];
 const propertyMap = {};
 CssData.properties.forEach((item) => {
-    properties.push(item.name);
+    properties.push({
+        value: item.name,
+        type: 'support.type.property-name.css'
+    });
     propertyMap[item.name] = item.values && item.values.map((item) => {
-        return item.name;
+        return {
+            value: item.name,
+            type: 'support.type.property-value.css'
+        }
     }) || [];
 });
 const attrName = '[a-zA-Z][a-zA-Z0-9\\-]*';

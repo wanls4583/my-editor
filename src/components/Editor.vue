@@ -11,12 +11,12 @@
 				class="my-num"
 				v-for="line in renderHtmls"
 			>
-				<span @mouseleave="onIconMouseLeave" @mouseover="onIconMouseOver(line.num, $event)" class="my-line-icon my-center">
+				<span @mouseleave="onIconMouseLeave" @mouseover="onIconMouseOver(line.num, $event)" class="my-line-icon my-center-center">
 					<i class="my-icon-error" style="margin-top:-2px" v-if="errorMap[line.num]"></i>
 				</span>
 				<span class="num">{{line.num}}</span>
 				<!-- 折叠图标 -->
-				<span :class="[line.fold=='open'?'my-fold-open':'my-fold-close']" @click="onToggleFold(line.num)" class="my-fold my-center" v-if="line.fold"></span>
+				<span :class="[line.fold=='open'?'my-fold-open':'my-fold-close']" @click="onToggleFold(line.num)" class="my-fold my-center-center" v-if="line.fold"></span>
 			</div>
 		</div>
 		<div :style="{'box-shadow': _leftShadow}" class="my-content-wrap">
@@ -154,9 +154,9 @@ export default {
             },
             cursorVisible: true,
             cursorFocus: true,
-            // language: 'HTML',
+            language: 'HTML',
             // language: 'JavaScript',
-            language: 'CSS',
+            // language: 'CSS',
             // language: '',
             tabSize: 4,
             renderHtmls: [],
@@ -319,7 +319,7 @@ export default {
             if (newVal) {
                 this.showEditor();
             } else {
-                this.autocomplete.clearSearch();
+                this.autocomplete.stop();
             }
         }
     },
@@ -627,8 +627,8 @@ export default {
         },
         closeAllMenu() {
             this.menuVisible = false;
-            // this.autoTipList = null;
-            // this.autocomplete.clearSearch();
+            this.autoTipList = null;
+            this.autocomplete.stop();
         },
         // 折叠行
         foldLine(line) {
