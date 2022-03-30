@@ -522,7 +522,7 @@ export default class {
                 type = rule.token;
             }
         }
-        return type;
+        return type || 'plain';
     }
     /**
      * 获取折叠标记对象

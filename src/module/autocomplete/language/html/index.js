@@ -33,18 +33,9 @@ class Searcher {
         });
     }
     search() {
-        let emmetExpr = this.getEmmetExpr();
-        if (emmetExpr) {
-            this.setAutoTip([{
-                result: emmetExpr.word,
-                word: emmetExpr.word,
-                lookahead: emmetExpr.lookahead,
-                desc: 'Emmet Abbreviation',
-                type: 'tag.html',
-                icon: 'icon-property',
-                indexs: [],
-                score: 0
-            }]);
+        let tips = this.getTips();
+        if (tips) {
+            this.setAutoTip(tips);
         }
     }
     checkEmmetValid(text) {
@@ -57,10 +48,24 @@ class Searcher {
         }
         return !!regs.emmet.exec(text);
     }
-    getEmmetExpr() {
+    getTips() {
         let tokenType = _getType.call(this);
         if (tokenType.type === 'tag') {
-            return this.getNowWord(tokenType.column);
+            let emmetExpr = this.getEmmetExpr(tokenType.column);
+            if (emmetExpr) {
+                return [{
+                    result: emmetExpr.word,
+                    word: emmetExpr.word,
+                    lookahead: emmetExpr.lookahead,
+                    desc: 'Emmet Abbreviation',
+                    type: 'tag.html',
+                    icon: 'icon-property',
+                    indexs: [],
+                    score: 0
+                }];
+            }
+        } else if (tokenType.type === 'attrName') {
+
         }
 
         function _getType() {
@@ -99,7 +104,7 @@ class Searcher {
             return result;
         }
     }
-    getNowWord(start) {
+    getEmmetExpr(start) {
         let multiCursorPos = this.cursor.multiCursorPos.toArray();
         let line = multiCursorPos[0].line;
         let column = multiCursorPos[0].column;

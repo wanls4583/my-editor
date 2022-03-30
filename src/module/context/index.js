@@ -792,14 +792,22 @@ class Context {
 
         function _parenEmmet(text, index, tabNum) {
             let result = '';
+            let exec = null;
             while (index < text.length && text[index] != ')') {
                 let resObj = _emmet(text, index, tabNum);
                 index = resObj.index;
                 result += '\n' + resObj.result;
             }
+            index++;
             result = result.slice(1);
+            let _text = text.slice(index);
+            if (exec = regs.emmetNum.exec(_text)) {
+                let num = exec[1] - 0 || 1;
+                index += exec[0].length;
+                result = _multiply(result, num);
+            }
             return {
-                index: index + 2,
+                index: index + 1, //')'后面跟着'+'或者为结尾
                 result: result
             };
         }
