@@ -4,6 +4,7 @@
  * @Description: 
  */
 import CssData from '@/data/browsers.css-data.js';
+
 const properties = [];
 const propertyMap = {};
 CssData.properties.forEach((item) => {
@@ -18,8 +19,8 @@ CssData.properties.forEach((item) => {
         }
     }) || [];
 });
-const attrName = '[a-zA-Z][a-zA-Z0-9\\-]*';
 
+const attrName = '[a-zA-Z][a-zA-Z0-9\\-]*';
 
 const braces = {
     start: '\\{',
@@ -58,7 +59,7 @@ const braces = {
                 }, {
                     regex: '\\#[a-zA-Z0-9]+',
                     token: 'constant.other.color.rgb-value.css',
-                    auto: true
+                    auto: 'css-color'
                 }, {
                     regex: '[^\\s\\:\\;\\{\\}]+',
                     token: 'support.constant.property-value.css',

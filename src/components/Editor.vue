@@ -775,18 +775,20 @@ export default {
                 });
                 this.autoTipList = results;
                 this.autoTipList[0].active = true;
-                let width = this.$refs.autoTip.clientWidth;
-                let height = this.$refs.autoTip.clientHeight;
-                this.autoTipStyle.top = this.folder.getRelativeLine(this.nowCursorPos.line) * this.charObj.charHight;
-                this.autoTipStyle.left = this.getExactLeft(this.nowCursorPos);
-                if (this.autoTipStyle.top + height > Util.getNum(this._top) + this.$refs.render.clientHeight) {
-                    this.autoTipStyle.top -= height + this.charObj.charHight;
-                }
-                if (this.autoTipStyle.left + width > this.scrollLeft + this.scrollerArea.width) {
-                    this.autoTipStyle.left -= width;
-                }
-                this.autoTipStyle.top += 'px';
-                this.autoTipStyle.left += 'px';
+                this.$nextTick(() => {
+                    let width = this.$refs.autoTip.$el.clientWidth;
+                    let height = this.$refs.autoTip.$el.clientHeight;
+                    this.autoTipStyle.top = this.folder.getRelativeLine(this.nowCursorPos.line) * this.charObj.charHight;
+                    this.autoTipStyle.left = this.getExactLeft(this.nowCursorPos);
+                    if (this.autoTipStyle.top + height > Util.getNum(this._top) + this.$refs.render.clientHeight) {
+                        this.autoTipStyle.top -= height + this.charObj.charHight;
+                    }
+                    if (this.autoTipStyle.left + width > this.scrollLeft + this.scrollerArea.width) {
+                        this.autoTipStyle.left -= width;
+                    }
+                    this.autoTipStyle.top += 'px';
+                    this.autoTipStyle.left += 'px';
+                });
             } else {
                 //内容改变时会触发setAutoTip(null)
                 this.setAutoTip.hideTimer = setTimeout(() => {

@@ -68,7 +68,7 @@ class Autocomplete {
         if (nowRule.autoHintPre) {
             let list = this.getPreAutoList(nowToken) || {};
             list.forEach((item) => {
-                _addTip(item.value, item.type, true, nowToken.value.length);
+                _addTip('', item.value, item.type, true);
             });
             _showTip.call(this, true);
             return;
@@ -78,7 +78,7 @@ class Autocomplete {
         function _findInList(list) {
             for (let i = this.nowIndex; i < list.length; i++) {
                 let item = list[i];
-                _addTip(item.value, item.type);
+                _addTip(nowToken.value, item.value, item.type);
                 if (++count % 100 == 0 && Date.now() - startTime > 20) {
                     this.searchTimer = setTimeout(() => {
                         this.nowIndex = i + 1;
@@ -100,7 +100,7 @@ class Autocomplete {
                 tokens.forEach((item) => {
                     let rule = this.tokenizer.ruleIdMap[item.ruleId];
                     if (rule && rule.auto === nowRule.auto) {
-                        _addTip(item.value, item.type);
+                        _addTip(nowToken.value, item.value, item.type);
                     }
                 });
                 if (++count % 100 == 0 && Date.now() - startTime > 20) {
@@ -114,7 +114,7 @@ class Autocomplete {
             _showTip.call(this);
         }
 
-        function _addTip(value, type, skip, lookahead) {
+        function _addTip(word, value, type, skip, lookahead) {
             if (doneMap[value]) {
                 if (typeof doneMap[value] === 'object') {
                     doneMap[value].icon = doneMap[value].icon || iconMap[type];
@@ -127,12 +127,12 @@ class Autocomplete {
                         score: 0
                     };
                 } else {
-                    result = Util.fuzzyMatch(nowToken.value, value);
+                    result = Util.fuzzyMatch(word, value);
                 }
                 if (result) {
                     let obj = {
                         result: value,
-                        word: nowToken.value,
+                        word: word,
                         type: type,
                         icon: iconMap[type] || '',
                         indexs: result.indexs,

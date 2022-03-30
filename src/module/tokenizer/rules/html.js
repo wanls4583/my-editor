@@ -5,38 +5,69 @@
  */
 import jsRule from './javascript.js';
 import cssRule from './css.js';
+import CssData from '@/data/browsers.css-data.js';
+
+const properties = [];
+const propertyMap = {};
+CssData.properties.forEach((item) => {
+    properties.push({
+        value: item.name,
+        type: 'support.type.property-name.css'
+    });
+    propertyMap[item.name] = item.values && item.values.map((item) => {
+        return {
+            value: item.name,
+            type: 'support.type.property-value.css'
+        }
+    }) || [];
+});
 
 const noEscape = '(?:[^\\\\]|^)(?:\\\\\\\\)*';
 const attrName = '[a-zA-Z][a-zA-Z0-9\\-]*';
 
 const styleRules = [{
-    regex: `[a-zA-Z_][a-zA-Z-]*?(?=\\s*?\\:)`,
-    token: 'support.type.property-name.css'
-}, {
-    start: `\\:`,
-    end: `\\;`,
-    startToken: 'punctuation.separator.key-value.css',
-    endToken: 'punctuation.terminator.rule.css',
-    rules: [{
-        regex: `[\\-\\+]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)`,
-        token: 'constant.numeric.css'
-    }, {
-        regex: `(?<=\\d)(?:px|%)`,
-        token: 'keyword.other.unit.css'
-    }, {
-        regex: `\\#[a-zA-Z0-9]+`,
-        token: 'constant.other.color.rgb-value.css'
-    }, {
-        regex: `[^\\s\\:\\;\\{\\}'"]+`,
-        token: 'support.constant.property-value.css'
-    }, {
-        regex: `\\b"[^"]*?"\\b`,
-        token: 'support.constant.property-value.string.quoted.double.css'
-    }, {
-        regex: `\\b'[^']*?'\\b`,
-        token: 'support.constant.property-value.string.quoted.single.css'
-    }]
-}];
+        regex: `[a-zA-Z_][a-zA-Z-]*?(?=\\s*?\\:)`,
+        token: 'support.type.property-name.css',
+        auto: properties,
+        autoByMap: propertyMap,
+        autoName: 'html-css-values'
+    },
+    {
+        start: `(?=\\:)`,
+        end: `(?<=\\;)`,
+        rules: [{
+                regex: '\\:',
+                token: 'punctuation.separator.key-value.css',
+                autoHintPre: 'html-css-values'
+            },
+            {
+                regex: '\\;',
+                token: 'punctuation.terminator.rule.css'
+            },
+            {
+                regex: `[\\-\\+]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)`,
+                token: 'constant.numeric.css'
+            }, {
+                regex: `(?<=\\d)(?:px|%)`,
+                token: 'keyword.other.unit.css'
+            }, {
+                regex: `\\#[a-zA-Z0-9]+`,
+                token: 'constant.other.color.rgb-value.css',
+                auto: 'html-css-color',
+            }, {
+                regex: `[^\\s\\:\\;\\{\\}'"]+`,
+                token: 'support.constant.property-value.css',
+                autoByPre: 'html-css-values'
+            }, {
+                regex: `\\b"[^"]*?"\\b`,
+                token: 'support.constant.property-value.string.quoted.double.css'
+            }, {
+                regex: `\\b'[^']*?'\\b`,
+                token: 'support.constant.property-value.string.quoted.single.css'
+            }
+        ]
+    }
+];
 
 const attrRules = [{
         regex: `(?<=\\<)${attrName}`,
@@ -60,8 +91,8 @@ const attrRules = [{
         startToken: 'string.quoted.single.html',
         endToken: 'string.quoted.single.html',
         name: 'Style',
-        level: 1,
-        rules: styleRules
+        rules: styleRules,
+        autoChild: properties
     },
     {
         start: `(?<=\\sstyle\\s*?\\=\\s*?)"`,
@@ -70,20 +101,18 @@ const attrRules = [{
         startToken: 'string.quoted.double.html',
         endToken: 'string.quoted.double.html',
         name: 'Style',
-        level: 1,
-        rules: styleRules
+        rules: styleRules,
+        autoChild: properties
     },
     {
         start: `'`,
         end: `(?<=${noEscape})'`,
-        token: 'string.quoted.single.html',
-        level: 1
+        token: 'string.quoted.single.html'
     },
     {
         start: `"`,
         end: `(?<=${noEscape})"`,
-        token: 'string.quoted.double.html',
-        level: 1
+        token: 'string.quoted.double.html'
     }
 ];
 
