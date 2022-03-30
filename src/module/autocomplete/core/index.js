@@ -12,6 +12,8 @@ const iconMap = {
     'support.class.js': 'icon-class',
     'support.type.property-name.css': 'icon-property',
     'support.type.property-value.css': 'icon-value',
+    'entity.other.attribute-name.html': 'icon-property',
+    'entity.name.tag.html': 'icon-property',
 }
 
 class Autocomplete {

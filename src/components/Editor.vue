@@ -780,7 +780,7 @@ export default {
                     let height = this.$refs.autoTip.$el.clientHeight;
                     this.autoTipStyle.top = this.folder.getRelativeLine(this.nowCursorPos.line) * this.charObj.charHight;
                     this.autoTipStyle.left = this.getExactLeft(this.nowCursorPos);
-                    if (this.autoTipStyle.top + height > Util.getNum(this._top) + this.$refs.render.clientHeight) {
+                    if (this.autoTipStyle.top + height > Util.getNum(this._top) + this.$refs.scroller.clientHeight) {
                         this.autoTipStyle.top -= height + this.charObj.charHight;
                     }
                     if (this.autoTipStyle.left + width > this.scrollLeft + this.scrollerArea.width) {

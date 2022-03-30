@@ -6,9 +6,12 @@
 import jsRule from './javascript.js';
 import cssRule from './css.js';
 import CssData from '@/data/browsers.css-data.js';
+import HtmlData from '@/data/browsers.html-data';
 
 const properties = [];
 const propertyMap = {};
+const tgas = [];
+const tagMap = {};
 CssData.properties.forEach((item) => {
     properties.push({
         value: item.name,
@@ -18,6 +21,18 @@ CssData.properties.forEach((item) => {
         return {
             value: item.name,
             type: 'support.type.property-value.css'
+        }
+    }) || [];
+});
+HtmlData.tags.forEach((item) => {
+    tgas.push({
+        value: item.name,
+        type: 'entity.name.tag.html'
+    });
+    tagMap[item.name] = item.attributes && item.attributes.map((item) => {
+        return {
+            value: item.name,
+            type: 'entity.other.attribute-name.html'
         }
     }) || [];
 });
@@ -73,7 +88,10 @@ const attrRules = [{
         regex: `(?<=\\<)${attrName}`,
         token: 'entity.name.tag.html',
         foldName: tagFoldName,
-        foldType: -1
+        foldType: -1,
+        auto: tgas,
+        autoByMap: tagMap,
+        autoName: 'html-attr-name',
     },
     {
         regex: `(?<=\\<\\/)${attrName}`,
@@ -82,7 +100,8 @@ const attrRules = [{
         foldType: 1
     }, {
         regex: `\\b[a-zA-Z][a-zA-Z-]*`,
-        token: 'entity.other.attribute-name.html'
+        token: 'entity.other.attribute-name.html',
+        autoByPre: 'html-attr-name'
     },
     {
         start: `(?<=\\sstyle\\s*?\\=\\s*?)'`,
