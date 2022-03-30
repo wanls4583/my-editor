@@ -73,7 +73,8 @@ const rule = {
         },
         {
             regex: /\b(?:var|let|const|class|function)\b/,
-            token: 'storage.type.js'
+            token: 'storage.type.js',
+            auto: true
         },
         {
             name: 'storageArrowType',
@@ -82,41 +83,50 @@ const rule = {
         },
         {
             regex: '\\b(?:continue|break|switch|case|do|while|else|for|if|new|return|from|import|export|default|module|with|throw|try|catch|finally)\\b',
-            token: 'keyword.control.js'
+            token: 'keyword.control.js',
+            auto: true
         },
         {
             regex: '(?<=\\.)(?:toString|valueOf|toLocaleString|hasOwnProperty|isPrototypeOf|propertyIsEnumerable)\b',
-            token: 'support.function.js'
+            token: 'support.function.js',
+            auto: true
         },
         {
             regex: '\\b[A-Z][a-zA-Z0-9]*?(?=\\.)', //Token.
-            token: 'support.class.js'
+            token: 'support.class.js',
+            auto: true
         },
         {
             regex: '\\b(?:String|Number|Boolean|Array|Object|Map|Set|Date|Function|Promise|Proxy|RegExp|Error)\\b',
-            token: 'support.class.js'
+            token: 'support.class.js',
+            auto: true
         },
         {
             regex: '\\b(?:window|document)\\b',
-            token: 'support.class.js'
+            token: 'support.class.js',
+            auto: true
         },
         {
             regex: '\\b(?:Math|JSON)\\b',
-            token: 'support.constant.js'
+            token: 'support.constant.js',
+            auto: true
         }, {
             regex: '(?<=\\.)(?:prototype|exports)\\b',
-            token: 'support.constant.js'
+            token: 'support.constant.js',
+            auto: true
         },
         {
             start: `(?<=function\\s*?)${variable}`,
             end: '(?<=\\})',
             startToken: 'entity.name.function.js',
+            auto: true,
             rules: functionChild
         },
         {
             start: `(?<=\\s*?class\\s*?)(?:${variable})?`, //ie. calss Test{},
             end: '(?=[^\\{\\s])',
             startToken: 'entity.name.class.js',
+            auto: true,
             rules: [{
                 start: '\\{',
                 end: '\\}',
@@ -126,13 +136,15 @@ const rule = {
                     'blockComment',
                     {
                         regex: '\\b(?:static|private|public|protected)\\b',
-                        token: 'storage.modifier.js'
+                        token: 'storage.modifier.js',
+                        auto: true
                     },
                     // 属性函数，test(){}
                     {
                         start: `${variable}`,
                         end: '(?<=\\})',
                         startToken: 'entity.name.function.js',
+                        auto: true,
                         rules: functionChild
                     },
                 ]
@@ -145,11 +157,13 @@ const rule = {
         },
         {
             regex: `${variable}\\s*(?=\\()`,
+            auto: true,
             token: 'variable.function.js'
         },
         {
             regex: `${variable}\\s*(?=\\=\\>)`,
-            token: 'variable.parameter.js'
+            token: 'variable.parameter.js',
+            auto: true
         },
         {
             regex: '\\!|\\+|\\-|\\*|\\/|\\%|\\&|\\||\\~|\\>|\\<|\\=|\\?',
@@ -157,11 +171,13 @@ const rule = {
         },
         {
             regex: '\\b(?:typeof|in|new)\\b',
-            token: 'keyword.operator.js'
+            token: 'keyword.operator.js',
+            auto: true
         },
         {
             regex: '\\bthis\\b|\\bself\\b',
-            token: 'variable.language.js'
+            token: 'variable.language.js',
+            auto: true
         },
         {
             name: 'constantNumeric',
@@ -170,7 +186,8 @@ const rule = {
         },
         {
             regex: '\\b(?:undefined|null|true|false|NaN|Infinity|globalThis)\\b',
-            token: 'constant.language.js'
+            token: 'constant.language.js',
+            auto: true
         },
         {
             start: '\\(',
@@ -186,7 +203,8 @@ const rule = {
         },
         {
             regex: `${variable}`,
-            token: 'variable.other.js'
+            token: 'variable.other.js',
+            auto: true
         },
         //对象字面量必须放到blockStmt前面
         {
@@ -203,9 +221,10 @@ const rule = {
                     'singleStr',
                     'doubleStr',
                     'constantNumeric',
-                    // 箭头函数，:function、:()=>
+                    // 函数，:function、:()=>
                     {
                         regex: `${variable}(?=\\s*\\:\\s*(?:function|\\((?=[^\\(]*?\\=\\>)))`,
+                        auto: true,
                         startToken: 'entity.name.function.js'
                     },
                     // 属性函数，test(){}
@@ -213,6 +232,7 @@ const rule = {
                         start: `(?<=(?:^|\\,|\\{)\\s*)${variable}\\s*(?=\\()`,
                         end: '\\,|(?=\\})',
                         startToken: 'entity.name.function.js',
+                        auto: true,
                         rules: functionChild
                     },
                     {

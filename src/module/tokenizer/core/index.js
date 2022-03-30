@@ -315,7 +315,8 @@ export default class {
                 tokens: this.splitLongToken([{
                     type: 'plain',
                     column: 0,
-                    value: lineObj.text
+                    value: lineObj.text,
+                    state: states.peek()
                 }]),
                 folds: [],
                 states: states
@@ -339,6 +340,7 @@ export default class {
                     resultObj.tokens.push({
                         value: value,
                         column: preEnd,
+                        state: states.peek(),
                         type: this.getTokenType({
                             rule: this.ruleIdMap[states.peek()],
                             index: preEnd,
@@ -381,6 +383,7 @@ export default class {
             resultObj.tokens.push({
                 value: lineObj.text,
                 column: 0,
+                state: states.peek(),
                 type: this.getTokenType({
                     rule: this.ruleIdMap[states.peek()],
                     value: lineObj.text,
@@ -392,6 +395,7 @@ export default class {
             resultObj.tokens.push({
                 value: value,
                 column: preEnd,
+                state: states.peek(),
                 type: this.getTokenType({
                     rule: this.ruleIdMap[states.peek()],
                     index: preEnd,
@@ -418,7 +422,8 @@ export default class {
                     result.push({
                         column: column + startCol,
                         value: token.value.slice(column, column + 100),
-                        type: token.type
+                        type: token.type,
+                        state: token.state
                     });
                 }
                 count = count * 100;
@@ -426,7 +431,8 @@ export default class {
                     result.push({
                         column: count + startCol,
                         value: token.value.slice(count),
-                        type: token.type
+                        type: token.type,
+                        state: token.state
                     });
                 }
             } else {
@@ -451,7 +457,8 @@ export default class {
         let token = {
             ruleId: rule.ruleId,
             value: result,
-            column: match.index
+            column: match.index,
+            state: states && states.peek()
         };
         if (rule.start && rule.end) { //多行token-end
             if (side === 'end') { //多行token尾
