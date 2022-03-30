@@ -108,7 +108,7 @@
 <script>
 import Tokenizer from '@/module/tokenizer/core/index';
 import Lint from '@/module/lint/core/index';
-import Autocomplete from '@/module/autocomplete/core/index';
+import Autocomplete from '@/module/autocomplete/index';
 import Fold from '@/module/fold/index';
 import Search from '@/module/search/index';
 import Select from '@/module/select/index';

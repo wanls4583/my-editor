@@ -777,7 +777,7 @@ class Context {
     // 点击自动提示替换输入的内容
     replaceTip(tip, ranges) {
         let text = tip.result;
-        if (tip.type === 'tag.html') { //emmet语法
+        if (tip.type === 'emmet-html') { //emmet语法
             let result = '';
             let index = 0;
             while (index < text.length) {
