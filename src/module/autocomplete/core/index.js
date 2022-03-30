@@ -52,76 +52,150 @@ class Autocomplete {
             return;
         }
         nowRule = this.tokenizer.ruleIdMap[nowToken.ruleId];
-        for (let i = this.nowIndex; i < this.htmls.length; i++) {
-            let lineObj = this.htmls[i];
-            if (lineObj.text.length < 10000) { //大于10000个字符，跳过该行
-                _run.call(this, lineObj.tokens || []);
-            }
-            if (++count % 100 == 0 && Date.now() - startTime > 20) {
-                this.searchTimer = setTimeout(() => {
-                    this.nowIndex = i + 1;
-                    this._search();
-                });
-                break;
-            }
+        if (!nowRule) {
+            let parentRule = this.tokenizer.ruleIdMap[nowToken.state];
+            _findInList.call(this, parentRule.autoChild);
+            return;
         }
-        _send.call(this);
-
-        function _run(tokens) {
-            tokens.forEach((item) => {
-                let rule = this.tokenizer.ruleIdMap[item.ruleId];
-                if (rule && rule.auto === nowRule.auto) {
-                    if (doneMap[item.value]) {
-                        if (typeof doneMap[item.value] === 'object') {
-                            doneMap[item.value].icon = doneMap[item.value].icon || iconMap[item.type];
-                        }
-                    } else {
-                        let result = Util.fuzzyMatch(nowToken.value, item.value);
-                        if (result) {
-                            let obj = {
-                                result: item.value,
-                                word: nowToken.value,
-                                type: item.type,
-                                icon: iconMap[item.type] || '',
-                                indexs: result.indexs,
-                                score: result.score
-                            };
-                            results.push(obj);
-                            doneMap[item.value] = obj;
-                        } else {
-                            doneMap[item.value] = true;
-                        }
-                    }
-                }
+        if (nowRule.auto instanceof Array) {
+            _findInList.call(this, nowRule.auto);
+            return;
+        }
+        if (nowRule.autoByPre) {
+            let list = this.getPreAutoList(nowToken) || {};
+            list && _findInList.call(this, list);
+            return;
+        }
+        if (nowRule.autoHintPre) {
+            let list = this.getPreAutoList(nowToken) || {};
+            list.forEach((item) => {
+                _addTip(item, true, nowToken.value.length);
             });
+            _showTip.call(this, true);
+            return;
+        }
+        _findInToken();
+
+        function _findInList(list) {
+            for (let i = this.nowIndex; i < list.length; i++) {
+                let value = list[i];
+                _addTip(value);
+                if (++count % 100 == 0 && Date.now() - startTime > 20) {
+                    this.searchTimer = setTimeout(() => {
+                        this.nowIndex = i + 1;
+                        _findInList.call(this, list);
+                    });
+                    break;
+                }
+            }
+            _showTip.call(this);
         }
 
-        function _send() {
+        function _findInToken() {
+            for (let i = this.nowIndex; i < this.htmls.length; i++) {
+                let lineObj = this.htmls[i];
+                let tokens = lineObj.tokens || [];
+                if (lineObj.text.length > 10000) { //大于10000个字符，跳过该行
+                    continue;
+                }
+                tokens.forEach((item) => {
+                    let rule = this.tokenizer.ruleIdMap[item.ruleId];
+                    if (rule && rule.auto === nowRule.auto) {
+                        _addTip(item.value);
+                    }
+                });
+                if (++count % 100 == 0 && Date.now() - startTime > 20) {
+                    this.searchTimer = setTimeout(() => {
+                        this.nowIndex = i + 1;
+                        _findInToken.call(this);
+                    });
+                    break;
+                }
+            }
+            _showTip.call(this);
+        }
+
+        function _addTip(value, skip, lookahead) {
+            if (doneMap[value]) {
+                if (typeof doneMap[value] === 'object') {
+                    doneMap[value].icon = doneMap[value].icon || iconMap[nowToken.type];
+                }
+            } else {
+                let result = null;
+                if (skip) {
+                    result = {
+                        indexs: [],
+                        score: 0
+                    };
+                } else {
+                    result = Util.fuzzyMatch(nowToken.value, value);
+                }
+                if (result) {
+                    let obj = {
+                        result: value,
+                        word: nowToken.value,
+                        type: nowToken.type,
+                        icon: iconMap[nowToken.type] || '',
+                        indexs: result.indexs,
+                        score: result.score,
+                        lookahead: lookahead
+                    };
+                    results.push(obj);
+                    doneMap[value] = obj;
+                } else {
+                    doneMap[value] = true;
+                }
+            }
+        }
+
+        function _showTip(all) {
             if (searcherId === this.searcherId) {
                 results = results.concat(this.preResults);
-                results = results.sort((a, b) => {
-                    return b.score - a.score;
-                }).slice(0, 10);
+                if (!all) {
+                    results = results.sort((a, b) => {
+                        return b.score - a.score;
+                    }).slice(0, 10);
+                }
                 this.setAutoTip(results);
                 this.preResults = results;
             }
         }
     }
+    getPreAutoList(token) {
+        let multiCursorPos = this.cursor.multiCursorPos.toArray();
+        let tokens = this.htmls[multiCursorPos[0].line - 1].tokens;
+        let rule = this.tokenizer.ruleIdMap[token.ruleId];
+        if (tokens) {
+            for (let i = tokens.length - 1; i >= 0; i--) {
+                let _token = tokens[i];
+                let _rule = this.tokenizer.ruleIdMap[_token.ruleId];
+                if (_rule && _rule.autoByMap && (_rule.autoName === rule.autoByPre || _rule.autoName === rule.autoHintPre)) {
+                    return _rule.autoByMap[_token.value];
+                }
+            }
+        }
+        return null;
+    }
     getNowToken() {
         let preToken = null;
-        let preRule = null;
         let multiCursorPos = this.cursor.multiCursorPos.toArray();
         for (let i = 0; i < multiCursorPos.length; i++) {
+            let hasAuto = false;
             let cursorPos = multiCursorPos[i];
             let token = _getToken.call(this, cursorPos);
             let rule = token && token.ruleId && this.tokenizer.ruleIdMap[token.ruleId];
-            if (!token || !rule || !rule.auto ||
-                // preRule && (preRule.auto !== rule.auto || preRule.ruleId !== rule.ruleId) ||
-                preToken && (token.value !== preToken.value || token.type !== preToken.type)) {
+            let auto = rule && (rule.auto || rule.autoByPre || rule.autoHintPre);
+            if (!rule && token && token.state) {
+                rule = this.tokenizer.ruleIdMap[token.state];
+                auto = rule.autoChild;
+            }
+            if (token && auto && (!preToken || (token.value === preToken.value && token.type === preToken.type))) {
+                hasAuto = true;
+            }
+            if (!hasAuto) {
                 return null;
             }
             preToken = token;
-            preRule = rule;
         }
         return preToken;
 

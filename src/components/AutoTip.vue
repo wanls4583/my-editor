@@ -4,7 +4,7 @@
  * @Description: 
 -->
 <template>
-	<div :style="styles" @mousedown.stop class="my-auto">
+	<div :style="styles" @mousedown.stop @wheel.stop class="my-auto" ref="auto">
 		<div class="my-light-bg">
 			<div :class="{active: item.active}" @mousedown="onClick(item)" class="my-auto-item my-center-between" v-for="item in tipList">
 				<div class="my-center-between">
@@ -32,6 +32,8 @@ export default {
     },
     data() {
         return {
+            nowIndex: 0,
+            itemHeight: 25
         }
     },
     computed: {
@@ -48,6 +50,17 @@ export default {
             }
         }
     },
+    watch: {
+        nowIndex() {
+            let $auto = this.$refs.auto;
+            let height = (this.nowIndex + 1) * this.itemHeight;
+            if ($auto && height > $auto.clientHeight + $auto.scrollTop) {
+                $auto.scrollTop = height - $auto.clientHeight;
+            } else if ($auto && height < $auto.scrollTop + this.itemHeight) {
+                $auto.scrollTop = height - this.itemHeight;
+            }
+        }
+    },
     created() {
     },
     methods: {
@@ -60,6 +73,7 @@ export default {
             index = index - 1;
             index = index < 0 ? this.tipList.length - 1 : index;
             this.tipList[index].active = true;
+            this.nowIndex = index;
         },
         next() {
             let index = this.getActiveIndex();
@@ -67,6 +81,7 @@ export default {
             index = index + 1;
             index = index > this.tipList.length - 1 ? 0 : index;
             this.tipList[index].active = true;
+            this.nowIndex = index;
         },
         getActiveIndex() {
             for (let i = 0; i < this.tipList.length; i++) {

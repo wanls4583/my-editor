@@ -155,8 +155,8 @@ export default {
             cursorVisible: true,
             cursorFocus: true,
             // language: 'HTML',
-            language: 'JavaScript',
-            // language: 'CSS',
+            // language: 'JavaScript',
+            language: 'CSS',
             // language: '',
             tabSize: 4,
             renderHtmls: [],
@@ -627,8 +627,8 @@ export default {
         },
         closeAllMenu() {
             this.menuVisible = false;
-            this.autoTipList = null;
-            this.autocomplete.clearSearch();
+            // this.autoTipList = null;
+            // this.autocomplete.clearSearch();
         },
         // 折叠行
         foldLine(line) {
