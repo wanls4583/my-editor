@@ -101,24 +101,37 @@ export default class {
         if (rule.rules) {
             let rules = this.getRule(rule.rules);
             if (rules) {
+                let _rules = [];
                 rules = rules instanceof Array ? rules : rules.rules;
-                rules = rules.map((_item) => {
-                    if (typeof _item.regex === 'string') {
-                        _item.regex = new RegExp(_item.regex);
+                rules.forEach((_item) => {
+                    _item = this.getRule(_item);
+                    if (_item instanceof Array) {
+                        _rules.push(..._item);
                     } else {
-                        _item = this.getRule(_item);
+                        if (typeof _item.regex === 'string') {
+                            _item.regex = new RegExp(_item.regex);
+                        }
+                        _rules.push(_item);
                     }
                     if (!_item.ruleId) {
                         this.setRuleId(_item);
                     }
-                    return _item;
                 });
+                rules = _rules;
             }
             rule.rules = rules;
         }
     }
     getRule(rule) {
-        return typeof rule === 'string' ? this.ruleNameMap[rule] : rule;
+        if (typeof rule === 'string') {
+            if (rule.startsWith('...')) {
+                return this.ruleNameMap[rule.slice(3)].rules;
+            } else {
+                return this.ruleNameMap[rule];
+            }
+        } else {
+            return rule;
+        }
     }
     // 组合正则表达式
     getCombRegex(states) {
@@ -367,7 +380,7 @@ export default class {
                 preRule && preRule.ruleId === rule.ruleId) {
                 // 有些规则可能没有结果，只是标识进入某一个规则块，
                 // 如果其子规则也有该规则，则会进入死循环
-                break;
+                regex.lastIndex++;
             }
             if (!valid) { //跳过当前无效结果
                 continue;

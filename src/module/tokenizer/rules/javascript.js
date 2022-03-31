@@ -208,7 +208,7 @@ const rule = {
         },
         //对象字面量必须放到blockStmt前面
         {
-            start: '(?<=\\b(?:default|import|export|return|typeof|in|new)\\s*|(?<!\\=)\\>|[\\(\\[\\;\\,\\:\\!\\+\\-\\*\\/\\%\\&\\|\\~\\<\\=\\?]\\s*)',
+            start: '(?<=\\b(?:default|import|export|return|typeof|in|new)\\s*|(?:[^\\=]|^)\\>|[\\(\\[\\;\\,\\:\\!\\+\\-\\*\\/\\%\\&\\|\\~\\<\\=\\?]\\s*)',
             end: '(?=[^\\{\\s])',
             rules: [{
                 start: '\\{',

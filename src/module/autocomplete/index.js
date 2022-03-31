@@ -38,7 +38,7 @@ class Autocomplete {
         this.initProperties(editor, context);
     }
     initProperties(editor, context) {
-        Util.defineProperties(this, editor, ['language', 'cursor', 'tokenizer', 'autocomplete', 'setAutoTip']);
+        Util.defineProperties(this, editor, ['language', 'cursor', 'tokenizer', 'setAutoTip']);
         Util.defineProperties(this, context, ['htmls']);
     }
     reset() {

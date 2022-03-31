@@ -918,22 +918,7 @@ export default {
         },
         // 选中自动提示
         onClickAuto(item) {
-            let ranges = [];
-            let word = item.word || '';
-            let lookahead = item.lookahead || 0;
-            this.cursor.multiCursorPos.forEach((item) => {
-                ranges.push({
-                    start: {
-                        line: item.line,
-                        column: item.column - word.length + lookahead
-                    },
-                    end: {
-                        line: item.line,
-                        column: item.column + lookahead
-                    }
-                });
-            });
-            this.myContext.replaceTip(item, ranges);
+            this.myContext.replaceTip(item);
             this.autoTipList = null;
             this.focus();
         },

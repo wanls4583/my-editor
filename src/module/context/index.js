@@ -4,6 +4,9 @@
  * @Description: 
  */
 import Util from '@/common/Util';
+import {
+    type
+} from 'jquery';
 
 const regs = {
     word: /[a-zA-Z0-9_]/,
@@ -11,6 +14,7 @@ const regs = {
     emmetAttr: /^[\.\#]([^\.\#\>\<\+\*\(\)]*)/,
     emmetNum: /^\*(\d+)/,
     dWord: Util.fullAngleReg,
+    endTag: /(?=\<\/)/,
     space: /\s/
 }
 
@@ -38,6 +42,7 @@ class Context {
             'searcher',
             'fSelecter',
             'fSearcher',
+            'autocomplete',
             'render',
             'unFold',
             'setNowCursorPos',
@@ -733,14 +738,16 @@ class Context {
         this.searcher.clearSearch();
         this.fSearcher.refreshSearch();
     }
-    replace(text, ranges, command) {
+    replace(texts, ranges, command) {
         let historyObj = null;
         let historyRnageList = [];
-        let deleteText = this.getRangeText(ranges.peek().start, ranges.peek().end);
+        let deleteTexts = [];
         let direct = ranges.length > 1 && Util.comparePos(ranges[0].start, ranges[1].start) < 0 ? 'asc' : 'desc';
         for (let i = ranges.length - 1; i >= 0; i--) {
             let item = ranges[i];
+            let deleteText = this.getRangeText(item.start, item.end);
             let end = null;
+            let text = texts instanceof Array ? texts[i] : texts;
             deleteText && this._deleteContent({
                 start: item.start,
                 end: item.end
@@ -751,20 +758,28 @@ class Context {
             } else {
                 end = item.start;
             }
+            deleteTexts.push(deleteText);
             historyRnageList.push({
                 start: item.start,
                 end: end
             });
+        }
+        if (typeof texts === 'string') {
             if (direct === 'asc') {
-                i == 0 && this.cursor.setCursorPos(end);
+                this.cursor.setCursorPos(historyRnageList[0].end);
             } else {
-                i == ranges.length - 1 && this.cursor.setCursorPos(end);
+                this.cursor.setCursorPos(historyRnageList.peek().end);
             }
+        } else {
+            this.cursor.clearCursorPos();
+            historyRnageList.forEach((item) => {
+                this.cursor.addCursorPos(item.end);
+            });
         }
         historyObj = {
             type: Util.command.REPLACE,
             cursorPos: historyRnageList,
-            text: deleteText
+            text: deleteTexts
         }
         if (!command) { // 新增历史记录
             this.history.pushHistory(historyObj);
@@ -773,21 +788,77 @@ class Context {
         }
         this.searcher.refreshSearch();
         this.fSearcher.refreshSearch();
+        return historyObj;
     }
     // 点击自动提示替换输入的内容
-    replaceTip(tip, ranges) {
-        let text = tip.result;
-        if (tip.type === 'emmet-html') { //emmet语法
+    replaceTip(tip) {
+        let word = tip.word || '';
+        let lookahead = tip.lookahead || 0;
+        let firstToken = null;
+        let result = _getResult(tip);
+        let ranges = _getTextsAndRanges.call(this);
+        let texts = ranges.texts;
+        ranges = ranges.ranges;
+        _updatePos.call(this, this.replace(texts, ranges).cursorPos);
+
+        function _getResult(tip) {
             let result = '';
-            let index = 0;
-            while (index < text.length) {
-                let resObj = _emmet(text, index);
-                index = resObj.index;
-                result += '\n' + resObj.result;
+            if (tip.type === 'emmet-html') { //emmet语法
+                let index = 0;
+                let text = tip.result;
+                while (index < text.length) {
+                    let resObj = _emmet(text, index);
+                    index = resObj.index;
+                    result += '\n' + resObj.result;
+                }
+                result = result.slice(1);
+            } else if (tip.type === 'entity.name.tag.html') {
+                result += tip.result + `></${tip.result}>`;
+            } else {
+                result = tip.result;
             }
-            this.replace(result.slice(1), ranges);
-        } else {
-            this.replace(text, ranges);
+            return result;
+        }
+
+        function _getTextsAndRanges() {
+            let texts = [];
+            let ranges = [];
+            this.cursor.multiCursorPos.forEach((cursorPos, index) => {
+                let range = null;
+                let token = this.autocomplete.getToken(cursorPos);
+                if (index === 0) {
+                    firstToken = token;
+                }
+                if (!index || index > 0 && token.type === firstToken.type && token.value === firstToken.value) {
+                    range = {
+                        start: {
+                            line: cursorPos.line,
+                            column: cursorPos.column - word.length + lookahead
+                        },
+                        end: {
+                            line: cursorPos.line,
+                            column: cursorPos.column + lookahead
+                        }
+                    }
+                } else {
+                    range = {
+                        start: {
+                            line: cursorPos.line,
+                            column: cursorPos.column
+                        },
+                        end: {
+                            line: cursorPos.line,
+                            column: cursorPos.column
+                        }
+                    }
+                }
+                ranges.push(range);
+                texts.push(result);
+            });
+            return {
+                texts: texts,
+                ranges: ranges
+            }
         }
 
         function _parenEmmet(text, index, tabNum) {
@@ -886,6 +957,34 @@ class Context {
                 str += '\t';
             }
             return str;
+        }
+
+        function _updatePos(ranges) {
+            if (tip.type === 'emmet-html' || tip === 'entity.name.tag.html') { //生成标签后，光标定位到标签中间的位置
+                let exec = regs.endTag.exec(result);
+                let text = result.slice(exec.index);
+                let deltaArr = text.split('\n');
+                let multiCursorPos = this.cursor.multiCursorPos.toArray();
+                for (let i = multiCursorPos.length - 1; i >= 0; i--) {
+                    let cursorPos = _getDeltaPos.call(this, deltaArr, multiCursorPos[i]);
+                    this.cursor.updateCursorPos(multiCursorPos[i], cursorPos.line, cursorPos.column);
+                }
+            }
+        }
+
+        function _getDeltaPos(deltaArr, cursorPos) {
+            let line = cursorPos.line;
+            let column = cursorPos.column;
+            if (deltaArr.length === 1) {
+                column -= deltaArr[0].length;
+            } else {
+                line -= deltaArr.length - 1;
+                column = this.htmls[line - 1].text.length - deltaArr[0].length;
+            }
+            return {
+                line: line,
+                column: column
+            }
         }
     }
     // 获取选中范围内的文本
