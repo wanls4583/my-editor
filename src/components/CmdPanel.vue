@@ -4,7 +4,7 @@
  * @Description: 
 -->
 <template>
-	<div @mousedown.stop class="my-cmd-panel" v-if="visible">
+	<div @mousedown.stop class="my-cmd-panel my-shadow my-border" v-if="visible">
 		<div>
 			<div class="my-cmd-search">
 				<input type="text" v-model="searchText" />

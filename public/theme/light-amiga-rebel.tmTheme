@@ -16,14 +16,6 @@
 	<string>theme.light.amiga_rebel_palette_light</string>
 	<key>colorSpaceName</key>
 	<string>sRGB</string>
-	<key>globalSettings</key>
-	<dict>
-		<key>menu</key>
-		<dict>
-			<key>background</key>
-			<string>#ffffff</string>
-		</dict>
-	</dict>
 	<key>settings</key>
 	<array>
 		<dict>

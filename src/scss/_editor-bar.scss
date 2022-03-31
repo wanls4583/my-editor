@@ -5,6 +5,7 @@
         left: 0;
         width: 100%;
         height: 40px;
+        background-color: rgb(238, 238, 238);
 
         .bar-scroller {
             display: flex;
@@ -37,6 +38,8 @@
             cursor: pointer;
 
             &.active {
+                background-color: #ffffff;
+
                 .bar-close-icon {
                     display: block;
                 }

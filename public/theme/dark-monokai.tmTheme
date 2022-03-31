@@ -25,6 +25,16 @@
 			<key>background</key>
 			<string>rgb(200,200,200,0.1)</string>
 		</dict>
+		<key>shadow</key>
+		<dict>
+			<key>shadow</key>
+			<string>rgba(0, 0, 0, 0.8) 0 0 8px</string>
+		</dict>
+		<key>border</key>
+		<dict>
+			<key>border</key>
+			<string>none</string>
+		</dict>
 		<key>menu-bar</key>
 		<dict>
 			<key>background</key>

@@ -21,7 +21,7 @@ body {
     padding: 0;
     width: 100;
     height: 100%;
-    color: #666666;
+    color: #575757;
 }
 
 #app {
@@ -73,8 +73,12 @@ body {
         background-color: rgba(200, 200, 200, 0.4);
     }
 
-    &-border-shadow {
-        box-shadow: 0 0 8px rgba(0, 0, 0, .1);
+    &-shadow {
+        box-shadow: rgba(0, 0, 0, 0.2) 0 0 8px;
+    }
+
+    &-border {
+        border: 1px solid rgba(120, 120, 120, 0.4);
     }
 
     &-icon-error {
@@ -112,6 +116,7 @@ body {
         height: 100%;
         overflow: hidden;
         font-size: 13px;
+        color: #575757;
     }
 
     &-right-wrap {

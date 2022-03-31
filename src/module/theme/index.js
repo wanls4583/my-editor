@@ -7,7 +7,9 @@ import Vue from 'vue';
 const propertyMap = {
     foreground: 'color',
     background: 'background-color',
-    fontStyle: 'font-style'
+    fontStyle: 'font-style',
+    shadow: 'box-shadow',
+    border: 'border',
 }
 
 export default class {
@@ -42,18 +44,12 @@ export default class {
         let caret = editorColor.foreground || '#000';
         let lineHighlight = editorColor.lineHighlight || 'rgba(0,0,0,0.1)';
         let selection = editorColor.selection || 'rgba(0,0,0,0.1)';
-        cssText += `.my-window,.my-auto,.my-tip{background-color:${background};color:${foreground};}\n`;
-        cssText += `.my-editor-bar .bar-item.active{background-color:${background};color:${foreground}}\n`;
-        cssText += `.my-cursor{background-color:${caret};}\n`;
-        cssText += `.my-line.active::before,.my-line.active::after{background-color:${lineHighlight}}\n`;
-        cssText += `.my-tab-line{border-left:1px solid ${lineHighlight};}\n`;
-        cssText += `.my-select-bg,.my-search-bg{border:1px solid ${foreground};}\n`;
-        cssText += `.my-select-bg.active,.my-search-bg.active{background-color:${selection};}\n`;
-        cssText += `.my-scroller::-webkit-scrollbar-corner{background-color:${background};}\n`;
         if (globalSettings) {
             let window = globalSettings.window;
             let active = globalSettings.active;
             let hover = globalSettings.hover;
+            let shadow = globalSettings.shadow;
+            let border = globalSettings.border;
             let menu = globalSettings.menu;
             let menuBar = globalSettings['menu-bar'];
             let statusBar = globalSettings['status-bar'];
@@ -71,17 +67,26 @@ export default class {
             if (hover) {
                 cssText += _addStyle(hover, '.my-hover:hover');
             }
-            if (menu) {
-                cssText += _addStyle(menu, '.my-menu');
+            if (shadow) {
+                cssText += _addStyle(shadow, '.my-shadow');
+            }
+            if (border) {
+                cssText += _addStyle(border, '.my-border');
             }
             if (menuBar) {
-                cssText += _addStyle(menuBar, '.my-menu-bar, .my-menu-bar');
+                cssText += _addStyle(menuBar, '.my-menu-bar, .my-menu');
+            }
+            if (menu) {
+                cssText += _addStyle(menu, '.my-menu');
             }
             if (statusBar) {
                 cssText += _addStyle(statusBar, '.my-status-bar');
             }
             if (sideBar) {
-                cssText += _addStyle(sideBar, '.my-side-bar, .my-menu, .my-auto');
+                cssText += _addStyle(sideBar, '.my-side-bar, .my-auto');
+            }
+            if (autTip) {
+                cssText += _addStyle(autTip, '.my-auto');
             }
             if (editorBar) {
                 cssText += _addStyle(editorBar, '.my-editor-bar');
@@ -92,10 +97,15 @@ export default class {
             if (cmdInput) {
                 cssText += _addStyle(cmdInput, '.my-cmd-panel input');
             }
-            if (autTip) {
-                cssText += _addStyle(autTip, '.my-auto');
-            }
         }
+        cssText += `.my-wrap{background-color:${background};color:${foreground}}\n`;
+        cssText += `.my-editor-bar .bar-item.active{background-color:${background};color:${foreground}}\n`;
+        cssText += `.my-cursor{background-color:${caret};}\n`;
+        cssText += `.my-line.active::before,.my-line.active::after{background-color:${lineHighlight}}\n`;
+        cssText += `.my-tab-line{border-left:1px solid ${lineHighlight};}\n`;
+        cssText += `.my-select-bg,.my-search-bg{border:1px solid ${foreground};}\n`;
+        cssText += `.my-select-bg.active,.my-search-bg.active{background-color:${selection};}\n`;
+        cssText += `.my-scroller::-webkit-scrollbar-corner{background-color:${background};}\n`;
         data.settings.slice(1).forEach((item) => {
             if (item.scope) {
                 let selector = item.scope.replace(/\s/g, '').split(',').map((_item) => {
