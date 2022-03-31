@@ -150,14 +150,15 @@ class Util {
         return cont.replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
     // 深度克隆
-    static deepAssign(targetObj, originObj, excludeKeys) {
-        return _assign(targetObj, originObj, excludeKeys, new Map());
+    static deepAssign(targetObj, originObj, noDeepKeys) {
+        return _assign(targetObj, originObj, noDeepKeys, new Map());
 
-        function _assign(targetObj, originObj, excludeKeys, assigned) {
-            excludeKeys = excludeKeys || [];
+        function _assign(targetObj, originObj, noDeepKeys, assigned) {
+            noDeepKeys = noDeepKeys || [];
             for (var key in originObj) {
                 var value = originObj[key];
-                if (excludeKeys.indexOf(key) > -1) {
+                if (noDeepKeys.indexOf(key) > -1) {
+                    targetObj[key] = value;
                     continue;
                 }
                 if (typeof value === 'object' && !(value instanceof RegExp) && value !== null &&
@@ -169,11 +170,11 @@ class Util {
                         if (value instanceof Array) {
                             tmp = targetObj[key] || [];
                             assigned.set(value, tmp);
-                            targetObj[key] = _assign(tmp, value, excludeKeys, new Map(assigned));
+                            targetObj[key] = _assign(tmp, value, noDeepKeys, new Map(assigned));
                         } else {
                             tmp = targetObj[key] || {};
                             assigned.set(value, tmp);
-                            targetObj[key] = _assign(tmp, value, excludeKeys, new Map(assigned));
+                            targetObj[key] = _assign(tmp, value, noDeepKeys, new Map(assigned));
                         }
                     }
                 } else {

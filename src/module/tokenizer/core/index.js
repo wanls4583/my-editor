@@ -50,7 +50,7 @@ export default class {
             unnamed: true
         };
         this.regexMap = {};
-        rule = Util.deepAssign({}, rule);
+        rule = Util.deepAssign({}, rule, ['auto', 'autoByMap', 'autoChild']);
         this.setRuleNameMap(rule);
         this.setRuleId(rule);
         this.rule = rule;

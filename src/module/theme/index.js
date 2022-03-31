@@ -101,7 +101,7 @@ export default class {
         cssText += `.my-right-wrap{background-color:${background};color:${foreground}}\n`;
         cssText += `.my-editor-bar .bar-item.active{background-color:${background};color:${foreground}}\n`;
         cssText += `.my-cursor{background-color:${caret};}\n`;
-        cssText += `.my-line.active::before,.my-line.active::after{background-color:${lineHighlight}}\n`;
+        cssText += `.my-line.active::after{border-color:${lineHighlight}}\n`;
         cssText += `.my-tab-line{border-left:1px solid ${lineHighlight};}\n`;
         cssText += `.my-select-bg,.my-search-bg{border:1px solid ${foreground};}\n`;
         cssText += `.my-select-bg.active,.my-search-bg.active{background-color:${selection};}\n`;
