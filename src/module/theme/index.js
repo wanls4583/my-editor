@@ -98,7 +98,7 @@ export default class {
                 cssText += _addStyle(cmdInput, '.my-cmd-panel input');
             }
         }
-        cssText += `.my-wrap{background-color:${background};color:${foreground}}\n`;
+        cssText += `.my-right-wrap{background-color:${background};color:${foreground}}\n`;
         cssText += `.my-editor-bar .bar-item.active{background-color:${background};color:${foreground}}\n`;
         cssText += `.my-cursor{background-color:${caret};}\n`;
         cssText += `.my-line.active::before,.my-line.active::after{background-color:${lineHighlight}}\n`;
