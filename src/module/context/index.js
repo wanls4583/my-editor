@@ -960,7 +960,7 @@ class Context {
         }
 
         function _updatePos(ranges) {
-            if (tip.type === 'emmet-html' || tip === 'entity.name.tag.html') { //生成标签后，光标定位到标签中间的位置
+            if (tip.type === 'emmet-html' || tip.type === 'entity.name.tag.html') { //生成标签后，光标定位到标签中间的位置
                 let exec = regs.endTag.exec(result);
                 let text = result.slice(exec.index);
                 let deltaArr = text.split('\n');
