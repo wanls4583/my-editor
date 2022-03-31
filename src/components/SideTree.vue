@@ -9,7 +9,7 @@
 			<div :style="{height:_scrollHeight}" class="side-tree">
 				<div :style="{top:_top}" class="side-tree-content">
 					<div @click.stop="onClickItem(item)" class="side-item my-hover" v-for="item in renderList">
-						<div :class="{'active':item.active}" :style="{'padding-left':_paddingLeft(item)}" :title="item.path" @contextmenu.stop.prevent class="side-item-title">
+						<div :class="{'my-active':item.active}" :style="{'padding-left':_paddingLeft(item)}" :title="item.path" @contextmenu.stop.prevent class="side-item-title">
 							<template v-if="item.type==='dir'">
 								<span class="left-icon iconfont icon-down1" v-if="item.open"></span>
 								<span class="left-icon iconfont icon-right" v-else></span>

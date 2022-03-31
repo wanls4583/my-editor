@@ -61,6 +61,7 @@ export default class {
             let editorBar = globalSettings['editor-bar'];
             let cmdPanel = globalSettings['cmd-panel'];
             let cmdInput = globalSettings['cmd-input'];
+            let autTip = globalSettings['auto-tip'];
             if (window) {
                 cssText += _addStyle(window, '.my-window');
             }
@@ -71,25 +72,28 @@ export default class {
                 cssText += _addStyle(hover, '.my-hover:hover');
             }
             if (menu) {
-                cssText += _addStyle(menu, '.my-menu .my-light-bg');
+                cssText += _addStyle(menu, '.my-menu');
             }
             if (menuBar) {
-                cssText += _addStyle(menuBar, '.my-menu-bar .my-light-bg');
+                cssText += _addStyle(menuBar, '.my-menu-bar, .my-menu-bar');
             }
             if (statusBar) {
-                cssText += _addStyle(statusBar, '.my-status-bar .my-light-bg');
+                cssText += _addStyle(statusBar, '.my-status-bar');
             }
             if (sideBar) {
-                cssText += _addStyle(sideBar, '.my-side-bar .my-light-bg');
+                cssText += _addStyle(sideBar, '.my-side-bar, .my-menu, .my-auto');
             }
             if (editorBar) {
-                cssText += _addStyle(editorBar, '.my-editor-bar .my-light-bg');
+                cssText += _addStyle(editorBar, '.my-editor-bar');
             }
             if (cmdPanel) {
-                cssText += _addStyle(cmdPanel, '.my-cmd-panel .my-light-bg');
+                cssText += _addStyle(cmdPanel, '.my-cmd-panel');
             }
             if (cmdInput) {
                 cssText += _addStyle(cmdInput, '.my-cmd-panel input');
+            }
+            if (autTip) {
+                cssText += _addStyle(autTip, '.my-auto');
             }
         }
         data.settings.slice(1).forEach((item) => {

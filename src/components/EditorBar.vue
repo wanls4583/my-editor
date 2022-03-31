@@ -5,7 +5,7 @@
 -->
 <template>
 	<div @selectstart.prevent class="my-editor-bar">
-		<div class="bar-scroller my-light-bg">
+		<div class="bar-scroller">
 			<div
 				:class="{'active':item.active}"
 				:title="item.path"

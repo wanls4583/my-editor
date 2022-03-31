@@ -4,8 +4,8 @@
  * @Description: 
 -->
 <template>
-	<div :style="{height:height+'px'}" @contextmenu.stop.prevent class="my-menu-bar my-width-100 my-light-bg">
-		<div class="my-height-100 my-center-between my-light-bg">
+	<div :style="{height:height+'px'}" @contextmenu.stop.prevent class="my-menu-bar my-width-100">
+		<div class="my-height-100 my-center-between">
 			<div class="bar-left">
 				<div @mousedown.stop="showMemu('fileMenuVisible')" class="bar-item my-hover">
 					<span>File</span>
