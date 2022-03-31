@@ -48,21 +48,25 @@ body {
         height: 100%;
     }
 
-    &-clickable {
+    &-hover {
         cursor: pointer;
 
         &:hover {
-            background-color: rgba(0, 0, 0, 0.1);
+            background-color: rgba(200, 200, 200, 0.4);
         }
     }
 
-    &-clickable-danger {
+    &-hover-danger {
         cursor: pointer;
 
         &:hover {
             background-color: red;
             color: white;
         }
+    }
+
+    &-active {
+        background-color: rgba(200, 200, 200, 0.4);
     }
 
     &-light-bg {

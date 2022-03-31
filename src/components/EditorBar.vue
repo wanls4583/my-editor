@@ -11,7 +11,7 @@
 				:title="item.path"
 				@click="onClickItem(item.id)"
 				@contextmenu.prevent.stop="onContextmenu($event, item.id)"
-				class="bar-item my-clickable"
+				class="bar-item my-hover"
 				v-for="item in editorList"
 			>
 				<span class="bar-text">{{item.name}}</span>

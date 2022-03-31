@@ -25,13 +25,13 @@ export default class {
         });
     }
     insertCss(css) {
-        if (this.style) {
-            this.style.remove();
+        if (window.globalData.style) {
+            window.globalData.style.remove();
         }
-        this.style = document.createElement("style");
-        this.style.type = "text/css";
-        this.style.appendChild(document.createTextNode(css));
-        document.getElementsByTagName("head")[0].appendChild(this.style);
+        window.globalData.style = document.createElement("style");
+        window.globalData.style.type = "text/css";
+        window.globalData.style.appendChild(document.createTextNode(css));
+        document.getElementsByTagName("head")[0].appendChild(window.globalData.style);
     }
     parseCss(data) {
         let cssText = '';
@@ -42,7 +42,7 @@ export default class {
         let caret = editorColor.foreground || '#000';
         let lineHighlight = editorColor.lineHighlight || 'rgba(0,0,0,0.1)';
         let selection = editorColor.selection || 'rgba(0,0,0,0.1)';
-        cssText += `.my-window,.my-auto,.my-tip,.my-menu,.my-dialog,.my-cmd-panel{background-color:${background};color:${foreground};}\n`;
+        cssText += `.my-window,.my-auto,.my-tip{background-color:${background};color:${foreground};}\n`;
         cssText += `.my-editor-bar .bar-item.active{background-color:${background};color:${foreground}}\n`;
         cssText += `.my-cursor{background-color:${caret};}\n`;
         cssText += `.my-line.active::before,.my-line.active::after{background-color:${lineHighlight}}\n`;
@@ -52,40 +52,44 @@ export default class {
         cssText += `.my-scroller::-webkit-scrollbar-corner{background-color:${background};}\n`;
         if (globalSettings) {
             let window = globalSettings.window;
+            let active = globalSettings.active;
+            let hover = globalSettings.hover;
             let menu = globalSettings.menu;
-            let menuBar = globalSettings.menuBar;
-            let statusBar = globalSettings.statusBar;
-            let sideBar = globalSettings.sideBar;
-            let editorBar = globalSettings.editorBar;
+            let menuBar = globalSettings['menu-bar'];
+            let statusBar = globalSettings['status-bar'];
+            let sideBar = globalSettings['side-bar'];
+            let editorBar = globalSettings['editor-bar'];
+            let cmdPanel = globalSettings['cmd-panel'];
+            let cmdInput = globalSettings['cmd-input'];
             if (window) {
-                cssText += `.my-window{\n`;
-                cssText += _joinStyle(window);
-                cssText += `}\n`;
+                cssText += _addStyle(window, '.my-window');
+            }
+            if (active) {
+                cssText += _addStyle(active, '.my-active');
+            }
+            if (hover) {
+                cssText += _addStyle(hover, '.my-hover:hover');
             }
             if (menu) {
-                cssText += `.my-menu .my-light-bg{\n`;
-                cssText += _joinStyle(menu);
-                cssText += `}\n`;
+                cssText += _addStyle(menu, '.my-menu .my-light-bg');
             }
             if (menuBar) {
-                cssText += `.my-menu-bar .my-light-bg{\n`;
-                cssText += _joinStyle(menuBar);
-                cssText += `}\n`;
+                cssText += _addStyle(menuBar, '.my-menu-bar .my-light-bg');
             }
             if (statusBar) {
-                cssText += `.my-status-bar .my-light-bg{\n`;
-                cssText += _joinStyle(statusBar);
-                cssText += `}\n`;
+                cssText += _addStyle(statusBar, '.my-status-bar .my-light-bg');
             }
             if (sideBar) {
-                cssText += `.my-side-bar .my-light-bg{\n`;
-                cssText += _joinStyle(sideBar);
-                cssText += `}\n`;
+                cssText += _addStyle(sideBar, '.my-side-bar .my-light-bg');
             }
             if (editorBar) {
-                cssText += `.my-editor-bar .my-light-bg{\n`;
-                cssText += _joinStyle(editorBar);
-                cssText += `}\n`;
+                cssText += _addStyle(editorBar, '.my-editor-bar .my-light-bg');
+            }
+            if (cmdPanel) {
+                cssText += _addStyle(cmdPanel, '.my-cmd-panel .my-light-bg');
+            }
+            if (cmdInput) {
+                cssText += _addStyle(cmdInput, '.my-cmd-panel input');
             }
         }
         data.settings.slice(1).forEach((item) => {
@@ -107,6 +111,14 @@ export default class {
             for (let property in option) {
                 cssText += `${propertyMap[property]}:${option[property]};\n`;
             }
+            return cssText;
+        }
+
+        function _addStyle(option, selector) {
+            let cssText = '';
+            cssText += `${selector}{\n`;
+            cssText += _joinStyle(option);
+            cssText += `}\n`;
             return cssText;
         }
     }

@@ -6,10 +6,11 @@
         z-index: 100;
         min-width: 300px;
         transform: translate(-50%, -70px);
+        color: #333333;
         background-color: #ffffff;
         border-radius: 8px;
         box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.5);
-        border: 1px solid rgba(200, 200, 200, 0.2);
+        border: 1px solid rgb(238, 238, 238);
         overflow: hidden;
         user-select: none;
 
@@ -58,7 +59,8 @@
             align-items: center;
             justify-content: center;
             padding: 10px;
-            background-color: rgba(200, 200, 200, 0.2);
+            background-color: rgb(238, 238, 238);
+            border-top: 1px solid rgb(222, 222, 222);
 
             .dialog-btn {
                 display: flex;

@@ -15,25 +15,49 @@
 			<key>foreground</key>
 			<string>rgb(205,205,205)</string>
 		</dict>
-		<key>menuBar</key>
+		<key>active</key>
+		<dict>
+			<key>background</key>
+			<string>rgb(9,71,113)</string>
+		</dict>
+		<key>hover</key>
+		<dict>
+			<key>background</key>
+			<string>rgb(200,200,200,0.1)</string>
+		</dict>
+		<key>menu-bar</key>
 		<dict>
 			<key>background</key>
 			<string>rgb(60,60,60)</string>
 		</dict>
-		<key>statusBar</key>
+		<key>status-bar</key>
 		<dict>
 			<key>background</key>
 			<string>rgb(60,60,60)</string>
 		</dict>
-		<key>sideBar</key>
+		<key>side-bar</key>
 		<dict>
 			<key>background</key>
 			<string>rgb(37,37,37)</string>
 		</dict>
-		<key>editorBar</key>
+		<key>editor-bar</key>
 		<dict>
 			<key>background</key>
 			<string>rgb(45,45,45)</string>
+		</dict>
+		<key>cmd-panel</key>
+		<dict>
+			<key>foreground</key>
+			<string>rgb(205,205,205)</string>
+			<key>background</key>
+			<string>rgb(37,37,37)</string>
+		</dict>
+		<key>cmd-input</key>
+		<dict>
+			<key>foreground</key>
+			<string>rgb(205,205,205)</string>
+			<key>background</key>
+			<string>rgb(60,60,60)</string>
 		</dict>
 	</dict>
 	<key>settings</key>

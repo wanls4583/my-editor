@@ -7,44 +7,38 @@
 	<div :style="{height:height+'px'}" @contextmenu.stop.prevent class="my-menu-bar my-width-100 my-light-bg">
 		<div class="my-height-100 my-center-between my-light-bg">
 			<div class="bar-left">
-				<div @mousedown.stop="showMemu('fileMenuVisible')" class="bar-item my-clickable">
+				<div @mousedown.stop="showMemu('fileMenuVisible')" class="bar-item my-hover">
 					<span>File</span>
-					<Menu :checkable="false" :menuList="fileMenuList" :styles="{left: 0, top: height+'px'}" @change="onFileMenuChange" v-show="fileMenuVisible"></Menu>
+					<Menu :checkable="false" :menuList="fileMenuList" :styles="{left: 0, top: _top}" @change="onFileMenuChange" v-show="fileMenuVisible"></Menu>
 				</div>
-				<div @mousedown.stop="showMemu('editMenuVisible')" class="bar-item my-clickable">
+				<div @mousedown.stop="showMemu('editMenuVisible')" class="bar-item my-hover">
 					<span>Edit</span>
-					<Menu :checkable="false" :menuList="editMenuList" :styles="{left: 0, top: height+'px'}" @change="onEditMenuChange" v-show="editMenuVisible"></Menu>
+					<Menu :checkable="false" :menuList="editMenuList" :styles="{left: 0, top: _top}" @change="onEditMenuChange" v-show="editMenuVisible"></Menu>
 				</div>
-				<div @mousedown.stop="showMemu('selectionMenuVisible')" class="bar-item my-clickable">
+				<div @mousedown.stop="showMemu('selectionMenuVisible')" class="bar-item my-hover">
 					<span>Selection</span>
-					<Menu :checkable="false" :menuList="selectionMenuList" :styles="{left: 0, top: height+'px'}" @change="onSelectionMenuChange" v-show="selectionMenuVisible"></Menu>
+					<Menu :checkable="false" :menuList="selectionMenuList" :styles="{left: 0, top: _top}" @change="onSelectionMenuChange" v-show="selectionMenuVisible"></Menu>
 				</div>
-				<div @mousedown.stop="showMemu('preferenceMenuVisible')" class="bar-item my-clickable">
+				<div @mousedown.stop="showMemu('preferenceMenuVisible')" class="bar-item my-hover">
 					<span>Preference</span>
-					<Menu
-						:checkable="false"
-						:menuList="preferenceMenuList"
-						:styles="{left: 0, top: height+'px'}"
-						@change="onPreferenceMenuChange"
-						v-show="preferenceMenuVisible"
-					></Menu>
+					<Menu :checkable="false" :menuList="preferenceMenuList" :styles="{left: 0, top: _top}" @change="onPreferenceMenuChange" v-show="preferenceMenuVisible"></Menu>
 				</div>
 			</div>
 			<div class="bar-right" v-if="mode==='app'">
 				<!-- 最小化 -->
-				<div @click="onMinimize" class="bar-item my-clickable" style="width:35px;height:35px">
+				<div @click="onMinimize" class="bar-item my-hover" style="width:35px;height:35px">
 					<span class="iconfont icon-zuixiaohua"></span>
 				</div>
 				<!-- 还原最大化 -->
-				<div @click="onUnmaximize" class="bar-item my-clickable" style="width:35px;height:35px" v-if="maximize">
+				<div @click="onUnmaximize" class="bar-item my-hover" style="width:35px;height:35px" v-if="maximize">
 					<span class="iconfont icon-huanyuan"></span>
 				</div>
 				<!-- 最大化 -->
-				<div @click="onMaximize" class="bar-item my-clickable" style="width:35px;height:35px" v-else>
+				<div @click="onMaximize" class="bar-item my-hover" style="width:35px;height:35px" v-else>
 					<span class="iconfont icon-zuidahua"></span>
 				</div>
 				<!-- 最小化 -->
-				<div @click="onClose" class="bar-item my-clickable-danger" style="width:35px;height:35px">
+				<div @click="onClose" class="bar-item my-hover-danger" style="width:35px;height:35px">
 					<span class="iconfont icon-close" style="font-size:18px"></span>
 				</div>
 			</div>
@@ -188,6 +182,9 @@ export default {
         }
     },
     computed: {
+        _top() {
+            return this.height + 2 + 'px';
+        },
         editor() {
             return this.getNowEditor();
         },

@@ -8,9 +8,9 @@
 		<div class="my-light-bg">
 			<div class="my-menu-group" v-for="group in menuList">
 				<div
-					:class="{checked: checkable && item.checked, disabled: item.disabled}"
+					:class="{'my-active': checkable && item.checked, disabled: item.disabled}"
 					@mousedown="onClick(item, group)"
-					class="my-menu-item my-center-between my-clickable"
+					class="my-menu-item my-center-between my-hover"
 					v-for="item in group"
 				>
 					<div class="my-center-between">
