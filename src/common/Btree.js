@@ -296,9 +296,14 @@ class Btree {
         compare = compare || this.compare;
         for (let i = 0; i < result.num; i++) {
             let item = result.dataList[i];
-            if (compare(value, item) === 0) {
+            let res = compare(value, item);
+            if (res >= 0) { //确保next一定大于等于当前值
                 index = i;
                 orginIndex = i;
+                if (res === 0) {
+                    break;
+                }
+            } else {
                 break;
             }
         }

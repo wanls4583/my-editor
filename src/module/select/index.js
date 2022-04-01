@@ -57,15 +57,12 @@ export default class {
                 return value;
             }
             it.reset();
-            while (value = it.next()) {
-                if (Util.comparePos(value.start, cursorPos) > 0) {
-                    return false;
-                }
-                if (Util.comparePos(value.end, cursorPos) >= 0) {
-                    return value;
-                }
+            value = it.next();
+            if (value && Util.comparePos(value.start, cursorPos) == 0) {
+                return value;
             }
         }
+        return false;
     }
     select(direct, wholeWord) {
         this.cursor.multiCursorPos.forEach((cursorPos) => {
@@ -254,12 +251,9 @@ export default class {
         }
         it.reset();
         it.next();
-        while (value = it.next()) {
-            if (Util.comparePos(range.end, value.start) > 0) {
-                dels.push(value);
-            } else {
-                break;
-            }
+        value = it.next();
+        if (value && Util.comparePos(range.end, value.start) > 0) {
+            dels.push(value);
         }
         dels.forEach((item) => {
             this.ranges.delete(item);

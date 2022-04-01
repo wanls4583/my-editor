@@ -105,18 +105,8 @@ export default class {
     getFoldByLine(line) {
         let it = this.folds.search(null, (a, b) => {
             return line - b.start.line;
-        }, true);
-        let value = null;
-        if (it) {
-            while ((value = it.next())) {
-                if (value.start.line === line) {
-                    return value;
-                } else if (value.start.line > line) {
-                    break;
-                }
-            }
-        }
-        return null;
+        });
+        return it && it.next();
     }
     /**
      * 获取折叠范围
