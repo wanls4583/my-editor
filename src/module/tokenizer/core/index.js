@@ -3,10 +3,14 @@
  * @Date: 2021-12-15 11:39:41
  * @Description: 
  */
-import jsRule from '@/module/tokenizer/rules/javascript.js';
-import htmlRule from '@/module/tokenizer/rules/html.js';
-import cssRule from '@/module/tokenizer/rules/css.js';
 import Util from '@/common/Util';
+const vsctm = require('vscode-textmate');
+const oniguruma = require('vscode-oniguruma');
+
+const require = window.require || window.parent.require || function () { };
+const fs = require('fs');
+const path = require('path');
+
 export default class {
     constructor(editor, context) {
         this.currentLine = 1;
@@ -34,194 +38,6 @@ export default class {
     initProperties(editor, context) {
         Util.defineProperties(this, editor, ['startLine', 'maxVisibleLines', 'maxLine', 'renderLine', '$nextTick']);
         Util.defineProperties(this, context, ['htmls']);
-    }
-    initRules(rule) {
-        if (this.languageMap[this.language]) {
-            let obj = this.languageMap[this.language];
-            this.rule = obj.rule;
-            this.ruleIdMap = obj.ruleIdMap;
-            this.ruleNameMap = obj.ruleNameMap;
-            this.regexMap = obj.regexMap;
-            return;
-        }
-        this.ruleId = 1;
-        this.ruleIdMap = {};
-        this.ruleNameMap = {
-            unnamed: true
-        };
-        this.regexMap = {};
-        rule = Util.deepAssign({}, rule, ['auto', 'autoByMap', 'autoChild']);
-        this.setRuleNameMap(rule);
-        this.setRuleId(rule);
-        this.rule = rule;
-        this.languageMap[this.language] = {
-            rule: this.rule,
-            ruleIdMap: this.ruleIdMap,
-            ruleNameMap: this.ruleNameMap,
-            regexMap: this.regexMap
-        };
-    }
-    setRuleNameMap(rule) {
-        if (rule.name) {
-            this.ruleNameMap[rule.name] = rule;
-        }
-        rule.name = rule.name || 'unnamed';
-        if (rule.rules instanceof Array) {
-            rule.rules.forEach((_item) => {
-                if (typeof _item === 'object' && (!_item.name || !this.ruleNameMap[_item.name])) {
-                    this.setRuleNameMap(_item);
-                }
-            });
-        }
-    }
-    setRuleId(rule) {
-        // 每个规则生成一个唯一标识
-        rule.ruleId = this.ruleId++;
-        rule.level = rule.level || 0;
-        rule.token = rule.token || '';
-        this.ruleIdMap[rule.ruleId] = rule;
-        if (rule.start) {
-            let start = this.getRule(rule.start);
-            if (typeof start === 'object' && !(start instanceof RegExp)) {
-                this.setRuleId(start);
-                start.startBy = rule.ruleId;
-            } else if (typeof rule.start === 'string') {
-                rule.start = new RegExp(rule.start);
-            }
-        }
-        if (rule.end) {
-            let end = this.getRule(rule.end);
-            if (typeof end === 'object' && !(end instanceof RegExp)) {
-                this.setRuleId(end);
-                end.endBy = rule.ruleId;
-            } else if (typeof rule.end === 'string') {
-                rule.end = new RegExp(rule.end);
-            }
-        }
-        if (rule.rules) {
-            let rules = this.getRule(rule.rules);
-            if (rules) {
-                let _rules = [];
-                rules = rules instanceof Array ? rules : rules.rules;
-                rules.forEach((_item) => {
-                    _item = this.getRule(_item);
-                    if (_item instanceof Array) {
-                        _rules.push(..._item);
-                    } else {
-                        if (typeof _item.regex === 'string') {
-                            _item.regex = new RegExp(_item.regex);
-                        }
-                        _rules.push(_item);
-                    }
-                    if (!_item.ruleId) {
-                        this.setRuleId(_item);
-                    }
-                });
-                rules = _rules;
-            }
-            rule.rules = rules;
-        }
-    }
-    getRule(rule) {
-        if (typeof rule === 'string') {
-            if (rule.startsWith('...')) {
-                return this.ruleNameMap[rule.slice(3)].rules;
-            } else {
-                return this.ruleNameMap[rule];
-            }
-        } else {
-            return rule;
-        }
-    }
-    // 组合正则表达式
-    getCombRegex(states) {
-        states = states || [];
-        let statesKey = states + '' || '1';
-        let sources = [];
-        let sourceMap = {};
-        let regexs = [];
-        let index = 0;
-        let rule = null;
-        if (this.regexMap[statesKey]) {
-            return this.regexMap[statesKey];
-        }
-        if (states.length > 1) {
-            let resultStates = [];
-            while (index < states.length - 1) {
-                rule = this.ruleIdMap[states[index + 1]];
-                if (rule.startBy === states[index] || rule.endBy === states[index]) { //处于同一层级
-                    index++;
-                    continue;
-                }
-                resultStates.push(states[index]);
-                index++;
-            }
-            resultStates.push(states[index]);
-            states = resultStates;
-        }
-        if (states.length > 0) {
-            rule = this.ruleIdMap[states.peek()];
-            states.length && regexs.push(this.getEndRegex(rule));
-            for (let i = 0; i < states.length - 1; i++) {
-                if (this.ruleIdMap[states[i]].prior) { //可以提前结束子规则块
-                    regexs.push(this.getEndRegex(this.ruleIdMap[states[i]]));
-                }
-            }
-        } else {
-            rule = this.rule;
-        }
-        rule.rules && rule.rules.forEach((item) => {
-            regexs.push(this.getStartRegex(item));
-        });
-        regexs.forEach((item) => {
-            let side = item.side === -1 ? 'start' : 'end';
-            if (!sourceMap[item.ruleId] || sourceMap[item.ruleId] !== side) {
-                sources.push(`?<${side}_${item.ruleId}>${item.regex.source}`);
-                sourceMap[item.ruleId] = side;
-            }
-        });
-        this.regexMap[statesKey] = new RegExp(`(${sources.join(')|(')})`, 'g');
-        return this.regexMap[statesKey];
-    }
-    getStartRegex(rule) {
-        let start = null;
-        rule = this.getRule(rule);
-        start = this.getRule(rule.start);
-        if (rule.regex instanceof RegExp) {
-            return {
-                ruleId: rule.ruleId,
-                regex: rule.regex,
-                side: -1
-            }
-        } else if (start instanceof RegExp) {
-            return {
-                ruleId: rule.ruleId,
-                regex: start,
-                side: -1
-            };
-        } else if (start.startBy) {
-            return this.getStartRegex(start);
-        }
-    }
-    getEndRegex(rule, side) {
-        let end = null;
-        rule = this.getRule(rule);
-        end = this.getRule(rule.end);
-        if (rule.regex instanceof RegExp) {
-            return {
-                ruleId: rule.ruleId,
-                regex: rule.regex,
-                side: side || 1
-            }
-        } else if (end instanceof RegExp) {
-            return {
-                ruleId: rule.ruleId,
-                regex: end,
-                side: side || 1
-            };
-        } else if (end.endBy) {
-            return this.getStartRegex(end, -1);
-        }
     }
     onInsertContentAfter(nowLine, newLine) {
         if (nowLine <= this.currentLine) {
@@ -282,7 +98,8 @@ export default class {
                     if (rule && typeof rule.value === 'function') {
                         return rule.value(item.value);
                     } else {
-                        return `<span class="${item.type.split('.').join(' ')}" data-column="${item.column}">${Util.htmlTrans(item.value)}</span>`;
+                        let type = item.type.join('.');
+                        return `<span class="${type.split('.').join(' ')}" data-column="${item.column}">${Util.htmlTrans(item.value)}</span>`;
                     }
                 }).join('');
                 this.renderLine(lineObj.lineId);
@@ -297,6 +114,7 @@ export default class {
                 // 避免卡顿
                 if (processedLines % 10 == 0 && Date.now() - processedTime >= 20) {
                     startLine++;
+                    console.log(startLine);
                     break;
                 }
             }
@@ -311,14 +129,12 @@ export default class {
     }
     tokenizeLine(line) {
         let match = null;
-        let rule = null;
-        let lastIndex = 0;
+        let startPosition = 0;
+        let preStart = 0;
         let preEnd = 0;
         let preRule = null;
-        let preIndex = 0;
-        let newStates = [];
-        let states = (line > 1 && this.htmls[line - 2].states || []).slice(0);
         let lineObj = this.htmls[line - 1];
+        let states = (line > 1 && this.htmls[line - 2].states || []).slice(0);
         let resultObj = {
             tokens: [],
             folds: []
@@ -335,62 +151,53 @@ export default class {
                 states: states
             }
         }
-        let regex = this.getRegex(states);
-        while (match = regex.exec(lineObj.text)) {
-            let token = null;
-            let fold = null;
-            let valid = true;
-            let side = '';
-            for (let ruleId in match.groups) {
-                if (match.groups[ruleId] == undefined) {
-                    continue;
-                }
-                side = ruleId.split('_')[0];
-                ruleId = ruleId.split('_')[1] - 0;
-                rule = this.ruleIdMap[ruleId];
-                if (preEnd < match.index) { //普通文本
-                    let value = lineObj.text.slice(preEnd, match.index);
-                    resultObj.tokens.push({
-                        value: value,
-                        column: preEnd,
-                        state: states.peek(),
-                        type: this.getTokenType({
-                            rule: this.ruleIdMap[states.peek()],
-                            index: preEnd,
-                            value: value,
-                            line: line
-                        })
-                    });
-                    preEnd = match.index;
-                }
-                if (typeof rule.valid === 'function') {
-                    valid = rule.valid(this.getFunParam(match.index, match[0], line, side));
-                }
-                if (!valid) {
-                    break;
-                }
-                fold = this.getFold(rule, match, resultObj, line, side);
-                token = this.getToken(rule, match, states, newStates, resultObj, line, side);
-                token.value && resultObj.tokens.push(token);
-                fold && resultObj.folds.push(fold);
-                preEnd = match.index + match[0].length;
-                break;
+        let scanner = this.getRegex(states);
+        while (match = scanner.findNextMatchSync(lineObj.text, startPosition)) {
+            let side = this.firstIsEnd && match.index === 0 ? 'end' : 'begin';
+            let rule = this.nowCombRegexRule[match.index];
+            rule = this.ruleIdMap[rule];
+            if (preEnd < match.captureIndices[0].start) { //普通文本
+                let value = lineObj.text.slice(preEnd, match.captureIndices[0].start);
+                resultObj.tokens.push({
+                    value: value,
+                    column: preEnd,
+                    state: states.peek(),
+                    type: this.getTokenType({
+                        states: states
+                    })
+                });
             }
-            if (!match[0] && side === 'start' && preIndex === match.index &&
+            this.addToken({
+                rule: rule,
+                states: states,
+                match: match,
+                side: side,
+                text: lineObj.text,
+                tokens: resultObj.tokens
+            });
+            if (rule.begin && rule.end) { //多行token-end
+                if (side === 'end') { //多行token尾
+                    states.pop();
+                } else { //多行token-begin
+                    states.push(rule.ruleId);
+                }
+            }
+            if (resultObj.tokens.length) {
+                preEnd = resultObj.tokens.peek();
+                preEnd = preEnd.column + preEnd.value.length;
+            }
+            if (match.captureIndices[0].start === match.captureIndices[0].end &&
+                side === 'begin' && preStart === match.captureIndices[0].start &&
                 preRule && preRule.ruleId === rule.ruleId) {
                 // 有些规则可能没有结果，只是标识进入某一个规则块，
                 // 如果其子规则也有该规则，则会进入死循环
-                regex.lastIndex++;
+                startPosition++;
+            } else {
+                startPosition = match.captureIndices[0].end;
             }
-            if (!valid) { //跳过当前无效结果
-                continue;
-            }
-            lastIndex = regex.lastIndex;
-            regex.lastIndex = 0;
-            regex = this.getRegex(states, rule.ruleId);
-            regex.lastIndex = lastIndex;
+            scanner = this.getRegex(states, rule.ruleId);
+            preStart = match.captureIndices[0].start;
             preRule = rule;
-            preIndex = match.index;
         }
         if (!resultObj.tokens.length && states.length) { // 整行被多行token包裹
             resultObj.tokens.push({
@@ -398,9 +205,7 @@ export default class {
                 column: 0,
                 state: states.peek(),
                 type: this.getTokenType({
-                    rule: this.ruleIdMap[states.peek()],
-                    value: lineObj.text,
-                    line: line
+                    states: states
                 })
             });
         } else if (preEnd < lineObj.text.length) { //文本末尾
@@ -410,14 +215,10 @@ export default class {
                 column: preEnd,
                 state: states.peek(),
                 type: this.getTokenType({
-                    rule: this.ruleIdMap[states.peek()],
-                    index: preEnd,
-                    value: value,
-                    line: line
+                    states: states
                 })
             });
         }
-        regex.lastIndex = 0;
         return {
             tokens: this.splitLongToken(resultObj.tokens),
             folds: resultObj.folds,
@@ -454,214 +255,123 @@ export default class {
         });
         return result;
     }
-    /**
-     * 获取折叠标记对象
-     * @param {Object} rule 规则对象
-     * @param {Object} match 正则结果对象
-     * @param {Array} states 状态栈
-     * @param {Array} newStates 当前行的新增状态栈
-     * @param {Object} resultObj 结果对象
-     * @param {Number} line 当前行
-     * @param {String} side 开始/结束标记
-     */
-    getToken(rule, match, states, newStates, resultObj, line, side) {
-        let result = match[0];
-        let text = this.htmls[line - 1].text;
-        let token = {
-            ruleId: rule.ruleId,
-            value: result,
-            column: match.index,
-            state: states && states.peek()
-        };
-        if (rule.start && rule.end) { //多行token-end
-            if (side === 'end') { //多行token尾
-                while (states.peek() != rule.ruleId) {
-                    states.pop();
-                }
-                states.pop();
-                if (!rule.rules) { //无子节点
-                    if (newStates.indexOf(rule.ruleId) > -1) { //在同一行匹配
-                        let value = '';
-                        token = resultObj.tokens.pop();
-                        value = token.value;
-                        if (token.ruleId !== rule.ruleId) {
-                            token = resultObj.tokens.pop();
-                            value = token.value + value;
-                        }
-                        token.value = value + result;
-                    } else { //跨行匹配
-                        resultObj.tokens.pop()
-                        token.value = text.slice(0, match.index + result.length);
-                        token.column = 0;
-                    }
-                }
-            } else { //多行token-start
-                states.push(rule.ruleId);
-                newStates.push(rule.ruleId);
-            }
-        }
-        token.type = this.getTokenType({
+    addToken(option) {
+        let rule = option.rule;
+        let states = option.states;
+        let match = option.match;
+        let side = option.side;
+        let text = option.text;
+        let tokens = option.tokens;
+        let token = null;
+        let type = this.getTokenType({
             rule: rule,
-            index: match.index,
-            value: token.value,
-            line: line,
+            states: states,
+            match: match,
             side: side
         });
-        return token;
+        if (rule.beginCaptures && side === 'begin') {
+            _addCapturesToken(rule.beginCaptures);
+        } else if (rule.endCaptures && side === 'end') {
+            _addCapturesToken(rule.endCaptures);
+        } else if (rule.captures) {
+            _addCapturesToken(rule.captures);
+        } else if (match.captureIndices[0].start < match.captureIndices[0].end) {
+            token = _createToken.call(this, match.captureIndices[0].start, match.captureIndices[0].end, type);
+            tokens.push(token);
+        }
+
+        function _createToken(start, end, type) {
+            let token = {
+                ruleId: rule.ruleId,
+                value: text.slice(start, end),
+                column: start,
+                state: states.peek(),
+                type: type
+            }
+            return token;
+        }
+
+        function _addCapturesToken(captures) {
+            let _tokens = [];
+            for (let i = 0; i < match.captureIndices.length; i++) {
+                let start = match.captureIndices[i].start;
+                let end = match.captureIndices[i].end;
+                if (captures[i] && start < 100000 && start < end) {
+                    token = _createToken(start, end, [captures[i].name]);
+                    _tokens.push(token);
+                }
+            }
+            _tokens.sort((a, b) => {
+                return a.column + a.value.length - (b.column + b.value.length);
+            });
+            let token = null;
+            let tokenPart = [];
+            while (token = _tokens.pop()) {
+                let preEnd = token.column + token.value.length;
+                let _type = token.type.concat(type);
+                for (let i = _tokens.length - 1; i >= 0; i--) {
+                    let _token = _tokens[i];
+                    let end = _token.column + _token.value.length;
+                    if (end > token.column) {
+                        if (preEnd > end) {
+                            tokenPart.push(_createToken(end, preEnd, _type));
+                        }
+                        _token.type.push(...token.type);
+                        preEnd = _token.column;
+                    } else {
+                        break;
+                    }
+                }
+                if (preEnd > token.column) {
+                    tokenPart.push(_createToken(token.column, preEnd, _type));
+                }
+            }
+            tokenPart.sort((a, b) => {
+                return a.column - b.column;
+            });
+            for (let i = 0; i < tokenPart.length; i++) {
+                let end = 0;
+                token = tokenPart[i];
+                tokens.push(token);
+                end = token.column + token.value.length;
+                token = tokenPart[i + 1];
+                if (token && token.column > end) {
+                    tokens.push(_createToken(end, token.column, type));
+                }
+            }
+        }
     }
     /**
      * 获取token类型
      * @param {Object} option {
      *  rule: 规则对象,
-     *  index: value在text中的开始索引,
-     *  text: 当前行的文本,
-     *  value: token的文本范围,
      *  side: 开始/结束标记,
      *  match: 正则执行后的结果对象
+     *  states: 状态栈
      * } 
      */
     getTokenType(option) {
-        let rule = option.rule;
-        let index = option.index || 0;
-        let value = option.value;
-        let line = option.line;
-        let side = option.side;
-        let type = '';
-        let param = this.getFunParam(index, value, line)
-        if (!rule) {
-            return 'plain';
-        }
-        if (typeof rule.token == 'function') {
-            type = rule.token(param);
-        } else {
-            if (side === 'start' && rule.startToken) {
-                type = typeof rule.startToken === 'function' ? rule.startToken(param) : rule.startToken;
-            } else if (side === 'end' && rule.endToken) {
-                type = typeof rule.endToken === 'function' ? rule.endToken(param) : rule.endToken;
-            } else {
-                type = rule.token;
-            }
-        }
-        return type || 'plain';
-    }
-    /**
-     * 获取折叠标记对象
-     * @param {Object} rule 规则对象
-     * @param {Object} match 正则结果对象
-     * @param {Object} resultObj 结果对象
-     * @param {Number} line 当前行
-     * @param {String} side 开始/结束标记
-     */
-    getFold(rule, match, resultObj, line, side) {
-        let result = match[0];
-        let fold = null;
-        if (rule.start && rule.end) { //多行token被匹配
-            if (rule.foldName) { //多行匹配可折叠
-                fold = {
-                    start: match.index,
-                    end: match.index + result.length,
-                    value: result
-                };
-            }
-        } else if (rule.foldName && rule.foldType) { //折叠标记
-            fold = {
-                start: match.index,
-                end: match.index + result.length,
-                value: result
-            };
-        }
-        if (fold) {
-            let foldName = this.getFoldName(rule, match, line);
-            if (!foldName) { //没有折叠名称无效
-                return null;
-            }
-            fold.name = foldName;
-            fold.type = this.getFoldType(rule, match, line, side);
-            if (fold.type == 1) {
-                fold = _checkFold(resultObj, fold);
-            }
-        }
-        return fold;
-
-        function _checkFold(resultObj, fold) {
-            let folds = resultObj.folds;
-            if (folds) {
-                for (let i = folds.length - 1; i >= 0; i--) {
-                    // 同行折叠无效
-                    if (folds[i].name == fold.name && folds[i].type == -1) {
-                        resultObj.folds = folds.slice(0, i);
-                        fold = null;
-                        break;
-                    }
+        let rule = option.rule || {};
+        let states = option.states || [];
+        let type = [];
+        rule.name && type.push(rule.name);
+        for (let i = states.length - 1; i >= 0; i--) {
+            let _rule = this.ruleIdMap[states[i]];
+            if (_rule.ruleId !== rule.ruleId) {
+                if (_rule.name) {
+                    type.push(_rule.name);
+                }
+                if (_rule.contentName) {
+                    type.push(_rule.contentName);
                 }
             }
-            return fold;
         }
+        if (!type.length) {
+            type.push('plain')
+        };
+        return type;
     }
-    /**
-     * 获取折叠名称[唯一标识]
-     * @param {Object} rule 规则对象
-     * @param {Object} match 正则执行后的结果对象
-     * @param {Number} line 当前行
-     */
-    getFoldName(rule, match, line) {
-        let foldName = '';
-        if (typeof rule.foldName === 'function') {
-            foldName = rule.foldName(this.getFunParam(match.index, match[0], line));
-        } else {
-            foldName = rule.foldName;
-        }
-        return foldName;
-    }
-    /**
-     * 获取折叠类型[-1:首,1:尾]
-     * @param {Object} rule 规则对象
-     * @param {Object} match 正则执行后的结果对象
-     * @param {Number} line 当前行
-     * @param {String} side 开始/结束标记
-     */
-    getFoldType(rule, match, line, side) {
-        let foldType = '';
-        if (typeof rule.foldType === 'function') {
-            foldType = rule.foldType(this.getFunParam(match.index, match[0], line));
-        } else if (rule.start && rule.end) {
-            foldType = side == 'start' ? -1 : 1;
-        } else {
-            foldType = rule.foldType;
-        }
-        return foldType;
-    }
-    getRegex(states, preRuleId) {
-        let preRule = this.ruleIdMap[preRuleId];
-        while (preRule && states.indexOf(preRule.ruleId) == -1 && preRule.endBy) {
-            while (states.peek() != preRule.endBy) {
-                states.pop();
-            }
-            states.pop();
-            preRule = this.ruleIdMap[preRule.endBy];
-        }
-        if (preRule && states.indexOf(preRule.ruleId) == -1 && preRule.startBy) {
-            states.push(preRule.startBy);
-        }
+    getRegex(states) {
         return this.getCombRegex(states);
-    }
-    getFunParam(index, value, line, side) {
-        return {
-            index: index,
-            value: value,
-            line: line,
-            side: side,
-            getLineText: (line) => {
-                return this.htmls[line - 1] && this.htmls[line - 1].text;
-            },
-            getLineTokens: (line) => {
-                return this.htmls[line - 1] && this.htmls[line - 1].tokens && this.htmls[line - 1].tokens.map((item) => {
-                    return {
-                        type: item.type,
-                        value: item.value
-                    };
-                });
-            }
-        }
     }
 }
