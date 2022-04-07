@@ -54,7 +54,7 @@ class Autocomplete {
         this.stop();
         this.reset();
         this.searchTimer = setTimeout(() => {
-            this._search(this.searcherId);
+            // this._search(this.searcherId);
         });
     }
     _search(searcherId) {

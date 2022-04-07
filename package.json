@@ -6,13 +6,15 @@
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
-    "client": "electron src/electron/main.js"
+    "client": "electron src/entry.js"
   },
   "dependencies": {
     "@electron/remote": "^2.0.5",
     "axios": "^0.26.1",
     "core-js": "^3.8.3",
     "jquery": "^3.6.0",
+    "vscode-oniguruma": "^1.6.2",
+    "vscode-textmate": "^6.0.0",
     "vue": "^2.6.14",
     "vue-router": "^3.5.3"
   },
