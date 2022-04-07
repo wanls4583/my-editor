@@ -105,12 +105,11 @@ export default class {
             if (this.tokenizeVisibleLins.id !== tokenizeVisibleLinsId) {
                 return;
             }
-            let currentLine = this.currentLine;
-            this.tokenizeLines(this.startLine, this.startLine + this.maxVisibleLines);
-            this.currentLine = currentLine;
+            this.tokenizeLines(this.startLine, this.startLine + this.maxVisibleLines, this.currentLine);
         });
     }
-    tokenizeLines(startLine, endLine) {
+    tokenizeLines(startLine, endLine, currentLine) {
+        console.log('currentLine', currentLine);
         let processedLines = 0;
         let processedTime = Date.now();
         endLine = endLine || this.maxLine;
@@ -147,18 +146,22 @@ export default class {
                 }
                 processedLines++;
                 // 避免卡顿
-                if (processedLines % 10 == 0 && Date.now() - processedTime >= 20) {
+                if (processedLines % 5 == 0 && Date.now() - processedTime >= 20) {
                     startLine++;
-                    console.log(startLine);
                     break;
                 }
             }
             startLine++;
         }
         this.currentLine = startLine;
+        clearTimeout(this.tokenizeLines.timer);
         if (startLine <= endLine) {
             this.tokenizeLines.timer = setTimeout(() => {
-                this.tokenizeLines(startLine, endLine);
+                this.tokenizeLines(startLine, endLine, currentLine);
+            }, 20);
+        } else if(currentLine !== undefined) {
+            this.tokenizeLines.timer = setTimeout(() => {
+                this.tokenizeLines(currentLine);
             }, 20);
         }
     }
