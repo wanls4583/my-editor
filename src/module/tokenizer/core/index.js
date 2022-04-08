@@ -4,6 +4,7 @@
  * @Description: 
  */
 import Util from '@/common/Util';
+import languageScopeMap from '@/module/language/language.scopeMap.js';
 import * as vsctm from 'vscode-textmate';
 import * as oniguruma from 'vscode-oniguruma';
 
@@ -33,9 +34,9 @@ export default class {
         this.registry = new vsctm.Registry({
             onigLib: vscodeOnigurumaLib,
             loadGrammar: (scopeName) => {
-                if (scopeName === 'source.js') {
-                    // https://github.com/textmate/javascript.tmbundle/blob/master/Syntaxes/JavaScript.plist
-                    return this.readFile('./src/module/language/JavaScript.plist').then(data => vsctm.parseRawGrammar(data.toString()))
+                let filePath = languageScopeMap[scopeName];
+                if (filePath) {
+                    return this.readFile(filePath).then(data => vsctm.parseRawGrammar(data.toString(), filePath));
                 }
                 console.log(`Unknown scope name: ${scopeName}`);
                 return null;
@@ -46,16 +47,24 @@ export default class {
         if (this.language === language) {
             return;
         }
+        this.language = language;
+        this.scopeName = '';
+        this.grammar = null;
         switch (language) {
+            case 'HTML':
+                this.scopeName = 'text.html.basic';
+                break;
             case 'JavaScript':
-                this.registry.loadGrammar('source.js').then(grammar => {
-                    this.grammar = grammar;
-                });
-                this.language = language;
+                this.scopeName = 'source.js';
                 break;
-            default:
-                this.language = 'plain';
+            case 'CSS':
+                this.scopeName = 'source.css';
                 break;
+        }
+        if (this.scopeName) {
+            this.registry.loadGrammar(this.scopeName).then(grammar => {
+                this.grammar = grammar;
+            });
         }
     }
     initProperties(editor, context) {
@@ -109,13 +118,12 @@ export default class {
         });
     }
     tokenizeLines(startLine, endLine, currentLine) {
-        console.log('currentLine', currentLine);
         let processedLines = 0;
         let processedTime = Date.now();
         endLine = endLine || this.maxLine;
         endLine = endLine > this.maxLine ? this.maxLine : endLine;
         clearTimeout(this.tokenizeLines.timer);
-        if (this.language !== 'plain' && !this.grammar) {
+        if (this.scopeName && !this.grammar) {
             this.tokenizeLines.timer = setTimeout(() => {
                 this.tokenizeLines(startLine, endLine);
             });
@@ -159,7 +167,7 @@ export default class {
             this.tokenizeLines.timer = setTimeout(() => {
                 this.tokenizeLines(startLine, endLine, currentLine);
             }, 20);
-        } else if(currentLine !== undefined) {
+        } else if (currentLine !== undefined) {
             this.tokenizeLines.timer = setTimeout(() => {
                 this.tokenizeLines(currentLine);
             }, 20);
@@ -167,7 +175,7 @@ export default class {
     }
     tokenizeLine(line) {
         let lineText = this.htmls[line - 1].text;
-        if (lineText.length > 10000 || this.language == 'plain') {
+        if (lineText.length > 10000 || !this.scopeName) {
             return {
                 tokens: this.splitLongToken([{
                     type: 'plain',
