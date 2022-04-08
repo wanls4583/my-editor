@@ -4,8 +4,8 @@
  * @Description: 
 -->
 <template>
-	<div :style="styles" @mousedown.stop class="my-menu my-shadow my-border" v-show="visible">
-		<div>
+	<div :style="styles" @mousedown.stop class="my-menu my-shadow my-border">
+		<div v-show="visible">
 			<div class="my-menu-group" v-for="group in menuList">
 				<div
 					:class="{'my-active': checkable && item.checked, disabled: item.disabled}"

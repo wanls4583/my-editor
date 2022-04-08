@@ -13,9 +13,9 @@ Vue.prototype.$http = axios.create({
   }
 });
 window.globalData = {
-  nowTheme: '/theme/dark-monokai.tmTheme'
+  nowTheme: '/theme/dark-monokai.tmTheme',
+  languageList: []
 };
-window.contexts = {};
 
 new Vue({
   router,

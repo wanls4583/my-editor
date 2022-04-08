@@ -18,7 +18,7 @@
 				</div>
 				<div @mousedown.stop="showLanguage" class="bar-item my-hover" v-if="editor">
 					<span>{{_language}}</span>
-					<Menu :menuList="languageList" :styles="{right: 0, bottom: height+'px'}" :value="language" @change="onLnaguageChange" v-show="languageVisible"></Menu>
+					<Menu :menuList="languages" :styles="{right: 0, bottom: height+'px'}" :value="language" @change="onLnaguageChange" ref="language" v-show="languageVisible"></Menu>
 				</div>
 			</div>
 		</div>
@@ -33,6 +33,7 @@ export default {
             type: Number,
             default: 25
         },
+        languageList: Array
     },
     components: {
         Menu
@@ -46,16 +47,19 @@ export default {
             tabsizeVisible: false,
             languageVisible: false,
             tabSizeList: [[]],
+            languages: [[]],
             languageMap: {},
-            languageList: [[
-                { name: 'JavaScript', value: 'JavaScript' },
-                { name: 'HTML', value: 'HTML' },
-                { name: 'CSS', value: 'CSS' },
-                { name: 'Plain Text', value: '', checked: true }
-            ]]
         }
     },
     watch: {
+        languageList() {
+            let languageMap = {};
+            this.languageList.forEach((item) => {
+                languageMap[item.value] = item.name;
+            });
+            this.languages = [this.languageList];
+            this.languageMap = languageMap;
+        }
     },
     computed: {
         editor() {
@@ -73,9 +77,6 @@ export default {
                 value: i
             });
         }
-        this.languageList[0].forEach((item) => {
-            this.languageMap[item.value] = item.name;
-        });
     },
     mounted() {
     },

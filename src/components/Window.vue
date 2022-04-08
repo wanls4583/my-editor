@@ -37,7 +37,7 @@
 		<!-- 顶部菜单栏 -->
 		<menu-bar :height="topBarHeight" @change="onMenuChange" ref="menuBar"></menu-bar>
 		<!-- 状态栏 -->
-		<status-bar :height="statusHeight" ref="statusBar"></status-bar>
+		<status-bar :height="statusHeight" :languageList="languageList" ref="statusBar"></status-bar>
 		<cmd-panel :menuList="cmdMenuList" :value="cmdValue" :visible.sync="cmdVisible"></cmd-panel>
 		<Dialog
 			:btns="dialogBtns"
@@ -66,6 +66,7 @@ import $ from 'jquery';
 
 const require = window.require || window.parent.require || function () { };
 const fs = require('fs');
+const path = require('path');
 const remote = require('@electron/remote');
 const contexts = Context.contexts;
 
@@ -82,6 +83,8 @@ export default {
     },
     data() {
         return {
+            languagePath: './public/language',
+            languageList: [],
             statusHeight: 30,
             topBarHeight: 35,
             nowId: null,
@@ -138,6 +141,12 @@ export default {
         }
         this.theme = new Theme();
         this.theme.loadXml(window.globalData.nowTheme);
+        this.loadLanguage().then((results) => {
+            results.push({ name: 'Plain Text', value: '', checked: true });
+            window.globalData.languageList.push(...results.slice());
+            this.languageList = results;
+            this.checkLanguage();
+        });
     },
     mounted() {
         window.test = this;
@@ -170,7 +179,7 @@ export default {
                 });
                 tab.active = true;
                 this.nowId = id;
-                this.changStatus();
+                this.changeStatus();
             } else {
                 this.getNowEditor().focus();
             }
@@ -390,23 +399,6 @@ export default {
             function _done() {
                 this.$nextTick(() => {
                     if (tab && tab.path && !tab.loaded) {
-                        let fileType = tab.name.match(/\.[^\.]+?$/i);
-                        let language = '';
-                        fileType = fileType && fileType[0].toLowerCase().slice(1) || '';
-                        switch (fileType) {
-                            case 'html':
-                            case 'xml':
-                            case 'vue':
-                                language = 'HTML';
-                                break;
-                            case 'js':
-                                language = 'JavaScript';
-                                break;
-                            case 'css':
-                                language = 'CSS';
-                                break;
-                        }
-                        this.getEditor(tab.id).language = language;
                         fs.readFile(tab.path, { encoding: 'utf8' }, (err, data) => {
                             if (err) {
                                 throw err;
@@ -417,6 +409,7 @@ export default {
                         });
                     }
                     this.onChangeTab(tab.id);
+                    this.checkLanguage();
                 });
             }
         },
@@ -473,11 +466,11 @@ export default {
         writeFile(path, text) {
             fs.writeFileSync(path, text, { encoding: 'utf-8' });
         },
-        changStatus() {
-            let changStatusId = this.changStatus.id || 1;
-            this.changStatus.id = changStatusId;
+        changeStatus() {
+            let changStatusId = this.changeStatus.id || 1;
+            this.changeStatus.id = changStatusId;
             this.$nextTick(() => {
-                if (this.changStatus.id !== changStatusId) {
+                if (this.changeStatus.id !== changStatusId) {
                     return;
                 }
                 let editor = this.getNowEditor();
@@ -491,6 +484,65 @@ export default {
                     statusBar.setLine('?');
                     statusBar.setColumn('?');
                 }
+            });
+        },
+        // 检查当前打开的文件的语言
+        checkLanguage() {
+            if (this.nowId) {
+                let tab = this.getTabById(this.nowId);
+                let editor = this.getNowEditor();
+                let statusBar = this.$refs.statusBar;
+                let suffix = /\.[^\.]+$/.exec(tab.name);
+                if (!suffix) {
+                    return;
+                }
+                for (let i = 0; i < this.languageList.length; i++) {
+                    let language = this.languageList[i];
+                    if (language.extensions && language.extensions.indexOf(suffix[0]) > -1) {
+                        statusBar.setLanguage(language.name);
+                        editor.language = language.name;
+                        break;
+                    }
+                }
+            }
+        },
+        // 加载语言支持
+        loadLanguage() {
+            return new Promise((resolve) => {
+                let results = [];
+                // 异步读取目录内容
+                fs.readdir(this.languagePath, { encoding: 'utf8' }, (err, files) => {
+                    if (err) { throw err }
+                    files.forEach((item, index) => {
+                        let fullPath = path.join(this.languagePath, item);
+                        let packPath = path.join(fullPath, './package.json');
+                        if (fs.existsSync(packPath)) {
+                            const text = fs.readFileSync(packPath, 'utf-8');
+                            try {
+                                let json = JSON.parse(text);
+                                let contributes = json.contributes;
+                                let languages = contributes.languages;
+                                let grammars = contributes.grammars;
+                                languages.map((language) => {
+                                    for (let i = 0; i < grammars.length; i++) {
+                                        let grammar = grammars[i];
+                                        if (language.id === grammar.language) {
+                                            results.push({
+                                                name: grammar.language,
+                                                value: grammar.language,
+                                                scopeName: grammar.scopeName,
+                                                path: path.join(fullPath, grammar.path),
+                                                extensions: language.extensions
+                                            });
+                                            break;
+                                        }
+                                    }
+                                });
+                            } catch (e) { }
+                        }
+                    });
+                    resolve(results);
+                });
             });
         },
         getTabById(id) {

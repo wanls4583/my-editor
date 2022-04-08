@@ -227,6 +227,20 @@ class Util {
         });
         Object.defineProperties(target, result);
     }
+    static getLanguageByName(languageList, language) {
+        for (let i = 0; i < languageList.length; i++) {
+            if (languageList[i].name === language) {
+                return languageList[i];
+            }
+        }
+    }
+    static getLanguageByScopeName(languageList, scopeName) {
+        for (let i = 0; i < languageList.length; i++) {
+            if (languageList[i].scopeName === scopeName) {
+                return languageList[i];
+            }
+        }
+    }
     /**
      * 模糊匹配【word是否存在于target中】
      * @param {String} word 被搜索的单词

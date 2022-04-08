@@ -4,7 +4,6 @@
  * @Description: 
  */
 import Util from '@/common/Util';
-import languageScopeMap from '@/module/language/language.scopeMap.js';
 import * as vsctm from 'vscode-textmate';
 import * as oniguruma from 'vscode-oniguruma';
 
@@ -15,12 +14,13 @@ export default class {
     constructor(editor, context) {
         this.currentLine = 1;
         this.languageMap = [];
+        this.languageList = window.globalData.languageList;
         this.initRegistry();
         this.initProperties(editor, context);
         this.initLanguage(editor.language);
     }
     initRegistry() {
-        const wasmBin = fs.readFileSync('./node_modules/vscode-oniguruma/release/onig.wasm').buffer;
+        const wasmBin = fs.readFileSync('./public/lib/onig.wasm').buffer;
         const vscodeOnigurumaLib = oniguruma.loadWASM(wasmBin).then(() => {
             return {
                 createOnigScanner(patterns) {
@@ -34,9 +34,9 @@ export default class {
         this.registry = new vsctm.Registry({
             onigLib: vscodeOnigurumaLib,
             loadGrammar: (scopeName) => {
-                let filePath = languageScopeMap[scopeName];
-                if (filePath) {
-                    return this.readFile(filePath).then(data => vsctm.parseRawGrammar(data.toString(), filePath));
+                let language = Util.getLanguageByScopeName(this.languageList, scopeName);
+                if (language) {
+                    return this.readFile(language.path).then(data => vsctm.parseRawGrammar(data.toString(), language.path));
                 }
                 console.log(`Unknown scope name: ${scopeName}`);
                 return null;
@@ -48,19 +48,9 @@ export default class {
             return;
         }
         this.language = language;
-        this.scopeName = '';
         this.grammar = null;
-        switch (language) {
-            case 'HTML':
-                this.scopeName = 'text.html.basic';
-                break;
-            case 'JavaScript':
-                this.scopeName = 'source.js';
-                break;
-            case 'CSS':
-                this.scopeName = 'source.css';
-                break;
-        }
+        language = Util.getLanguageByName(this.languageList, language);
+        this.scopeName = language && language.scopeName || '';
         if (this.scopeName) {
             this.registry.loadGrammar(this.scopeName).then(grammar => {
                 this.grammar = grammar;
@@ -178,7 +168,7 @@ export default class {
         if (lineText.length > 10000 || !this.scopeName) {
             return {
                 tokens: this.splitLongToken([{
-                    type: 'plain',
+                    type: ['plain'],
                     column: 0,
                     value: lineText,
                 }]),
