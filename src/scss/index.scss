@@ -48,6 +48,27 @@ body {
         height: 100%;
     }
 
+    &-scroll-overlay {
+        overflow: overlay;
+
+        &::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+            border-radius: 6px;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background-color: transparent;
+        }
+
+        &:hover {
+            &::-webkit-scrollbar-thumb {
+                border-radius: 6px;
+                background-color: rgba(200, 200, 200, 0.5);
+            }
+        }
+    }
+
     &-hover {
         cursor: pointer;
 

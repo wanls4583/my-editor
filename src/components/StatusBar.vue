@@ -4,52 +4,71 @@
  * @Description: 
 -->
 <template>
-	<div :style="{height:height+'px'}" @contextmenu.stop.prevent class="my-status-bar my-width-100">
-		<div class="my-height-100 my-center-between">
-			<div class="bar-left">
-				<div class="bar-item" v-if="editor">
-					<span>Line {{line}}, Column {{column}}</span>
-				</div>
-			</div>
-			<div class="bar-right">
-				<div @mousedown.stop="showTabsize" class="bar-item my-hover" v-if="editor">
-					<span>Tab Size:{{tabSize}}</span>
-					<Menu :menuList="tabSizeList" :styles="{right: 0, bottom: height+'px'}" :value="tabSize" @change="onTabsizeChange" v-show="tabsizeVisible"></Menu>
-				</div>
-				<div @mousedown.stop="showLanguage" class="bar-item my-hover" v-if="editor">
-					<span>{{_language}}</span>
-					<Menu :menuList="languages" :styles="{right: 0, bottom: height+'px'}" :value="language" @change="onLnaguageChange" ref="language" v-show="languageVisible"></Menu>
-				</div>
-			</div>
-		</div>
-	</div>
+    <div
+        :style="{ height: height + 'px' }"
+        @contextmenu.stop.prevent
+        class="my-status-bar my-width-100"
+    >
+        <div class="my-height-100 my-center-between">
+            <div class="bar-left">
+                <div class="bar-item" v-if="hasEditor">
+                    <span>Line {{ line }}, Column {{ column }}</span>
+                </div>
+            </div>
+            <div class="bar-right">
+                <div
+                    @mousedown.stop="showTabsize"
+                    class="bar-item my-hover"
+                    v-if="hasEditor"
+                >
+                    <span>Tab Size:{{ tabSize }}</span>
+                    <Menu
+                        :menuList="tabSizeList"
+                        :styles="{ right: 0, bottom: height + 'px' }"
+                        :value="tabSize"
+                        @change="onTabsizeChange"
+                        v-show="tabsizeVisible"
+                    ></Menu>
+                </div>
+                <div
+                    @mousedown.stop="showLanguage"
+                    class="bar-item my-hover"
+                    v-if="hasEditor"
+                >
+                    <span>{{ _language }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
 </template>
 <script>
-import Menu from './Menu';
+import Menu from "./Menu";
+import EventBus from "@/event";
+
 export default {
-    name: 'StatusBar',
+    name: "StatusBar",
     props: {
         height: {
             type: Number,
-            default: 25
+            default: 25,
         },
-        languageList: Array
+        languageList: Array,
     },
     components: {
-        Menu
+        Menu,
     },
     data() {
         return {
             line: 1,
             column: 0,
             tabSize: 4,
-            language: '',
+            language: "",
             tabsizeVisible: false,
-            languageVisible: false,
+            hasEditor: false,
             tabSizeList: [[]],
             languages: [[]],
             languageMap: {},
-        }
+        };
     },
     watch: {
         languageList() {
@@ -59,39 +78,43 @@ export default {
             });
             this.languages = [this.languageList];
             this.languageMap = languageMap;
-        }
+        },
     },
     computed: {
-        editor() {
-            return this.getNowEditor();
-        },
         _language() {
             return this.languageMap[this.language];
-        }
+        },
     },
-    inject: ['getNowEditor'],
     created() {
+        this.initEventBus();
         for (let i = 1; i <= 8; i++) {
             this.tabSizeList[0].push({
                 name: `Tab Width：${i}`,
-                value: i
+                value: i,
             });
         }
     },
-    mounted() {
-    },
+    mounted() {},
     methods: {
-        setLanguage(language) {
-            this.language = language;
-        },
-        setTabsize(tabSize) {
-            this.tabSize = tabSize;
-        },
-        setLine(line) {
-            this.line = line;
-        },
-        setColumn(column) {
-            this.column = column;
+        initEventBus() {
+            EventBus.$on("tab-change", (data) => {
+                if (data) {
+                    this.language = data.language;
+                    this.tabSize = data.tabSize;
+                    this.line = data.line;
+                    this.column = data.column;
+                    this.hasEditor = true;
+                } else {
+                    this.hasEditor = false;
+                }
+            });
+            EventBus.$emit("cursor-change", (data) => {
+                this.line = data.line;
+                this.column = data.column;
+            });
+            EventBus.$on("language-change", (language) => {
+                this.language = language;
+            });
         },
         showTabsize() {
             let visible = this.tabsizeVisible;
@@ -99,28 +122,18 @@ export default {
             this.tabsizeVisible = !visible;
         },
         showLanguage() {
-            let visible = this.languageVisible;
             this.closeAllMenu();
-            this.languageVisible = !visible;
+            this.$emit("select-langeuage");
         },
         closeAllMenu() {
-            this.languageVisible = false;
             this.tabsizeVisible = false;
         },
         onTabsizeChange(item) {
             if (this.tabSize != item.value) {
-                this.tabSize = item.value;
-                this.getNowEditor().tabSize = item.value;
+                this.$emit("tab-size-change", item.value);
             }
             this.tabsizeVisible = false;
         },
-        onLnaguageChange(item) {
-            if (this.language != item.name) {
-                this.language = item.value;
-                this.getNowEditor().language = item.value;
-            }
-            this.languageVisible = false;
-        }
-    }
-}
+    },
+};
 </script>

@@ -10,22 +10,6 @@
         .bar-scroller {
             display: flex;
             align-items: center;
-            overflow: overlay;
-
-            &::-webkit-scrollbar {
-                height: 6px;
-            }
-
-            &::-webkit-scrollbar-thumb {
-                background-color: transparent;
-            }
-
-            &:hover {
-                &::-webkit-scrollbar-thumb {
-                    border-radius: 6px;
-                    background-color: rgba(0, 0, 0, 0.1);
-                }
-            }
         }
 
         .bar-item {

@@ -7,8 +7,9 @@ import Util from '@/common/Util';
 import * as vsctm from 'vscode-textmate';
 import * as oniguruma from 'vscode-oniguruma';
 
-const require = window.require || window.parent.require || function () {};
+const require = window.require || window.parent.require || function () { };
 const fs = require('fs');
+const path = require('path');
 
 export default class {
     constructor(editor, context) {
@@ -20,7 +21,7 @@ export default class {
         this.initLanguage(editor.language);
     }
     initRegistry() {
-        const wasmBin = fs.readFileSync('./public/lib/onig.wasm').buffer;
+        const wasmBin = fs.readFileSync(path.join(window.globalData.dirname, 'lib/onig.wasm')).buffer;
         const vscodeOnigurumaLib = oniguruma.loadWASM(wasmBin).then(() => {
             return {
                 createOnigScanner(patterns) {
@@ -36,7 +37,7 @@ export default class {
             loadGrammar: (scopeName) => {
                 let language = Util.getLanguageByScopeName(this.languageList, scopeName);
                 if (language) {
-                    return this.readFile(language.path).then(data => vsctm.parseRawGrammar(data.toString(), language.path));
+                    return Util.readFile(language.path).then(data => vsctm.parseRawGrammar(data.toString(), language.path));
                 }
                 console.log(`Unknown scope name: ${scopeName}`);
                 return null;
@@ -60,11 +61,6 @@ export default class {
     initProperties(editor, context) {
         Util.defineProperties(this, editor, ['startLine', 'maxVisibleLines', 'maxLine', 'renderLine', '$nextTick']);
         Util.defineProperties(this, context, ['htmls']);
-    }
-    readFile(path) {
-        return new Promise((resolve, reject) => {
-            fs.readFile(path, (error, data) => error ? reject(error) : resolve(data));
-        })
     }
     onInsertContentAfter(nowLine, newLine) {
         if (nowLine <= this.currentLine) {

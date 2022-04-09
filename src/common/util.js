@@ -4,6 +4,8 @@
  * @Description: 工具类
  */
 import $ from 'jquery';
+const require = window.require || window.parent.require || function () { };
+const fs = require('fs');
 
 class Util {
     static readClipboard() {
@@ -241,12 +243,17 @@ class Util {
             }
         }
     }
+    static readFile(path) {
+        return new Promise((resolve, reject) => {
+            fs.readFile(path, (error, data) => error ? reject(error) : resolve(data));
+        })
+    }
     /**
      * 模糊匹配【word是否存在于target中】
      * @param {String} word 被搜索的单词
      * @param {String} target 模板单词
      */
-    static fuzzyMatch(word, target) {
+    static fuzzyMatch(word, target, fullMatch) {
         let wordMap = {};
         let towMap = {};
         let wordLength = 0;
@@ -260,7 +267,7 @@ class Util {
         let result = null;
         let _target = target.toLowerCase();
         if (word === target) {
-            return;
+            return fullMatch ? {score: 100} : null;
         }
         _setMap();
         for (let i = 0; i < target.length; i++) {

@@ -4,70 +4,96 @@
  * @Description: 
 -->
 <template>
-	<div :style="{'padding-top':_topBarHeight,'padding-bottom':_statusHeight}" @mousedown="onWindMouseDown" class="my-window" ref="window">
-		<!-- 侧边栏 -->
-		<side-bar ref="sideBar" v-if="mode==='app'"></side-bar>
-		<div @contextmenu.prevent.stop="onContextmenu" class="my-right-wrap" ref="rightWrap">
-			<!-- tab栏 -->
-			<editor-bar
-				:editorList="editorList"
-				@change="onChangeTab"
-				@close="onCloseTab"
-				@close-all="onCloseAll"
-				@close-saved="onCloseSaved"
-				@close-to-left="onCloseToLeft"
-				@close-to-right="onCloseToRight"
-				ref="editorBar"
-				v-show="editorList.length"
-			></editor-bar>
-			<!-- 编辑区 -->
-			<template v-for="item in editorList">
-				<editor
-					:active="item.active"
-					:id="item.id"
-					:key="item.id"
-					:ref="'editor'+item.id"
-					@change="onFileChange(item.id)"
-					@save="onSaveFile(item.id)"
-					v-show="item.active"
-				></editor>
-			</template>
-			<window-menu ref="winMenu"></window-menu>
-		</div>
-		<!-- 顶部菜单栏 -->
-		<menu-bar :height="topBarHeight" @change="onMenuChange" ref="menuBar"></menu-bar>
-		<!-- 状态栏 -->
-		<status-bar :height="statusHeight" :languageList="languageList" ref="statusBar"></status-bar>
-		<cmd-panel :menuList="cmdMenuList" :value="cmdValue" :visible.sync="cmdVisible"></cmd-panel>
-		<Dialog
-			:btns="dialogBtns"
-			:content="dialogContent"
-			:icon="this.dialogIcon"
-			:icon-color="this.dialogIconColor"
-			:overlay="true"
-			:title="dialogTilte"
-			@close="onDialogClose"
-			v-show="dialogVisible"
-		></Dialog>
-	</div>
+    <div
+        :style="{
+            'padding-top': _topBarHeight,
+            'padding-bottom': _statusHeight,
+        }"
+        @mousedown="onWindMouseDown"
+        class="my-window"
+        ref="window"
+    >
+        <!-- 侧边栏 -->
+        <side-bar ref="sideBar" v-if="mode === 'app'"></side-bar>
+        <div
+            @contextmenu.prevent.stop="onContextmenu"
+            class="my-right-wrap"
+            ref="rightWrap"
+        >
+            <!-- tab栏 -->
+            <editor-bar
+                :editorList="editorList"
+                @change="onChangeTab"
+                @close="onCloseTab"
+                @close-all="onCloseAll"
+                @close-saved="onCloseSaved"
+                @close-to-left="onCloseToLeft"
+                @close-to-right="onCloseToRight"
+                ref="editorBar"
+                v-show="editorList.length"
+            ></editor-bar>
+            <!-- 编辑区 -->
+            <template v-for="item in editorList">
+                <editor
+                    :active="item.active"
+                    :id="item.id"
+                    :key="item.id"
+                    :ref="'editor' + item.id"
+                    @change="onFileChange(item.id)"
+                    @save="onSaveFile(item.id)"
+                    v-show="item.active"
+                ></editor>
+            </template>
+            <window-menu ref="winMenu"></window-menu>
+        </div>
+        <!-- 顶部菜单栏 -->
+        <menu-bar
+            :height="topBarHeight"
+            @change="onMenuChange"
+            ref="menuBar"
+        ></menu-bar>
+        <!-- 状态栏 -->
+        <status-bar
+            :height="statusHeight"
+            :languageList="languageList"
+            ref="statusBar"
+            @select-langeuage="onSelectLanguage"
+        ></status-bar>
+        <cmd-panel
+            :menuList="cmdMenuList"
+            :value="cmdValue"
+            :visible.sync="cmdVisible"
+        ></cmd-panel>
+        <Dialog
+            :btns="dialogBtns"
+            :content="dialogContent"
+            :icon="this.dialogIcon"
+            :icon-color="this.dialogIconColor"
+            :overlay="true"
+            :title="dialogTilte"
+            @close="onDialogClose"
+            v-show="dialogVisible"
+        ></Dialog>
+    </div>
 </template>
 <script>
-import EditorBar from './EditorBar.vue';
-import Editor from './Editor.vue';
-import MenuBar from './MenuBar';
-import StatusBar from './StatusBar';
-import SideBar from './SideBar.vue';
-import Dialog from './Dialog.vue';
-import WindowMenu from './WindowMenu.vue';
-import CmdPanel from './CmdPanel.vue';
-import Context from '@/module/context/index';
-import Theme from '@/module/theme';
-import $ from 'jquery';
+import EditorBar from "./EditorBar.vue";
+import Editor from "./Editor.vue";
+import MenuBar from "./MenuBar";
+import StatusBar from "./StatusBar";
+import SideBar from "./SideBar.vue";
+import Dialog from "./Dialog.vue";
+import WindowMenu from "./WindowMenu.vue";
+import CmdPanel from "./CmdPanel.vue";
+import Context from "@/module/context/index";
+import Theme from "@/module/theme";
+import EventBus from "@/event";
+import $ from "jquery";
 
-const require = window.require || window.parent.require || function () { };
-const fs = require('fs');
-const path = require('path');
-const remote = require('@electron/remote');
+const require = window.require || window.parent.require || function () {};
+const fs = require("fs");
+const path = require("path");
+const remote = require("@electron/remote");
 const contexts = Context.contexts;
 
 export default {
@@ -83,7 +109,7 @@ export default {
     },
     data() {
         return {
-            languagePath: './public/language',
+            languagePath: path.join(window.globalData.dirname, "language"),
             languageList: [],
             statusHeight: 30,
             topBarHeight: 35,
@@ -93,22 +119,22 @@ export default {
             editorList: [],
             cmdMenuList: [],
             cmdVisible: false,
-            cmdValue: '',
-            dialogTilte: '',
-            dialogContent: '',
+            cmdValue: "",
+            dialogTilte: "",
+            dialogContent: "",
             dialogVisible: false,
             dialogBtns: [],
-            dialogIcon: '',
-            dialogIconColor: '',
-            mode: remote ? 'app' : 'mode'
-        }
+            dialogIcon: "",
+            dialogIconColor: "",
+            mode: remote ? "app" : "mode",
+        };
     },
     computed: {
         _topBarHeight() {
-            return this.topBarHeight + 'px';
+            return this.topBarHeight + "px";
         },
         _statusHeight() {
-            return this.statusHeight + 'px';
+            return this.statusHeight + "px";
         },
     },
     provide() {
@@ -124,17 +150,17 @@ export default {
             },
             openFolder: () => {
                 this.openFolder();
-            }
-        }
+            },
+        };
     },
     created() {
-        if (this.mode === 'app') {
-            remote.getCurrentWindow().on('resize', () => {
+        if (this.mode === "app") {
+            remote.getCurrentWindow().on("resize", () => {
                 let editor = this.getNowEditor();
                 editor && editor.showEditor();
             });
         } else {
-            $(window).on('resize', () => {
+            $(window).on("resize", () => {
                 let editor = this.getNowEditor();
                 editor && editor.showEditor();
             });
@@ -142,7 +168,7 @@ export default {
         this.theme = new Theme();
         this.theme.loadXml(window.globalData.nowTheme);
         this.loadLanguage().then((results) => {
-            results.push({ name: 'Plain Text', value: '', checked: true });
+            results.push({ name: "Plain Text", value: "", checked: true });
             window.globalData.languageList.push(...results.slice());
             this.languageList = results;
             this.checkLanguage();
@@ -162,7 +188,7 @@ export default {
             this.$refs.statusBar.closeAllMenu();
             this.$refs.menuBar.closeAllMenu();
             this.$refs.editorBar.closeAllMenu();
-            if (this.mode === 'app') {
+            if (this.mode === "app") {
                 this.$refs.sideBar.closeAllMenu();
             }
             if (this.nowId) {
@@ -192,30 +218,33 @@ export default {
             let index = this.editorList.indexOf(tab);
             if (!tab.saved) {
                 this.showDialog({
-                    content: '文件尚未保存，是否先保存文件？',
+                    content: "文件尚未保存，是否先保存文件？",
                     cancel: true,
-                    icon: 'my-icon-warn',
-                    iconColor: 'rgba(255,196,0)',
-                    btns: [{
-                        name: '保存',
-                        callback: () => {
-                            if (this.mode === 'app') {
-                                this.onSaveFile(id).then(() => {
+                    icon: "my-icon-warn",
+                    iconColor: "rgba(255,196,0)",
+                    btns: [
+                        {
+                            name: "保存",
+                            callback: () => {
+                                if (this.mode === "app") {
+                                    this.onSaveFile(id).then(() => {
+                                        _closeTab.call(this);
+                                        this.onDialogClose();
+                                    });
+                                } else {
                                     _closeTab.call(this);
                                     this.onDialogClose();
-                                });
-                            } else {
+                                }
+                            },
+                        },
+                        {
+                            name: "不保存",
+                            callback: () => {
                                 _closeTab.call(this);
                                 this.onDialogClose();
-                            }
-                        }
-                    }, {
-                        name: '不保存',
-                        callback: () => {
-                            _closeTab.call(this);
-                            this.onDialogClose();
-                        }
-                    }]
+                            },
+                        },
+                    ],
                 });
             } else {
                 _closeTab.call(this);
@@ -228,10 +257,10 @@ export default {
                     tab.active = false;
                     tab = this.editorList[index] || this.editorList[index - 1];
                     if (tab) {
-                        tab.active = true;
-                        this.nowId = tab.id;
+                        this.onChangeTab(tab.id);
                     } else {
                         this.nowId = null;
+                        EventBus.$emit("tab-change", null);
                     }
                 } else {
                     this.getNowEditor().focus();
@@ -257,7 +286,7 @@ export default {
         onCloseToLeft(id) {
             let tab = null;
             id = id || this.nowId;
-            while (tab = this.editorList[0]) {
+            while ((tab = this.editorList[0])) {
                 if (tab.id !== id) {
                     this.onCloseTab(tab.id);
                 } else {
@@ -268,7 +297,7 @@ export default {
         onCloseToRight(id) {
             let tab = null;
             id = id || this.nowId;
-            while (tab = this.editorList.peek()) {
+            while ((tab = this.editorList.peek())) {
                 if (tab.id !== id) {
                     this.onCloseTab(tab.id);
                 } else {
@@ -278,20 +307,38 @@ export default {
         },
         onMenuChange(item) {
             switch (item.op) {
-                case 'changeTheme':
-                    this.cmdMenuList = [[{
-                        op: 'changeTheme',
-                        name: 'Dark Monokai',
-                        value: '/theme/dark-monokai.tmTheme',
-                    }, {
-                        op: 'changeTheme',
-                        name: 'Light Amiga Rebel',
-                        value: '/theme/light-amiga-rebel.tmTheme'
-                    }]];
+                case "changeTheme":
+                    this.cmdMenuList = [
+                        [
+                            {
+                                op: "changeTheme",
+                                name: "Dark Monokai",
+                                value: "theme/dark-monokai.tmTheme",
+                            },
+                            {
+                                op: "changeTheme",
+                                name: "Light Amiga Rebel",
+                                value: "theme/light-amiga-rebel.tmTheme",
+                            },
+                        ],
+                    ];
                     this.cmdVisible = true;
                     this.cmdValue = window.globalData.nowTheme;
                     break;
             }
+        },
+        onSelectLanguage() {
+            this.cmdMenuList = [
+                this.languageList.map((item) => {
+                    return {
+                        op: "selectLanguage",
+                        name: item.name,
+                        value: item.value,
+                    };
+                }),
+            ];
+            this.cmdVisible = true;
+            this.cmdValue = this.nowId && this.getNowEditor().language;
         },
         onFileChange(id) {
             let tab = this.getTabById(id);
@@ -299,7 +346,7 @@ export default {
         },
         onSaveFile(id) {
             let tab = this.getTabById(id);
-            if (this.mode === 'web') {
+            if (this.mode === "web") {
                 return Promise.resolve();
             }
             if (!tab.saved) {
@@ -313,16 +360,21 @@ export default {
                         title: "请选择要保存的文件名",
                         buttonLabel: "保存",
                     };
-                    return remote.dialog.showSaveDialog(win, options).then(result => {
-                        if (!result.canceled && result.filePath) {
-                            tab.path = result.filePath;
-                            tab.name = tab.path.match(/[^\\\/]+$/)[0];
-                            this.writeFile(tab.path, contexts[id].getAllText());
-                            tab.saved = true;
-                        } else {
-                            return Promise.reject();
-                        }
-                    });
+                    return remote.dialog
+                        .showSaveDialog(win, options)
+                        .then((result) => {
+                            if (!result.canceled && result.filePath) {
+                                tab.path = result.filePath;
+                                tab.name = tab.path.match(/[^\\\/]+$/)[0];
+                                this.writeFile(
+                                    tab.path,
+                                    contexts[id].getAllText()
+                                );
+                                tab.saved = true;
+                            } else {
+                                return Promise.reject();
+                            }
+                        });
                 }
             }
         },
@@ -341,43 +393,51 @@ export default {
         choseFolder() {
             let win = remote.getCurrentWindow();
             let options = {
-                title: '选择文件夹',
-                properties: ['openDirectory', 'multiSelections']
+                title: "选择文件夹",
+                properties: ["openDirectory", "multiSelections"],
             };
-            return remote.dialog.showOpenDialog(win, options).then(result => {
-                let results = [];
-                if (!result.canceled && result.filePaths) {
-                    result.filePaths.forEach((item) => {
-                        let obj = {
-                            name: item.match(/[^\\\/]+$/)[0],
-                            path: item,
-                            type: 'dir',
-                            active: false,
-                            open: false,
-                            children: []
-                        };
-                        results.push(Object.assign({}, obj));
-                    });
-                    return results;
-                }
-            }).catch(err => {
-                console.log(err)
-            })
+            return remote.dialog
+                .showOpenDialog(win, options)
+                .then((result) => {
+                    let results = [];
+                    if (!result.canceled && result.filePaths) {
+                        result.filePaths.forEach((item) => {
+                            let obj = {
+                                name: item.match(/[^\\\/]+$/)[0],
+                                path: item,
+                                type: "dir",
+                                active: false,
+                                open: false,
+                                children: [],
+                            };
+                            results.push(Object.assign({}, obj));
+                        });
+                        return results;
+                    }
+                })
+                .catch((err) => {
+                    console.log(err);
+                });
         },
         openFile(fileObj, choseFile) {
             let tab = fileObj && this.getTabByPath(fileObj.path);
             if (!tab) {
                 let index = -1;
-                let name = fileObj && fileObj.name || `Untitled${this.titleCount++}`;
+                let name =
+                    (fileObj && fileObj.name) || `Untitled${this.titleCount++}`;
                 if (this.editorList.length) {
                     tab = this.getTabById(this.nowId);
                     index = this.editorList.indexOf(tab);
                 }
-                if (choseFile) { //从资源管理器中选择文件
+                if (choseFile) {
+                    //从资源管理器中选择文件
                     this.choseFile().then((results) => {
                         if (results) {
                             tab = results[0];
-                            this.editorList = this.editorList.slice(0, index).concat(results).concat(this.editorList.slice(index));
+                            this.editorList = this.editorList
+                                .slice(0, index)
+                                .concat(results)
+                                .concat(this.editorList.slice(index));
                             _done.call(this);
                         }
                     });
@@ -385,10 +445,10 @@ export default {
                     tab = {
                         id: this.idCount++,
                         name: name,
-                        path: fileObj && fileObj.path || '',
+                        path: (fileObj && fileObj.path) || "",
                         saved: true,
-                        active: false
-                    }
+                        active: false,
+                    };
                     this.editorList.splice(index + 1, 0, tab);
                     _done.call(this);
                 }
@@ -399,14 +459,18 @@ export default {
             function _done() {
                 this.$nextTick(() => {
                     if (tab && tab.path && !tab.loaded) {
-                        fs.readFile(tab.path, { encoding: 'utf8' }, (err, data) => {
-                            if (err) {
-                                throw err;
+                        fs.readFile(
+                            tab.path,
+                            { encoding: "utf8" },
+                            (err, data) => {
+                                if (err) {
+                                    throw err;
+                                }
+                                this.getContext(tab.id).insertContent(data);
+                                tab.saved = true;
+                                tab.loaded = true;
                             }
-                            this.getContext(tab.id).insertContent(data);
-                            tab.saved = true;
-                            tab.loaded = true;
-                        });
+                        );
                     }
                     this.onChangeTab(tab.id);
                     this.checkLanguage();
@@ -416,27 +480,30 @@ export default {
         choseFile() {
             let win = remote.getCurrentWindow();
             let options = {
-                title: '选择文件',
-                properties: ['openFile', 'multiSelections']
+                title: "选择文件",
+                properties: ["openFile", "multiSelections"],
             };
-            return remote.dialog.showOpenDialog(win, options).then(result => {
-                let results = [];
-                if (!result.canceled && result.filePaths) {
-                    result.filePaths.forEach((item) => {
-                        let obj = {
-                            id: this.idCount++,
-                            name: item.match(/[^\\\/]+$/)[0],
-                            path: item,
-                            saved: true,
-                            active: false
-                        }
-                        results.push(Object.assign({}, obj));
-                    });
-                    return results;
-                }
-            }).catch(err => {
-                console.log(err)
-            })
+            return remote.dialog
+                .showOpenDialog(win, options)
+                .then((result) => {
+                    let results = [];
+                    if (!result.canceled && result.filePaths) {
+                        result.filePaths.forEach((item) => {
+                            let obj = {
+                                id: this.idCount++,
+                                name: item.match(/[^\\\/]+$/)[0],
+                                path: item,
+                                saved: true,
+                                active: false,
+                            };
+                            results.push(Object.assign({}, obj));
+                        });
+                        return results;
+                    }
+                })
+                .catch((err) => {
+                    console.log(err);
+                });
         },
         sortFileList() {
             this.list.sort((a, b) => {
@@ -444,27 +511,27 @@ export default {
                     if (a.name === b.name) {
                         return 0;
                     } else if (a.name > b.name) {
-                        return 1
+                        return 1;
                     } else {
                         return -1;
                     }
                 }
-                if (a.type === 'dir') {
+                if (a.type === "dir") {
                     return -1;
                 }
                 return 1;
             });
         },
         showDialog(option) {
-            this.dialogTilte = option.title || '';
-            this.dialogContent = option.content || '';
+            this.dialogTilte = option.title || "";
+            this.dialogContent = option.content || "";
             this.dialogBtns = option.btns;
             this.dialogVisible = true;
-            this.dialogIconColor = option.iconColor || '';
-            this.dialogIcon = option.icon || '';
+            this.dialogIconColor = option.iconColor || "";
+            this.dialogIcon = option.icon || "";
         },
         writeFile(path, text) {
-            fs.writeFileSync(path, text, { encoding: 'utf-8' });
+            fs.writeFileSync(path, text, { encoding: "utf-8" });
         },
         changeStatus() {
             let changStatusId = this.changeStatus.id || 1;
@@ -474,16 +541,14 @@ export default {
                     return;
                 }
                 let editor = this.getNowEditor();
-                let statusBar = this.$refs.statusBar;
-                statusBar.setLanguage(editor.language);
-                statusBar.setTabsize(editor.tabSize);
-                if (editor.nowCursorPos) {
-                    statusBar.setLine(editor.nowCursorPos.line);
-                    statusBar.setColumn(editor.nowCursorPos.column);
-                } else {
-                    statusBar.setLine('?');
-                    statusBar.setColumn('?');
-                }
+                EventBus.$emit(`tab-change`, {
+                    language: editor.language,
+                    tabSize: editor.tabSize,
+                    line: editor.nowCursorPos ? editor.nowCursorPos.line : "?",
+                    column: editor.nowCursorPos
+                        ? editor.nowCursorPos.column
+                        : "?",
+                });
             });
         },
         // 检查当前打开的文件的语言
@@ -498,9 +563,13 @@ export default {
                 }
                 for (let i = 0; i < this.languageList.length; i++) {
                     let language = this.languageList[i];
-                    if (language.extensions && language.extensions.indexOf(suffix[0]) > -1) {
-                        statusBar.setLanguage(language.name);
-                        editor.language = language.name;
+                    if (
+                        language.extensions &&
+                        language.extensions.indexOf(suffix[0]) > -1
+                    ) {
+                        this.$nextTick(() => {
+                            EventBus.$emit("language-change", language.name);
+                        });
                         break;
                     }
                 }
@@ -511,38 +580,58 @@ export default {
             return new Promise((resolve) => {
                 let results = [];
                 // 异步读取目录内容
-                fs.readdir(this.languagePath, { encoding: 'utf8' }, (err, files) => {
-                    if (err) { throw err }
-                    files.forEach((item, index) => {
-                        let fullPath = path.join(this.languagePath, item);
-                        let packPath = path.join(fullPath, './package.json');
-                        if (fs.existsSync(packPath)) {
-                            const text = fs.readFileSync(packPath, 'utf-8');
-                            try {
-                                let json = JSON.parse(text);
-                                let contributes = json.contributes;
-                                let languages = contributes.languages;
-                                let grammars = contributes.grammars;
-                                languages.map((language) => {
-                                    for (let i = 0; i < grammars.length; i++) {
-                                        let grammar = grammars[i];
-                                        if (language.id === grammar.language) {
-                                            results.push({
-                                                name: grammar.language,
-                                                value: grammar.language,
-                                                scopeName: grammar.scopeName,
-                                                path: path.join(fullPath, grammar.path),
-                                                extensions: language.extensions
-                                            });
-                                            break;
-                                        }
-                                    }
-                                });
-                            } catch (e) { }
+                fs.readdir(
+                    this.languagePath,
+                    { encoding: "utf8" },
+                    (err, files) => {
+                        if (err) {
+                            throw err;
                         }
-                    });
-                    resolve(results);
-                });
+                        files.forEach((item, index) => {
+                            let fullPath = path.join(this.languagePath, item);
+                            let packPath = path.join(
+                                fullPath,
+                                "./package.json"
+                            );
+                            if (fs.existsSync(packPath)) {
+                                const text = fs.readFileSync(packPath, "utf-8");
+                                try {
+                                    let json = JSON.parse(text);
+                                    let contributes = json.contributes;
+                                    let languages = contributes.languages;
+                                    let grammars = contributes.grammars;
+                                    languages.map((language) => {
+                                        for (
+                                            let i = 0;
+                                            i < grammars.length;
+                                            i++
+                                        ) {
+                                            let grammar = grammars[i];
+                                            if (
+                                                language.id === grammar.language
+                                            ) {
+                                                results.push({
+                                                    name: grammar.language,
+                                                    value: grammar.language,
+                                                    scopeName:
+                                                        grammar.scopeName,
+                                                    path: path.join(
+                                                        fullPath,
+                                                        grammar.path
+                                                    ),
+                                                    extensions:
+                                                        language.extensions,
+                                                });
+                                                break;
+                                            }
+                                        }
+                                    });
+                                } catch (e) {}
+                            }
+                        });
+                        resolve(results);
+                    }
+                );
             });
         },
         getTabById(id) {
@@ -572,6 +661,6 @@ export default {
         getNowContext() {
             return this.getContext(this.nowId);
         },
-    }
-}
+    },
+};
 </script>

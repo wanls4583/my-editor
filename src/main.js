@@ -13,7 +13,8 @@ Vue.prototype.$http = axios.create({
   }
 });
 window.globalData = {
-  nowTheme: '/theme/dark-monokai.tmTheme',
+  nowTheme: 'theme/dark-monokai.tmTheme',
+  dirname: 'public/',
   languageList: []
 };
 

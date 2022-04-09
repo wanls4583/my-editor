@@ -4,50 +4,64 @@
  * @Description: 
 -->
 <template>
-	<div @mousedown.stop class="my-cmd-panel my-shadow my-border" v-if="visible">
-		<div>
-			<div class="my-cmd-search">
-				<input type="text" v-model="searchText" />
-			</div>
-			<Menu :checkable="true" :menuList="_menuList" :value="value" @change="onChange" style="position:relative"></Menu>
-		</div>
-	</div>
+    <div
+        @mousedown.stop
+        class="my-cmd-panel my-shadow my-border"
+        v-if="visible"
+    >
+        <div>
+            <div class="my-cmd-search">
+                <input type="text" v-model="searchText" />
+            </div>
+            <div class="my-scroll-overlay">
+                <Menu
+                    :checkable="true"
+                    :menuList="_menuList"
+                    :value="value"
+                    @change="onChange"
+                    style="position: relative"
+                ></Menu>
+            </div>
+        </div>
+    </div>
 </template>
 <script>
-import Util from '@/common/Util';
-import Theme from '@/module/theme';
-import Menu from './Menu';
+import Util from "@/common/Util";
+import Theme from "@/module/theme";
+import Menu from "./Menu";
+import EventBus from "@/event";
+
 export default {
-    name: 'CmdPanel',
+    name: "CmdPanel",
     components: {
-        Menu
+        Menu,
     },
     props: {
         menuList: {
             type: Array,
-            default: []
+            default: [],
         },
         value: {
-            type: [Number, String]
+            type: [Number, String],
         },
-        visible: Boolean
+        visible: Boolean,
     },
     data() {
         return {
-            searchText: '',
+            searchText: "",
             _menuList: [],
-        }
+        };
     },
     watch: {
         visible() {
-            this.searchText = '';
+            this.searchText = "";
         },
         menuList() {
             this.searchMenu();
         },
         searchText() {
             this.searchMenu();
-        }
+        },
     },
     created() {
         this._menuList = this.menuList;
@@ -56,9 +70,24 @@ export default {
     methods: {
         searchMenu() {
             if (this.searchText) {
-                let menu = this.menuList[0].filter((item) => {
-                    return Util.fuzzyMatch(this.searchText, item.name);
+                let menu = [];
+                this.menuList[0].forEach((item) => {
+                    let result = Util.fuzzyMatch(
+                        this.searchText,
+                        item.name,
+                        true
+                    );
+                    if (result) {
+                        menu.push([item, result]);
+                    }
                 });
+                menu = menu
+                    .sort((a, b) => {
+                        return b[1].score - a[1].score;
+                    })
+                    .map((item) => {
+                        return item[0];
+                    });
                 this._menuList = [menu];
             } else {
                 this._menuList = this.menuList.slice();
@@ -66,13 +95,16 @@ export default {
         },
         onChange(item) {
             switch (item.op) {
-                case 'changeTheme':
+                case "changeTheme":
                     this.theme.loadXml(item.value);
                     window.globalData.nowTheme = item.value;
                     break;
+                case "selectLanguage":
+                    EventBus.$emit("language-change", item.value);
+                    break;
             }
-            this.$emit('update:visible', false);
+            this.$emit("update:visible", false);
         },
-    }
-}
+    },
+};
 </script>

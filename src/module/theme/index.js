@@ -4,6 +4,10 @@
  * @Description: 
  */
 import Vue from 'vue';
+import Util from '../../common/Util';
+
+const require = window.require || window.parent.require || function () { };
+const path = require('path');
 const propertyMap = {
     foreground: 'color',
     background: 'background-color',
@@ -17,11 +21,8 @@ export default class {
 
     }
     loadXml(url) {
-        return Vue.prototype.$http({
-            url: url,
-            method: 'get'
-        }).then((data) => {
-            let arr = this.parseXmlString(data.data);
+        Util.readFile(path.join(window.globalData.dirname, url)).then((data) => {
+            let arr = this.parseXmlString(data.toString());
             let css = this.parseCss(arr);
             this.insertCss(css);
         });

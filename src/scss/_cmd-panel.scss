@@ -9,6 +9,10 @@
         background-color: rgb(238, 238, 238);
         color: #575757;
 
+        .my-scroll-overlay{
+            max-height: 500px;
+        }
+
         .my-menu {
             background-color: transparent !important;
             box-shadow: none;
