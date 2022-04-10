@@ -477,20 +477,37 @@ export default {
             $(document).on("mouseup", this.initEvent.fn2);
         },
         initEventBus() {
-            EventBus.$on("language-change", (language) => {
-                if (this.active) {
-                    this.language = language;
-                }
-            });
-            EventBus.$on("tab-size-change", (tabSize) => {
-                if (this.active) {
-                    this.tabSize = tabSize;
-                }
-            });
+            EventBus.$on(
+                "language-change",
+                (this.initEventBus.fn1 = (language) => {
+                    if (this.active) {
+                        this.language = language;
+                    }
+                })
+            );
+            EventBus.$on(
+                "tab-size-change",
+                (this.initEventBus.fn2 = (tabSize) => {
+                    if (this.active) {
+                        this.tabSize = tabSize;
+                    }
+                })
+            );
+            EventBus.$on(
+                "close-menu",
+                (this.initEventBus.fn3 = () => {
+                    this.menuVisible = false;
+                    this.autoTipList = null;
+                    this.autocomplete.stop();
+                })
+            );
         },
         unbindEvent() {
             $(document).unbind("mousemove", this.initEvent.fn1);
             $(document).unbind("mouseup", this.initEvent.fn2);
+            EventBus.$off("language-change", this.initEventBus.fn1);
+            EventBus.$off("tab-size-change", this.initEventBus.fn2);
+            EventBus.$off("close-menu", this.initEventBus.fn3);
         },
         showEditor() {
             if (this.active) {
@@ -532,7 +549,6 @@ export default {
             clearTimeout(this.curserTimer);
             this.showCursor.show = false;
             this.cursorFocus = false;
-            this.closeAllMenu();
         },
         // 聚焦
         focus() {
@@ -784,11 +800,6 @@ export default {
                 }
                 return left + "px";
             }
-        },
-        closeAllMenu() {
-            this.menuVisible = false;
-            this.autoTipList = null;
-            this.autocomplete.stop();
         },
         // 折叠行
         foldLine(line) {

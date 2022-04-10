@@ -6,11 +6,11 @@
 import Util from '@/common/Util';
 
 export default class {
-    constructor(menuBar) {
-        this.initProperties(menuBar);
+    constructor(titleBar) {
+        this.initProperties(titleBar);
     }
-    initProperties(menuBar) {
-        Util.defineProperties(this, menuBar, [
+    initProperties(titleBar) {
+        Util.defineProperties(this, titleBar, [
             'openFile',
             'openFolder'
         ]);

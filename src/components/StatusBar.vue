@@ -35,7 +35,7 @@
                     class="bar-item my-hover"
                     v-if="hasEditor"
                 >
-                    <span>{{ _language }}</span>
+                    <span>{{ nowLanguage }}</span>
                 </div>
             </div>
         </div>
@@ -81,7 +81,7 @@ export default {
         },
     },
     computed: {
-        _language() {
+        nowLanguage() {
             return this.languageMap[this.language];
         },
     },
@@ -115,18 +115,18 @@ export default {
             EventBus.$on("language-change", (language) => {
                 this.language = language;
             });
+            EventBus.$on("close-menu", (language) => {
+                this.tabsizeVisible = false;
+            });
         },
         showTabsize() {
             let visible = this.tabsizeVisible;
-            this.closeAllMenu();
+            EventBus.$emit("close-menu");
             this.tabsizeVisible = !visible;
         },
         showLanguage() {
-            this.closeAllMenu();
+            EventBus.$emit("close-menu");
             this.$emit("select-langeuage");
-        },
-        closeAllMenu() {
-            this.tabsizeVisible = false;
         },
         onTabsizeChange(item) {
             if (this.tabSize != item.value) {

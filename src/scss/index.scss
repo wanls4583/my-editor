@@ -8,7 +8,8 @@
 @import 'editor-bar';
 @import 'search';
 @import 'side-bar';
-@import 'menu-status-bar';
+@import 'title-bar';
+@import 'status-bar';
 @import 'cmd-panel';
 
 * {
@@ -29,9 +30,7 @@ body {
     height: 100%;
 }
 
-
 .my {
-
     &-position-relative {
         position: relative;
     }
@@ -71,10 +70,6 @@ body {
 
     &-hover {
         cursor: pointer;
-
-        &:hover {
-            background-color: rgba(200, 200, 200, 0.4);
-        }
     }
 
     &-hover-danger {
@@ -84,22 +79,6 @@ body {
             background-color: red;
             color: white;
         }
-    }
-
-    &-active {
-        background-color: rgba(200, 200, 200, 0.4);
-    }
-
-    &-light-bg {
-        background-color: rgba(200, 200, 200, 0.4);
-    }
-
-    &-shadow {
-        box-shadow: rgba(0, 0, 0, 0.2) 0 0 8px;
-    }
-
-    &-border {
-        border: 1px solid rgba(120, 120, 120, 0.4);
     }
 
     &-icon-error {
@@ -137,7 +116,8 @@ body {
         height: 100%;
         overflow: hidden;
         font-size: 13px;
-        color: #575757;
+        background-color: var(--my-background);
+        color: var(--my-foreground);
     }
 
     &-right-wrap {
@@ -147,4 +127,82 @@ body {
         height: 100%;
         overflow: hidden;
     }
+}
+
+:root {
+    --my-foreground: #575757;
+    --my-background: #fff;
+    --my-titlebar-activeForeground: #575757;
+    --my-titlebar-activeBackground: #ddd;
+    --my-titleBar-border: transparent;
+    --my-menubar-selectionForeground: #575757;
+    --my-menubar-selectionBackground: rgba(200, 200, 200, 0.4);
+    --my-menubar-selectionBorder: transparent;
+
+    --my-menu-foreground: #575757;
+    --my-menu-background: #fff;
+    --my-menu-border: rgba(200, 200, 200, 0.4);
+    --my-menu-selectionForeground: #575757;
+    --my-menu-selectionBackground: rgba(200, 200, 200, 0.4);
+    --my-menu-selectionBorder: transparent;
+    --my-menu-separatorBackground: rgba(200, 200, 200, 0.4);
+
+    --my-statusbar-foreground: #575757;
+    --my-statusbar-background: #ddd;
+    --my-statusbar-border: transparent;
+    --my-statusbarItem-hoverBackground: rgba(200, 200, 200, 0.4);
+    --my-statusbarItem-activeBackground: rgba(200, 200, 200, 0.4);
+
+    --my-sidebar-foreground: #575757;
+    --my-sidebar-background: #eee;
+    --my-sidebar-border: #ddd;
+    --my-sidebarTitle-foreground: #575757;
+
+    --my-list-activeSelectionForeground: #fff;
+    --my-list-activeSelectionBackground: #0066b8;
+    --my-list-focusForeground: #575757;
+    --my-list-focusBackground: transparent;
+    --my-list-focusOutline: #0066b8;
+    --my-list-hoverForeground: #575757;
+    --my-list-hoverBackground: rgba(200, 200, 200, 0.4);
+
+    --my-editorGroupHeader-tabsBackground: #eee;
+    --my-editorGroupHeader-border: transparent;
+    --my-tab-border: transparent;
+    --my-tab-activeForeground: #333;
+    --my-tab-activeBackground: #fff;
+    --my-tab-inactiveForeground: #575757;
+    --my-tab-inactiveBackground: transparent;
+    --my-tab-activeBorder: transparent;
+    --my-tab-activeBorderTop: transparent;
+    --my-tab-hoverForeground: #333;
+    --my-tab-hoverBackground: rgba(200, 200, 200, 0.4);
+    --my-tab-hoverBorder: transparent;
+
+    --my-editor-foreground: #575757;
+    --my-editor-background: #fff;
+    --my-editorLineNumber-foreground: #999;
+    --my-editorLineNumber-activeForeground: #333;
+    --my-editorCursor-foreground: #333;
+    --my-editor-selectionForeground: #575757;
+    --my-editor-selectionBackground: #add6ff;
+    --my-editor-selectionHighlightBorder: #add6ff;
+    --my-editor-selectionHighlightBackground: transparent;
+    --my-editor-findMatchBackground: #add6ff;
+    --my-editor-findMatchBorder: transparent;
+    --my-editor-findMatchHighlightBackground: transparent;
+    --my-editor-findMatchHighlightBorder: #add6ff;
+    --my-editor-lineHighlightBackground: transparent;
+    --my-editor-lineHighlightBorder: rgba(200, 200, 200, 0.4);
+
+    --my-editorWidget-foreground: #575757;
+    --my-editorWidget-background: #eee;
+    --my-editorWidget-border: #ddd;
+    --my-editorSuggestWidget-foreground: #575757;
+    --my-editorSuggestWidget-background: #eee;
+    --my-editorSuggestWidget-border: #ddd;
+    --my-editorSuggestWidget-selectedForeground: #575757;
+    --my-editorSuggestWidget-selectedBackground: #add6ff;
+    --my-editorSuggestWidget-highlightForeground: #fff;
+    --my-editorSuggestWidget-focusHighlightForeground: #fff;
 }

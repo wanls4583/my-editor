@@ -4,12 +4,15 @@
         flex-shrink: 0;
         width: 300px;
         height: 100%;
-        background-color: rgb(238, 238, 238);
+        border-right: 1px solid var(--my-sidebar-border);
+        background-color: var(--my-sidebar-background);
+        color: var(--my-sidebar-foreground);
 
         .side-bar-title {
             padding-left: 16px;
             height: 40px;
             line-height: 40px;
+            color: var(--my-sidebarTitle-foreground);
         }
 
         .side-tree {
@@ -46,7 +49,7 @@
             }
         }
 
-        .side-item {
+        .tree-item {
             position: relative;
             white-space: nowrap;
 
@@ -55,6 +58,15 @@
                 align-items: center;
                 height: 30px;
                 padding-right: 10px;
+                &:hover {
+                    background-color: var(--my-list-hoverBackground);
+                    color: var(--my-list-hoverForeground);
+                }
+                
+                &.my-active {
+                    background-color: var(--my-list-activeSelectionBackground);
+                    color: var(--my-list-activeSelectionForeground);
+                }
             }
 
             &-text {

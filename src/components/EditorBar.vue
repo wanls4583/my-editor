@@ -71,9 +71,6 @@ export default {
         onContextmenu(e, id) {
             this.$refs.editorBarMenu.show(e, id);
         },
-        closeAllMenu() {
-            this.$refs.editorBarMenu.hide();
-        },
     },
 };
 </script>

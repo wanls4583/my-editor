@@ -4,22 +4,19 @@
  * @Description: 
 -->
 <template>
-    <div
-        @mousedown.stop
-        class="my-cmd-panel my-shadow my-border"
-        v-if="visible"
-    >
+    <div @mousedown.stop class="my-cmd-panel my-list" v-if="visible">
         <div>
             <div class="my-cmd-search">
-                <input type="text" v-model="searchText" />
+                <input type="text" v-model="searchText" ref="input" />
             </div>
-            <div class="my-scroll-overlay">
+            <div>
                 <Menu
                     :checkable="true"
-                    :menuList="_menuList"
+                    :menuList="cmdList"
                     :value="value"
                     @change="onChange"
                     style="position: relative"
+                    class="my-scroll-overlay"
                 ></Menu>
             </div>
         </div>
@@ -36,42 +33,48 @@ export default {
     components: {
         Menu,
     },
-    props: {
-        menuList: {
-            type: Array,
-            default: [],
-        },
-        value: {
-            type: [Number, String],
-        },
-        visible: Boolean,
-    },
     data() {
         return {
             searchText: "",
-            _menuList: [],
+            cmdList: [],
+            visible: false,
         };
     },
     watch: {
-        visible() {
-            this.searchText = "";
-        },
-        menuList() {
-            this.searchMenu();
-        },
         searchText() {
             this.searchMenu();
         },
     },
     created() {
-        this._menuList = this.menuList;
         this.theme = new Theme();
+        this.initEventBus();
     },
     methods: {
+        initEventBus() {
+            EventBus.$on("close-menu", () => {
+                this.visible = false;
+            });
+            EventBus.$on("open-cmd-menu", (data) => {
+                this.visible = true;
+                this.searchText = "";
+                this.originCmdList = data.cmdList;
+                this.value = data.value;
+                if (
+                    this.originCmdList[0] &&
+                    !(this.originCmdList[0] instanceof Array)
+                ) {
+                    this.originCmdList = [this.originCmdList];
+                }
+                this.searchMenu();
+                this.$nextTick(() => {
+                    this.$refs.input.focus();
+                });
+            });
+        },
         searchMenu() {
             if (this.searchText) {
                 let menu = [];
-                this.menuList[0].forEach((item) => {
+                this.originCmdList[0].forEach((item) => {
                     let result = Util.fuzzyMatch(
                         this.searchText,
                         item.name,
@@ -88,22 +91,22 @@ export default {
                     .map((item) => {
                         return item[0];
                     });
-                this._menuList = [menu];
+                this.cmdList = [menu];
             } else {
-                this._menuList = this.menuList.slice();
+                this.cmdList = this.originCmdList.slice();
             }
         },
         onChange(item) {
             switch (item.op) {
                 case "changeTheme":
-                    this.theme.loadXml(item.value);
+                    this.theme.loadTheme(item.value);
                     window.globalData.nowTheme = item.value;
                     break;
                 case "selectLanguage":
                     EventBus.$emit("language-change", item.value);
                     break;
             }
-            this.$emit("update:visible", false);
+            this.visible = false;
         },
     },
 };

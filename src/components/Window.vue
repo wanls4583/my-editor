@@ -15,11 +15,7 @@
     >
         <!-- 侧边栏 -->
         <side-bar ref="sideBar" v-if="mode === 'app'"></side-bar>
-        <div
-            @contextmenu.prevent.stop="onContextmenu"
-            class="my-right-wrap"
-            ref="rightWrap"
-        >
+        <div @contextmenu.prevent.stop="onContextmenu" class="my-right-wrap" ref="rightWrap">
             <!-- tab栏 -->
             <editor-bar
                 :editorList="editorList"
@@ -34,36 +30,15 @@
             ></editor-bar>
             <!-- 编辑区 -->
             <template v-for="item in editorList">
-                <editor
-                    :active="item.active"
-                    :id="item.id"
-                    :key="item.id"
-                    :ref="'editor' + item.id"
-                    @change="onFileChange(item.id)"
-                    @save="onSaveFile(item.id)"
-                    v-show="item.active"
-                ></editor>
+                <editor :active="item.active" :id="item.id" :key="item.id" :ref="'editor' + item.id" @change="onFileChange(item.id)" @save="onSaveFile(item.id)" v-show="item.active"></editor>
             </template>
             <window-menu ref="winMenu"></window-menu>
         </div>
         <!-- 顶部菜单栏 -->
-        <menu-bar
-            :height="topBarHeight"
-            @change="onMenuChange"
-            ref="menuBar"
-        ></menu-bar>
+        <title-bar :height="topBarHeight" @change="onMenuChange" ref="titleBar"></title-bar>
         <!-- 状态栏 -->
-        <status-bar
-            :height="statusHeight"
-            :languageList="languageList"
-            ref="statusBar"
-            @select-langeuage="onSelectLanguage"
-        ></status-bar>
-        <cmd-panel
-            :menuList="cmdMenuList"
-            :value="cmdValue"
-            :visible.sync="cmdVisible"
-        ></cmd-panel>
+        <status-bar :height="statusHeight" :languageList="languageList" ref="statusBar" @select-langeuage="onSelectLanguage"></status-bar>
+        <cmd-panel></cmd-panel>
         <Dialog
             :btns="dialogBtns"
             :content="dialogContent"
@@ -77,30 +52,30 @@
     </div>
 </template>
 <script>
-import EditorBar from "./EditorBar.vue";
-import Editor from "./Editor.vue";
-import MenuBar from "./MenuBar";
-import StatusBar from "./StatusBar";
-import SideBar from "./SideBar.vue";
-import Dialog from "./Dialog.vue";
-import WindowMenu from "./WindowMenu.vue";
-import CmdPanel from "./CmdPanel.vue";
-import Context from "@/module/context/index";
-import Theme from "@/module/theme";
-import EventBus from "@/event";
-import $ from "jquery";
+import EditorBar from './EditorBar.vue';
+import Editor from './Editor.vue';
+import TitleBar from './TitleBar';
+import StatusBar from './StatusBar';
+import SideBar from './SideBar.vue';
+import Dialog from './Dialog.vue';
+import WindowMenu from './WindowMenu.vue';
+import CmdPanel from './CmdPanel.vue';
+import Context from '@/module/context/index';
+import Theme from '@/module/theme';
+import EventBus from '@/event';
+import $ from 'jquery';
 
 const require = window.require || window.parent.require || function () {};
-const fs = require("fs");
-const path = require("path");
-const remote = require("@electron/remote");
+const fs = require('fs');
+const path = require('path');
+const remote = require('@electron/remote');
 const contexts = Context.contexts;
 
 export default {
     components: {
         Editor,
         EditorBar,
-        MenuBar,
+        TitleBar,
         StatusBar,
         SideBar,
         Dialog,
@@ -109,32 +84,30 @@ export default {
     },
     data() {
         return {
-            languagePath: path.join(window.globalData.dirname, "language"),
+            languagePath: path.join(window.globalData.dirname, 'language'),
             languageList: [],
+            scopeFileList: [],
             statusHeight: 30,
             topBarHeight: 35,
             nowId: null,
             idCount: 1,
             titleCount: 1,
             editorList: [],
-            cmdMenuList: [],
-            cmdVisible: false,
-            cmdValue: "",
-            dialogTilte: "",
-            dialogContent: "",
+            dialogTilte: '',
+            dialogContent: '',
             dialogVisible: false,
             dialogBtns: [],
-            dialogIcon: "",
-            dialogIconColor: "",
-            mode: remote ? "app" : "mode",
+            dialogIcon: '',
+            dialogIconColor: '',
+            mode: remote ? 'app' : 'mode',
         };
     },
     computed: {
         _topBarHeight() {
-            return this.topBarHeight + "px";
+            return this.topBarHeight + 'px';
         },
         _statusHeight() {
-            return this.statusHeight + "px";
+            return this.statusHeight + 'px';
         },
     },
     provide() {
@@ -154,22 +127,23 @@ export default {
         };
     },
     created() {
-        if (this.mode === "app") {
-            remote.getCurrentWindow().on("resize", () => {
+        if (this.mode === 'app') {
+            remote.getCurrentWindow().on('resize', () => {
                 let editor = this.getNowEditor();
                 editor && editor.showEditor();
             });
         } else {
-            $(window).on("resize", () => {
+            $(window).on('resize', () => {
                 let editor = this.getNowEditor();
                 editor && editor.showEditor();
             });
         }
         this.theme = new Theme();
-        this.theme.loadXml(window.globalData.nowTheme);
+        this.theme.loadTheme(window.globalData.nowTheme);
         this.loadLanguage().then((results) => {
-            results.push({ name: "Plain Text", value: "", checked: true });
+            results.push({ name: 'Plain Text', value: '', checked: true });
             window.globalData.languageList.push(...results.slice());
+            window.globalData.scopeFileList.push(...this.scopeFileList);
             this.languageList = results;
             this.checkLanguage();
         });
@@ -180,22 +154,11 @@ export default {
     },
     methods: {
         onContextmenu(e) {
-            // this.$refs.winMenu.show(e);
+            // EventBus.$emit('open-win-menu');
         },
         // 点击编辑器
         onWindMouseDown() {
-            this.$refs.winMenu.hide();
-            this.$refs.statusBar.closeAllMenu();
-            this.$refs.menuBar.closeAllMenu();
-            this.$refs.editorBar.closeAllMenu();
-            if (this.mode === "app") {
-                this.$refs.sideBar.closeAllMenu();
-            }
-            if (this.nowId) {
-                this.getNowEditor().closeAllMenu();
-                this.getNowEditor().menuVisble = false;
-            }
-            this.cmdVisible = false;
+            EventBus.$emit('close-menu');
         },
         onChangeTab(id) {
             let tab = this.getTabById(id);
@@ -218,15 +181,15 @@ export default {
             let index = this.editorList.indexOf(tab);
             if (!tab.saved) {
                 this.showDialog({
-                    content: "文件尚未保存，是否先保存文件？",
+                    content: '文件尚未保存，是否先保存文件？',
                     cancel: true,
-                    icon: "my-icon-warn",
-                    iconColor: "rgba(255,196,0)",
+                    icon: 'my-icon-warn',
+                    iconColor: 'rgba(255,196,0)',
                     btns: [
                         {
-                            name: "保存",
+                            name: '保存',
                             callback: () => {
-                                if (this.mode === "app") {
+                                if (this.mode === 'app') {
                                     this.onSaveFile(id).then(() => {
                                         _closeTab.call(this);
                                         this.onDialogClose();
@@ -238,7 +201,7 @@ export default {
                             },
                         },
                         {
-                            name: "不保存",
+                            name: '不保存',
                             callback: () => {
                                 _closeTab.call(this);
                                 this.onDialogClose();
@@ -260,7 +223,7 @@ export default {
                         this.onChangeTab(tab.id);
                     } else {
                         this.nowId = null;
-                        EventBus.$emit("tab-change", null);
+                        EventBus.$emit('tab-change', null);
                     }
                 } else {
                     this.getNowEditor().focus();
@@ -307,38 +270,40 @@ export default {
         },
         onMenuChange(item) {
             switch (item.op) {
-                case "changeTheme":
-                    this.cmdMenuList = [
+                case 'changeTheme':
+                    let cmdList = [
                         [
                             {
-                                op: "changeTheme",
-                                name: "Dark Monokai",
-                                value: "theme/dark-monokai.tmTheme",
+                                op: 'changeTheme',
+                                name: 'Dark Monokai',
+                                value: 'theme/dark-monokai.tmTheme',
                             },
                             {
-                                op: "changeTheme",
-                                name: "Light Amiga Rebel",
-                                value: "theme/light-amiga-rebel.tmTheme",
+                                op: 'changeTheme',
+                                name: 'Light Amiga Rebel',
+                                value: 'theme/light-amiga-rebel.tmTheme',
                             },
                         ],
                     ];
-                    this.cmdVisible = true;
-                    this.cmdValue = window.globalData.nowTheme;
+                    EventBus.$emit('open-cmd-menu', {
+                        cmdList: cmdList,
+                        value: window.globalData.nowTheme,
+                    });
                     break;
             }
         },
         onSelectLanguage() {
-            this.cmdMenuList = [
-                this.languageList.map((item) => {
-                    return {
-                        op: "selectLanguage",
-                        name: item.name,
-                        value: item.value,
-                    };
-                }),
-            ];
-            this.cmdVisible = true;
-            this.cmdValue = this.nowId && this.getNowEditor().language;
+            let cmdList = this.languageList.map((item) => {
+                return {
+                    op: 'selectLanguage',
+                    name: item.name,
+                    value: item.value,
+                };
+            });
+            EventBus.$emit('open-cmd-menu', {
+                cmdList: cmdList,
+                value: this.nowId && this.getNowEditor().language,
+            });
         },
         onFileChange(id) {
             let tab = this.getTabById(id);
@@ -346,7 +311,7 @@ export default {
         },
         onSaveFile(id) {
             let tab = this.getTabById(id);
-            if (this.mode === "web") {
+            if (this.mode === 'web') {
                 return Promise.resolve();
             }
             if (!tab.saved) {
@@ -357,24 +322,19 @@ export default {
                 } else {
                     let win = remote.getCurrentWindow();
                     let options = {
-                        title: "请选择要保存的文件名",
-                        buttonLabel: "保存",
+                        title: '请选择要保存的文件名',
+                        buttonLabel: '保存',
                     };
-                    return remote.dialog
-                        .showSaveDialog(win, options)
-                        .then((result) => {
-                            if (!result.canceled && result.filePath) {
-                                tab.path = result.filePath;
-                                tab.name = tab.path.match(/[^\\\/]+$/)[0];
-                                this.writeFile(
-                                    tab.path,
-                                    contexts[id].getAllText()
-                                );
-                                tab.saved = true;
-                            } else {
-                                return Promise.reject();
-                            }
-                        });
+                    return remote.dialog.showSaveDialog(win, options).then((result) => {
+                        if (!result.canceled && result.filePath) {
+                            tab.path = result.filePath;
+                            tab.name = tab.path.match(/[^\\\/]+$/)[0];
+                            this.writeFile(tab.path, contexts[id].getAllText());
+                            tab.saved = true;
+                        } else {
+                            return Promise.reject();
+                        }
+                    });
                 }
             }
         },
@@ -393,8 +353,8 @@ export default {
         choseFolder() {
             let win = remote.getCurrentWindow();
             let options = {
-                title: "选择文件夹",
-                properties: ["openDirectory", "multiSelections"],
+                title: '选择文件夹',
+                properties: ['openDirectory', 'multiSelections'],
             };
             return remote.dialog
                 .showOpenDialog(win, options)
@@ -405,7 +365,7 @@ export default {
                             let obj = {
                                 name: item.match(/[^\\\/]+$/)[0],
                                 path: item,
-                                type: "dir",
+                                type: 'dir',
                                 active: false,
                                 open: false,
                                 children: [],
@@ -423,8 +383,7 @@ export default {
             let tab = fileObj && this.getTabByPath(fileObj.path);
             if (!tab) {
                 let index = -1;
-                let name =
-                    (fileObj && fileObj.name) || `Untitled${this.titleCount++}`;
+                let name = (fileObj && fileObj.name) || `Untitled${this.titleCount++}`;
                 if (this.editorList.length) {
                     tab = this.getTabById(this.nowId);
                     index = this.editorList.indexOf(tab);
@@ -434,10 +393,7 @@ export default {
                     this.choseFile().then((results) => {
                         if (results) {
                             tab = results[0];
-                            this.editorList = this.editorList
-                                .slice(0, index)
-                                .concat(results)
-                                .concat(this.editorList.slice(index));
+                            this.editorList = this.editorList.slice(0, index).concat(results).concat(this.editorList.slice(index));
                             _done.call(this);
                         }
                     });
@@ -445,7 +401,7 @@ export default {
                     tab = {
                         id: this.idCount++,
                         name: name,
-                        path: (fileObj && fileObj.path) || "",
+                        path: (fileObj && fileObj.path) || '',
                         saved: true,
                         active: false,
                     };
@@ -459,18 +415,14 @@ export default {
             function _done() {
                 this.$nextTick(() => {
                     if (tab && tab.path && !tab.loaded) {
-                        fs.readFile(
-                            tab.path,
-                            { encoding: "utf8" },
-                            (err, data) => {
-                                if (err) {
-                                    throw err;
-                                }
-                                this.getContext(tab.id).insertContent(data);
-                                tab.saved = true;
-                                tab.loaded = true;
+                        fs.readFile(tab.path, { encoding: 'utf8' }, (err, data) => {
+                            if (err) {
+                                throw err;
                             }
-                        );
+                            this.getContext(tab.id).insertContent(data);
+                            tab.saved = true;
+                            tab.loaded = true;
+                        });
                     }
                     this.onChangeTab(tab.id);
                     this.checkLanguage();
@@ -480,8 +432,8 @@ export default {
         choseFile() {
             let win = remote.getCurrentWindow();
             let options = {
-                title: "选择文件",
-                properties: ["openFile", "multiSelections"],
+                title: '选择文件',
+                properties: ['openFile', 'multiSelections'],
             };
             return remote.dialog
                 .showOpenDialog(win, options)
@@ -516,22 +468,22 @@ export default {
                         return -1;
                     }
                 }
-                if (a.type === "dir") {
+                if (a.type === 'dir') {
                     return -1;
                 }
                 return 1;
             });
         },
         showDialog(option) {
-            this.dialogTilte = option.title || "";
-            this.dialogContent = option.content || "";
+            this.dialogTilte = option.title || '';
+            this.dialogContent = option.content || '';
             this.dialogBtns = option.btns;
             this.dialogVisible = true;
-            this.dialogIconColor = option.iconColor || "";
-            this.dialogIcon = option.icon || "";
+            this.dialogIconColor = option.iconColor || '';
+            this.dialogIcon = option.icon || '';
         },
         writeFile(path, text) {
-            fs.writeFileSync(path, text, { encoding: "utf-8" });
+            fs.writeFileSync(path, text, { encoding: 'utf-8' });
         },
         changeStatus() {
             let changStatusId = this.changeStatus.id || 1;
@@ -544,10 +496,8 @@ export default {
                 EventBus.$emit(`tab-change`, {
                     language: editor.language,
                     tabSize: editor.tabSize,
-                    line: editor.nowCursorPos ? editor.nowCursorPos.line : "?",
-                    column: editor.nowCursorPos
-                        ? editor.nowCursorPos.column
-                        : "?",
+                    line: editor.nowCursorPos ? editor.nowCursorPos.line : '?',
+                    column: editor.nowCursorPos ? editor.nowCursorPos.column : '?',
                 });
             });
         },
@@ -563,12 +513,9 @@ export default {
                 }
                 for (let i = 0; i < this.languageList.length; i++) {
                     let language = this.languageList[i];
-                    if (
-                        language.extensions &&
-                        language.extensions.indexOf(suffix[0]) > -1
-                    ) {
+                    if (language.extensions && language.extensions.indexOf(suffix[0]) > -1) {
                         this.$nextTick(() => {
-                            EventBus.$emit("language-change", language.name);
+                            EventBus.$emit('language-change', language.name);
                         });
                         break;
                     }
@@ -580,58 +527,44 @@ export default {
             return new Promise((resolve) => {
                 let results = [];
                 // 异步读取目录内容
-                fs.readdir(
-                    this.languagePath,
-                    { encoding: "utf8" },
-                    (err, files) => {
-                        if (err) {
-                            throw err;
-                        }
-                        files.forEach((item, index) => {
-                            let fullPath = path.join(this.languagePath, item);
-                            let packPath = path.join(
-                                fullPath,
-                                "./package.json"
-                            );
-                            if (fs.existsSync(packPath)) {
-                                const text = fs.readFileSync(packPath, "utf-8");
-                                try {
-                                    let json = JSON.parse(text);
-                                    let contributes = json.contributes;
-                                    let languages = contributes.languages;
-                                    let grammars = contributes.grammars;
-                                    languages.map((language) => {
-                                        for (
-                                            let i = 0;
-                                            i < grammars.length;
-                                            i++
-                                        ) {
-                                            let grammar = grammars[i];
-                                            if (
-                                                language.id === grammar.language
-                                            ) {
-                                                results.push({
-                                                    name: grammar.language,
-                                                    value: grammar.language,
-                                                    scopeName:
-                                                        grammar.scopeName,
-                                                    path: path.join(
-                                                        fullPath,
-                                                        grammar.path
-                                                    ),
-                                                    extensions:
-                                                        language.extensions,
-                                                });
-                                                break;
-                                            }
-                                        }
-                                    });
-                                } catch (e) {}
-                            }
-                        });
-                        resolve(results);
+                fs.readdir(this.languagePath, { encoding: 'utf8' }, (err, files) => {
+                    if (err) {
+                        throw err;
                     }
-                );
+                    files.forEach((item, index) => {
+                        let fullPath = path.join(this.languagePath, item);
+                        let packPath = path.join(fullPath, './package.json');
+                        if (fs.existsSync(packPath)) {
+                            const text = fs.readFileSync(packPath, 'utf-8');
+                            try {
+                                let json = JSON.parse(text);
+                                let contributes = json.contributes;
+                                let languages = contributes.languages;
+                                let grammars = contributes.grammars;
+                                languages.map((language) => {
+                                    for (let i = 0; i < grammars.length; i++) {
+                                        let grammar = grammars[i];
+                                        this.scopeFileList.push({
+                                            scopeName: grammar.scopeName,
+                                            path: path.join(fullPath, grammar.path),
+                                        });
+                                        if (language.id === grammar.language) {
+                                            results.push({
+                                                name: grammar.language,
+                                                value: grammar.language,
+                                                scopeName: grammar.scopeName,
+                                                path: path.join(fullPath, grammar.path),
+                                                extensions: language.extensions,
+                                            });
+                                            break;
+                                        }
+                                    }
+                                });
+                            } catch (e) {}
+                        }
+                    });
+                    resolve(results);
+                });
             });
         },
         getTabById(id) {

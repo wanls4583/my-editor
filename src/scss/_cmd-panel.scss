@@ -6,23 +6,13 @@
         z-index: 99;
         transform: translateX(-50%);
         min-width: 500px;
-        background-color: rgb(238, 238, 238);
-        color: #575757;
+        border: 1px solid var(--my-editorWidget-border);
+        background-color: var(--my-editorWidget-background);
+        color: var(--my-editorWidget-foreground);
 
-        .my-scroll-overlay{
+        .my-scroll-overlay {
             max-height: 500px;
         }
-
-        .my-menu {
-            background-color: transparent !important;
-            box-shadow: none;
-            border: none;
-
-            .my-light-bg {
-                background-color: transparent !important;
-            }
-        }
-
     }
 
     &-cmd-search {

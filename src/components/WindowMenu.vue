@@ -4,41 +4,55 @@
  * @Description: 
 -->
 <template>
-	<div ref="wrap" v-show="menuVisible">
-		<Menu :checkable="false" :menuList="menuList" :styles="menuStyle" @change="onMenuChange" ref="menu"></Menu>
-	</div>
+    <div ref="wrap" v-show="menuVisible">
+        <Menu
+            :checkable="false"
+            :menuList="menuList"
+            :styles="menuStyle"
+            @change="onMenuChange"
+            ref="menu"
+        ></Menu>
+    </div>
 </template>
 <script>
-import Menu from './Menu.vue';
-import $ from 'jquery';
+import Menu from "./Menu.vue";
+import EventBus from "@/event";
+import $ from "jquery";
 
 export default {
-    name: 'WindowMenu',
+    name: "WindowMenu",
     components: {
-        Menu
+        Menu,
     },
     props: {
         styles: {
-            type: Object
+            type: Object,
         },
     },
     data() {
         return {
-            menuList: [
-            ],
+            menuList: [],
             menuVisible: false,
             menuStyle: {
-                left: '50%',
-                top: '50%'
-            }
-        }
+                left: "50%",
+                top: "50%",
+            },
+        };
     },
     created() {
+        this.initEventBus();
     },
     methods: {
+        initEventBus() {
+            EventBus.$on("close-menu", () => {
+                this.menuVisible = false;
+            });
+            EventBus.$on("open-win-menu", () => {
+                this.menuVisible = true;
+            });
+        },
         onMenuChange(item) {
             switch (item.op) {
-
             }
             this.menuVisible = false;
         },
@@ -49,15 +63,23 @@ export default {
                 let offset = $parent.offset();
                 let menuWidth = this.$refs.menu.$el.clientWidth;
                 let menuHeight = this.$refs.menu.$el.clientHeight;
-                if (menuHeight + e.clientY > offset.top + $parent[0].clientHeight) {
-                    this.menuStyle.top = e.clientY - offset.top - menuHeight + 'px';
+                if (
+                    menuHeight + e.clientY >
+                    offset.top + $parent[0].clientHeight
+                ) {
+                    this.menuStyle.top =
+                        e.clientY - offset.top - menuHeight + "px";
                 } else {
-                    this.menuStyle.top = e.clientY - offset.top + 'px';
+                    this.menuStyle.top = e.clientY - offset.top + "px";
                 }
-                if (menuWidth + e.clientX > offset.left + $parent[0].clientWidth) {
-                    this.menuStyle.left = e.clientX - offset.left - menuWidth + 'px';
+                if (
+                    menuWidth + e.clientX >
+                    offset.left + $parent[0].clientWidth
+                ) {
+                    this.menuStyle.left =
+                        e.clientX - offset.left - menuWidth + "px";
                 } else {
-                    this.menuStyle.left = e.clientX - offset.left + 'px';
+                    this.menuStyle.left = e.clientX - offset.left + "px";
                 }
             });
         },
@@ -65,5 +87,5 @@ export default {
             this.menuVisible = false;
         },
     },
-}
+};
 </script>

@@ -4,12 +4,14 @@
         z-index: 99;
         min-width: 200px;
         user-select: none;
-        background-color: #ffffff;
+        border: 1px solid var(--my-menu-border);
+        background-color: var(--my-menu-background);
+        color: var(--my-menu-foreground);
     }
 
     &-menu-group {
         padding: 5px 0;
-        border-bottom: 1px solid rgba(200, 200, 200, 0.5);
+        border-bottom: 1px solid var(--my-menu-separatorBackground);
 
         &:last-child {
             border-bottom: none;
@@ -22,15 +24,15 @@
         white-space: nowrap;
         min-width: 80px;
         min-height: 30px;
+        border: 1px solid transparent;
 
-        &:last-child {
-            .my-menu-content {
-                border-bottom: none;
-            }
+        &.my-active {
+            border: 1px solid var(--my-menu-selectionBorder);
+            background-color: var(--my-menu-selectionBackground);
+            color: var(--my-menu-selectionForeground);
         }
 
         &.disabled {
-
             &:hover {
                 background-color: transparent;
                 cursor: auto;
@@ -39,6 +41,25 @@
             .my-menu-title,
             .my-menu-shortcut {
                 color: #999999;
+            }
+        }
+    }
+
+    &-list &-menu {
+        border: none;
+        background-color: transparent;
+        color: var(--my-foreground);
+
+        .my-menu-item {
+            &:hover {
+                background-color: var(--my-list-hoverBackground);
+                color: var(--my-list-hoverForeground);
+            }
+            
+            &.my-active {
+                border: 1px solid transparent;
+                background-color: var(--my-list-activeSelectionBackground);
+                color: var(--my-list-activeSelectionForeground);
             }
         }
     }

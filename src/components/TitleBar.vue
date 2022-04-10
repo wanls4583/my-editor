@@ -7,21 +7,21 @@
     <div
         :style="{ height: height + 'px' }"
         @contextmenu.stop.prevent
-        class="my-menu-bar my-width-100"
+        class="my-title-bar my-width-100"
     >
         <div class="my-height-100 my-center-between">
-            <div class="bar-left">
+            <div class="menu-bar">
                 <div
                     @mousedown.stop="showMemu('fileMenuVisible')"
                     class="bar-item my-hover"
                 >
                     <span>File</span>
                     <Menu
-                        :checkable="false"
+                        :hoverCheck="true"
                         :menuList="fileMenuList"
                         :styles="{ left: 0, top: _top }"
                         @change="onFileMenuChange"
-                        v-show="fileMenuVisible"
+                        v-if="fileMenuVisible"
                     ></Menu>
                 </div>
                 <div
@@ -30,11 +30,11 @@
                 >
                     <span>Edit</span>
                     <Menu
-                        :checkable="false"
+                        :hoverCheck="true"
                         :menuList="editMenuList"
                         :styles="{ left: 0, top: _top }"
                         @change="onEditMenuChange"
-                        v-show="editMenuVisible"
+                        v-if="editMenuVisible"
                     ></Menu>
                 </div>
                 <div
@@ -43,11 +43,11 @@
                 >
                     <span>Selection</span>
                     <Menu
-                        :checkable="false"
+                        :hoverCheck="true"
                         :menuList="selectionMenuList"
                         :styles="{ left: 0, top: _top }"
                         @change="onSelectionMenuChange"
-                        v-show="selectionMenuVisible"
+                        v-if="selectionMenuVisible"
                     ></Menu>
                 </div>
                 <div
@@ -56,11 +56,11 @@
                 >
                     <span>Preference</span>
                     <Menu
-                        :checkable="false"
+                        :hoverCheck="true"
                         :menuList="preferenceMenuList"
                         :styles="{ left: 0, top: _top }"
                         @change="onPreferenceMenuChange"
-                        v-show="preferenceMenuVisible"
+                        v-if="preferenceMenuVisible"
                     ></Menu>
                 </div>
             </div>
@@ -91,7 +91,7 @@
                 >
                     <span class="iconfont icon-zuidahua"></span>
                 </div>
-                <!-- 最小化 -->
+                <!-- 关闭 -->
                 <div
                     @click="onClose"
                     class="bar-item my-hover-danger"
@@ -117,7 +117,7 @@ const remote = require("@electron/remote");
 const currentWindow = remote && remote.getCurrentWindow();
 
 export default {
-    name: "MenuBar",
+    name: "TitleBar",
     props: {
         height: {
             type: Number,
@@ -301,6 +301,7 @@ export default {
             ]);
         }
         this.shortcut = new ShortCut(this);
+        this.initEventBus();
         $(window).on("keydown", (e) => {
             this.shortcut.onKeyDown(e);
         });
@@ -311,15 +312,17 @@ export default {
         }
     },
     methods: {
-        showMemu(prop) {
-            this.closeAllMenu();
-            this[prop] = true;
+        initEventBus() {
+            EventBus.$on("close-menu", () => {
+                this.fileMenuVisible = false;
+                this.editMenuVisible = false;
+                this.selectionMenuVisible = false;
+                this.preferenceMenuVisible = false;
+            });
         },
-        closeAllMenu() {
-            this.fileMenuVisible = false;
-            this.editMenuVisible = false;
-            this.selectionMenuVisible = false;
-            this.preferenceMenuVisible = false;
+        showMemu(prop) {
+            EventBus.$emit("close-menu");
+            this[prop] = true;
         },
         // 最小化
         onMinimize() {

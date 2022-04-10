@@ -1,11 +1,11 @@
 .my {
-
-    &-status-bar,
-    &-menu-bar {
+    &-status-bar {
         position: absolute;
         bottom: 0;
         z-index: 99;
-        background-color: rgb(221, 221, 221);
+        border-top: 1px solid var(--my-statusbar-border);
+        background-color: var(--my-statusbar-background);
+        color: var(--my-statusbar-foreground);
         user-select: none;
 
         .bar-left {
@@ -26,23 +26,14 @@
             justify-content: center;
             padding: 0 20px;
             min-width: 120px;
+            &.my-hover:hover {
+                background-color: var(--my-statusbarItem-hoverBackground);
+            }
+            &.my-hover:active {
+                background-color: var(--my-statusbarItem-activeBackground);
+            }
         }
-    }
 
-    &-menu-bar {
-        -webkit-app-region: drag;
-        top: 0;
-        bottom: auto;
-        min-width: auto;
-
-        .bar-item {
-            -webkit-app-region: no-drag;
-            min-width: auto;
-            padding: 0 10px;
-        }
-    }
-
-    &-status-bar {
         .my-menu {
             min-width: 120px;
         }
