@@ -4,68 +4,66 @@
  * @Description: 
 -->
 <template>
-	<div @contextmenu.prevent @contextmenu.stop @mousedown.stop @selectstart.stop class="my-search">
-		<div class="my-search-left">
-			<span
-				:class="{'icon-down1':replaceVisible,'icon-right':!replaceVisible}"
-				@click="showReplace"
-				class="iconfont"
-				style="font-size:14px"
-				title="Toggle Replace mode"
-			></span>
-		</div>
-		<div style="flex-grow:1">
-			<div class="my-search-top">
-				<div :class="{'active-border':input1Focus}" class="my-search-input">
-					<input @blur="input1Focus=false" @focus="input1Focus=true" @keydown="onKeyDown" ref="input1" type="text" v-model="searchText" />
-					<span :class="{'active-suffix':ignoreCase}" @click="changeCase" class="my-search-suffix" title="Match Case(Alt+C)">Aa</span>
-					<span :class="{'active-suffix':wholeWord}" @click="changeWhole" class="my-search-suffix iconfont icon-whole-word" title="Match Whole Word(Alt+W)"></span>
-				</div>
-				<div v-if="count">
-					<span>{{now}}</span>
-					<span>&nbsp;of&nbsp;</span>
-					<span>{{count}}</span>
-				</div>
-				<span :style="{color:searchText?'red':'#333'}" v-else>No results</span>
-			</div>
-			<div class="my-search-bottom" style="margin-top:5px" v-if="replaceVisible">
-				<div :class="{'active-border':input2Focus}" class="my-search-input">
-					<input @blur="input2Focus=false" @focus="input2Focus=true" @keydown="onKeyDown2" ref="input2" type="text" v-model="replaceText" />
-				</div>
-				<span
-					:class="{'enabled-color':count>0,'disabled-color':count==0}"
-					@click="replace"
-					class="iconfont icon-replace active-click"
-					style="margin-right:5px"
-					title="Replace(Enter)"
-				></span>
-				<span
-					:class="{'enabled-color':count>0,'disabled-color':count==0}"
-					@click="replaceAll"
-					class="iconfont icon-replace-all active-click"
-					style="margin-right:5px"
-					title="Replace All(Ctrl+Alt+Enter)"
-				></span>
-			</div>
-		</div>
-		<div class="my-search-right">
-			<span
-				:class="{'active-border':searchPrevActive,'enabled-color':count>0,'disabled-color':count==0}"
-				@click="searchPrev"
-				class="iconfont icon-up"
-				style="margin-right:5px"
-				title="Previous Match(Shift Enter)"
-			></span>
-			<span
-				:class="{'active-border':searchNextActive,'enabled-color':count>0,'disabled-color':count==0}"
-				@click="searchNext"
-				class="iconfont icon-down"
-				style="margin-right:5px"
-				title="Next Match(Enter)"
-			></span>
-			<span @click="close" class="iconfont icon-close" title="Close"></span>
-		</div>
-	</div>
+    <div @contextmenu.prevent @contextmenu.stop @mousedown.stop @selectstart.stop class="my-search">
+        <div class="my-search-left active-click" tabindex="-1">
+            <span :class="{ 'icon-down1': replaceVisible, 'icon-right': !replaceVisible }" @click="showReplace" class="iconfont" style="font-size: 14px" title="Toggle Replace mode"></span>
+        </div>
+        <div style="flex-grow: 1">
+            <div class="my-search-top">
+                <div :class="{ 'my-active': input1Focus }" class="my-search-input">
+                    <input @blur="input1Focus = false" @focus="input1Focus = true" @keydown="onKeyDown" ref="input1" type="text" v-model="searchText" />
+                    <span :class="{ 'my-active': ignoreCase }" @click="changeCase" class="my-search-suffix" title="Match Case(Alt+C)">Aa</span>
+                    <span :class="{ 'my-active': wholeWord }" @click="changeWhole" class="my-search-suffix iconfont icon-whole-word" title="Match Whole Word(Alt+W)"></span>
+                </div>
+                <div v-if="count">
+                    <span>{{ now }}</span>
+                    <span>&nbsp;of&nbsp;</span>
+                    <span>{{ count }}</span>
+                </div>
+                <span :style="{ color: searchText ? 'red' : '#333' }" v-else>No results</span>
+            </div>
+            <div class="my-search-bottom" style="margin-top: 5px" v-if="replaceVisible">
+                <div :class="{ 'my-active': input2Focus }" class="my-search-input">
+                    <input @blur="input2Focus = false" @focus="input2Focus = true" @keydown="onKeyDown2" ref="input2" type="text" v-model="replaceText" />
+                </div>
+                <span
+                    :class="{ 'enabled-color': count > 0, 'disabled-color': count == 0 }"
+                    @click="replace"
+                    class="iconfont icon-replace active-click"
+                    style="margin-right: 5px"
+                    title="Replace(Enter)"
+                    tabindex="1"
+                ></span>
+                <span
+                    :class="{ 'enabled-color': count > 0, 'disabled-color': count == 0 }"
+                    @click="replaceAll"
+                    class="iconfont icon-replace-all active-click"
+                    style="margin-right: 5px"
+                    title="Replace All(Ctrl+Alt+Enter)"
+                    tabindex="1"
+                ></span>
+            </div>
+        </div>
+        <div class="my-search-right">
+            <span
+                :class="{ 'enabled-color': count > 0, 'disabled-color': count == 0 }"
+                @click="searchPrev"
+                class="iconfont icon-up active-click"
+                style="margin-right: 5px"
+                title="Previous Match(Shift Enter)"
+                tabindex="2"
+            ></span>
+            <span
+                :class="{ 'enabled-color': count > 0, 'disabled-color': count == 0 }"
+                @click="searchNext"
+                class="iconfont icon-down active-click"
+                style="margin-right: 5px"
+                title="Next Match(Enter)"
+                tabindex="2"
+            ></span>
+            <span @click="close" class="iconfont icon-close" title="Close"></span>
+        </div>
+    </div>
 </template>
 <script>
 export default {
@@ -73,12 +71,12 @@ export default {
     props: {
         now: {
             type: Number,
-            default: 1
+            default: 1,
         },
         count: {
             type: Number,
-            default: 0
-        }
+            default: 0,
+        },
     },
     data() {
         return {
@@ -91,7 +89,7 @@ export default {
             searchNextActive: false,
             input1Focus: false,
             input2Focus: false,
-        }
+        };
     },
     watch: {
         searchText: function (newVal) {
@@ -105,10 +103,9 @@ export default {
         },
         ignoreCase: function (newVal) {
             this.search();
-        }
+        },
     },
-    created() {
-    },
+    created() {},
     methods: {
         initData(obj) {
             for (let key in obj) {
@@ -126,7 +123,7 @@ export default {
                 this.$emit('search', {
                     text: this.searchText,
                     ignoreCase: this.ignoreCase,
-                    wholeWord: this.wholeWord
+                    wholeWord: this.wholeWord,
                 });
             });
         },
@@ -186,7 +183,7 @@ export default {
                 return;
             }
             if (e.keyCode === 13 || e.keyCode === 100) {
-                if (this.searchPrevActive || !this.searchNextActive && e.shiftKey) {
+                if (this.searchPrevActive || (!this.searchNextActive && e.shiftKey)) {
                     this.$emit('prev');
                 } else {
                     this.$emit('next');
@@ -205,6 +202,6 @@ export default {
                 }
             }
         },
-    }
-}
+    },
+};
 </script>

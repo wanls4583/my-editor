@@ -8,9 +8,9 @@
         display: flex;
         justify-content: space-between;
         padding: 5px 10px 5px 25px;
-        background-color: rgb(243, 243, 243);
-        border: 1px solid #dddddd;
-        color: #333;
+        border: 1px solid var(--my-editorWidget-border);
+        background-color: var(--my-editorWidget-background);
+        color: var(--my-editorWidget-foreground);
 
         .iconfont {
             display: inline-block;
@@ -23,12 +23,12 @@
             cursor: pointer;
         }
 
-        .active-border {
-            border: 1px solid #0098fb;
+        .active-click:hover {
+            background-color: var(--my-toolbar-hoverBackground);
         }
 
-        .active-click:active {
-            border: 1px solid #0098fb;
+        .active-click:focus {
+            border: 1px solid #007fd4;
         }
 
         .disabled-color {
@@ -53,16 +53,16 @@
             cursor: pointer;
 
             &:hover {
-                color: #333;
+                background-color: var(--my-inputOption-hoverBackground);
             }
 
-            &.active-suffix {
-                background-color: rgb(204, 233, 252);
-                color: #000;
+            &.my-active {
+                border: 1px solid var(--my-inputOption-activeBorder);
+                background-color: var(--my-inputOption-activeBackground);
+                color: var(--my-inputOption-activeForeground);
             }
         }
     }
-
 
     &-search-left {
         position: absolute;
@@ -90,7 +90,13 @@
         justify-content: space-between;
         width: 280px;
         margin-right: 5px;
-        background-color: #fff;
+        background-color: var(--my-input-background);
+        color: var(--my-input-foreground);
+        border: 1px solid transparent;
+
+        &.my-active {
+            border: 1px solid var(--my-input-border);
+        }
 
         input {
             flex-grow: 1;
@@ -99,6 +105,7 @@
             padding: 0 5px;
             border-style: none;
             outline: none;
+            background-color: transparent;
         }
     }
 

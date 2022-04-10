@@ -5,14 +5,15 @@
         white-space: nowrap;
 
         &.active::after {
-            content: "";
+            content: '';
             position: absolute;
             top: 0;
             display: block;
             width: 100%;
             height: 100%;
             z-index: -1;
-            border: 1px solid rgba(0, 0, 0, 0.1);
+            background-color: 1px solid var(--my-editor-lineHighlightBorder);
+            background-color: var(--my-editor-lineHighlightBackground);
         }
     }
 
@@ -35,21 +36,23 @@
     }
 
     &-select-bg {
-        border: 1px solid rgb(173, 214, 255);
+        border: 1px solid var(--my-editor-selectionHighlightBorder);
+        background-color: var(--my-editor-selectionHighlightBackground);
 
         &.active {
             border: none;
-            background-color: rgb(173, 214, 255);
+            background-color: var(--my-editor-selectionBackground);
+            color: var(--my-editor-selectionForeground);
         }
     }
 
-
     &-search-bg {
-        border: 1px solid rgb(250, 201, 171);
+        border: 1px solid var(--my-editor-findMatchHighlightBorder);
+        background-color: var(--my-editor-findMatchHighlightBackground);
 
         &.active {
-            border: none;
-            background-color: rgb(250, 201, 171);
+            border: 1px solid var(--my-editor-findMatchBorder);
+            background-color: var(--my-editor-findMatchBackground);
         }
     }
 
@@ -76,7 +79,7 @@
         }
 
         &.fold-close::before {
-            content: "...";
+            content: '...';
             position: absolute;
             top: 50%;
             left: 100%;
@@ -89,7 +92,7 @@
         }
 
         &.fold-close::after {
-            content: "...";
+            content: '...';
             position: absolute;
             top: -3px;
             left: 100%;

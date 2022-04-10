@@ -21,8 +21,9 @@
         input {
             width: 100%;
             height: 30px;
-            background-color: #ffffff;
-            border: 1px solid #0098fb;
+            background-color: var(--my-input-background);
+            color: var(--my-input-foreground);
+            border: 1px solid var(--my-input-border);
             outline: none;
         }
     }

@@ -185,13 +185,13 @@ body {
     --my-editorLineNumber-activeForeground: #333;
     --my-editorCursor-foreground: #333;
     --my-editor-selectionForeground: #575757;
-    --my-editor-selectionBackground: #add6ff;
-    --my-editor-selectionHighlightBorder: #add6ff;
+    --my-editor-selectionBackground: #0098fb;
+    --my-editor-selectionHighlightBorder: #0098fb;
     --my-editor-selectionHighlightBackground: transparent;
-    --my-editor-findMatchBackground: #add6ff;
+    --my-editor-findMatchBackground: rgb(250, 201, 171);
     --my-editor-findMatchBorder: transparent;
     --my-editor-findMatchHighlightBackground: transparent;
-    --my-editor-findMatchHighlightBorder: #add6ff;
+    --my-editor-findMatchHighlightBorder: #0098fb;
     --my-editor-lineHighlightBackground: transparent;
     --my-editor-lineHighlightBorder: rgba(200, 200, 200, 0.4);
 
@@ -202,7 +202,20 @@ body {
     --my-editorSuggestWidget-background: #eee;
     --my-editorSuggestWidget-border: #ddd;
     --my-editorSuggestWidget-selectedForeground: #575757;
-    --my-editorSuggestWidget-selectedBackground: #add6ff;
-    --my-editorSuggestWidget-highlightForeground: #fff;
+    --my-editorSuggestWidget-selectedBackground: #0098fb;
+    --my-editorSuggestWidget-highlightForeground: #0098fb;
     --my-editorSuggestWidget-focusHighlightForeground: #fff;
+
+    --my-input-foreground: #575757;
+    --my-input-background: #fff;
+    --my-input-border: #0098fb;
+    --my-input-placeholderForeground: #999;
+    --my-inputOption-activeForeground: #575757;
+    --my-inputOption-activeBackground: rgb(204, 233, 252);
+    --my-inputOption-activeBorder: transparent;
+    --my-inputOption-hoverBackground: rgba(200, 200, 200, 0.4);
+
+    --my-toolbar-hoverBackground: rgba(200, 200, 200, 0.4);
+    --my-toolbar-activeBackground: transparent;
+    --my-toolbar-hoverOutline: transparent;
 }
