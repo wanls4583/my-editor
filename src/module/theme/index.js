@@ -31,17 +31,25 @@ export default class {
                 break;
         }
         return _loadTheme(url).then(() => {
-            if (!result.colors['tab.activeBackground']) {
-                result.colors['tab.activeBackground'] = result.colors['editor.background'];
-            }
-            let css = this.parseCss(result);
+            let css = '';
+            result.colors['tab.activeBackground'] =
+                result.colors['tab.activeBackground'] || result.colors['editor.background'];
+            result.colors['editorIndentGuide.background'] =
+                result.colors['editorIndentGuide.background'] || result.colors['editorWhitespace.foreground'];
+            result.colors['editorIndentGuide.activeBackground'] =
+                result.colors['editorIndentGuide.activeBackground'] || result.colors['editorWhitespace.foreground'];
+            result.colors['menu.background'] = result.colors['menu.background'] || result.colors['dropdown.background'];
+            result.colors['editorWidget.background'] =
+                result.colors['editorWidget.background'] || result.colors['menu.background'];
+            css = this.parseCss(result);
             this.insertCss(css);
         });
 
         function _loadTheme(fullPath) {
             return Util.readFile(fullPath).then((data) => {
                 data = data.toString();
-                data = data.replaceAll(/(?<=[\n\r\{\[\"]\s*\,?\s*)\/\/[\s\S]*?(?=\r\n|\n|\r|$)/g, '');
+                // 去掉注释
+                data = data.replaceAll(/(?<=(?:[\n\r\{\[\"]|^)\s*\,?\s*)\/\/[\s\S]*?(?=\r\n|\n|\r|$)/g, '');
                 data = data.replaceAll(/\,(?=\s*(?:(?:\r\n|\n|\r))*\s*[\]\}])/g, '');
                 data = JSON.parse(data);
                 if (data.include) {

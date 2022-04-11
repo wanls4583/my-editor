@@ -6,23 +6,26 @@
 <template>
     <div :style="styles" @mousedown.stop class="my-menu my-shadow my-border" ref="scroller">
         <div v-show="visible" ref="content">
-            <div class="my-menu-group" v-for="group in myMenuList">
-                <div
-                    :class="{
-                        'my-active': checkable && item.checked,
-                        disabled: item.disabled,
-                    }"
-                    @mousedown="onClick(item)"
-                    @mouseover="onHover(item)"
-                    class="my-menu-item my-center-between my-hover"
-                    v-for="item in group"
-                >
-                    <div class="my-menu-title">{{ item.name }}</div>
-                    <div class="my-menu-shortcut" v-if="item.shortcut">
-                        {{ item.shortcut }}
+            <template v-for="(group, index) in myMenuList">
+                <div class="my-menu-group">
+                    <div
+                        :class="{
+                            'my-active': checkable && item.checked,
+                            disabled: item.disabled,
+                        }"
+                        @mousedown="onClick(item)"
+                        @mouseover="onHover(item)"
+                        class="my-menu-item my-center-between my-hover"
+                        v-for="item in group"
+                    >
+                        <div class="my-menu-title">{{ item.name }}</div>
+                        <div class="my-menu-shortcut" v-if="item.shortcut">
+                            {{ item.shortcut }}
+                        </div>
                     </div>
                 </div>
-            </div>
+                <div class="my-separator" v-if="index < myMenuList.length - 1"></div>
+            </template>
         </div>
     </div>
 </template>

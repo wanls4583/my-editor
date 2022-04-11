@@ -62,7 +62,7 @@
         z-index: 2;
         width: 0px;
         height: 100%;
-        border-left: 1px solid rgba(0, 0, 0, 0.1);
+        border-left: 1px solid var(--my-editorIndentGuide-background);
         pointer-events: none;
     }
 
