@@ -4,15 +4,15 @@
         flex-shrink: 0;
         width: 300px;
         height: 100%;
-        border-right: 1px solid var(--my-sidebar-border);
-        background-color: var(--my-sidebar-background);
-        color: var(--my-sidebar-foreground);
+        border-right: 1px solid var(--my-sideBar-border);
+        background-color: var(--my-sideBar-background);
+        color: var(--my-sideBar-foreground);
 
         .side-bar-title {
             padding-left: 16px;
             height: 40px;
             line-height: 40px;
-            color: var(--my-sidebarTitle-foreground);
+            color: var(--my-sideBarTitle-foreground);
         }
 
         .side-tree {

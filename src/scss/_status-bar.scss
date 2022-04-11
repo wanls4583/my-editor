@@ -3,9 +3,9 @@
         position: absolute;
         bottom: 0;
         z-index: 99;
-        border-top: 1px solid var(--my-statusbar-border);
-        background-color: var(--my-statusbar-background);
-        color: var(--my-statusbar-foreground);
+        border-top: 1px solid var(--my-statusBar-border);
+        background-color: var(--my-statusBar-background);
+        color: var(--my-statusBar-foreground);
         user-select: none;
 
         .bar-left {
@@ -27,10 +27,10 @@
             padding: 0 20px;
             min-width: 120px;
             &.my-hover:hover {
-                background-color: var(--my-statusbarItem-hoverBackground);
+                background-color: var(--my-statusBarItem-hoverBackground);
             }
             &.my-hover:active {
-                background-color: var(--my-statusbarItem-activeBackground);
+                background-color: var(--my-statusBarItem-activeBackground);
             }
         }
 

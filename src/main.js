@@ -3,6 +3,9 @@ import App from './App.vue';
 import router from './router';
 import axios from 'axios';
 import './scss/index.scss';
+const require = window.require || window.parent.require || function () {};
+const path = require('path');
+const dirname = 'public/';
 
 Vue.config.productionTip = false;
 Vue.prototype.$http = axios.create({
@@ -12,9 +15,14 @@ Vue.prototype.$http = axios.create({
         'Content-Type': 'application/json; charset=utf-8',
     },
 });
+
 window.globalData = {
-    dirname: 'public/',
-    nowTheme: './themes/theme-defaults/themes/dark_plus.json',
+    dirname: dirname,
+    nowTheme: {
+        value: 'Dark+ (default dark)',
+        type: 'dark',
+        path: dirname + 'themes/theme-defaults/themes/dark_plus.json'
+    },
     themes: [],
     languageList: [],
     scopeFileList: [],

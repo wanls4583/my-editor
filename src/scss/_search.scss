@@ -19,7 +19,6 @@
             line-height: 22px;
             font-size: 18px;
             text-align: center;
-            color: #000;
             cursor: pointer;
         }
 
@@ -40,7 +39,7 @@
         }
 
         .enable-color {
-            color: #000000;
+            color: var(--my-editorWidget-foreground);
         }
 
         .my-search-suffix {
@@ -49,7 +48,6 @@
             line-height: 22px;
             text-align: center;
             margin-right: 4px;
-            color: #999999;
             cursor: pointer;
 
             &:hover {

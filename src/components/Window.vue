@@ -157,7 +157,7 @@ export default {
             });
         }
         this.theme = new Theme();
-        this.theme.loadTheme(window.globalData.nowTheme);
+        this.theme.loadTheme(window.globalData.nowTheme.path, window.globalData.nowTheme.type);
         this.loadLanguage().then((results) => {
             results.push({ name: 'Plain Text', value: '', checked: true });
             window.globalData.languageList.push(...results.slice());
@@ -294,12 +294,12 @@ export default {
                 case 'changeTheme':
                     let cmdList = window.globalData.themes.map((item) => {
                         return item.map((item) => {
-                            return Object.assign({}, item);
+                            return Object.assign({ op: 'changeTheme' }, item);
                         });
                     });
                     EventBus.$emit('open-cmd-menu', {
                         cmdList: cmdList,
-                        value: window.globalData.nowTheme,
+                        value: window.globalData.nowTheme.value,
                     });
                     break;
             }
@@ -602,7 +602,7 @@ export default {
                                 let contributes = json.contributes;
                                 let themes = contributes.themes;
                                 themes.map((theme) => {
-                                    let type = '';
+                                    let type = 'light';
                                     let index = 0;
                                     switch (theme.uiTheme) {
                                         case 'vs-dark':
@@ -620,8 +620,9 @@ export default {
                                     }
                                     results[index].push({
                                         name: theme.id,
+                                        value: theme.id,
                                         type: type,
-                                        value: path.join(fullPath, theme.path),
+                                        path: path.join(fullPath, theme.path),
                                     });
                                 });
                             } catch (e) {}
