@@ -4,11 +4,7 @@
  * @Description: 
 -->
 <template>
-    <div
-        :style="{ height: height + 'px' }"
-        @contextmenu.stop.prevent
-        class="my-status-bar my-width-100"
-    >
+    <div :style="{ height: height + 'px' }" @contextmenu.stop.prevent class="my-status-bar my-width-100">
         <div class="my-height-100 my-center-between">
             <div class="bar-left">
                 <div class="bar-item" v-if="hasEditor">
@@ -16,25 +12,19 @@
                 </div>
             </div>
             <div class="bar-right">
-                <div
-                    @mousedown.stop="showTabsize"
-                    class="bar-item my-hover"
-                    v-if="hasEditor"
-                >
+                <div @mousedown.stop="showTabsize" class="bar-item my-hover" v-if="hasEditor">
                     <span>Tab Size:{{ tabSize }}</span>
-                    <Menu
-                        :menuList="tabSizeList"
-                        :styles="{ right: 0, bottom: height + 'px' }"
-                        :value="tabSize"
-                        @change="onTabsizeChange"
-                        v-show="tabsizeVisible"
-                    ></Menu>
+                    <div class="my-list" style="position: absolute; bottom: 30px">
+                        <Menu
+                            :menuList="tabSizeList"
+                            :styles="{ position: 'relative' }"
+                            :value="tabSize"
+                            @change="onTabsizeChange"
+                            v-show="tabsizeVisible"
+                        ></Menu>
+                    </div>
                 </div>
-                <div
-                    @mousedown.stop="showLanguage"
-                    class="bar-item my-hover"
-                    v-if="hasEditor"
-                >
+                <div @mousedown.stop="showLanguage" class="bar-item my-hover" v-if="hasEditor">
                     <span>{{ nowLanguage }}</span>
                 </div>
             </div>
@@ -42,11 +32,11 @@
     </div>
 </template>
 <script>
-import Menu from "./Menu";
-import EventBus from "@/event";
+import Menu from './Menu';
+import EventBus from '@/event';
 
 export default {
-    name: "StatusBar",
+    name: 'StatusBar',
     props: {
         height: {
             type: Number,
@@ -62,10 +52,10 @@ export default {
             line: 1,
             column: 0,
             tabSize: 4,
-            language: "",
+            language: '',
             tabsizeVisible: false,
             hasEditor: false,
-            tabSizeList: [[]],
+            tabSizeList: [],
             languages: [[]],
             languageMap: {},
         };
@@ -88,7 +78,7 @@ export default {
     created() {
         this.initEventBus();
         for (let i = 1; i <= 8; i++) {
-            this.tabSizeList[0].push({
+            this.tabSizeList.push({
                 name: `Tab Width：${i}`,
                 value: i,
             });
@@ -97,7 +87,7 @@ export default {
     mounted() {},
     methods: {
         initEventBus() {
-            EventBus.$on("tab-change", (data) => {
+            EventBus.$on('tab-change', (data) => {
                 if (data) {
                     this.language = data.language;
                     this.tabSize = data.tabSize;
@@ -108,29 +98,29 @@ export default {
                     this.hasEditor = false;
                 }
             });
-            EventBus.$emit("cursor-change", (data) => {
+            EventBus.$emit('cursor-change', (data) => {
                 this.line = data.line;
                 this.column = data.column;
             });
-            EventBus.$on("language-change", (language) => {
+            EventBus.$on('language-change', (language) => {
                 this.language = language;
             });
-            EventBus.$on("close-menu", (language) => {
+            EventBus.$on('close-menu', (language) => {
                 this.tabsizeVisible = false;
             });
         },
         showTabsize() {
             let visible = this.tabsizeVisible;
-            EventBus.$emit("close-menu");
+            EventBus.$emit('close-menu');
             this.tabsizeVisible = !visible;
         },
         showLanguage() {
-            EventBus.$emit("close-menu");
-            this.$emit("select-langeuage");
+            EventBus.$emit('close-menu');
+            this.$emit('select-langeuage');
         },
         onTabsizeChange(item) {
             if (this.tabSize != item.value) {
-                this.$emit("tab-size-change", item.value);
+                this.$emit('tab-size-change', item.value);
             }
             this.tabsizeVisible = false;
         },

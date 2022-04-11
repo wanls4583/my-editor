@@ -132,6 +132,8 @@ body {
 :root {
     --my-foreground: #575757;
     --my-background: #fff;
+    --my-widget-shadow: rgba(0,0,0,0.16);
+
     --my-titlebar-activeForeground: #575757;
     --my-titlebar-activeBackground: #ddd;
     --my-titleBar-border: transparent;
@@ -142,8 +144,8 @@ body {
     --my-menu-foreground: #575757;
     --my-menu-background: #fff;
     --my-menu-border: rgba(200, 200, 200, 0.4);
-    --my-menu-selectionForeground: #575757;
-    --my-menu-selectionBackground: rgba(200, 200, 200, 0.4);
+    --my-menu-selectionForeground: #fff;
+    --my-menu-selectionBackground: #0066b8;
     --my-menu-selectionBorder: transparent;
     --my-menu-separatorBackground: rgba(200, 200, 200, 0.4);
 

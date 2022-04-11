@@ -30,14 +30,27 @@
             ></editor-bar>
             <!-- 编辑区 -->
             <template v-for="item in editorList">
-                <editor :active="item.active" :id="item.id" :key="item.id" :ref="'editor' + item.id" @change="onFileChange(item.id)" @save="onSaveFile(item.id)" v-show="item.active"></editor>
+                <editor
+                    :active="item.active"
+                    :id="item.id"
+                    :key="item.id"
+                    :ref="'editor' + item.id"
+                    @change="onFileChange(item.id)"
+                    @save="onSaveFile(item.id)"
+                    v-show="item.active"
+                ></editor>
             </template>
             <window-menu ref="winMenu"></window-menu>
         </div>
         <!-- 顶部菜单栏 -->
         <title-bar :height="topBarHeight" @change="onMenuChange" ref="titleBar"></title-bar>
         <!-- 状态栏 -->
-        <status-bar :height="statusHeight" :languageList="languageList" ref="statusBar" @select-langeuage="onSelectLanguage"></status-bar>
+        <status-bar
+            :height="statusHeight"
+            :languageList="languageList"
+            ref="statusBar"
+            @select-langeuage="onSelectLanguage"
+        ></status-bar>
         <cmd-panel></cmd-panel>
         <Dialog
             :btns="dialogBtns"
@@ -393,7 +406,10 @@ export default {
                     this.choseFile().then((results) => {
                         if (results) {
                             tab = results[0];
-                            this.editorList = this.editorList.slice(0, index).concat(results).concat(this.editorList.slice(index));
+                            this.editorList = this.editorList
+                                .slice(0, index)
+                                .concat(results)
+                                .concat(this.editorList.slice(index));
                             _done.call(this);
                         }
                     });
@@ -549,8 +565,10 @@ export default {
                                             path: path.join(fullPath, grammar.path),
                                         });
                                         if (language.id === grammar.language) {
+                                            let name = language.aliases && language.aliases[0];
+                                            name = name ? `${name}（${grammar.language}）` : grammar.language;
                                             results.push({
-                                                name: grammar.language,
+                                                name: name,
                                                 value: grammar.language,
                                                 scopeName: grammar.scopeName,
                                                 path: path.join(fullPath, grammar.path),

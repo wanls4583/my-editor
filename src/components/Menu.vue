@@ -4,12 +4,7 @@
  * @Description: 
 -->
 <template>
-    <div
-        :style="styles"
-        @mousedown.stop
-        class="my-menu my-shadow my-border"
-        ref="scroller"
-    >
+    <div :style="styles" @mousedown.stop class="my-menu my-shadow my-border" ref="scroller">
         <div v-show="visible" ref="content">
             <div class="my-menu-group" v-for="group in myMenuList">
                 <div
@@ -34,9 +29,9 @@
     </div>
 </template>
 <script>
-import $ from "jquery";
+import $ from 'jquery';
 export default {
-    name: "Menu",
+    name: 'Menu',
     props: {
         menuList: {
             type: Array,
@@ -60,7 +55,7 @@ export default {
     data() {
         return {
             index: -1,
-            itemHeight: 30,
+            itemHeight: 22,
             myMenuList: [],
         };
     },
@@ -84,15 +79,9 @@ export default {
         index() {
             let $scroller = this.$refs.scroller;
             let height = (this.index + 1) * this.itemHeight;
-            if (
-                $scroller &&
-                height > $scroller.clientHeight + $scroller.scrollTop
-            ) {
+            if ($scroller && height > $scroller.clientHeight + $scroller.scrollTop) {
                 $scroller.scrollTop = height - $scroller.clientHeight;
-            } else if (
-                $scroller &&
-                height < $scroller.scrollTop + this.itemHeight
-            ) {
+            } else if ($scroller && height < $scroller.scrollTop + this.itemHeight) {
                 $scroller.scrollTop = height - this.itemHeight;
             }
         },
@@ -109,15 +98,15 @@ export default {
                     this.setCheckedByIndex(this.index + 1);
                 } else if (e.keyCode === 13) {
                     if (this.index > -1) {
-                        this.$emit("change", this.indexMap[this.index]);
+                        this.$emit('change', this.indexMap[this.index]);
                     }
                 }
             }
         };
-        $(window).on("keydown", this.keydownFn);
+        $(window).on('keydown', this.keydownFn);
     },
     destroyed() {
-        $(window).unbind("keydown", this.keydownFn);
+        $(window).unbind('keydown', this.keydownFn);
     },
     methods: {
         initMenu() {
@@ -132,8 +121,7 @@ export default {
             this.myMenuList = menuList.map((group) => {
                 return group.map((item) => {
                     item = Object.assign({}, item);
-                    item.value =
-                        item.value === undefined ? item.name : item.value;
+                    item.value = item.value === undefined ? item.name : item.value;
                     item.checked = item.value === this.value;
                     this.indexMap[++index] = item;
                     this.maxIndex = index;
@@ -150,7 +138,7 @@ export default {
             }
             this.clearChecked();
             item.checked = true;
-            this.$emit("change", item);
+            this.$emit('change', item);
         },
         onHover(item) {
             this.hoverCheck && this.setChecked(item.value);
