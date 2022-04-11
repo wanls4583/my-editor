@@ -17,11 +17,9 @@
                     class="my-menu-item my-center-between my-hover"
                     v-for="item in group"
                 >
-                    <div class="my-center-between">
-                        <div class="my-menu-title">{{ item.name }}</div>
-                        <div class="my-menu-shortcut" v-if="item.shortcut">
-                            {{ item.shortcut }}
-                        </div>
+                    <div class="my-menu-title">{{ item.name }}</div>
+                    <div class="my-menu-shortcut" v-if="item.shortcut">
+                        {{ item.shortcut }}
                     </div>
                 </div>
             </div>
