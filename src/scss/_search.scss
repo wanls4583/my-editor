@@ -31,15 +31,24 @@
         }
 
         .disabled-color {
-            color: #999999;
+            opacity: 0.5;
 
+            &:hover {
+                background-color: transparent;
+            }
+            
             &:active {
                 border: none;
             }
+
         }
 
         .enable-color {
             color: var(--my-editorWidget-foreground);
+        }
+
+        .no-result.my-active {
+            color: red;
         }
 
         .my-search-suffix {
@@ -104,6 +113,7 @@
             border-style: none;
             outline: none;
             background-color: transparent;
+            color: var(--my-input-foreground);
         }
     }
 

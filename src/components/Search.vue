@@ -6,25 +6,56 @@
 <template>
     <div @contextmenu.prevent @contextmenu.stop @mousedown.stop @selectstart.stop class="my-search">
         <div class="my-search-left active-click" tabindex="-1">
-            <span :class="{ 'icon-down1': replaceVisible, 'icon-right': !replaceVisible }" @click="showReplace" class="iconfont" style="font-size: 14px" title="Toggle Replace mode"></span>
+            <span
+                :class="{ 'icon-down1': replaceVisible, 'icon-right': !replaceVisible }"
+                @click="showReplace"
+                class="iconfont"
+                style="font-size: 14px"
+                title="Toggle Replace mode"
+            ></span>
         </div>
         <div style="flex-grow: 1">
             <div class="my-search-top">
                 <div :class="{ 'my-active': input1Focus }" class="my-search-input">
-                    <input @blur="input1Focus = false" @focus="input1Focus = true" @keydown="onKeyDown" ref="input1" type="text" v-model="searchText" />
-                    <span :class="{ 'my-active': ignoreCase }" @click="changeCase" class="my-search-suffix" title="Match Case(Alt+C)">Aa</span>
-                    <span :class="{ 'my-active': wholeWord }" @click="changeWhole" class="my-search-suffix iconfont icon-whole-word" title="Match Whole Word(Alt+W)"></span>
+                    <input
+                        @blur="input1Focus = false"
+                        @focus="input1Focus = true"
+                        @keydown="onKeyDown"
+                        ref="input1"
+                        type="text"
+                        v-model="searchText"
+                    />
+                    <span
+                        :class="{ 'my-active': ignoreCase }"
+                        @click="changeCase"
+                        class="my-search-suffix"
+                        title="Match Case(Alt+C)"
+                        >Aa</span
+                    >
+                    <span
+                        :class="{ 'my-active': wholeWord }"
+                        @click="changeWhole"
+                        class="my-search-suffix iconfont icon-whole-word"
+                        title="Match Whole Word(Alt+W)"
+                    ></span>
                 </div>
                 <div v-if="count">
                     <span>{{ now }}</span>
                     <span>&nbsp;of&nbsp;</span>
                     <span>{{ count }}</span>
                 </div>
-                <span :style="{ color: searchText ? 'red' : '#333' }" v-else>No results</span>
+                <span class="no-result" :class="{ 'my-active': searchText }" v-else>No results</span>
             </div>
             <div class="my-search-bottom" style="margin-top: 5px" v-if="replaceVisible">
                 <div :class="{ 'my-active': input2Focus }" class="my-search-input">
-                    <input @blur="input2Focus = false" @focus="input2Focus = true" @keydown="onKeyDown2" ref="input2" type="text" v-model="replaceText" />
+                    <input
+                        @blur="input2Focus = false"
+                        @focus="input2Focus = true"
+                        @keydown="onKeyDown2"
+                        ref="input2"
+                        type="text"
+                        v-model="replaceText"
+                    />
                 </div>
                 <span
                     :class="{ 'enabled-color': count > 0, 'disabled-color': count == 0 }"
