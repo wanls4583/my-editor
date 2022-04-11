@@ -98,6 +98,7 @@ export default {
     data() {
         return {
             languagePath: path.join(window.globalData.dirname, 'language'),
+            themePath: path.join(window.globalData.dirname, 'themes'),
             languageList: [],
             scopeFileList: [],
             statusHeight: 30,
@@ -163,6 +164,9 @@ export default {
             window.globalData.scopeFileList.push(...this.scopeFileList);
             this.languageList = results;
             this.checkLanguage();
+        });
+        this.loadThemes().then((results) => {
+            window.globalData.themes.push(...results.slice());
         });
     },
     mounted() {
@@ -288,20 +292,11 @@ export default {
         onMenuChange(item) {
             switch (item.op) {
                 case 'changeTheme':
-                    let cmdList = [
-                        [
-                            {
-                                op: 'changeTheme',
-                                name: 'Dark Monokai',
-                                value: 'theme/dark-monokai.tmTheme',
-                            },
-                            {
-                                op: 'changeTheme',
-                                name: 'Light Amiga Rebel',
-                                value: 'theme/light-amiga-rebel.tmTheme',
-                            },
-                        ],
-                    ];
+                    let cmdList = window.globalData.themes.map((item) => {
+                        return item.map((item) => {
+                            return Object.assign({}, item);
+                        });
+                    });
                     EventBus.$emit('open-cmd-menu', {
                         cmdList: cmdList,
                         value: window.globalData.nowTheme,
@@ -310,7 +305,7 @@ export default {
             }
         },
         onSelectLanguage() {
-            let cmdList = this.languageList.map((item) => {
+            let cmdList = window.globalData.languageList.map((item) => {
                 return {
                     op: 'selectLanguage',
                     name: item.name + (item.language ? `（${item.language}）` : ''),
@@ -525,8 +520,6 @@ export default {
         checkLanguage() {
             if (this.nowId) {
                 let tab = this.getTabById(this.nowId);
-                let editor = this.getNowEditor();
-                let statusBar = this.$refs.statusBar;
                 let suffix = /\.[^\.]+$/.exec(tab.name);
                 if (!suffix) {
                     return;
@@ -585,6 +578,57 @@ export default {
                                 });
                             } catch (e) {}
                         }
+                    });
+                    resolve(results);
+                });
+            });
+        },
+        // 加载默认主题
+        loadThemes() {
+            return new Promise((resolve) => {
+                let results = [[], [], [], []];
+                // 异步读取目录内容
+                fs.readdir(this.themePath, { encoding: 'utf8' }, (err, files) => {
+                    if (err) {
+                        throw err;
+                    }
+                    files.forEach((item) => {
+                        let fullPath = path.join(this.themePath, item);
+                        let packPath = path.join(fullPath, './package.json');
+                        if (fs.existsSync(packPath)) {
+                            const text = fs.readFileSync(packPath, 'utf-8');
+                            try {
+                                let json = JSON.parse(text);
+                                let contributes = json.contributes;
+                                let themes = contributes.themes;
+                                themes.map((theme) => {
+                                    let type = '';
+                                    let index = 0;
+                                    switch (theme.uiTheme) {
+                                        case 'vs-dark':
+                                            type = 'dark';
+                                            index = 1;
+                                            break;
+                                        case 'hc-light':
+                                            type = 'contrast light';
+                                            index = 2;
+                                            break;
+                                        case 'hc-black':
+                                            type = 'contrast dark';
+                                            index = 3;
+                                            break;
+                                    }
+                                    results[index].push({
+                                        name: theme.id,
+                                        type: type,
+                                        value: path.join(fullPath, theme.path),
+                                    });
+                                });
+                            } catch (e) {}
+                        }
+                    });
+                    results = results.filter((item) => {
+                        return item.length;
                     });
                     resolve(results);
                 });

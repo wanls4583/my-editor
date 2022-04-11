@@ -13,8 +13,9 @@ Vue.prototype.$http = axios.create({
     },
 });
 window.globalData = {
-    nowTheme: 'theme/dark-monokai.tmTheme',
     dirname: 'public/',
+    nowTheme: './themes/theme-defaults/themes/dark_plus.json',
+    themes: [],
     languageList: [],
     scopeFileList: [],
 };
