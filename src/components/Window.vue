@@ -141,9 +141,13 @@ export default {
     },
     created() {
         if (this.mode === 'app') {
-            remote.getCurrentWindow().on('resize', () => {
+            const currentWindow = remote.getCurrentWindow();
+            currentWindow.on('resize', () => {
                 let editor = this.getNowEditor();
                 editor && editor.showEditor();
+            });
+            currentWindow.on('blur', () => {
+                EventBus.$emit('close-menu');
             });
         } else {
             $(window).on('resize', () => {
@@ -309,7 +313,7 @@ export default {
             let cmdList = this.languageList.map((item) => {
                 return {
                     op: 'selectLanguage',
-                    name: item.name,
+                    name: item.name + (item.language ? `（${item.language}）` : ''),
                     value: item.value,
                 };
             });
@@ -566,10 +570,11 @@ export default {
                                         });
                                         if (language.id === grammar.language) {
                                             let name = language.aliases && language.aliases[0];
-                                            name = name ? `${name}（${grammar.language}）` : grammar.language;
+                                            name = name || grammar.language;
                                             results.push({
                                                 name: name,
                                                 value: grammar.language,
+                                                language: grammar.language,
                                                 scopeName: grammar.scopeName,
                                                 path: path.join(fullPath, grammar.path),
                                                 extensions: language.extensions,
