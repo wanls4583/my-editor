@@ -450,7 +450,6 @@ export default {
                 case "selectLanguage":
                     EventBus.$emit("language-change", item.value);
             }
-            this.editor.focus();
             this.preferenceMenuVisible = false;
         },
     },

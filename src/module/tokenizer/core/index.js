@@ -111,7 +111,6 @@ export default class {
         endLine = endLine || this.maxLine;
         endLine = endLine > this.maxLine ? this.maxLine : endLine;
         clearTimeout(this.tokenizeLines.timer);
-        console.time();
         if (this.scopeName && !this.grammar) {
             this.tokenizeLines.timer = setTimeout(() => {
                 this.tokenizeLines(startLine, endLine, currentLine);
@@ -149,7 +148,7 @@ export default class {
                 }
                 processedLines++;
                 // 避免卡顿
-                if (processedLines % 5 == 0 && Date.now() - processedTime >= 20000) {
+                if (processedLines % 5 == 0 && Date.now() - processedTime >= 20) {
                     startLine++;
                     break;
                 }
@@ -167,7 +166,6 @@ export default class {
             }
             startLine++;
         }
-        console.timeEnd();
         this.currentLine = startLine;
         if (startLine <= endLine) {
             this.tokenizeLines.timer = setTimeout(() => {

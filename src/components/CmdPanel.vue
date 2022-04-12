@@ -66,7 +66,7 @@ export default {
                     this.originCmdList = [this.originCmdList];
                 }
                 this.searchMenu();
-                this.$nextTick(() => {
+                requestAnimationFrame(()=>{
                     this.$refs.input.focus();
                 });
             });
