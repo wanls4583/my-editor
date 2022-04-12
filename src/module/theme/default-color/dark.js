@@ -47,7 +47,7 @@ export default {
     'tab.activeForeground': '#fff',
     'tab.activeBackground': '',
     'tab.inactiveForeground': 'rgba(255,255,255,0.5)',
-    'tab.inactiveBackground': 'transparent',
+    'tab.inactiveBackground': 'rgb(45, 45, 45)',
     'tab.activeBorder': 'transparent',
     'tab.activeBorderTop': 'transparent',
     'tab.hoverForeground': '#fff',
@@ -56,7 +56,7 @@ export default {
     // editor
     'editor.foreground': '#ccc',
     'editor.background': 'rgb(30,30,30)',
-    'editorLineNumber.foreground': 'rgb(120,120,120)',
+    'editorLineNumber.foreground': 'rgba(255,255,255,0.5)',
     'editorLineNumber.activeForeground': '#fff',
     'editorCursor.foreground': '#fff',
     'editor.selectionForeground': '#ccc',

@@ -528,7 +528,7 @@ export default {
                     let language = this.languageList[i];
                     if (language.extensions && language.extensions.indexOf(suffix[0]) > -1) {
                         this.$nextTick(() => {
-                            EventBus.$emit('language-change', language.name);
+                            EventBus.$emit('language-change', language.value);
                         });
                         break;
                     }
