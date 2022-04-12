@@ -120,7 +120,8 @@ export default {
         },
         onTabsizeChange(item) {
             if (this.tabSize != item.value) {
-                this.$emit('tab-size-change', item.value);
+                EventBus.$emit('tab-size-change', item.value);
+                this.tabSize = item.value;
             }
             this.tabsizeVisible = false;
         },
