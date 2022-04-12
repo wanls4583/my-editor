@@ -83,23 +83,22 @@ export default class {
         }
         if (data.tokenColors) {
             data.tokenColors.forEach((token) => {
-                let selector = '';
-                if (token.scope instanceof Array) {
-                    selector = [];
-                    token.scope.forEach((scope) => {
-                        selector.push(`.my-scope-${scopeId}`);
-                        scopeNameClassMap[scope] = `my-scope-${scopeId}`;
-                        scopeId++;
-                    });
-                    selector = selector.join(',');
-                } else {
-                    selector = `.my-scope-${scopeId}`;
-                    scopeNameClassMap[token.scope] = `my-scope-${scopeId}`;
-                    scopeId++;
+                if (!token.scope) {
+                    return;
                 }
+                let selector = [];
+                let scope = token.scope instanceof Array ? token.scope.join(',') : token.scope;
+                scope = scope.replace(/\s/g, '');
+                scope = scope.split(',');
+                scope.forEach((scope) => {
+                    selector.push(`.my-scope-${scopeId}`);
+                    scopeNameClassMap[scope] = `my-scope-${scopeId}`;
+                    scopeId++;
+                });
+                selector = selector.join(',');
                 css += `${selector}{\n`;
                 for (let prop in token.settings) {
-                    css += `${settingMap[prop]}:${token.settings[prop]}\n`;
+                    css += `${settingMap[prop]}:${token.settings[prop]};\n`;
                 }
                 css += '}\n';
             });

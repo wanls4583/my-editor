@@ -1,16 +1,37 @@
 <template>
-    <div @contextmenu.prevent.stop="onContextmenu" @selectstart.prevent @wheel.prevent="onWheel" class="my-editor-wrap" ref="editor">
+    <div
+        @contextmenu.prevent.stop="onContextmenu"
+        @selectstart.prevent
+        @wheel.prevent="onWheel"
+        class="my-editor-wrap"
+        ref="editor"
+    >
         <!-- 行号 -->
         <div :style="{ top: _numTop }" class="my-nums" v-if="active">
             <!-- 占位行号，避免行号宽度滚动时变化 -->
             <div class="my-num" style="visibility: hidden">{{ maxLine }}</div>
-            <div :class="{ active: _activeLine(line.num) }" :key="line.num" :style="{ height: _lineHeight, 'line-height': _lineHeight }" class="my-num" v-for="line in renderHtmls">
-                <span @mouseleave="onIconMouseLeave" @mouseover="onIconMouseOver(line.num, $event)" class="my-line-icon my-center-center">
+            <div
+                :class="{ active: _activeLine(line.num) }"
+                :key="line.num"
+                :style="{ height: _lineHeight, 'line-height': _lineHeight }"
+                class="my-num"
+                v-for="line in renderHtmls"
+            >
+                <span
+                    @mouseleave="onIconMouseLeave"
+                    @mouseover="onIconMouseOver(line.num, $event)"
+                    class="my-line-icon my-center-center"
+                >
                     <i class="my-icon-error" style="margin-top: -2px" v-if="errorMap[line.num]"></i>
                 </span>
                 <span class="num">{{ line.num }}</span>
                 <!-- 折叠图标 -->
-                <span :class="[line.fold == 'open' ? 'my-fold-open' : 'my-fold-close']" @click="onToggleFold(line.num)" class="my-fold my-center-center" v-if="line.fold"></span>
+                <span
+                    :class="[line.fold == 'open' ? 'my-fold-open' : 'my-fold-close']"
+                    @click="onToggleFold(line.num)"
+                    class="my-fold my-center-center"
+                    v-if="line.fold"
+                ></span>
             </div>
         </div>
         <div :style="{ 'box-shadow': _leftShadow }" class="my-content-wrap">
@@ -43,7 +64,11 @@
                         >
                             <!-- my-select-bg为选中状态 -->
                             <div
-                                :class="[line.selected ? 'my-select-bg active' : '', line.isFsearch ? 'my-search-bg' : '', line.fold == 'close' ? 'fold-close' : '']"
+                                :class="[
+                                    line.selected ? 'my-select-bg active' : '',
+                                    line.isFsearch ? 'my-search-bg' : '',
+                                    line.fold == 'close' ? 'fold-close' : '',
+                                ]"
                                 :data-line="line.num"
                                 class="my-code"
                                 v-html="line.html"
@@ -74,7 +99,11 @@
                                 class="my-line-bg my-select-bg"
                                 v-for="range in line.selectEnds"
                             ></div>
-                            <span :style="{ left: _tabLineLeft(tab) }" class="my-tab-line" v-for="tab in line.tabNum"></span>
+                            <span
+                                :style="{ left: _tabLineLeft(tab) }"
+                                class="my-tab-line"
+                                v-for="tab in line.tabNum"
+                            ></span>
                             <!-- 模拟光标 -->
                             <div
                                 :style="{
@@ -106,7 +135,13 @@
                         class="my-textarea"
                         ref="textarea"
                     ></textarea>
-                    <auto-tip :styles="autoTipStyle" :tipList="autoTipList" @change="onClickAuto" ref="autoTip" v-show="autoTipList && autoTipList.length"></auto-tip>
+                    <auto-tip
+                        :styles="autoTipStyle"
+                        :tipList="autoTipList"
+                        @change="onClickAuto"
+                        ref="autoTip"
+                        v-show="autoTipList && autoTipList.length"
+                    ></auto-tip>
                 </div>
             </div>
             <!-- 搜索框 -->
@@ -124,7 +159,14 @@
             ></search-dialog>
         </div>
         <!-- 右键菜单 -->
-        <Menu :checkable="false" :menuList="menuList" :styles="menuStyle" @change="onClickMenu" ref="menu" v-show="menuVisible"></Menu>
+        <Menu
+            :checkable="false"
+            :menuList="menuList"
+            :styles="menuStyle"
+            @change="onClickMenu"
+            ref="menu"
+            v-show="menuVisible"
+        ></Menu>
         <tip :content="tipContent" :styles="tipStyle" ref="tip" v-show="tipContent"></tip>
     </div>
 </template>
@@ -416,6 +458,15 @@ export default {
                     this.autocomplete.stop();
                 })
             );
+            EventBus.$on(
+                'theme-change',
+                (this.initEventBus.fn4 = () => {
+                    if (this.active) {
+                        this.tokenizer.onScroll();
+                        this.render();
+                    }
+                })
+            );
         },
         unbindEvent() {
             $(document).unbind('mousemove', this.initEvent.fn1);
@@ -423,6 +474,7 @@ export default {
             EventBus.$off('language-change', this.initEventBus.fn1);
             EventBus.$off('tab-size-change', this.initEventBus.fn2);
             EventBus.$off('close-menu', this.initEventBus.fn3);
+            EventBus.$off('theme-change', this.initEventBus.fn4);
         },
         showEditor() {
             if (this.active) {
@@ -509,7 +561,11 @@ export default {
             this.myContext.renderedIdMap.clear();
             this.myContext.renderedLineMap.clear();
             this.renderHtmls = [];
-            for (let i = 0, startLine = this.startLine; i < this.maxVisibleLines && startLine <= this.myContext.htmls.length; i++) {
+            for (
+                let i = 0, startLine = this.startLine;
+                i < this.maxVisibleLines && startLine <= this.myContext.htmls.length;
+                i++
+            ) {
                 let lineObj = this.myContext.htmls[startLine - 1];
                 let lineId = lineObj.lineId;
                 let obj = _getObj(lineObj, startLine);
@@ -673,7 +729,8 @@ export default {
                 // 强制滚动使光标处于可见区域
                 if (forceCursorView && cursorPos === that.nowCursorPos) {
                     if (left > that.scrollerArea.width + that.scrollLeft - that.charObj.fullAngleCharWidth) {
-                        that.$refs.scroller.scrollLeft = left + that.charObj.fullAngleCharWidth - that.scrollerArea.width;
+                        that.$refs.scroller.scrollLeft =
+                            left + that.charObj.fullAngleCharWidth - that.scrollerArea.width;
                     } else if (left < that.scrollLeft) {
                         that.$refs.scroller.scrollLeft = left - 1;
                     }
@@ -798,7 +855,8 @@ export default {
                             if (nowCursorPos.line <= this.startLine) {
                                 //此时this.startLine可能已经通过onScrll而改变
                                 this.startLine = nowCursorPos.line;
-                                this.$refs.scroller.scrollTop = (this.folder.getRelativeLine(nowCursorPos.line) - 1) * this.charObj.charHight;
+                                this.$refs.scroller.scrollTop =
+                                    (this.folder.getRelativeLine(nowCursorPos.line) - 1) * this.charObj.charHight;
                             }
                         });
                     }
@@ -833,7 +891,8 @@ export default {
                 this.$nextTick(() => {
                     let width = this.$refs.autoTip.$el.clientWidth;
                     let height = this.$refs.autoTip.$el.clientHeight;
-                    this.autoTipStyle.top = this.folder.getRelativeLine(this.nowCursorPos.line) * this.charObj.charHight;
+                    this.autoTipStyle.top =
+                        this.folder.getRelativeLine(this.nowCursorPos.line) * this.charObj.charHight;
                     this.autoTipStyle.left = this.getExactLeft(this.nowCursorPos);
                     if (this.autoTipStyle.top + height > Util.getNum(this._top) + this.$refs.scroller.clientHeight) {
                         this.autoTipStyle.top -= height + this.charObj.charHight;
@@ -853,7 +912,14 @@ export default {
         },
         // 获取文本在浏览器中的宽度
         getStrWidth(str, start, end) {
-            return Util.getStrWidth(str, this.charObj.charWidth, this.charObj.fullAngleCharWidth, this.tabSize, start, end);
+            return Util.getStrWidth(
+                str,
+                this.charObj.charWidth,
+                this.charObj.fullAngleCharWidth,
+                this.tabSize,
+                start,
+                end
+            );
         },
         // 获取行对应的文本在浏览器中的宽度
         getStrWidthByLine(line, start, end) {
@@ -1020,7 +1086,10 @@ export default {
                 time: Date.now(),
                 start: pos,
             };
-            if ((e.ctrlKey && this.cursor.multiKeyCode === 'ctrl') || (e.altKey && this.cursor.multiKeyCode === 'alt')) {
+            if (
+                (e.ctrlKey && this.cursor.multiKeyCode === 'ctrl') ||
+                (e.altKey && this.cursor.multiKeyCode === 'alt')
+            ) {
                 let range = this.selecter.getRangeWithCursorPos(pos);
                 if (range) {
                     //删除选中范围
@@ -1131,13 +1200,21 @@ export default {
                     if (autoDirect === 'down') {
                         column = that.myContext.htmls[line - 1].text.length;
                     } else {
-                        column = column < 0 ? 0 : column > that.myContext.htmls[line - 1].text.length ? that.myContext.htmls[line - 1].text.length : column;
+                        column =
+                            column < 0
+                                ? 0
+                                : column > that.myContext.htmls[line - 1].text.length
+                                ? that.myContext.htmls[line - 1].text.length
+                                : column;
                     }
                     that.mouseStartObj.cursorPos = that.cursor.setCursorPos({
                         line: line,
                         column: column,
                     });
-                    that.mouseStartObj.preRange = that.selecter.setRange(that.mouseStartObj.start, { line: line, column: column });
+                    that.mouseStartObj.preRange = that.selecter.setRange(that.mouseStartObj.start, {
+                        line: line,
+                        column: column,
+                    });
                     that.selectMoveTimer = requestAnimationFrame(() => {
                         _run(autoDirect, speed);
                     });

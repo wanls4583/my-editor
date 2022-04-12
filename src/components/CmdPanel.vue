@@ -105,6 +105,7 @@ export default {
                         type: item.type,
                         path: item.path
                     };
+                    EventBus.$emit("theme-change", item.value);
                     break;
                 case "selectLanguage":
                     EventBus.$emit("language-change", item.value);

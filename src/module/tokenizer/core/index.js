@@ -176,7 +176,7 @@ export default class {
                 let str = '';
                 scope = scope.split('.');
                 for (let i = 0; i < scope.length; i++) {
-                    str += scope[i];
+                    str += str ? '.' + scope[i] : scope[i];
                     if (globalData.scopeNameClassMap[str]) {
                         selector.push(globalData.scopeNameClassMap[str]);
                     }
