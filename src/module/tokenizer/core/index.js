@@ -111,6 +111,7 @@ export default class {
         endLine = endLine || this.maxLine;
         endLine = endLine > this.maxLine ? this.maxLine : endLine;
         clearTimeout(this.tokenizeLines.timer);
+        console.time();
         if (this.scopeName && !this.grammar) {
             this.tokenizeLines.timer = setTimeout(() => {
                 this.tokenizeLines(startLine, endLine, currentLine);
@@ -124,13 +125,17 @@ export default class {
                 let data = this.tokenizeLine(startLine);
                 lineObj.tokens = data.tokens;
                 lineObj.folds = data.folds;
-                lineObj.html = data.tokens
-                    .map((item) => {
-                        return _creatHtml(item);
-                    })
-                    .join('');
-                this.renderLine(lineObj.lineId);
-                lineObj.nowTheme = globalData.nowTheme.value;
+                if (this.checkLineVisible(startLine)) {
+                    lineObj.html = data.tokens
+                        .map((item) => {
+                            return _creatHtml(item);
+                        })
+                        .join('');
+                    this.renderLine(lineObj.lineId);
+                    lineObj.nowTheme = globalData.nowTheme.value;
+                } else {
+                    lineObj.nowTheme = '';
+                }
                 if (
                     !lineObj.states ||
                     (lineObj.states.equals && !lineObj.states.equals(data.states)) ||
@@ -144,20 +149,25 @@ export default class {
                 }
                 processedLines++;
                 // 避免卡顿
-                if (processedLines % 5 == 0 && Date.now() - processedTime >= 20) {
+                if (processedLines % 5 == 0 && Date.now() - processedTime >= 20000) {
                     startLine++;
                     break;
                 }
             } else if (lineObj.nowTheme !== globalData.nowTheme.value) {
-                lineObj.html = lineObj.tokens
-                    .map((item) => {
-                        return _creatHtml(item);
-                    })
-                    .join('');
-                lineObj.nowTheme = globalData.nowTheme.value;
+                if (this.checkLineVisible(startLine)) {
+                    lineObj.html = lineObj.tokens
+                        .map((item) => {
+                            return _creatHtml(item);
+                        })
+                        .join('');
+                    lineObj.nowTheme = globalData.nowTheme.value;
+                } else {
+                    lineObj.nowTheme = '';
+                }
             }
             startLine++;
         }
+        console.timeEnd();
         this.currentLine = startLine;
         if (startLine <= endLine) {
             this.tokenizeLines.timer = setTimeout(() => {
@@ -247,5 +257,8 @@ export default class {
             }
         });
         return result;
+    }
+    checkLineVisible(line) {
+        return line >= this.startLine && line <= this.startLine + this.maxVisibleLines;
     }
 }
