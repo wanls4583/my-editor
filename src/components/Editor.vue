@@ -359,9 +359,10 @@ export default {
             });
             this.render();
             this.lint.initLanguage(newVal);
-            this.tokenizer.initLanguage(newVal);
-            this.tokenizer.tokenizeVisibleLins();
-            this.tokenizer.tokenizeLines(1);
+            this.tokenizer.initLanguage(newVal).then(() => {
+                this.tokenizer.tokenizeVisibleLins();
+                this.tokenizer.tokenizeLines(1);
+            });
         },
         tabSize: function (newVal) {
             this.render();

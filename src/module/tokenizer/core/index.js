@@ -41,7 +41,6 @@ export default class {
                         vsctm.parseRawGrammar(data.toString(), language.path)
                     );
                 }
-                console.log(`Unknown scope name: ${scopeName}`);
                 return null;
             },
         });
@@ -55,10 +54,11 @@ export default class {
         language = Util.getLanguageById(globalData.languageList, language);
         this.scopeName = (language && language.scopeName) || '';
         if (this.scopeName) {
-            this.registry.loadGrammar(this.scopeName).then((grammar) => {
+            return this.registry.loadGrammar(this.scopeName).then((grammar) => {
                 this.grammar = grammar;
             });
         }
+        return Promise.resolve();
     }
     initProperties(editor, context) {
         Util.defineProperties(this, editor, ['startLine', 'maxVisibleLines', 'maxLine', 'renderLine', '$nextTick']);
@@ -113,7 +113,7 @@ export default class {
         clearTimeout(this.tokenizeLines.timer);
         if (this.scopeName && !this.grammar) {
             this.tokenizeLines.timer = setTimeout(() => {
-                this.tokenizeLines(startLine, endLine);
+                this.tokenizeLines(startLine, endLine, currentLine);
             });
             return;
         }
@@ -159,7 +159,6 @@ export default class {
             startLine++;
         }
         this.currentLine = startLine;
-        clearTimeout(this.tokenizeLines.timer);
         if (startLine <= endLine) {
             this.tokenizeLines.timer = setTimeout(() => {
                 this.tokenizeLines(startLine, endLine, currentLine);
