@@ -11,6 +11,11 @@ import defaultContrastDarkColors from './default-color/contrast-dark';
 
 const require = window.require || window.parent.require || function () {};
 const path = require('path');
+const settingMap = {
+    foreground: 'color',
+    background: 'background-color',
+    fontStyle: 'font-style',
+};
 
 export default class {
     constructor() {}
@@ -39,8 +44,6 @@ export default class {
             result.colors['editorIndentGuide.activeBackground'] =
                 result.colors['editorIndentGuide.activeBackground'] || result.colors['editorWhitespace.foreground'];
             result.colors['menu.background'] = result.colors['menu.background'] || result.colors['dropdown.background'];
-            result.colors['editorWidget.background'] =
-                result.colors['editorWidget.background'] || result.colors['menu.background'];
             css = this.parseCss(result);
             this.insertCss(css);
         });
@@ -54,28 +57,54 @@ export default class {
                 data = JSON.parse(data);
                 if (data.include) {
                     return _loadTheme(path.join(fullPath, '../' + data.include)).then(() => {
-                        _add(data);
+                        _addColors(data);
                     });
                 } else {
-                    _add(data);
+                    _addColors(data);
                 }
             });
         }
 
-        function _add(data) {
+        function _addColors(data) {
             data.tokenColors && result.tokenColors.push(...data.tokenColors);
             data.colors && Object.assign(result.colors, data.colors);
         }
     }
     parseCss(data) {
         let css = '';
+        let scopeId = 1;
+        let scopeNameClassMap = {};
         if (data.colors) {
-            css += ':root{';
+            css += ':root{\n';
             for (let key in data.colors) {
                 css += `--my-${key.replace(/\./g, '-')}: ${data.colors[key]};\n`;
             }
-            css += '}';
+            css += '}\n';
         }
+        if (data.tokenColors) {
+            data.tokenColors.forEach((token) => {
+                let selector = '';
+                if (token.scope instanceof Array) {
+                    selector = [];
+                    token.scope.forEach((scope) => {
+                        selector.push(`.my-scope-${scopeId}`);
+                        scopeNameClassMap[scope] = `my-scope-${scopeId}`;
+                        scopeId++;
+                    });
+                    selector = selector.join(',');
+                } else {
+                    selector = `.my-scope-${scopeId}`;
+                    scopeNameClassMap[token.scope] = `my-scope-${scopeId}`;
+                    scopeId++;
+                }
+                css += `${selector}{\n`;
+                for (let prop in token.settings) {
+                    css += `${settingMap[prop]}:${token.settings[prop]}\n`;
+                }
+                css += '}\n';
+            });
+        }
+        window.globalData.scopeNameClassMap = scopeNameClassMap;
         return css;
     }
     insertCss(css) {

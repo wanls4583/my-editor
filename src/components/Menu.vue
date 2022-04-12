@@ -56,7 +56,7 @@ export default {
     data() {
         return {
             index: -1,
-            itemHeight: 22,
+            itemHeight: 26,
             myMenuList: [],
         };
     },
@@ -78,13 +78,9 @@ export default {
             this.setChecked(newVal);
         },
         index() {
-            let $scroller = this.$refs.scroller;
-            let height = (this.index + 1) * this.itemHeight;
-            if ($scroller && height > $scroller.clientHeight + $scroller.scrollTop) {
-                $scroller.scrollTop = height - $scroller.clientHeight;
-            } else if ($scroller && height < $scroller.scrollTop + this.itemHeight) {
-                $scroller.scrollTop = height - this.itemHeight;
-            }
+            this.$nextTick(() => {
+                this.scrollToIndex();
+            });
         },
     },
     created() {
@@ -132,6 +128,15 @@ export default {
                     return item;
                 });
             });
+        },
+        scrollToIndex() {
+            let $scroller = this.$refs.scroller;
+            let height = (this.index + 1) * this.itemHeight;
+            if ($scroller && height > $scroller.clientHeight + $scroller.scrollTop) {
+                $scroller.scrollTop = height - $scroller.clientHeight;
+            } else if ($scroller && height < $scroller.scrollTop + this.itemHeight) {
+                $scroller.scrollTop = height - this.itemHeight;
+            }
         },
         onClick(item) {
             if (item.disabled) {

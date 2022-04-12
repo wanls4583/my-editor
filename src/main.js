@@ -18,6 +18,7 @@ Vue.prototype.$http = axios.create({
 
 window.globalData = {
     dirname: dirname,
+    scopeNameClassMap: {},
     nowTheme: {
         value: 'Dark+ (default dark)',
         type: 'dark',

@@ -10,18 +10,18 @@ import * as oniguruma from 'vscode-oniguruma';
 const require = window.require || window.parent.require || function () {};
 const fs = require('fs');
 const path = require('path');
+let globalData = null;
 
 export default class {
     constructor(editor, context) {
+        globalData = window.globalData;
         this.currentLine = 1;
-        this.languageList = window.globalData.languageList;
-        this.scopeFileList = window.globalData.scopeFileList;
         this.initRegistry();
         this.initProperties(editor, context);
         this.initLanguage(editor.language);
     }
     initRegistry() {
-        const wasmBin = fs.readFileSync(path.join(window.globalData.dirname, 'lib/onig.wasm')).buffer;
+        const wasmBin = fs.readFileSync(path.join(globalData.dirname, 'lib/onig.wasm')).buffer;
         const vscodeOnigurumaLib = oniguruma.loadWASM(wasmBin).then(() => {
             return {
                 createOnigScanner(patterns) {
@@ -35,9 +35,11 @@ export default class {
         this.registry = new vsctm.Registry({
             onigLib: vscodeOnigurumaLib,
             loadGrammar: (scopeName) => {
-                let language = Util.getLanguageByScopeName(this.scopeFileList, scopeName);
+                let language = Util.getLanguageByScopeName(globalData.scopeFileList, scopeName);
                 if (language) {
-                    return Util.readFile(language.path).then((data) => vsctm.parseRawGrammar(data.toString(), language.path));
+                    return Util.readFile(language.path).then((data) =>
+                        vsctm.parseRawGrammar(data.toString(), language.path)
+                    );
                 }
                 console.log(`Unknown scope name: ${scopeName}`);
                 return null;
@@ -50,7 +52,7 @@ export default class {
         }
         this.language = language;
         this.grammar = null;
-        language = Util.getLanguageByName(this.languageList, language);
+        language = Util.getLanguageById(globalData.languageList, language);
         this.scopeName = (language && language.scopeName) || '';
         if (this.scopeName) {
             this.registry.loadGrammar(this.scopeName).then((grammar) => {
@@ -124,17 +126,16 @@ export default class {
                 lineObj.folds = data.folds;
                 lineObj.html = data.tokens
                     .map((item) => {
-                        let rule = this.ruleIdMap && this.ruleIdMap[item.ruleId];
-                        if (rule && typeof rule.value === 'function') {
-                            return rule.value(item.value);
-                        } else {
-                            let type = item.type.join('.');
-                            return `<span class="${type.split('.').join(' ')}" data-column="${item.column}">${Util.htmlTrans(item.value)}</span>`;
-                        }
+                        return _creatHtml(item);
                     })
                     .join('');
                 this.renderLine(lineObj.lineId);
-                if (!lineObj.states || !lineObj.states.equals(data.states)) {
+                lineObj.nowTheme = globalData.nowTheme.value;
+                if (
+                    !lineObj.states ||
+                    (lineObj.states.equals && !lineObj.states.equals(data.states)) ||
+                    lineObj.states.toString() !== data.states.toString()
+                ) {
                     lineObj.states = data.states;
                     lineObj = this.htmls[startLine];
                     if (lineObj) {
@@ -147,6 +148,13 @@ export default class {
                     startLine++;
                     break;
                 }
+            } else if (lineObj.nowTheme !== globalData.nowTheme.value) {
+                lineObj.html = lineObj.tokens
+                    .map((item) => {
+                        return _creatHtml(item);
+                    })
+                    .join('');
+                lineObj.nowTheme = globalData.nowTheme.value;
             }
             startLine++;
         }
@@ -160,6 +168,23 @@ export default class {
             this.tokenizeLines.timer = setTimeout(() => {
                 this.tokenizeLines(currentLine);
             }, 20);
+        }
+
+        function _creatHtml(item) {
+            let selector = [];
+            item.type.forEach((scope) => {
+                let str = '';
+                scope = scope.split('.');
+                for (let i = 0; i < scope.length; i++) {
+                    str += scope[i];
+                    if (globalData.scopeNameClassMap[str]) {
+                        selector.push(globalData.scopeNameClassMap[str]);
+                    }
+                }
+            });
+            return `<span class="${selector.join(' ')}" data-column="${item.column}">${Util.htmlTrans(
+                item.value
+            )}</span>`;
         }
     }
     tokenizeLine(line) {

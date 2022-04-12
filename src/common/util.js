@@ -229,9 +229,9 @@ class Util {
         });
         Object.defineProperties(target, result);
     }
-    static getLanguageByName(languageList, language) {
+    static getLanguageById(languageList, language) {
         for (let i = 0; i < languageList.length; i++) {
-            if (languageList[i].name === language) {
+            if (languageList[i].language === language) {
                 return languageList[i];
             }
         }

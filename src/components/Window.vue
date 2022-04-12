@@ -160,13 +160,13 @@ export default {
         this.theme.loadTheme(window.globalData.nowTheme.path, window.globalData.nowTheme.type);
         this.loadLanguage().then((results) => {
             results.push({ name: 'Plain Text', value: '', checked: true });
-            window.globalData.languageList.push(...results.slice());
-            window.globalData.scopeFileList.push(...this.scopeFileList);
+            window.globalData.languageList = results.slice();
+            window.globalData.scopeFileList = this.scopeFileList.slice();
             this.languageList = results;
             this.checkLanguage();
         });
         this.loadThemes().then((results) => {
-            window.globalData.themes.push(...results.slice());
+            window.globalData.themes = results.slice();
         });
     },
     mounted() {
