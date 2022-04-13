@@ -148,7 +148,7 @@ export default class {
                 }
                 processedLines++;
                 // 避免卡顿
-                if (processedLines % 5 == 0 && Date.now() - processedTime >= 20) {
+                if (processedLines % 10 == 0 && Date.now() - processedTime >= 25) {
                     startLine++;
                     break;
                 }
@@ -170,11 +170,11 @@ export default class {
         if (startLine <= endLine) {
             this.tokenizeLines.timer = setTimeout(() => {
                 this.tokenizeLines(startLine, endLine, currentLine);
-            }, 20);
+            }, 15);
         } else if (currentLine !== undefined) {
             this.tokenizeLines.timer = setTimeout(() => {
                 this.tokenizeLines(currentLine);
-            }, 20);
+            }, 15);
         }
 
         function _creatHtml(item) {

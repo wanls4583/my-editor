@@ -21,7 +21,7 @@ global.shareObject = {
 
 function createWindow(name, url, type, parent) {
     const win = new BrowserWindow({
-        frame: false,
+        frame: true,
         show: false,
         parent: parent,
         webPreferences: {
@@ -43,7 +43,7 @@ function createWindow(name, url, type, parent) {
 }
 app.whenReady().then(() => {
     main.initialize();
-    Menu.setApplicationMenu(null); //去掉默认菜单和快捷键
+    // Menu.setApplicationMenu(null); //去掉默认菜单和快捷键
     mainWin = createWindow('main', 'http://localhost:8080/', 'remote');
     mainWin.show();
     initEvent();
