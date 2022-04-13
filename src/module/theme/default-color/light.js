@@ -3,7 +3,7 @@ export default {
     background: '#fff',
     'widget.shadow': 'rgba(0,0,0,0.16)',
     //titleBar
-    'titlebar.activeForeground': '#575757',
+    'titleBar.activeForeground': '#575757',
     'titleBar.activeBackground': '#ddd',
     'titleBar.border': 'transparent',
     'menubar.selectionForeground': '#575757',
@@ -11,7 +11,7 @@ export default {
     'menubar.selectionBorder': 'transparent',
     //menu
     'menu.foreground': '#575757',
-    'menu.background': '',
+    'menu.background': '#fff',
     'menu.border': 'transparent',
     'menu.selectionForeground': '#fff',
     'menu.selectionBackground': '#0066b8',

@@ -3,7 +3,7 @@ export default {
     background: 'rgba(60,60,60)',
     'widget.shadow': 'rgba(0,0,0,0.36)',
     //titleBar
-    'titlebar.activeForeground': '#ccc',
+    'titleBar.activeForeground': '#ccc',
     'titleBar.activeBackground': 'rgba(60,60,60)',
     'titleBar.border': 'transparent',
     'menubar.selectionForeground': '#ccc',
