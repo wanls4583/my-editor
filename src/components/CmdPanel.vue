@@ -23,19 +23,19 @@
     </div>
 </template>
 <script>
-import Util from "@/common/Util";
-import Theme from "@/module/theme";
-import Menu from "./Menu";
-import EventBus from "@/event";
+import Util from '@/common/Util';
+import Theme from '@/module/theme';
+import Menu from './Menu';
+import EventBus from '@/event';
 
 export default {
-    name: "CmdPanel",
+    name: 'CmdPanel',
     components: {
         Menu,
     },
     data() {
         return {
-            searchText: "",
+            searchText: '',
             cmdList: [],
             visible: false,
         };
@@ -51,22 +51,19 @@ export default {
     },
     methods: {
         initEventBus() {
-            EventBus.$on("close-menu", () => {
+            EventBus.$on('close-menu', () => {
                 this.visible = false;
             });
-            EventBus.$on("open-cmd-menu", (data) => {
+            EventBus.$on('open-cmd-menu', (data) => {
                 this.visible = true;
-                this.searchText = "";
+                this.searchText = '';
                 this.originCmdList = data.cmdList;
                 this.value = data.value;
-                if (
-                    this.originCmdList[0] &&
-                    !(this.originCmdList[0] instanceof Array)
-                ) {
+                if (this.originCmdList[0] && !(this.originCmdList[0] instanceof Array)) {
                     this.originCmdList = [this.originCmdList];
                 }
                 this.searchMenu();
-                requestAnimationFrame(()=>{
+                requestAnimationFrame(() => {
                     this.$refs.input.focus();
                 });
             });
@@ -75,11 +72,7 @@ export default {
             if (this.searchText) {
                 let menu = [];
                 this.originCmdList[0].forEach((item) => {
-                    let result = Util.fuzzyMatch(
-                        this.searchText,
-                        item.name,
-                        true
-                    );
+                    let result = Util.fuzzyMatch(this.searchText, item.name, true);
                     if (result) {
                         menu.push([item, result]);
                     }
@@ -98,17 +91,18 @@ export default {
         },
         onChange(item) {
             switch (item.op) {
-                case "changeTheme":
-                    this.theme.loadTheme(item.path, item.type);
+                case 'changeTheme':
                     window.globalData.nowTheme = {
                         value: item.value,
                         type: item.type,
-                        path: item.path
+                        path: item.path,
                     };
-                    EventBus.$emit("theme-change", item.value);
+                    this.theme.loadTheme(item.path, item.type).then(() => {
+                        EventBus.$emit('theme-change', item.value);
+                    });
                     break;
-                case "selectLanguage":
-                    EventBus.$emit("language-change", item.value);
+                case 'selectLanguage':
+                    EventBus.$emit('language-change', item.value);
                     break;
             }
             this.visible = false;

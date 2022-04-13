@@ -110,7 +110,7 @@ export default class {
         let processedTime = Date.now();
         endLine = endLine || this.maxLine;
         endLine = endLine > this.maxLine ? this.maxLine : endLine;
-        clearTimeout(this.tokenizeLines.timer);
+        cancelIdleCallback(this.tokenizeLines.timer);
         if (this.scopeName && !this.grammar) {
             this.tokenizeLines.timer = setTimeout(() => {
                 this.tokenizeLines(startLine, endLine, currentLine);
@@ -125,7 +125,8 @@ export default class {
                 lineObj.tokens = data.tokens;
                 lineObj.folds = data.folds;
                 if (this.checkLineVisible(startLine)) {
-                    lineObj.html = data.tokens
+                    lineObj.tokens = this.splitLongToken(lineObj.tokens);
+                    lineObj.html = lineObj.tokens
                         .map((item) => {
                             return _creatHtml(item);
                         })
@@ -148,17 +149,19 @@ export default class {
                 }
                 processedLines++;
                 // 避免卡顿
-                if (processedLines % 10 == 0 && Date.now() - processedTime >= 25) {
+                if (processedLines % 5 == 0 && Date.now() - processedTime >= 30) {
                     startLine++;
                     break;
                 }
             } else if (lineObj.nowTheme !== globalData.nowTheme.value) {
                 if (this.checkLineVisible(startLine)) {
+                    lineObj.tokens = this.splitLongToken(lineObj.tokens);
                     lineObj.html = lineObj.tokens
                         .map((item) => {
                             return _creatHtml(item);
                         })
                         .join('');
+                    this.renderLine(lineObj.lineId);
                     lineObj.nowTheme = globalData.nowTheme.value;
                 } else {
                     lineObj.nowTheme = '';
@@ -166,15 +169,15 @@ export default class {
             }
             startLine++;
         }
-        this.currentLine = startLine;
+        this.currentLine = currentLine || startLine;
         if (startLine <= endLine) {
-            this.tokenizeLines.timer = setTimeout(() => {
+            this.tokenizeLines.timer = requestIdleCallback(() => {
                 this.tokenizeLines(startLine, endLine, currentLine);
-            }, 15);
+            });
         } else if (currentLine !== undefined) {
-            this.tokenizeLines.timer = setTimeout(() => {
+            this.tokenizeLines.timer = requestIdleCallback(() => {
                 this.tokenizeLines(currentLine);
-            }, 15);
+            });
         }
 
         function _creatHtml(item) {
@@ -198,13 +201,13 @@ export default class {
         let lineText = this.htmls[line - 1].text;
         if (lineText.length > 10000 || !this.scopeName) {
             return {
-                tokens: this.splitLongToken([
+                tokens: [
                     {
                         type: ['plain'],
                         column: 0,
                         value: lineText,
                     },
-                ]),
+                ],
                 folds: [],
                 states: [],
             };
@@ -220,7 +223,7 @@ export default class {
             };
         });
         return {
-            tokens: this.splitLongToken(lineTokens),
+            tokens: lineTokens,
             folds: [],
             states: states,
         };

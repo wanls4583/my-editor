@@ -463,6 +463,9 @@ export default {
                 'theme-change',
                 (this.initEventBus.fn4 = () => {
                     if (this.active) {
+                        this.myContext.htmls.forEach((lineObj) => {
+                            lineObj.nowTheme = '';
+                        });
                         this.tokenizer.onScroll();
                         this.render();
                     }
