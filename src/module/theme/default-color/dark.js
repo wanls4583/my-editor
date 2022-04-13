@@ -19,7 +19,7 @@ export default {
     'menu.separatorBackground': 'rgba(255, 255, 255, 0.1)',
     //statusBar
     'statusBar.foreground': '#fff',
-    'statusBar.background': 'rgb(0, 122, 204)',
+    'statusBar.background': 'rgb(60, 60, 60)',
     'statusBar.border': 'transparent',
     'statusBarItem.hoverBackground': 'rgba(255, 255, 255, 0.1)',
     'statusBarItem.activeBackground': 'rgba(255, 255, 255, 0.1)',
