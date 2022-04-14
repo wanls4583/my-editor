@@ -28,6 +28,16 @@
         }
     }
 
+    &-cmd-panel {
+        .my-menu .my-menu-item {
+            &.my-active {
+                border: 1px dotted var(--my-contrastActiveBorder);
+                background-color: var(--my-quickInputList-focusBackground);
+                color: var(--my-quickInputList-focusForeground);
+            }
+        }
+    }
+
     &-dropdown {
         position: absolute;
         z-index: 99;
@@ -65,10 +75,15 @@
         white-space: nowrap;
         min-width: 80px;
         height: 30px;
-        border: 1px solid transparent;
+        border: 1px dotted transparent;
+
+        &:hover {
+            border-color: var(--my-contrastActiveBorder);
+        }
 
         &.my-active {
-            border: 1px solid var(--my-menu-selectionBorder);
+            border-style: solid;
+            border-color: var(--my-menu-selectionBorder);
             background-color: var(--my-menu-selectionBackground);
             color: var(--my-menu-selectionForeground);
         }

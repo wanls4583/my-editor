@@ -14,15 +14,17 @@
                 class="bar-item my-hover"
                 v-for="item in editorList"
             >
-                <span class="bar-text">{{ item.name }}</span>
-                <div class="bar-icon">
-                    <span
-                        @click.stop="onClose(item.id)"
-                        class="bar-close-icon iconfont icon-close"
-                        title="close"
-                        v-show="item.saved"
-                    ></span>
-                    <span class="bar-dot" v-show="!item.saved"></span>
+                <div class="bar-content">
+                    <span class="bar-text">{{ item.name }}</span>
+                    <div class="bar-icon">
+                        <span
+                            @click.stop="onClose(item.id)"
+                            class="bar-close-icon iconfont icon-close"
+                            title="close"
+                            v-show="item.saved"
+                        ></span>
+                        <span class="bar-dot" v-show="!item.saved"></span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -30,12 +32,12 @@
     </div>
 </template>
 <script>
-import EditorBarMenu from "./EditorBarMenu";
-import ShortCut from "@/module/shortcut/editor-bar";
-import $ from "jquery";
+import EditorBarMenu from './EditorBarMenu';
+import ShortCut from '@/module/shortcut/editor-bar';
+import $ from 'jquery';
 
 export default {
-    name: "EditorBar",
+    name: 'EditorBar',
     components: {
         EditorBarMenu,
     },
@@ -56,17 +58,17 @@ export default {
     },
     created() {
         this.shortcut = new ShortCut(this);
-        $(window).on("keydown", (e) => {
+        $(window).on('keydown', (e) => {
             this.shortcut.onKeyDown(e);
         });
     },
     mounted() {},
     methods: {
         onClickItem(id) {
-            this.$emit("change", id);
+            this.$emit('change', id);
         },
         onClose(id) {
-            this.$emit("close", id);
+            this.$emit('close', id);
         },
         onContextmenu(e, id) {
             this.$refs.editorBarMenu.show(e, id);

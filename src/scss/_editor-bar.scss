@@ -10,6 +10,7 @@
 
         .bar-scroller {
             width: 100%;
+            height: 100%;
             display: flex;
             align-items: center;
         }
@@ -17,11 +18,8 @@
         .bar-item {
             position: relative;
             flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            height: 39px;
-            padding-left: 15px;
-            padding-right: 40px;
+            height: 100%;
+            padding: 5px;
             border: 1px solid transparent;
             border-right: 1px solid var(--my-tab-border);
             background-color: var(--my-tab-inactiveBackground);
@@ -43,8 +41,25 @@
                 background-color: var(--my-tab-activeBackground);
                 color: var(--my-tab-activeForeground);
 
+                .bar-content {
+                    border: 1px solid var(--my-contrastActiveBorder) !important;
+                }
+
                 .bar-close-icon {
                     display: block;
+                }
+            }
+
+            .bar-content {
+                position: relative;
+                display: flex;
+                align-items: center;
+                height: 100%;
+                padding-left: 15px;
+                padding-right: 40px;
+                border: 1px solid transparent;
+                &:hover {
+                    border: 1px dotted var(--my-contrastActiveBorder);
                 }
             }
 

@@ -4,10 +4,6 @@
  * @Description:
  */
 import Util from '../../common/Util';
-import defaultLightColors from './default-color/light';
-import defaultDarkColors from './default-color/dark';
-import defaultContrastLightColors from './default-color/contrast-light';
-import defaultContrastDarkColors from './default-color/contrast-dark';
 
 const require = window.require || window.parent.require || function () {};
 const path = require('path');
@@ -21,29 +17,9 @@ export default class {
     constructor() {}
     loadTheme(url, type) {
         let result = { tokenColors: [], colors: {} };
-        switch (type) {
-            case 'light':
-                Object.assign(result.colors, defaultLightColors);
-                break;
-            case 'dark':
-                Object.assign(result.colors, defaultDarkColors);
-                break;
-            case 'contrast light':
-                Object.assign(result.colors, defaultContrastLightColors);
-                break;
-            case 'contrast dark':
-                Object.assign(result.colors, defaultContrastDarkColors);
-                break;
-        }
         return _loadTheme(url).then(() => {
             let css = '';
-            result.colors['tab.activeBackground'] =
-                result.colors['tab.activeBackground'] || result.colors['editor.background'];
-            result.colors['editorIndentGuide.background'] =
-                result.colors['editorIndentGuide.background'] || result.colors['editorWhitespace.foreground'];
-            result.colors['editorIndentGuide.activeBackground'] =
-                result.colors['editorIndentGuide.activeBackground'] || result.colors['editorWhitespace.foreground'];
-            result.colors['menu.background'] = result.colors['menu.background'] || result.colors['dropdown.background'];
+            this.setDefaultColor(result, type);
             css = this.parseCss(result);
             this.insertCss(css);
         });
@@ -114,5 +90,428 @@ export default class {
         window.globalData.style.type = 'text/css';
         window.globalData.style.appendChild(document.createTextNode(css));
         document.getElementsByTagName('head')[0].appendChild(window.globalData.style);
+    }
+    setDefaultColor(result, type) {
+        let transparent = 'transparent';
+        let foreground = '';
+        let background = '';
+        let contrastBorder = '';
+        let contrastActiveBorder = '';
+        let isLight = type === 'light' || type === 'contrast light';
+        let isHc = type === 'contrast light' || type === 'contrast dark';
+
+        _base();
+        _titleBar();
+        _dropdown();
+        _menu();
+        _statusBar();
+        _sideBar();
+        _list();
+        _editor();
+        _tab();
+        _editorWidget();
+        _input();
+        _toolbar();
+
+        // base
+        function _base() {
+            if (!result.colors['foreground']) {
+                if (isLight) {
+                    result.colors['foreground'] = '#575757';
+                } else {
+                    result.colors['foreground'] = '#ccc';
+                }
+            }
+            if (!result.colors['background']) {
+                if (isLight) {
+                    result.colors['background'] = '#fff';
+                } else {
+                    result.colors['background'] = 'rgba(60,60,60)';
+                }
+            }
+            if (!result.colors['forcusBorder']) {
+                if (isHc) {
+                    if (isLight) {
+                        result.colors['forcusBorder'] = '#0f4a85';
+                    } else {
+                        result.colors['forcusBorder'] = '#f38518';
+                    }
+                } else {
+                    result.colors['forcusBorder'] = transparent;
+                }
+            }
+            if (!result.colors['contrastBorder']) {
+                if (isHc) {
+                    if (isLight) {
+                        result.colors['contrastBorder'] = '#0f4a85';
+                    } else {
+                        result.colors['contrastBorder'] = '#6fc3df';
+                    }
+                } else {
+                    result.colors['contrastBorder'] = transparent;
+                }
+            }
+            if (!result.colors['contrastActiveBorder']) {
+                if (isHc) {
+                    result.colors['contrastActiveBorder'] = result.colors['forcusBorder'];
+                } else {
+                    result.colors['contrastBorder'] = transparent;
+                }
+            }
+            if (!result.colors['widget.shadow']) {
+                if (isHc) {
+                    result.colors['widget.shadow'] = transparent;
+                } else if (isLight) {
+                    result.colors['widget.shadow'] = 'rgba(0,0,0,0.16)';
+                } else {
+                    result.colors['widget.shadow'] = 'rgba(0,0,0,0.36)';
+                }
+            }
+            if (type === 'contrast light' || type === 'contrast dark') {
+                result.colors['contrastActiveBorder-side'] = result.colors['contrastActiveBorder'];
+            }
+            background = result.colors['background'];
+            foreground = result.colors['foreground'];
+            contrastBorder = result.colors['contrastBorder'];
+            contrastActiveBorder = result.colors['contrastActiveBorder'];
+        }
+        //titleBar
+        function _titleBar() {
+            if (!result.colors['titleBar.border']) {
+                result.colors['titleBar.border'] = contrastBorder;
+            }
+            if (!result.colors['titleBar.activeForeground']) {
+                result.colors['titleBar.activeForeground'] = foreground;
+            }
+            if (!result.colors['titleBar.activeBackground']) {
+                result.colors['titleBar.activeBackground'] = transparent;
+            }
+            if (!result.colors['menubar.selectionForeground']) {
+                result.colors['menubar.selectionForeground'] = foreground;
+            }
+            if (!result.colors['menubar.selectionBackground']) {
+                result.colors['menubar.selectionBackground'] = transparent;
+            }
+            if (!result.colors['menubar.selectionBorder']) {
+                if (isHc) {
+                    result.colors['menubar.selectionBorder'] = contrastActiveBorder;
+                } else {
+                    result.colors['menubar.selectionBorder'] = transparent;
+                }
+            }
+        }
+        // dropdown
+        function _dropdown() {
+            if (!result.colors['dropdown.foreground']) {
+                result.colors['dropdown.foreground'] = foreground;
+            }
+            if (!result.colors['dropdown.background']) {
+                if (isLight) {
+                    result.colors['dropdown.background'] = '#eee';
+                } else {
+                    result.colors['dropdown.background'] = 'rgba(37,37,38)';
+                }
+            }
+            if (!result.colors['dropdown.border']) {
+                result.colors['dropdown.border'] = contrastBorder;
+            }
+        }
+        //menu
+        function _menu() {
+            if (!result.colors['menu.foreground']) {
+                result.colors['menu.foreground'] = foreground;
+            }
+            if (!result.colors['menu.background']) {
+                result.colors['menu.background'] = result.colors['dropdown.background'];
+            }
+            if (!result.colors['menu.border']) {
+                result.colors['menu.border'] = contrastBorder;
+            }
+            if (!result.colors['menu.selectionForeground']) {
+                result.colors['menu.selectionForeground'] = foreground;
+            }
+            if (!result.colors['menu.selectionForeground']) {
+                result.colors['menu.selectionForeground'] = transparent;
+            }
+            if (!result.colors['menu.selectionBorder']) {
+                result.colors['menu.selectionBorder'] = contrastActiveBorder;
+            }
+            if (!result.colors['menu.separatorBackground']) {
+                result.colors['menu.separatorBackground'] = result.colors['menu.selectionBorder'];
+            }
+        }
+        //statusBar
+        function _statusBar() {
+            if (!result.colors['statusBar.foreground']) {
+                result.colors['statusBar.foreground'] = '#fff';
+            }
+            if (!result.colors['statusBar.background']) {
+                if (isLight) {
+                    result.colors['statusBar.background'] = 'rgb(0, 122, 204)';
+                } else {
+                    result.colors['menu.selectionBorder'] = transparent;
+                }
+            }
+            if (!result.colors['statusBar.border']) {
+                result.colors['statusBar.border'] = contrastBorder;
+            }
+            if (!result.colors['statusBarItem.hoverBackground']) {
+                result.colors['statusBarItem.hoverBackground'] = transparent;
+            }
+            if (!result.colors['statusBarItem.activeBackground']) {
+                result.colors['statusBarItem.activeBackground'] = transparent;
+            }
+        }
+        //sideBar
+        function _sideBar() {
+            if (!result.colors['sideBar.foreground']) {
+                result.colors['sideBar.foreground'] = foreground;
+            }
+            if (!result.colors['sideBarTitle.foreground']) {
+                result.colors['sideBarTitle.foreground'] = foreground;
+            }
+            if (!result.colors['sideBar.background']) {
+                if (isLight) {
+                    result.colors['sideBar.background'] = '#eee';
+                } else {
+                    result.colors['sideBar.background'] = 'rgba(37,37,38)';
+                }
+            }
+            if (!result.colors['sideBar.border']) {
+                result.colors['sideBar.border'] = contrastBorder;
+            }
+        }
+        // list
+        function _list() {
+            if (!result.colors['list.activeSelectionForeground']) {
+                result.colors['list.activeSelectionForeground'] = '#fff';
+            }
+            if (!result.colors['list.activeSelectionBackground']) {
+                result.colors['list.activeSelectionBackground'] = '#0066b8';
+            }
+            if (!result.colors['list.hoverForeground']) {
+                result.colors['list.hoverForeground'] = foreground;
+            }
+            if (!result.colors['list.hoverBackground']) {
+                if (isLight) {
+                    result.colors['list.hoverBackground'] = 'rgba(0, 0, 0, 0.2)';
+                } else {
+                    result.colors['list.hoverBackground'] = 'rgba(255, 255, 255, 0.1)';
+                }
+            }
+            if (!result.colors['list.inactiveFocusBackground']) {
+                result.colors['list.inactiveFocusBackground'] = transparent;
+            }
+            if (!result.colors['quickInputList.focusForeground']) {
+                result.colors['quickInputList.focusForeground'] = foreground;
+            }
+            if (!result.colors['quickInputList.focusBackground']) {
+                result.colors['quickInputList.focusBackground'] = result.colors['list.inactiveFocusBackground'];
+            }
+        }
+        // editor
+        function _editor() {
+            if (!result.colors['editor.foreground']) {
+                result.colors['editor.foreground'] = foreground;
+            }
+            if (!result.colors['editor.background']) {
+                if (isHc) {
+                    result.colors['editor.background'] = background;
+                } else if (isLight) {
+                    result.colors['editor.background'] = '#fff';
+                } else {
+                    result.colors['editor.background'] = 'rgb(30,30,30)';
+                }
+            }
+            if (!result.colors['editorLineNumber.foreground']) {
+                if (isHc) {
+                    result.colors['editorLineNumber.foreground'] = foreground;
+                } else if (isLight) {
+                    result.colors['editorLineNumber.foreground'] = 'rgba(0, 0, 0, 0.5)';
+                } else {
+                    result.colors['editorLineNumber.foreground'] = 'rgba(255, 255, 255, 0.5)';
+                }
+            }
+            if (!result.colors['editorLineNumber.activeForeground']) {
+                if (isHc) {
+                    result.colors['editorLineNumber.activeForeground'] = contrastActiveBorder || result.colors['editor.foreground'];
+                } else if (isLight) {
+                    result.colors['editorLineNumber.activeForeground'] = '#000';
+                } else {
+                    result.colors['editorLineNumber.activeForeground'] = '#fff';
+                }
+            }
+            if (!result.colors['editorCursor.foreground']) {
+                result.colors['editorCursor.foreground'] = result.colors['editor.foreground'];
+            }
+            if (!result.colors['editor.selectionForeground']) {
+                result.colors['editor.selectionForeground'] = foreground;
+            }
+            if (!result.colors['editor.selectionBackground']) {
+                result.colors['editor.selectionBackground'] = '#0097fb6e';
+            }
+            if (!result.colors['editor.selectionHighlightBackground']) {
+                result.colors['editor.selectionHighlightBackground'] = transparent;
+            }
+            if (!result.colors['editor.selectionHighlightBorder']) {
+                result.colors['editor.selectionHighlightBorder'] = contrastActiveBorder || '#0097fb6e';
+            }
+            if (!result.colors['editor.findMatchBackground']) {
+                result.colors['editor.selectionBackground'] = 'rgb(250, 201, 171)';
+            }
+            if (!result.colors['editor.findMatchBorder']) {
+                result.colors['editor.findMatchBorder'] = transparent;
+            }
+            if (!result.colors['editor.findMatchHighlightBackground']) {
+                result.colors['editor.findMatchHighlightBackground'] = transparent;
+            }
+            if (!result.colors['editor.findMatchHighlightBorder']) {
+                result.colors['editor.findMatchHighlightBorder'] = contrastActiveBorder || 'rgb(250, 201, 171)';
+            }
+            if (!result.colors['editor.lineHighlightBackground']) {
+                result.colors['editor.lineHighlightBackground'] = transparent;
+            }
+            if (!result.colors['editor.lineHighlightBorder']) {
+                if (isHc) {
+                    result.colors['editor.lineHighlightBorder'] = contrastActiveBorder;
+                } else if (isLight) {
+                    result.colors['editor.lineHighlightBorder'] = 'rgba(0, 0, 0, 0.2)';
+                } else {
+                    result.colors['editor.lineHighlightBorder'] = 'rgba(255, 255, 255, 0.1)';
+                }
+            }
+            if (!result.colors['editorWhitespace.foreground']) {
+                if (isHc) {
+                    result.colors['editorWhitespace.foreground'] = result.colors['editor.foreground'];
+                } else if (isLight) {
+                    result.colors['editorWhitespace.foreground'] = 'rgba(0, 0, 0, 0.2)';
+                } else {
+                    result.colors['editorWhitespace.foreground'] = 'rgba(255, 255, 255, 0.1)';
+                }
+            }
+            if (!result.colors['editorIndentGuide.background']) {
+                result.colors['editorIndentGuide.background'] = result.colors['editorWhitespace.foreground'];
+            }
+        }
+        // tab
+        function _tab() {
+            if (!result.colors['editorGroupHeader.tabsBackground']) {
+                result.colors['editorGroupHeader.tabsBackground'] = transparent;
+            }
+            if (!result.colors['editorGroupHeader.border']) {
+                result.colors['editorGroupHeader.border'] = contrastBorder;
+            }
+            if (!result.colors['tab.border']) {
+                result.colors['tab.border'] = contrastBorder;
+            }
+            if (!result.colors['tab.activeForeground']) {
+                result.colors['tab.activeForeground'] = foreground;
+            }
+            if (!result.colors['tab.activeBackground']) {
+                result.colors['tab.activeBackground'] = result.colors['editor.background'];
+            }
+            if (!result.colors['tab.inactiveForeground']) {
+                result.colors['tab.inactiveForeground'] = foreground;
+            }
+            if (!result.colors['tab.inactiveBackground']) {
+                result.colors['tab.inactiveBackground'] = transparent;
+            }
+            if (!result.colors['tab.activeBorder']) {
+                result.colors['tab.activeBorder'] = transparent;
+            }
+            if (!result.colors['tab.activeBorderTop']) {
+                result.colors['tab.activeBorderTop'] = transparent;
+            }
+            if (!result.colors['tab.hoverForeground']) {
+                result.colors['tab.hoverForeground'] = foreground;
+            }
+            if (!result.colors['tab.hoverBackground']) {
+                result.colors['tab.hoverBackground'] = transparent;
+            }
+            if (!result.colors['tab.hoverBorder']) {
+                result.colors['tab.hoverBorder'] = transparent;
+            }
+        }
+        // editorWidget
+        function _editorWidget() {
+            if (!result.colors['editorWidget.foreground']) {
+                result.colors['editorWidget.foreground'] = foreground;
+            }
+            if (!result.colors['editorWidget.background']) {
+                if (isHc) {
+                    result.colors['editorWidget.background'] = background;
+                } else if (isLight) {
+                    result.colors['editorWidget.background'] = '#eee';
+                } else {
+                    result.colors['editorWidget.background'] = 'rgb(37,37,38)';
+                }
+            }
+            if (!result.colors['editorWidget.border']) {
+                result.colors['editorWidget.border'] = contrastBorder;
+            }
+            if (!result.colors['editorSuggestWidget.foreground']) {
+                result.colors['editorSuggestWidget.foreground'] = foreground;
+            }
+            if (!result.colors['editorSuggestWidget.background']) {
+                if (isHc) {
+                    result.colors['editorWidget.background'] = background;
+                } else if (isLight) {
+                    result.colors['editorWidget.background'] = '#eee';
+                } else {
+                    result.colors['editorWidget.background'] = 'rgb(37,37,38)';
+                }
+            }
+            if (!result.colors['editorSuggestWidget.border']) {
+                result.colors['editorSuggestWidget.border'] = contrastBorder;
+            }
+            if (!result.colors['editorSuggestWidget.selectedForeground']) {
+                result.colors['editorSuggestWidget.selectedForeground'] = foreground;
+            }
+            if (!result.colors['editorSuggestWidget.selectedBackground']) {
+                result.colors['editorSuggestWidget.selectedBackground'] = transparent;
+            }
+            if (!result.colors['editorSuggestWidget.highlightForeground']) {
+                result.colors['editorSuggestWidget.highlightForeground'] = contrastActiveBorder;
+            }
+            if (!result.colors['editorSuggestWidget.focusHighlightForeground']) {
+                result.colors['editorSuggestWidget.focusHighlightForeground'] = contrastBorder;
+            }
+        }
+        // input
+        function _input() {
+            if (!result.colors['input.foreground']) {
+                result.colors['input.foreground'] = foreground;
+            }
+            if (!result.colors['input.background']) {
+                result.colors['input.background'] = transparent;
+            }
+            if (!result.colors['input.border']) {
+                result.colors['input.border'] = contrastBorder;
+            }
+            if (!result.colors['inputOption.activeForeground']) {
+                result.colors['inputOption.activeForeground'] = foreground;
+            }
+            if (!result.colors['inputOption.activeBackground']) {
+                result.colors['inputOption.activeBackground'] = transparent;
+            }
+            if (!result.colors['inputOption.activeBorder']) {
+                result.colors['inputOption.activeBorder'] = contrastActiveBorder;
+            }
+            if (!result.colors['inputOption.hoverBackground']) {
+                result.colors['inputOption.hoverBackground'] = contrastActiveBorder;
+            }
+        }
+        // toolbar
+        function _toolbar() {
+            if (!result.colors['toolbar.hoverBackground']) {
+                result.colors['toolbar.hoverBackground'] = transparent;
+            }
+            if (!result.colors['toolbar.activeBackground']) {
+                result.colors['toolbar.activeBackground'] = transparent;
+            }
+            if (!result.colors['toolbar.hoverOutline']) {
+                result.colors['toolbar.hoverOutline'] = contrastActiveBorder;
+            }
+        }
     }
 }
