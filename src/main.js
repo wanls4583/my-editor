@@ -20,7 +20,7 @@ window.globalData = {
     dirname: dirname,
     scopeNameClassMap: {},
     nowTheme: {
-        value: 'Dark+ (default dark)',
+        value: 'Default Dark+',
         type: 'dark',
         path: dirname + 'themes/theme-defaults/themes/dark_plus.json'
     },
