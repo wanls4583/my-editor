@@ -157,7 +157,7 @@ export default class {
                 if (isHc) {
                     result.colors['contrastActiveBorder'] = result.colors['forcusBorder'];
                 } else {
-                    result.colors['contrastBorder'] = transparent;
+                    result.colors['contrastActiveBorder'] = transparent;
                 }
             }
             if (!result.colors['widget.shadow']) {
@@ -232,28 +232,46 @@ export default class {
                 result.colors['menu.border'] = contrastBorder;
             }
             if (!result.colors['menu.selectionForeground']) {
-                result.colors['menu.selectionForeground'] = foreground;
+                if (isHc) {
+                    result.colors['menu.selectionForeground'] = foreground;
+                } else {
+                    result.colors['menu.selectionForeground'] = '#fff';
+                }
             }
-            if (!result.colors['menu.selectionForeground']) {
-                result.colors['menu.selectionForeground'] = transparent;
+            if (!result.colors['menu.selectionBackground']) {
+                if (isHc) {
+                    result.colors['menu.selectionBackground'] = transparent;
+                } else {
+                    result.colors['menu.selectionBackground'] = '#0066b8';
+                }
             }
             if (!result.colors['menu.selectionBorder']) {
                 result.colors['menu.selectionBorder'] = contrastActiveBorder;
             }
             if (!result.colors['menu.separatorBackground']) {
-                result.colors['menu.separatorBackground'] = result.colors['menu.selectionBorder'];
+                if (isHc) {
+                    result.colors['menu.separatorBackground'] = contrastBorder;
+                } else if (isLight) {
+                    result.colors['menu.separatorBackground'] = 'rgba(0,0,0,0.2)';
+                } else {
+                    result.colors['menu.separatorBackground'] = 'rgba(255,255,255,0.2)';
+                }
             }
         }
         //statusBar
         function _statusBar() {
             if (!result.colors['statusBar.foreground']) {
-                result.colors['statusBar.foreground'] = '#fff';
+                if (isHc) {
+                    result.colors['statusBar.foreground'] = foreground;
+                } else {
+                    result.colors['statusBar.foreground'] = '#fff';
+                }
             }
             if (!result.colors['statusBar.background']) {
                 if (isLight && !isHc) {
                     result.colors['statusBar.background'] = 'rgb(0, 122, 204)';
                 } else {
-                    result.colors['menu.selectionBorder'] = transparent;
+                    result.colors['statusBar.background'] = transparent;
                 }
             }
             if (!result.colors['statusBar.border']) {
@@ -299,7 +317,9 @@ export default class {
                 result.colors['list.hoverForeground'] = foreground;
             }
             if (!result.colors['list.hoverBackground']) {
-                if (isLight) {
+                if (isHc) {
+                    result.colors['list.hoverBackground'] = transparent;
+                } else if (isLight) {
                     result.colors['list.hoverBackground'] = 'rgba(0, 0, 0, 0.2)';
                 } else {
                     result.colors['list.hoverBackground'] = 'rgba(255, 255, 255, 0.1)';
