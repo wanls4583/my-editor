@@ -125,6 +125,8 @@ export default class {
             if (!result.colors['background']) {
                 if (isLight) {
                     result.colors['background'] = '#fff';
+                } else if (isHc) {
+                    result.colors['background'] = '#000';
                 } else {
                     result.colors['background'] = 'rgba(60,60,60)';
                 }
@@ -206,7 +208,9 @@ export default class {
                 result.colors['dropdown.foreground'] = foreground;
             }
             if (!result.colors['dropdown.background']) {
-                if (isLight) {
+                if (isHc) {
+                    result.colors['dropdown.background'] = background;
+                } else if (isLight) {
                     result.colors['dropdown.background'] = '#eee';
                 } else {
                     result.colors['dropdown.background'] = 'rgba(37,37,38)';
@@ -246,7 +250,7 @@ export default class {
                 result.colors['statusBar.foreground'] = '#fff';
             }
             if (!result.colors['statusBar.background']) {
-                if (isLight) {
+                if (isLight && !isHc) {
                     result.colors['statusBar.background'] = 'rgb(0, 122, 204)';
                 } else {
                     result.colors['menu.selectionBorder'] = transparent;
@@ -271,7 +275,9 @@ export default class {
                 result.colors['sideBarTitle.foreground'] = foreground;
             }
             if (!result.colors['sideBar.background']) {
-                if (isLight) {
+                if (isHc) {
+                    result.colors['sideBar.background'] = transparent;
+                } else if (isLight) {
                     result.colors['sideBar.background'] = '#eee';
                 } else {
                     result.colors['sideBar.background'] = 'rgba(37,37,38)';
