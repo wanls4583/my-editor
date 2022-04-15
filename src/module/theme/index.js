@@ -49,8 +49,11 @@ export default class {
     parseCss(data) {
         let css = '';
         let scopeId = 1;
-        let scopeNameClassMap = {};
-        let scopeNameClassMap1 = {};
+        let scopeList = [];
+        let regSource = [];
+        let scopeIdMap = {};
+        let dotReg = /\./g;
+        let sReg = /\s+/g;
         if (data.colors) {
             css += ':root{\n';
             for (let key in data.colors) {
@@ -67,13 +70,15 @@ export default class {
                 let scope = token.scope instanceof Array ? token.scope.join(',') : token.scope;
                 scope = scope.replace(/\s+/g, ' ');
                 scope = scope.split(',');
-                scope.forEach((scope) => {
+                scope.forEach((scope, index) => {
                     selector.push(`.my-scope-${scopeId}`);
-                    scopeNameClassMap[scope] = `my-scope-${scopeId}`;
+                    scopeIdMap[scopeId] = {
+                        scopeId: scopeId,
+                        scope: scope,
+                        level: _getLevel(scope),
+                    };
+                    scopeList.push(scopeIdMap[scopeId]);
                     scopeId++;
-                    if(scope.indexOf(' ')>-1) {
-                        scopeNameClassMap1[scope] = scopeNameClassMap[scope];
-                    }
                 });
                 selector = selector.join(',');
                 css += `${selector}{\n`;
@@ -83,9 +88,29 @@ export default class {
                 css += '}\n';
             });
         }
-        window.globalData.scopeNameClassMap = scopeNameClassMap;
-        window.globalData.scopeNameClassMap1 = scopeNameClassMap1;
+        scopeList.sort((a, b) => {
+            return b.level - a.level;
+        });
+        scopeList.forEach((item) => {
+            let scope = item.scope
+                .split(' ')
+                .map((item) => {
+                    return `${item}(?:\\.[^\\.\\s])*?`;
+                })
+                .join(' ');
+            regSource.push(`(?<reg_${item.scopeId}>${scope})`);
+        });
+        window.globalData.scopeReg = new RegExp(regSource.join('|'));
+        window.globalData.scopeIdMap = scopeIdMap;
         return css;
+
+        function _getLevel(scope) {
+            let dot = scope.match(dotReg);
+            let s = scope.match(sReg);
+            dot = (dot && dot.length) || 0;
+            s = (s && s.length * 1000) || 0;
+            return dot + s;
+        }
     }
     insertCss(css) {
         if (window.globalData.style) {

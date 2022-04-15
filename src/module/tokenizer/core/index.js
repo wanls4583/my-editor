@@ -175,29 +175,39 @@ export default class {
                     if (item.scopes[0] === 'plain') {
                         selector = 'my-plain';
                     } else {
-                        item.scopes.forEach((scope, index) => {
-                            let str = '';
-                            scope = scope.split('.');
-                            for (let i = 0; i < scope.length; i++) {
-                                str += str ? '.' + scope[i] : scope[i];
-                                selector = _getSelector(item.scopes, index, str) || selector;
-                            }
-                        });
+                        selector = _getSelector(item.scopes);
                     }
+                    selector = (selector && `my-scope-${selector.scopeId}`) || '';
                     return `<span class="${selector}" data-column="${item.column}">${Util.htmlTrans(item.value)}</span>`;
                 })
                 .join('');
         }
 
-        function _getSelector(scopes, index, selector) {
-            if (globalData.scopeNameClassMap[selector]) {
-                return globalData.scopeNameClassMap[selector];
-            } else {
-                for (let i = index - 1; i >= 0; i--) {
+        function _getSelector(scopes) {
+            let result = null;
+            let selector = '';
+            for (let i = scopes.length - 1; i >= 0; i--) {
+                if (selector) {
                     selector = scopes[i] + ' ' + selector;
-                    if (globalData.scopeNameClassMap[selector]) {
-                        return globalData.scopeNameClassMap[selector];
+                } else {
+                    selector = scopes[i];
+                }
+                let exec = globalData.scopeReg.exec(selector);
+                if (exec) {
+                    let scopeId = _getScopeId(exec.groups);
+                    let _result = globalData.scopeIdMap[scopeId];
+                    if (!result || _result.level - result.level > 900) {
+                        result = _result;
                     }
+                }
+            }
+            return result;
+        }
+
+        function _getScopeId(groups) {
+            for (let key in groups) {
+                if (groups[key]) {
+                    return key.split('_')[1];
                 }
             }
         }
