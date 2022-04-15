@@ -15,10 +15,11 @@
             .my-menu-item {
                 height: 26px;
                 &:hover {
+                    border-color: var(--my-contrastActiveBorder);
                     background-color: var(--my-list-hoverBackground);
                     color: var(--my-list-hoverForeground);
                 }
-
+                
                 &.my-active {
                     border: 1px solid transparent;
                     background-color: var(--my-list-activeSelectionBackground);
@@ -76,10 +77,6 @@
         min-width: 80px;
         height: 30px;
         border: 1px dotted transparent;
-
-        &:hover {
-            border-color: var(--my-contrastActiveBorder);
-        }
 
         &.my-active {
             border-style: solid;

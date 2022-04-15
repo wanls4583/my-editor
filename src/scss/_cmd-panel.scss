@@ -21,8 +21,12 @@
             height: 30px;
             background-color: var(--my-input-background);
             color: var(--my-input-foreground);
-            border: 1px solid var(--my-input-border);
+            border: 1px solid transparent;
+            border-color: var(--my-input-border);
             outline: none;
+            &:focus {
+                border-color: var(--my-focusBorder);
+            }
         }
     }
 }

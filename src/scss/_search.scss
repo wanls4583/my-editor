@@ -8,6 +8,7 @@
         display: flex;
         justify-content: space-between;
         padding: 5px 10px 5px 25px;
+        box-shadow: 0 0 8px 2px var(--my-widget-shadow);
         border: 1px solid var(--my-editorWidget-border);
         background-color: var(--my-editorWidget-background);
         color: var(--my-editorWidget-foreground);
@@ -22,12 +23,16 @@
             cursor: pointer;
         }
 
+        .active-click {
+            border: 1px solid transparent;
+        }
+
         .active-click:hover {
             background-color: var(--my-toolbar-hoverBackground);
         }
 
         .active-click:focus {
-            border: 1px solid #007fd4;
+            border-color: var(--my-focusBorder);
         }
 
         .disabled-color {
@@ -36,11 +41,10 @@
             &:hover {
                 background-color: transparent;
             }
-            
-            &:active {
-                border: none;
-            }
 
+            &:active {
+                border-color: transparent;
+            }
         }
 
         .enable-color {
@@ -57,6 +61,7 @@
             line-height: 22px;
             text-align: center;
             margin-right: 4px;
+            border: 1px solid transparent;
             cursor: pointer;
 
             &:hover {
@@ -64,7 +69,7 @@
             }
 
             &.my-active {
-                border: 1px solid var(--my-inputOption-activeBorder);
+                border-color: var(--my-inputOption-activeBorder);
                 background-color: var(--my-inputOption-activeBackground);
                 color: var(--my-inputOption-activeForeground);
             }
@@ -100,9 +105,10 @@
         background-color: var(--my-input-background);
         color: var(--my-input-foreground);
         border: 1px solid transparent;
+        border-color: var(--my-input-border);
 
         &.my-active {
-            border: 1px solid var(--my-input-border);
+            border-color: var(--my-focusBorder);
         }
 
         input {
@@ -115,9 +121,5 @@
             background-color: transparent;
             color: var(--my-input-foreground);
         }
-    }
-
-    &-no-results {
-        color: red;
     }
 }

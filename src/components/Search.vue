@@ -63,7 +63,7 @@
                     class="iconfont icon-replace active-click"
                     style="margin-right: 5px"
                     title="Replace(Enter)"
-                    tabindex="1"
+                    tabindex="-1"
                 ></span>
                 <span
                     :class="{ 'enabled-color': count > 0, 'disabled-color': count == 0 }"
@@ -71,7 +71,7 @@
                     class="iconfont icon-replace-all active-click"
                     style="margin-right: 5px"
                     title="Replace All(Ctrl+Alt+Enter)"
-                    tabindex="1"
+                    tabindex="-1"
                 ></span>
             </div>
         </div>
@@ -82,7 +82,7 @@
                 class="iconfont icon-up active-click"
                 style="margin-right: 5px"
                 title="Previous Match(Shift Enter)"
-                tabindex="2"
+                tabindex="-1"
             ></span>
             <span
                 :class="{ 'enabled-color': count > 0, 'disabled-color': count == 0 }"
@@ -90,9 +90,9 @@
                 class="iconfont icon-down active-click"
                 style="margin-right: 5px"
                 title="Next Match(Enter)"
-                tabindex="2"
+                tabindex="-1"
             ></span>
-            <span @click="close" class="iconfont icon-close" title="Close"></span>
+            <span @click="close" class="iconfont icon-close active-click" title="Close"></span>
         </div>
     </div>
 </template>

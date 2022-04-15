@@ -95,6 +95,7 @@ export default class {
         let transparent = 'transparent';
         let foreground = '';
         let background = '';
+        let focusBorder = '';
         let contrastBorder = '';
         let contrastActiveBorder = '';
         let isLight = type === 'light' || type === 'contrast light';
@@ -103,10 +104,10 @@ export default class {
         _base();
         _titleBar();
         _dropdown();
+        _list();
         _menu();
         _statusBar();
         _sideBar();
-        _list();
         _editor();
         _tab();
         _editorWidget();
@@ -131,15 +132,15 @@ export default class {
                     result.colors['background'] = 'rgba(60,60,60)';
                 }
             }
-            if (!result.colors['forcusBorder']) {
+            if (!result.colors['focusBorder']) {
                 if (isHc) {
                     if (isLight) {
-                        result.colors['forcusBorder'] = '#0f4a85';
+                        result.colors['focusBorder'] = '#0f4a85';
                     } else {
-                        result.colors['forcusBorder'] = '#f38518';
+                        result.colors['focusBorder'] = '#f38518';
                     }
                 } else {
-                    result.colors['forcusBorder'] = transparent;
+                    result.colors['focusBorder'] = '#0066b8';
                 }
             }
             if (!result.colors['contrastBorder']) {
@@ -155,7 +156,7 @@ export default class {
             }
             if (!result.colors['contrastActiveBorder']) {
                 if (isHc) {
-                    result.colors['contrastActiveBorder'] = result.colors['forcusBorder'];
+                    result.colors['contrastActiveBorder'] = result.colors['focusBorder'];
                 } else {
                     result.colors['contrastActiveBorder'] = transparent;
                 }
@@ -174,6 +175,7 @@ export default class {
             }
             background = result.colors['background'];
             foreground = result.colors['foreground'];
+            focusBorder = result.colors['focusBorder'];
             contrastBorder = result.colors['contrastBorder'];
             contrastActiveBorder = result.colors['contrastActiveBorder'];
         }
@@ -226,6 +228,46 @@ export default class {
                 result.colors['dropdown.border'] = contrastBorder;
             }
         }
+        // list
+        function _list() {
+            if (!result.colors['list.activeSelectionBackground']) {
+                result.colors['list.activeSelectionBackground'] = '#0066b8';
+                if (!result.colors['list.activeSelectionForeground']) {
+                    result.colors['list.activeSelectionForeground'] = '#fff';
+                }
+            }
+            if (!result.colors['list.activeSelectionForeground']) {
+                result.colors['list.activeSelectionForeground'] = background;
+            }
+            if (!result.colors['list.hoverForeground']) {
+                result.colors['list.hoverForeground'] = foreground;
+            }
+            if (!result.colors['list.hoverBackground']) {
+                if (isHc) {
+                    result.colors['list.hoverBackground'] = transparent;
+                } else if (isLight) {
+                    result.colors['list.hoverBackground'] = 'rgba(0,0,0,0.2)';
+                } else {
+                    result.colors['list.hoverBackground'] = 'rgba(255,255,255,0.1)';
+                }
+            }
+            if (!result.colors['quickInputList.focusForeground']) {
+                if (result.colors['list.inactiveFocusForeground']) {
+                    result.colors['quickInputList.focusForeground'] = result.colors['list.inactiveFocusForeground'];
+                } else {
+                    result.colors['quickInputList.focusForeground'] = foreground;
+                }
+            }
+            if (!result.colors['quickInputList.focusBackground']) {
+                if (result.colors['list.inactiveFocusBackground']) {
+                    result.colors['quickInputList.focusBackground'] = result.colors['list.inactiveFocusBackground'];
+                } else if (isHc) {
+                    result.colors['quickInputList.focusBackground'] = transparent;
+                } else {
+                    result.colors['quickInputList.focusBackground'] = '#0066b8';
+                }
+            }
+        }
         //menu
         function _menu() {
             if (!result.colors['menu.foreground']) {
@@ -238,18 +280,10 @@ export default class {
                 result.colors['menu.border'] = contrastBorder;
             }
             if (!result.colors['menu.selectionForeground']) {
-                if (isHc) {
-                    result.colors['menu.selectionForeground'] = foreground;
-                } else {
-                    result.colors['menu.selectionForeground'] = '#fff';
-                }
+                result.colors['menu.selectionForeground'] = result.colors['list.activeSelectionForeground'];
             }
             if (!result.colors['menu.selectionBackground']) {
-                if (isHc) {
-                    result.colors['menu.selectionBackground'] = transparent;
-                } else {
-                    result.colors['menu.selectionBackground'] = '#0066b8';
-                }
+                result.colors['menu.selectionBackground'] = result.colors['list.activeSelectionBackground'];
             }
             if (!result.colors['menu.selectionBorder']) {
                 result.colors['menu.selectionBorder'] = contrastActiveBorder;
@@ -309,43 +343,6 @@ export default class {
             }
             if (!result.colors['sideBar.border']) {
                 result.colors['sideBar.border'] = contrastBorder;
-            }
-        }
-        // list
-        function _list() {
-            if (!result.colors['list.activeSelectionForeground']) {
-                result.colors['list.activeSelectionForeground'] = '#fff';
-            }
-            if (!result.colors['list.activeSelectionBackground']) {
-                result.colors['list.activeSelectionBackground'] = '#0066b8';
-            }
-            if (!result.colors['list.hoverForeground']) {
-                result.colors['list.hoverForeground'] = foreground;
-            }
-            if (!result.colors['list.hoverBackground']) {
-                if (isHc) {
-                    result.colors['list.hoverBackground'] = transparent;
-                } else if (isLight) {
-                    result.colors['list.hoverBackground'] = 'rgba(0,0,0,0.2)';
-                } else {
-                    result.colors['list.hoverBackground'] = 'rgba(255,255,255,0.1)';
-                }
-            }
-            if (!result.colors['quickInputList.focusForeground']) {
-                if (result.colors['list.inactiveFocusForeground']) {
-                    result.colors['quickInputList.focusForeground'] = result.colors['list.inactiveFocusForeground'];
-                } else {
-                    result.colors['quickInputList.focusForeground'] = foreground;
-                }
-            }
-            if (!result.colors['quickInputList.focusBackground']) {
-                if (result.colors['list.inactiveFocusBackground']) {
-                    result.colors['quickInputList.focusBackground'] = result.colors['list.inactiveFocusBackground'];
-                } else if (isHc) {
-                    result.colors['quickInputList.focusBackground'] = transparent;
-                } else {
-                    result.colors['quickInputList.focusBackground'] = '#0066b8';
-                }
             }
         }
         // editor
@@ -411,7 +408,9 @@ export default class {
                 result.colors['editor.lineHighlightBackground'] = transparent;
             }
             if (!result.colors['editor.lineHighlightBorder']) {
-                if (isHc) {
+                if (result.colors['editor.lineHighlightBackground'] !== transparent) {
+                    result.colors['editor.lineHighlightBorder'] = transparent;
+                } else if (isHc) {
                     result.colors['editor.lineHighlightBorder'] = contrastActiveBorder;
                 } else if (isLight) {
                     result.colors['editor.lineHighlightBorder'] = 'rgba(0,0,0,0.2)';
@@ -489,16 +488,10 @@ export default class {
                 result.colors['editorWidget.border'] = contrastBorder;
             }
             if (!result.colors['editorSuggestWidget.foreground']) {
-                result.colors['editorSuggestWidget.foreground'] = foreground;
+                result.colors['editorSuggestWidget.background'] = result.colors['editorWidget.foreground'];
             }
             if (!result.colors['editorSuggestWidget.background']) {
-                if (isHc) {
-                    result.colors['editorWidget.background'] = background;
-                } else if (isLight) {
-                    result.colors['editorWidget.background'] = '#eee';
-                } else {
-                    result.colors['editorWidget.background'] = 'rgb(37,37,38)';
-                }
+                result.colors['editorSuggestWidget.background'] = result.colors['editorWidget.background'];
             }
             if (!result.colors['editorSuggestWidget.border']) {
                 result.colors['editorSuggestWidget.border'] = contrastBorder;
@@ -531,28 +524,46 @@ export default class {
                 }
             }
             if (!result.colors['input.border']) {
-                result.colors['input.border'] = contrastBorder;
-                if(result.colors['input.border'] === transparent) {
+                if (result.colors['input.background'] === transparent) {
                     result.colors['input.border'] = '#0066b8';
+                } else {
+                    result.colors['input.border'] = transparent;
                 }
             }
             if (!result.colors['inputOption.activeForeground']) {
                 result.colors['inputOption.activeForeground'] = foreground;
             }
             if (!result.colors['inputOption.activeBackground']) {
-                result.colors['inputOption.activeBackground'] = transparent;
+                if (isHc) {
+                    result.colors['inputOption.activeBackground'] = transparent;
+                } else {
+                    result.colors['inputOption.activeBackground'] = 'rgb(36,87,121)';
+                    result.colors['inputOption.activeForeground'] = '#fff';
+                }
             }
             if (!result.colors['inputOption.activeBorder']) {
-                result.colors['inputOption.activeBorder'] = contrastActiveBorder;
+                result.colors['inputOption.activeBorder'] = focusBorder;
             }
             if (!result.colors['inputOption.hoverBackground']) {
-                result.colors['inputOption.hoverBackground'] = contrastActiveBorder;
+                if (isHc) {
+                    result.colors['inputOption.hoverBackground'] = transparent;
+                } else if (isLight) {
+                    result.colors['inputOption.hoverBackground'] = 'rgba(0,0,0,0.2)';
+                } else {
+                    result.colors['inputOption.hoverBackground'] = 'rgba(255,255,255,0.1)';
+                }
             }
         }
         // toolbar
         function _toolbar() {
             if (!result.colors['toolbar.hoverBackground']) {
-                result.colors['toolbar.hoverBackground'] = transparent;
+                if (isHc) {
+                    result.colors['toolbar.hoverBackground'] = transparent;
+                } else if (isLight) {
+                    result.colors['toolbar.hoverBackground'] = 'rgba(0,0,0,0.2)';
+                } else {
+                    result.colors['toolbar.hoverBackground'] = 'rgba(255,255,255,0.1)';
+                }
             }
             if (!result.colors['toolbar.activeBackground']) {
                 result.colors['toolbar.activeBackground'] = transparent;
