@@ -188,19 +188,19 @@ export default class {
                 result.colors['titleBar.activeForeground'] = foreground;
             }
             if (!result.colors['titleBar.activeBackground']) {
-                if (isHc) {
-                    result.colors['titleBar.activeBackground'] = transparent;
-                } else if (isLight) {
-                    result.colors['titleBar.activeBackground'] = 'rgba(0,0,0,0.2)';
-                } else {
-                    result.colors['titleBar.activeBackground'] = 'rgba(255,255,255,0.1)';
-                }
+                result.colors['titleBar.activeBackground'] = transparent;
             }
             if (!result.colors['menubar.selectionForeground']) {
                 result.colors['menubar.selectionForeground'] = foreground;
             }
             if (!result.colors['menubar.selectionBackground']) {
-                result.colors['menubar.selectionBackground'] = transparent;
+                if (isHc) {
+                    result.colors['menubar.selectionBackground'] = transparent;
+                } else if (isLight) {
+                    result.colors['menubar.selectionBackground'] = 'rgba(0,0,0,0.2)';
+                } else {
+                    result.colors['menubar.selectionBackground'] = 'rgba(255,255,255,0.1)';
+                }
             }
             if (!result.colors['menubar.selectionBorder']) {
                 if (isHc) {
@@ -212,9 +212,6 @@ export default class {
         }
         // dropdown
         function _dropdown() {
-            if (!result.colors['dropdown.foreground']) {
-                result.colors['dropdown.foreground'] = foreground;
-            }
             if (!result.colors['dropdown.background']) {
                 if (isHc) {
                     result.colors['dropdown.background'] = background;
@@ -223,6 +220,9 @@ export default class {
                 } else {
                     result.colors['dropdown.background'] = 'rgba(37,37,38)';
                 }
+            }
+            if (!result.colors['dropdown.foreground']) {
+                result.colors['dropdown.foreground'] = foreground;
             }
             if (!result.colors['dropdown.border']) {
                 result.colors['dropdown.border'] = contrastBorder;
@@ -237,7 +237,7 @@ export default class {
                 }
             }
             if (!result.colors['list.activeSelectionForeground']) {
-                result.colors['list.activeSelectionForeground'] = background;
+                result.colors['list.activeSelectionForeground'] = foreground;
             }
             if (!result.colors['list.hoverForeground']) {
                 result.colors['list.hoverForeground'] = foreground;
@@ -251,13 +251,6 @@ export default class {
                     result.colors['list.hoverBackground'] = 'rgba(255,255,255,0.1)';
                 }
             }
-            if (!result.colors['quickInputList.focusForeground']) {
-                if (result.colors['list.inactiveFocusForeground']) {
-                    result.colors['quickInputList.focusForeground'] = result.colors['list.inactiveFocusForeground'];
-                } else {
-                    result.colors['quickInputList.focusForeground'] = foreground;
-                }
-            }
             if (!result.colors['quickInputList.focusBackground']) {
                 if (result.colors['list.inactiveFocusBackground']) {
                     result.colors['quickInputList.focusBackground'] = result.colors['list.inactiveFocusBackground'];
@@ -265,6 +258,14 @@ export default class {
                     result.colors['quickInputList.focusBackground'] = transparent;
                 } else {
                     result.colors['quickInputList.focusBackground'] = '#0066b8';
+                    result.colors['quickInputList.focusForeground'] = '#fff';
+                }
+            }
+            if (!result.colors['quickInputList.focusForeground']) {
+                if (result.colors['list.inactiveFocusForeground']) {
+                    result.colors['quickInputList.focusForeground'] = result.colors['list.inactiveFocusForeground'];
+                } else {
+                    result.colors['quickInputList.focusForeground'] = foreground;
                 }
             }
         }
