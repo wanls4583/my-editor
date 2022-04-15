@@ -15,12 +15,15 @@
             .my-menu-item {
                 height: 26px;
                 &:hover {
+                    border-style: dotted;
                     border-color: var(--my-contrastActiveBorder);
                     background-color: var(--my-list-hoverBackground);
                     color: var(--my-list-hoverForeground);
                 }
-                
+
                 &.my-active {
+                    border-style: solid;
+                    border-color: var(--my-contrastActiveBorder);
                     background-color: var(--my-list-activeSelectionBackground);
                     color: var(--my-list-activeSelectionForeground);
                 }
@@ -31,7 +34,8 @@
     &-cmd-panel {
         .my-menu .my-menu-item {
             &.my-active {
-                border: 1px dotted var(--my-contrastActiveBorder);
+                border-style: dotted;
+                border-color: var(--my-contrastActiveBorder);
                 background-color: var(--my-quickInputList-focusBackground);
                 color: var(--my-quickInputList-focusForeground);
             }
@@ -75,10 +79,9 @@
         white-space: nowrap;
         min-width: 80px;
         height: 30px;
-        border: 1px dotted transparent;
+        border: 1px solid transparent;
 
         &.my-active {
-            border-style: solid;
             border-color: var(--my-menu-selectionBorder);
             background-color: var(--my-menu-selectionBackground);
             color: var(--my-menu-selectionForeground);
