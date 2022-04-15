@@ -537,7 +537,7 @@ export default class {
                 if (isHc) {
                     result.colors['inputOption.activeBackground'] = transparent;
                 } else {
-                    result.colors['inputOption.activeBackground'] = 'rgb(36,87,121)';
+                    result.colors['inputOption.activeBackground'] = focusBorder;
                     result.colors['inputOption.activeForeground'] = '#fff';
                 }
             }
