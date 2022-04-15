@@ -50,6 +50,7 @@ export default class {
         let css = '';
         let scopeId = 1;
         let scopeNameClassMap = {};
+        let scopeNameClassMap1 = {};
         if (data.colors) {
             css += ':root{\n';
             for (let key in data.colors) {
@@ -64,12 +65,15 @@ export default class {
                 }
                 let selector = [];
                 let scope = token.scope instanceof Array ? token.scope.join(',') : token.scope;
-                scope = scope.replace(/\s/g, '');
+                scope = scope.replace(/\s+/g, ' ');
                 scope = scope.split(',');
                 scope.forEach((scope) => {
                     selector.push(`.my-scope-${scopeId}`);
                     scopeNameClassMap[scope] = `my-scope-${scopeId}`;
                     scopeId++;
+                    if(scope.indexOf(' ')>-1) {
+                        scopeNameClassMap1[scope] = scopeNameClassMap[scope];
+                    }
                 });
                 selector = selector.join(',');
                 css += `${selector}{\n`;
@@ -80,6 +84,7 @@ export default class {
             });
         }
         window.globalData.scopeNameClassMap = scopeNameClassMap;
+        window.globalData.scopeNameClassMap1 = scopeNameClassMap1;
         return css;
     }
     insertCss(css) {

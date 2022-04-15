@@ -37,9 +37,7 @@ export default class {
             loadGrammar: (scopeName) => {
                 let language = Util.getLanguageByScopeName(globalData.scopeFileList, scopeName);
                 if (language) {
-                    return Util.readFile(language.path).then((data) =>
-                        vsctm.parseRawGrammar(data.toString(), language.path)
-                    );
+                    return Util.readFile(language.path).then((data) => vsctm.parseRawGrammar(data.toString(), language.path));
                 }
                 return null;
             },
@@ -125,22 +123,13 @@ export default class {
                 lineObj.tokens = data.tokens;
                 lineObj.folds = data.folds;
                 if (this.checkLineVisible(startLine)) {
-                    lineObj.tokens = this.splitLongToken(lineObj.tokens);
-                    lineObj.html = lineObj.tokens
-                        .map((item) => {
-                            return _creatHtml(item);
-                        })
-                        .join('');
+                    lineObj.html = _creatHtml.call(this, lineObj);
                     this.renderLine(lineObj.lineId);
                     lineObj.nowTheme = globalData.nowTheme.value;
                 } else {
                     lineObj.nowTheme = '';
                 }
-                if (
-                    !lineObj.states ||
-                    (lineObj.states.equals && !lineObj.states.equals(data.states)) ||
-                    lineObj.states.toString() !== data.states.toString()
-                ) {
+                if (!lineObj.states || (lineObj.states.equals && !lineObj.states.equals(data.states)) || lineObj.states.toString() !== data.states.toString()) {
                     lineObj.states = data.states;
                     lineObj = this.htmls[startLine];
                     if (lineObj) {
@@ -155,12 +144,7 @@ export default class {
                 }
             } else if (lineObj.nowTheme !== globalData.nowTheme.value) {
                 if (this.checkLineVisible(startLine)) {
-                    lineObj.tokens = this.splitLongToken(lineObj.tokens);
-                    lineObj.html = lineObj.tokens
-                        .map((item) => {
-                            return _creatHtml(item);
-                        })
-                        .join('');
+                    lineObj.html = _creatHtml.call(this, lineObj);
                     this.renderLine(lineObj.lineId);
                     lineObj.nowTheme = globalData.nowTheme.value;
                 } else {
@@ -180,21 +164,42 @@ export default class {
             });
         }
 
-        function _creatHtml(item) {
-            let selector = [];
-            item.type.forEach((scope) => {
-                let str = '';
-                scope = scope.split('.');
-                for (let i = 0; i < scope.length; i++) {
-                    str += str ? '.' + scope[i] : scope[i];
-                    if (globalData.scopeNameClassMap[str]) {
-                        selector.push(globalData.scopeNameClassMap[str]);
+        function _creatHtml(lineObj) {
+            let lineText = lineObj.text;
+            lineObj.tokens = this.splitLongToken(lineObj.tokens);
+            return lineObj.tokens
+                .map((item) => {
+                    let selector = '';
+                    item.column = item.startIndex;
+                    item.value = lineText.substring(item.startIndex, item.endIndex);
+                    if (item.scopes[0] === 'plain') {
+                        selector = 'my-plain';
+                    } else {
+                        item.scopes.forEach((scope, index) => {
+                            let str = '';
+                            scope = scope.split('.');
+                            for (let i = 0; i < scope.length; i++) {
+                                str += str ? '.' + scope[i] : scope[i];
+                                selector = _getSelector(item.scopes, index, str) || selector;
+                            }
+                        });
+                    }
+                    return `<span class="${selector}" data-column="${item.column}">${Util.htmlTrans(item.value)}</span>`;
+                })
+                .join('');
+        }
+
+        function _getSelector(scopes, index, selector) {
+            if (globalData.scopeNameClassMap[selector]) {
+                return globalData.scopeNameClassMap[selector];
+            } else {
+                for (let i = index - 1; i >= 0; i--) {
+                    selector = scopes[i] + ' ' + selector;
+                    if (globalData.scopeNameClassMap[selector]) {
+                        return globalData.scopeNameClassMap[selector];
                     }
                 }
-            });
-            return `<span class="${selector.join(' ')}" data-column="${item.column}">${Util.htmlTrans(
-                item.value
-            )}</span>`;
+            }
         }
     }
     tokenizeLine(line) {
@@ -203,9 +208,9 @@ export default class {
             return {
                 tokens: [
                     {
-                        type: ['plain'],
-                        column: 0,
-                        value: lineText,
+                        scopes: ['plain'],
+                        startIndex: 0,
+                        endIndex: lineText.length,
                     },
                 ],
                 folds: [],
@@ -215,15 +220,8 @@ export default class {
         let states = (line > 1 && this.htmls[line - 2].states) || vsctm.INITIAL;
         let lineTokens = this.grammar.tokenizeLine(lineText, states);
         states = lineTokens.ruleStack;
-        lineTokens = lineTokens.tokens.map((token) => {
-            return {
-                value: lineText.substring(token.startIndex, token.endIndex),
-                type: token.scopes,
-                column: token.startIndex,
-            };
-        });
         return {
-            tokens: lineTokens,
+            tokens: lineTokens.tokens,
             folds: [],
             states: states,
         };
@@ -231,26 +229,27 @@ export default class {
     splitLongToken(tokens) {
         let result = [];
         tokens.forEach((token) => {
-            if (token.value.length > 100) {
+            let length = token.endIndex - token.startIndex;
+            if (length > 100) {
                 //将文本数量大于100的token分隔
-                let startCol = token.column;
-                let count = Math.floor(token.value.length / 100);
+                let startCol = token.startIndex;
+                let count = Math.floor(length / 100);
                 for (let i = 0; i < count; i++) {
-                    let column = i * 100;
+                    let startIndex = i * 100;
+                    let endIndex = (i + 1) * 100;
+                    endIndex = endIndex > token.endIndex ? token.endIndex : endIndex;
                     result.push({
-                        column: column + startCol,
-                        value: token.value.slice(column, column + 100),
-                        type: token.type,
-                        state: token.state,
+                        startIndex: startIndex + startCol,
+                        endIndex: endIndex,
+                        scopes: token.scopes,
                     });
                 }
                 count = count * 100;
-                if (count < token.value.length) {
+                if (count < length) {
                     result.push({
-                        column: count + startCol,
-                        value: token.value.slice(count),
-                        type: token.type,
-                        state: token.state,
+                        startIndex: count + startCol,
+                        endIndex: token.endIndex,
+                        scopes: token.scopes,
                     });
                 }
             } else {
