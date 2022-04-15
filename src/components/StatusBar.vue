@@ -20,7 +20,7 @@
                             :styles="{ position: 'relative' }"
                             :value="tabSize"
                             @change="onTabsizeChange"
-                            v-show="tabsizeVisible"
+                            v-if="tabsizeVisible"
                         ></Menu>
                     </div>
                 </div>

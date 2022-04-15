@@ -21,7 +21,6 @@
                 }
                 
                 &.my-active {
-                    border: 1px solid transparent;
                     background-color: var(--my-list-activeSelectionBackground);
                     color: var(--my-list-activeSelectionForeground);
                 }

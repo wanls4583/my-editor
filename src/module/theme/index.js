@@ -231,8 +231,10 @@ export default class {
         // list
         function _list() {
             if (!result.colors['list.activeSelectionBackground']) {
-                result.colors['list.activeSelectionBackground'] = '#0066b8';
-                if (!result.colors['list.activeSelectionForeground']) {
+                if (isHc) {
+                    result.colors['list.activeSelectionBackground'] = transparent;
+                } else {
+                    result.colors['list.activeSelectionBackground'] = '#0066b8';
                     result.colors['list.activeSelectionForeground'] = '#fff';
                 }
             }
@@ -362,7 +364,7 @@ export default class {
             }
             if (!result.colors['editorLineNumber.foreground']) {
                 if (isHc) {
-                    result.colors['editorLineNumber.foreground'] = foreground;
+                    result.colors['editorLineNumber.foreground'] = result.colors['editor.foreground'];
                 } else if (isLight) {
                     result.colors['editorLineNumber.foreground'] = 'rgba(0,0,0,0.5)';
                 } else {
