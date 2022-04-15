@@ -95,7 +95,7 @@ export default class {
             let scope = item.scope
                 .split(' ')
                 .map((item) => {
-                    return `${item}(?:\\.[^\\.\\s])*?`;
+                    return `${item}(?:\\.[^\\.\\s]+)*?(?:\\s[^\\s]+)*?`;
                 })
                 .join(' ');
             regSource.push(`(?<reg_${item.scopeId}>${scope})`);
