@@ -210,6 +210,16 @@ export default class {
                     result.colors['sash.hoverBorder'] = '#75715e';
                 }
             }
+            if (!result.colors['scrollbar.shadow']) {
+                result.colors['scrollbar.shadow'] = transparent;
+            }
+            if (!result.colors['scrollbarSlider.background']) {
+                if (isLight) {
+                    result.colors['scrollbarSlider.background'] = 'rgba(100, 100, 100, 0.4)';
+                } else {
+                    result.colors['scrollbarSlider.background'] = 'rgba(121, 121, 121, 0.6);';
+                }
+            }
             if (type === 'contrast light' || type === 'contrast dark') {
                 result.colors['contrastActiveBorder-side'] = result.colors['contrastActiveBorder'];
             }

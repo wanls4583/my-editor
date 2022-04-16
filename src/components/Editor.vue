@@ -36,7 +36,7 @@
         </div>
         <div :style="{ 'box-shadow': _leftShadow }" class="my-content-wrap">
             <!-- 可滚动区域 -->
-            <div @scroll="onScroll" class="my-scroller" ref="scroller">
+            <div @scroll="onScroll" class="my-scroller my-scroll-auto" ref="scroller">
                 <!-- 内如区域 -->
                 <div
                     :style="{

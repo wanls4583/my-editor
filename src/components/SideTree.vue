@@ -4,7 +4,7 @@
  * @Description: 
 -->
 <template>
-	<div @scroll="onScroll" class="side-tree-warp" ref="wrap">
+	<div @scroll="onScroll" class="side-tree-warp my-scroll-overlay" ref="wrap">
 		<div style="width:100%;overflow:hidden">
 			<div :style="{height:_scrollHeight}" class="side-tree">
 				<div :style="{top:_top}" class="side-tree-content">
