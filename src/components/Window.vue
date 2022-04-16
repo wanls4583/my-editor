@@ -157,7 +157,9 @@ export default {
             });
         }
         this.theme = new Theme();
-        this.theme.loadTheme(window.globalData.nowTheme.path, window.globalData.nowTheme.type);
+        this.theme.loadTheme(window.globalData.nowTheme.path, window.globalData.nowTheme.type).then(() => {
+            EventBus.$emit('theme-change', window.globalData.nowTheme.value);
+        });
         this.loadLanguage().then((results) => {
             results.push({ name: 'Plain Text', value: '', checked: true });
             window.globalData.languageList = results.slice();

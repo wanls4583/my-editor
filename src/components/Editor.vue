@@ -11,7 +11,7 @@
             <!-- 占位行号，避免行号宽度滚动时变化 -->
             <div class="my-num" style="visibility: hidden">{{ maxLine }}</div>
             <div
-                :class="{ active: _activeLine(line.num) }"
+                :class="{ 'my-active': nowCursorPos.line === line.num }"
                 :key="line.num"
                 :style="{ height: _lineHeight, 'line-height': _lineHeight }"
                 class="my-num"
@@ -65,7 +65,8 @@
                             <!-- my-select-bg为选中状态 -->
                             <div
                                 :class="[
-                                    line.selected ? 'my-select-bg my-select-fg my-active' : '',
+                                    line.selected ? 'my-select-bg my-active' : '',
+                                    line.selected && selectedFg ? 'my-select-fg' : '',
                                     line.isFsearch ? 'my-search-bg' : '',
                                     line.fold == 'close' ? 'fold-close' : '',
                                 ]"
@@ -280,6 +281,8 @@ export default {
             tipContent: null,
             menuVisible: false,
             searchVisible: false,
+            selectedFg: false,
+            activeLineBg: true,
             searchNow: 1,
             searchCount: 0,
         };
@@ -334,14 +337,8 @@ export default {
         },
         _activeLine() {
             return (num) => {
-                return this.nowCursorPos && this.nowCursorPos.line == num;
+                return this.nowCursorPos.line == num && this.activeLineBg;
             };
-        },
-        _nowLine() {
-            return (this.nowCursorPos && this.nowCursorPos.line) || 1;
-        },
-        _nowColumn() {
-            return (this.nowCursorPos && this.nowCursorPos.column) || 0;
         },
         space() {
             return Util.space(this.tabSize);
@@ -400,6 +397,7 @@ export default {
         this.initEvent();
     },
     mounted() {
+        this.selectedFg = !!globalData.colors['editor.selectionForeground'];
         this.showEditor();
     },
     destroyed() {
@@ -464,6 +462,7 @@ export default {
             EventBus.$on(
                 'theme-change',
                 (this.initEventBus.fn4 = () => {
+                    this.selectedFg = !!globalData.colors['editor.selectionForeground'];
                     if (this.active) {
                         this.myContext.htmls.forEach((lineObj) => {
                             lineObj.nowTheme = '';
@@ -589,12 +588,9 @@ export default {
             }
 
             function _getObj(item, line) {
-                let selected = false;
                 let spaceNum = /^\s+/.exec(item.text);
                 let tabNum = 0;
                 let fold = '';
-                let selectStarts = [];
-                let selectEnds = [];
                 if (spaceNum) {
                     tabNum = /\t+/.exec(spaceNum[0]);
                     tabNum = (tabNum && tabNum[0].length) || 0;
@@ -613,9 +609,9 @@ export default {
                     html: html,
                     num: line,
                     tabNum: tabNum,
-                    selectStarts: selectStarts,
-                    selectEnds: selectEnds,
-                    selected: selected,
+                    selectStarts: [],
+                    selectEnds: [],
+                    selected: false,
                     fold: fold,
                     cursorList: [],
                 };
@@ -624,6 +620,7 @@ export default {
         renderSelectedBg() {
             let renderSelectedBgId = this.renderSelectedBg.id + 1 || 1;
             this.renderSelectedBg.id = renderSelectedBgId;
+            this.activeLineBg = true;
             this.$nextTick(() => {
                 if (this.renderSelectedBg.id != renderSelectedBgId) {
                     return;
@@ -703,6 +700,9 @@ export default {
                     isFsearch: isFsearch,
                 });
                 range.active && this._renderSelectionToken(end.line, 0, end.column);
+            }
+            if (start.line === this.nowCursorPos.line || end.line === this.nowCursorPos.line) {
+                this.activeLineBg = false;
             }
         },
         renderSelectionToken(line) {
@@ -843,15 +843,9 @@ export default {
 
             function _setCursorRealPos(cursorPos) {
                 let left = 0;
-                let lineObj = that.myContext.htmls[cursorPos.line - 1];
                 if (cursorPos.del) {
                     return;
                 }
-                // if ($('#line_' + cursorPos.line).length && lineObj.tokens && lineObj.tokens.length) {
-                //     left = that.getExactLeft(cursorPos);
-                // } else {
-                //     left = that.getStrWidthByLine(cursorPos.line, 0, cursorPos.column);
-                // }
                 left = that.getExactLeft(cursorPos);
                 // 强制滚动使光标处于可见区域
                 if (forceCursorView && cursorPos === that.nowCursorPos) {

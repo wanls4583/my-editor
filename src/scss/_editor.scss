@@ -41,7 +41,7 @@
             color: var(--my-editorLineNumber-foreground);
         }
 
-        &.active {
+        &.my-active {
             .num {
                 color: var(--my-editorLineNumber-activeForeground);
             }
