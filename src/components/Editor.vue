@@ -664,12 +664,12 @@ export default {
             let endColumn = text.length;
             start.left = this.getStrWidth(text, 0, start.column);
             if (start.line == end.line) {
-                start.width = this.getStrWidth(text, start.column, end.column);
+                start.width = this.getStrWidth(text, start.column, end.column) || 10;
             } else {
-                start.width = this.getStrWidth(text, start.column);
+                start.width = this.getStrWidth(text, start.column) || 10;
                 end.left = 0;
                 text = this.myContext.htmls[end.line - 1].text;
-                end.width = this.getStrWidth(text, 0, end.column);
+                end.width = this.getStrWidth(text, 0, end.column) || 10;
             }
             firstLine = firstLine > start.line + 1 ? firstLine : start.line + 1;
             lastLine = lastLine < end.line - 1 ? lastLine : end.line - 1;
