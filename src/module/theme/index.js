@@ -4,6 +4,7 @@
  * @Description:
  */
 import Util from '../../common/Util';
+import chroma from 'chroma-js';
 
 const require = window.require || window.parent.require || function () {};
 const path = require('path');
@@ -226,26 +227,30 @@ export default class {
                 result.colors['scrollbar.shadow'] = transparent;
             }
             if (!result.colors['scrollbarSlider.background']) {
-                if (isLight) {
+                if (isHc) {
+                    result.colors['scrollbarSlider.background'] = chroma(contrastBorder).alpha(0.6).css();
+                } else if (isLight) {
                     result.colors['scrollbarSlider.background'] = 'rgba(100, 100, 100, 0.4)';
                 } else {
-                    result.colors['scrollbarSlider.background'] = 'rgba(121, 121, 121, 0.6);';
+                    result.colors['scrollbarSlider.background'] = 'rgba(121, 121, 121, 0.4);';
+                }
+            }
+            if (!result.colors['scrollbarSlider.hoverBackground']) {
+                if (isHc) {
+                    result.colors['scrollbarSlider.hoverBackground'] = chroma(contrastBorder).alpha(0.8).css();
+                } else if (isLight) {
+                    result.colors['scrollbarSlider.hoverBackground'] = 'rgba(100, 100, 100, 0.7)';
+                } else {
+                    result.colors['scrollbarSlider.hoverBackground'] = 'rgba(100, 100, 100, 0.7);';
                 }
             }
             if (!result.colors['scrollbarSlider.activeBackground']) {
                 if (isHc) {
-                    result.colors['scrollbarSlider.activeBackground'] = contrastActiveBorder;
+                    result.colors['scrollbarSlider.activeBackground'] = contrastBorder;
                 } else if (isLight) {
                     result.colors['scrollbarSlider.activeBackground'] = 'rgba(0, 0, 0, 0.6)';
                 } else {
                     result.colors['scrollbarSlider.activeBackground'] = 'rgba(191, 191, 191, 0.4);';
-                }
-            }
-            if (!result.colors['scrollbarSlider.hoverBackground']) {
-                if (isLight) {
-                    result.colors['scrollbarSlider.hoverBackground'] = 'rgba(100, 100, 100, 0.7)';
-                } else {
-                    result.colors['scrollbarSlider.hoverBackground'] = 'rgba(100, 100, 100, 0.7);';
                 }
             }
         }
@@ -646,7 +651,7 @@ export default class {
                 if (isHc) {
                     result.colors['inputOption.activeBackground'] = transparent;
                 } else {
-                    result.colors['inputOption.activeBackground'] = focusBorder;
+                    result.colors['inputOption.activeBackground'] = chroma(focusBorder).alpha(0.6).css();
                     result.colors['inputOption.activeForeground'] = '#fff';
                 }
             }
