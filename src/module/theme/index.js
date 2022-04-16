@@ -133,6 +133,7 @@ export default class {
         let isHc = type === 'contrast light' || type === 'contrast dark';
 
         _base();
+        _scrollbar();
         _titleBar();
         _dropdown();
         _list();
@@ -210,6 +211,17 @@ export default class {
                     result.colors['sash.hoverBorder'] = '#75715e';
                 }
             }
+
+            if (type === 'contrast light' || type === 'contrast dark') {
+                result.colors['contrastActiveBorder-side'] = result.colors['contrastActiveBorder'];
+            }
+            background = result.colors['background'];
+            foreground = result.colors['foreground'];
+            focusBorder = result.colors['focusBorder'];
+            contrastBorder = result.colors['contrastBorder'];
+            contrastActiveBorder = result.colors['contrastActiveBorder'];
+        }
+        function _scrollbar() {
             if (!result.colors['scrollbar.shadow']) {
                 result.colors['scrollbar.shadow'] = transparent;
             }
@@ -236,14 +248,6 @@ export default class {
                     result.colors['scrollbarSlider.hoverBackground'] = 'rgba(100, 100, 100, 0.7);';
                 }
             }
-            if (type === 'contrast light' || type === 'contrast dark') {
-                result.colors['contrastActiveBorder-side'] = result.colors['contrastActiveBorder'];
-            }
-            background = result.colors['background'];
-            foreground = result.colors['foreground'];
-            focusBorder = result.colors['focusBorder'];
-            contrastBorder = result.colors['contrastBorder'];
-            contrastActiveBorder = result.colors['contrastActiveBorder'];
         }
         //titleBar
         function _titleBar() {
