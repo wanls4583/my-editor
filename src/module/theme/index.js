@@ -220,6 +220,22 @@ export default class {
                     result.colors['scrollbarSlider.background'] = 'rgba(121, 121, 121, 0.6);';
                 }
             }
+            if (!result.colors['scrollbarSlider.activeBackground']) {
+                if (isHc) {
+                    result.colors['scrollbarSlider.activeBackground'] = contrastActiveBorder;
+                } else if (isLight) {
+                    result.colors['scrollbarSlider.activeBackground'] = 'rgba(0, 0, 0, 0.6)';
+                } else {
+                    result.colors['scrollbarSlider.activeBackground'] = 'rgba(191, 191, 191, 0.4);';
+                }
+            }
+            if (!result.colors['scrollbarSlider.hoverBackground']) {
+                if (isLight) {
+                    result.colors['scrollbarSlider.hoverBackground'] = 'rgba(100, 100, 100, 0.7)';
+                } else {
+                    result.colors['scrollbarSlider.hoverBackground'] = 'rgba(100, 100, 100, 0.7);';
+                }
+            }
             if (type === 'contrast light' || type === 'contrast dark') {
                 result.colors['contrastActiveBorder-side'] = result.colors['contrastActiveBorder'];
             }

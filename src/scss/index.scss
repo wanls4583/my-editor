@@ -61,6 +61,14 @@ body {
 
         &::-webkit-scrollbar-thumb {
             background-color: var(--my-scrollbarSlider-background);
+
+            &:hover {
+                background-color: var(--my-scrollbarSlider-hoverBackground);
+            }
+
+            &:active {
+                background-color: var(--my-scrollbarSlider-activeBackground);
+            }
         }
     }
 
@@ -81,6 +89,14 @@ body {
         &:hover {
             &::-webkit-scrollbar-thumb {
                 background-color: var(--my-scrollbarSlider-background);
+
+                &:hover {
+                    background-color: var(--my-scrollbarSlider-hoverBackground);
+                }
+
+                &:active {
+                    background-color: var(--my-scrollbarSlider-activeBackground);
+                }
             }
         }
     }
