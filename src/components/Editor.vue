@@ -815,9 +815,8 @@ export default {
                     lineObj.tokens,
                     lineObj.text
                 );
-            } else {
-                lineObj.nowTheme = '';
             }
+            lineObj.nowTheme = '';
         },
         // 渲染光标
         renderCursor(forceCursorView) {
