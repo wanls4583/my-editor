@@ -151,7 +151,7 @@ export default class {
                 if (isLight) {
                     result.colors['foreground'] = '#575757';
                 } else {
-                    result.colors['foreground'] = '#ccc';
+                    result.colors['foreground'] = 'rgb(221, 221, 221)';
                 }
             }
             if (!result.colors['background']) {
@@ -201,6 +201,15 @@ export default class {
                     result.colors['widget.shadow'] = 'rgba(0,0,0,0.36)';
                 }
             }
+            if (!result.colors['sash.hoverBorder']) {
+                if (isHc) {
+                    result.colors['sash.hoverBorder'] = result.colors['contrastActiveBorder'];
+                } else if (isLight) {
+                    result.colors['sash.hoverBorder'] = '#0090f1';
+                } else {
+                    result.colors['sash.hoverBorder'] = '#75715e';
+                }
+            }
             if (type === 'contrast light' || type === 'contrast dark') {
                 result.colors['contrastActiveBorder-side'] = result.colors['contrastActiveBorder'];
             }
@@ -219,7 +228,11 @@ export default class {
                 result.colors['titleBar.activeForeground'] = foreground;
             }
             if (!result.colors['titleBar.activeBackground']) {
-                result.colors['titleBar.activeBackground'] = transparent;
+                if (isHc) {
+                    result.colors['titleBar.activeBackground'] = transparent;
+                } else if (isLight) {
+                    result.colors['titleBar.activeBackground'] = 'rgb(221, 221, 221)';
+                }
             }
             if (!result.colors['menubar.selectionForeground']) {
                 result.colors['menubar.selectionForeground'] = foreground;

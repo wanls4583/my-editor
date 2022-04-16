@@ -4,6 +4,7 @@
         flex-shrink: 0;
         width: 300px;
         height: 100%;
+        padding: 0 4px;
         border-right: 1px solid var(--my-sideBar-border);
         background-color: var(--my-sideBar-background);
         color: var(--my-sideBar-foreground);
@@ -76,6 +77,18 @@
                 overflow: hidden;
                 text-overflow: ellipsis;
             }
+        }
+    }
+    &-sash-v {
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        z-index: 1;
+        width: 4px;
+        cursor: ew-resize;
+        &:hover {
+            background-color: var(--my-sash-hoverBorder);
         }
     }
 }

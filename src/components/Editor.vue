@@ -399,6 +399,7 @@ export default {
     mounted() {
         this.selectedFg = !!globalData.colors['editor.selectionForeground'];
         this.showEditor();
+        this.initResizeEvent();
     },
     destroyed() {
         this.unbindEvent();
@@ -433,6 +434,15 @@ export default {
             };
             $(document).on('mousemove', this.initEvent.fn1);
             $(document).on('mouseup', this.initEvent.fn2);
+        },
+        initResizeEvent() {
+            const resizeObserver = new ResizeObserver((entries) => {
+                if (this.$refs.editor) {
+                    //editor被删除后也会触发事件
+                    this.showEditor();
+                }
+            });
+            resizeObserver.observe(this.$refs.editor);
         },
         initEventBus() {
             EventBus.$on(

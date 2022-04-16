@@ -143,17 +143,8 @@ export default {
     created() {
         if (this.mode === 'app') {
             const currentWindow = remote.getCurrentWindow();
-            currentWindow.on('resize', () => {
-                let editor = this.getNowEditor();
-                editor && editor.showEditor();
-            });
             currentWindow.on('blur', () => {
                 EventBus.$emit('close-menu');
-            });
-        } else {
-            $(window).on('resize', () => {
-                let editor = this.getNowEditor();
-                editor && editor.showEditor();
             });
         }
         this.theme = new Theme();
