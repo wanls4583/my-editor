@@ -1,7 +1,7 @@
 /*
  * @Author: lisong
  * @Date: 2022-02-13 10:41:16
- * @Description: 
+ * @Description:
  */
 import Util from '@/common/Util';
 import Btree from '@/common/Btree';
@@ -12,7 +12,7 @@ const comparator = function (a, b) {
         return Util.comparePos(a.end, b.end);
     }
     return res;
-}
+};
 
 export default class {
     constructor(editor, context) {
@@ -21,25 +21,41 @@ export default class {
         this.activedRanges = new Btree(comparator);
     }
     initProperties(editor, context) {
-        Util.defineProperties(this, editor, [
-            'renderSelectedBg',
-            'cursor',
-        ]);
-        Util.defineProperties(this, context, [
-            'htmls',
-        ]);
+        Util.defineProperties(this, editor, ['cursor', 'renderSelectedBg', 'clearSelectionToken']);
+        Util.defineProperties(this, context, ['htmls']);
         this.setContextData = (prop, value) => {
             context.setData(prop, value);
-        }
+        };
         this.setEditorData = (prop, value) => {
             editor.setData(prop, value);
+        };
+    }
+    getRangeByLine(line) {
+        let results = [];
+        let it = this.ranges.search(
+            { line: line, column: 0 },
+            (value, item) => {
+                return value - item.start.line;
+            },
+            true
+        );
+        if (it) {
+            let value = it.next();
+            while (value) {
+                if (value.start === line || value.end.line === line) {
+                    results.push(value);
+                } else if (value.start.line > line) {
+                    break;
+                }
+                value = it.next();
+            }
         }
+        return results;
     }
     // 检测光标是否在选中区域范围的边界
     getRangeByCursorPos(cursorPos) {
         let result = this.ranges.search(cursorPos, (value, item) => {
-            if (Util.comparePos(value, item.start) === 0 ||
-                Util.comparePos(value, item.end) === 0) {
+            if (Util.comparePos(value, item.start) === 0 || Util.comparePos(value, item.end) === 0) {
                 return 0;
             }
             return Util.comparePos(value, item.start);
@@ -48,19 +64,21 @@ export default class {
     }
     // 检查光标是否在选中范围内
     getRangeWithCursorPos(cursorPos) {
-        let it = this.ranges.search(null, (a, item) => {
-            return Util.comparePos(cursorPos, item.start);
-        }, true);
-        if (it) {
-            let value = it.prev();
-            if (value && Util.comparePos(value.end, cursorPos) >= 0) {
-                return value;
-            }
-            it.reset();
-            value = it.next();
-            if (value && Util.comparePos(value.start, cursorPos) == 0) {
-                return value;
-            }
+        let it = this.ranges.search(
+            cursorPos,
+            (value, item) => {
+                return Util.comparePos(value, item.start);
+            },
+            true
+        );
+        let value = it.prev();
+        if (value && Util.comparePos(value.end, cursorPos) >= 0) {
+            return value;
+        }
+        it.reset();
+        value = it.next();
+        if (value && Util.comparePos(value.start, cursorPos) == 0) {
+            return value;
         }
         return false;
     }
@@ -86,7 +104,7 @@ export default class {
                 }
                 this.updateRange(range, {
                     start: start,
-                    end: end
+                    end: end,
                 });
             } else {
                 let start = Object.assign({}, cursorPos);
@@ -95,7 +113,7 @@ export default class {
                 if (range) {
                     this.addRange({
                         start: start,
-                        end: end
+                        end: end,
                     });
                 }
             }
@@ -105,14 +123,17 @@ export default class {
     selectAll() {
         let end = {
             line: this.htmls.length,
-            column: this.htmls.peek().text.length
+            column: this.htmls.peek().text.length,
         };
         this.setEditorData('forceCursorView', false);
         this.cursor.setCursorPos(end);
-        this.setRange({
-            line: 1,
-            column: 0
-        }, end);
+        this.setRange(
+            {
+                line: 1,
+                column: 0,
+            },
+            end
+        );
         this.renderSelectedBg();
     }
     selectAllOccurence() {
@@ -149,21 +170,20 @@ export default class {
             } else if (!same) {
                 return;
             }
-            let active = this.cursor.getCursorsByLineColumn(start.line, start.column) ||
-                this.cursor.getCursorsByLineColumn(end.line, end.column);
+            let active = this.cursor.getCursorsByLineColumn(start.line, start.column) || this.cursor.getCursorsByLineColumn(end.line, end.column);
             range = {
                 start: {
                     line: start.line,
-                    column: start.column
+                    column: start.column,
                 },
                 end: {
                     line: end.line,
-                    column: end.column
+                    column: end.column,
                 },
-                active: !!active
+                active: !!active,
             };
             this.ranges.insert(range);
-            active && this.activedRanges.insert(range);;
+            active && this.activedRanges.insert(range);
             results.push(range);
             this.filterRange(range);
         });
@@ -195,12 +215,11 @@ export default class {
         } else if (!same) {
             return;
         }
-        let active = this.cursor.getCursorsByLineColumn(start.line, start.column) ||
-            this.cursor.getCursorsByLineColumn(end.line, end.column);
+        let active = this.cursor.getCursorsByLineColumn(start.line, start.column) || this.cursor.getCursorsByLineColumn(end.line, end.column);
         let range = {
             start: Object.assign({}, start),
             end: Object.assign({}, end),
-            active: !!active
+            active: !!active,
         };
         this.clearRange();
         this.ranges.empty();
@@ -246,7 +265,8 @@ export default class {
         let it = this.ranges.search(range);
         let dels = [];
         let value = it.prev();
-        if (value && Util.comparePos(value.end, range.start) > 0) { //删除前件
+        if (value && Util.comparePos(value.end, range.start) > 0) {
+            //删除前件
             dels.push(value);
         }
         it.reset();
@@ -274,8 +294,8 @@ export default class {
         }
         return {
             start: start,
-            end: end
-        }
+            end: end,
+        };
     }
     // 清除选中背景
     clearRange() {

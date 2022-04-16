@@ -123,7 +123,8 @@ export default class {
                 lineObj.tokens = data.tokens;
                 lineObj.folds = data.folds;
                 if (this.checkLineVisible(startLine)) {
-                    lineObj.html = _creatHtml.call(this, lineObj);
+                    lineObj.tokens = this.splitLongToken(lineObj.tokens);
+                    lineObj.html = this.creatHtml(lineObj.tokens, lineObj.text);
                     this.renderLine(lineObj.lineId);
                     lineObj.nowTheme = globalData.nowTheme.value;
                 } else {
@@ -144,7 +145,8 @@ export default class {
                 }
             } else if (lineObj.nowTheme !== globalData.nowTheme.value) {
                 if (this.checkLineVisible(startLine)) {
-                    lineObj.html = _creatHtml.call(this, lineObj);
+                    lineObj.tokens = this.splitLongToken(lineObj.tokens);
+                    lineObj.html = this.creatHtml(lineObj.tokens, lineObj.text);
                     this.renderLine(lineObj.lineId);
                     lineObj.nowTheme = globalData.nowTheme.value;
                 } else {
@@ -163,25 +165,23 @@ export default class {
                 this.tokenizeLines(currentLine);
             });
         }
-
-        function _creatHtml(lineObj) {
-            let lineText = lineObj.text;
-            lineObj.tokens = this.splitLongToken(lineObj.tokens);
-            return lineObj.tokens
-                .map((item) => {
-                    let selector = '';
-                    item.column = item.startIndex;
-                    item.value = lineText.substring(item.startIndex, item.endIndex);
-                    if (item.scopes[0] === 'plain') {
-                        selector = 'my-plain';
-                    } else {
-                        selector = _getSelector(item.scopes);
-                    }
+    }
+    creatHtml(tokens, lineText) {
+        return tokens
+            .map((item) => {
+                let selector = '';
+                let value = lineText.substring(item.startIndex, item.endIndex);
+                if (item.scopes[0] === 'plain') {
+                    selector = 'my-plain';
+                } else if (item.scopes[0] === 'selected') {
+                    selector = 'my-select-fg';
+                } else {
+                    selector = _getSelector(item.scopes);
                     selector = (selector && `my-scope-${selector.scopeId}`) || '';
-                    return `<span class="${selector}" data-column="${item.column}">${Util.htmlTrans(item.value)}</span>`;
-                })
-                .join('');
-        }
+                }
+                return `<span class="${selector}" data-column="${item.startIndex}">${Util.htmlTrans(value)}</span>`;
+            })
+            .join('');
 
         function _getSelector(scopes) {
             let result = null;

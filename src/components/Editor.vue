@@ -51,7 +51,7 @@
                 >
                     <div :style="{ top: _top }" class="my-render" ref="render" v-if="active">
                         <div
-                            :class="{ active: _activeLine(line.num) }"
+                            :class="{ 'my-active': _activeLine(line.num) }"
                             :data-line="line.num"
                             :id="'line_' + line.num"
                             :key="line.num"
@@ -65,7 +65,7 @@
                             <!-- my-select-bg为选中状态 -->
                             <div
                                 :class="[
-                                    line.selected ? 'my-select-bg active' : '',
+                                    line.selected ? 'my-select-bg my-select-fg my-active' : '',
                                     line.isFsearch ? 'my-search-bg' : '',
                                     line.fold == 'close' ? 'fold-close' : '',
                                 ]"
@@ -76,7 +76,7 @@
                             <!-- 选中时的首行背景 -->
                             <div
                                 :class="{
-                                    active: range.active,
+                                    'my-active': range.active,
                                     'my-search-bg': range.isFsearch,
                                 }"
                                 :style="{
@@ -89,7 +89,7 @@
                             <!-- 选中时的末行背景 -->
                             <div
                                 :class="{
-                                    active: range.active,
+                                    'my-active': range.active,
                                     'my-search-bg': range.isFsearch,
                                 }"
                                 :style="{
@@ -172,7 +172,7 @@
 </template>
 
 <script>
-import Tokenizer from '@/module/tokenizer/core/index';
+import Tokenizer from '@/module/tokenizer/index';
 import Lint from '@/module/lint/core/index';
 import Autocomplete from '@/module/autocomplete/index';
 import Fold from '@/module/fold/index';
@@ -190,6 +190,7 @@ import Util from '@/common/Util';
 import EventBus from '@/event';
 import $ from 'jquery';
 const contexts = Context.contexts;
+let globalData = null;
 
 export default {
     name: 'Editor',
@@ -407,6 +408,7 @@ export default {
     methods: {
         // 初始化数据
         initData() {
+            globalData = window.globalData;
             this.editorId = this.id;
             contexts[this.editorId] = new Context(this);
             this.maxWidthObj.lineId = this.myContext.htmls[0].lineId;
@@ -536,6 +538,7 @@ export default {
                 }
                 this.renderLine();
                 this.renderSelectedBg();
+                this.renderSelectionToken();
                 this.renderCursor(forceCursorView);
                 this.$nextTick(() => {
                     this.scrollerArea = {
@@ -558,6 +561,7 @@ export default {
                         Object.assign(obj, _getObj(item, obj.num));
                         this.renderCursor();
                         this.renderSelectedBg();
+                        this.renderSelectionToken(obj.line);
                     }
                 }
                 return;
@@ -631,6 +635,7 @@ export default {
                     });
                     return;
                 }
+                this.clearSelectionToken();
                 this.renderHtmls.forEach((item) => {
                     item.selected = false;
                     item.selectStarts = [];
@@ -654,12 +659,12 @@ export default {
         },
         // 渲染选中背景
         _renderSelectedBg(range, isFsearch) {
-            let selecter = isFsearch ? this.fSelecter : this.selecter;
             let firstLine = this.renderHtmls[0].num;
             let lastLine = this.renderHtmls.peek().num;
             let start = range.start;
             let end = range.end;
             let text = this.myContext.htmls[start.line - 1].text;
+            let endColumn = text.length;
             start.left = this.getStrWidth(text, 0, start.column);
             if (start.line == end.line) {
                 start.width = this.getStrWidth(text, start.column, end.column);
@@ -685,6 +690,10 @@ export default {
                     active: range.active,
                     isFsearch: isFsearch,
                 });
+                if (end.line == start.line) {
+                    endColumn = end.column;
+                }
+                range.active && this._renderSelectionToken(start.line, start.column, endColumn);
             }
             if (end.line > start.line && this.myContext.renderedLineMap.has(end.line)) {
                 this.myContext.renderedLineMap.get(end.line).selectEnds.push({
@@ -693,6 +702,121 @@ export default {
                     active: range.active,
                     isFsearch: isFsearch,
                 });
+                range.active && this._renderSelectionToken(end.line, 0, end.column);
+            }
+        },
+        renderSelectionToken(line) {
+            // 只有设置了选中前景色才处理
+            if (!globalData.colors['editor.selectionForeground']) {
+                return;
+            }
+            let results = this.selecter.getRangeByLine(line);
+            results.forEach((range) => {
+                if (range.active) {
+                    let startColumn = range.start.column;
+                    let endColumn = range.end.column;
+                    if (range.start.line === line) {
+                        if (range.end.line > range.start.line) {
+                            endColumn = this.myContext.htmls[range.start.line - 1].text.length;
+                        }
+                    } else {
+                        startColumn = 0;
+                    }
+                    this._renderSelectionToken(line, startColumn, endColumn);
+                }
+            });
+        },
+        _renderSelectionToken(line, startColumn, endColumn) {
+            // 只有设置了选中前景色才处理
+            if (!globalData.colors['editor.selectionForeground']) {
+                return;
+            }
+            let lineObj = this.myContext.htmls[line - 1];
+            let tokens = lineObj.tokens;
+            let scopes = ['selected'];
+            let _tokens = [];
+            this.myContext.fgLines.push(line);
+            for (let i = 0; i < tokens.length; i++) {
+                let token = tokens[i];
+                if (token.startIndex <= startColumn && token.endIndex > startColumn) {
+                    if (token.startIndex < startColumn) {
+                        _tokens.push({
+                            startIndex: token.startIndex,
+                            endIndex: startColumn,
+                            scopes: token.scopes,
+                        });
+                    }
+                    if (token.endIndex > endColumn) {
+                        _tokens.push({
+                            startIndex: startColumn,
+                            endIndex: endColumn,
+                            scopes: scopes,
+                        });
+                        _tokens.push({
+                            startIndex: endColumn,
+                            endIndex: token.endIndex,
+                            scopes: token.scopes,
+                        });
+                        _tokens = _tokens.concat(tokens.slice(i + 1));
+                        break;
+                    } else {
+                        _tokens.push({
+                            startIndex: startColumn,
+                            endIndex: token.endIndex,
+                            scopes: scopes,
+                        });
+                    }
+                } else if (token.startIndex > startColumn && token.endIndex <= endColumn) {
+                    _tokens.push({
+                        startIndex: token.startIndex,
+                        endIndex: token.endIndex,
+                        scopes: scopes,
+                    });
+                } else if (token.startIndex < endColumn && token.endIndex > endColumn) {
+                    _tokens.push({
+                        startIndex: token.startIndex,
+                        endIndex: endColumn,
+                        scopes: scopes,
+                    });
+                    _tokens.push({
+                        startIndex: endColumn,
+                        endIndex: token.endIndex,
+                        scopes: token.scopes,
+                    });
+                    _tokens = _tokens.concat(tokens.slice(i + 1));
+                    break;
+                } else if (token.startIndex >= endColumn) {
+                    _tokens = _tokens.concat(tokens.slice(i + 1));
+                    break;
+                } else {
+                    _tokens.push(token);
+                }
+            }
+            lineObj.html = this.tokenizer.creatHtml(_tokens, lineObj.text);
+            this.myContext.renderedIdMap.get(lineObj.lineId).html = lineObj.html;
+            this.$nextTick(() => {
+                lineObj.fgTokens = _tokens;
+            });
+        },
+        clearSelectionToken() {
+            this.myContext.fgLines.forEach((line) => {
+                this._clearSelectionToken(line);
+            });
+            this.myContext.fgLines.empty();
+        },
+        _clearSelectionToken(line) {
+            let lineObj = this.myContext.htmls[line - 1];
+            if (!lineObj.fgTokens) {
+                return;
+            }
+            lineObj.fgTokens = null;
+            if (this.myContext.renderedLineMap.has(line)) {
+                this.myContext.renderedIdMap.get(lineObj.lineId).html = this.tokenizer.creatHtml(
+                    lineObj.tokens,
+                    lineObj.text
+                );
+            } else {
+                lineObj.nowTheme = '';
             }
         },
         // 渲染光标
@@ -964,13 +1088,18 @@ export default {
                 }
             }
             let lineObj = this.myContext.htmls[line - 1];
+            let tokens = lineObj.fgTokens || lineObj.tokens;
             if (!column) {
                 column = lineObj.text.length;
             } else {
                 column = column - 0;
-                for (let i = 0; i < lineObj.tokens.length; i++) {
-                    if (lineObj.tokens[i].column == column) {
-                        column += this.getColumnByWidth(lineObj.tokens[i].value, e.offsetX);
+                for (let i = 0; i < tokens.length; i++) {
+                    let token = tokens[i];
+                    if (tokens[i].startIndex == column) {
+                        column += this.getColumnByWidth(
+                            lineObj.text.slice(token.startIndex, token.endIndex),
+                            e.offsetX
+                        );
                         break;
                     }
                 }
@@ -986,21 +1115,22 @@ export default {
             if (!lineObj.tokens || !lineObj.tokens.length) {
                 return 0;
             }
-            let token = lineObj.tokens[0];
-            for (let i = 1; i < lineObj.tokens.length; i++) {
-                if (lineObj.tokens[i].column < cursorPos.column) {
-                    token = lineObj.tokens[i];
+            let tokens = lineObj.fgTokens || lineObj.tokens;
+            let token = tokens[0];
+            for (let i = 1; i < tokens.length; i++) {
+                if (tokens[i].startIndex < cursorPos.column) {
+                    token = tokens[i];
                 } else {
                     break;
                 }
             }
             let $token = $('#line_' + cursorPos.line)
                 .children('.my-code')
-                .children('span[data-column="' + token.column + '"]');
+                .children('span[data-column="' + token.startIndex + '"]');
             if (!$token.length) {
                 return 0;
             }
-            let text = token.value.slice(0, cursorPos.column - token.column);
+            let text = lineObj.text.slice(token.startIndex, cursorPos.column);
             return $token[0].offsetLeft + this.getStrWidth(text);
         },
         // 右键菜单事件

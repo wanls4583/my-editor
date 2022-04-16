@@ -102,6 +102,7 @@ export default class {
         });
         window.globalData.scopeReg = new RegExp(regSource.join('|'));
         window.globalData.scopeIdMap = scopeIdMap;
+        window.globalData.colors = data.colors;
         return css;
 
         function _getLevel(scope) {
@@ -414,10 +415,20 @@ export default class {
                 result.colors['editorCursor.foreground'] = result.colors['editor.foreground'];
             }
             if (!result.colors['editor.selectionForeground']) {
-                result.colors['editor.selectionForeground'] = foreground;
+                if (isHc) {
+                    if (isLight) {
+                        result.colors['editor.selectionForeground'] = '#fff';
+                    } else {
+                        result.colors['editor.selectionForeground'] = '#333';
+                    }
+                }
             }
             if (!result.colors['editor.selectionBackground']) {
-                result.colors['editor.selectionBackground'] = '#0097fb6e';
+                if (isHc) {
+                    result.colors['editor.selectionBackground'] = focusBorder;
+                } else {
+                    result.colors['editor.selectionBackground'] = '#0097fb6e';
+                }
             }
             if (!result.colors['editor.selectionHighlightBackground']) {
                 result.colors['editor.selectionHighlightBackground'] = transparent;
@@ -426,7 +437,7 @@ export default class {
                 result.colors['editor.selectionHighlightBorder'] = contrastActiveBorder || '#0097fb6e';
             }
             if (!result.colors['editor.findMatchBackground']) {
-                result.colors['editor.selectionBackground'] = 'rgb(250, 201, 171)';
+                result.colors['editor.findMatchBackground'] = 'rgb(250, 201, 171)';
             }
             if (!result.colors['editor.findMatchBorder']) {
                 result.colors['editor.findMatchBorder'] = transparent;
