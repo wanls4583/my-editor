@@ -786,7 +786,7 @@ export default {
                     _tokens = _tokens.concat(tokens.slice(i + 1));
                     break;
                 } else if (token.startIndex >= endColumn) {
-                    _tokens = _tokens.concat(tokens.slice(i + 1));
+                    _tokens = _tokens.concat(tokens.slice(i));
                     break;
                 } else {
                     _tokens.push(token);
