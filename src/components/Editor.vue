@@ -588,14 +588,8 @@ export default {
             }
 
             function _getObj(item, line) {
-                let spaceNum = /^\s+/.exec(item.text);
-                let tabNum = 0;
+                let tabNum = _getTabNum(line);
                 let fold = '';
-                if (spaceNum) {
-                    tabNum = /\t+/.exec(spaceNum[0]);
-                    tabNum = (tabNum && tabNum[0].length) || 0;
-                    tabNum = tabNum + Math.ceil((spaceNum[0].length - tabNum) / that.tabSize);
-                }
                 if (that.folder.getFoldByLine(line)) {
                     //该行已经折叠
                     fold = 'close';
@@ -615,6 +609,43 @@ export default {
                     fold: fold,
                     cursorList: [],
                 };
+            }
+
+            function _getTabNum(line) {
+                let text = that.myContext.htmls[line - 1].text;
+                let wReg = /[^\s]/;
+                let tabNum = 0;
+                if (wReg.exec(text)) {
+                    //该行有内容
+                    let spaceNum = /^\s+/.exec(text);
+                    if (spaceNum) {
+                        tabNum = /\t+/.exec(spaceNum[0]);
+                        tabNum = (tabNum && tabNum[0].length) || 0;
+                        tabNum = tabNum + Math.ceil((spaceNum[0].length - tabNum) / that.tabSize);
+                    }
+                } else {
+                    //空行
+                    let _line = line - 1;
+                    let preTabNum = 0;
+                    while (_line >= 1) {
+                        if (wReg.exec(that.myContext.htmls[_line - 1].text)) {
+                            preTabNum = _getTabNum(_line);
+                            break;
+                        }
+                        _line--;
+                    }
+                    if (preTabNum) {
+                        _line = line + 1;
+                        while (_line <= that.maxLine) {
+                            if (wReg.exec(that.myContext.htmls[_line - 1])) {
+                                tabNum = Math.min(preTabNum, _getTabNum(_line));
+                                break;
+                            }
+                            _line++;
+                        }
+                    }
+                }
+                return tabNum;
             }
         },
         renderSelectedBg() {
