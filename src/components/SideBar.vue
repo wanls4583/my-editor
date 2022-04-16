@@ -54,7 +54,7 @@ export default {
                         let width = (this.width += e.clientX - this.mouseObj.clientX);
                         let pWidth = $(this.$refs.sideBar).parent().width();
                         width = width < 10 ? 10 : width;
-                        width = width > pWidth - 100 ? pWidth - 100 : width;
+                        width = width > pWidth - 10 ? pWidth - 10 : width;
                         this.width = width;
                         this.mouseObj = e;
                     }
