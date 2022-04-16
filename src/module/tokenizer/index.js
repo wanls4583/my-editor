@@ -224,7 +224,7 @@ export default class {
                     },
                 ],
                 folds: [],
-                states: [],
+                states: vsctm.INITIAL,
             };
         }
         let states = (line > 1 && this.htmls[line - 2].states) || vsctm.INITIAL;
