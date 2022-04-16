@@ -4,7 +4,7 @@
  * @Description: 
 -->
 <template>
-	<div :style="styles" @mousedown.stop @wheel.stop class="my-auto my-shadow my-border my-scroll-overlay" ref="auto">
+	<div :style="styles" @mousedown.stop @wheel.stop class="my-auto my-shadow my-border my-scroll-overlay my-scroll-mini" ref="auto">
 		<div>
 			<div :class="{'my-active': item.active}" @mousedown="onClick(item)" class="my-auto-item my-center-between" v-for="item in tipList">
 				<div class="my-center-between">

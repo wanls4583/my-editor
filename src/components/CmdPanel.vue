@@ -16,7 +16,7 @@
                     :value="value"
                     @change="onChange"
                     style="position: relative"
-                    class="my-scroll-overlay"
+                    class="my-scroll-overlay my-scroll-mini"
                 ></Menu>
             </div>
         </div>
