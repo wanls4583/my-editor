@@ -228,7 +228,7 @@ export default class {
                 if (isHc) {
                     result.colors['menubar.selectionBackground'] = transparent;
                 } else if (isLight) {
-                    result.colors['menubar.selectionBackground'] = 'rgba(0,0,0,0.2)';
+                    result.colors['menubar.selectionBackground'] = 'rgba(0,0,0,0.1)';
                 } else {
                     result.colors['menubar.selectionBackground'] = 'rgba(255,255,255,0.1)';
                 }
@@ -279,7 +279,7 @@ export default class {
                 if (isHc) {
                     result.colors['list.hoverBackground'] = transparent;
                 } else if (isLight) {
-                    result.colors['list.hoverBackground'] = 'rgba(0,0,0,0.2)';
+                    result.colors['list.hoverBackground'] = 'rgba(0,0,0,0.1)';
                 } else {
                     result.colors['list.hoverBackground'] = 'rgba(255,255,255,0.1)';
                 }
@@ -478,7 +478,11 @@ export default class {
         // tab
         function _tab() {
             if (!result.colors['editorGroupHeader.tabsBackground']) {
-                result.colors['editorGroupHeader.tabsBackground'] = transparent;
+                if (isHc) {
+                    result.colors['editorGroupHeader.tabsBackground'] = transparent;
+                } else {
+                    result.colors['editorGroupHeader.tabsBackground'] = result.colors['sideBar.background'];
+                }
             }
             if (!result.colors['editorGroupHeader.border']) {
                 result.colors['editorGroupHeader.border'] = contrastBorder;
@@ -487,16 +491,34 @@ export default class {
                 result.colors['tab.border'] = contrastBorder;
             }
             if (!result.colors['tab.activeForeground']) {
-                result.colors['tab.activeForeground'] = foreground;
+                if (isHc) {
+                    result.colors['tab.activeForeground'] = foreground;
+                } else if (isLight) {
+                    result.colors['tab.activeForeground'] = 'rgba(51, 51, 51)';
+                } else {
+                    result.colors['tab.activeForeground'] = '#fff';
+                }
             }
             if (!result.colors['tab.activeBackground']) {
                 result.colors['tab.activeBackground'] = result.colors['editor.background'];
             }
             if (!result.colors['tab.inactiveForeground']) {
-                result.colors['tab.inactiveForeground'] = foreground;
+                if (isHc) {
+                    result.colors['tab.inactiveForeground'] = foreground;
+                } else if (isLight) {
+                    result.colors['tab.inactiveForeground'] = 'rgba(51, 51, 51, 0.7)';
+                } else {
+                    result.colors['tab.inactiveForeground'] = 'rgba(255, 255, 255, 0.5)';
+                }
             }
             if (!result.colors['tab.inactiveBackground']) {
-                result.colors['tab.inactiveBackground'] = transparent;
+                if (isHc) {
+                    result.colors['tab.inactiveBackground'] = transparent;
+                } else if (isLight) {
+                    result.colors['tab.inactiveBackground'] = 'rgb(236, 236, 236)';
+                } else {
+                    result.colors['tab.inactiveBackground'] = 'rgb(45, 45, 45)';
+                }
             }
             if (!result.colors['tab.activeBorder']) {
                 result.colors['tab.activeBorder'] = transparent;
@@ -505,7 +527,7 @@ export default class {
                 result.colors['tab.activeBorderTop'] = transparent;
             }
             if (!result.colors['tab.hoverForeground']) {
-                result.colors['tab.hoverForeground'] = foreground;
+                result.colors['tab.hoverForeground'] = result.colors['tab.inactiveForeground'];
             }
             if (!result.colors['tab.hoverBackground']) {
                 result.colors['tab.hoverBackground'] = transparent;
@@ -592,7 +614,7 @@ export default class {
                 if (isHc) {
                     result.colors['inputOption.hoverBackground'] = transparent;
                 } else if (isLight) {
-                    result.colors['inputOption.hoverBackground'] = 'rgba(0,0,0,0.2)';
+                    result.colors['inputOption.hoverBackground'] = 'rgba(0,0,0,0.1)';
                 } else {
                     result.colors['inputOption.hoverBackground'] = 'rgba(255,255,255,0.1)';
                 }
@@ -604,7 +626,7 @@ export default class {
                 if (isHc) {
                     result.colors['toolbar.hoverBackground'] = transparent;
                 } else if (isLight) {
-                    result.colors['toolbar.hoverBackground'] = 'rgba(0,0,0,0.2)';
+                    result.colors['toolbar.hoverBackground'] = 'rgba(0,0,0,0.1)';
                 } else {
                     result.colors['toolbar.hoverBackground'] = 'rgba(255,255,255,0.1)';
                 }

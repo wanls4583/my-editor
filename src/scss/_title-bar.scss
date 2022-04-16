@@ -3,11 +3,18 @@
         position: absolute;
         top: 0;
         z-index: 99;
-        border-bottom: 1px solid var(--my-titleBar-border);
         background-color: var(--my-titleBar-activeBackground);
         color: var(--my-titlebar-activeForeground);
         user-select: none;
         -webkit-app-region: drag;
+
+        &::after {
+            content: "";
+            position: absolute;
+            width: 100%;
+            bottom: 0;
+            border-bottom: 1px solid var(--my-titleBar-border);
+        }
 
         .menu-bar {
             height: 100%;
