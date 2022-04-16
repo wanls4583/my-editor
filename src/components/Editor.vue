@@ -615,6 +615,9 @@ export default {
                 let text = that.myContext.htmls[line - 1].text;
                 let wReg = /[^\s]/;
                 let tabNum = 0;
+                if (that.myContext.renderedLineMap.has(line)) {
+                    return that.myContext.renderedLineMap.get(line).tabNum;
+                }
                 if (wReg.exec(text)) {
                     //该行有内容
                     let spaceNum = /^\s+/.exec(text);
@@ -636,8 +639,12 @@ export default {
                     }
                     if (preTabNum) {
                         _line = line + 1;
+                        if (_getTabNum.nearNextLine && _getTabNum.nearNextLine > _line) {
+                            _line = _getTabNum.nearNextLine;
+                        }
                         while (_line <= that.maxLine) {
                             if (wReg.exec(that.myContext.htmls[_line - 1])) {
+                                _getTabNum.nearNextLine = _line;
                                 tabNum = Math.min(preTabNum, _getTabNum(_line));
                                 break;
                             }
