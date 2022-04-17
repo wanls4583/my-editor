@@ -18,7 +18,7 @@ export default class {
     constructor() {}
     loadTheme(url, type) {
         let result = { tokenColors: [], colors: {} };
-        return _loadTheme(url).then(() => {
+        return _loadTheme.call(this, url).then(() => {
             let css = '';
             this.setDefaultColor(result, type);
             css = this.parseCss(result);
@@ -26,14 +26,9 @@ export default class {
         });
 
         function _loadTheme(fullPath) {
-            return Util.readFile(fullPath).then((data) => {
-                data = data.toString();
-                // 去掉注释
-                data = data.replaceAll(/(?<=(?:[\n\r\{\[\"]|^)\s*\,?\s*)\/\/[\s\S]*?(?=\r\n|\n|\r|$)/g, '');
-                data = data.replaceAll(/\,(?=\s*(?:(?:\r\n|\n|\r))*\s*[\]\}])/g, '');
-                data = JSON.parse(data);
+            return this.loadJsonFile(fullPath).then((data) => {
                 if (data.include) {
-                    return _loadTheme(path.join(fullPath, '../' + data.include)).then(() => {
+                    return _loadTheme.call(this, path.join(fullPath, '../' + data.include)).then(() => {
                         _addColors(data);
                     });
                 } else {
@@ -46,6 +41,44 @@ export default class {
             data.tokenColors && result.tokenColors.push(...data.tokenColors);
             data.colors && Object.assign(result.colors, data.colors);
         }
+    }
+    loadIconTheme(url) {
+        return _loadTheme.call(this, url);
+
+        function _loadTheme(fullPath) {
+            return this.loadJsonFile(fullPath).then((data) => {
+                console.log(data);
+                let fonts = data.fonts;
+                let css = '';
+                fonts.forEach((font) => {
+                    let fontFace = '@font-face{\nsrc:';
+                    font.src.forEach((src, index) => {
+                        let url = path.join(fullPath, '../' + src.path);
+                        url = url.replace(/\\/g, '/');
+                        fontFace += `url('my-file://${url}')`;
+                        fontFace += ` format('${src.format}')`;
+                        fontFace += index < font - src.length - 1 ? ', ' : '';
+                    });
+                    fontFace += ';\n';
+                    fontFace += `font-family:${font.id};\n`;
+                    fontFace += `font-style:${font.style};\n`;
+                    fontFace += `font-weight:${font.weight};\n`;
+                    fontFace += '}\n';
+                    css += fontFace;
+                });
+                this.insertFont(css);
+            });
+        }
+    }
+    loadJsonFile(fullPath) {
+        return Util.readFile(fullPath).then((data) => {
+            data = data.toString();
+            // 去掉注释
+            data = data.replaceAll(/(?<=(?:[\n\r\{\[\"]|^)\s*\,?\s*)\/\/[\s\S]*?(?=\r\n|\n|\r|$)/g, '');
+            data = data.replaceAll(/\,(?=\s*(?:(?:\r\n|\n|\r))*\s*[\]\}])/g, '');
+            data = JSON.parse(data);
+            return data;
+        });
     }
     parseCss(data) {
         let css = '';
@@ -115,13 +148,22 @@ export default class {
         }
     }
     insertCss(css) {
-        if (window.globalData.style) {
-            window.globalData.style.remove();
+        if (window.globalData.themeStyle) {
+            window.globalData.themeStyle.remove();
         }
-        window.globalData.style = document.createElement('style');
-        window.globalData.style.type = 'text/css';
-        window.globalData.style.appendChild(document.createTextNode(css));
-        document.getElementsByTagName('head')[0].appendChild(window.globalData.style);
+        window.globalData.themeStyle = document.createElement('style');
+        window.globalData.themeStyle.type = 'text/css';
+        window.globalData.themeStyle.appendChild(document.createTextNode(css));
+        document.getElementsByTagName('head')[0].appendChild(window.globalData.themeStyle);
+    }
+    insertFont(css) {
+        if (window.globalData.iconStyle) {
+            window.globalData.iconStyle.remove();
+        }
+        window.globalData.iconStyle = document.createElement('style');
+        window.globalData.iconStyle.type = 'text/css';
+        window.globalData.iconStyle.appendChild(document.createTextNode(css));
+        document.getElementsByTagName('head')[0].appendChild(window.globalData.iconStyle);
     }
     setDefaultColor(result, type) {
         let transparent = 'transparent';

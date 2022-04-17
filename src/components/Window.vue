@@ -146,19 +146,23 @@ export default {
             });
         }
         this.theme = new Theme();
-        this.theme.loadTheme(window.globalData.nowTheme.path, window.globalData.nowTheme.type).then(() => {
-            EventBus.$emit('theme-change', window.globalData.nowTheme.value);
-        });
         this.loadExtensions().then((result) => {
             let langeuages = result.languages;
             let themes = result.themes;
+            let iconThemes = result.iconThemes;
             let scopeFileList = result.scopeFileList;
             langeuages.push({ name: 'Plain Text', value: '', checked: true });
             window.globalData.languageList = langeuages.slice();
             window.globalData.scopeFileList = scopeFileList.slice();
             window.globalData.themes = themes.slice();
+            window.globalData.iconThemes = iconThemes.slice();
             this.languageList = langeuages;
             this.checkLanguage();
+            this.theme.loadTheme(window.globalData.nowTheme.path, window.globalData.nowTheme.type).then(() => {
+                EventBus.$emit('theme-change', window.globalData.nowTheme.value);
+            });
+            this.theme.loadIconTheme(window.globalData.nowIconTheme.path).then(() => {
+            });
         });
     },
     mounted() {
@@ -532,6 +536,7 @@ export default {
             let languages = [];
             let scopeFileList = [];
             let themes = [[], [], [], []];
+            let iconThemes = [];
             return new Promise((resolve) => {
                 // 异步读取目录内容
                 fs.readdir(this.extensionsPath, { encoding: 'utf8' }, (err, files) => {
@@ -539,7 +544,6 @@ export default {
                         throw err;
                     }
                     files.forEach((item, index) => {
-                        console.log(item)
                         let fullPath = path.join(this.extensionsPath, item);
                         let packPath = path.join(fullPath, './package.json');
                         if (fs.existsSync(packPath)) {
@@ -549,6 +553,7 @@ export default {
                                 let contributes = json.contributes;
                                 _addLanguage(contributes, fullPath);
                                 _addTheme(contributes, fullPath);
+                                _addIconTheme(contributes, fullPath);
                             } catch (e) {}
                         }
                     });
@@ -559,6 +564,7 @@ export default {
                         languages: languages,
                         scopeFileList: scopeFileList,
                         themes: themes,
+                        iconThemes: iconThemes,
                     });
                 });
             });
@@ -613,6 +619,17 @@ export default {
                         name: theme.id,
                         value: theme.id,
                         type: type,
+                        path: path.join(fullPath, theme.path),
+                    });
+                });
+            }
+
+            function _addIconTheme(contributes, fullPath) {
+                let list = contributes.iconThemes || [];
+                list.map((theme) => {
+                    iconThemes.push({
+                        name: theme.id,
+                        value: theme.id,
                         path: path.join(fullPath, theme.path),
                     });
                 });

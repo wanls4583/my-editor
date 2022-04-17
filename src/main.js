@@ -4,8 +4,9 @@ import router from './router';
 import axios from 'axios';
 import './scss/index.scss';
 const require = window.require || window.parent.require || function () {};
+const remote = require('@electron/remote');
 const path = require('path');
-const dirname = 'public/';
+const dirname = remote.app.getAppPath();
 
 Vue.config.productionTip = false;
 Vue.prototype.$http = axios.create({
@@ -24,9 +25,14 @@ window.globalData = {
     nowTheme: {
         value: 'Default Dark+',
         type: 'dark',
-        path: dirname + 'extensions/theme-defaults/themes/dark_plus.json'
+        path: path.join(dirname , '/extensions/theme-defaults/themes/dark_plus.json')
+    },
+    nowIconTheme: {
+        value: 'vs-seti',
+        path: path.join(dirname , '/extensions/theme-seti/icons/vs-seti-icon-theme.json')
     },
     themes: [],
+    iconThemes: [],
     languageList: [],
     scopeFileList: [],
 };
