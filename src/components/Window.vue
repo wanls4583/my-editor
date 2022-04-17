@@ -30,27 +30,14 @@
             ></editor-bar>
             <!-- 编辑区 -->
             <template v-for="item in editorList">
-                <editor
-                    :active="item.active"
-                    :id="item.id"
-                    :key="item.id"
-                    :ref="'editor' + item.id"
-                    @change="onFileChange(item.id)"
-                    @save="onSaveFile(item.id)"
-                    v-show="item.active"
-                ></editor>
+                <editor :active="item.active" :id="item.id" :key="item.id" :ref="'editor' + item.id" @change="onFileChange(item.id)" @save="onSaveFile(item.id)" v-show="item.active"></editor>
             </template>
             <window-menu ref="winMenu"></window-menu>
         </div>
         <!-- 顶部菜单栏 -->
         <title-bar :height="topBarHeight" @change="onMenuChange" ref="titleBar"></title-bar>
         <!-- 状态栏 -->
-        <status-bar
-            :height="statusHeight"
-            :languageList="languageList"
-            ref="statusBar"
-            @select-langeuage="onSelectLanguage"
-        ></status-bar>
+        <status-bar :height="statusHeight" :languageList="languageList" ref="statusBar" @select-langeuage="onSelectLanguage"></status-bar>
         <cmd-panel></cmd-panel>
         <Dialog
             :btns="dialogBtns"
@@ -172,11 +159,7 @@ export default {
             EventBus.$on('icon-change', (value) => {
                 this.editorList.forEach((item) => {
                     if (value) {
-                        let icon = Util.getIconByPath(
-                            window.globalData.nowIconData,
-                            item,
-                            window.globalData.nowTheme.type
-                        );
+                        let icon = Util.getIconByPath(window.globalData.nowIconData, item, window.globalData.nowTheme.type);
                         item.icon = icon ? `my-file-icon my-file-icon-${icon}` : '';
                     } else {
                         item.icon = '';
@@ -321,7 +304,7 @@ export default {
                     cmdList.push({
                         name: 'None',
                         value: 'none',
-                        op: 'changeIconTheme'
+                        op: 'changeIconTheme',
                     });
                     EventBus.$emit('open-cmd-menu', {
                         cmdList: cmdList,
@@ -431,10 +414,7 @@ export default {
                     this.choseFile().then((results) => {
                         if (results) {
                             tab = results[0];
-                            this.editorList = this.editorList
-                                .slice(0, index)
-                                .concat(results)
-                                .concat(this.editorList.slice(index));
+                            this.editorList = this.editorList.slice(0, index).concat(results).concat(this.editorList.slice(index));
                             _done.call(this);
                         }
                     });
@@ -447,6 +427,10 @@ export default {
                         saved: true,
                         active: false,
                     };
+                    if (!tab.icon) {
+                        let icon = Util.getIconByPath(window.globalData.nowIconData, '', window.globalData.nowTheme.type);
+                        tab.icon = icon ? `my-file-icon my-file-icon-${icon}` : '';
+                    }
                     this.editorList.splice(index + 1, 0, tab);
                     _done.call(this);
                 }
@@ -483,11 +467,7 @@ export default {
                     let results = [];
                     if (!result.canceled && result.filePaths) {
                         result.filePaths.forEach((item) => {
-                            let icon = Util.getIconByPath(
-                                window.globalData.nowIconData,
-                                item,
-                                window.globalData.nowTheme.type
-                            );
+                            let icon = Util.getIconByPath(window.globalData.nowIconData, item, window.globalData.nowTheme.type);
                             icon = icon ? `my-file-icon my-file-icon-${icon}` : '';
                             let obj = {
                                 id: this.idCount++,

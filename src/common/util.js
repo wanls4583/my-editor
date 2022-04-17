@@ -244,24 +244,31 @@ class Util {
     }
     static getIconByPath(iconData, path, type, fileType, opened) {
         let fileName = /[^\\\/]+$/.exec(path);
-        let suffix1 = /(?<=\.)[^\.]+$/.exec(fileName);
-        let suffix2 = /(?<=\.)[^\.]+\.[^\.]+$/.exec(fileName);
+        let suffix1 = '';
+        let suffix2 = '';
         fileName = fileName && fileName[0];
-        suffix1 = suffix1 && suffix1[0];
-        suffix2 = suffix2 && suffix2[0];
+        if (!iconData) {
+            return '';
+        }
+        if (fileName) {
+            suffix1 = /(?<=\.)[^\.]+$/.exec(fileName);
+            suffix2 = /(?<=\.)[^\.]+\.[^\.]+$/.exec(fileName);
+            suffix1 = suffix1 && suffix1[0];
+            suffix2 = suffix2 && suffix2[0];
+        }
         if (type === 'light' || type === 'contrast light') {
             iconData = iconData.light;
         }
         if (fileType === 'dir') {
             return opened ? iconData.folderExpanded : iconData.folder;
         }
-        if (iconData.fileNames[fileName]) {
+        if (iconData.fileNames && iconData.fileNames[fileName]) {
             return iconData.fileNames[fileName];
         }
-        if (iconData.fileExtensions[suffix2]) {
+        if (iconData.fileExtensions && iconData.fileExtensions[suffix2]) {
             return iconData.fileExtensions[suffix2];
         }
-        if (iconData.fileExtensions[suffix1]) {
+        if (iconData.fileExtensions && iconData.fileExtensions[suffix1]) {
             return iconData.fileExtensions[suffix1];
         }
         return iconData.file;

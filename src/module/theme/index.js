@@ -110,6 +110,8 @@ export default class {
                     css += '}\n';
                 }
                 this.insertFont(css);
+                data.fileNames = data.fileNames || {};
+                data.fileExtensions = data.fileExtensions || {};
                 _setFileExtensions(data);
                 window.globalData.nowIconTheme = {
                     value: option.value,
