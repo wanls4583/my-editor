@@ -957,7 +957,7 @@ export default {
             this[prop] = value;
         },
         setNowCursorPos(nowCursorPos) {
-            this.nowCursorPos = nowCursorPos;
+            this.nowCursorPos = nowCursorPos || { line: 1, column: 0 };
             if (nowCursorPos) {
                 let setNowCursorPosId = this.setNowCursorPos.id + 1 || 1;
                 this.setNowCursorPos.id = setNowCursorPosId;

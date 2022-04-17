@@ -98,7 +98,7 @@ export default {
                     this.hasEditor = false;
                 }
             });
-            EventBus.$emit('cursor-change', (data) => {
+            EventBus.$on('cursor-change', (data) => {
                 this.line = data.line;
                 this.column = data.column;
             });

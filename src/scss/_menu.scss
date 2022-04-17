@@ -14,12 +14,6 @@
 
             .my-menu-item {
                 height: 26px;
-                &:hover {
-                    border-style: dotted;
-                    border-color: var(--my-contrastActiveBorder);
-                    background-color: var(--my-list-hoverBackground);
-                    color: var(--my-list-hoverForeground);
-                }
 
                 &.my-active {
                     border-style: solid;
@@ -80,6 +74,13 @@
         min-width: 80px;
         height: 30px;
         border: 1px solid transparent;
+
+        &:hover {
+            border-style: dotted;
+            border-color: var(--my-contrastActiveBorder);
+            background-color: var(--my-list-hoverBackground);
+            color: var(--my-list-hoverForeground);
+        }
 
         &.my-active {
             border-color: var(--my-menu-selectionBorder);
