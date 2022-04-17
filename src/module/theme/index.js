@@ -206,10 +206,8 @@ export default class {
             if (!result.colors['sash.hoverBorder']) {
                 if (isHc) {
                     result.colors['sash.hoverBorder'] = result.colors['contrastActiveBorder'];
-                } else if (isLight) {
-                    result.colors['sash.hoverBorder'] = '#0090f1';
                 } else {
-                    result.colors['sash.hoverBorder'] = '#75715e';
+                    result.colors['sash.hoverBorder'] = result.colors['focusBorder'];
                 }
             }
 

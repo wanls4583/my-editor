@@ -24,7 +24,7 @@ window.globalData = {
     nowTheme: {
         value: 'Default Dark+',
         type: 'dark',
-        path: dirname + 'themes/theme-defaults/themes/dark_plus.json'
+        path: dirname + 'extensions/theme-defaults/themes/dark_plus.json'
     },
     themes: [],
     languageList: [],

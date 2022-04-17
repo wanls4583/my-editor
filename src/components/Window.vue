@@ -97,10 +97,8 @@ export default {
     },
     data() {
         return {
-            languagePath: path.join(window.globalData.dirname, 'language'),
-            themePath: path.join(window.globalData.dirname, 'themes'),
+            extensionsPath: path.join(window.globalData.dirname, 'extensions'),
             languageList: [],
-            scopeFileList: [],
             statusHeight: 30,
             topBarHeight: 35,
             nowId: null,
@@ -151,15 +149,16 @@ export default {
         this.theme.loadTheme(window.globalData.nowTheme.path, window.globalData.nowTheme.type).then(() => {
             EventBus.$emit('theme-change', window.globalData.nowTheme.value);
         });
-        this.loadLanguage().then((results) => {
-            results.push({ name: 'Plain Text', value: '', checked: true });
-            window.globalData.languageList = results.slice();
-            window.globalData.scopeFileList = this.scopeFileList.slice();
-            this.languageList = results;
+        this.loadExtensions().then((result) => {
+            let langeuages = result.languages;
+            let themes = result.themes;
+            let scopeFileList = result.scopeFileList;
+            langeuages.push({ name: 'Plain Text', value: '', checked: true });
+            window.globalData.languageList = langeuages.slice();
+            window.globalData.scopeFileList = scopeFileList.slice();
+            window.globalData.themes = themes.slice();
+            this.languageList = langeuages;
             this.checkLanguage();
-        });
-        this.loadThemes().then((results) => {
-            window.globalData.themes = results.slice();
         });
     },
     mounted() {
@@ -529,104 +528,95 @@ export default {
             }
         },
         // 加载语言支持
-        loadLanguage() {
+        loadExtensions() {
+            let languages = [];
+            let scopeFileList = [];
+            let themes = [[], [], [], []];
             return new Promise((resolve) => {
-                let results = [];
                 // 异步读取目录内容
-                fs.readdir(this.languagePath, { encoding: 'utf8' }, (err, files) => {
+                fs.readdir(this.extensionsPath, { encoding: 'utf8' }, (err, files) => {
                     if (err) {
                         throw err;
                     }
                     files.forEach((item, index) => {
-                        let fullPath = path.join(this.languagePath, item);
+                        console.log(item)
+                        let fullPath = path.join(this.extensionsPath, item);
                         let packPath = path.join(fullPath, './package.json');
                         if (fs.existsSync(packPath)) {
                             const text = fs.readFileSync(packPath, 'utf-8');
                             try {
                                 let json = JSON.parse(text);
                                 let contributes = json.contributes;
-                                let languages = contributes.languages;
-                                let grammars = contributes.grammars;
-                                languages.map((language) => {
-                                    for (let i = 0; i < grammars.length; i++) {
-                                        let grammar = grammars[i];
-                                        this.scopeFileList.push({
-                                            scopeName: grammar.scopeName,
-                                            path: path.join(fullPath, grammar.path),
-                                        });
-                                        if (language.id === grammar.language) {
-                                            let name = language.aliases && language.aliases[0];
-                                            name = name || grammar.language;
-                                            results.push({
-                                                name: name,
-                                                value: grammar.language,
-                                                language: grammar.language,
-                                                scopeName: grammar.scopeName,
-                                                path: path.join(fullPath, grammar.path),
-                                                extensions: language.extensions,
-                                            });
-                                            break;
-                                        }
-                                    }
-                                });
+                                _addLanguage(contributes, fullPath);
+                                _addTheme(contributes, fullPath);
                             } catch (e) {}
                         }
                     });
-                    resolve(results);
-                });
-            });
-        },
-        // 加载默认主题
-        loadThemes() {
-            return new Promise((resolve) => {
-                let results = [[], [], [], []];
-                // 异步读取目录内容
-                fs.readdir(this.themePath, { encoding: 'utf8' }, (err, files) => {
-                    if (err) {
-                        throw err;
-                    }
-                    files.forEach((item) => {
-                        let fullPath = path.join(this.themePath, item);
-                        let packPath = path.join(fullPath, './package.json');
-                        if (fs.existsSync(packPath)) {
-                            const text = fs.readFileSync(packPath, 'utf-8');
-                            try {
-                                let json = JSON.parse(text);
-                                let contributes = json.contributes;
-                                let themes = contributes.themes;
-                                themes.map((theme) => {
-                                    let type = 'light';
-                                    let index = 0;
-                                    switch (theme.uiTheme) {
-                                        case 'vs-dark':
-                                            type = 'dark';
-                                            index = 1;
-                                            break;
-                                        case 'hc-light':
-                                            type = 'contrast light';
-                                            index = 2;
-                                            break;
-                                        case 'hc-black':
-                                            type = 'contrast dark';
-                                            index = 3;
-                                            break;
-                                    }
-                                    results[index].push({
-                                        name: theme.id,
-                                        value: theme.id,
-                                        type: type,
-                                        path: path.join(fullPath, theme.path),
-                                    });
-                                });
-                            } catch (e) {}
-                        }
-                    });
-                    results = results.filter((item) => {
+                    themes = themes.filter((item) => {
                         return item.length;
                     });
-                    resolve(results);
+                    resolve({
+                        languages: languages,
+                        scopeFileList: scopeFileList,
+                        themes: themes,
+                    });
                 });
             });
+
+            function _addLanguage(contributes, fullPath) {
+                let grammars = contributes.grammars;
+                let list = contributes.languages || [];
+                list.map((language) => {
+                    for (let i = 0; i < grammars.length; i++) {
+                        let grammar = grammars[i];
+                        scopeFileList.push({
+                            scopeName: grammar.scopeName,
+                            path: path.join(fullPath, grammar.path),
+                        });
+                        if (language.id === grammar.language) {
+                            let name = language.aliases && language.aliases[0];
+                            name = name || grammar.language;
+                            languages.push({
+                                name: name,
+                                value: grammar.language,
+                                language: grammar.language,
+                                scopeName: grammar.scopeName,
+                                path: path.join(fullPath, grammar.path),
+                                extensions: language.extensions,
+                            });
+                            break;
+                        }
+                    }
+                });
+            }
+
+            function _addTheme(contributes, fullPath) {
+                let list = contributes.themes || [];
+                list.map((theme) => {
+                    let type = 'light';
+                    let index = 0;
+                    switch (theme.uiTheme) {
+                        case 'vs-dark':
+                            type = 'dark';
+                            index = 1;
+                            break;
+                        case 'hc-light':
+                            type = 'contrast light';
+                            index = 2;
+                            break;
+                        case 'hc-black':
+                            type = 'contrast dark';
+                            index = 3;
+                            break;
+                    }
+                    themes[index].push({
+                        name: theme.id,
+                        value: theme.id,
+                        type: type,
+                        path: path.join(fullPath, theme.path),
+                    });
+                });
+            }
         },
         getTabById(id) {
             for (let i = 0; i < this.editorList.length; i++) {
