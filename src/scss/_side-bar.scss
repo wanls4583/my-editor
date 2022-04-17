@@ -53,7 +53,7 @@
                 }
 
                 &.my-active {
-                    border-color: var(--my-contrastActiveBorder-side);
+                    border-color: var(--my-contrastActiveBorder);
                     background-color: var(--my-list-activeSelectionBackground);
                     color: var(--my-list-activeSelectionForeground);
                 }

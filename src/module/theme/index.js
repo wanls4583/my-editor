@@ -318,10 +318,6 @@ export default class {
                     result.colors['sash.hoverBorder'] = result.colors['focusBorder'];
                 }
             }
-
-            if (type === 'contrast light' || type === 'contrast dark') {
-                result.colors['contrastActiveBorder-side'] = result.colors['contrastActiveBorder'];
-            }
             background = result.colors['background'];
             foreground = result.colors['foreground'];
             focusBorder = result.colors['focusBorder'];
