@@ -25,12 +25,13 @@ window.globalData = {
     nowTheme: {
         value: 'Default Dark+',
         type: 'dark',
-        path: path.join(dirname , '/extensions/theme-defaults/themes/dark_plus.json')
+        path: path.join(dirname, '/extensions/theme-defaults/themes/dark_plus.json'),
     },
     nowIconTheme: {
         value: 'vs-seti',
-        path: path.join(dirname , '/extensions/theme-seti/icons/vs-seti-icon-theme.json')
+        path: path.join(dirname, '/extensions/theme-seti/icons/vs-seti-icon-theme.json'),
     },
+    nowIconData: {},
     themes: [],
     iconThemes: [],
     languageList: [],

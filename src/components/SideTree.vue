@@ -4,32 +4,42 @@
  * @Description: 
 -->
 <template>
-	<div @scroll="onScroll" class="side-tree-warp my-scroll-overlay" ref="wrap">
-		<div style="width:100%;overflow:hidden">
-			<div :style="{height:_scrollHeight}" class="side-tree">
-				<div :style="{top:_top}" class="side-tree-content">
-					<div @click.stop="onClickItem(item)" class="tree-item my-hover" v-for="item in renderList">
-						<div :class="{'my-active':item.active}" :style="{'padding-left':_paddingLeft(item)}" :title="item.path" @contextmenu.stop.prevent class="tree-item-title">
-							<template v-if="item.type==='dir'">
-								<span class="left-icon iconfont icon-down1" v-if="item.open"></span>
-								<span class="left-icon iconfont icon-right" v-else></span>
-							</template>
-							<span class="tree-item-text" style="margin-left:4px">{{item.name}}</span>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
+    <div @scroll="onScroll" class="side-tree-warp my-scroll-overlay" ref="wrap">
+        <div style="width: 100%; overflow: hidden">
+            <div :style="{ height: _scrollHeight }" class="side-tree">
+                <div :style="{ top: _top }" class="side-tree-content">
+                    <div @click.stop="onClickItem(item)" class="tree-item my-hover" v-for="item in renderList">
+                        <div
+                            :class="[item.active ? 'my-active' : '', item.icon]"
+                            :style="{ 'padding-left': _paddingLeft(item) }"
+                            :title="item.path"
+                            @contextmenu.stop.prevent
+                            class="tree-item-title"
+                        >
+                            <template v-if="item.type === 'dir'">
+                                <span class="left-icon iconfont icon-down1" v-if="item.open"></span>
+                                <span class="left-icon iconfont icon-right" v-else></span>
+                            </template>
+                            <span class="tree-item-text" style="margin-left: 4px">{{ item.name }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </template>
 <script>
-const require = window.require || window.parent.require || function () { };
+import EventBus from '@/event';
+import Util from '@/common/Util';
+
+const require = window.require || window.parent.require || function () {};
 let preActiveItem = null;
+
 export default {
     name: 'SideTree',
     props: {
         list: {
-            type: Array
+            type: Array,
         },
     },
     inject: ['openFile'],
@@ -41,7 +51,7 @@ export default {
             renderList: [],
             startLine: 1,
             maxVisibleLines: 100,
-        }
+        };
     },
     computed: {
         _top() {
@@ -53,7 +63,7 @@ export default {
         _paddingLeft() {
             return function (item) {
                 return item.deep * this.itemPadding + 'px';
-            }
+            };
         },
     },
     watch: {
@@ -62,27 +72,51 @@ export default {
             this.renderList = [];
             this.openedList = this.getRenderList(this.list, 0);
             this.render();
-        }
+        },
     },
     created() {
         this.openedList = this.getRenderList(this.list, 0);
+        this.initEventBus();
     },
     mounted() {
         this.maxVisibleLines = Math.ceil(this.$refs.wrap.clientHeight / this.itemHeight) + 1;
         this.render();
     },
     methods: {
+        initEventBus() {
+            EventBus.$on('icon-change', () => {
+                this.openedList.forEach((item) => {
+                    item.icon = '';
+                });
+                this.render();
+            });
+        },
         render() {
             this.renderList = this.openedList.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines);
+            this.renderList.forEach((item) => {
+                const globalData = window.globalData;
+                if (globalData.nowIconData) {
+                    item.icon = Util.getIconByPath(
+                        globalData.nowIconData,
+                        item.path,
+                        globalData.nowTheme.type,
+                        item.type,
+                        item.open
+                    );
+                    item.icon = item.icon ? `my-file-icon my-file-icon-${item.icon}` : '';
+                }
+            });
         },
         readdir(dirPath) {
-            const fs = require('fs')
+            const fs = require('fs');
             const path = require('path');
             return new Promise((resolve) => {
                 let results = [];
                 // 异步读取目录内容
                 fs.readdir(dirPath, { encoding: 'utf8' }, (err, files) => {
-                    if (err) { throw err }
+                    if (err) {
+                        throw err;
+                    }
                     files.forEach((item, index) => {
                         let fullPath = path.join(dirPath, item);
                         fs.stat(fullPath, (err, data) => {
@@ -91,8 +125,8 @@ export default {
                                 path: fullPath,
                                 parentPath: dirPath,
                                 active: false,
-                                children: []
-                            }
+                                children: [],
+                            };
                             if (data.isFile()) {
                                 obj.type = 'file';
                             } else {
@@ -116,6 +150,21 @@ export default {
                 return 1;
             });
             return results;
+        },
+        getRenderList(list, deep) {
+            let results = [];
+            _loopList(list, deep);
+            return results;
+
+            function _loopList(list, deep) {
+                list.forEach((item) => {
+                    item.deep = deep + 1;
+                    results.push(item);
+                    if (item.open && item.children.length) {
+                        _loopList(item.children, item.deep);
+                    }
+                });
+            }
         },
         onClickItem(item) {
             if (!item.active) {
@@ -150,7 +199,8 @@ export default {
                 if (item.children.length) {
                     if (item.open) {
                         let index = this.openedList.indexOf(item);
-                        this.openedList = this.openedList.slice(0, index + 1)
+                        this.openedList = this.openedList
+                            .slice(0, index + 1)
                             .concat(this.getRenderList(item.children, item.deep))
                             .concat(this.openedList.slice(index + 1));
                     } else {
@@ -165,26 +215,11 @@ export default {
                 }
             }
         },
-        getRenderList(list, deep) {
-            let results = [];
-            _loopList(list, deep);
-            return results;
-
-            function _loopList(list, deep) {
-                list.forEach((item) => {
-                    item.deep = deep + 1;
-                    results.push(item);
-                    if (item.open && item.children.length) {
-                        _loopList(item.children, item.deep);
-                    }
-                });
-            }
-        },
         onScroll(e) {
             let scrollTop = e.target.scrollTop;
             this.startLine = Math.floor(scrollTop / this.itemHeight) + 1;
             this.render();
-        }
-    }
-}
+        },
+    },
+};
 </script>

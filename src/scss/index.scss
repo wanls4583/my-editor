@@ -130,6 +130,10 @@ body {
         }
     }
 
+    &-file-icon::before {
+        margin-top: 3px;
+    }
+
     &-icon-error {
         width: 14px;
         height: 14px;

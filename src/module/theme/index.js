@@ -5,6 +5,7 @@
  */
 import Util from '../../common/Util';
 import chroma from 'chroma-js';
+import EventBus from '@/event';
 
 const require = window.require || window.parent.require || function () {};
 const path = require('path');
@@ -16,13 +17,19 @@ const settingMap = {
 
 export default class {
     constructor() {}
-    loadTheme(url, type) {
+    loadTheme(option) {
         let result = { tokenColors: [], colors: {} };
-        return _loadTheme.call(this, url).then(() => {
+        return _loadTheme.call(this, option.path).then(() => {
             let css = '';
-            this.setDefaultColor(result, type);
+            this.setDefaultColor(result, option.type);
             css = this.parseCss(result);
             this.insertCss(css);
+            window.globalData.nowTheme = {
+                value: option.value,
+                type: option.type,
+                path: option.path,
+            };
+            EventBus.$emit('theme-change', option.value);
         });
 
         function _loadTheme(fullPath) {
@@ -42,12 +49,21 @@ export default class {
             data.colors && Object.assign(result.colors, data.colors);
         }
     }
-    loadIconTheme(url) {
-        return _loadTheme.call(this, url);
+    loadIconTheme(option) {
+        let languages = window.globalData.languageList;
+        let languageMap = {};
+        languages.forEach((item) => {
+            if (item.extensions) {
+                languageMap[item.value] = item.extensions.map((e) => {
+                    return e.slice(1);
+                });
+            }
+        });
+
+        return _loadTheme.call(this, option.path);
 
         function _loadTheme(fullPath) {
             return this.loadJsonFile(fullPath).then((data) => {
-                console.log(data);
                 let fonts = data.fonts;
                 let css = '';
                 fonts.forEach((font) => {
@@ -65,9 +81,59 @@ export default class {
                     fontFace += `font-weight:${font.weight};\n`;
                     fontFace += '}\n';
                     css += fontFace;
+                    css += '.my-file-icon::before{\n';
+                    css += `font-family:${font.id};\n`;
+                    css += `font-size:${font.size};\n`;
+                    css += '}\n';
                 });
+                for (let icon in data.iconDefinitions) {
+                    css += `.my-file-icon-${icon}::before{\n`;
+                    icon = data.iconDefinitions[icon];
+                    css += `content:"${icon.fontCharacter}";\n`;
+                    css += `color:${icon.fontColor};\n`;
+                    css += '}\n';
+                }
                 this.insertFont(css);
+                _setFileExtensions(data);
+                window.globalData.nowIconTheme = {
+                    value: option.value,
+                    path: option.path,
+                };
+                window.globalData.nowIconData = data;
+                EventBus.$emit('icon-change', option.value);
             });
+        }
+
+        function _setFileExtensions(data) {
+            data.languageIds && _parseLanguageIds(data.languageIds, data.fileExtensions);
+            if (data.light) {
+                data.light.fileExtensions = data.light.fileExtensions || {};
+                data.light.fileNames = data.light.fileNames || {};
+                data.light.languageIds && _parseLanguageIds(data.light.languageIds, data.light.fileExtensions);
+                for (let key in data.fileExtensions) {
+                    data.light.fileExtensions[key] = data.light.fileExtensions[key] || data.fileExtensions[key];
+                }
+                for (let key in data.fileNames) {
+                    data.light.fileNames[key] = data.light.fileNames[key] || data.fileNames[key];
+                }
+            } else {
+                data.light = {
+                    fileExtensions: data.fileExtensions,
+                    fileNames: data.fileNames,
+                };
+            }
+        }
+
+        function _parseLanguageIds(languageIds, fileExtensions) {
+            for (let key in languageIds) {
+                let extensions = languageMap[key];
+                let value = languageIds[key];
+                if (extensions) {
+                    extensions.forEach((item) => {
+                        fileExtensions[item] = value;
+                    });
+                }
+            }
         }
     }
     loadJsonFile(fullPath) {

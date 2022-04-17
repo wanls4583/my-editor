@@ -92,14 +92,7 @@ export default {
         onChange(item) {
             switch (item.op) {
                 case 'changeTheme':
-                    window.globalData.nowTheme = {
-                        value: item.value,
-                        type: item.type,
-                        path: item.path,
-                    };
-                    this.theme.loadTheme(item.path, item.type).then(() => {
-                        EventBus.$emit('theme-change', item.value);
-                    });
+                    this.theme.loadTheme(item);
                     break;
                 case 'selectLanguage':
                     EventBus.$emit('language-change', item.value);

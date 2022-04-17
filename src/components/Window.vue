@@ -76,7 +76,7 @@ import CmdPanel from './CmdPanel.vue';
 import Context from '@/module/context/index';
 import Theme from '@/module/theme';
 import EventBus from '@/event';
-import $ from 'jquery';
+import Util from '@/common/Util';
 
 const require = window.require || window.parent.require || function () {};
 const fs = require('fs');
@@ -158,18 +158,25 @@ export default {
             window.globalData.iconThemes = iconThemes.slice();
             this.languageList = langeuages;
             this.checkLanguage();
-            this.theme.loadTheme(window.globalData.nowTheme.path, window.globalData.nowTheme.type).then(() => {
-                EventBus.$emit('theme-change', window.globalData.nowTheme.value);
-            });
-            this.theme.loadIconTheme(window.globalData.nowIconTheme.path).then(() => {
-            });
+            this.theme.loadTheme(window.globalData.nowTheme);
+            this.theme.loadIconTheme(window.globalData.nowIconTheme);
         });
+        this.initEventBus();
     },
     mounted() {
         window.test = this;
         this.openFile();
     },
     methods: {
+        initEventBus() {
+            EventBus.$on('icon-change', () => {
+                this.editorList.forEach((item) => {
+                    let icon = Util.getIconByPath(window.globalData.nowIconData, item, window.globalData.nowTheme.type);
+                    item.icon = icon;
+                });
+                this.editorList.splice();
+            });
+        },
         onContextmenu(e) {
             // EventBus.$emit('open-win-menu');
         },
@@ -413,6 +420,7 @@ export default {
                         id: this.idCount++,
                         name: name,
                         path: (fileObj && fileObj.path) || '',
+                        icon: (fileObj && fileObj.icon) || '',
                         saved: true,
                         active: false,
                     };
@@ -452,10 +460,16 @@ export default {
                     let results = [];
                     if (!result.canceled && result.filePaths) {
                         result.filePaths.forEach((item) => {
+                            let icon = Util.getIconByPath(
+                                window.globalData.nowIconData,
+                                item,
+                                window.globalData.nowTheme.type
+                            );
                             let obj = {
                                 id: this.idCount++,
                                 name: item.match(/[^\\\/]+$/)[0],
                                 path: item,
+                                icon: icon,
                                 saved: true,
                                 active: false,
                             };

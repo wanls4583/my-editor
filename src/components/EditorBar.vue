@@ -7,14 +7,14 @@
     <div @selectstart.prevent class="my-editor-bar">
         <div class="bar-scroller my-scroll-overlay my-scroll-mini">
             <div
-                :class="{ active: item.active }"
+                :class="[item.active ? 'my-active' : '']"
                 :title="item.path"
                 @click="onClickItem(item.id)"
                 @contextmenu.prevent.stop="onContextmenu($event, item.id)"
                 class="bar-item my-hover"
                 v-for="item in editorList"
             >
-                <div class="bar-content">
+                <div class="bar-content" :class="[item.icon ? 'my-file-icon' : '', item.icon]">
                     <span class="bar-text">{{ item.name }}</span>
                     <div class="bar-icon">
                         <span

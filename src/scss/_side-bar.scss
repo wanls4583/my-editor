@@ -44,14 +44,16 @@
                 height: 30px;
                 padding-right: 10px;
                 border: 1px solid transparent;
+                
                 &:hover {
-                    border: 1px dotted var(--my-contrastActiveBorder);
+                    border-style: dotted;
+                    border-color: var(--my-contrastActiveBorder);
                     background-color: var(--my-list-hoverBackground);
                     color: var(--my-list-hoverForeground);
                 }
 
                 &.my-active {
-                    border: 1px solid var(--my-contrastActiveBorder-side);
+                    border-color: var(--my-contrastActiveBorder-side);
                     background-color: var(--my-list-activeSelectionBackground);
                     color: var(--my-list-activeSelectionForeground);
                 }
@@ -63,6 +65,7 @@
             }
         }
     }
+
     &-sash-v {
         position: absolute;
         right: 0;
@@ -71,6 +74,7 @@
         z-index: 1;
         width: 4px;
         cursor: ew-resize;
+
         &:hover {
             background-color: var(--my-sash-hoverBorder);
         }
