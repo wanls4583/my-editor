@@ -94,6 +94,9 @@ export default {
                 case 'changeTheme':
                     this.theme.loadTheme(item);
                     break;
+                case 'changeIconTheme':
+                    this.theme.loadIconTheme(item);
+                    break;
                 case 'selectLanguage':
                     EventBus.$emit('language-change', item.value);
                     break;

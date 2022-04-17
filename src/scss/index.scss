@@ -131,7 +131,15 @@ body {
     }
 
     &-file-icon::before {
-        margin-top: 3px;
+        display: inline-block;
+        flex-shrink: 0;
+        width: 16px;
+        height: 22px;
+        line-height: 22px;
+        margin: 0 6px;
+        background-size: 16px;
+        background-position: 0;
+        background-repeat: no-repeat;
     }
 
     &-icon-error {
@@ -160,6 +168,11 @@ body {
         display: flex;
         align-items: center;
         justify-content: space-between;
+    }
+
+    &-center-start {
+        display: flex;
+        align-items: center;
     }
 
     &-window {

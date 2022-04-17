@@ -14,7 +14,7 @@
                 class="bar-item my-hover"
                 v-for="item in editorList"
             >
-                <div class="bar-content" :class="[item.icon ? 'my-file-icon' : '', item.icon]">
+                <div class="bar-content" :class="[item.icon]">
                     <span class="bar-text">{{ item.name }}</span>
                     <div class="bar-icon">
                         <span

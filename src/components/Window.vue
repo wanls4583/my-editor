@@ -169,10 +169,18 @@ export default {
     },
     methods: {
         initEventBus() {
-            EventBus.$on('icon-change', () => {
+            EventBus.$on('icon-change', (value) => {
                 this.editorList.forEach((item) => {
-                    let icon = Util.getIconByPath(window.globalData.nowIconData, item, window.globalData.nowTheme.type);
-                    item.icon = icon;
+                    if (value) {
+                        let icon = Util.getIconByPath(
+                            window.globalData.nowIconData,
+                            item,
+                            window.globalData.nowTheme.type
+                        );
+                        item.icon = icon ? `my-file-icon my-file-icon-${icon}` : '';
+                    } else {
+                        item.icon = '';
+                    }
                 });
                 this.editorList.splice();
             });
@@ -293,9 +301,10 @@ export default {
             }
         },
         onMenuChange(item) {
+            let cmdList = null;
             switch (item.op) {
                 case 'changeTheme':
-                    let cmdList = window.globalData.themes.map((item) => {
+                    cmdList = window.globalData.themes.map((item) => {
                         return item.map((item) => {
                             return Object.assign({ op: 'changeTheme' }, item);
                         });
@@ -303,6 +312,20 @@ export default {
                     EventBus.$emit('open-cmd-menu', {
                         cmdList: cmdList,
                         value: window.globalData.nowTheme.value,
+                    });
+                    break;
+                case 'changeIconTheme':
+                    cmdList = window.globalData.iconThemes.map((item) => {
+                        return Object.assign({ op: 'changeIconTheme' }, item);
+                    });
+                    cmdList.push({
+                        name: 'None',
+                        value: 'none',
+                        op: 'changeIconTheme'
+                    });
+                    EventBus.$emit('open-cmd-menu', {
+                        cmdList: cmdList,
+                        value: window.globalData.nowIconTheme.value,
                     });
                     break;
             }
@@ -465,6 +488,7 @@ export default {
                                 item,
                                 window.globalData.nowTheme.type
                             );
+                            icon = icon ? `my-file-icon my-file-icon-${icon}` : '';
                             let obj = {
                                 id: this.idCount++,
                                 name: item.match(/[^\\\/]+$/)[0],

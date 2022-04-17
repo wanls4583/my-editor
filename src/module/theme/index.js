@@ -50,6 +50,14 @@ export default class {
         }
     }
     loadIconTheme(option) {
+        if (!option.path) {
+            window.globalData.nowIconTheme = {
+                value: option.value,
+            };
+            window.globalData.nowIconData = null;
+            EventBus.$emit('icon-change');
+            return;
+        }
         let languages = window.globalData.languageList;
         let languageMap = {};
         languages.forEach((item) => {
@@ -64,7 +72,7 @@ export default class {
 
         function _loadTheme(fullPath) {
             return this.loadJsonFile(fullPath).then((data) => {
-                let fonts = data.fonts;
+                let fonts = data.fonts || [];
                 let css = '';
                 fonts.forEach((font) => {
                     let fontFace = '@font-face{\nsrc:';
@@ -89,8 +97,16 @@ export default class {
                 for (let icon in data.iconDefinitions) {
                     css += `.my-file-icon-${icon}::before{\n`;
                     icon = data.iconDefinitions[icon];
-                    css += `content:"${icon.fontCharacter}";\n`;
-                    css += `color:${icon.fontColor};\n`;
+                    if (icon.fontCharacter) {
+                        css += 'margin-top:3px;';
+                        css += `content:"${icon.fontCharacter}";\n`;
+                        css += `color:${icon.fontColor};\n`;
+                    } else if (icon.iconPath) {
+                        let imgUrl = path.join(fullPath, '../' + icon.iconPath);
+                        imgUrl = imgUrl.replace(/\\/g, '/');
+                        css += 'content:"";';
+                        css += `background-image:url(my-file://${imgUrl})`;
+                    }
                     css += '}\n';
                 }
                 this.insertFont(css);

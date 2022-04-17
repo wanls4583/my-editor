@@ -437,10 +437,7 @@ export default {
         },
         initResizeEvent() {
             const resizeObserver = new ResizeObserver((entries) => {
-                if (this.$refs.editor) {
-                    //editor被删除后也会触发事件
-                    this.showEditor();
-                }
+                this.showEditor();
             });
             resizeObserver.observe(this.$refs.editor);
         },
@@ -494,10 +491,12 @@ export default {
         showEditor() {
             if (this.active) {
                 this.$nextTick(() => {
-                    this.charObj = Util.getCharWidth(this.$refs.content);
-                    this.maxVisibleLines = Math.ceil(this.$refs.scroller.clientHeight / this.charObj.charHight) + 1;
-                    this.render();
-                    this.focus();
+                    if(this.$refs.content) {
+                        this.charObj = Util.getCharWidth(this.$refs.content);
+                        this.maxVisibleLines = Math.ceil(this.$refs.scroller.clientHeight / this.charObj.charHight) + 1;
+                        this.render();
+                        this.focus();
+                    }
                 });
             }
         },
