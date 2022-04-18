@@ -102,10 +102,26 @@ export default class {
         return fold;
     }
     getFoldByLine(line) {
-        let it = this.folds.search(null, (a, b) => {
-            return line - b.start.line;
+        let it = this.folds.search(line, (a, b) => {
+            return a - b.start.line;
         });
         return it && it.next();
+    }
+    getLineInFold(line) {
+        let it = this.folds.search(
+            line,
+            (a, b) => {
+                return a - b.start.line;
+            },
+            true
+        );
+        if (it) {
+            let fold = it.prev();
+            if (fold && fold.start.line < line && fold.end.line > line) {
+                return true;
+            }
+        }
+        return false;
     }
     /**
      * 获取折叠范围

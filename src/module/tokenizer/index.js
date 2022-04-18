@@ -66,7 +66,7 @@ export default class {
         return Promise.resolve();
     }
     initProperties(editor, context) {
-        Util.defineProperties(this, editor, ['startLine', 'maxVisibleLines', 'maxLine', 'renderLine', '$nextTick']);
+        Util.defineProperties(this, editor, ['startLine', 'maxVisibleLines', 'maxLine', 'renderLine', 'folder', '$nextTick']);
         Util.defineProperties(this, context, ['htmls']);
     }
     initLanguageConifg(data) {
@@ -135,7 +135,9 @@ export default class {
             if (this.tokenizeVisibleLins.id !== tokenizeVisibleLinsId) {
                 return;
             }
-            this.tokenizeLines(this.startLine, this.startLine + this.maxVisibleLines, this.currentLine);
+            let endLine = this.startLine + this.maxVisibleLines;
+            endLine = this.folder.getRealLine(endLine);
+            this.tokenizeLines(this.startLine, endLine, this.currentLine);
         });
     }
     tokenizeLines(startLine, endLine, currentLine) {
@@ -269,7 +271,7 @@ export default class {
         if (this.foldReg && this.foldReg.test(lineText)) {
             lineTokens.tokens.forEach((token) => {
                 let text = lineText.slice(token.startIndex, token.endIndex);
-                if (this.foldMap[text]) {
+                if (this.foldMap[text] || this.foldMap[text[text.length - 1]]) {
                     folds.push({
                         startIndex: token.startIndex,
                         endIndex: token.endIndex,
@@ -317,6 +319,11 @@ export default class {
         return result;
     }
     checkLineVisible(line) {
-        return line >= this.startLine && line <= this.startLine + this.maxVisibleLines;
+        let endLine = this.startLine + this.maxVisibleLines;
+        endLine = this.folder.getRealLine(endLine);
+        if(this.folder.getLineInFold(line)) { //该行被包裹
+            return false;
+        }
+        return line >= this.startLine && line <= endLine;
     }
 }
