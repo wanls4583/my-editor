@@ -18,10 +18,7 @@
             <div @scroll="onScroll" class="my-scroller my-scroll-overlay" ref="scroller">
                 <!-- 内如区域 -->
                 <div
-                    :style="{
-                        minWidth: _contentMinWidth,
-                        height: contentHeight,
-                    }"
+                    :style="{ minWidth: _contentMinWidth, height: contentHeight }"
                     @mousedown="onContentMdown"
                     @mousemove="onContentMmove"
                     @selectend.prevent="onSelectend"
@@ -34,10 +31,7 @@
                             :data-line="line.num"
                             :id="'line_' + line.num"
                             :key="line.num"
-                            :style="{
-                                height: _lineHeight,
-                                'line-height': _lineHeight,
-                            }"
+                            :style="{ height: _lineHeight, 'line-height': _lineHeight }"
                             class="my-line"
                             v-for="line in renderHtmls"
                         >
@@ -55,50 +49,26 @@
                             ></div>
                             <!-- 选中时的首行背景 -->
                             <div
-                                :class="{
-                                    'my-active': range.active,
-                                    'my-search-bg': range.isFsearch,
-                                }"
-                                :style="{
-                                    left: range.left + 'px',
-                                    width: range.width + 'px',
-                                }"
+                                :class="{ 'my-active': range.active, 'my-search-bg': range.isFsearch }"
+                                :style="{ left: range.left + 'px', width: range.width + 'px' }"
                                 class="my-line-bg my-select-bg"
                                 v-for="range in line.selectStarts"
                             ></div>
                             <!-- 选中时的末行背景 -->
                             <div
-                                :class="{
-                                    'my-active': range.active,
-                                    'my-search-bg': range.isFsearch,
-                                }"
-                                :style="{
-                                    left: range.left + 'px',
-                                    width: range.width + 'px',
-                                }"
+                                :class="{ 'my-active': range.active, 'my-search-bg': range.isFsearch }"
+                                :style="{ left: range.left + 'px', width: range.width + 'px' }"
                                 class="my-line-bg my-select-bg"
                                 v-for="range in line.selectEnds"
                             ></div>
                             <span :style="{ left: _tabLineLeft(tab) }" class="my-tab-line" v-for="tab in line.tabNum"></span>
                             <!-- 模拟光标 -->
-                            <div
-                                :style="{
-                                    height: _lineHeight,
-                                    left: left,
-                                    visibility: _cursorVisible,
-                                }"
-                                class="my-cursor"
-                                style="top: 0px"
-                                v-for="left in line.cursorList"
-                            ></div>
+                            <div :style="{ height: _lineHeight, left: left, visibility: _cursorVisible }" class="my-cursor" style="top: 0px" v-for="left in line.cursorList"></div>
                         </div>
                     </div>
                     <!-- 输入框 -->
                     <textarea
-                        :style="{
-                            top: _textAreaPos.top,
-                            left: _textAreaPos.left,
-                        }"
+                        :style="{ top: _textAreaPos.top, left: _textAreaPos.left }"
                         @blur="onBlur"
                         @compositionend="onCompositionend"
                         @compositionstart="onCompositionstart"
@@ -317,7 +287,6 @@ export default {
                 lineObj.states = null;
                 lineObj.html = '';
             });
-            this.render();
             this.lint.initLanguage(newVal);
             this.tokenizer.initLanguage(newVal).then(() => {
                 this.tokenizer.tokenizeVisibleLins();
@@ -333,8 +302,8 @@ export default {
             this.setContentHeight();
         },
         startLine: function (newVal) {
-            this.tokenizer.onScroll();
             this.render();
+            this.tokenizer.tokenizeVisibleLins();
         },
         nowCursorPos: {
             handler: function (newVal) {
@@ -436,10 +405,9 @@ export default {
                     this.selectedFg = !!globalData.colors['editor.selectionForeground'];
                     if (this.active) {
                         this.myContext.htmls.forEach((lineObj) => {
-                            lineObj.nowTheme = '';
+                            lineObj.html = '';
                         });
-                        this.tokenizer.onScroll();
-                        this.render();
+                        this.tokenizer.tokenizeVisibleLins();
                     }
                 })
             );
@@ -564,7 +532,16 @@ export default {
                     //可折叠
                     fold = 'open';
                 }
-                let html = item.html || Util.htmlTrans(item.text);
+                let html = item.html;
+                if (!html) {
+                    if (item.tokens && item.tokens.length) {
+                        item.tokens = that.tokenizer.splitLongToken(item.tokens);
+                        item.html = that.tokenizer.createHtml(item.tokens, item.text);
+                        html = item.html;
+                    } else {
+                        html = Util.htmlTrans(item.text);
+                    }
+                }
                 html = html.replace(/\t/g, that.space);
                 return {
                     html: html,

@@ -290,20 +290,16 @@ class Btree {
      * @param {Any} value 
      */
     iterator(result, value, compare) {
-        let index = 0;
-        let orginIndex = 0;
-        let originResult = result;
+        let index = result.num;
+        let orginIndex = result.num;
+        let originResult = result.num;
         compare = compare || this.compare;
         for (let i = 0; i < result.num; i++) {
             let item = result.dataList[i];
             let res = compare(value, item);
-            if (res >= 0) { //确保next一定大于等于当前值
-                index = i;
+            if(res <= 0) { //确保next一定大于等于当前值value
                 orginIndex = i;
-                if (res === 0) {
-                    break;
-                }
-            } else {
+                index = i;
                 break;
             }
         }

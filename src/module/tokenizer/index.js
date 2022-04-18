@@ -161,7 +161,7 @@ export default class {
                 lineObj.folds = data.folds;
                 if (this.checkLineVisible(startLine)) {
                     lineObj.tokens = this.splitLongToken(lineObj.tokens);
-                    lineObj.html = this.creatHtml(lineObj.tokens, lineObj.text);
+                    lineObj.html = this.createHtml(lineObj.tokens, lineObj.text);
                     this.renderLine(lineObj.lineId);
                     lineObj.nowTheme = globalData.nowTheme.value;
                 } else {
@@ -180,15 +180,6 @@ export default class {
                     startLine++;
                     break;
                 }
-            } else if (lineObj.nowTheme !== globalData.nowTheme.value) {
-                if (this.checkLineVisible(startLine)) {
-                    lineObj.tokens = this.splitLongToken(lineObj.tokens);
-                    lineObj.html = this.creatHtml(lineObj.tokens, lineObj.text);
-                    this.renderLine(lineObj.lineId);
-                    lineObj.nowTheme = globalData.nowTheme.value;
-                } else {
-                    lineObj.nowTheme = '';
-                }
             }
             startLine++;
         }
@@ -203,7 +194,7 @@ export default class {
             });
         }
     }
-    creatHtml(tokens, lineText) {
+    createHtml(tokens, lineText) {
         return tokens
             .map((item) => {
                 let selector = '';
@@ -321,7 +312,8 @@ export default class {
     checkLineVisible(line) {
         let endLine = this.startLine + this.maxVisibleLines;
         endLine = this.folder.getRealLine(endLine);
-        if(this.folder.getLineInFold(line)) { //该行被包裹
+        if (this.folder.getLineInFold(line)) {
+            //该行被包裹
             return false;
         }
         return line >= this.startLine && line <= endLine;
