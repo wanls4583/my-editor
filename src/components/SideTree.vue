@@ -98,13 +98,7 @@ export default {
             this.renderList.forEach((item) => {
                 const globalData = window.globalData;
                 if (globalData.nowIconData) {
-                    item.icon = Util.getIconByPath(
-                        globalData.nowIconData,
-                        item.path,
-                        globalData.nowTheme.type,
-                        item.type,
-                        item.open
-                    );
+                    item.icon = Util.getIconByPath(globalData.nowIconData, item.path, globalData.nowTheme.type, item.type, item.open);
                     item.icon = item.icon ? `my-file-icon my-file-icon-${item.icon}` : '';
                 }
             });
@@ -121,35 +115,41 @@ export default {
                     }
                     files.forEach((item, index) => {
                         let fullPath = path.join(dirPath, item);
-                        fs.stat(fullPath, (err, data) => {
-                            let obj = {
-                                name: item,
-                                path: fullPath,
-                                parentPath: dirPath,
-                                active: false,
-                                children: [],
-                            };
-                            if (data.isFile()) {
-                                obj.type = 'file';
-                            } else {
-                                obj.type = 'dir';
-                                obj.open = false;
-                            }
-                            results.push(obj);
-                            if (index === files.length - 1) {
-                                resolve(this.sortFileList(results));
-                            }
-                        });
+                        let state = fs.statSync(fullPath);
+                        let obj = {
+                            name: item,
+                            path: fullPath,
+                            parentPath: dirPath,
+                            active: false,
+                            children: [],
+                        };
+                        if (state.isFile()) {
+                            obj.type = 'file';
+                        } else {
+                            obj.type = 'dir';
+                            obj.open = false;
+                        }
+                        results.push(obj);
+                        if (index === files.length - 1) {
+                            resolve(this.sortFileList(results));
+                        }
                     });
                 });
             });
         },
         sortFileList(results) {
             results.sort((a, b) => {
-                if (a.type == 'dir') {
+                if (a.type === 'dir' && b.type === 'file') {
                     return -1;
+                } else if (a.type === 'file' && b.type === 'dir') {
+                    return 1;
+                } else if (a.name > b.name) {
+                    return 1;
+                } else if (a.name < b.name) {
+                    return -1;
+                } else {
+                    return 0;
                 }
-                return 1;
             });
             return results;
         },

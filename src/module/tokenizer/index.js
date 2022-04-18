@@ -81,16 +81,20 @@ export default class {
         }
         if (data.brackets) {
             data.brackets.forEach((item) => {
-                source.push(item[0]);
-                source.push(item[1]);
-                this.foldMap[item[0]] = -type;
-                this.foldMap[item[1]] = type;
-                type++;
+                if (this.foldMap[item[1]]) {
+                    source.push(item[0]);
+                    this.foldMap[item[0]] = -this.foldMap[item[1]];
+                } else {
+                    source.push(item[0]);
+                    source.push(item[1]);
+                    this.foldMap[item[0]] = -type;
+                    this.foldMap[item[1]] = type;
+                    type++;
+                }
             });
         }
         source = source.join('|');
-        source = source.replace(/[\{\}\(\)\[\]\$\*\+\?]/g,'\\$&');
-        console.log(source)
+        source = source.replace(/[\{\}\(\)\[\]\$\*\+\?]/g, '\\$&');
         this.foldReg = new RegExp(source);
     }
     onInsertContentAfter(nowLine, newLine) {
