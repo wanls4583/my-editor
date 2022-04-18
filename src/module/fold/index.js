@@ -147,8 +147,8 @@ export default class {
                                 return line - startLine > 1;
                             } else {
                                 resultFold = {
-                                    start: Object.assign({}, stack.peek()),
-                                    end: Object.assign({}, fold),
+                                    start: Object.assign({ line: startLine }, stack.peek()),
+                                    end: Object.assign({ line: line }, fold),
                                 };
                                 stack.pop();
                                 break;

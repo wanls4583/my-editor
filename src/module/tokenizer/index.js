@@ -271,7 +271,6 @@ export default class {
                 let text = lineText.slice(token.startIndex, token.endIndex);
                 if (this.foldMap[text]) {
                     folds.push({
-                        line: line,
                         startIndex: token.startIndex,
                         endIndex: token.endIndex,
                         type: this.foldMap[text],
