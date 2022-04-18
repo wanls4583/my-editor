@@ -4,6 +4,8 @@
  * @Description: 工具类
  */
 import $ from 'jquery';
+import stripJsonComments from 'strip-json-comments';
+
 const require = window.require || window.parent.require || function () {};
 const fs = require('fs');
 
@@ -276,6 +278,15 @@ class Util {
     static readFile(path) {
         return new Promise((resolve, reject) => {
             fs.readFile(path, (error, data) => (error ? reject(error) : resolve(data)));
+        });
+    }
+    static loadJsonFile(fullPath) {
+        return Util.readFile(fullPath).then((data) => {
+            data = data.toString();
+            data = stripJsonComments(data);
+            data = data.replaceAll(/\,(?=\s*(?:(?:\r\n|\n|\r))*\s*[\]\}])/g, '');
+            data = JSON.parse(data);
+            return data;
         });
     }
     /**

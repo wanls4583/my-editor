@@ -64,6 +64,7 @@ import Context from '@/module/context/index';
 import Theme from '@/module/theme';
 import EventBus from '@/event';
 import Util from '@/common/Util';
+import stripJsonComments from 'strip-json-comments';
 
 const require = window.require || window.parent.require || function () {};
 const fs = require('fs');
@@ -567,7 +568,7 @@ export default {
                         if (fs.existsSync(packPath)) {
                             const text = fs.readFileSync(packPath, 'utf-8');
                             try {
-                                let json = JSON.parse(text);
+                                let json = JSON.parse(stripJsonComments(text));
                                 let contributes = json.contributes;
                                 _addLanguage(contributes, fullPath);
                                 _addTheme(contributes, fullPath);
@@ -606,6 +607,7 @@ export default {
                                 language: grammar.language,
                                 scopeName: grammar.scopeName,
                                 path: path.join(fullPath, grammar.path),
+                                configPath: language.configuration ? path.join(fullPath, language.configuration) : '',
                                 extensions: language.extensions,
                             });
                             break;

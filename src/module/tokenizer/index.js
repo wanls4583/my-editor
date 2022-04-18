@@ -6,6 +6,7 @@
 import Util from '@/common/Util';
 import * as vsctm from 'vscode-textmate';
 import * as oniguruma from 'vscode-oniguruma';
+import fold from '../fold';
 
 const require = window.require || window.parent.require || function () {};
 const fs = require('fs');
@@ -49,11 +50,17 @@ export default class {
         }
         this.language = language;
         this.grammar = null;
+        this.foldMap = {};
         language = Util.getLanguageById(globalData.languageList, language);
         this.scopeName = (language && language.scopeName) || '';
         if (this.scopeName) {
             return this.registry.loadGrammar(this.scopeName).then((grammar) => {
-                this.grammar = grammar;
+                if (language.configPath) {
+                    return Util.loadJsonFile(language.configPath).then((data) => {
+                        this.grammar = grammar;
+                        this.initLanguageConifg(data);
+                    });
+                }
             });
         }
         return Promise.resolve();
@@ -61,6 +68,30 @@ export default class {
     initProperties(editor, context) {
         Util.defineProperties(this, editor, ['startLine', 'maxVisibleLines', 'maxLine', 'renderLine', '$nextTick']);
         Util.defineProperties(this, context, ['htmls']);
+    }
+    initLanguageConifg(data) {
+        let type = 1;
+        let source = [];
+        if (data.comments && data.comments.blockComment) {
+            source.push(data.comments.blockComment[0]);
+            source.push(data.comments.blockComment[1]);
+            this.foldMap[data.comments.blockComment[0]] = -type;
+            this.foldMap[data.comments.blockComment[1]] = type;
+            type++;
+        }
+        if (data.brackets) {
+            data.brackets.forEach((item) => {
+                source.push(item[0]);
+                source.push(item[1]);
+                this.foldMap[item[0]] = -type;
+                this.foldMap[item[1]] = type;
+                type++;
+            });
+        }
+        source = source.join('|');
+        source = source.replace(/[\{\}\(\)\[\]\$\*\+\?]/g,'\\$&');
+        console.log(source)
+        this.foldReg = new RegExp(source);
     }
     onInsertContentAfter(nowLine, newLine) {
         if (nowLine <= this.currentLine) {
@@ -229,10 +260,24 @@ export default class {
         }
         let states = (line > 1 && this.htmls[line - 2].states) || vsctm.INITIAL;
         let lineTokens = this.grammar.tokenizeLine(lineText, states);
+        let folds = [];
         states = lineTokens.ruleStack;
+        if (this.foldReg && this.foldReg.test(lineText)) {
+            lineTokens.tokens.forEach((token) => {
+                let text = lineText.slice(token.startIndex, token.endIndex);
+                if (this.foldMap[text]) {
+                    folds.push({
+                        line: line,
+                        startIndex: token.startIndex,
+                        endIndex: token.endIndex,
+                        type: this.foldMap[text],
+                    });
+                }
+            });
+        }
         return {
             tokens: lineTokens.tokens,
-            folds: [],
+            folds: folds,
             states: states,
         };
     }

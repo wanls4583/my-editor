@@ -1,14 +1,14 @@
 /*
  * @Author: lisong
  * @Date: 2021-12-31 14:42:01
- * @Description: 
+ * @Description:
  */
 import Util from '@/common/Util';
 import Btree from '@/common/Btree';
 
 const comparator = function (a, b) {
     return a.start.line - b.start.line;
-}
+};
 
 export default class {
     constructor(editor, context) {
@@ -57,8 +57,7 @@ export default class {
             let endLine = fold.end.line;
             if (starLine <= preCursorPos.line) {
                 if (starLine < preCursorPos.line) {
-                    if (starLine >= cursorPos.line && starLine < preCursorPos.line ||
-                        starLine < cursorPos.line && endLine > cursorPos.line) {
+                    if ((starLine >= cursorPos.line && starLine < preCursorPos.line) || (starLine < cursorPos.line && endLine > cursorPos.line)) {
                         this.editorFunObj.unFold(starLine);
                     }
                 } else {
@@ -122,9 +121,13 @@ export default class {
         if (lineObj.folds && lineObj.folds.length) {
             for (let i = 0; i < lineObj.folds.length; i++) {
                 let fold = lineObj.folds[i];
-                if (fold.type == -1) {
-                    if (!stack.length || stack.peek().name == fold.name) {
+                if (fold.type < 0) {
+                    if (!stack.length || stack.peek().type == fold.type) {
                         stack.push(fold);
+                    }
+                } else if (fold.type > 0) {
+                    if (stack.length && stack.peek().type + fold.type === 0) {
+                        stack.pop();
                     }
                 }
             }
@@ -134,26 +137,19 @@ export default class {
             if (lineObj.folds && lineObj.folds.length) {
                 for (let i = 0; i < lineObj.folds.length; i++) {
                     let fold = lineObj.folds[i];
-                    if (fold.type == -1) {
-                        if (stack.peek().name == fold.name) {
+                    if (fold.type < 0) {
+                        if (stack.peek().type === fold.type) {
                             stack.push(fold);
                         }
-                    } else if (stack.peek().name == fold.name) {
+                    } else if (stack.peek().type + fold.type === 0) {
                         if (stack.length == 1) {
                             if (foldIconCheck) {
                                 return line - startLine > 1;
                             } else {
                                 resultFold = {
-                                    start: {
-                                        line: startLine,
-                                        start: stack.peek().start
-                                    },
-                                    end: {
-                                        line: line,
-                                        end: fold.end
-                                    },
-                                    name: fold.name
-                                }
+                                    start: Object.assign({}, stack.peek()),
+                                    end: Object.assign({}, fold),
+                                };
                                 stack.pop();
                                 break;
                             }
@@ -181,7 +177,8 @@ export default class {
                 break;
             }
             i++;
-            while (i < folds.length && folds[i].end.line <= fold.end.line) { //多级折叠
+            while (i < folds.length && folds[i].end.line <= fold.end.line) {
+                //多级折叠
                 i++;
             }
         }
@@ -201,7 +198,8 @@ export default class {
                 break;
             }
             i++;
-            while (i < folds.length && folds[i].end.line <= fold.end.line) { //多级折叠
+            while (i < folds.length && folds[i].end.line <= fold.end.line) {
+                //多级折叠
                 i++;
             }
         }

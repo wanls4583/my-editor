@@ -33,7 +33,7 @@ export default class {
         });
 
         function _loadTheme(fullPath) {
-            return this.loadJsonFile(fullPath).then((data) => {
+            return Util.loadJsonFile(fullPath).then((data) => {
                 if (data.include) {
                     return _loadTheme.call(this, path.join(fullPath, '../' + data.include)).then(() => {
                         _addColors(data);
@@ -71,7 +71,7 @@ export default class {
         return _loadTheme.call(this, option.path);
 
         function _loadTheme(fullPath) {
-            return this.loadJsonFile(fullPath).then((data) => {
+            return Util.loadJsonFile(fullPath).then((data) => {
                 let fonts = data.fonts || [];
                 let css = '';
                 fonts.forEach((font) => {
@@ -153,16 +153,6 @@ export default class {
                 }
             }
         }
-    }
-    loadJsonFile(fullPath) {
-        return Util.readFile(fullPath).then((data) => {
-            data = data.toString();
-            // 去掉注释
-            data = data.replaceAll(/(?<=(?:[\n\r\{\[\"]|^)\s*\,?\s*)\/\/[\s\S]*?(?=\r\n|\n|\r|$)/g, '');
-            data = data.replaceAll(/\,(?=\s*(?:(?:\r\n|\n|\r))*\s*[\]\}])/g, '');
-            data = JSON.parse(data);
-            return data;
-        });
     }
     parseCss(data) {
         let css = '';
