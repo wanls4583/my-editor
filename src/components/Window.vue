@@ -597,6 +597,7 @@ export default {
                         scopeFileList.push({
                             scopeName: grammar.scopeName,
                             path: path.join(fullPath, grammar.path),
+                            configPath: language.configuration ? path.join(fullPath, language.configuration) : '',
                         });
                         if (language.id === grammar.language) {
                             let name = language.aliases && language.aliases[0];

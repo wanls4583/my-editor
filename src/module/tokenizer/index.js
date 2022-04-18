@@ -38,7 +38,15 @@ export default class {
             loadGrammar: (scopeName) => {
                 let language = Util.getLanguageByScopeName(globalData.scopeFileList, scopeName);
                 if (language) {
-                    return Util.readFile(language.path).then((data) => vsctm.parseRawGrammar(data.toString(), language.path));
+                    if (language.configPath) {
+                        return Util.loadJsonFile(language.configPath).then((data) => {
+                            this.sourceFoldMap[language.scopeName] = {};
+                            this.initLanguageConifg(this.sourceFoldMap[language.scopeName], data);
+                            return Util.readFile(language.path).then((data) => vsctm.parseRawGrammar(data.toString(), language.path));
+                        });
+                    } else {
+                        return Util.readFile(language.path).then((data) => vsctm.parseRawGrammar(data.toString(), language.path));
+                    }
                 }
                 return null;
             },
@@ -50,17 +58,13 @@ export default class {
         }
         this.language = language;
         this.grammar = null;
-        this.foldMap = {};
+        this.foldType = 1;
+        this.sourceFoldMap = { allFoldMap: {} };
         language = Util.getLanguageById(globalData.languageList, language);
         this.scopeName = (language && language.scopeName) || '';
         if (this.scopeName) {
             return this.registry.loadGrammar(this.scopeName).then((grammar) => {
-                if (language.configPath) {
-                    return Util.loadJsonFile(language.configPath).then((data) => {
-                        this.grammar = grammar;
-                        this.initLanguageConifg(data);
-                    });
-                }
+                this.grammar = grammar;
             });
         }
         return Promise.resolve();
@@ -69,33 +73,35 @@ export default class {
         Util.defineProperties(this, editor, ['startLine', 'maxVisibleLines', 'maxLine', 'renderLine', 'folder', '$nextTick']);
         Util.defineProperties(this, context, ['htmls']);
     }
-    initLanguageConifg(data) {
-        let type = 1;
+    initLanguageConifg(foldMap, data) {
         let source = [];
         if (data.comments && data.comments.blockComment) {
             source.push(data.comments.blockComment[0]);
             source.push(data.comments.blockComment[1]);
-            this.foldMap[data.comments.blockComment[0]] = -type;
-            this.foldMap[data.comments.blockComment[1]] = type;
-            type++;
+            foldMap[data.comments.blockComment[0]] = -this.foldType;
+            foldMap[data.comments.blockComment[1]] = this.foldType;
+            this.sourceFoldMap.allFoldMap[data.comments.blockComment[0]] = true;
+            this.sourceFoldMap.allFoldMap[data.comments.blockComment[1]] = true;
+            this.foldType++;
         }
         if (data.brackets) {
             data.brackets.forEach((item) => {
-                if (this.foldMap[item[1]]) {
-                    source.push(item[0]);
-                    this.foldMap[item[0]] = -this.foldMap[item[1]];
+                if (foldMap[item[1]]) {
+                    if (!foldMap[item[0]]) {
+                        source.push(item[0]);
+                        foldMap[item[0]] = -foldMap[item[1]];
+                    }
                 } else {
                     source.push(item[0]);
                     source.push(item[1]);
-                    this.foldMap[item[0]] = -type;
-                    this.foldMap[item[1]] = type;
-                    type++;
+                    foldMap[item[0]] = -this.foldType;
+                    foldMap[item[1]] = this.foldType;
+                    this.foldType++;
                 }
+                this.sourceFoldMap.allFoldMap[item[0]] = true;
+                this.sourceFoldMap.allFoldMap[item[1]] = true;
             });
         }
-        source = source.join('|');
-        source = source.replace(/[\{\}\(\)\[\]\$\*\+\?]/g, '\\$&');
-        this.foldReg = new RegExp(source);
     }
     onInsertContentAfter(nowLine, newLine) {
         if (nowLine <= this.currentLine) {
@@ -259,18 +265,21 @@ export default class {
         let lineTokens = this.grammar.tokenizeLine(lineText, states);
         let folds = [];
         states = lineTokens.ruleStack;
-        if (this.foldReg && this.foldReg.test(lineText)) {
-            lineTokens.tokens.forEach((token) => {
-                let text = lineText.slice(token.startIndex, token.endIndex);
-                if (this.foldMap[text] || this.foldMap[text[text.length - 1]]) {
-                    folds.push({
-                        startIndex: token.startIndex,
-                        endIndex: token.endIndex,
-                        type: this.foldMap[text],
-                    });
+        lineTokens.tokens.forEach((token) => {
+            let text = lineText.slice(token.startIndex, token.endIndex);
+            if (this.sourceFoldMap.allFoldMap[text]) {
+                for (let i = token.scopes.length - 1; i >= 0; i--) {
+                    if (this.sourceFoldMap[token.scopes[i]] && this.sourceFoldMap[token.scopes[i]][text]) {
+                        folds.push({
+                            startIndex: token.startIndex,
+                            endIndex: token.endIndex,
+                            type: this.sourceFoldMap[token.scopes[i]][text],
+                        });
+                        break;
+                    }
                 }
-            });
-        }
+            }
+        });
         return {
             tokens: lineTokens.tokens,
             folds: folds,
