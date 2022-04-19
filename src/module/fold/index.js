@@ -133,48 +133,48 @@ export default class {
         let startLine = line;
         let lineObj = this.htmls[startLine - 1];
         let resultFold = null;
+        let startFold = null;
         line++;
         if (lineObj.folds && lineObj.folds.length) {
             for (let i = 0; i < lineObj.folds.length; i++) {
                 let fold = lineObj.folds[i];
                 if (fold.type < 0) {
-                    if (!stack.length || stack.peek().type == fold.type) {
-                        stack.push(fold);
-                    }
+                    stack.push(fold);
                 } else if (fold.type > 0) {
-                    if (stack.length && stack.peek().type + fold.type === 0) {
-                        stack.pop();
+                    for (let i = stack.length - 1; i >= 0; i--) {
+                        if (stack[i].type + fold.type === 0) {
+                            stack.splice(i, 1);
+                            break;
+                        }
                     }
                 }
             }
         }
-        while (stack.length && line <= this.htmls.length && (!foldIconCheck || line - startLine <= 1)) {
-            lineObj = this.htmls[line - 1];
-            if (lineObj.folds && lineObj.folds.length) {
-                for (let i = 0; i < lineObj.folds.length; i++) {
-                    let fold = lineObj.folds[i];
-                    if (fold.type < 0) {
-                        if (stack.peek().type === fold.type) {
+        if (stack.length) {
+            startFold = stack.peek();
+            stack = [];
+            while (line <= this.htmls.length && (!foldIconCheck || line - startLine <= 1)) {
+                lineObj = this.htmls[line - 1];
+                if (lineObj.folds && lineObj.folds.length) {
+                    for (let i = 0; i < lineObj.folds.length; i++) {
+                        let fold = lineObj.folds[i];
+                        if (fold.type === startFold.type) {
                             stack.push(fold);
-                        }
-                    } else if (stack.peek().type + fold.type === 0) {
-                        if (stack.length == 1) {
-                            if (foldIconCheck) {
-                                return line - startLine > 1;
-                            } else {
+                        } else if (startFold.type + fold.type === 0) {
+                            if (stack.length === 0) {
                                 resultFold = {
-                                    start: Object.assign({ line: startLine }, stack.peek()),
+                                    start: Object.assign({ line: startLine }, startFold),
                                     end: Object.assign({ line: line }, fold),
                                 };
+                                return foldIconCheck ? line - startLine > 1 : resultFold;
+                            } else {
                                 stack.pop();
-                                break;
                             }
                         }
-                        stack.pop();
                     }
                 }
+                line++;
             }
-            line++;
         }
         return foldIconCheck ? line - startLine > 1 : resultFold;
     }
