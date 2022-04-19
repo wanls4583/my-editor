@@ -384,6 +384,7 @@ class Context {
             startObj.text = text;
         }
         startObj.width = this.getStrWidth(startObj.text);
+        startObj.html = '';
         startObj.tokens = null;
         startObj.folds = null;
         startObj.states = null;
