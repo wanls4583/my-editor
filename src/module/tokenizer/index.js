@@ -6,7 +6,6 @@
 import Util from '@/common/Util';
 import * as vsctm from 'vscode-textmate';
 import * as oniguruma from 'vscode-oniguruma';
-import fold from '../fold';
 
 const require = window.require || window.parent.require || function () {};
 const fs = require('fs');
@@ -79,12 +78,24 @@ export default class {
     }
     initLanguageConifg(foldMap, data) {
         let source = [];
-        if (data.comments && data.comments.blockComment) {
-            source.push(data.comments.blockComment[0]);
-            source.push(data.comments.blockComment[1]);
-            foldMap[data.comments.blockComment[0]] = -this.foldType;
-            foldMap[data.comments.blockComment[1]] = this.foldType;
-            this.foldType++;
+        foldMap.__comments__ = {
+            lineComment: '',
+            blockComment: [],
+        };
+        if (data.comments) {
+            if (data.comments.lineComment) {
+                source.push(data.comments.lineComment);
+                foldMap[data.comments.lineComment] = 0;
+            }
+            if (data.comments.blockComment) {
+                source.push(data.comments.blockComment[0]);
+                source.push(data.comments.blockComment[1]);
+                foldMap[data.comments.blockComment[0]] = -this.foldType;
+                foldMap[data.comments.blockComment[1]] = this.foldType;
+                foldMap.__comments__.blockComment = data.comments.blockComment;
+                foldMap.__endCommentReg__ = new RegExp(data.comments.blockComment[1].replace(/[\{\}\(\)\[\]\&\?\+\*\\]/g, '\\$&'), 'g');
+                this.foldType++;
+            }
         }
         if (data.brackets) {
             data.brackets.forEach((item) => {
@@ -111,7 +122,7 @@ export default class {
         }
         source = source.join('|');
         source = source.replace(/[\{\}\(\)\[\]\&\?\+\*\\]/g, '\\$&');
-        foldMap.foldReg = new RegExp(source, 'g');
+        foldMap.__foldReg__ = new RegExp(source, 'g');
     }
     onInsertContentAfter(nowLine, newLine) {
         if (nowLine <= this.currentLine) {
@@ -175,6 +186,7 @@ export default class {
                 let data = this.tokenizeLine(startLine);
                 lineObj.tokens = data.tokens;
                 lineObj.folds = data.folds;
+                lineObj.stateFold = data.stateFold;
                 if (this.checkLineVisible(startLine)) {
                     lineObj.tokens = this.splitLongToken(lineObj.tokens);
                     lineObj.html = this.createHtml(lineObj.tokens, lineObj.text);
@@ -274,20 +286,22 @@ export default class {
         }
         let states = (line > 1 && this.htmls[line - 2].states) || vsctm.INITIAL;
         let lineTokens = this.grammar.tokenizeLine(lineText, states);
-        let tokens = lineTokens.tokens;
-        states = lineTokens.ruleStack;
-        this.sourceFoldMap && this.addFold(tokens, lineText, folds);
+        let stateFold = this.addFold(line, lineTokens.tokens, folds);
         return {
-            tokens: tokens,
+            tokens: lineTokens.tokens,
+            states: lineTokens.ruleStack,
             folds: folds,
-            states: states,
+            stateFold: stateFold,
         };
     }
-    addFold(tokens, lineText, folds) {
+    addFold(line, tokens, folds) {
         let scopeName = '';
         let startIndex = 0;
         let existTag = false;
-        tokens.forEach((token, index) => {
+        let lineText = this.htmls[line - 1].text;
+        let stateFold = line > 1 ? this.htmls[line - 2].stateFold : null;
+        outerLoop: for (let index = 0; index < tokens.length; index++) {
+            let token = tokens[index];
             let _scopeName = '';
             let foldMap = null;
             for (let i = token.scopes.length - 1; i >= 0; i--) {
@@ -299,17 +313,19 @@ export default class {
                 if (scopeName || index === tokens.length - 1) {
                     if (_scopeName !== scopeName || index === tokens.length - 1) {
                         let endIndex = index === tokens.length - 1 ? token.endIndex : token.startIndex;
-                        let text = lineText.slice(startIndex, endIndex);
-                        let res = null;
-                        while ((res = foldMap.foldReg.exec(text))) {
-                            folds.push({
-                                startIndex: startIndex + res.index,
-                                endIndex: startIndex + res.index + res[0].length,
-                                type: foldMap[res[0]],
-                                isBracket: true,
-                            });
+                        let lastFold = this.addBracket({
+                            line: line,
+                            foldMap: foldMap,
+                            folds: folds,
+                            startIndex: startIndex,
+                            endIndex: endIndex,
+                            stateFold: stateFold,
+                            lineText: lineText,
+                        });
+                        // 单行注释
+                        if (lastFold && lastFold.type === 'line-comment') {
+                            break outerLoop;
                         }
-                        foldMap.foldReg.lastIndex = 0;
                         scopeName = token.scopes[i];
                         startIndex = token.startIndex;
                     }
@@ -319,35 +335,95 @@ export default class {
                 }
                 break;
             }
-            if (this.hasTextGrammar && token.scopes.peek().startsWith('entity.name.tag')) {
-                //html、xml标签名称
-                let tag = lineText.slice(token.startIndex, token.endIndex);
-                let type = 0;
-                if (foldMap[tag]) {
-                    type = foldMap[tag];
-                } else {
-                    type = this.foldType++;
-                    foldMap[tag] = type;
-                }
-                //开始标签
-                if (lineText[token.startIndex - 1] === '<') {
-                    type = -type;
-                }
-                folds.push({
-                    startIndex: token.startIndex,
-                    endIndex: token.endIndex,
-                    type: type,
-                    isTag: true,
-                });
+            if (
+                this.addTagFold({
+                    token: token,
+                    foldMap: foldMap,
+                    folds: folds,
+                    lineText: lineText,
+                })
+            ) {
                 existTag = true;
             }
-        });
+        }
         if (existTag) {
             folds.sort((a, b) => {
                 return a.startIndex - b.startIndex;
             });
         }
-        return folds;
+        if (folds.length) {
+            return folds.peek().type === 'block-comment' ? folds.peek() : null;
+        } else {
+            return stateFold;
+        }
+    }
+    addBracket(option) {
+        let foldMap = option.foldMap;
+        let folds = option.folds;
+        let startIndex = option.startIndex;
+        let endIndex = option.endIndex;
+        let stateFold = option.stateFold;
+        let text = option.lineText.slice(startIndex, endIndex);
+        let reg = foldMap.__foldReg__;
+        let res = null;
+        let preFold = null;
+        if (folds.length) {
+            preFold = folds.peek();
+        } else {
+            preFold = stateFold;
+        }
+        if (preFold && preFold.type === 'block-comment' && preFold.side < 0) {
+            reg = foldMap.__endCommentReg__;
+        }
+        while ((res = reg.exec(text))) {
+            let type = 'bracket';
+            if (foldMap.__comments__.lineComment === res[0]) {
+                type = 'line-comment';
+            } else if (foldMap.__comments__.blockComment[0] === res[0] || foldMap.__comments__.blockComment[1] === res[0]) {
+                type = 'block-comment';
+            }
+            folds.push({
+                startIndex: startIndex + res.index,
+                endIndex: startIndex + res.index + res[0].length,
+                side: foldMap[res[0]],
+                type: type,
+            });
+            if (type === 'block-comment' && foldMap[res[0]] < 0) {
+                foldMap.__endCommentReg__.lastIndex = reg.lastIndex;
+                reg.lastIndex = 0;
+                reg = foldMap.__endCommentReg__;
+            }
+        }
+        reg.lastIndex = 0;
+        return folds.length && folds.peek();
+    }
+    addTagFold(option) {
+        let token = option.token;
+        let folds = option.folds;
+        let foldMap = option.foldMap;
+        let lineText = option.lineText;
+        if (this.hasTextGrammar && token.scopes.peek().startsWith('entity.name.tag')) {
+            //html、xml标签名称
+            let tag = lineText.slice(token.startIndex, token.endIndex);
+            let side = 0;
+            if (foldMap[tag]) {
+                side = foldMap[tag];
+            } else {
+                side = this.foldType++;
+                foldMap[tag] = side;
+            }
+            //开始标签
+            if (lineText[token.startIndex - 1] === '<') {
+                side = -side;
+            }
+            folds.push({
+                startIndex: token.startIndex,
+                endIndex: token.endIndex,
+                side: side,
+                type: 'tag',
+            });
+            return true;
+        }
     }
     splitLongToken(tokens) {
         let result = [];

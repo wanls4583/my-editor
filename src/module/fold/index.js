@@ -144,11 +144,11 @@ export default class {
         if (lineObj.folds && lineObj.folds.length) {
             for (let i = 0; i < lineObj.folds.length; i++) {
                 let fold = lineObj.folds[i];
-                if (fold.type < 0) {
+                if (fold.side <= 0) {
                     stack.push(fold);
-                } else if (fold.type > 0) {
+                } else if (fold.side > 0) {
                     for (let i = stack.length - 1; i >= 0; i--) {
-                        if (stack[i].type + fold.type === 0) {
+                        if (stack[i].side + fold.side === 0) {
                             stack.splice(i, 1);
                             break;
                         }
@@ -157,10 +157,40 @@ export default class {
             }
         }
         if (stack.length) {
+            let foldStartText = '';
             startFold = stack.peek();
             stack = [];
+            foldStartText = lineObj.text.slice(startFold.startIndex, startFold.endIndex);
             // 单标签没有折叠
-            if (singleTagMap[lineObj.text.slice(startFold.startIndex, startFold.endIndex)]) {
+            if (singleTagMap[foldStartText]) {
+                return false;
+            }
+            if (startFold.type === 'line-comment') {
+                let endLine = 0;
+                let fold = null;
+                while (line <= this.htmls.length) {
+                    let lineObj = this.htmls[line - 1];
+                    let text = lineObj.text.trimLeft();
+                    let _fold = lineObj.folds && lineObj.folds[0];
+                    if (!text || (_fold && _fold.type === 'line-comment')) {
+                        if (text) {
+                            endLine = line;
+                            fold = _fold;
+                            if (foldIconCheck && endLine - startLine > 1) {
+                                return true;
+                            }
+                        } else if (endLine) {
+                            resultFold = {
+                                start: Object.assign({ line: startLine }, startFold),
+                                end: Object.assign({ line: endLine }, fold),
+                            };
+                            return foldIconCheck ? line - startLine > 1 : resultFold;
+                        }
+                        line++;
+                    } else {
+                        break;
+                    }
+                }
                 return false;
             }
             while (line <= this.htmls.length && (!foldIconCheck || line - startLine <= 1)) {
@@ -168,9 +198,9 @@ export default class {
                 if (lineObj.folds && lineObj.folds.length) {
                     for (let i = 0; i < lineObj.folds.length; i++) {
                         let fold = lineObj.folds[i];
-                        if (fold.type === startFold.type) {
+                        if (fold.side === startFold.side) {
                             stack.push(fold);
-                        } else if (startFold.type + fold.type === 0) {
+                        } else if (startFold.side + fold.side === 0) {
                             if (stack.length === 0) {
                                 resultFold = {
                                     start: Object.assign({ line: startLine }, startFold),
