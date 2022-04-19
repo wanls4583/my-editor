@@ -10,6 +10,12 @@ const comparator = function (a, b) {
     return a.start.line - b.start.line;
 };
 
+const singleTag = ['br', 'hr', 'area', 'base', 'img', 'input', 'link', 'meta', 'basefont', 'param', 'col', 'frame', 'embed', 'keygen', 'source'];
+const singleTagMap = {};
+singleTag.forEach((tag) => {
+    singleTagMap[tag] = true;
+});
+
 export default class {
     constructor(editor, context) {
         this.folds = new Btree(comparator);
@@ -153,6 +159,10 @@ export default class {
         if (stack.length) {
             startFold = stack.peek();
             stack = [];
+            // 单标签没有折叠
+            if (singleTagMap[lineObj.text.slice(startFold.startIndex, startFold.endIndex)]) {
+                return false;
+            }
             while (line <= this.htmls.length && (!foldIconCheck || line - startLine <= 1)) {
                 lineObj = this.htmls[line - 1];
                 if (lineObj.folds && lineObj.folds.length) {
