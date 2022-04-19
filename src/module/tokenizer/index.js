@@ -40,6 +40,7 @@ export default class {
                 if (language) {
                     if (language.configPath) {
                         return Util.loadJsonFile(language.configPath).then((data) => {
+                            // 每种语言都有对应的折叠标记
                             this.sourceFoldMap[language.scopeName] = {};
                             this.initLanguageConifg(this.sourceFoldMap[language.scopeName], data);
                             return Util.readFile(language.path).then((data) => vsctm.parseRawGrammar(data.toString(), language.path));
@@ -59,7 +60,7 @@ export default class {
         this.language = language;
         this.grammar = null;
         this.foldType = 1;
-        this.sourceFoldMap = { allFoldMap: {} };
+        this.sourceFoldMap = {};
         language = Util.getLanguageById(globalData.languageList, language);
         this.scopeName = (language && language.scopeName) || '';
         if (this.scopeName) {
@@ -80,13 +81,18 @@ export default class {
             source.push(data.comments.blockComment[1]);
             foldMap[data.comments.blockComment[0]] = -this.foldType;
             foldMap[data.comments.blockComment[1]] = this.foldType;
-            this.sourceFoldMap.allFoldMap[data.comments.blockComment[0]] = true;
-            this.sourceFoldMap.allFoldMap[data.comments.blockComment[1]] = true;
             this.foldType++;
         }
         if (data.brackets) {
             data.brackets.forEach((item) => {
-                if (foldMap[item[1]]) {
+                if (foldMap[item[0]]) {
+                    //相同的前缀
+                    if (!foldMap[item[1]]) {
+                        source.push(item[1]);
+                        foldMap[item[1]] = -foldMap[item[0]];
+                    }
+                } else if (foldMap[item[1]]) {
+                    //相同的后缀
                     if (!foldMap[item[0]]) {
                         source.push(item[0]);
                         foldMap[item[0]] = -foldMap[item[1]];
@@ -98,10 +104,11 @@ export default class {
                     foldMap[item[1]] = this.foldType;
                     this.foldType++;
                 }
-                this.sourceFoldMap.allFoldMap[item[0]] = true;
-                this.sourceFoldMap.allFoldMap[item[1]] = true;
             });
         }
+        source = source.join('|');
+        source = source.replace(/[\{\}\(\)\[\]\&\?\+\*\\]/g, '\\$&');
+        foldMap.foldReg = new RegExp(source, 'g');
     }
     onInsertContentAfter(nowLine, newLine) {
         if (nowLine <= this.currentLine) {
@@ -248,6 +255,7 @@ export default class {
     }
     tokenizeLine(line) {
         let lineText = this.htmls[line - 1].text;
+        let folds = [];
         if (lineText.length > 10000 || !this.scopeName) {
             return {
                 tokens: [
@@ -263,28 +271,49 @@ export default class {
         }
         let states = (line > 1 && this.htmls[line - 2].states) || vsctm.INITIAL;
         let lineTokens = this.grammar.tokenizeLine(lineText, states);
-        let folds = [];
+        let tokens = lineTokens.tokens;
         states = lineTokens.ruleStack;
-        lineTokens.tokens.forEach((token) => {
-            let text = lineText.slice(token.startIndex, token.endIndex);
-            if (this.sourceFoldMap.allFoldMap[text]) {
-                for (let i = token.scopes.length - 1; i >= 0; i--) {
-                    if (this.sourceFoldMap[token.scopes[i]] && this.sourceFoldMap[token.scopes[i]][text]) {
-                        folds.push({
-                            startIndex: token.startIndex,
-                            endIndex: token.endIndex,
-                            type: this.sourceFoldMap[token.scopes[i]][text],
-                        });
-                        break;
-                    }
-                }
-            }
-        });
+        this.sourceFoldMap && this.addFold(tokens, lineText, folds);
         return {
-            tokens: lineTokens.tokens,
+            tokens: tokens,
             folds: folds,
             states: states,
         };
+    }
+    addFold(tokens, lineText, folds) {
+        let scopeName = '';
+        let startIndex = 0;
+        tokens.forEach((token, index) => {
+            for (let i = token.scopes.length - 1; i >= 0; i--) {
+                let _scopeName = token.scopes[i];
+                let foldMap = this.sourceFoldMap[_scopeName];
+                if (!foldMap) {
+                    continue;
+                }
+                if (scopeName || index === tokens.length - 1) {
+                    if (_scopeName !== scopeName || index === tokens.length - 1) {
+                        let endIndex = index === tokens.length - 1 ? token.endIndex : token.startIndex;
+                        let text = lineText.slice(startIndex, endIndex);
+                        let res = null;
+                        while ((res = foldMap.foldReg.exec(text))) {
+                            folds.push({
+                                startIndex: startIndex + res.index,
+                                endIndex: startIndex + res.index + res[0].length,
+                                type: foldMap[res[0]],
+                            });
+                        }
+                        foldMap.foldReg.lastIndex = 0;
+                        scopeName = token.scopes[i];
+                        startIndex = token.startIndex;
+                    }
+                } else {
+                    scopeName = token.scopes[i];
+                    startIndex = token.startIndex;
+                }
+                break;
+            }
+        });
+        return folds;
     }
     splitLongToken(tokens) {
         let result = [];
