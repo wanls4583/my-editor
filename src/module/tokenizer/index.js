@@ -42,6 +42,8 @@ export default class {
                         return Util.loadJsonFile(language.configPath).then((data) => {
                             // 每种语言都有对应的折叠标记
                             this.sourceFoldMap[language.scopeName] = {};
+                            // 是否存在标记性语言
+                            this.hasTextGrammar = this.hasTextGrammar || language.scopeName.startsWith('text');
                             this.initLanguageConifg(this.sourceFoldMap[language.scopeName], data);
                             return Util.readFile(language.path).then((data) => vsctm.parseRawGrammar(data.toString(), language.path));
                         });
@@ -61,6 +63,7 @@ export default class {
         this.grammar = null;
         this.foldType = 1;
         this.sourceFoldMap = {};
+        this.hasTextGrammar = false;
         language = Util.getLanguageById(globalData.languageList, language);
         this.scopeName = (language && language.scopeName) || '';
         if (this.scopeName) {
@@ -283,13 +286,16 @@ export default class {
     addFold(tokens, lineText, folds) {
         let scopeName = '';
         let startIndex = 0;
+        let existTag = false;
         tokens.forEach((token, index) => {
+            let _scopeName = '';
+            let foldMap = null;
             for (let i = token.scopes.length - 1; i >= 0; i--) {
-                let _scopeName = token.scopes[i];
-                let foldMap = this.sourceFoldMap[_scopeName];
+                foldMap = this.sourceFoldMap[token.scopes[i]];
                 if (!foldMap) {
                     continue;
                 }
+                _scopeName = token.scopes[i];
                 if (scopeName || index === tokens.length - 1) {
                     if (_scopeName !== scopeName || index === tokens.length - 1) {
                         let endIndex = index === tokens.length - 1 ? token.endIndex : token.startIndex;
@@ -300,6 +306,7 @@ export default class {
                                 startIndex: startIndex + res.index,
                                 endIndex: startIndex + res.index + res[0].length,
                                 type: foldMap[res[0]],
+                                isBracket: true,
                             });
                         }
                         foldMap.foldReg.lastIndex = 0;
@@ -312,7 +319,34 @@ export default class {
                 }
                 break;
             }
+            if (this.hasTextGrammar && token.scopes.peek().startsWith('entity.name.tag')) {
+                //html、xml标签名称
+                let tag = lineText.slice(token.startIndex, token.endIndex);
+                let type = 0;
+                if (foldMap[tag]) {
+                    type = foldMap[tag];
+                } else {
+                    type = this.foldType++;
+                    foldMap[tag] = type;
+                }
+                //开始标签
+                if (lineText[token.startIndex - 1] === '<') {
+                    type = -type;
+                }
+                folds.push({
+                    startIndex: token.startIndex,
+                    endIndex: token.endIndex,
+                    type: type,
+                    isTag: true,
+                });
+                existTag = true;
+            }
         });
+        if (existTag) {
+            folds.sort((a, b) => {
+                return a.startIndex - b.startIndex;
+            });
+        }
         return folds;
     }
     splitLongToken(tokens) {
