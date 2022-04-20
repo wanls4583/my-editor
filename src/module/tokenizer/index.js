@@ -86,6 +86,7 @@ export default class {
             if (data.comments.lineComment) {
                 source.push(data.comments.lineComment);
                 foldMap[data.comments.lineComment] = 0;
+                foldMap.__comments__.lineComment = data.comments.lineComment;
             }
             if (data.comments.blockComment) {
                 source.push(data.comments.blockComment[0]);
@@ -392,6 +393,8 @@ export default class {
                 foldMap.__endCommentReg__.lastIndex = reg.lastIndex;
                 reg.lastIndex = 0;
                 reg = foldMap.__endCommentReg__;
+            } else if(type === 'line-comment') {
+                break;
             }
         }
         reg.lastIndex = 0;

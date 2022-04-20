@@ -166,7 +166,7 @@ export default class {
                 return false;
             }
             if (startFold.type === 'line-comment') {
-                let endLine = 0;
+                let endLine = startLine;
                 let fold = null;
                 while (line <= this.htmls.length) {
                     let lineObj = this.htmls[line - 1];
@@ -174,24 +174,24 @@ export default class {
                     let _fold = lineObj.folds && lineObj.folds[0];
                     if (!text || (_fold && _fold.type === 'line-comment')) {
                         if (text) {
-                            endLine = line;
+                            endLine = text ? line : endLine;
                             fold = _fold;
-                            if (foldIconCheck && endLine - startLine > 1) {
-                                return true;
-                            }
-                        } else if (endLine) {
-                            resultFold = {
-                                start: Object.assign({ line: startLine }, startFold),
-                                end: Object.assign({ line: endLine }, fold),
-                            };
-                            return foldIconCheck ? line - startLine > 1 : resultFold;
+                        } else if (fold) {
+                            break;
                         }
                         line++;
                     } else {
                         break;
                     }
                 }
-                return false;
+                if (foldIconCheck) {
+                    return endLine - startLine > 1;
+                } else {
+                    return {
+                        start: Object.assign({ line: startLine }, startFold),
+                        end: Object.assign({ line: endLine }, fold),
+                    };
+                }
             }
             while (line <= this.htmls.length && (!foldIconCheck || line - startLine <= 1)) {
                 lineObj = this.htmls[line - 1];
