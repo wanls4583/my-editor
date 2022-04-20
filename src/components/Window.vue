@@ -525,7 +525,9 @@ export default {
                     return;
                 }
                 let editor = this.getNowEditor();
+                let tab = this.getTabById(this.nowId);
                 EventBus.$emit(`tab-change`, {
+                    path: tab.path,
                     language: editor.language,
                     tabSize: editor.tabSize,
                     line: editor.nowCursorPos ? editor.nowCursorPos.line : '?',

@@ -93,6 +93,16 @@ export default {
                 });
                 this.render();
             });
+            EventBus.$on('tab-change', (data) => {
+                let path = data && data.path;
+                if (path && preActiveItem && preActiveItem.path !== path) {
+                    preActiveItem.active = false;
+                    this.focusItem(path);
+                } else if(!path && preActiveItem) {
+                    preActiveItem.active = false;
+                    preActiveItem = null;
+                }
+            });
         },
         render() {
             this.renderList = this.openedList.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines);
@@ -168,6 +178,39 @@ export default {
                 });
             }
         },
+        focusItem(path) {
+            let index = 0;
+            _findItem.call(this, path);
+
+            function _findItem(path) {
+                for (let i = index; i < this.openedList.length; i++) {
+                    let item = this.openedList[i];
+                    if (item.path === path) {
+                        let wrap = this.$refs.wrap;
+                        let scrollTop = wrap.scrollTop;
+                        let clientHeight = wrap.clientHeight;
+                        let height = (i + 1) * this.itemHeight;
+                        if (scrollTop + clientHeight < height) {
+                            wrap.scrollTop = height - clientHeight;
+                        } else if (scrollTop + this.itemHeight > height) {
+                            wrap.scrollTop = height - this.itemHeight;
+                        }
+                        if (!item.active) {
+                            this.onClickItem(item);
+                        }
+                        break;
+                    } else if (path.startsWith(item.path)) {
+                        if (!item.open) {
+                            index = i + 1;
+                            this.onClickItem(item).then(() => {
+                                _findItem(path);
+                            });
+                            break;
+                        }
+                    }
+                }
+            }
+        },
         onClickItem(item) {
             if (!item.active) {
                 if (preActiveItem) {
@@ -178,7 +221,7 @@ export default {
                 if (item.type === 'dir') {
                     item.open = !item.open;
                     if (!item.loaded) {
-                        this.readdir(item.path).then((data) => {
+                        return this.readdir(item.path).then((data) => {
                             item.children = data;
                             item.loaded = true;
                             data.forEach((_item) => {
@@ -196,6 +239,7 @@ export default {
                 item.open = !item.open;
                 _changOpen.call(this, item);
             }
+            return Promise.resolve();
 
             function _changOpen(item) {
                 if (item.children.length) {

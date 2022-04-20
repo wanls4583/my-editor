@@ -229,6 +229,7 @@ export default class {
                     lineObj = this.htmls[startLine];
                     if (lineObj) {
                         lineObj.tokens = null;
+                        lineObj.html = '';
                     }
                 }
                 processedLines++;
