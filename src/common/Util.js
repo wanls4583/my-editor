@@ -468,5 +468,6 @@ Util.constData = {
     LINE_COMMENT: 'line-comment',
     BLOCK_COMMENT: 'block-comment',
     BRACKET: 'bracket',
+    TAG: 'tag',
 };
 export default Util;

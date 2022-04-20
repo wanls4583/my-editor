@@ -450,7 +450,7 @@ export default class {
                 startIndex: token.startIndex,
                 endIndex: token.endIndex,
                 side: side,
-                type: 'tag',
+                type: Util.constData.TAG,
             });
             return true;
         }

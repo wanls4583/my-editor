@@ -421,7 +421,7 @@ export default {
                         this.myContext.htmls.forEach((lineObj) => {
                             lineObj.html = '';
                         });
-                        this.tokenizer.tokenizeVisibleLins();
+                        this.render();
                     }
                 })
             );

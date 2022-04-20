@@ -238,9 +238,12 @@ export default class {
         let stack = [];
         outerLoop: while (line >= 1 && !startFold) {
             let folds = this.htmls[line - 1].folds || [];
-            for (let i = 0; i < folds.length; i++) {
+            for (let i = folds.length - 1; i >= 0; i--) {
                 let fold = folds[i];
-                if (fold.side > 0 && (line < cursorPos.line || fold.startIndex < cursorPos.column - 1)) {
+                // 跳过标签名
+                if(fold.type === Util.constData.TAG) {
+                    continue;
+                } else if (fold.side > 0 && (line < cursorPos.line || fold.startIndex < cursorPos.column - 1)) {
                     stack.push(fold);
                 } else if (fold.side < 0 && (line < cursorPos.line || fold.startIndex <= cursorPos.column)) {
                     let exsitEnd = false;
