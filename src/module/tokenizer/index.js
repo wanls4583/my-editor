@@ -375,7 +375,7 @@ export default class {
             reg = foldMap.__endCommentReg__;
         }
         while ((res = reg.exec(text))) {
-            let type = 'bracket';
+            let type = Util.constData.BRACKET;
             if (foldMap.__comments__.lineComment === res[0]) {
                 type = Util.constData.LINE_COMMENT;
             } else if (foldMap.__comments__.blockComment[0] === res[0] || foldMap.__comments__.blockComment[1] === res[0]) {

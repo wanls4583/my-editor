@@ -171,13 +171,13 @@ export default class {
                 while (line <= this.htmls.length) {
                     let lineObj = this.htmls[line - 1];
                     let text = lineObj.text.trimLeft();
+                    let startIndex = lineObj.text.length - text.length;
                     let _fold = lineObj.folds && lineObj.folds[0];
-                    if (!text || (_fold && _fold.type === Util.constData.LINE_COMMENT)) {
-                        if (text) {
-                            endLine = text ? line : endLine;
-                            fold = _fold;
-                        } else if (fold) {
-                            break;
+                    if (_fold && _fold.type === Util.constData.LINE_COMMENT && _fold.startIndex === startIndex) {
+                        endLine = line;
+                        fold = _fold;
+                        if (foldIconCheck && endLine - startLine > 1) {
+                            return true;
                         }
                         line++;
                     } else {
