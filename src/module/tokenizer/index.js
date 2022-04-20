@@ -164,12 +164,31 @@ export default class {
             if (this.tokenizeVisibleLins.id !== tokenizeVisibleLinsId) {
                 return;
             }
+            let currentLine = this.currentLine;
+            let startLine = this.startLine;
             let endLine = this.startLine + this.maxVisibleLines;
             endLine = this.folder.getRealLine(endLine);
-            this.tokenizeLines(this.startLine, endLine, this.currentLine);
+            // 先渲染可视范围内的行
+            this.asyncTokenizeLines(startLine, endLine).then(() => {
+                startLine = this.startLine - 2000;
+                startLine = startLine < 1 ? 1 : startLine;
+                // 考虑到当前行可能处于内嵌语法种，渲染前2000行
+                if (startLine > currentLine) {
+                    this.asyncTokenizeLines(startLine, endLine).then(() => {
+                        this.tokenizeLines(currentLine);
+                    });
+                } else {
+                    this.tokenizeLines(currentLine);
+                }
+            });
         });
     }
-    tokenizeLines(startLine, endLine, currentLine) {
+    asyncTokenizeLines(startLine, endLine) {
+        return new Promise((resolve) => {
+            this.tokenizeLines(startLine, endLine, resolve);
+        });
+    }
+    tokenizeLines(startLine, endLine, resolve) {
         let processedLines = 0;
         let processedTime = Date.now();
         endLine = endLine || this.maxLine;
@@ -177,7 +196,7 @@ export default class {
         cancelIdleCallback(this.tokenizeLines.timer);
         if (this.scopeName && !this.grammar) {
             this.tokenizeLines.timer = setTimeout(() => {
-                this.tokenizeLines(startLine, endLine, currentLine);
+                this.tokenizeLines(startLine, endLine, resolve);
             });
             return;
         }
@@ -210,15 +229,13 @@ export default class {
             }
             startLine++;
         }
-        this.currentLine = currentLine || startLine;
+        this.currentLine = startLine;
         if (startLine <= endLine) {
             this.tokenizeLines.timer = requestIdleCallback(() => {
-                this.tokenizeLines(startLine, endLine, currentLine);
+                this.tokenizeLines(startLine, endLine, resolve);
             });
-        } else if (currentLine !== undefined) {
-            this.tokenizeLines.timer = requestIdleCallback(() => {
-                this.tokenizeLines(currentLine);
-            });
+        } else if (resolve) {
+            resolve();
         }
     }
     createHtml(tokens, lineText) {
