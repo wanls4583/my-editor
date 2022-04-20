@@ -63,6 +63,15 @@
         }
     }
 
+    &-bracket-match {
+        position: absolute;
+        top: 0;
+        z-index: 0;
+        height: 100%;
+        border: 1px solid var(--my-editorBracketMatch-border);
+        background-color: var(--my-editorBracketMatch-background);
+    }
+
     &-tab-line {
         position: absolute;
         top: 0;

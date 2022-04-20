@@ -633,6 +633,16 @@ export default class {
             if (!result.colors['editorIndentGuide.background']) {
                 result.colors['editorIndentGuide.background'] = result.colors['editorWhitespace.foreground'];
             }
+            if (!result.colors['editorBracketMatch.background']) {
+                result.colors['editorBracketMatch.background'] = transparent;
+            }
+            if (!result.colors['editorBracketMatch.border']) {
+                if (result.colors['editorBracketMatch.background'] === transparent) {
+                    result.colors['editorBracketMatch.border'] = chroma(result.colors['editor.foreground']).alpha(0.6).css();
+                } else {
+                    result.colors['editorBracketMatch.border'] = transparent;
+                }
+            }
         }
         // tab
         function _tab() {

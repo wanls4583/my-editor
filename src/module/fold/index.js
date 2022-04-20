@@ -234,24 +234,24 @@ export default class {
      */
     getBracketMatch(cursorPos) {
         let line = cursorPos.line;
-        let folds = this.htmls[line - 1].folds || [];
         let startFold = null;
         let stack = [];
         while (line >= 1 && !startFold) {
+            let folds = this.htmls[line - 1].folds || [];
             for (let i = 0; i < folds.length; i++) {
                 let fold = folds[i];
-                if (fold.type < 0 && fold.startIndex === cursorPos.column) {
+                if (fold.side < 0 && fold.startIndex === cursorPos.column) {
                     startFold = fold;
                     break;
-                } else if (fold.type > 0) {
+                } else if (fold.side > 0) {
                     if (fold.startIndex < cursorPos.column - 1 || line < cursorPos.line) {
                         stack.push(fold);
                     }
-                } else {
+                } else if (fold.side < 0) {
                     let exsitEnd = false;
                     if (stack.length) {
-                        for (let i = stack.length; i >= 0; i--) {
-                            if (stack[i].type + fold.type === 0) {
+                        for (let i = stack.length - 1; i >= 0; i--) {
+                            if (stack[i].side + fold.side === 0) {
                                 stack.splice(i, 1);
                                 exsitEnd = true;
                                 break;
@@ -259,11 +259,12 @@ export default class {
                         }
                     }
                     if (!exsitEnd) {
-                        startFold = fold;
+                        startFold = Object.assign({ line: line }, fold);
                         break;
                     }
                 }
             }
+            line--;
         }
         if (startFold) {
             return this.getRangeFoldByStartFold(startFold);

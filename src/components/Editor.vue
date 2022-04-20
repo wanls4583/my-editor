@@ -47,6 +47,18 @@
                                 class="my-code"
                                 v-html="line.html"
                             ></div>
+                            <!-- 当前光标所处范围-begin -->
+                            <div
+                                class="my-bracket-match"
+                                :style="{ left: bracketMatch.start.left + 'px', width: bracketMatch.start.width + 'px' }"
+                                v-if="bracketMatch && line.num == bracketMatch.start.line"
+                            ></div>
+                            <!-- 当前光标所处范围-end -->
+                            <div
+                                class="my-bracket-match"
+                                :style="{ left: bracketMatch.end.left + 'px', width: bracketMatch.end.width + 'px' }"
+                                v-if="bracketMatch && line.num == bracketMatch.end.line"
+                            ></div>
                             <!-- 选中时的首行背景 -->
                             <div
                                 :class="{ 'my-active': range.active, 'my-search-bg': range.isFsearch }"
@@ -156,14 +168,10 @@ export default {
             },
             cursorVisible: true,
             cursorFocus: true,
-            // language: 'HTML',
-            // language: 'JavaScript',
-            // language: 'CSS',
             language: '',
             tabSize: 4,
             renderHtmls: [],
             startLine: 1,
-            startToEndToken: null,
             top: 0,
             cursorLeft: 0,
             scrollLeft: 0,
@@ -172,6 +180,10 @@ export default {
             maxLine: 1,
             contentHeight: '100%',
             scrollerArea: {},
+            bracketMatch: {
+                start: {},
+                end: {},
+            },
             maxWidthObj: {
                 lineId: null,
                 text: '',
@@ -313,6 +325,7 @@ export default {
                     line: newVal ? newVal.line : '?',
                     column: newVal ? newVal.column : '?',
                 });
+                this.renderBracketMatch();
             },
             deep: true,
         },
@@ -780,6 +793,23 @@ export default {
             this.$nextTick(() => {
                 lineObj.fgTokens = _tokens;
             });
+        },
+        renderBracketMatch() {
+            this.bracketMatch = this.folder.getBracketMatch(this.nowCursorPos);
+            if (this.bracketMatch) {
+                let lineObj = null;
+                let pos = null;
+
+                lineObj = this.myContext.htmls[this.bracketMatch.start.line - 1];
+                pos = this.bracketMatch.start;
+                this.bracketMatch.start.width = this.getStrWidth(lineObj.text, pos.startIndex, pos.endIndex);
+                this.bracketMatch.start.left = this.getStrWidth(lineObj.text, 0, pos.startIndex);
+
+                lineObj = this.myContext.htmls[this.bracketMatch.end.line - 1];
+                pos = this.bracketMatch.end;
+                this.bracketMatch.end.width = this.getStrWidth(lineObj.text, pos.startIndex, pos.endIndex);
+                this.bracketMatch.end.left = this.getStrWidth(lineObj.text, 0, pos.startIndex);
+            }
         },
         clearSelectionToken() {
             this.myContext.fgLines.forEach((line) => {
