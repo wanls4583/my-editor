@@ -10,6 +10,7 @@ import * as oniguruma from 'vscode-oniguruma';
 const require = window.require || window.parent.require || function () {};
 const fs = require('fs');
 const path = require('path');
+
 let globalData = null;
 
 export default class {
@@ -192,9 +193,6 @@ export default class {
                     lineObj.tokens = this.splitLongToken(lineObj.tokens);
                     lineObj.html = this.createHtml(lineObj.tokens, lineObj.text);
                     this.renderLine(lineObj.lineId);
-                    lineObj.nowTheme = globalData.nowTheme.value;
-                } else {
-                    lineObj.nowTheme = '';
                 }
                 if (!lineObj.states || (lineObj.states.equals && !lineObj.states.equals(data.states)) || lineObj.states.toString() !== data.states.toString()) {
                     lineObj.states = data.states;
@@ -324,7 +322,7 @@ export default class {
                             lineText: lineText,
                         });
                         // 单行注释
-                        if (lastFold && lastFold.type === 'line-comment') {
+                        if (lastFold && lastFold.type === Util.constData.LINE_COMMENT) {
                             break outerLoop;
                         }
                         scopeName = token.scopes[i];
@@ -353,7 +351,7 @@ export default class {
             });
         }
         if (folds.length) {
-            return folds.peek().type === 'block-comment' ? folds.peek() : null;
+            return folds.peek().type === Util.constData.BLOCK_COMMENT ? folds.peek() : null;
         } else {
             return stateFold;
         }
@@ -373,15 +371,15 @@ export default class {
         } else {
             preFold = stateFold;
         }
-        if (preFold && preFold.type === 'block-comment' && preFold.side < 0) {
+        if (preFold && preFold.type === Util.constData.BLOCK_COMMENT && preFold.side < 0) {
             reg = foldMap.__endCommentReg__;
         }
         while ((res = reg.exec(text))) {
             let type = 'bracket';
             if (foldMap.__comments__.lineComment === res[0]) {
-                type = 'line-comment';
+                type = Util.constData.LINE_COMMENT;
             } else if (foldMap.__comments__.blockComment[0] === res[0] || foldMap.__comments__.blockComment[1] === res[0]) {
-                type = 'block-comment';
+                type = Util.constData.BLOCK_COMMENT;
             }
             folds.push({
                 startIndex: startIndex + res.index,
@@ -389,11 +387,11 @@ export default class {
                 side: foldMap[res[0]],
                 type: type,
             });
-            if (type === 'block-comment' && foldMap[res[0]] < 0) {
+            if (type === Util.constData.BLOCK_COMMENT && foldMap[res[0]] < 0) {
                 foldMap.__endCommentReg__.lastIndex = reg.lastIndex;
                 reg.lastIndex = 0;
                 reg = foldMap.__endCommentReg__;
-            } else if(type === 'line-comment') {
+            } else if (type === Util.constData.LINE_COMMENT) {
                 break;
             }
         }

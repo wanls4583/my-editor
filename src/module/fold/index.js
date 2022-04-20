@@ -165,14 +165,14 @@ export default class {
             if (singleTagMap[foldStartText]) {
                 return false;
             }
-            if (startFold.type === 'line-comment') {
+            if (startFold.type === Util.constData.LINE_COMMENT) {
                 let endLine = startLine;
                 let fold = null;
                 while (line <= this.htmls.length) {
                     let lineObj = this.htmls[line - 1];
                     let text = lineObj.text.trimLeft();
                     let _fold = lineObj.folds && lineObj.folds[0];
-                    if (!text || (_fold && _fold.type === 'line-comment')) {
+                    if (!text || (_fold && _fold.type === Util.constData.LINE_COMMENT)) {
                         if (text) {
                             endLine = text ? line : endLine;
                             fold = _fold;

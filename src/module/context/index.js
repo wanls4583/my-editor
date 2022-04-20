@@ -61,7 +61,8 @@ class Context {
             width: 0,
             tokens: [],
             folds: [],
-            states: []
+            states: [],
+            stateFold: null
         });
         this.lineIdMap.set(this.htmls[0].lineId, this.htmls[0]);
     }
@@ -159,7 +160,8 @@ class Context {
                 width: 0,
                 tokens: null,
                 folds: null,
-                states: null
+                states: null,
+                stateFold: null
             };
             this.lineIdMap.set(item.lineId, item);
             return item;
@@ -388,6 +390,7 @@ class Context {
         startObj.tokens = null;
         startObj.folds = null;
         startObj.states = null;
+        startObj.stateFold = null;
         this.setEditorData('maxLine', this.htmls.length);
         this.lint.onDeleteContentAfter(originPos.line, newPos.line);
         this.tokenizer.onDeleteContentAfter(originPos.line, newPos.line);

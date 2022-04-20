@@ -465,11 +465,7 @@ Util.command = {
     REPLACE: 'replace',
 };
 Util.constData = {
-    PAIR_START: -1,
-    PAIR_START_END: 0,
-    PAIR_END: 1,
-    FOLD_OPEN: 1,
-    FOLD_CLOSE: -1,
-    DEFAULT: 'default',
+    LINE_COMMENT: 'line-comment',
+    BLOCK_COMMENT: 'block-comment',
 };
 export default Util;

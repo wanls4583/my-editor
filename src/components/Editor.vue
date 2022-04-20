@@ -284,6 +284,7 @@ export default {
             this.myContext.htmls.forEach((lineObj) => {
                 lineObj.tokens = null;
                 lineObj.folds = null;
+                lineObj.stateFold = null;
                 lineObj.states = null;
                 lineObj.html = '';
             });
