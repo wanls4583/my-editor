@@ -469,10 +469,10 @@ export default {
         },
         // 渲染
         render(forceCursorView) {
-            let renderId = this.render.id + 1 || 1;
-            this.render.id = renderId;
+            let renderId = this.renderId + 1 || 1;
+            this.renderId = renderId;
             this.$nextTick(() => {
-                if (this.render.id !== renderId) {
+                if (this.renderId !== renderId) {
                     return;
                 }
                 this.renderLine();
@@ -601,11 +601,11 @@ export default {
             }
         },
         renderSelectedBg() {
-            let renderSelectedBgId = this.renderSelectedBg.id + 1 || 1;
-            this.renderSelectedBg.id = renderSelectedBgId;
+            let renderSelectedBgId = this.renderSelectedBgId + 1 || 1;
+            this.renderSelectedBgId = renderSelectedBgId;
             this.activeLineBg = true;
             this.$nextTick(() => {
-                if (this.renderSelectedBg.id != renderSelectedBgId) {
+                if (this.renderSelectedBgId != renderSelectedBgId) {
                     return;
                 }
                 if (!this.renderHtmls.length) {
@@ -801,10 +801,10 @@ export default {
         // 渲染光标
         renderCursor(forceCursorView) {
             let that = this;
-            let renderCursorId = this.renderCursor.id + 1 || 1;
-            this.renderCursor.id = renderCursorId;
+            let renderCursorId = this.renderCursorId + 1 || 1;
+            this.renderCursorId = renderCursorId;
             this.$nextTick(() => {
-                if (this.renderCursor.id !== renderCursorId || !this.renderHtmls.length) {
+                if (this.renderCursorId !== renderCursorId || !this.renderHtmls.length) {
                     return;
                 }
                 this.renderHtmls.forEach((item) => {
@@ -937,11 +937,11 @@ export default {
         setNowCursorPos(nowCursorPos) {
             this.nowCursorPos = nowCursorPos || { line: 1, column: 0 };
             if (nowCursorPos) {
-                let setNowCursorPosId = this.setNowCursorPos.id + 1 || 1;
-                this.setNowCursorPos.id = setNowCursorPosId;
+                let setNowCursorPosId = this.setNowCursorPosId + 1 || 1;
+                this.setNowCursorPosId = setNowCursorPosId;
                 // 强制滚动使光标处于可见区域
                 this.$nextTick(() => {
-                    if (this.setNowCursorPos.id != setNowCursorPosId) {
+                    if (this.setNowCursorPosId != setNowCursorPosId) {
                         return;
                     }
                     let height = this.folder.getRelativeLine(nowCursorPos.line) * this.charObj.charHight;

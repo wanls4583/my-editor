@@ -169,10 +169,10 @@ export default class {
         this.tokenizeVisibleLins();
     }
     tokenizeVisibleLins() {
-        let tokenizeVisibleLinsId = this.tokenizeVisibleLins.id + 1 || 1;
-        this.tokenizeVisibleLins.id = tokenizeVisibleLinsId;
+        let tokenizeVisibleLinsId = this.tokenizeVisibleLinsId + 1 || 1;
+        this.tokenizeVisibleLinsId = tokenizeVisibleLinsId;
         this.$nextTick(() => {
-            if (this.tokenizeVisibleLins.id !== tokenizeVisibleLinsId) {
+            if (this.tokenizeVisibleLinsId !== tokenizeVisibleLinsId) {
                 return;
             }
             let currentLine = this.currentLine;
