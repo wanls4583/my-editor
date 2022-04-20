@@ -98,7 +98,7 @@ export default {
                 if (path && preActiveItem && preActiveItem.path !== path) {
                     preActiveItem.active = false;
                     this.focusItem(path);
-                } else if(!path && preActiveItem) {
+                } else if (!path && preActiveItem) {
                     preActiveItem.active = false;
                     preActiveItem = null;
                 }
@@ -203,7 +203,7 @@ export default {
                         if (!item.open) {
                             index = i + 1;
                             this.onClickItem(item).then(() => {
-                                _findItem(path);
+                                _findItem.call(this, path);
                             });
                             break;
                         }
