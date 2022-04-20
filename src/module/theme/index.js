@@ -4,6 +4,7 @@
  * @Description:
  */
 import Util from '../../common/Util';
+import globalData from '@/data/globalData';
 import chroma from 'chroma-js';
 import EventBus from '@/event';
 
@@ -24,7 +25,7 @@ export default class {
             this.setDefaultColor(result, option.type);
             css = this.parseCss(result);
             this.insertCss(css);
-            window.globalData.nowTheme = {
+            globalData.nowTheme = {
                 value: option.value,
                 type: option.type,
                 path: option.path,
@@ -51,14 +52,14 @@ export default class {
     }
     loadIconTheme(option) {
         if (!option.path) {
-            window.globalData.nowIconTheme = {
+            globalData.nowIconTheme = {
                 value: option.value,
             };
-            window.globalData.nowIconData = null;
+            globalData.nowIconData = null;
             EventBus.$emit('icon-change');
             return;
         }
-        let languages = window.globalData.languageList;
+        let languages = globalData.languageList;
         let languageMap = {};
         languages.forEach((item) => {
             if (item.extensions) {
@@ -113,11 +114,11 @@ export default class {
                 data.fileNames = data.fileNames || {};
                 data.fileExtensions = data.fileExtensions || {};
                 _setFileExtensions(data);
-                window.globalData.nowIconTheme = {
+                globalData.nowIconTheme = {
                     value: option.value,
                     path: option.path,
                 };
-                window.globalData.nowIconData = data;
+                globalData.nowIconData = data;
                 EventBus.$emit('icon-change', option.value);
             });
         }
@@ -208,9 +209,9 @@ export default class {
                 .join(' ');
             regSource.push(`(?<reg_${item.scopeId}>${scope})`);
         });
-        window.globalData.scopeReg = new RegExp(regSource.join('|'));
-        window.globalData.scopeIdMap = scopeIdMap;
-        window.globalData.colors = data.colors;
+        globalData.scopeReg = new RegExp(regSource.join('|'));
+        globalData.scopeIdMap = scopeIdMap;
+        globalData.colors = data.colors;
         return css;
 
         function _getLevel(scope) {
@@ -222,22 +223,22 @@ export default class {
         }
     }
     insertCss(css) {
-        if (window.globalData.themeStyle) {
-            window.globalData.themeStyle.remove();
+        if (globalData.themeStyle) {
+            globalData.themeStyle.remove();
         }
-        window.globalData.themeStyle = document.createElement('style');
-        window.globalData.themeStyle.type = 'text/css';
-        window.globalData.themeStyle.appendChild(document.createTextNode(css));
-        document.getElementsByTagName('head')[0].appendChild(window.globalData.themeStyle);
+        globalData.themeStyle = document.createElement('style');
+        globalData.themeStyle.type = 'text/css';
+        globalData.themeStyle.appendChild(document.createTextNode(css));
+        document.getElementsByTagName('head')[0].appendChild(globalData.themeStyle);
     }
     insertFont(css) {
-        if (window.globalData.iconStyle) {
-            window.globalData.iconStyle.remove();
+        if (globalData.iconStyle) {
+            globalData.iconStyle.remove();
         }
-        window.globalData.iconStyle = document.createElement('style');
-        window.globalData.iconStyle.type = 'text/css';
-        window.globalData.iconStyle.appendChild(document.createTextNode(css));
-        document.getElementsByTagName('head')[0].appendChild(window.globalData.iconStyle);
+        globalData.iconStyle = document.createElement('style');
+        globalData.iconStyle.type = 'text/css';
+        globalData.iconStyle.appendChild(document.createTextNode(css));
+        document.getElementsByTagName('head')[0].appendChild(globalData.iconStyle);
     }
     setDefaultColor(result, type) {
         let transparent = 'transparent';

@@ -4,6 +4,7 @@
  * @Description:
  */
 import Util from '@/common/Util';
+import globalData from '@/data/globalData';
 import * as vsctm from 'vscode-textmate';
 import * as oniguruma from 'vscode-oniguruma';
 
@@ -11,11 +12,9 @@ const require = window.require || window.parent.require || function () {};
 const fs = require('fs');
 const path = require('path');
 
-let globalData = null;
 
 export default class {
     constructor(editor, context) {
-        globalData = window.globalData;
         this.currentLine = 1;
         this.initRegistry();
         this.initProperties(editor, context);
@@ -67,9 +66,21 @@ export default class {
         language = Util.getLanguageById(globalData.languageList, language);
         this.scopeName = (language && language.scopeName) || '';
         if (this.scopeName) {
-            return this.registry.loadGrammar(this.scopeName).then((grammar) => {
-                this.grammar = grammar;
-            });
+            if(globalData.grammars[this.scopeName]) {
+                let grammarData = globalData.grammars[this.scopeName];
+                this.grammar = grammarData.grammar;
+                this.sourceFoldMap = grammarData.sourceFoldMap;
+                this.hasTextGrammar = grammarData.hasTextGrammar;
+            } else {
+                return this.registry.loadGrammar(this.scopeName).then((grammar) => {
+                    this.grammar = grammar;
+                    globalData.grammars[this.scopeName] = {
+                        grammar: grammar,
+                        sourceFoldMap: this.sourceFoldMap,
+                        hasTextGrammar: this.hasTextGrammar
+                    }
+                });
+            }
         }
         return Promise.resolve();
     }

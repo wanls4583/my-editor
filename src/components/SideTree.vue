@@ -33,6 +33,7 @@
 <script>
 import EventBus from '@/event';
 import Util from '@/common/Util';
+import globalData from '@/data/globalData';
 
 const require = window.require || window.parent.require || function () {};
 let preActiveItem = null;
@@ -96,7 +97,6 @@ export default {
         render() {
             this.renderList = this.openedList.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines);
             this.renderList.forEach((item) => {
-                const globalData = window.globalData;
                 if (globalData.nowIconData) {
                     item.icon = Util.getIconByPath(globalData.nowIconData, item.path, globalData.nowTheme.type, item.type, item.open);
                     item.icon = item.icon ? `my-file-icon my-file-icon-${item.icon}` : '';

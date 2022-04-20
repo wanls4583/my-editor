@@ -122,8 +122,9 @@ import Tip from './Tip';
 import Util from '@/common/Util';
 import EventBus from '@/event';
 import $ from 'jquery';
+import globalData from '@/data/globalData';
+
 const contexts = Context.contexts;
-let globalData = null;
 
 export default {
     name: 'Editor',
@@ -339,7 +340,6 @@ export default {
     methods: {
         // 初始化数据
         initData() {
-            globalData = window.globalData;
             this.editorId = this.id;
             contexts[this.editorId] = new Context(this);
             this.maxWidthObj.lineId = this.myContext.htmls[0].lineId;

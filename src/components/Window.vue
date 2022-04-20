@@ -64,6 +64,7 @@ import Context from '@/module/context/index';
 import Theme from '@/module/theme';
 import EventBus from '@/event';
 import Util from '@/common/Util';
+import globalData from '@/data/globalData';
 import stripJsonComments from 'strip-json-comments';
 
 const require = window.require || window.parent.require || function () {};
@@ -85,7 +86,7 @@ export default {
     },
     data() {
         return {
-            extensionsPath: path.join(window.globalData.dirname, 'extensions'),
+            extensionsPath: path.join(globalData.dirname, 'extensions'),
             languageList: [],
             statusHeight: 30,
             topBarHeight: 35,
@@ -127,6 +128,7 @@ export default {
         };
     },
     created() {
+        window.globalData = globalData;
         if (this.mode === 'app') {
             const currentWindow = remote.getCurrentWindow();
             currentWindow.on('blur', () => {
@@ -140,14 +142,14 @@ export default {
             let iconThemes = result.iconThemes;
             let scopeFileList = result.scopeFileList;
             langeuages.push({ name: 'Plain Text', value: '', checked: true });
-            window.globalData.languageList = langeuages.slice();
-            window.globalData.scopeFileList = scopeFileList.slice();
-            window.globalData.themes = themes.slice();
-            window.globalData.iconThemes = iconThemes.slice();
+            globalData.languageList = langeuages.slice();
+            globalData.scopeFileList = scopeFileList.slice();
+            globalData.themes = themes.slice();
+            globalData.iconThemes = iconThemes.slice();
             this.languageList = langeuages;
             this.checkLanguage();
-            this.theme.loadTheme(window.globalData.nowTheme);
-            this.theme.loadIconTheme(window.globalData.nowIconTheme);
+            this.theme.loadTheme(globalData.nowTheme);
+            this.theme.loadIconTheme(globalData.nowIconTheme);
         });
         this.initEventBus();
     },
@@ -160,7 +162,7 @@ export default {
             EventBus.$on('icon-change', (value) => {
                 this.editorList.forEach((item) => {
                     if (value) {
-                        let icon = Util.getIconByPath(window.globalData.nowIconData, item, window.globalData.nowTheme.type);
+                        let icon = Util.getIconByPath(globalData.nowIconData, item, globalData.nowTheme.type);
                         item.icon = icon ? `my-file-icon my-file-icon-${icon}` : '';
                     } else {
                         item.icon = '';
@@ -288,18 +290,18 @@ export default {
             let cmdList = null;
             switch (item.op) {
                 case 'changeTheme':
-                    cmdList = window.globalData.themes.map((item) => {
+                    cmdList = globalData.themes.map((item) => {
                         return item.map((item) => {
                             return Object.assign({ op: 'changeTheme' }, item);
                         });
                     });
                     EventBus.$emit('open-cmd-menu', {
                         cmdList: cmdList,
-                        value: window.globalData.nowTheme.value,
+                        value: globalData.nowTheme.value,
                     });
                     break;
                 case 'changeIconTheme':
-                    cmdList = window.globalData.iconThemes.map((item) => {
+                    cmdList = globalData.iconThemes.map((item) => {
                         return Object.assign({ op: 'changeIconTheme' }, item);
                     });
                     cmdList.push({
@@ -309,13 +311,13 @@ export default {
                     });
                     EventBus.$emit('open-cmd-menu', {
                         cmdList: cmdList,
-                        value: window.globalData.nowIconTheme.value,
+                        value: globalData.nowIconTheme.value,
                     });
                     break;
             }
         },
         onSelectLanguage() {
-            let cmdList = window.globalData.languageList.map((item) => {
+            let cmdList = globalData.languageList.map((item) => {
                 return {
                     op: 'selectLanguage',
                     name: item.name + (item.language ? `（${item.language}）` : ''),
@@ -429,7 +431,7 @@ export default {
                         active: false,
                     };
                     if (!tab.icon) {
-                        let icon = Util.getIconByPath(window.globalData.nowIconData, '', window.globalData.nowTheme.type);
+                        let icon = Util.getIconByPath(globalData.nowIconData, '', globalData.nowTheme.type);
                         tab.icon = icon ? `my-file-icon my-file-icon-${icon}` : '';
                     }
                     this.editorList.splice(index + 1, 0, tab);
@@ -468,7 +470,7 @@ export default {
                     let results = [];
                     if (!result.canceled && result.filePaths) {
                         result.filePaths.forEach((item) => {
-                            let icon = Util.getIconByPath(window.globalData.nowIconData, item, window.globalData.nowTheme.type);
+                            let icon = Util.getIconByPath(globalData.nowIconData, item, globalData.nowTheme.type);
                             icon = icon ? `my-file-icon my-file-icon-${icon}` : '';
                             let obj = {
                                 id: this.idCount++,
