@@ -653,8 +653,8 @@ export default class {
                     result.colors['editorGroupHeader.tabsBackground'] = result.colors['sideBar.background'];
                 }
             }
-            if (!result.colors['editorGroupHeader.border']) {
-                result.colors['editorGroupHeader.border'] = contrastBorder;
+            if (!result.colors['editorGroupHeader.tabsBackground']) {
+                result.colors['editorGroupHeader.tabsBackground'] = contrastBorder;
             }
             if (!result.colors['tab.border']) {
                 result.colors['tab.border'] = contrastBorder;

@@ -5,9 +5,18 @@
         left: 0;
         width: 100%;
         height: 40px;
-        border-bottom: 1px solid var(--my-editorGroupHeader-border);
         background-color: var(--my-editorGroupHeader-tabsBackground);
         background-clip: content-box;
+
+        &::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            z-index: 1;
+            height: 1px;
+            width: 100%;
+            background-color: var(--my-editorGroupHeader-tabsBorder);
+        }
 
         .bar-scroller {
             width: 100%;
@@ -37,6 +46,7 @@
             }
 
             &.my-active {
+                z-index: 2;
                 border-top: 1px solid var(--my-tab-activeBorderTop);
                 border-bottom: 1px solid var(--my-tab-activeBorder);
                 background-color: var(--my-tab-activeBackground);

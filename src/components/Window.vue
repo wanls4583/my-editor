@@ -559,6 +559,7 @@ export default {
             let scopeFileList = [];
             let themes = [[], [], [], []];
             let iconThemes = [];
+            let varMap = {};
             return new Promise((resolve) => {
                 // 异步读取目录内容
                 fs.readdir(this.extensionsPath, { encoding: 'utf8' }, (err, files) => {
@@ -568,6 +569,15 @@ export default {
                     files.forEach((item, index) => {
                         let fullPath = path.join(this.extensionsPath, item);
                         let packPath = path.join(fullPath, './package.json');
+                        let varConfigPath = path.join(fullPath, './package.nls.json');
+                        if (fs.existsSync(varConfigPath)) {
+                            const text = fs.readFileSync(varConfigPath, 'utf-8');
+                            try {
+                                varMap = JSON.parse(stripJsonComments(text));
+                            } catch (e) {
+                                console.log(e);
+                            }
+                        }
                         if (fs.existsSync(packPath)) {
                             const text = fs.readFileSync(packPath, 'utf-8');
                             try {
@@ -576,7 +586,9 @@ export default {
                                 _addLanguage(contributes, fullPath);
                                 _addTheme(contributes, fullPath);
                                 _addIconTheme(contributes, fullPath);
-                            } catch (e) {}
+                            } catch (e) {
+                                console.log(e);
+                            }
                         }
                     });
                     themes = themes.filter((item) => {
@@ -625,6 +637,7 @@ export default {
                 list.map((theme) => {
                     let type = 'light';
                     let index = 0;
+                    let label = _getValue(theme.label);
                     switch (theme.uiTheme) {
                         case 'vs-dark':
                             type = 'dark';
@@ -640,8 +653,8 @@ export default {
                             break;
                     }
                     themes[index].push({
-                        name: theme.id,
-                        value: theme.id,
+                        name: theme.id || label,
+                        value: label || theme.id,
                         type: type,
                         path: path.join(fullPath, theme.path),
                     });
@@ -651,12 +664,21 @@ export default {
             function _addIconTheme(contributes, fullPath) {
                 let list = contributes.iconThemes || [];
                 list.map((theme) => {
+                    let label = _getValue(theme.label);
                     iconThemes.push({
-                        name: theme.id,
-                        value: theme.id,
+                        name: label || theme.id,
+                        value: theme.id || label,
                         path: path.join(fullPath, theme.path),
                     });
                 });
+            }
+
+            function _getValue(name) {
+                name = name || '';
+                if(name[0] === '%' && name[name.length-1] === '%') {
+                    name = varMap[name.slice(1, -1)] || name;
+                }
+                return name;
             }
         },
         getTabById(id) {
