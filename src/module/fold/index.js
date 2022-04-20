@@ -236,18 +236,13 @@ export default class {
         let line = cursorPos.line;
         let startFold = null;
         let stack = [];
-        while (line >= 1 && !startFold) {
+        outerLoop: while (line >= 1 && !startFold) {
             let folds = this.htmls[line - 1].folds || [];
             for (let i = 0; i < folds.length; i++) {
                 let fold = folds[i];
-                if (fold.side < 0 && fold.startIndex === cursorPos.column) {
-                    startFold = fold;
-                    break;
-                } else if (fold.side > 0) {
-                    if (fold.startIndex < cursorPos.column - 1 || line < cursorPos.line) {
-                        stack.push(fold);
-                    }
-                } else if (fold.side < 0) {
+                if (fold.side > 0 && (line < cursorPos.line || fold.startIndex < cursorPos.column - 1)) {
+                    stack.push(fold);
+                } else if (fold.side < 0 && (line < cursorPos.line || fold.startIndex <= cursorPos.column)) {
                     let exsitEnd = false;
                     if (stack.length) {
                         for (let i = stack.length - 1; i >= 0; i--) {
@@ -260,7 +255,7 @@ export default class {
                     }
                     if (!exsitEnd) {
                         startFold = Object.assign({ line: line }, fold);
-                        break;
+                        break outerLoop;
                     }
                 }
             }
