@@ -88,6 +88,12 @@
 
             .bar-close-icon {
                 display: none;
+                padding: 4px;
+                border-radius: 4px;
+
+                &:hover {
+                    background-color: var(--my-toolbar-hoverBackground);
+                }
             }
 
             .bar-dot {
