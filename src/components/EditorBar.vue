@@ -4,7 +4,7 @@
  * @Description: 
 -->
 <template>
-    <div @selectstart.prevent class="my-editor-bar">
+    <div @selectstart.prevent class="my-editor-bar" ref="editorBar">
         <div class="bar-scroller my-scroll-overlay my-scroll-mini">
             <div
                 :class="[item.active ? 'my-active' : '']"
@@ -17,12 +17,7 @@
                 <div class="bar-content" :class="[item.icon]">
                     <span class="bar-text">{{ item.name }}</span>
                     <div class="bar-icon">
-                        <span
-                            @click.stop="onClose(item.id)"
-                            class="bar-close-icon iconfont icon-close"
-                            title="close"
-                            v-show="item.saved"
-                        ></span>
+                        <span @click.stop="onClose(item.id)" class="bar-close-icon iconfont icon-close" title="close" v-show="item.saved"></span>
                         <span class="bar-dot" v-show="!item.saved"></span>
                     </div>
                 </div>
@@ -34,6 +29,7 @@
 <script>
 import EditorBarMenu from './EditorBarMenu';
 import ShortCut from '@/module/shortcut/editor-bar';
+import EventBus from '@/event';
 import $ from 'jquery';
 
 export default {
@@ -58,12 +54,20 @@ export default {
     },
     created() {
         this.shortcut = new ShortCut(this);
+        this.initEventBus();
         $(window).on('keydown', (e) => {
             this.shortcut.onKeyDown(e);
         });
     },
-    mounted() {},
     methods: {
+        initEventBus() {
+            EventBus.$on('tab-change', (data) => {
+                this.$nextTick(() => {
+                    let $tab = $(this.$refs.editorBar).find('div.my-active');
+                    $tab.length && $tab[0].scrollIntoView();
+                });
+            });
+        },
         onClickItem(id) {
             this.$emit('change', id);
         },

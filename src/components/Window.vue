@@ -25,7 +25,6 @@
                 @close-saved="onCloseSaved"
                 @close-to-left="onCloseToLeft"
                 @close-to-right="onCloseToRight"
-                ref="editorBar"
                 v-show="editorList.length"
             ></editor-bar>
             <!-- 编辑区 -->
