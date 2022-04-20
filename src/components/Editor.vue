@@ -1384,12 +1384,12 @@ export default {
         },
         // 获得焦点
         onFocus() {
-            clearTimeout(this.onBlur.timer);
+            clearTimeout(this.onBlurTimer);
             this.showCursor();
         },
         // 失去焦点
         onBlur() {
-            this.onBlur.timer = setTimeout(() => {
+            this.onBlurTimer = setTimeout(() => {
                 this.hideCursor();
             }, 300);
         },

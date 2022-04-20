@@ -428,7 +428,7 @@ class Context {
             line: this.htmls[0].lineId,
             width: 0
         };
-        clearTimeout(this.setMaxWidth.timer);
+        clearTimeout(this.setMaxWidthTimer);
         _setMaxWidth();
 
         function _setMaxWidth() {
@@ -447,7 +447,7 @@ class Context {
                 }
             }
             if (index < that.htmls.length) {
-                that.setMaxWidth.timer = setTimeout(() => {
+                that.setMaxWidthTimer = setTimeout(() => {
                     _setMaxWidth();
                 }, 20);
             } else {
@@ -464,7 +464,7 @@ class Context {
         let index = 0;
         let startTime = Date.now();
         let maxWidthObj = this.maxWidthObj;
-        clearTimeout(this.setLineWidth.timer);
+        clearTimeout(this.setLineWidthTimer);
         _setLineWidth();
 
         function _setLineWidth() {
@@ -487,7 +487,7 @@ class Context {
                 }
             }
             if (index < texts.length) {
-                that.setLineWidth.timer = setTimeout(() => {
+                that.setLineWidthTimer = setTimeout(() => {
                     _setLineWidth();
                 }, 20);
             } else {

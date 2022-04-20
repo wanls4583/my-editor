@@ -140,7 +140,7 @@ export default class {
     onInsertContentAfter(nowLine, newLine) {
         if (nowLine <= this.currentLine) {
             this.currentLine = nowLine;
-            clearTimeout(this.tokenizeLines.timer);
+            clearTimeout(this.tokenizeLinesTimer);
             this.$nextTick(() => {
                 if (this.currentLine !== nowLine) {
                     return;
@@ -154,7 +154,7 @@ export default class {
     onDeleteContentAfter(nowLine, newLine) {
         if (newLine <= this.currentLine) {
             this.currentLine = newLine;
-            clearTimeout(this.tokenizeLines.timer);
+            clearTimeout(this.tokenizeLinesTimer);
             this.$nextTick(() => {
                 if (this.currentLine !== newLine) {
                     return;
@@ -204,9 +204,9 @@ export default class {
         let processedTime = Date.now();
         endLine = endLine || this.maxLine;
         endLine = endLine > this.maxLine ? this.maxLine : endLine;
-        cancelIdleCallback(this.tokenizeLines.timer);
+        cancelIdleCallback(this.tokenizeLinesTimer);
         if (this.scopeName && !this.grammar) {
-            this.tokenizeLines.timer = setTimeout(() => {
+            this.tokenizeLinesTimer = setTimeout(() => {
                 this.tokenizeLines(startLine, endLine, resolve);
             });
             return;
@@ -243,7 +243,7 @@ export default class {
         }
         this.currentLine = startLine;
         if (startLine <= endLine) {
-            this.tokenizeLines.timer = requestIdleCallback(() => {
+            this.tokenizeLinesTimer = requestIdleCallback(() => {
                 this.tokenizeLines(startLine, endLine, resolve);
             });
         } else if (resolve) {
