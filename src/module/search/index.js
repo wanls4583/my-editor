@@ -96,6 +96,7 @@ export default class {
                     line: line + lines.length - 1,
                     column: lines.length > 1 ? lines.peek().length : column + exec[0].length,
                 };
+                line = end.line;
                 column = end.column;
                 rangePos = {
                     start: start,
