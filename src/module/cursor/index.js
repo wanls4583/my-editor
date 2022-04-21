@@ -47,13 +47,13 @@ export default class {
     addCursorAbove() {
         this.multiCursorPos.forEach((item) => {
             if (item.line > 1) {
-                let maxColumn = this.htmls[item.line - 2].text.length;
-                let column = item.moveColumn !== undefined ? item.moveColumn : item.column;
+                let width = item.moveWidth || this.getStrWidth(this.htmls[item.line-1].text, 0, item.column);
+                let column = this.getColumnByWidth(this.htmls[item.line-2].text, width);
                 let cursorPos = this.addCursorPos({
                     line: item.line - 1,
-                    column: column > maxColumn ? maxColumn : column
+                    column: column
                 });
-                cursorPos.moveColumn = column;
+                cursorPos.moveWidth = width;
                 this.setNowCursorPos(cursorPos);
             }
         });
@@ -61,13 +61,13 @@ export default class {
     addCursorBelow() {
         this.multiCursorPos.forEach((item) => {
             if (item.line < this.htmls.length) {
-                let maxColumn = this.htmls[item.line].text.length;
-                let column = item.moveColumn !== undefined ? item.moveColumn : item.column;
+                let width = item.moveWidth || this.getStrWidth(this.htmls[item.line-1].text, 0, item.column);
+                let column = this.getColumnByWidth(this.htmls[item.line].text, width);
                 let cursorPos = this.addCursorPos({
                     line: item.line + 1,
-                    column: column > maxColumn ? maxColumn : column
+                    column: column
                 });
-                cursorPos.moveColumn = column;
+                cursorPos.moveWidth = width;
                 this.setNowCursorPos(cursorPos);
             }
         });
@@ -200,14 +200,16 @@ export default class {
             column = this.htmls[line - 1].text.length;
         } else if (direct === 'up') {
             if (line > 1) {
-                let width = this.getStrWidth(text, 0, column);
+                let width = cursorPos.moveWidth || this.getStrWidth(text, 0, column);
+                cursorPos.moveWidth = width;
                 line--;
                 text = this.htmls[line - 1].text;
                 column = this.getColumnByWidth(text, width);
             }
         } else if (direct === 'down') {
             if (line < this.htmls.length) {
-                let width = this.getStrWidth(text, 0, column);
+                let width = cursorPos.moveWidth || this.getStrWidth(text, 0, column);
+                cursorPos.moveWidth = width;
                 line++;
                 text = this.htmls[line - 1].text;
                 column = this.getColumnByWidth(text, width);
