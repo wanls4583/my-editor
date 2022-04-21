@@ -5,7 +5,6 @@
  */
 import Util from '@/common/Util';
 import Btree from '@/common/Btree';
-import globalData from '@/data/globalData';
 
 const regs = {
     word: /[a-zA-Z0-9_]/,
@@ -17,14 +16,8 @@ export default class {
         this.initProperties(editor, context);
         this.multiCursorPos = new Btree(Util.comparePos);
         this.multiKeyCode = 'ctrl';
-        this.wordPattern = globalData.defaultWordPattern;
-        let language = Util.getLanguageById(globalData.languageList, this.language);
-        if (language) {
-            wordPattern = globalData.sourceWordMap[language.scopeName];
-            wordPattern = wordPattern && wordPattern.pattern;
-            this.wordPattern = wordPattern || this.wordPattern;
-        }
-        this.wordPattern = new RegExp(this.wordPattern, 'g');
+        this.wordPattern = Util.getWordPattern(this.language);
+        this.leftWrodPattern = new RegExp(`(${this.wordPattern.source})$`);
     }
     initProperties(editor, context) {
         Util.defineProperties(this, editor, ['language', 'nowCursorPos', 'searcher', 'selecter', 'setNowCursorPos', 'renderCursor', 'getColumnByWidth', 'getStrWidth']);
@@ -243,12 +236,10 @@ export default class {
                         let _column = column;
                         column--;
                         text = text.slice(0, _column);
-                        while ((res = this.wordPattern.exec(text))) {
-                            if (res.index + res[0].length === _column) {
-                                column = res.index;
-                            }
+                        res = this.leftWrodPattern.exec(text);
+                        if (res) {
+                            column = res.index;
                         }
-                        this.wordPattern.lastIndex = 0;
                     }
                 } else if (cursorPos.line === line) {
                     column--;

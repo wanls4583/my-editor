@@ -24,11 +24,13 @@ class Context {
         this.lineIdMap = new Map(); //htmls的唯一标识对象
         this.renderedIdMap = new Map(); //renderHtmls的唯一标识对象
         this.renderedLineMap = new Map(); //renderHtmls的唯一标识对象
+        this.wordPattern = Util.getWordPattern(this.language);
         this.initProperties(editor);
         this.initData();
     }
     initProperties(editor) {
         Util.defineProperties(this, editor, [
+            'language',
             'tabSize',
             'nowCursorPos',
             'maxLine',
@@ -1087,23 +1089,21 @@ class Context {
         let text = this.htmls[this.nowCursorPos.line - 1].text;
         let str = '';
         let index = this.nowCursorPos.column;
-        let sReg = regs.word;
         let startColumn = index;
         let endColumn = index;
-        if (index && text[index - 1].match(regs.dWord)) {
-            sReg = regs.dWord;
+        let res = null;
+        while ((res = this.wordPattern.exec(text))) {
+            if (res.index <= index && res.index + res[0].length >= index) {
+                startColumn = res.index;
+                endColumn = res.index + res[0].length;
+                str = res[0];
+                break;
+            } else if (res.index > index) {
+                break;
+            }
         }
-        while (index > 0 && text[index - 1].match(sReg)) {
-            str = text[index - 1] + str;
-            startColumn = index;
-            index--;
-        }
-        index = this.nowCursorPos.column;
-        while (index < text.length && text[index].match(sReg)) {
-            str += text[index];
-            endColumn = index;
-            index++;
-        }
+        this.wordPattern.lastIndex = 0;
+
         return {
             text: str,
             range: {

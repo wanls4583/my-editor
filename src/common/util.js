@@ -3,6 +3,7 @@
  * @Date: 2020-10-31 13:48:50
  * @Description: 工具类
  */
+import globalData from '@/data/globalData';
 import $ from 'jquery';
 import stripJsonComments from 'strip-json-comments';
 
@@ -243,6 +244,16 @@ class Util {
                 return languageList[i];
             }
         }
+    }
+    static getWordPattern(language) {
+        let wordPattern = globalData.defaultWordPattern;
+        language = Util.getLanguageById(globalData.languageList, language);
+        if (language) {
+            let _wordPattern = globalData.sourceWordMap[language.scopeName];
+            _wordPattern = _wordPattern && _wordPattern.pattern;
+            wordPattern = _wordPattern || wordPattern;
+        }
+        return new RegExp(wordPattern, 'g');
     }
     static getIconByPath(iconData, path, type, fileType, opened) {
         let fileName = /[^\\\/]+$/.exec(path);
