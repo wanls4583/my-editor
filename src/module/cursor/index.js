@@ -202,6 +202,10 @@ export default class {
         let text = this.htmls[cursorPos.line - 1].text;
         let line = cursorPos.line;
         let column = cursorPos.column;
+        // 去除上下移动光标的初始宽度记录
+        if(direct !== 'up' && direct !== 'down') {
+            cursorPos.moveWidth = 0;
+        }
         if (direct === 'home') {
             column = 0;
         } else if (direct === 'end') {
