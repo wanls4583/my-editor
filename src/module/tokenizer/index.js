@@ -41,6 +41,7 @@ export default class {
                         return Util.loadJsonFile(language.configPath).then((data) => {
                             // 每种语言都有对应的折叠标记
                             this.sourceFoldMap[language.scopeName] = {};
+                            globalData.sourceWordMap[language.scopeName] = data.wordPattern;
                             // 是否存在标记性语言
                             this.hasTextGrammar = this.hasTextGrammar || language.scopeName.startsWith('text');
                             this.initLanguageConifg(this.sourceFoldMap[language.scopeName], data);

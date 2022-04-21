@@ -23,6 +23,8 @@ const globalData = {
     languageList: [],
     scopeFileList: [],
     grammars: {},
+    sourceWordMap: {},
+    defaultWordPattern: "(-?\\d*\\.\\d\\w*)|([^\\`\\~\\!\\@\\%\\^\\&\\*\\(\\)\\-\\=\\+\\[\\{\\]\\}\\\\\\|\\;\\:\\'\\\"\\,\\.\\<\\>/\\?\\s]+)"
 };
 
 export default globalData;
