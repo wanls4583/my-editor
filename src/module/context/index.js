@@ -157,6 +157,7 @@ class Context {
     _insertContent(text, cursorPos, alignmentTab) {
         let nowLineText = this.htmls[cursorPos.line - 1].text;
         let newPos = Object.assign({}, cursorPos);
+        cursorPos.moveWidth = 0; //删除上下移动光标宽度记录
         text = text.split(/\r\n|\n/);
         text = text.map((item) => {
             item = {
@@ -339,6 +340,7 @@ class Context {
     _deleteContent(cursorPos, keyCode) {
         let range = null;
         let margin = keyCode === Util.keyCode.DELETE ? 'left' : 'right';
+        cursorPos.moveWidth = 0; //删除上下移动光标宽度记录
         if (cursorPos.start && cursorPos.end) {
             //删除范围内的内容
             range = cursorPos;
