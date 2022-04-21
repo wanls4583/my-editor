@@ -586,26 +586,42 @@ export default class {
                 if (isHc) {
                     result.colors['editor.selectionBackground'] = focusBorder;
                 } else {
-                    result.colors['editor.selectionBackground'] = '#0097fb6e';
+                    result.colors['editor.selectionBackground'] = chroma(focusBorder).alpha(0.6).css();
                 }
             }
             if (!result.colors['editor.selectionHighlightBackground']) {
-                result.colors['editor.selectionHighlightBackground'] = transparent;
+                if (isHc) {
+                    result.colors['editor.selectionHighlightBackground'] = transparent;
+                } else {
+                    result.colors['editor.selectionHighlightBackground'] = chroma(focusBorder).alpha(0.3).css();
+                }
             }
             if (!result.colors['editor.selectionHighlightBorder']) {
-                result.colors['editor.selectionHighlightBorder'] = contrastActiveBorder || '#0097fb6e';
+                if (isHc) {
+                    result.colors['editor.selectionHighlightBorder'] = contrastActiveBorder;
+                } else {
+                    result.colors['editor.selectionHighlightBorder'] = transparent;
+                }
             }
             if (!result.colors['editor.findMatchBackground']) {
-                result.colors['editor.findMatchBackground'] = 'rgb(250, 201, 171)';
+                result.colors['editor.findMatchBackground'] = chroma(focusBorder).alpha(0.8).css();
             }
             if (!result.colors['editor.findMatchBorder']) {
                 result.colors['editor.findMatchBorder'] = transparent;
             }
             if (!result.colors['editor.findMatchHighlightBackground']) {
-                result.colors['editor.findMatchHighlightBackground'] = transparent;
+                if (isHc) {
+                    result.colors['editor.findMatchHighlightBackground'] = transparent;
+                } else {
+                    result.colors['editor.findMatchHighlightBackground'] = chroma(focusBorder).alpha(0.3).css();
+                }
             }
             if (!result.colors['editor.findMatchHighlightBorder']) {
-                result.colors['editor.findMatchHighlightBorder'] = contrastActiveBorder || 'rgb(250, 201, 171)';
+                if (isHc) {
+                    result.colors['editor.findMatchHighlightBorder'] = contrastActiveBorder;
+                } else {
+                    result.colors['editor.findMatchHighlightBorder'] = transparent;
+                }
             }
             if (!result.colors['editor.lineHighlightBackground']) {
                 result.colors['editor.lineHighlightBackground'] = transparent;
