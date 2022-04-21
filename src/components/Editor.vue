@@ -591,6 +591,9 @@ export default {
                     while (_line >= 1) {
                         if (wReg.exec(that.myContext.htmls[_line - 1].text)) {
                             preTabNum = _getTabNum(_line);
+                            if (that.folder.getRangeFold(_line, true)) {
+                                preTabNum++;
+                            }
                             break;
                         }
                         _line--;

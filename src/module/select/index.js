@@ -71,14 +71,16 @@ export default class {
             },
             true
         );
-        let value = it.prev();
-        if (value && Util.comparePos(value.end, cursorPos) >= 0) {
-            return value;
-        }
-        it.reset();
-        value = it.next();
-        if (value && Util.comparePos(value.start, cursorPos) == 0) {
-            return value;
+        if(it) {
+            let value = it.prev();
+            if (value && Util.comparePos(value.end, cursorPos) >= 0) {
+                return value;
+            }
+            it.reset();
+            value = it.next();
+            if (value && Util.comparePos(value.start, cursorPos) == 0) {
+                return value;
+            }
         }
         return false;
     }
