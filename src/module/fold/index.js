@@ -243,7 +243,7 @@ export default class {
                 // 跳过标签名
                 if(fold.type === Util.constData.TAG) {
                     continue;
-                } else if (fold.side > 0 && (line < cursorPos.line || fold.startIndex < cursorPos.column - 1)) {
+                } else if (fold.side > 0 && (line < cursorPos.line || fold.endIndex < cursorPos.column)) {
                     stack.push(fold);
                 } else if (fold.side < 0 && (line < cursorPos.line || fold.startIndex <= cursorPos.column)) {
                     let exsitEnd = false;
