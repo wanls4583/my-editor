@@ -644,7 +644,7 @@ export default {
                     let _range = this.fSelecter.getRangeByCursorPos(range.start);
                     if (this.searchVisible) {
                         // 优先渲染搜索框的选中范围
-                        if (!_range || !_range.active) {
+                        if (!_range && range.active) {
                             this._renderSelectedBg(range);
                         }
                     } else {
@@ -1446,8 +1446,6 @@ export default {
             });
             this.searchNow = resultObj.now;
             this.searchCount = resultObj.count;
-            // 删除非搜索框选中的区域
-            this.searcher.clearSearch();
         },
         onSearchNext() {
             if (this.fSearcher.hasCache()) {

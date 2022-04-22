@@ -122,7 +122,6 @@ class Context {
             let _text = texts.length === cursorPosList.length ? texts[index] : text;
             let commandObj = (command && command[index]) || {};
             let margin = commandObj.margin || 'right';
-            let active = commandObj.active || false;
             let pos = {
                 line: cursorPos.line,
                 column: cursorPos.column,
@@ -137,19 +136,12 @@ class Context {
             historyArr.push(historyObj);
             prePos = historyObj.cursorPos;
             historyObj.margin = margin;
-            historyObj.active = active;
             lineDelta += historyObj.cursorPos.line - historyObj.preCursorPos.line;
             columnDelta += historyObj.cursorPos.column - historyObj.preCursorPos.column;
             if (margin === 'right') {
                 this.cursor.addCursorPos(historyObj.cursorPos);
             } else {
                 this.cursor.addCursorPos(historyObj.preCursorPos);
-            }
-            if (active) {
-                this.selecter.addRange({
-                    start: historyObj.preCursorPos,
-                    end: historyObj.cursorPos,
-                });
             }
         });
         return historyArr;
@@ -238,7 +230,6 @@ class Context {
                     start: item.preCursorPos,
                     end: item.cursorPos,
                     margin: item.margin,
-                    active: item.active,
                 };
                 return obj;
             });
@@ -464,7 +455,6 @@ class Context {
             text: deleteText,
             keyCode: keyCode,
             margin: margin,
-            active: range && range.active,
         };
         return historyObj;
     }
@@ -780,7 +770,6 @@ class Context {
                     column: this.htmls[item.line - 1].text.length,
                 },
                 margin: 'right',
-                active: false,
             };
             ranges.push(range);
             preItem = item;

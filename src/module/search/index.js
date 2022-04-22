@@ -23,28 +23,45 @@ export default class {
         let config = null;
         searchObj = searchObj || {};
         if (hasCache) {
-            resultObj = this.getFromCache(searchObj.direct);
+            // 搜索框第一次搜索时不选中活动区域，避免第一次删除非搜索框选中区域
+            if (this.fSearcher === this && this.selecter.activedRanges.size === 0) {
+                resultObj = {
+                    now: this.cacheData.index + 1,
+                    result: this.cacheData.results[this.cacheData.index],
+                    results: this.cacheData.results,
+                };
+            } else {
+                resultObj = this.getFromCache(searchObj.direct);
+            }
         } else {
             config = (searchObj && searchObj.config) || this.getToSearchConfig();
             if (!config || !config.text) {
                 return { now: 0, count: 0 };
             }
-            this.cursor.clearCursorPos();
             resultObj = this._search(config);
         }
         if (resultObj && resultObj.result) {
-            if (!hasCache) {
-                this.selecter.addRange(resultObj.list);
-            }
-            if (this.fSearcher === this) {
-                this.selecter.setActive(resultObj.result.end);
-                this.cursor.setCursorPos(resultObj.result.end);
+            if (hasCache) {
+                if (this.fSearcher === this) {
+                    this.selecter.setActive(resultObj.result.end);
+                    this.cursor.setCursorPos(resultObj.result.end);
+                    this.searcher.clearSearch(); //搜索框确认搜索时，删除非搜索框的选中区域
+                } else {
+                    this.selecter.addActive(resultObj.result.end);
+                    this.cursor.addCursorPos(resultObj.result.end);
+                }
             } else {
-                this.selecter.addActive(resultObj.result.end);
-                this.cursor.addCursorPos(resultObj.result.end);
+                this.selecter.addRange(resultObj.results);
+                if (this.searcher === this) {
+                    this.selecter.addActive(resultObj.result.end);
+                    this.cursor.setCursorPos(resultObj.result.end);
+                } else {
+                    // 搜索框第一次搜索时不选中活动区域，避免第一次删除非搜索框选中区域
+                    this.selecter.clearActive();
+                }
             }
             now = resultObj.now;
-            count = resultObj.list.length;
+            count = resultObj.results.length;
         }
 
         return {
@@ -116,7 +133,7 @@ export default class {
         };
         return {
             now: this.cacheData.index + 1,
-            list: results,
+            results: results,
             result: result,
         };
     }
@@ -140,6 +157,9 @@ export default class {
             }
         });
     }
+    hasCache() {
+        return !!this.cacheData;
+    }
     /**
      * 清除搜索
      * @param {Boolean} retainActive 是否保留活动的选中区域
@@ -158,9 +178,6 @@ export default class {
             this.cacheData.indexs = {};
             this.selecter.clearActive();
         }
-    }
-    hasCache() {
-        return !!this.cacheData;
     }
     setPrevActive(cursorPos) {
         let results = this.cacheData.results;
@@ -194,7 +211,7 @@ export default class {
         if (this.fSearcher === this) {
             // 搜索框移动活动区域
             if (direct === 'up') {
-                this.setPrevActive();
+                this.setPrevActive(this.nowCursorPos);
             } else {
                 this.setNextActive(this.nowCursorPos);
             }
@@ -221,7 +238,7 @@ export default class {
         return {
             now: index + 1,
             result: result,
-            list: results,
+            results: results,
         };
     }
     getConfig() {
