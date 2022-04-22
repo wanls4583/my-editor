@@ -5,13 +5,22 @@
 -->
 <template>
     <div @contextmenu.prevent @contextmenu.stop @mousedown.stop @selectstart.stop class="my-search">
-        <div class="my-search-left active-click" tabindex="-1">
+        <div class="my-search-left active-click" style="border-radius: 0" tabindex="-1">
             <span :class="{ 'icon-down1': replaceVisible, 'icon-right': !replaceVisible }" @click="showReplace" class="iconfont" style="font-size: 14px" title="Toggle Replace mode"></span>
         </div>
         <div style="flex-grow: 1">
             <div class="my-search-top">
                 <div :class="{ 'my-active': input1Focus }" class="my-search-input">
-                    <input @blur="input1Focus = false" @focus="input1Focus = true" @keydown="onKeyDown" @input="onInput" ref="input1" type="text" v-model="text" />
+                    <textarea
+                        @blur="input1Focus = false"
+                        @focus="input1Focus = true"
+                        @keydown="onKeyDown"
+                        @input="onInput"
+                        ref="input1"
+                        :style="{ height: input1Height + 'px' }"
+                        type="text"
+                        v-model="text"
+                    ></textarea>
                     <span :class="{ 'my-active': ignoreCase }" @click="changeCase" class="my-search-suffix" title="Match Case(Alt+C)">Aa</span>
                     <span :class="{ 'my-active': wholeWord }" @click="changeWhole" class="my-search-suffix iconfont icon-whole-word" title="Match Whole Word(Alt+W)"></span>
                 </div>
@@ -24,7 +33,15 @@
             </div>
             <div class="my-search-bottom" style="margin-top: 5px" v-if="replaceVisible">
                 <div :class="{ 'my-active': input2Focus }" class="my-search-input">
-                    <input @blur="input2Focus = false" @focus="input2Focus = true" @keydown="onKeyDown2" ref="input2" type="text" v-model="replaceText" />
+                    <textarea
+                        @blur="input2Focus = false"
+                        @focus="input2Focus = true"
+                        @keydown="onKeyDown2"
+                        ref="input2"
+                        :style="{ height: input2Height + 'px' }"
+                        type="text"
+                        v-model="replaceText"
+                    ></textarea>
                 </div>
                 <span
                     :class="{ 'enabled-color': count > 0, 'disabled-color': count == 0 }"
@@ -89,7 +106,15 @@ export default {
             searchNextActive: false,
             input1Focus: false,
             input2Focus: false,
+            input1Height: 30,
+            input2Height: 30,
         };
+    },
+    watch: {
+        text() {
+            requestAnimationFrame(() => {});
+        },
+        replaceText() {},
     },
     created() {},
     methods: {
@@ -103,7 +128,7 @@ export default {
                 text: this.text,
                 wholeWord: this.wholeWord,
                 ignoreCase: this.ignoreCase,
-            }
+            };
         },
         search() {
             let searchId = this.search.id || 1;

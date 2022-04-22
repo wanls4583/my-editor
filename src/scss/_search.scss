@@ -113,15 +113,21 @@
             border-color: var(--my-focusBorder);
         }
 
-        input {
+        textarea {
             flex-grow: 1;
-            height: 30px;
             line-height: 30px;
             padding: 0 5px;
             border-style: none;
             outline: none;
             background-color: transparent;
             color: var(--my-input-foreground);
+            resize: none;
+            white-space: pre;
+            overflow-wrap: normal;
+            
+            &::-webkit-scrollbar {
+                display: none;
+            }
         }
     }
 }
