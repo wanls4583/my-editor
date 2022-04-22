@@ -44,8 +44,11 @@ export default class {
             } else {
                 this.selecter.addRange(resultObj.results);
                 if (this.searcher === this) {
-                    this.selecter.addActive(resultObj.result.end);
-                    this.cursor.setCursorPos(resultObj.result.end);
+                    //当前光标已处于选中区域边界，则不处理（历史记录可能存在多个选中区域的情况）
+                    if (!this.selecter.activedRanges.size > 0) {
+                        this.selecter.addActive(resultObj.result.end);
+                        this.cursor.setCursorPos(resultObj.result.end);
+                    }
                 } else {
                     // 搜索框第一次搜索时不选中活动区域，避免第一次删除非搜索框选中区域
                     this.selecter.clearActive();
@@ -78,8 +81,9 @@ export default class {
         let source = config.text.replace(/\\|\.|\*|\+|\-|\?|\(|\)|\[|\]|\{|\}|\^|\$|\~|\!/g, '\\$&');
         //完整匹配
         if (this.wordPattern.test(config.text) && config.wholeWord) {
-            source = config.wholeWord ? '(?:\\b|(?<=[^0-9a-zA-Z]))' + source + '(?:\\b|(?=[^0-9a-zA-Z]))' : source;
+            source = '(?:\\b|(?<=[^0-9a-zA-Z]))' + source + '(?:\\b|(?=[^0-9a-zA-Z]))';
         }
+        this.wordPattern.lastIndex = 0;
         reg = new RegExp('[^\n]*?(' + source + ')|[^\n]*?\n', config.ignoreCase ? 'img' : 'mg');
         config = config || {};
         while ((exec = reg.exec(text))) {
@@ -237,7 +241,7 @@ export default class {
             return;
         }
         return Object.assign({}, this.cacheData.config);
-    }    
+    }
     // 获取待搜索的文本
     getSearchConfig() {
         // 非搜索框模式下，存在多个活动区域时，阻止搜索
