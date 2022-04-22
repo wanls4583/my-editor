@@ -900,7 +900,7 @@ export default {
         },
         // ctrl+f打开搜索
         openSearch(replaceMode) {
-            let searchConfig = this.fSearcher.getToSearchConfig();
+            let searchConfig = this.fSearcher.getSearchConfig();
             if (searchConfig && searchConfig.text) {
                 this.$refs.searchDialog.initData({
                     replaceVisible: !!replaceMode,

@@ -25,7 +25,7 @@ export default class {
         if (hasCache) {
             resultObj = this.getFromCache(searchObj.direct);
         } else {
-            config = (searchObj && searchObj.config) || this.getToSearchConfig();
+            config = (searchObj && searchObj.config) || this.getSearchConfig();
             if (!config || !config.text) {
                 return { now: 0, count: 0 };
             }
@@ -239,7 +239,7 @@ export default class {
         return Object.assign({}, this.cacheData.config);
     }    
     // 获取待搜索的文本
-    getToSearchConfig() {
+    getSearchConfig() {
         // 非搜索框模式下，存在多个活动区域时，阻止搜索
         if (this.selecter.activedRanges.size > 1 && this.searcher === this) {
             return null;
