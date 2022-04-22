@@ -312,7 +312,7 @@ export default class {
         this.activedRanges.empty();
         this.renderSelectedBg();
     }
-    clearInactive() {
+    clearInactiveRange() {
         if (!this.activedRanges.size) {
             this.clearRange();
         } else {

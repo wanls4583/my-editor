@@ -9,9 +9,10 @@ export default class {
     constructor(editor, context, selecter) {
         this.selecter = selecter;
         this.initProperties(editor, context);
+        this.wordPattern = Util.getWordPattern(this.language);
     }
     initProperties(editor, context) {
-        Util.defineProperties(this, editor, ['fSearcher', 'searcher', 'nowCursorPos', 'cursorFocus', 'cursor', '$nextTick', '$refs']);
+        Util.defineProperties(this, editor, ['language', 'fSearcher', 'searcher', 'nowCursorPos', 'cursor', '$nextTick', '$refs']);
         Util.defineProperties(this, context, ['htmls', 'getToSearchConfig', 'getAllText']);
     }
     search(searchObj) {
@@ -22,16 +23,13 @@ export default class {
         let config = null;
         searchObj = searchObj || {};
         if (hasCache) {
-            if (searchObj.direct === 'up') {
-                resultObj = this.prev();
-            } else {
-                resultObj = this.next();
-            }
+            resultObj = this.getFromCache(searchObj.direct);
         } else {
             config = (searchObj && searchObj.config) || this.getToSearchConfig();
             if (!config || !config.text) {
                 return { now: 0, count: 0 };
             }
+            this.cursor.clearCursorPos();
             resultObj = this._search(config);
         }
         if (resultObj && resultObj.result) {
@@ -39,21 +37,11 @@ export default class {
                 this.selecter.addRange(resultObj.list);
             }
             if (this.fSearcher === this) {
-                if (this.cursorFocus === false) {
-                    this.searcher.clearSearch();
-                    this.selecter.setActive(resultObj.result.end);
-                    this.cursor.setCursorPos(resultObj.result.end);
-                } else {
-                    this.clearNow();
-                }
+                this.selecter.setActive(resultObj.result.end);
+                this.cursor.setCursorPos(resultObj.result.end);
             } else {
                 this.selecter.addActive(resultObj.result.end);
-                if (this.selecter.getRangeByCursorPos(this.nowCursorPos)) {
-                    this.cursor.removeCursor(resultObj.result.start);
-                    this.cursor.addCursorPos(resultObj.result.end);
-                } else {
-                    this.cursor.setCursorPos(resultObj.result.end);
-                }
+                this.cursor.addCursorPos(resultObj.result.end);
             }
             now = resultObj.now;
             count = resultObj.list.length;
@@ -71,8 +59,8 @@ export default class {
         let start = null;
         let end = null;
         let result = null;
-        let resultCaches = [];
-        let resultIndexMap = {};
+        let results = [];
+        let indexs = {};
         let rangePos = null;
         let line = 1;
         let column = 0;
@@ -80,7 +68,10 @@ export default class {
         let text = this.getAllText();
         let lines = config.text.split(/\n/);
         let source = config.text.replace(/\\|\.|\*|\+|\-|\?|\(|\)|\[|\]|\{|\}|\^|\$|\~|\!/g, '\\$&');
-        source = config.wholeWord ? '(?:\\b|(?<=[^0-9a-zA-Z]))' + source + '(?:\\b|(?=[^0-9a-zA-Z]))' : source;
+        //完整匹配
+        if (this.wordPattern.test(config.text) && config.wholeWord) {
+            source = config.wholeWord ? '(?:\\b|(?<=[^0-9a-zA-Z]))' + source + '(?:\\b|(?=[^0-9a-zA-Z]))' : source;
+        }
         reg = new RegExp('[^\n]*?(' + source + ')|[^\n]*?\n', config.ignoreCase ? 'img' : 'mg');
         config = config || {};
         while ((exec = reg.exec(text))) {
@@ -102,32 +93,30 @@ export default class {
                     start: start,
                     end: end,
                 };
-                resultCaches.push(rangePos);
-                if (!result && (!that.nowCursorPos || Util.comparePos(end, that.nowCursorPos) >= 0)) {
-                    if (!this.selecter.ranges.size || !this.selecter.getRangeByCursorPos(end)) {
-                        result = rangePos;
-                    }
-                    index = resultCaches.length - 1;
-                    resultIndexMap[resultCaches.length - 1] = true;
+                results.push(rangePos);
+                if (!result && Util.comparePos(end, that.nowCursorPos) >= 0) {
+                    result = rangePos;
+                    index = results.length - 1;
+                    indexs[results.length - 1] = true;
                 }
             }
         }
-        if (!resultCaches.length) {
+        if (!results.length) {
             return null;
         }
-        if (!result && resultCaches.length) {
+        if (!result && results.length) {
             index = 0;
-            result = resultCaches[0];
+            result = results[0];
         }
         this.cacheData = {
             config: config,
-            resultCaches: resultCaches,
-            resultIndexMap: resultIndexMap,
+            results: results,
+            indexs: indexs,
             index: index,
         };
         return {
             now: this.cacheData.index + 1,
-            list: resultCaches,
+            list: results,
             result: result,
         };
     }
@@ -157,78 +146,82 @@ export default class {
      */
     clearSearch(retainActive) {
         if (retainActive) {
-            this.selecter.clearInactive();
+            this.selecter.clearInactiveRange();
         } else {
             this.selecter.clearRange();
         }
         this.cacheData = null;
     }
-    clearNow() {
+    clearActive() {
         if (this.cacheData) {
             this.cacheData.index = -1;
-            this.cacheData.resultIndexMap = {};
+            this.cacheData.indexs = {};
             this.selecter.clearActive();
         }
     }
     hasCache() {
         return !!this.cacheData;
     }
-    now() {
-        return this.cacheData.resultCaches[this.cacheData.index];
-    }
-    next() {
-        return this.getFromCache();
-    }
-    prev() {
-        return this.getFromCache('up');
-    }
-    setNow(cursorPos) {
-        let resultCaches = this.cacheData.resultCaches;
-        this.cacheData.index = 0;
-        this.cacheData.resultIndexMap = {
-            0: true,
-        };
-        for (let i = 0; i < resultCaches.length; i++) {
-            let item = resultCaches[i];
-            if (Util.comparePos(item.end, cursorPos) >= 0) {
+    setPrevActive(cursorPos) {
+        let results = this.cacheData.results;
+        this.cacheData.index = results.length - 1;
+        for (let i = results.length - 1; i >= 0; i--) {
+            let item = results[i];
+            if (Util.comparePos(item.end, cursorPos) < 0) {
                 this.cacheData.index = i;
-                this.cacheData.resultIndexMap = {
-                    i: true,
-                };
                 break;
             }
         }
     }
-    getFromCache(direct) {
-        if (!this.selecter.getRangeByCursorPos(this.nowCursorPos) || this.cacheData.index < 0) {
-            this.setNow(this.nowCursorPos);
-            if (direct !== 'up') {
-                let resultCaches = this.cacheData.resultCaches;
-                return {
-                    now: this.cacheData.index + 1,
-                    list: resultCaches,
-                    result: resultCaches[this.cacheData.index],
-                };
+    setNextActive(cursorPos) {
+        let results = this.cacheData.results;
+        this.cacheData.index = 0;
+        for (let i = 0; i < results.length; i++) {
+            let item = results[i];
+            if (Util.comparePos(item.end, cursorPos) > 0) {
+                this.cacheData.index = i;
+                break;
             }
         }
-        let resultCaches = this.cacheData.resultCaches;
-        let resultIndexMap = this.cacheData.resultIndexMap;
-        let index = this.cacheData.index + (direct === 'up' ? -1 : 1);
+    }
+    getNowRange() {
+        return this.cacheData.results[this.cacheData.index];
+    }
+    getFromCache(direct) {
+        let results = this.cacheData.results;
         let result = null;
-        if (index == resultCaches.length) {
-            index = 0;
-        } else if (index < 0) {
-            index = resultCaches.length - 1;
+        let index = 0;
+        if (this.fSearcher === this) {
+            // 搜索框移动活动区域
+            if (direct === 'up') {
+                this.setPrevActive();
+            } else {
+                this.setNextActive(this.nowCursorPos);
+            }
+            result = results[this.cacheData.index];
+        } else {
+            //CTRL+D移动活动区域
+            let indexs = this.cacheData.indexs;
+            index = this.cacheData.index + (direct === 'up' ? -1 : 1);
+            if (index == results.length) {
+                index = 0;
+            } else if (index < 0) {
+                index = results.length - 1;
+            }
+            // 已经没有非活动区域
+            if (!indexs[index]) {
+                result = results[index];
+                indexs[index] = true;
+                this.cacheData.index = index;
+            } else {
+                index = this.cacheData.index;
+            }
         }
-        if (!resultIndexMap[index] || this.fSearcher === this) {
-            result = resultCaches[index];
-            this.cacheData.index = index;
-            resultIndexMap[index] = true;
-        }
+
         return {
             now: index + 1,
             result: result,
-            list: resultCaches,
+            list: results,
         };
     }
     getConfig() {

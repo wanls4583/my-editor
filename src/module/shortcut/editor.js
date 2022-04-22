@@ -204,7 +204,7 @@ export default class {
             }
             that.setAutoTip(null); //取消自动提示
             that.searcher.clearSearch();
-            that.fSearcher.clearNow();
+            that.fSearcher.clearActive();
         }
     }
 }

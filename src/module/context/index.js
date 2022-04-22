@@ -105,7 +105,6 @@ class Context {
             historyArr.serial = command.serial;
         }
         this.setNowCursorPos(this.cursor.multiCursorPos.get(0));
-        this.fSearcher.refreshSearch();
         return historyArr;
     }
     _insertMultiContent(text, cursorPosList, command) {
@@ -204,6 +203,8 @@ class Context {
         this.render(true);
         this.$emit('change');
         this.setAutoTip(null);
+        this.fSearcher.refreshSearch(); //搜索框更新搜索
+        this.searcher.clearSearch(); //删除非搜索框选中区域
         let historyObj = {
             type: Util.command.DELETE,
             cursorPos: Object.assign({}, newPos),
@@ -269,8 +270,6 @@ class Context {
             });
         }
         this.setNowCursorPos(this.cursor.multiCursorPos.get(0));
-        this.searcher.clearSearch();
-        this.fSearcher.refreshSearch();
         return historyArr;
     }
     _deleteMultiContent(rangeList, keyCode) {
@@ -446,6 +445,8 @@ class Context {
         this.render(true);
         this.$emit('change');
         this.setAutoTip(null);
+        this.fSearcher.refreshSearch(); //搜索框更新搜索
+        this.searcher.clearSearch(); //删除非搜索框选中区域
         // 更新最大文本宽度
         if (startObj.width >= this.maxWidthObj.width) {
             this.setEditorData('maxWidthObj', {
@@ -596,8 +597,6 @@ class Context {
             // 撤销或重做操作后，更新历史记录
             this.history.updateHistory(historyObj);
         }
-        this.searcher.refreshSearch();
-        this.fSearcher.refreshSearch();
 
         function _moveLine(cursorPos) {
             let upLine = cursorPos.line - (direct === 'down' ? 0 : 1);
@@ -676,8 +675,6 @@ class Context {
         historyPosList.forEach((item) => {
             this.cursor.addCursorPos(item);
         });
-        this.searcher.refreshSearch();
-        this.fSearcher.refreshSearch();
     }
     // 删除上面一行
     deleteCopyLineUp(command) {
@@ -745,8 +742,6 @@ class Context {
         historyPosList.forEach((item) => {
             this.cursor.addCursorPos(item);
         });
-        this.searcher.refreshSearch();
-        this.fSearcher.refreshSearch();
     }
     // 删除当前行
     deleteLine() {
@@ -791,8 +786,6 @@ class Context {
             preItem = item;
         });
         this.history.pushHistory(this._deleteMultiContent(ranges));
-        this.searcher.clearSearch();
-        this.fSearcher.refreshSearch();
     }
     replace(texts, ranges) {
         let historyArr = null;
@@ -803,8 +796,6 @@ class Context {
         historyArr = this._insertMultiContent(texts, this.cursor.multiCursorPos.toArray());
         historyArr.serial = serial;
         this.history.pushHistory(historyArr);
-        this.searcher.refreshSearch();
-        this.fSearcher.refreshSearch();
     }
     // 点击自动提示替换输入的内容
     replaceTip(tip) {
@@ -1058,8 +1049,6 @@ class Context {
         });
         if (cut) {
             this.history.pushHistory(this._deleteMultiContent(ranges));
-            this.searcher.clearSearch();
-            this.fSearcher.refreshSearch();
         }
         return text.slice(1);
     }

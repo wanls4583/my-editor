@@ -901,45 +901,46 @@ export default {
         // ctrl+f打开搜索
         openSearch(replaceMode) {
             let searchConfig = this.myContext.getToSearchConfig();
-            let obj = {
-                replaceVisible: !!replaceMode,
-                wholeWord: false,
-                ignoreCase: false,
-            };
-            if (searchConfig.text) {
-                obj.searchText = searchConfig.text;
-            }
-            if (this.searchVisible && !obj.text) {
-                return;
+            if (searchConfig && searchConfig.text) {
+                this.$refs.searchDialog.initData({
+                    replaceVisible: !!replaceMode,
+                    ignoreCase: true,
+                    wholeWord: true,
+                    text: searchConfig.text,
+                });
             }
             this.searchVisible = true;
-            this.cursorFocus = false;
-            this.$refs.searchDialog.initData(obj);
             this.$refs.searchDialog.focus();
+            this.onSearch(this.$refs.searchDialog.getData());
         },
-        // ctrl+d搜索完整单词
+        // 搜索完整单词
         searchWord(direct) {
-            this.searcher.search({ direct: direct });
             if (this.searchVisible) {
-                let searchConfig = this.searcher.getConfig();
+                //搜索框搜索
+                let searchConfig = this.fSearcher.getConfig();
                 if (searchConfig && searchConfig.text) {
                     let $search = this.$refs.searchDialog;
-                    if ($search.searchText != searchConfig.text || !$search.wholeWord || !$search.ignoreCase) {
+                    if ($search.text != searchConfig.text || !$search.wholeWord || !$search.ignoreCase) {
+                        //和当前搜索框搜索条件不一致，重写搜索
                         let config = {
-                            searchText: searchConfig.text,
+                            text: searchConfig.text,
                             wholeWord: true,
                             ignoreCase: true,
                         };
                         $search.initData(config);
+                        this.onSearch(config);
                     } else {
                         direct === 'up' ? this.onSearchPrev() : this.onSearchNext();
                     }
                 }
+            } else {
+                //CTRL+D搜索
+                this.searcher.search({ direct: direct });
             }
         },
         replace(data) {
             if (this.fSelecter.ranges.size) {
-                let range = this.fSearcher.now();
+                let range = this.fSearcher.getNowRange();
                 this.myContext.replace(data.text, [range]);
             }
         },
@@ -1213,26 +1214,27 @@ export default {
             }
             let pos = this.getPosByEvent(e);
             let cursorPos = null;
-            let range = null;
             this.mouseStartObj = {
                 time: Date.now(),
                 start: pos,
             };
             if ((e.ctrlKey && this.cursor.multiKeyCode === 'ctrl') || (e.altKey && this.cursor.multiKeyCode === 'alt')) {
+                // 多光标编辑
                 let range = this.selecter.getRangeWithCursorPos(pos);
+                //删除重叠选中区域
                 if (range) {
-                    //删除选中范围
                     this.selecter.removeRange(range);
                 }
                 cursorPos = this.cursor.addCursorPos(pos);
             } else {
                 cursorPos = this.cursor.setCursorPos(pos);
+                // 非多点编辑情况下，鼠标左键删除选中区域
                 if (e.which !== 3) {
                     this.searcher.clearSearch();
                 }
             }
             if (e.which != 3) {
-                this.fSearcher.clearNow();
+                this.fSearcher.clearActive(); //光标更改后，搜索框取消当前活动区域
                 if (this.mouseUpTime && Date.now() - this.mouseUpTime < 200) {
                     //双击选中单词
                     this.mouseStartObj.doubleClick = true;
@@ -1240,6 +1242,7 @@ export default {
                 }
             }
             this.mouseStartObj.cursorPos = cursorPos;
+            // 删除非活动区域的选中区域
             this.searcher.clearSearch(true);
             this.focus();
         },
@@ -1430,6 +1433,7 @@ export default {
         onKeyDown(e) {
             this.shortcut.onKeyDown(e);
         },
+        // 搜索框首次搜索
         onSearch(data) {
             let resultObj = null;
             this.fSearcher.clearSearch();
@@ -1442,24 +1446,17 @@ export default {
             });
             this.searchNow = resultObj.now;
             this.searchCount = resultObj.count;
-            if (this.cursorFocus === false) {
-                this.searcher.clearSearch();
-            }
+            // 删除非搜索框选中的区域
+            this.searcher.clearSearch();
         },
-        onSearchNext(cursorFocus) {
-            if (cursorFocus !== undefined) {
-                this.cursorFocus = cursorFocus;
-            }
+        onSearchNext() {
             if (this.fSearcher.hasCache()) {
                 let resultObj = this.fSearcher.search({});
                 this.searchNow = resultObj.now;
                 this.searchCount = resultObj.count;
             }
         },
-        onSearchPrev(cursorFocus) {
-            if (cursorFocus !== undefined) {
-                this.cursorFocus = cursorFocus;
-            }
+        onSearchPrev() {
             if (this.fSearcher.hasCache()) {
                 let resultObj = this.fSearcher.search({ direct: 'up' });
                 this.searchNow = resultObj.now;
