@@ -93,6 +93,12 @@ export default {
                 });
                 this.render();
             });
+            EventBus.$on('theme-change', () => {
+                this.openedList.forEach((item) => {
+                    item.icon = '';
+                });
+                this.render();
+            });
             EventBus.$on('tab-change', (data) => {
                 let path = data && data.path;
                 if (path && preActiveItem && preActiveItem.path !== path) {

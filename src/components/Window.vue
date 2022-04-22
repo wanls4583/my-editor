@@ -158,17 +158,19 @@ export default {
     },
     methods: {
         initEventBus() {
-            EventBus.$on('icon-change', (value) => {
+            let iconFn = (value) => {
                 this.editorList.forEach((item) => {
                     if (value) {
-                        let icon = Util.getIconByPath(globalData.nowIconData, item, globalData.nowTheme.type);
+                        let icon = Util.getIconByPath(globalData.nowIconData, item.path, globalData.nowTheme.type);
                         item.icon = icon ? `my-file-icon my-file-icon-${icon}` : '';
                     } else {
                         item.icon = '';
                     }
                 });
                 this.editorList.splice();
-            });
+            };
+            EventBus.$on('icon-change', iconFn);
+            EventBus.$on('theme-change', iconFn);
         },
         onContextmenu(e) {
             // EventBus.$emit('open-win-menu');
@@ -675,7 +677,7 @@ export default {
 
             function _getValue(name) {
                 name = name || '';
-                if(name[0] === '%' && name[name.length-1] === '%') {
+                if (name[0] === '%' && name[name.length - 1] === '%') {
                     name = varMap[name.slice(1, -1)] || name;
                 }
                 return name;
