@@ -13,7 +13,7 @@ export default class {
     }
     initProperties(editor, context) {
         Util.defineProperties(this, editor, ['language', 'fSearcher', 'searcher', 'nowCursorPos', 'cursor', '$nextTick', '$refs']);
-        Util.defineProperties(this, context, ['htmls', 'getToSearchConfig', 'getAllText']);
+        Util.defineProperties(this, context, ['htmls', 'getRangeText', 'getAllText']);
     }
     search(searchObj) {
         let resultObj = null;
@@ -237,5 +237,61 @@ export default class {
             return;
         }
         return Object.assign({}, this.cacheData.config);
+    }    
+    // 获取待搜索的文本
+    getToSearchConfig() {
+        // 非搜索框模式下，存在多个活动区域时，阻止搜索
+        if (this.selecter.activedRanges.size > 1 && this.searcher === this) {
+            return null;
+        }
+        let wholeWord = false;
+        let searchText = '';
+        if (this.selecter.ranges.size) {
+            let range = this.searcher.selecter.getRangeByCursorPos(this.nowCursorPos);
+            if (range) {
+                searchText = this.getRangeText(range.start, range.end);
+            }
+        } else {
+            searchText = this.getNowWord().text;
+            wholeWord = true;
+        }
+        return {
+            text: searchText,
+            wholeWord: wholeWord,
+            ignoreCase: wholeWord,
+        };
+    }
+    getNowWord() {
+        let text = this.htmls[this.nowCursorPos.line - 1].text;
+        let str = '';
+        let index = this.nowCursorPos.column;
+        let startColumn = index;
+        let endColumn = index;
+        let res = null;
+        while ((res = this.wordPattern.exec(text))) {
+            if (res.index <= index && res.index + res[0].length >= index) {
+                startColumn = res.index;
+                endColumn = res.index + res[0].length;
+                str = res[0];
+                break;
+            } else if (res.index > index) {
+                break;
+            }
+        }
+        this.wordPattern.lastIndex = 0;
+
+        return {
+            text: str,
+            range: {
+                start: {
+                    line: this.nowCursorPos.line,
+                    column: startColumn,
+                },
+                end: {
+                    line: this.nowCursorPos.line,
+                    column: endColumn,
+                },
+            },
+        };
     }
 }

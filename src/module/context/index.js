@@ -1041,61 +1041,6 @@ class Context {
         }
         return text.slice(1);
     }
-    // 获取待搜索的文本
-    getToSearchConfig() {
-        if (this.selecter.activedRanges.size > 1) {
-            return null;
-        }
-        let wholeWord = false;
-        let searchText = '';
-        if (this.selecter.ranges.size) {
-            let range = this.selecter.getRangeByCursorPos(this.nowCursorPos);
-            if (range) {
-                searchText = this.getRangeText(range.start, range.end);
-            }
-        } else {
-            searchText = this.getNowWord().text;
-            wholeWord = true;
-        }
-        return {
-            text: searchText,
-            wholeWord: wholeWord,
-            ignoreCase: wholeWord,
-        };
-    }
-    getNowWord() {
-        let text = this.htmls[this.nowCursorPos.line - 1].text;
-        let str = '';
-        let index = this.nowCursorPos.column;
-        let startColumn = index;
-        let endColumn = index;
-        let res = null;
-        while ((res = this.wordPattern.exec(text))) {
-            if (res.index <= index && res.index + res[0].length >= index) {
-                startColumn = res.index;
-                endColumn = res.index + res[0].length;
-                str = res[0];
-                break;
-            } else if (res.index > index) {
-                break;
-            }
-        }
-        this.wordPattern.lastIndex = 0;
-
-        return {
-            text: str,
-            range: {
-                start: {
-                    line: this.nowCursorPos.line,
-                    column: startColumn,
-                },
-                end: {
-                    line: this.nowCursorPos.line,
-                    column: endColumn,
-                },
-            },
-        };
-    }
     getAllText() {
         return this.htmls
             .map((item) => {
