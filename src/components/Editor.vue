@@ -1222,9 +1222,7 @@ export default {
                 // 多光标编辑
                 let range = this.selecter.getRangeWithCursorPos(pos);
                 //删除重叠选中区域
-                if (range) {
-                    this.selecter.removeRange(range);
-                }
+                range && this.selecter.removeRange(range);
                 cursorPos = this.cursor.addCursorPos(pos);
             } else {
                 cursorPos = this.cursor.setCursorPos(pos);
@@ -1250,6 +1248,9 @@ export default {
             if (this.mouseStartObj && Date.now() - this.mouseStartObj.time > 100) {
                 let end = this.getPosByEvent(e);
                 if (end && Util.comparePos(end, this.mouseStartObj.cursorPos)) {
+                    let range = this.selecter.getRangeWithCursorPos(end);
+                    //删除重叠选中区域
+                    range && this.selecter.removeRange(range);
                     this.cursor.removeCursor(this.mouseStartObj.cursorPos);
                     this.mouseStartObj.cursorPos = this.cursor.addCursorPos({
                         line: end.line,
@@ -1296,7 +1297,6 @@ export default {
             }
             function _move(autoDirect, speed, line) {
                 let originLine = line || that.folder.getRelativeLine(that.nowCursorPos.line);
-                let originRealLine = line ? that.folder.getRealLine(line) : that.nowCursorPos.line;
                 let originColumn = that.nowCursorPos.column;
                 let count = 0; // 累计滚动距离
                 _run(autoDirect, speed);
