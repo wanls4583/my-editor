@@ -96,6 +96,7 @@ class Context {
         }
         historyArr = this._insertMultiContent(text, cursorPosList, command);
         historyArr.serial = serial;
+        this.setNowCursorPos(this.cursor.multiCursorPos.get(0));
         if (!command) {
             // 新增历史记录
             this.history.pushHistory(historyArr);
@@ -103,8 +104,9 @@ class Context {
             // 撤销或重做操作后，更新历史记录
             this.history.updateHistory(historyArr);
             historyArr.serial = command.serial;
+            historyArr.searchConfig = command.searchConfig;
+            command.searchConfig && this.searcher.search({ config: command.searchConfig });
         }
-        this.setNowCursorPos(this.cursor.multiCursorPos.get(0));
         return historyArr;
     }
     _insertMultiContent(text, cursorPosList, command) {
@@ -224,6 +226,7 @@ class Context {
     deleteContent(keyCode, command) {
         let historyArr = [];
         let rangeList = [];
+        let searchConfig = this.searcher.getConfig();
         if (command) {
             rangeList = command.map((item) => {
                 let obj = {
@@ -250,11 +253,13 @@ class Context {
         }
         historyArr = this._deleteMultiContent(rangeList, keyCode);
         if (!command) {
+            historyArr.searchConfig = searchConfig;
             // 新增历史记录
             historyArr.length && this.history.pushHistory(historyArr);
         } else {
             // 撤销或重做操作后，更新历史记录
             historyArr.serial = command.serial;
+            historyArr.searchConfig = command.searchConfig;
             this.history.updateHistory(historyArr);
             historyArr.forEach((item) => {
                 this.cursor.addCursorPos(item.cursorPos);
