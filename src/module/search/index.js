@@ -23,16 +23,7 @@ export default class {
         let config = null;
         searchObj = searchObj || {};
         if (hasCache) {
-            // 搜索框第一次搜索时不选中活动区域，避免第一次删除非搜索框选中区域
-            if (this.fSearcher === this && this.selecter.activedRanges.size === 0) {
-                resultObj = {
-                    now: this.cacheData.index + 1,
-                    result: this.cacheData.results[this.cacheData.index],
-                    results: this.cacheData.results,
-                };
-            } else {
-                resultObj = this.getFromCache(searchObj.direct);
-            }
+            resultObj = this.getFromCache(searchObj.direct);
         } else {
             config = (searchObj && searchObj.config) || this.getToSearchConfig();
             if (!config || !config.text) {

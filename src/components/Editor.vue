@@ -1462,9 +1462,12 @@ export default {
             }
         },
         onCloseSearch() {
-            this.searchVisible = false;
-            this.fSearcher.clearSearch();
+            let activedRanges = this.fSelecter.activedRanges.toArray();
+            this.selecter.addRange(activedRanges);
             this.focus();
+            this.fSearcher.clearSearch();
+            this.searchVisible = false;
+            this.searchWord();
         },
     },
 };
