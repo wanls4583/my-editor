@@ -571,7 +571,7 @@ class Context {
             let line = range ? range.start.line : item.line;
             if (preItem) {
                 let preLine = preItem.line ? preItem.line : preItem.end.line;
-                if (preLine + 1 === line) {
+                if (preLine + 1 === line || preLine === line) {
                     //和之前的光标冲突，移除当前光标所处的活动区域
                     range && this.selecter.removeRange(range);
                     pass = false;
@@ -593,30 +593,27 @@ class Context {
             }
             this._moveLine(range || cursorPosList[index], direct);
             //移动光标和选区
-            while (index < cursorPosList.length && cursorPosList[index].line === line) {
-                let range = this.selecter.getRangeByCursorPos(cursorPosList[index]);
-                let delta = direct === 'down' ? 1 : -1;
-                if (range) {
-                    //更新活动区域坐标
-                    this.selecter.updateRange(range, {
-                        start: {
-                            line: range.start.line + delta,
-                            column: range.start.column,
-                        },
-                        end: {
-                            line: range.end.line + delta,
-                            column: range.end.column,
-                        },
-                    });
-                }
-                // 更新光标坐标
-                cursorPosList[index].line = cursorPosList[index].line + delta;
-                historyPosList.push({
-                    line: cursorPosList[index].line,
-                    column: cursorPosList[index].column,
+            let delta = direct === 'down' ? 1 : -1;
+            if (range) {
+                //更新活动区域坐标
+                this.selecter.updateRange(range, {
+                    start: {
+                        line: range.start.line + delta,
+                        column: range.start.column,
+                    },
+                    end: {
+                        line: range.end.line + delta,
+                        column: range.end.column,
+                    },
                 });
-                index++;
             }
+            // 更新光标坐标
+            cursorPosList[index].line = cursorPosList[index].line + delta;
+            historyPosList.push({
+                line: cursorPosList[index].line,
+                column: cursorPosList[index].column,
+            });
+            index++;
         }
         if (!historyPosList.length) {
             return;
