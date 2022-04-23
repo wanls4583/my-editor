@@ -614,8 +614,8 @@ class Context {
         if (!historyPosList.length) {
             return;
         }
+        this.searcher.clearSearch();
         this.cursor.clearCursorPos();
-        this.selecter.clearRange();
         // 恢复活动区域和光标
         historyPosList.forEach((item) => {
             if (item.start) {
@@ -636,8 +636,8 @@ class Context {
         } else {
             // 撤销或重做操作后，更新历史记录
             this.history.updateHistory(historyObj);
+            command.searchConifg && this.searcher.search({ config: command.searchConifg });
         }
-        this.searcher.refreshSearch(command && command.searchConifg);
         this.fSearcher.refreshSearch();
     }
     _moveLine(cursorPos, direct) {
@@ -760,8 +760,8 @@ class Context {
             }
             historyPosList.push(originPos.start ? this.selecter.clone(originPos, ['margin']) : Object.assign({}, originPos));
         });
+        this.searcher.clearSearch();
         this.cursor.clearCursorPos();
-        this.selecter.clearRange();
         // 恢复活动区域和光标
         historyPosList.forEach((item) => {
             if (item.start) {
@@ -782,8 +782,8 @@ class Context {
         } else {
             // 撤销或重做操作后，更新历史记录
             this.history.updateHistory(historyObj);
+            command.searchConifg && this.searcher.search({ config: command.searchConifg });
         }
-        this.searcher.refreshSearch(command && command.searchConifg);
         this.fSearcher.refreshSearch();
     }
     // 删除上面一行
@@ -848,8 +848,8 @@ class Context {
             }
             historyPosList.push(originPos.start ? this.selecter.clone(originPos, ['margin']) : Object.assign({}, originPos));
         });
+        this.searcher.clearSearch();
         this.cursor.clearCursorPos();
-        this.selecter.clearRange();
         // 恢复活动区域和光标
         historyPosList.forEach((item) => {
             if (item.start) {
@@ -870,8 +870,8 @@ class Context {
         } else {
             // 撤销或重做操作后，更新历史记录
             this.history.updateHistory(historyObj);
+            command.searchConifg && this.searcher.search({ config: command.searchConifg });
         }
-        this.searcher.refreshSearch(command && command.searchConifg);
         this.fSearcher.refreshSearch();
     }
     // 插入当前行
@@ -886,7 +886,7 @@ class Context {
             cursorPosList.push({ line: line, column: this.htmls[line - 1].text.length });
         });
         this._insertMultiContent(texts, cursorPosList);
-        this.selecter.clearRange();
+        this.searcher.clearSearch();
         this.cursor.clearCursorPos();
         originList.forEach((item) => {
             if (item.start) {
@@ -903,7 +903,7 @@ class Context {
         };
         // 撤销或重做操作后，更新历史记录
         this.history.updateHistory(historyObj);
-        this.searcher.refreshSearch(searchConifg);
+        this.searcher.search({ config: searchConifg });
         this.fSearcher.refreshSearch();
     }
     // 删除当前行
@@ -977,10 +977,10 @@ class Context {
             if (originPos.start) {
                 column = originPos.margin === 'left' ? originPos.start.column : originPos.end.column;
             }
-            column = column > this.htmls[line-1].text.length ? this.htmls[line-1].text.length : column;
+            column = column > this.htmls[line - 1].text.length ? this.htmls[line - 1].text.length : column;
             historyPosList.push({ line: line, column: column });
         });
-        this.selecter.clearRange();
+        this.searcher.clearSearch();
         this.cursor.clearCursorPos();
         historyPosList.forEach((item) => {
             this.cursor.addCursorPos(item);
@@ -997,8 +997,8 @@ class Context {
         } else {
             // 撤销或重做操作后，更新历史记录
             this.history.updateHistory(historyObj);
+            command.searchConifg && this.searcher.search({ config: command.searchConifg });
         }
-        this.searcher.refreshSearch(command && command.searchConifg);
         this.fSearcher.refreshSearch();
     }
     replace(texts, ranges) {
