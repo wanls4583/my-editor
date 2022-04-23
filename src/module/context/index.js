@@ -591,7 +591,7 @@ class Context {
                 index++;
                 continue;
             }
-            this._moveLine(range || cursorPosList[index]);
+            this._moveLine(range || cursorPosList[index], direct);
             //移动光标和选区
             while (index < cursorPosList.length && cursorPosList[index].line === line) {
                 let range = this.selecter.getRangeByCursorPos(cursorPosList[index]);
@@ -631,6 +631,7 @@ class Context {
                     end: Object.assign({}, item.end),
                 };
             }),
+            searchConifg: this.searcher.getConfig(),
         };
         if (!command) {
             // 新增历史记录
@@ -639,7 +640,7 @@ class Context {
             // 撤销或重做操作后，更新历史记录
             this.history.updateHistory(historyObj);
         }
-        this.searcher.refreshSearch();
+        this.searcher.refreshSearch(command && command.searchConifg);
         this.fSearcher.refreshSearch();
     }
     _moveLine(cursorPos, direct) {
