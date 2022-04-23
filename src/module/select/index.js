@@ -71,7 +71,7 @@ export default class {
             },
             true
         );
-        if(it) {
+        if (it) {
             let value = it.prev();
             if (value && Util.comparePos(value.end, cursorPos) >= 0) {
                 return value;
@@ -321,5 +321,16 @@ export default class {
             });
             this.renderSelectedBg();
         }
+    }
+    clone(range, properties) {
+        properties = properties || [];
+        let result = {
+            start: Object.assign({}, range.start),
+            end: Object.assign({}, range.end),
+        };
+        properties.forEach((key) => {
+            result[key] = range[key];
+        });
+        return result;
     }
 }

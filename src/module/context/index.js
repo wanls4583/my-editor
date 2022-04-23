@@ -553,82 +553,78 @@ class Context {
         let cursorPosList = [];
         let historyPosList = [];
         let index = 0;
-        let preItem = null;
+        let prePos = null;
+        let searchConifg = null;
         if (command) {
+            searchConifg = command.searchConifg;
             cursorPosList = command.cursorPos;
-            cursorPosList = cursorPosList.map((item) => {
-                return this.cursor.addCursorPos(item);
-            });
-            this.selecter.clearRange();
-            this.selecter.addRange(command.ranges || []);
         } else {
-            cursorPosList = this.cursor.multiCursorPos.toArray();
-        }
-        // 过滤光标，去除上下相邻的光标
-        cursorPosList = cursorPosList.filter((item) => {
-            let range = this.selecter.getRangeByCursorPos(item); //当前光标处于活动区域边界
-            let pass = true;
-            let line = range ? range.start.line : item.line;
-            if (preItem) {
-                let preLine = preItem.line ? preItem.line : preItem.end.line;
-                if (preLine + 1 === line || preLine === line) {
-                    //和之前的光标冲突，移除当前光标所处的活动区域
-                    range && this.selecter.removeRange(range);
-                    pass = false;
+            searchConifg = this.searcher.getConfig();
+            cursorPosList = [];
+            // 过滤光标，去除上下相邻的光标
+            this.cursor.multiCursorPos.toArray().forEach((item) => {
+                let range = this.selecter.getRangeByCursorPos(item); //当前光标处于活动区域边界
+                let pass = true;
+                let line = range ? range.start.line : item.line;
+                if (prePos) {
+                    let preLine = prePos.end ? prePos.end.line : prePos.line;
+                    if (preLine + 1 === line || preLine === line) {
+                        //和之前的光标冲突，移除当前光标所处的活动区域
+                        range && this.selecter.removeRange(range);
+                        pass = false;
+                    }
                 }
-            }
-            if (pass) {
-                preItem = range || item;
-            }
-            return pass;
-        });
+                if (pass) {
+                    var enLine = (range && range.end.line) || line;
+                    if ((line === 1 && direct === 'up') || (enLine === this.maxLine && direct === 'down')) {
+                        pass = false;
+                    } else {
+                        if (range) {
+                            range.margin = Util.comparePos(range.start, item) === 0 ? 'left' : 'right';
+                            prePos = range;
+                        } else {
+                            prePos = item;
+                        }
+                        cursorPosList.push(prePos);
+                    }
+                }
+            });
+        }
         while (index < cursorPosList.length) {
-            let line = cursorPosList[index].line;
-            let range = this.selecter.getRangeByCursorPos(cursorPosList[index]);
-            let startLine = range ? range.start.line : line;
-            let endLine = range ? range.end.line : line;
-            if ((startLine === 1 && direct === 'up') || (endLine === this.maxLine && direct === 'down')) {
-                index++;
-                continue;
-            }
-            this._moveLine(range || cursorPosList[index], direct);
+            let pos = cursorPosList[index];
+            let range = pos.start ? pos : null;
+            this._moveLine(pos, direct);
             //移动光标和选区
             let delta = direct === 'down' ? 1 : -1;
             if (range) {
-                //更新活动区域坐标
-                this.selecter.updateRange(range, {
-                    start: {
-                        line: range.start.line + delta,
-                        column: range.start.column,
-                    },
-                    end: {
-                        line: range.end.line + delta,
-                        column: range.end.column,
-                    },
-                });
+                //更新选中区域坐标
+                range.start.line = range.start.line + delta;
+                range.end.line = range.end.line + delta;
+            } else {
+                // 更新光标坐标
+                pos.line = pos.line + delta;
             }
-            // 更新光标坐标
-            cursorPosList[index].line = cursorPosList[index].line + delta;
-            historyPosList.push({
-                line: cursorPosList[index].line,
-                column: cursorPosList[index].column,
-            });
+            historyPosList.push(range ? this.selecter.clone(range, ['margin']) : Object.assign({}, pos));
             index++;
         }
         if (!historyPosList.length) {
             return;
         }
+        this.cursor.clearCursorPos();
+        this.selecter.clearRange();
+        // 恢复活动区域和光标
+        historyPosList.forEach((item) => {
+            if (item.start) {
+                this.cursor.addCursorPos(item.margin === 'left' ? item.start : item.end);
+                this.selecter.addRange(item);
+            } else {
+                this.cursor.addCursorPos(item);
+            }
+        });
         let historyObj = {
             type: direct === 'down' ? Util.command.MOVEUP : Util.command.MOVEDOWN,
             cursorPos: historyPosList,
-            // 记录活动区域
-            ranges: this.selecter.activedRanges.toArray().map((item) => {
-                return {
-                    start: Object.assign({}, item.start),
-                    end: Object.assign({}, item.end),
-                };
-            }),
-            searchConifg: this.searcher.getConfig(),
+            searchConifg: searchConifg, // 记录搜索配置
         };
         if (!command) {
             // 新增历史记录
@@ -695,38 +691,85 @@ class Context {
         let historyPosList = [];
         let prePos = null;
         let texts = [];
-        let index = 0;
+        let searchConifg = null;
         if (command) {
+            searchConifg = command.searchConifg;
             originList = command.cursorPos;
         } else {
-            originList = this.cursor.multiCursorPos.toArray();
+            searchConifg = this.searcher.getConfig();
+            originList = [];
+            // 过滤重叠光标和活动区域
+            this.cursor.multiCursorPos.toArray().forEach((item) => {
+                let range = this.selecter.getRangeByCursorPos(item);
+                let line = (range && range.start.line) || item.line;
+                let pass = true;
+                if (prePos) {
+                    let preLine = prePos.end ? prePos.end.line : prePos.line;
+                    if (preLine === line) {
+                        pass = false;
+                    }
+                }
+                if (pass) {
+                    if (range) {
+                        range.margin = Util.comparePos(range.start, item) === 0 ? 'left' : 'right';
+                        prePos = range;
+                    } else {
+                        prePos = item;
+                    }
+                    originList.push(prePos);
+                }
+            });
         }
         originList.forEach((item) => {
-            if (!prePos || prePos.line !== item.line) {
-                let text = this.htmls[item.line - 1].text;
-                cursorPosList.push({
-                    line: item.line,
-                    column: text.length,
-                });
-                texts.push('\n' + text);
+            let pos = null;
+            let text = '';
+            if (item.end) {
+                pos = { line: item.end.line + 1, column: 0 };
+                text = this.htmls
+                    .slice(item.start.line - 1, item.end.line)
+                    .map((item) => {
+                        return item.text;
+                    })
+                    .join('\n');
+            } else {
+                pos = { line: item.line + 1, column: 0 };
+                text = this.htmls[item.line - 1].text;
             }
-            prePos = item;
+            text = text + '\n';
+            texts.push(text);
+            cursorPosList.push(pos);
         });
-        this._insertMultiContent(texts, cursorPosList).forEach((item) => {
-            let originLine = originList[index].line;
-            let line = direct === 'down' ? item.cursorPos.line : item.cursorPos.line - 1;
-            while (index < originList.length && originList[index].line === originLine) {
-                originList[index].line = line;
-                historyPosList.push({
-                    line: line,
-                    column: originList[index].column,
-                });
-                index++;
+        this._insertMultiContent(texts, cursorPosList).forEach((item, index) => {
+            let line = 0;
+            let originPos = originList[index];
+            line = item.cursorPos.line - 1;
+            if (direct === 'up') {
+                line = line - (originPos.start ? originPos.end.line - originPos.start.line + 1 : 1);
+            }
+            if (originPos.start) {
+                let delta = originPos.end.line - originPos.start.line;
+                originPos.end.line = line;
+                originPos.start.line = line - delta;
+            } else {
+                originPos.line = line;
+            }
+            historyPosList.push(originPos.start ? this.selecter.clone(originPos, ['margin']) : Object.assign({}, originPos));
+        });
+        this.cursor.clearCursorPos();
+        this.selecter.clearRange();
+        // 恢复活动区域和光标
+        historyPosList.forEach((item) => {
+            if (item.start) {
+                this.cursor.addCursorPos(item.margin === 'left' ? item.start : item.end);
+                this.selecter.addRange(item);
+            } else {
+                this.cursor.addCursorPos(item);
             }
         });
         let historyObj = {
             type: direct === 'down' ? Util.command.DELETE_COPY_UP : Util.command.DELETE_COPY_DOWN,
             cursorPos: historyPosList,
+            searchConifg: searchConifg, // 记录搜索配置
         };
         if (!command) {
             // 新增历史记录
@@ -735,11 +778,7 @@ class Context {
             // 撤销或重做操作后，更新历史记录
             this.history.updateHistory(historyObj);
         }
-        this.cursor.clearCursorPos();
-        historyPosList.forEach((item) => {
-            this.cursor.addCursorPos(item);
-        });
-        this.searcher.refreshSearch();
+        this.searcher.refreshSearch(command && command.searchConifg);
         this.fSearcher.refreshSearch();
     }
     // 删除上面一行
@@ -754,48 +793,57 @@ class Context {
         let originList = [];
         let cursorPosList = [];
         let historyPosList = [];
-        let prePos = null;
-        let index = 0;
-        if (command) {
-            originList = command.cursorPos;
-        } else {
-            originList = this.cursor.multiCursorPos.toArray();
-        }
+        originList = command.cursorPos;
         originList.forEach((item) => {
-            if (!prePos || prePos.line !== item.line) {
-                let upLine = direct === 'down' ? item.line : item.line - 1;
-                let downLine = upLine + 1;
-                let upText = this.htmls[upLine - 1].text;
-                let downText = this.htmls[downLine - 1].text;
-                let range = {
-                    start: {
-                        line: upLine,
-                        column: upText.length,
-                    },
-                    end: {
-                        line: downLine,
-                        column: downText.length,
-                    },
-                };
-                cursorPosList.push(range);
+            let upLine = 0;
+            let downLine = 0;
+            if (item.end) {
+                upLine = item.start.line;
+                downLine = item.end.line + 1;
+            } else {
+                upLine = item.line;
+                downLine = item.line + 1;
             }
-            prePos = item;
+            cursorPosList.push({
+                start: { line: upLine, column: 0 },
+                end: { line: downLine, column: 0 },
+            });
         });
-        this._deleteMultiContent(cursorPosList).forEach((item) => {
-            let originLine = originList[index].line;
-            let line = item.cursorPos.line;
-            while (index < originList.length && originList[index].line === originLine) {
-                originList[index].line = line;
-                historyPosList.push({
-                    line: line,
-                    column: originList[index].column,
-                });
-                index++;
+        this._deleteMultiContent(cursorPosList).forEach((item, index) => {
+            let originPos = originList[index];
+            if (originPos.start) {
+                let delta = originPos.end.line - originPos.start.line;
+                if (direct === 'up') {
+                    originPos.end.line = item.cursorPos.line - 1;
+                    originPos.start.line = originPos.end.line - delta;
+                } else {
+                    originPos.start.line = item.cursorPos.line;
+                    originPos.end.line = originPos.start.line + delta;
+                }
+            } else {
+                if (direct === 'up') {
+                    originPos.line = item.cursorPos.line - 1;
+                } else {
+                    originPos.line = item.cursorPos.line;
+                }
+            }
+            historyPosList.push(originPos.start ? this.selecter.clone(originPos, ['margin']) : Object.assign({}, originPos));
+        });
+        this.cursor.clearCursorPos();
+        this.selecter.clearRange();
+        // 恢复活动区域和光标
+        historyPosList.forEach((item) => {
+            if (item.start) {
+                this.cursor.addCursorPos(item.margin === 'left' ? item.start : item.end);
+                this.selecter.addRange(item);
+            } else {
+                this.cursor.addCursorPos(item);
             }
         });
         let historyObj = {
             type: direct === 'down' ? Util.command.COPY_UP : Util.command.COPY_DOWN,
             cursorPos: historyPosList,
+            searchConifg: command.searchConifg,
         };
         if (!command) {
             // 新增历史记录
@@ -804,11 +852,7 @@ class Context {
             // 撤销或重做操作后，更新历史记录
             this.history.updateHistory(historyObj);
         }
-        this.cursor.clearCursorPos();
-        historyPosList.forEach((item) => {
-            this.cursor.addCursorPos(item);
-        });
-        this.searcher.refreshSearch();
+        this.searcher.refreshSearch(command && command.searchConifg);
         this.fSearcher.refreshSearch();
     }
     // 删除当前行
