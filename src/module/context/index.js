@@ -550,31 +550,67 @@ class Context {
         this.moveLine(command, 'down');
     }
     moveLine(command, direct) {
-        let that = this;
         let cursorPosList = [];
         let historyPosList = [];
         let index = 0;
+        let preItem = null;
         if (command) {
             cursorPosList = command.cursorPos;
             cursorPosList = cursorPosList.map((item) => {
                 return this.cursor.addCursorPos(item);
             });
+            this.selecter.clearRange();
+            this.selecter.addRange(command.ranges || []);
         } else {
             cursorPosList = this.cursor.multiCursorPos.toArray();
         }
+        // 过滤光标，去除上下相邻的光标
+        cursorPosList = cursorPosList.filter((item) => {
+            let range = this.selecter.getRangeByCursorPos(item); //当前光标处于活动区域边界
+            let pass = true;
+            let line = range ? range.start.line : item.line;
+            if (preItem) {
+                let preLine = preItem.line ? preItem.line : preItem.end.line;
+                if (preLine + 1 === line) {
+                    //和之前的光标冲突，移除当前光标所处的活动区域
+                    range && this.selecter.removeRange(range);
+                    pass = false;
+                }
+            }
+            if (pass) {
+                preItem = range || item;
+            }
+            return pass;
+        });
         while (index < cursorPosList.length) {
             let line = cursorPosList[index].line;
-            if ((line === 1 && direct === 'up') || (line === this.maxLine && direct === 'down')) {
+            let range = this.selecter.getRangeByCursorPos(cursorPosList[index]);
+            let startLine = range ? range.start.line : line;
+            let endLine = range ? range.end.line : line;
+            if ((startLine === 1 && direct === 'up') || (endLine === this.maxLine && direct === 'down')) {
                 index++;
                 continue;
             }
-            _moveLine(cursorPosList[index]);
+            this._moveLine(range || cursorPosList[index]);
+            //移动光标和选区
             while (index < cursorPosList.length && cursorPosList[index].line === line) {
-                if (direct === 'down') {
-                    cursorPosList[index].line++;
-                } else {
-                    cursorPosList[index].line--;
+                let range = this.selecter.getRangeByCursorPos(cursorPosList[index]);
+                let delta = direct === 'down' ? 1 : -1;
+                if (range) {
+                    //更新活动区域坐标
+                    this.selecter.updateRange(range, {
+                        start: {
+                            line: range.start.line + delta,
+                            column: range.start.column,
+                        },
+                        end: {
+                            line: range.end.line + delta,
+                            column: range.end.column,
+                        },
+                    });
                 }
+                // 更新光标坐标
+                cursorPosList[index].line = cursorPosList[index].line + delta;
                 historyPosList.push({
                     line: cursorPosList[index].line,
                     column: cursorPosList[index].column,
@@ -588,6 +624,13 @@ class Context {
         let historyObj = {
             type: direct === 'down' ? Util.command.MOVEUP : Util.command.MOVEDOWN,
             cursorPos: historyPosList,
+            // 记录活动区域
+            ranges: this.selecter.activedRanges.toArray().map((item) => {
+                return {
+                    start: Object.assign({}, item.start),
+                    end: Object.assign({}, item.end),
+                };
+            }),
         };
         if (!command) {
             // 新增历史记录
@@ -598,25 +641,47 @@ class Context {
         }
         this.searcher.refreshSearch();
         this.fSearcher.refreshSearch();
-
-        function _moveLine(cursorPos) {
-            let upLine = cursorPos.line - (direct === 'down' ? 0 : 1);
-            let downLine = upLine + 1;
-            let upText = that.htmls[upLine - 1].text;
-            let downText = that.htmls[downLine - 1].text;
-            let start = {
-                line: upLine,
-                column: 0,
-            };
-            that._deleteContent({
-                start: start,
-                end: {
-                    line: downLine,
-                    column: downText.length,
-                },
-            });
-            that._insertContent(downText + '\n' + upText, start);
+    }
+    _moveLine(cursorPos, direct) {
+        let range = cursorPos.start ? cursorPos : null;
+        let upLine = 0;
+        let downLine = 0;
+        let text = '';
+        // 当前光标处于选中区域边界
+        if (range) {
+            text = this.htmls
+                .slice(range.start.line - 1, range.end.line)
+                .map((item) => {
+                    return item.text;
+                })
+                .join('\n');
+            if (direct === 'down') {
+                upLine = range.start.line;
+                downLine = range.end.line + 1;
+                text = this.htmls[downLine - 1].text + '\n' + text;
+            } else {
+                upLine = range.start.line - 1;
+                downLine = range.end.line;
+                text = text + '\n' + this.htmls[upLine - 1].text;
+            }
+        } else {
+            upLine = cursorPos.line - (direct === 'down' ? 0 : 1);
+            downLine = upLine + 1;
+            text = this.htmls[downLine - 1].text + '\n' + this.htmls[upLine - 1].text;
         }
+        let start = {
+            line: upLine,
+            column: 0,
+        };
+        let end = {
+            line: downLine,
+            column: this.htmls[downLine - 1].text.length,
+        };
+        this._deleteContent({
+            start: start,
+            end: end,
+        });
+        this._insertContent(text, start);
     }
     // 向上复制一行
     copyLineUp(command) {

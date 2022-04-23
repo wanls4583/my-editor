@@ -224,8 +224,6 @@ export default class {
             active: !!active,
         };
         this.clearRange();
-        this.ranges.empty();
-        this.activedRanges.empty();
         this.ranges.insert(range);
         active && this.activedRanges.insert(range);
         this.renderSelectedBg();
