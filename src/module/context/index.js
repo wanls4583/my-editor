@@ -912,20 +912,29 @@ class Context {
             let upLine = 0;
             let downLine = 0;
             let range = null;
-            if (item.start) {
-                upLine = item.start.line;
-                downLine = item.end.line + 1;
+            let startColumn = 0;
+            let endColumn = 0;
+            if (item.end) {
+                upLine = item.start.line - 1;
+                downLine = item.end.line;
             } else {
-                upLine = item.line;
-                downLine = item.line + 1;
+                upLine = item.line - 1;
+                downLine = item.line;
             }
-            range = { start: { line: upLine, column: 0 }, end: { line: downLine, column: 0 } };
-            if (downLine > this.maxLine) {
-                range.end = { line: this.maxLine, column: this.htmls[this.maxLine - 1].text.length };
-                if (upLine === this.maxLine && upLine > 1) {
-                    range.start = { line: this.maxLine - 1, column: this.htmls[this.maxLine - 2].text.length };
+            endColumn = this.htmls[downLine - 1].text.length;
+            if (upLine < 1) {
+                upLine = 1;
+                if (downLine < this.maxLine) {
+                    downLine++;
+                    endColumn = 0;
                 }
+            } else {
+                startColumn = this.htmls[upLine - 1].text.length;
             }
+            range = {
+                start: { line: upLine, column: startColumn },
+                end: { line: downLine, column: endColumn },
+            };
             texts.push(this.getRangeText(range.start, range.end));
             cursorPosList.push(range);
         });
