@@ -633,10 +633,11 @@ class Context {
         if (!command) {
             // 新增历史记录
             this.history.pushHistory(historyObj);
+            this.searcher.refreshSearch(searchConifg);
         } else {
             // 撤销或重做操作后，更新历史记录
             this.history.updateHistory(historyObj);
-            command.searchConifg && this.searcher.search({ config: command.searchConifg });
+            this.searcher.refreshSearch(command.searchConifg);
         }
         this.fSearcher.refreshSearch();
     }
@@ -779,10 +780,11 @@ class Context {
         if (!command) {
             // 新增历史记录
             this.history.pushHistory(historyObj);
+            this.searcher.refreshSearch(searchConifg);
         } else {
             // 撤销或重做操作后，更新历史记录
             this.history.updateHistory(historyObj);
-            command.searchConifg && this.searcher.search({ config: command.searchConifg });
+            this.searcher.refreshSearch(command.searchConifg);
         }
         this.fSearcher.refreshSearch();
     }
@@ -864,14 +866,8 @@ class Context {
             cursorPos: historyPosList,
             searchConifg: command.searchConifg,
         };
-        if (!command) {
-            // 新增历史记录
-            this.history.pushHistory(historyObj);
-        } else {
-            // 撤销或重做操作后，更新历史记录
-            this.history.updateHistory(historyObj);
-            command.searchConifg && this.searcher.search({ config: command.searchConifg });
-        }
+        this.history.updateHistory(historyObj);
+        this.searcher.refreshSearch(command.searchConifg);
         this.fSearcher.refreshSearch();
     }
     // 插入当前行
@@ -903,7 +899,7 @@ class Context {
         };
         // 撤销或重做操作后，更新历史记录
         this.history.updateHistory(historyObj);
-        this.searcher.search({ config: searchConifg });
+        this.searcher.refreshSearch(command.searchConifg);
         this.fSearcher.refreshSearch();
     }
     // 删除当前行
@@ -997,7 +993,7 @@ class Context {
         } else {
             // 撤销或重做操作后，更新历史记录
             this.history.updateHistory(historyObj);
-            command.searchConifg && this.searcher.search({ config: command.searchConifg });
+            this.searcher.refreshSearch(command.searchConifg);
         }
         this.fSearcher.refreshSearch();
     }
