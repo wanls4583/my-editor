@@ -977,6 +977,7 @@ class Context {
             if (originPos.start) {
                 column = originPos.margin === 'left' ? originPos.start.column : originPos.end.column;
             }
+            column = column > this.htmls[line-1].text.length ? this.htmls[line-1].text.length : column;
             historyPosList.push({ line: line, column: column });
         });
         this.selecter.clearRange();
