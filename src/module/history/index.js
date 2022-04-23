@@ -22,6 +22,8 @@ export default class {
             'copyLineDown',
             'deleteCopyLineUp',
             'deleteCopyLineDown',
+            'insertLine',
+            'deleteLine',
             'replace',
         ]);
     }

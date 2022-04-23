@@ -4,6 +4,7 @@
  * @Description:
  */
 import Util from '@/common/Util';
+import globalData from '@/data/globalData';
 
 const regs = {
     word: /[a-zA-Z0-9_]/,
@@ -157,7 +158,8 @@ class Context {
     }
     // 插入内容
     _insertContent(text, cursorPos, alignmentTab) {
-        let nowLineText = this.htmls[cursorPos.line - 1].text;
+        let lineObj = this.htmls[cursorPos.line - 1];
+        let nowLineText = lineObj.text;
         let newPos = Object.assign({}, cursorPos);
         cursorPos.moveWidth = 0; //去除上下移动光标的初始宽度记录
         text = text.split(/\r\n|\n/);
@@ -177,9 +179,11 @@ class Context {
         });
         if (text.length > 1) {
             // 换行对齐
-            if (!text[0].text && alignmentTab) {
+            if (!text[0].text && alignmentTab && lineObj.folds && lineObj.folds.length) {
                 let tabStr = _getTabStr.call(this, nowLineText, this.folder.getRangeFold(cursorPos.line, true));
-                text[1].text = tabStr + text[1].text.trimLeft();
+                if (tabStr) {
+                    text[1].text = tabStr + text[1].text.trimLeft();
+                }
             }
             // 插入多行
             newPos.column = text[text.length - 1].text.length;
@@ -721,10 +725,10 @@ class Context {
             });
         }
         originList.forEach((item) => {
-            let pos = null;
+            let line = 0;
             let text = '';
             if (item.end) {
-                pos = { line: item.end.line + 1, column: 0 };
+                line = item.start.line - 1;
                 text = this.htmls
                     .slice(item.start.line - 1, item.end.line)
                     .map((item) => {
@@ -732,19 +736,20 @@ class Context {
                     })
                     .join('\n');
             } else {
-                pos = { line: item.line + 1, column: 0 };
+                line = item.line - 1;
                 text = this.htmls[item.line - 1].text;
             }
-            text = text + '\n';
+            line = line < 1 ? 1 : line;
+            text = '\n' + text;
             texts.push(text);
-            cursorPosList.push(pos);
+            cursorPosList.push({ line: line, column: this.htmls[line - 1].text.length });
         });
         this._insertMultiContent(texts, cursorPosList).forEach((item, index) => {
             let line = 0;
             let originPos = originList[index];
-            line = item.cursorPos.line - 1;
-            if (direct === 'up') {
-                line = line - (originPos.start ? originPos.end.line - originPos.start.line + 1 : 1);
+            line = item.cursorPos.line;
+            if (direct === 'down') {
+                line = line + (originPos.start ? originPos.end.line - originPos.start.line + 1 : 1);
             }
             if (originPos.start) {
                 let delta = originPos.end.line - originPos.start.line;
@@ -767,7 +772,7 @@ class Context {
             }
         });
         let historyObj = {
-            type: direct === 'down' ? Util.command.DELETE_COPY_UP : Util.command.DELETE_COPY_DOWN,
+            type: direct === 'down' ? Util.command.DELETE_COPY_DOWN : Util.command.DELETE_COPY_UP,
             cursorPos: historyPosList,
             searchConifg: searchConifg, // 记录搜索配置
         };
@@ -797,32 +802,46 @@ class Context {
         originList.forEach((item) => {
             let upLine = 0;
             let downLine = 0;
+            let range = null;
+            let startColumn = 0;
+            let endColumn = 0;
             if (item.end) {
-                upLine = item.start.line;
-                downLine = item.end.line + 1;
+                upLine = item.start.line - 1;
+                downLine = item.end.line;
             } else {
-                upLine = item.line;
-                downLine = item.line + 1;
+                upLine = item.line - 1;
+                downLine = item.line;
             }
-            cursorPosList.push({
-                start: { line: upLine, column: 0 },
-                end: { line: downLine, column: 0 },
-            });
+            endColumn = this.htmls[downLine - 1].text.length;
+            if (upLine < 1) {
+                upLine = 1;
+                if (downLine < this.maxLine) {
+                    downLine++;
+                    endColumn = 0;
+                }
+            } else {
+                startColumn = this.htmls[upLine - 1].text.length;
+            }
+            range = {
+                start: { line: upLine, column: startColumn },
+                end: { line: downLine, column: endColumn },
+            };
+            cursorPosList.push(range);
         });
         this._deleteMultiContent(cursorPosList).forEach((item, index) => {
             let originPos = originList[index];
             if (originPos.start) {
                 let delta = originPos.end.line - originPos.start.line;
                 if (direct === 'up') {
-                    originPos.end.line = item.cursorPos.line - 1;
-                    originPos.start.line = originPos.end.line - delta;
-                } else {
-                    originPos.start.line = item.cursorPos.line;
+                    originPos.start.line = item.cursorPos.line + (originPos.start.line === 1 ? 0 : 1);
                     originPos.end.line = originPos.start.line + delta;
+                } else {
+                    originPos.end.line = item.cursorPos.line;
+                    originPos.start.line = originPos.end.line - delta;
                 }
             } else {
                 if (direct === 'up') {
-                    originPos.line = item.cursorPos.line - 1;
+                    originPos.line = item.cursorPos.line + (originPos.line === 1 ? 0 : 1);
                 } else {
                     originPos.line = item.cursorPos.line;
                 }
@@ -856,49 +875,88 @@ class Context {
         this.fSearcher.refreshSearch();
     }
     // 删除当前行
-    deleteLine() {
-        let preItem = null;
-        let ranges = [];
-        this.cursor.multiCursorPos.forEach((item) => {
-            let range = this.selecter.getRangeByCursorPos(item);
-            let start = null;
-            if (range) {
-                if (Util.comparePos(range.start, item) === 0) {
-                    range.margin = 'left';
-                } else {
-                    range.margin = 'right';
+    deleteLine(command) {
+        let originList = [];
+        let cursorPosList = [];
+        let historyPosList = [];
+        let prePos = null;
+        let texts = [];
+        let searchConifg = null;
+        if (command) {
+            searchConifg = command.searchConifg;
+            originList = command.cursorPos;
+        } else {
+            searchConifg = this.searcher.getConfig();
+            this.cursor.multiCursorPos.forEach((item) => {
+                let range = this.selecter.getRangeByCursorPos(item);
+                let line = (range && range.start.line) || item.line;
+                let pass = true;
+                if (prePos) {
+                    let preLine = prePos.end ? prePos.end.line : prePos.line;
+                    if (preLine === line) {
+                        pass = false;
+                    }
                 }
-                ranges.push(range);
-                return;
-            }
-            if (preItem && item.line === preItem.line) {
-                return;
-            }
-            if (item.line > 1) {
-                start = {
-                    line: item.line - 1,
-                    column: this.htmls[item.line - 2].text.length,
-                };
+                if (pass) {
+                    if (range) {
+                        range.margin = Util.comparePos(range.start, item) === 0 ? 'left' : 'right';
+                        prePos = range;
+                    } else {
+                        prePos = item;
+                    }
+                    originList.push(prePos);
+                }
+            });
+        }
+        originList.forEach((item) => {
+            let upLine = 0;
+            let downLine = 0;
+            let range = null;
+            if (item.start) {
+                upLine = item.start.line;
+                downLine = item.end.line + 1;
             } else {
-                start = {
-                    line: item.line,
-                    column: 0,
-                };
+                upLine = item.line;
+                downLine = item.line + 1;
             }
-            range = {
-                start: start,
-                end: {
-                    line: item.line,
-                    column: this.htmls[item.line - 1].text.length,
-                },
-                margin: 'right',
-                active: false,
-            };
-            ranges.push(range);
-            preItem = item;
+            range = { start: { line: upLine, column: 0 }, end: { line: downLine, column: 0 } };
+            if (downLine > this.maxLine) {
+                range.end = { line: this.maxLine, column: this.htmls[this.maxLine - 1].text.length };
+                if (upLine === this.maxLine && upLine > 1) {
+                    range.start = { line: this.maxLine - 1, column: this.htmls[this.maxLine - 2].text.length };
+                }
+            }
+            texts.push(this.getRangeText(range.start, range.end));
+            cursorPosList.push(range);
         });
-        this.history.pushHistory(this._deleteMultiContent(ranges));
-        this.searcher.clearSearch();
+        this._deleteMultiContent(cursorPosList).forEach((item, index) => {
+            let originPos = originList[index];
+            let line = item.cursorPos.line;
+            let column = originList[index].column;
+            if (originPos.start) {
+                column = originPos.margin === 'left' ? originPos.start.column : originPos.end.column;
+            }
+            historyPosList.push({ line: line, column: column });
+        });
+        this.selecter.clearRange();
+        this.cursor.clearCursorPos();
+        historyPosList.forEach((item) => {
+            this.cursor.addCursorPos(item);
+        });
+        let historyObj = {
+            type: Util.command.INSERT_LINE,
+            cursorPos: originList,
+            text: texts,
+            searchConifg: searchConifg,
+        };
+        if (!command) {
+            // 新增历史记录
+            this.history.pushHistory(historyObj);
+        } else {
+            // 撤销或重做操作后，更新历史记录
+            this.history.updateHistory(historyObj);
+        }
+        this.searcher.refreshSearch(command && command.searchConifg);
         this.fSearcher.refreshSearch();
     }
     replace(texts, ranges) {
@@ -1117,7 +1175,9 @@ class Context {
                 return item.text;
             });
             text += arr.length ? '\n' + arr.join('\n') : '';
-            text += '\n' + this.htmls[end.line - 1].text.slice(0, end.column);
+            if (end.line <= this.maxLine) {
+                text += '\n' + this.htmls[end.line - 1].text.slice(0, end.column);
+            }
         } else {
             text = text.slice(start.column, end.column);
         }
@@ -1126,7 +1186,7 @@ class Context {
     // 获取待复制的文本
     getCopyText(cut) {
         let text = '';
-        let preItem = null;
+        let prePos = null;
         let ranges = [];
         this.cursor.multiCursorPos.forEach((item) => {
             let range = this.selecter.getRangeByCursorPos(item);
@@ -1135,7 +1195,7 @@ class Context {
                 ranges.push(range);
                 return;
             }
-            if (preItem && item.line === preItem.line) {
+            if (prePos && item.line === prePos.line) {
                 return;
             }
             if (item.line > 1) {
@@ -1157,7 +1217,7 @@ class Context {
                 },
             };
             ranges.push(range);
-            preItem = item;
+            prePos = item;
         });
         ranges.forEach((item) => {
             let str = this.getRangeText(item.start, item.end);

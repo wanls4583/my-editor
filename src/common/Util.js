@@ -474,6 +474,9 @@ Util.command = {
     DELETE_COPY_UP: 'deleteCopyLineUp',
     DELETE_COPY_DOWN: 'deleteCopyLineDown',
     REPLACE: 'replace',
+    INSERT_LINE: 'insertLine',
+    DELETE_LINE: 'deleteLine',
+    REPLACE: 'replace',
 };
 Util.constData = {
     LINE_COMMENT: 'line-comment',
