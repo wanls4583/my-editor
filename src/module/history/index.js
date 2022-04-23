@@ -1,7 +1,7 @@
 /*
  * @Author: lisong
  * @Date: 2021-12-31 15:11:27
- * @Description: 
+ * @Description:
  */
 import Util from '@/common/Util';
 export default class {
@@ -10,9 +10,7 @@ export default class {
         this.initProperties(editor, context);
     }
     initProperties(editor, context) {
-        Util.defineProperties(this, editor, [
-            'cursor',
-        ]);
+        Util.defineProperties(this, editor, ['cursor']);
         Util.defineProperties(this, context, [
             'insertContent',
             'deleteContent',
@@ -33,7 +31,8 @@ export default class {
             let command = this.history[this.history.index - 1];
             this.doCommand(command);
             this.history.index--;
-            if (command.serial) { //连续操作标识
+            if (command.serial) {
+                //连续操作标识
                 let _command = this.history[this.history.index - 1];
                 _command && _command.serial === command.serial && this.undo();
             }
@@ -45,7 +44,8 @@ export default class {
             let command = this.history[this.history.index];
             this.history.index++;
             this.doCommand(command);
-            if (command.serial) { //连续操作标识
+            if (command.serial) {
+                //连续操作标识
                 let _command = this.history[this.history.index];
                 _command && _command.serial === command.serial && this.redo();
             }
@@ -70,6 +70,14 @@ export default class {
                 } else {
                     this.insertContent(command.text, command);
                 }
+                break;
+            case Util.command.DELETE_LINE:
+                this.cursor.clearCursorPos();
+                this.deleteLine(command);
+                break;
+            case Util.command.INSERT_LINE:
+                this.cursor.clearCursorPos();
+                this.insertLine(command);
                 break;
             case Util.command.MOVEUP:
                 this.cursor.clearCursorPos();
@@ -109,12 +117,8 @@ export default class {
         let that = this;
         let lastCommand = this.history[this.history.index - 1];
         command = this.sortComand(command);
-        if (lastCommand instanceof Array &&
-            command instanceof Array &&
-            lastCommand.length === command.length &&
-            Date.now() - this.pushHistoryTime < 2000) {
-            if (_checkSameOp(lastCommand) && _checkSameOp(command) &&
-                _combCheck(lastCommand[0], command[0])) {
+        if (lastCommand instanceof Array && command instanceof Array && lastCommand.length === command.length && Date.now() - this.pushHistoryTime < 2000) {
+            if (_checkSameOp(lastCommand) && _checkSameOp(command) && _combCheck(lastCommand[0], command[0])) {
                 for (let i = 0; i < lastCommand.length; i++) {
                     _combCommand(lastCommand[i], command[i]);
                 }
@@ -140,18 +144,20 @@ export default class {
 
         function _combCheck(lastCommand, command) {
             // 检测是否为连续插入或连续删除
-            if ((command.type == Util.command.DELETE || command.type == Util.command.INSERT) &&
-                lastCommand && lastCommand.type == command.type &&
+            if (
+                (command.type == Util.command.DELETE || command.type == Util.command.INSERT) &&
+                lastCommand &&
+                lastCommand.type == command.type &&
                 lastCommand.preCursorPos.line == command.cursorPos.line &&
-                Date.now() - that.pushHistoryTime < 2000) {
+                Date.now() - that.pushHistoryTime < 2000
+            ) {
                 if (lastCommand.type == Util.command.DELETE) {
                     if (Util.comparePos(lastCommand.cursorPos, command.preCursorPos) == 0) {
                         return true;
                     }
                 }
                 if (lastCommand.type == Util.command.INSERT) {
-                    if (Util.comparePos(lastCommand.cursorPos, command.preCursorPos) == 0 ||
-                        Util.comparePos(lastCommand.cursorPos, command.cursorPos) == 0) {
+                    if (Util.comparePos(lastCommand.cursorPos, command.preCursorPos) == 0 || Util.comparePos(lastCommand.cursorPos, command.cursorPos) == 0) {
                         return true;
                     }
                 }

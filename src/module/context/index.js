@@ -874,6 +874,38 @@ class Context {
         this.searcher.refreshSearch(command && command.searchConifg);
         this.fSearcher.refreshSearch();
     }
+    // 插入当前行
+    insertLine(command) {
+        let searchConifg = command.searchConifg;
+        let originList = command.cursorPos;
+        let texts = command.text;
+        let cursorPosList = [];
+        originList.forEach((item) => {
+            let line = item.start ? item.start.line - 1 : item.line - 1;
+            line = line < 1 ? 1 : line;
+            cursorPosList.push({ line: line, column: this.htmls[line - 1].text.length });
+        });
+        this._insertMultiContent(texts, cursorPosList);
+        this.selecter.clearRange();
+        this.cursor.clearCursorPos();
+        originList.forEach((item) => {
+            if (item.start) {
+                this.cursor.addCursorPos(item.margin === 'left' ? item.start : item.end);
+                this.selecter.addRange(item);
+            } else {
+                this.cursor.addCursorPos(item);
+            }
+        });
+        let historyObj = {
+            type: Util.command.DELETE_LINE,
+            cursorPos: originList,
+            searchConifg: searchConifg,
+        };
+        // 撤销或重做操作后，更新历史记录
+        this.history.updateHistory(historyObj);
+        this.searcher.refreshSearch(searchConifg);
+        this.fSearcher.refreshSearch();
+    }
     // 删除当前行
     deleteLine(command) {
         let originList = [];
