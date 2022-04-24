@@ -26,6 +26,7 @@
         .active-click {
             border-radius: 4px;
             border: 1px solid transparent;
+            outline: none;
         }
 
         .active-click:hover {
@@ -95,7 +96,6 @@
     &-search-bottom {
         display: flex;
         align-items: center;
-        height: 30px;
     }
 
     &-search-input {
@@ -115,8 +115,8 @@
 
         textarea {
             flex-grow: 1;
-            line-height: 30px;
-            padding: 0 5px;
+            line-height: 20px;
+            padding: 5px;
             border-style: none;
             outline: none;
             background-color: transparent;

@@ -65,6 +65,8 @@
             <span
                 :class="{ 'enabled-color': count > 0, 'disabled-color': count == 0 }"
                 @click="searchPrev"
+                @focus="preFocus = true"
+                @blur="preFocus = false"
                 class="iconfont icon-up active-click"
                 style="margin-right: 5px"
                 title="Previous Match(Shift Enter)"
@@ -73,6 +75,8 @@
             <span
                 :class="{ 'enabled-color': count > 0, 'disabled-color': count == 0 }"
                 @click="searchNext"
+                @focus="nextFocus = true"
+                @blur="nextFocus = false"
                 class="iconfont icon-down active-click"
                 style="margin-right: 5px"
                 title="Next Match(Enter)"
@@ -83,6 +87,7 @@
     </div>
 </template>
 <script>
+import $ from 'jquery';
 export default {
     name: 'Search',
     props: {
@@ -106,17 +111,33 @@ export default {
             searchNextActive: false,
             input1Focus: false,
             input2Focus: false,
+            preFocus: false,
+            nextFocus: false,
             input1Height: 30,
             input2Height: 30,
         };
     },
     watch: {
         text() {
-            requestAnimationFrame(() => {});
+            let lines = this.text.split(/\n/);
+            this.input1Height = lines.length * 20 + 10;
         },
-        replaceText() {},
+        replaceText() {
+            let lines = this.replaceText.split(/\n/);
+            this.input2Height = lines.length * 20 + 10;
+        },
     },
-    created() {},
+    created() {
+        $(document).on('keydown', (e) => {
+            if (e.keyCode === 13 || e.keyCode === 100) {
+                if (this.preFocus) {
+                    this.searchPrev();
+                } else if (this.nextFocus) {
+                    this.searchNext();
+                }
+            }
+        });
+    },
     methods: {
         initData(obj) {
             for (let key in obj) {
@@ -147,12 +168,12 @@ export default {
         changeCase() {
             this.ignoreCase = !this.ignoreCase;
             this.focus();
-            this.search();
+            this.onInput();
         },
         changeWhole() {
             this.wholeWord = !this.wholeWord;
             this.focus();
-            this.search();
+            this.onInput();
         },
         showReplace() {
             this.replaceVisible = !this.replaceVisible;
@@ -161,16 +182,12 @@ export default {
             if (!this.count) {
                 return;
             }
-            this.searchNextActive = true;
-            this.focus();
             this.$emit('next');
         },
         searchPrev() {
             if (!this.count) {
                 return;
             }
-            this.searchPrevActive = true;
-            this.focus();
             this.$emit('prev');
         },
         replace() {
@@ -202,11 +219,8 @@ export default {
                 return;
             }
             if (e.keyCode === 13 || e.keyCode === 100) {
-                if (this.searchPrevActive || (!this.searchNextActive && e.shiftKey)) {
-                    this.$emit('prev');
-                } else {
-                    this.$emit('next');
-                }
+                this.$emit('next');
+                e.preventDefault();
             }
         },
         onKeyDown2(e) {
@@ -219,6 +233,7 @@ export default {
                 } else {
                     this.replace();
                 }
+                e.preventDefault();
             }
         },
         onInput() {
