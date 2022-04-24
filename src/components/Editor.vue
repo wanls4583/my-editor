@@ -790,7 +790,7 @@ export default {
                     _tokens.push(token);
                 }
             }
-            lineObj.html = this.tokenizer.creatHtml(_tokens, lineObj.text);
+            lineObj.html = this.tokenizer.createHtml(_tokens, lineObj.text);
             this.myContext.renderedIdMap.get(lineObj.lineId).html = lineObj.html;
             this.$nextTick(() => {
                 lineObj.fgTokens = _tokens;
@@ -826,7 +826,7 @@ export default {
             }
             lineObj.fgTokens = null;
             if (this.myContext.renderedLineMap.has(line)) {
-                this.myContext.renderedIdMap.get(lineObj.lineId).html = this.tokenizer.creatHtml(lineObj.tokens, lineObj.text);
+                this.myContext.renderedIdMap.get(lineObj.lineId).html = this.tokenizer.createHtml(lineObj.tokens, lineObj.text);
             }
             lineObj.nowTheme = '';
         },
