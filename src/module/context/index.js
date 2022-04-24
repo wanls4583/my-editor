@@ -997,7 +997,7 @@ class Context {
         }
         this.fSearcher.refreshSearch();
     }
-    replace(texts, ranges) {
+    replace(texts, ranges, stopSearch) {
         let historyArr = null;
         let serial = this.serial++;
         historyArr = this._deleteMultiContent(ranges);
@@ -1006,8 +1006,7 @@ class Context {
         historyArr = this._insertMultiContent(texts, this.cursor.multiCursorPos.toArray());
         historyArr.serial = serial;
         this.history.pushHistory(historyArr);
-        this.searcher.refreshSearch();
-        this.fSearcher.refreshSearch();
+        !stopSearch && this.fSearcher.refreshSearch();
     }
     // 点击自动提示替换输入的内容
     replaceTip(tip) {

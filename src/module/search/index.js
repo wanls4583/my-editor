@@ -196,6 +196,10 @@ export default class {
             }
         }
     }
+    removeNow() {
+        this.cacheData.results.splice(this.cacheData.index, 1);
+        this.cacheData.index--;
+    }
     getNowRange() {
         return this.cacheData.results[this.cacheData.index];
     }

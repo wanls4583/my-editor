@@ -918,11 +918,11 @@ export default {
         searchWord(direct) {
             if (this.searchVisible) {
                 //搜索框搜索
-                let searchConfig = this.fSearcher.getConfig();
+                let searchConfig = this.fSearcher.getSearchConfig();
                 if (searchConfig && searchConfig.text) {
                     let $search = this.$refs.searchDialog;
                     if ($search.text != searchConfig.text || !$search.wholeWord || !$search.ignoreCase) {
-                        //和当前搜索框搜索条件不一致，重写搜索
+                        //和当前搜索框搜索条件不一致，重新搜索
                         let config = {
                             text: searchConfig.text,
                             wholeWord: true,
@@ -930,6 +930,7 @@ export default {
                         };
                         $search.initData(config);
                         this.onSearch(config);
+                        this.onSearchNext();
                     } else {
                         direct === 'up' ? this.onSearchPrev() : this.onSearchNext();
                     }
@@ -942,12 +943,18 @@ export default {
         replace(data) {
             if (this.fSelecter.ranges.size) {
                 let range = this.fSearcher.getNowRange();
-                this.myContext.replace(data.text, [range]);
+                this.myContext.replace(data.text, [range], true);
+                this.fSearcher.removeNow();
+                this.searchCount--;
+                this.$nextTick(() => {
+                    this.onSearchNext();
+                });
             }
         },
         replaceAll(data) {
             if (this.fSelecter.ranges.size) {
                 this.myContext.replace(data.text, this.fSelecter.ranges.toArray());
+                this.fSearcher.clearSearch();
                 this.searchCount = 0;
             }
         },
