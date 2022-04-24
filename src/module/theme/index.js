@@ -791,12 +791,11 @@ export default class {
                 if (isHc) {
                     result.colors['inputOption.activeBackground'] = transparent;
                 } else {
-                    result.colors['inputOption.activeBackground'] = chroma(focusBorder).alpha(0.6).css();
-                    result.colors['inputOption.activeForeground'] = '#fff';
+                    result.colors['inputOption.activeBackground'] = chroma(focusBorder).alpha(0.3).css();
                 }
             }
             if (!result.colors['inputOption.activeBorder']) {
-                result.colors['inputOption.activeBorder'] = focusBorder;
+                result.colors['inputOption.activeBorder'] = transparent;
             }
             if (!result.colors['inputOption.hoverBackground']) {
                 if (isHc) {
