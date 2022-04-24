@@ -35,34 +35,6 @@
         height: 100%;
     }
 
-    &-select-fg {
-        color: var(--my-editor-selectionForeground) !important;
-        span {
-            color: var(--my-editor-selectionForeground) !important;
-        }
-    }
-
-    &-select-bg {
-        border: 1px solid var(--my-editor-selectionHighlightBorder);
-        background-color: var(--my-editor-selectionHighlightBackground);
-
-        &.my-active {
-            border: none;
-            background-color: var(--my-editor-selectionBackground);
-            color: var(--my-editor-selectionForeground);
-        }
-    }
-
-    &-search-bg {
-        border: 1px solid var(--my-editor-findMatchHighlightBorder);
-        background-color: var(--my-editor-findMatchHighlightBackground);
-
-        &.my-active {
-            border: 1px solid var(--my-editor-findMatchBorder);
-            background-color: var(--my-editor-findMatchBackground);
-        }
-    }
-
     &-bracket-match {
         position: absolute;
         top: 0;
@@ -92,6 +64,8 @@
         // font-family: monospace;
 
         span {
+            position: relative;
+            z-index: 1;
             display: inline-block;
         }
 
@@ -115,6 +89,58 @@
             left: 100%;
             color: #333333;
             transform: scaleX(0.6);
+        }
+    }
+
+    &-select-fg {
+        color: var(--my-editor-selectionForeground) !important;
+        span {
+            color: var(--my-editor-selectionForeground) !important;
+        }
+    }
+
+    &-select-bg {
+        background-color: var(--my-editor-selectionHighlightBackground);
+
+        &.my-active {
+            background-color: var(--my-editor-selectionBackground);
+            color: var(--my-editor-selectionForeground);
+
+            &::after {
+                border-color: transparent;
+            }
+        }
+
+        &::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            border: 1px solid var(--my-editor-selectionHighlightBorder);
+        }
+    }
+
+    &-search-bg {
+        background-color: var(--my-editor-findMatchHighlightBackground);
+
+        &.my-active {
+            background-color: var(--my-editor-findMatchBackground);
+
+            &::after {
+                border-color: var(--my-editor-findMatchBorder);
+            }
+        }
+
+        &::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            border: 1px solid var(--my-editor-findMatchHighlightBorder);
         }
     }
 }

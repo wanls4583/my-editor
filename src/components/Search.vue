@@ -19,6 +19,7 @@
                         ref="input1"
                         :style="{ height: input1Height + 'px' }"
                         type="text"
+                        spellcheck="false"
                         v-model="text"
                     ></textarea>
                     <span :class="{ 'my-active': ignoreCase }" @click="changeCase" class="my-search-suffix" title="Match Case(Alt+C)">Aa</span>
@@ -215,25 +216,21 @@ export default {
             this.searchNextActive = false;
         },
         onKeyDown(e) {
-            if (!this.count) {
-                return;
-            }
             if (e.keyCode === 13 || e.keyCode === 100) {
-                this.$emit('next');
                 e.preventDefault();
+                this.$emit('next');
             }
         },
         onKeyDown2(e) {
-            if (!this.count) {
-                return;
-            }
             if (e.keyCode === 13 || e.keyCode === 100) {
-                if (e.ctrlKey && e.altKey) {
-                    this.replaceAll();
-                } else {
-                    this.replace();
-                }
                 e.preventDefault();
+                if (this.count) {
+                    if (e.ctrlKey && e.altKey) {
+                        this.replaceAll();
+                    } else {
+                        this.replace();
+                    }
+                }
             }
         },
         onInput() {

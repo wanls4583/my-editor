@@ -38,9 +38,9 @@
                             <!-- my-select-bg为选中状态 -->
                             <div
                                 :class="[
-                                    line.selected ? 'my-select-bg my-active' : '',
+                                    line.active ? 'my-active' : '',
+                                    line.selected ? (line.isFsearch ? 'my-search-bg' : 'my-select-bg') : '',
                                     line.selected && selectedFg ? 'my-select-fg' : '',
-                                    line.isFsearch ? 'my-search-bg' : '',
                                     line.fold == 'close' ? 'fold-close' : '',
                                 ]"
                                 :data-line="line.num"
@@ -677,6 +677,7 @@ export default {
                     let lineObj = this.myContext.renderedLineMap.get(line);
                     lineObj.selected = true;
                     lineObj.isFsearch = isFsearch;
+                    lineObj.active = range.active;
                 }
             }
             if (this.myContext.renderedLineMap.has(start.line)) {
@@ -904,8 +905,8 @@ export default {
             if (searchConfig && searchConfig.text) {
                 this.$refs.searchDialog.initData({
                     replaceVisible: !!replaceMode,
-                    ignoreCase: true,
-                    wholeWord: true,
+                    ignoreCase: searchConfig.ignoreCase,
+                    wholeWord: searchConfig.wholeWord,
                     text: searchConfig.text,
                 });
             }

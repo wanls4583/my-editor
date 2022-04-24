@@ -327,6 +327,9 @@ export default class {
                     result.colors['sash.hoverBorder'] = result.colors['focusBorder'];
                 }
             }
+            if(!result.colors['selection.background']) {
+                result.colors['selection.background'] = result.colors['focusBorder'];
+            }
             background = result.colors['background'];
             foreground = result.colors['foreground'];
             focusBorder = result.colors['focusBorder'];

@@ -78,7 +78,7 @@ export default class {
         let index = 0;
         let text = this.getAllText();
         let lines = config.text.split(/\n/);
-        let source = config.text.replace(/\\|\.|\*|\+|\-|\?|\(|\)|\[|\]|\{|\}|\^|\$|\~|\!/g, '\\$&');
+        let source = config.text.replace(/\\|\.|\*|\+|\-|\?|\(|\)|\[|\]|\{|\}|\^|\$|\~|\!|\&|\|/g, '\\$&');
         //完整匹配
         if (this.wordPattern.test(config.text) && config.wholeWord) {
             source = '(?:\\b|(?<=[^0-9a-zA-Z]))' + source + '(?:\\b|(?=[^0-9a-zA-Z]))';
@@ -93,7 +93,7 @@ export default class {
             } else {
                 start = {
                     line: line,
-                    column: column + exec[0].length - lines[0].length,
+                    column: column + exec[0].length - exec[1].length,
                 };
                 end = {
                     line: line + lines.length - 1,
@@ -245,12 +245,12 @@ export default class {
     // 获取待搜索的文本
     getSearchConfig() {
         // 非搜索框模式下，存在多个活动区域时，阻止搜索
-        if (this.selecter.activedRanges.size > 1 && this.searcher === this) {
+        if (this.selecter.activedRanges.size > 1) {
             return null;
         }
         let wholeWord = false;
         let searchText = '';
-        if (this.selecter.ranges.size) {
+        if (this.searcher.selecter.ranges.size) {
             let range = this.searcher.selecter.getRangeByCursorPos(this.nowCursorPos);
             if (range) {
                 searchText = this.getRangeText(range.start, range.end);
