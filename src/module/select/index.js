@@ -30,6 +30,10 @@ export default class {
             editor.setData(prop, value);
         };
     }
+    getRange(range) {
+        let it = this.ranges.search(range);
+        return it && it.next();
+    }
     getRangeByLine(line) {
         let results = [];
         let it = this.ranges.search(
@@ -184,10 +188,19 @@ export default class {
                 },
                 active: !!active,
             };
-            this.ranges.insert(range);
-            active && this.activedRanges.insert(range);
-            results.push(range);
-            this.filterRange(range);
+            let _range = this.getRange(range);
+            if(_range) {
+                if(!_range.active) {
+                    _range.active = active;
+                    this.activedRanges.insert(_range);
+                }
+                results.push(_range);
+            } else {
+                this.ranges.insert(range);
+                active && this.activedRanges.insert(range);
+                results.push(range);
+                this.filterRange(range);
+            }
         });
         this.renderSelectedBg();
         return ranges instanceof Array ? results : results[0];

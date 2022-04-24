@@ -1006,7 +1006,11 @@ class Context {
         historyArr = this._insertMultiContent(texts, this.cursor.multiCursorPos.toArray());
         historyArr.serial = serial;
         this.history.pushHistory(historyArr);
-        !stopSearch && this.fSearcher.refreshSearch();
+        if(stopSearch) {
+            return Promise.resolve();
+        } else {
+            return this.fSearcher.refreshSearch();
+        }
     }
     // 点击自动提示替换输入的内容
     replaceTip(tip) {

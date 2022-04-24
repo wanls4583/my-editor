@@ -102,7 +102,7 @@ export default class {
                     break;
                 case 68: //ctrl+D，搜素
                     e.preventDefault();
-                    this.searchWord();
+                    this.searchWord('down');
                     break;
                 case 70: //ctrl+F，搜素
                     e.preventDefault();

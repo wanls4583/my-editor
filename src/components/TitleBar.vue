@@ -390,7 +390,7 @@ export default {
                     this.editor.cursor.addCursorLineEnds();
                     break;
                 case 'addNextOccurence':
-                    this.editor.searchWord('next');
+                    this.editor.searchWord('down');
                     break;
                 case 'addPrevOccurence':
                     this.editor.searchWord('up');

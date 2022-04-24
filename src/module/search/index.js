@@ -23,7 +23,7 @@ export default class {
         let config = null;
         searchObj = searchObj || {};
         if (hasCache) {
-            resultObj = this.getFromCache(searchObj.direct);
+            resultObj = this.getFromCache(searchObj.direct, searchObj.increase);
         } else {
             config = (searchObj && searchObj.config) || this.getSearchConfig();
             if (!config || !config.text) {
@@ -32,25 +32,27 @@ export default class {
             resultObj = this._search(config);
         }
         if (resultObj && resultObj.result) {
-            if (hasCache) {
-                if (this.fSearcher === this) {
-                    this.selecter.setActive(resultObj.result.end);
-                    this.cursor.setCursorPos(resultObj.result.end);
-                    this.searcher.clearSearch(); //搜索框确认搜索时，删除非搜索框的选中区域
-                } else {
+            if (this.searcher === this || searchObj.increase) {
+                if (hasCache) {
                     this.selecter.addActive(resultObj.result.end);
                     this.cursor.addCursorPos(resultObj.result.end);
-                }
-            } else {
-                this.selecter.addRange(resultObj.results);
-                if (this.searcher === this) {
-                    //当前光标已处于选中区域边界，则不处理（历史记录可能存在多个选中区域的情况）
-                    if (!this.selecter.activedRanges.size > 0) {
+                } else {
+                    this.selecter.addRange(resultObj.results);
+                    //当前光标已处于选中区域边界，则不处理（历史记录后退时可能存在多个选中区域的情况）
+                    if (this.selecter.activedRanges.size === 0) {
                         this.selecter.addActive(resultObj.result.end);
                         this.cursor.setCursorPos(resultObj.result.end);
+                    } else {
+                        this.initIndexs();
                     }
+                }
+            } else {
+                if (hasCache) {
+                    this.selecter.setActive(resultObj.result.end);
+                    this.cursor.setCursorPos(resultObj.result.end);
+                    this.searcher.clearSearch();
                 } else {
-                    // 搜索框第一次搜索时不选中活动区域，避免第一次删除非搜索框选中区域
+                    this.selecter.addRange(resultObj.results);
                     this.selecter.clearActive();
                 }
             }
@@ -132,24 +134,41 @@ export default class {
             result: result,
         };
     }
+    initIndexs() {
+        let ranges = this.selecter.activedRanges.toArray();
+        this.cacheData.indexs = {};
+        ranges.forEach((range) => {
+            for (let i = 0; i < this.cacheData.results.length; i++) {
+                let item = this.cacheData.results[i];
+                if (Util.comparePos(range.start, item.start) === 0) {
+                    this.cacheData.index = i;
+                    this.cacheData.indexs[i] = true;
+                    break;
+                }
+            }
+        });
+    }
     // 重新搜索
     refreshSearch(config) {
         if (!this.hasCache() && !config) {
             return;
         }
-        let refreshSearchId = this.refreshSearch.id + 1 || 1;
-        this.refreshSearch.id = refreshSearchId;
-        this.$nextTick(() => {
-            if (this.refreshSearch.id !== refreshSearchId) {
-                return;
-            }
-            if (this.hasCache() || config) {
-                config = config || this.cacheData.config;
-                this.clearSearch();
-                this.search({
-                    config: config,
-                });
-            }
+        return new Promise((resolve) => {
+            let refreshSearchId = this.refreshSearch.id + 1 || 1;
+            this.refreshSearch.id = refreshSearchId;
+            this.$nextTick(() => {
+                if (this.refreshSearch.id !== refreshSearchId) {
+                    return;
+                }
+                if (this.hasCache() || config) {
+                    config = config || this.cacheData.config;
+                    this.clearSearch();
+                    this.search({
+                        config: config,
+                    });
+                }
+                resolve();
+            });
         });
     }
     hasCache() {
@@ -203,22 +222,30 @@ export default class {
     getNowRange() {
         return this.cacheData.results[this.cacheData.index];
     }
-    getFromCache(direct) {
+    getFromCache(direct, increase) {
         let results = this.cacheData.results;
         let result = null;
         let index = 0;
-        if (this.fSearcher === this) {
+        if (this.fSearcher === this && !increase) {
             // 搜索框移动活动区域
             if (direct === 'up') {
                 this.setPrevActive(this.nowCursorPos);
             } else {
                 this.setNextActive(this.nowCursorPos);
             }
-            result = results[this.cacheData.index];
+            index = this.cacheData.index;
+            result = this.cacheData.results[index];
+            this.cacheData.indexs = { i: true };
         } else {
             //CTRL+D移动活动区域
             let indexs = this.cacheData.indexs;
-            index = this.cacheData.index + (direct === 'up' ? -1 : 1);
+            let delta = 0;
+            if (direct === 'up') {
+                delta = -1;
+            } else {
+                delta = 1;
+            }
+            index = this.cacheData.index + delta;
             if (index == results.length) {
                 index = 0;
             } else if (index < 0) {
@@ -248,17 +275,11 @@ export default class {
     }
     // 获取待搜索的文本
     getSearchConfig() {
-        // 非搜索框模式下，存在多个活动区域时，阻止搜索
-        if (this.selecter.activedRanges.size > 1) {
-            return null;
-        }
         let wholeWord = false;
         let searchText = '';
-        if (this.searcher.selecter.ranges.size) {
-            let range = this.searcher.selecter.getRangeByCursorPos(this.nowCursorPos);
-            if (range) {
-                searchText = this.getRangeText(range.start, range.end);
-            }
+        let range = this.searcher.selecter.getRangeByCursorPos(this.nowCursorPos);
+        if (range) {
+            searchText = this.getRangeText(range.start, range.end);
         } else {
             searchText = this.getNowWord().text;
             wholeWord = true;

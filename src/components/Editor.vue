@@ -916,6 +916,7 @@ export default {
         },
         // 搜索完整单词
         searchWord(direct) {
+            this.searcher.search({ direct: direct });
             if (this.searchVisible) {
                 //搜索框搜索
                 let searchConfig = this.fSearcher.getSearchConfig();
@@ -929,33 +930,29 @@ export default {
                             ignoreCase: true,
                         };
                         $search.initData(config);
-                        this.onSearch(config);
-                        this.onSearchNext();
+                        this.onSearch(config, true);
                     } else {
-                        direct === 'up' ? this.onSearchPrev() : this.onSearchNext();
+                        direct === 'up' ? this.onSearchPrev() : this.onSearchNext(true);
                     }
                 }
-            } else {
-                //CTRL+D搜索
-                this.searcher.search({ direct: direct });
             }
         },
         replace(data) {
             if (this.fSelecter.ranges.size) {
                 let range = this.fSearcher.getNowRange();
-                this.myContext.replace(data.text, [range], true);
-                this.fSearcher.removeNow();
-                this.searchCount--;
-                this.$nextTick(() => {
+                this.myContext.replace(data.text, [range], true).then(() => {
+                    this.fSearcher.removeNow();
+                    this.searchCount--;
                     this.onSearchNext();
                 });
             }
         },
         replaceAll(data) {
             if (this.fSelecter.ranges.size) {
-                this.myContext.replace(data.text, this.fSelecter.ranges.toArray());
-                this.fSearcher.clearSearch();
-                this.searchCount = 0;
+                this.myContext.replace(data.text, this.fSelecter.ranges.toArray()).then(() => {
+                    this.fSearcher.clearSearch();
+                    this.searchCount = 0;
+                });
             }
         },
         // 上一个提示
@@ -1442,10 +1439,11 @@ export default {
             this.shortcut.onKeyDown(e);
         },
         // 搜索框首次搜索
-        onSearch(data) {
+        onSearch(data, increase) {
             let resultObj = null;
             this.fSearcher.clearSearch();
             resultObj = this.fSearcher.search({
+                increase: increase,
                 config: {
                     text: data.text,
                     wholeWord: data.wholeWord,
@@ -1455,9 +1453,9 @@ export default {
             this.searchNow = resultObj.now;
             this.searchCount = resultObj.count;
         },
-        onSearchNext() {
+        onSearchNext(increase) {
             if (this.fSearcher.hasCache()) {
-                let resultObj = this.fSearcher.search({});
+                let resultObj = this.fSearcher.search({ increase: increase });
                 this.searchNow = resultObj.now;
                 this.searchCount = resultObj.count;
             }
@@ -1475,7 +1473,7 @@ export default {
             this.focus();
             this.fSearcher.clearSearch();
             this.searchVisible = false;
-            this.searchWord();
+            this.searcher.refreshSearch();
         },
     },
 };
