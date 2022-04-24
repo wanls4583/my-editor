@@ -327,7 +327,7 @@ export default class {
                     result.colors['sash.hoverBorder'] = result.colors['focusBorder'];
                 }
             }
-            if(!result.colors['selection.background']) {
+            if (!result.colors['selection.background']) {
                 result.colors['selection.background'] = result.colors['focusBorder'];
             }
             background = result.colors['background'];
@@ -607,24 +607,16 @@ export default class {
                 }
             }
             if (!result.colors['editor.findMatchBackground']) {
-                result.colors['editor.findMatchBackground'] = chroma(focusBorder).alpha(0.8).css();
+                result.colors['editor.findMatchBackground'] = result.colors['editor.selectionBackground'];
             }
             if (!result.colors['editor.findMatchBorder']) {
                 result.colors['editor.findMatchBorder'] = transparent;
             }
             if (!result.colors['editor.findMatchHighlightBackground']) {
-                if (isHc) {
-                    result.colors['editor.findMatchHighlightBackground'] = transparent;
-                } else {
-                    result.colors['editor.findMatchHighlightBackground'] = chroma(focusBorder).alpha(0.4).css();
-                }
+                result.colors['editor.findMatchHighlightBackground'] = result.colors['editor.selectionHighlightBackground'];
             }
             if (!result.colors['editor.findMatchHighlightBorder']) {
-                if (isHc) {
-                    result.colors['editor.findMatchHighlightBorder'] = contrastActiveBorder;
-                } else {
-                    result.colors['editor.findMatchHighlightBorder'] = transparent;
-                }
+                result.colors['editor.findMatchHighlightBorder'] = result.colors['editor.selectionHighlightBorder'];
             }
             if (!result.colors['editor.lineHighlightBackground']) {
                 result.colors['editor.lineHighlightBackground'] = transparent;
