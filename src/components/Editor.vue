@@ -473,12 +473,9 @@ export default {
         },
         // 聚焦
         focus() {
-            this.$refs.textarea.focus();
-            setTimeout(() => {
-                setTimeout(() => {
-                    this.$refs.textarea.focus();
-                }, 100);
-            }, 100);
+            requestAnimationFrame(() => {
+                this.$refs.textarea.focus();
+            });
         },
         // 渲染
         render(forceCursorView) {
@@ -1432,14 +1429,11 @@ export default {
         },
         // 获得焦点
         onFocus() {
-            clearTimeout(this.onBlurTimer);
             this.showCursor();
         },
         // 失去焦点
         onBlur() {
-            this.onBlurTimer = setTimeout(() => {
-                this.hideCursor();
-            }, 300);
+            this.hideCursor();
         },
         // 键盘按下事件
         onKeyDown(e) {
