@@ -949,16 +949,18 @@ export default {
             if (resultObj) {
                 this.searchNow = resultObj.now;
                 this.searchCount = resultObj.count;
+            } else {
+                this.searchCount = 0;
             }
         },
         replace(data) {
-            if (this.fSelecter.ranges.size) {
+            if (this.fSelecter.activedRanges.size) {
                 let range = this.fSearcher.getNowRange();
-                this.myContext.replace(data.text, [range], true).then(() => {
-                    this.fSearcher.removeNow();
-                    this.searchCount--;
-                    this.onSearchNext();
+                this.myContext.replace(data.text, [range]).then(() => {
+                    this.searchText();
                 });
+            } else {
+                this.searchText();
             }
         },
         replaceAll(data) {
@@ -1455,14 +1457,10 @@ export default {
             this.searchText({ config: config });
         },
         onSearchNext() {
-            if (this.fSearcher.hasCache()) {
-                this.searchText({ direct: 'next' });
-            }
+            this.searchText({ direct: 'next' });
         },
         onSearchPrev() {
-            if (this.fSearcher.hasCache()) {
-                this.searchText({ direct: 'up' });
-            }
+            this.searchText({ direct: 'up' });
         },
         onCloseSearch() {
             this.focus();
