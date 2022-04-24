@@ -473,6 +473,7 @@ export default {
         },
         // 聚焦
         focus() {
+            this.$refs.textarea.focus();
             requestAnimationFrame(() => {
                 this.$refs.textarea.focus();
             });
@@ -898,28 +899,30 @@ export default {
         },
         // ctrl+f打开搜索
         openSearch(replaceMode) {
-            if (!this.cursorFocus) {
+            let searchDialog = this.$refs.searchDialog;
+            if (this.searchVisible && (this.fSelecter.activedRanges.size || !this.cursorFocus)) {
+                //无效操作
                 return;
             }
-            let searchConfig = this.fSearcher.getSearchConfig();
-            let searchDialog = this.$refs.searchDialog;
-            let resultObj = null;
-            if (searchConfig) {
-                searchDialog.initData({
-                    replaceVisible: !!replaceMode,
-                    ignoreCase: searchConfig.ignoreCase,
-                    wholeWord: searchConfig.wholeWord,
-                    text: searchConfig.text,
-                });
-                this.fSearcher.clearSearch();
-                resultObj = this.fSearcher.search({ config: searchDialog.getData() });
-                if (resultObj) {
-                    this.searchNow = resultObj.now;
-                    this.searchCount = resultObj.count;
+            if (this.cursorFocus) {
+                let searchConfig = this.fSearcher.getSearchConfig();
+                if (searchConfig) {
+                    //有效搜索
+                    searchDialog.initData({
+                        ignoreCase: searchConfig.ignoreCase,
+                        wholeWord: searchConfig.wholeWord,
+                        text: searchConfig.text,
+                    });
+                } else if (this.searchVisible) {
+                    //无效搜索
+                    return;
                 }
             }
-            searchDialog.focus();
             this.searchVisible = true;
+            this.fSearcher.clearSearch();
+            this.searchText({ config: searchDialog.getData() });
+            searchDialog.initData({ replaceVisible: !!replaceMode });
+            searchDialog.focus();
         },
         // 搜索完整单词
         searchWord(direct) {
@@ -939,6 +942,13 @@ export default {
                     this.searchNow = resultObj.now;
                     this.searchCount = resultObj.count;
                 }
+            }
+        },
+        searchText(option) {
+            let resultObj = this.fSearcher.search(option);
+            if (resultObj) {
+                this.searchNow = resultObj.now;
+                this.searchCount = resultObj.count;
             }
         },
         replace(data) {
@@ -1440,31 +1450,18 @@ export default {
             this.shortcut.onKeyDown(e);
         },
         // 搜索框首次搜索
-        onSearch(data) {
-            let resultObj = null;
+        onSearch(config) {
             this.fSearcher.clearSearch();
-            resultObj = this.fSearcher.search({
-                config: {
-                    text: data.text,
-                    wholeWord: data.wholeWord,
-                    ignoreCase: data.ignoreCase,
-                },
-            });
-            this.searchNow = resultObj.now;
-            this.searchCount = resultObj.count;
+            this.searchText({ config: config });
         },
         onSearchNext() {
             if (this.fSearcher.hasCache()) {
-                let resultObj = this.fSearcher.search();
-                this.searchNow = resultObj.now;
-                this.searchCount = resultObj.count;
+                this.searchText({ direct: 'next' });
             }
         },
         onSearchPrev() {
             if (this.fSearcher.hasCache()) {
-                let resultObj = this.fSearcher.search({ direct: 'up' });
-                this.searchNow = resultObj.now;
-                this.searchCount = resultObj.count;
+                this.searchText({ direct: 'up' });
             }
         },
         onCloseSearch() {

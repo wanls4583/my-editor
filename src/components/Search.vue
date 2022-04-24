@@ -207,7 +207,8 @@ export default {
             this.$emit('close');
         },
         focus() {
-            this.$nextTick(() => {
+            this.$refs.input1.focus();
+            requestAnimationFrame(() => {
                 this.$refs.input1.focus();
             });
         },
