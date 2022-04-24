@@ -101,8 +101,8 @@
                 :count="searchCount"
                 :now="searchNow"
                 @close="onCloseSearch"
-                @next="onSearchNext(false)"
-                @prev="onSearchPrev(false)"
+                @next="onSearchNext()"
+                @prev="onSearchPrev()"
                 @replace="replace"
                 @replaceAll="replaceAll"
                 @search="onSearch"
@@ -901,39 +901,46 @@ export default {
         },
         // ctrl+f打开搜索
         openSearch(replaceMode) {
+            if (!this.cursorFocus) {
+                return;
+            }
             let searchConfig = this.fSearcher.getSearchConfig();
-            if (searchConfig && searchConfig.text) {
-                this.$refs.searchDialog.initData({
+            let searchDialog = this.$refs.searchDialog;
+            let resultObj = null;
+            if (searchConfig) {
+                searchDialog.initData({
                     replaceVisible: !!replaceMode,
                     ignoreCase: searchConfig.ignoreCase,
                     wholeWord: searchConfig.wholeWord,
                     text: searchConfig.text,
                 });
+                this.fSearcher.clearSearch();
+                resultObj = this.fSearcher.search({ config: searchDialog.getData() });
+                if (resultObj) {
+                    this.searchNow = resultObj.now;
+                    this.searchCount = resultObj.count;
+                }
             }
+            searchDialog.focus();
             this.searchVisible = true;
-            this.$refs.searchDialog.focus();
-            this.onSearch(this.$refs.searchDialog.getData());
         },
         // 搜索完整单词
         searchWord(direct) {
+            let resultObj = null;
             this.searcher.search({ direct: direct });
             if (this.searchVisible) {
-                //搜索框搜索
-                let searchConfig = this.fSearcher.getSearchConfig();
-                if (searchConfig && searchConfig.text) {
-                    let $search = this.$refs.searchDialog;
-                    if ($search.text != searchConfig.text || !$search.wholeWord || !$search.ignoreCase) {
-                        //和当前搜索框搜索条件不一致，重新搜索
-                        let config = {
-                            text: searchConfig.text,
-                            wholeWord: true,
-                            ignoreCase: true,
-                        };
-                        $search.initData(config);
-                        this.onSearch(config, true);
-                    } else {
-                        direct === 'up' ? this.onSearchPrev() : this.onSearchNext(true);
+                if (this.fSelecter.activedRanges.size === 0) {
+                    let searchConfig = this.fSearcher.getSearchConfig();
+                    if (searchConfig) {
+                        this.fSearcher.clearSearch();
+                        resultObj = this.fSearcher.search({ direct: direct, increase: true });
                     }
+                } else {
+                    resultObj = this.fSearcher.search({ direct: direct, increase: true });
+                }
+                if (resultObj) {
+                    this.searchNow = resultObj.now;
+                    this.searchCount = resultObj.count;
                 }
             }
         },
@@ -1439,11 +1446,10 @@ export default {
             this.shortcut.onKeyDown(e);
         },
         // 搜索框首次搜索
-        onSearch(data, increase) {
+        onSearch(data) {
             let resultObj = null;
             this.fSearcher.clearSearch();
             resultObj = this.fSearcher.search({
-                increase: increase,
                 config: {
                     text: data.text,
                     wholeWord: data.wholeWord,
@@ -1453,9 +1459,9 @@ export default {
             this.searchNow = resultObj.now;
             this.searchCount = resultObj.count;
         },
-        onSearchNext(increase) {
+        onSearchNext() {
             if (this.fSearcher.hasCache()) {
-                let resultObj = this.fSearcher.search({ increase: increase });
+                let resultObj = this.fSearcher.search();
                 this.searchNow = resultObj.now;
                 this.searchCount = resultObj.count;
             }
@@ -1468,12 +1474,12 @@ export default {
             }
         },
         onCloseSearch() {
-            let activedRanges = this.fSelecter.activedRanges.toArray();
-            this.selecter.addRange(activedRanges);
             this.focus();
+            if (this.fSelecter.activedRanges.size) {
+                this.searcher.clone(this.fSearcher.getCacheData());
+            }
             this.fSearcher.clearSearch();
             this.searchVisible = false;
-            this.searcher.refreshSearch();
         },
     },
 };

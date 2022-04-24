@@ -34,26 +34,25 @@ export default class {
         if (resultObj && resultObj.result) {
             if (this.searcher === this || searchObj.increase) {
                 if (hasCache) {
-                    this.selecter.addActive(resultObj.result.end);
                     this.cursor.addCursorPos(resultObj.result.end);
+                    this.selecter.addActive(resultObj.result.end);
                 } else {
-                    this.selecter.addRange(resultObj.results);
                     //当前光标已处于选中区域边界，则不处理（历史记录后退时可能存在多个选中区域的情况）
                     if (this.selecter.activedRanges.size === 0) {
-                        this.selecter.addActive(resultObj.result.end);
                         this.cursor.setCursorPos(resultObj.result.end);
                     } else {
                         this.initIndexs();
                     }
+                    this.selecter.addRange(resultObj.results);
                 }
             } else {
                 if (hasCache) {
                     this.selecter.setActive(resultObj.result.end);
                     this.cursor.setCursorPos(resultObj.result.end);
-                    this.searcher.clearSearch();
+                    this.searcher.clearSearch(); //搜索框确认搜索后，删除按键搜索
                 } else {
                     this.selecter.addRange(resultObj.results);
-                    this.selecter.clearActive();
+                    this.clearActive();
                 }
             }
             now = resultObj.now;
@@ -195,10 +194,12 @@ export default class {
     }
     setPrevActive(cursorPos) {
         let results = this.cacheData.results;
+        let index = this.cacheData.index;
         this.cacheData.index = results.length - 1;
         for (let i = results.length - 1; i >= 0; i--) {
             let item = results[i];
-            if (Util.comparePos(item.end, cursorPos) < 0) {
+            let res = Util.comparePos(item.end, cursorPos);
+            if (res < 0 || (index === -1 && res === 0)) {
                 this.cacheData.index = i;
                 break;
             }
@@ -206,10 +207,12 @@ export default class {
     }
     setNextActive(cursorPos) {
         let results = this.cacheData.results;
+        let index = this.cacheData.index;
         this.cacheData.index = 0;
         for (let i = 0; i < results.length; i++) {
             let item = results[i];
-            if (Util.comparePos(item.end, cursorPos) > 0) {
+            let res = Util.comparePos(item.end, cursorPos);
+            if (res > 0 || (index === -1 && res === 0)) {
                 this.cacheData.index = i;
                 break;
             }
@@ -218,6 +221,15 @@ export default class {
     removeNow() {
         this.cacheData.results.splice(this.cacheData.index, 1);
         this.cacheData.index--;
+    }
+    clone(cacheData) {
+        this.cacheData = cacheData;
+        if (cacheData) {
+            this.selecter.addRange(cacheData.results);
+        }
+    }
+    getCacheData() {
+        return this.cacheData;
     }
     getNowRange() {
         return this.cacheData.results[this.cacheData.index];
@@ -275,20 +287,27 @@ export default class {
     }
     // 获取待搜索的文本
     getSearchConfig() {
+        let result = null;
         let wholeWord = false;
         let searchText = '';
         let range = this.searcher.selecter.getRangeByCursorPos(this.nowCursorPos);
+        if (this.searcher === this && this.selecter.ranges.size > 0) {
+            return null;
+        }
         if (range) {
             searchText = this.getRangeText(range.start, range.end);
         } else {
             searchText = this.getNowWord().text;
             wholeWord = true;
         }
-        return {
-            text: searchText,
-            wholeWord: wholeWord,
-            ignoreCase: wholeWord,
-        };
+        if (searchText) {
+            result = {
+                text: searchText,
+                wholeWord: wholeWord,
+                ignoreCase: wholeWord,
+            };
+        }
+        return result;
     }
     getNowWord() {
         let text = this.htmls[this.nowCursorPos.line - 1].text;
