@@ -5,8 +5,8 @@
 -->
 <template>
     <div @contextmenu.prevent @contextmenu.stop @mousedown.stop @selectstart.stop class="my-search">
-        <div class="my-search-left active-click" style="border-radius: 0" tabindex="-1">
-            <span :class="{ 'icon-down1': replaceVisible, 'icon-right': !replaceVisible }" @click="showReplace" class="iconfont" style="font-size: 14px" title="Toggle Replace mode"></span>
+        <div class="my-search-left active-click" style="border-radius: 0" tabindex="-1" @click="showReplace">
+            <span :class="{ 'icon-down1': replaceVisible, 'icon-right': !replaceVisible }" class="iconfont" style="font-size: 14px" title="Toggle Replace mode"></span>
         </div>
         <div style="flex-grow: 1">
             <div class="my-search-top">
