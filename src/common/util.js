@@ -253,7 +253,7 @@ class Util {
             _wordPattern = _wordPattern && _wordPattern.pattern;
             wordPattern = _wordPattern || wordPattern;
         }
-        return new RegExp(wordPattern, 'g');
+        return new RegExp(wordPattern);
     }
     static getIconByPath(iconData, path, type, fileType, opened) {
         let fileName = /[^\\\/]+$/.exec(path);

@@ -1067,7 +1067,7 @@ export default {
                 //内容改变时会触发setAutoTip(null)
                 this.setAutoTip.hideTimer = setTimeout(() => {
                     this.autoTipList = null;
-                }, 0);
+                }, 60);
             }
         },
         // 获取文本在浏览器中的宽度

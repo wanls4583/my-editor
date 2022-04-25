@@ -594,7 +594,7 @@ export default class {
             if (!result.colors['editor.selectionHighlightBorder']) {
                 if (isHc) {
                     result.colors['editor.selectionHighlightBorder'] = contrastActiveBorder;
-                } else if(result.colors['editor.selectionHighlightBackground'] === transparent){
+                } else if (result.colors['editor.selectionHighlightBackground'] === transparent) {
                     result.colors['editor.selectionHighlightBorder'] = focusBorder;
                 }
             }
@@ -711,7 +711,7 @@ export default class {
         // editorWidget
         function _editorWidget() {
             if (!result.colors['editorWidget.foreground']) {
-                result.colors['editorWidget.foreground'] = foreground;
+                result.colors['editorWidget.foreground'] = result.colors['editor.foreground'];
             }
             if (!result.colors['editorWidget.background']) {
                 if (isHc) {
@@ -723,28 +723,40 @@ export default class {
                 }
             }
             if (!result.colors['editorWidget.border']) {
-                result.colors['editorWidget.border'] = contrastBorder;
+                if (isHc) {
+                    result.colors['editorWidget.border'] = contrastBorder;
+                } else {
+                    result.colors['editorWidget.border'] = transparent;
+                }
             }
             if (!result.colors['editorSuggestWidget.foreground']) {
-                result.colors['editorSuggestWidget.background'] = result.colors['editorWidget.foreground'];
+                result.colors['editorSuggestWidget.foreground'] = result.colors['editorWidget.foreground'];
             }
             if (!result.colors['editorSuggestWidget.background']) {
                 result.colors['editorSuggestWidget.background'] = result.colors['editorWidget.background'];
             }
             if (!result.colors['editorSuggestWidget.border']) {
-                result.colors['editorSuggestWidget.border'] = contrastBorder;
+                result.colors['editorSuggestWidget.border'] = result.colors['editorWidget.border'];
             }
             if (!result.colors['editorSuggestWidget.selectedForeground']) {
-                result.colors['editorSuggestWidget.selectedForeground'] = foreground;
+                result.colors['editorSuggestWidget.selectedForeground'] = result.colors['editor.foreground'];
             }
             if (!result.colors['editorSuggestWidget.selectedBackground']) {
-                result.colors['editorSuggestWidget.selectedBackground'] = transparent;
+                result.colors['editorSuggestWidget.selectedBackground'] = result.colors['list.activeSelectionBackground'];
             }
             if (!result.colors['editorSuggestWidget.highlightForeground']) {
-                result.colors['editorSuggestWidget.highlightForeground'] = contrastActiveBorder;
+                if (isHc) {
+                    result.colors['editorSuggestWidget.highlightForeground'] = contrastBorder;
+                } else {
+                    result.colors['editorSuggestWidget.highlightForeground'] = result.colors['editor.foreground'];
+                }
             }
             if (!result.colors['editorSuggestWidget.focusHighlightForeground']) {
-                result.colors['editorSuggestWidget.focusHighlightForeground'] = contrastBorder;
+                if (isHc) {
+                    result.colors['editorSuggestWidget.focusHighlightForeground'] = contrastActiveBorder;
+                } else {
+                    result.colors['editorSuggestWidget.highlightForeground'] = result.colors['editor.foreground'];
+                }
             }
         }
         // input

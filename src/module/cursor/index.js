@@ -17,6 +17,7 @@ export default class {
         this.multiCursorPos = new Btree(Util.comparePos);
         this.multiKeyCode = 'ctrl';
         this.wordPattern = Util.getWordPattern(this.language);
+        this.rightWrodPattern = new RegExp(`^(${this.wordPattern.source})`);
         this.leftWrodPattern = new RegExp(`(${this.wordPattern.source})$`);
     }
     initProperties(editor, context) {
@@ -259,8 +260,7 @@ export default class {
                     }
                     if (column < text.length) {
                         text = text.slice(column);
-                        text = this.wordPattern.exec(text);
-                        this.wordPattern.lastIndex = 0;
+                        text = this.rightWrodPattern.exec(text);
                         if (text && text.index == 0) {
                             column += text[0].length;
                         } else {

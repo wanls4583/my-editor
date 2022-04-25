@@ -11,6 +11,7 @@
         cursor: default;
 
         .match-char {
+            font-weight: bold;
             color: var(--my-editorSuggestWidget-highlightForeground);
         }
     }
@@ -21,9 +22,16 @@
         padding-right: 10px;
         white-space: nowrap;
         cursor: pointer;
+
+        &:hover {
+            background-color: var(--my-list-hoverBackground);
+            color: var(--my-list-hoverForeground);
+        }
+
         &.my-active {
             background-color: var(--my-editorSuggestWidget-selectedBackground);
             color: var(--my-editorSuggestWidget-selectedForeground);
+
             .match-char {
                 color: var(--my-editorSuggestWidget-focusHighlightForeground);
             }

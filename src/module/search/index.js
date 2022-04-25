@@ -10,6 +10,8 @@ export default class {
         this.selecter = selecter;
         this.initProperties(editor, context);
         this.wordPattern = Util.getWordPattern(this.language);
+        this.wholeWordPattern = new RegExp(`^(${this.wordPattern.source})$`);
+        this.wordPattern = new RegExp(this.wordPattern.source, 'g');
     }
     initProperties(editor, context) {
         Util.defineProperties(this, editor, ['language', 'fSearcher', 'searcher', 'nowCursorPos', 'cursor', '$nextTick', '$refs']);
@@ -81,10 +83,9 @@ export default class {
         let lines = config.text.split(/\n/);
         let source = config.text.replace(/\\|\.|\*|\+|\-|\?|\(|\)|\[|\]|\{|\}|\^|\$|\~|\!|\&|\|/g, '\\$&');
         //完整匹配
-        if (this.wordPattern.test(config.text) && config.wholeWord) {
+        if (this.wholeWordPattern.test(config.text) && config.wholeWord) {
             source = '(?:\\b|(?<=[^0-9a-zA-Z]))' + source + '(?:\\b|(?=[^0-9a-zA-Z]))';
         }
-        this.wordPattern.lastIndex = 0;
         reg = new RegExp('[^\n]*?(' + source + ')|[^\n]*?\n', config.ignoreCase ? 'img' : 'mg');
         config = config || {};
         while ((exec = reg.exec(text))) {
