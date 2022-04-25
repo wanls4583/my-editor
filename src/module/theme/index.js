@@ -560,22 +560,10 @@ export default class {
                 }
             }
             if (!result.colors['editorLineNumber.foreground']) {
-                if (isHc) {
-                    result.colors['editorLineNumber.foreground'] = result.colors['editor.foreground'];
-                } else if (isLight) {
-                    result.colors['editorLineNumber.foreground'] = 'rgba(0,0,0,0.5)';
-                } else {
-                    result.colors['editorLineNumber.foreground'] = 'rgba(255,255,255,0.5)';
-                }
+                result.colors['editorLineNumber.foreground'] = chroma(result.colors['editor.foreground']).alpha(0.5).css()
             }
             if (!result.colors['editorLineNumber.activeForeground']) {
-                if (isHc) {
-                    result.colors['editorLineNumber.activeForeground'] = contrastActiveBorder || result.colors['editor.foreground'];
-                } else if (isLight) {
-                    result.colors['editorLineNumber.activeForeground'] = '#000';
-                } else {
-                    result.colors['editorLineNumber.activeForeground'] = '#fff';
-                }
+                result.colors['editorLineNumber.activeForeground'] = result.colors['editor.foreground'];
             }
             if (!result.colors['editorCursor.foreground']) {
                 result.colors['editorCursor.foreground'] = result.colors['editor.foreground'];

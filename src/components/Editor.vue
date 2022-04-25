@@ -10,7 +10,12 @@
                 </span>
                 <span class="num">{{ line.num }}</span>
                 <!-- 折叠图标 -->
-                <span :class="['iconfont', line.fold == 'open' ? 'my-fold-open icon-down1' : 'my-fold-close icon-right']" @click="onToggleFold(line.num)" class="my-fold my-center-center" v-if="line.fold"></span>
+                <span
+                    :class="['iconfont', line.fold == 'open' ? 'my-fold-open icon-down1' : 'my-fold-close icon-right']"
+                    @click="onToggleFold(line.num)"
+                    class="my-fold my-center-center"
+                    v-if="line.fold"
+                ></span>
             </div>
         </div>
         <div :style="{ 'box-shadow': _leftShadow }" class="my-content-wrap">
@@ -169,6 +174,7 @@ export default {
             cursorVisible: true,
             cursorFocus: true,
             language: '',
+            theme: '',
             tabSize: 4,
             renderHtmls: [],
             startLine: 1,
@@ -307,6 +313,12 @@ export default {
                 this.tokenizer.tokenizeLines(1);
             });
         },
+        theme: function () {
+            this.myContext.htmls.forEach((lineObj) => {
+                lineObj.html = '';
+            });
+            this.render();
+        },
         tabSize: function (newVal) {
             this.render();
             this.maxWidthObj = { lineId: null, text: '', width: 0 };
@@ -395,6 +407,7 @@ export default {
                     if (this.active) {
                         this.language = language;
                     }
+                    this._language = language;
                 })
             );
             EventBus.$on(
@@ -415,14 +428,12 @@ export default {
             );
             EventBus.$on(
                 'theme-change',
-                (this.initEventBus.fn4 = () => {
+                (this.initEventBus.fn4 = (theme) => {
                     this.selectedFg = !!globalData.colors['editor.selectionForeground'];
                     if (this.active) {
-                        this.myContext.htmls.forEach((lineObj) => {
-                            lineObj.html = '';
-                        });
-                        this.render();
+                        this.theme = theme;
                     }
+                    this._theme = theme;
                 })
             );
         },
@@ -437,6 +448,8 @@ export default {
         showEditor() {
             if (this.active) {
                 this.$nextTick(() => {
+                    this.language = this._language || '';
+                    this.theme = this._theme || '';
                     this.charObj = Util.getCharWidth(this.$refs.content);
                     this.maxVisibleLines = Math.ceil(this.$refs.scroller.clientHeight / this.charObj.charHight) + 1;
                     this.render();
