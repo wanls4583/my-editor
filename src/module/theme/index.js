@@ -276,7 +276,9 @@ export default class {
                 }
             }
             if (!result.colors['background']) {
-                if (isLight) {
+                if (result.colors['editor.background']) {
+                    result.colors['background'] = chroma(result.colors['editor.background']).alpha(0.8).css();
+                } else if (isLight) {
                     result.colors['background'] = '#fff';
                 } else if (isHc) {
                     result.colors['background'] = '#000';
