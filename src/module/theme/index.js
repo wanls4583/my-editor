@@ -589,17 +589,13 @@ export default class {
                 }
             }
             if (!result.colors['editor.selectionHighlightBackground']) {
-                if (isHc) {
-                    result.colors['editor.selectionHighlightBackground'] = transparent;
-                } else {
-                    result.colors['editor.selectionHighlightBackground'] = chroma(focusBorder).alpha(0.4).css();
-                }
+                result.colors['editor.selectionHighlightBackground'] = transparent;
             }
             if (!result.colors['editor.selectionHighlightBorder']) {
                 if (isHc) {
                     result.colors['editor.selectionHighlightBorder'] = contrastActiveBorder;
-                } else {
-                    result.colors['editor.selectionHighlightBorder'] = transparent;
+                } else if(result.colors['editor.selectionHighlightBackground'] === transparent){
+                    result.colors['editor.selectionHighlightBorder'] = focusBorder;
                 }
             }
             if (!result.colors['editor.findMatchBackground']) {
