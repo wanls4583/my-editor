@@ -578,11 +578,7 @@ export default class {
             }
             if (!result.colors['editor.selectionForeground']) {
                 if (isHc) {
-                    if (isLight) {
-                        result.colors['editor.selectionForeground'] = '#fff';
-                    } else {
-                        result.colors['editor.selectionForeground'] = '#333';
-                    }
+                    result.colors['editor.selectionForeground'] = foreground;
                 }
             }
             if (!result.colors['editor.selectionBackground']) {

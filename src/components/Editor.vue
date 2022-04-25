@@ -562,6 +562,7 @@ export default {
                     selectStarts: [],
                     selectEnds: [],
                     selected: false,
+                    isFsearch: false,
                     fold: fold,
                     cursorList: [],
                 };
@@ -813,6 +814,7 @@ export default {
                 this.bracketMatch.end.left = this.getStrWidth(lineObj.text, 0, pos.startIndex);
             }
         },
+        // 清除选中前景色
         clearSelectionToken() {
             this.myContext.fgLines.forEach((line) => {
                 this._clearSelectionToken(line);
@@ -828,7 +830,7 @@ export default {
             if (this.myContext.renderedLineMap.has(line)) {
                 this.myContext.renderedIdMap.get(lineObj.lineId).html = this.tokenizer.createHtml(lineObj.tokens, lineObj.text);
             }
-            lineObj.nowTheme = '';
+            lineObj.html = '';
         },
         // 渲染光标
         renderCursor(forceCursorView) {
