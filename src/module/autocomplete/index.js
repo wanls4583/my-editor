@@ -24,7 +24,7 @@ const iconMap = {
 };
 
 const regs = {
-    word: /^[a-zA-Z][a-zA-Z0-9]*$/,
+    stringToken: /(?:\.|^)(?:string|regexp)(?:\.|$)/,
     emmet: /^[a-zA-Z][a-zA-Z0-9\-]*(?:[\.\#][^\.\#\>\<\+\*\(\)]*)*(?:\*\d+)?(?:[\>\+][a-zA-Z][a-zA-Z0-9\-]*(?:[\.\#][^\.\#\>\<\+\*\(\)]*)*(?:\*\d+)?)*$/,
     paremEmmet: /\([a-zA-Z][a-zA-Z0-9\-]*(?:[\.\#][^\.\#\>\<\+\*\(\)]*)*(?:\*\d+)?(?:[\>\+][a-zA-Z][a-zA-Z0-9\-]*(?:[\.\#][^\.\#\>\<\+\*\(\)]*)*(?:\*\d+)?)*\)/g,
     invalidEmmetParen: /\)\>/,
@@ -62,12 +62,12 @@ class Autocomplete {
         this.reset();
         //当前token为单词
         if (this.wordPattern.test(word) && word) {
-            this._searchWord(word);
+            this._searchWord(word, nowToken);
         } else {
             this.setAutoTip(null);
         }
     }
-    _searchWord(word) {
+    _searchWord(word, nowToken) {
         let line = this.currentLine;
         let startTime = Date.now();
         let processedLines = 0;
@@ -81,6 +81,10 @@ class Autocomplete {
             tokens.forEach((token) => {
                 let text = lineObj.text.slice(token.startIndex, token.endIndex);
                 if (this.wordPattern.test(text)) {
+                    // 跳过标签和字符串
+                    if (this._isTextToken(token) || this._isStringToken(token)) {
+                        return;
+                    }
                     this._addTip({ word: word, value: text });
                 }
             });
@@ -94,9 +98,40 @@ class Autocomplete {
         this._showTip();
         if (line <= this.htmls.length) {
             this.searchTimer = requestIdleCallback(() => {
-                this._searchWord(word);
+                this._searchWord(word, nowToken);
             });
         }
+    }
+    _setTokenType(token) {
+        for (let i = token.scopes.length - 1; i >= 0; i--) {
+            if (token.scopes[i].startsWith('source.')) {
+                token.isSourceToken = true;
+                break;
+            } else if (token.scopes[i].startsWith('text.')) {
+                token.isTextToken = true;
+                break;
+            } else if (!token.isStringToken && regs.stringToken.test(token.scopes[i])) {
+                token.isStringToken = true;
+            }
+        }
+    }
+    _isTextToken(token) {
+        if (token.isTextToken === undefined) {
+            this._setTokenType(token);
+        }
+        return token.isTextToken;
+    }
+    _isSourceToken(token) {
+        if (token.isSourceToken === undefined) {
+            this._setTokenType(token);
+        }
+        return token.isSourceToken;
+    }
+    _isStringToken(token) {
+        if (token.isStringToken === undefined) {
+            this._setTokenType(token);
+        }
+        return token.isStringToken;
     }
     _addTip(option) {
         if (this.doneMap[option.value]) {
