@@ -12,6 +12,9 @@ const require = window.require || window.parent.require || function () {};
 const fs = require('fs');
 const path = require('path');
 
+const regs = {
+    stringToken: /(\.|^)string(\.|$)/,
+};
 
 export default class {
     constructor(editor, context) {
@@ -67,7 +70,7 @@ export default class {
         language = Util.getLanguageById(globalData.languageList, language);
         this.scopeName = (language && language.scopeName) || '';
         if (this.scopeName) {
-            if(globalData.grammars[this.scopeName]) {
+            if (globalData.grammars[this.scopeName]) {
                 let grammarData = globalData.grammars[this.scopeName];
                 this.grammar = grammarData.grammar;
                 this.sourceFoldMap = grammarData.sourceFoldMap;
@@ -78,8 +81,8 @@ export default class {
                     globalData.grammars[this.scopeName] = {
                         grammar: grammar,
                         sourceFoldMap: this.sourceFoldMap,
-                        hasTextGrammar: this.hasTextGrammar
-                    }
+                        hasTextGrammar: this.hasTextGrammar,
+                    };
                 });
             }
         }
@@ -329,6 +332,12 @@ export default class {
         let existTag = false;
         let lineText = this.htmls[line - 1].text;
         let stateFold = line > 1 ? this.htmls[line - 2].stateFold : null;
+        //给字符串token打上标记
+        tokens.forEach((token) => {
+            if (regs.stringToken.test(token.scopes.join('.'))) {
+                token.isString = true;
+            }
+        });
         outerLoop: for (let index = 0; index < tokens.length; index++) {
             let token = tokens[index];
             let _scopeName = '';
@@ -343,6 +352,7 @@ export default class {
                     if (_scopeName !== scopeName || index === tokens.length - 1) {
                         let endIndex = index === tokens.length - 1 ? token.endIndex : token.startIndex;
                         let lastFold = this.addBracket({
+                            tokens: tokens,
                             line: line,
                             foldMap: foldMap,
                             folds: folds,
@@ -387,6 +397,7 @@ export default class {
         }
     }
     addBracket(option) {
+        let tokens = option.tokens;
         let foldMap = option.foldMap;
         let folds = option.folds;
         let startIndex = option.startIndex;
@@ -411,6 +422,10 @@ export default class {
             } else if (foldMap.__comments__.blockComment[0] === res[0] || foldMap.__comments__.blockComment[1] === res[0]) {
                 type = Util.constData.BLOCK_COMMENT;
             }
+            // 如果处于字符串中，则无效
+            if (_inString(res)) {
+                continue;
+            }
             folds.push({
                 startIndex: startIndex + res.index,
                 endIndex: startIndex + res.index + res[0].length,
@@ -427,6 +442,21 @@ export default class {
         }
         reg.lastIndex = 0;
         return folds.length && folds.peek();
+
+        function _inString(res) {
+            let index = res.index;
+            for (let i = 0; i < tokens.length; i++) {
+                if (tokens[i].startIndex <= index && tokens[i].endIndex > index) {
+                    if (tokens[i].isString) {
+                        return true;
+                    }
+                    break;
+                } else if (tokens[i].startIndex > index) {
+                    break;
+                }
+            }
+            return false;
+        }
     }
     addTagFold(option) {
         let token = option.token;
