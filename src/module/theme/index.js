@@ -742,7 +742,7 @@ export default class {
                 result.colors['editorSuggestWidget.selectedForeground'] = result.colors['editor.foreground'];
             }
             if (!result.colors['editorSuggestWidget.selectedBackground']) {
-                result.colors['editorSuggestWidget.selectedBackground'] = result.colors['list.activeSelectionBackground'];
+                result.colors['editorSuggestWidget.selectedBackground'] = result.colors['quickInputList.focusBackground'];
             }
             if (!result.colors['editorSuggestWidget.highlightForeground']) {
                 if (isHc) {
