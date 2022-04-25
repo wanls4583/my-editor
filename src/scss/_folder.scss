@@ -3,46 +3,21 @@
         position: absolute;
         top: 0;
         right: 0;
+        display: flex;
+        align-items: center;
         width: 20px;
         height: 100%;
         cursor: pointer;
         opacity: 0;
-        // transition: opacity 0.2s;
+        transition: opacity 0.4s;
+        font-size: 12px;
     }
 
-    &-fold-open:after {
-        display: block;
-        content: '';
-        border-width: 6px 4px 0 4px;
-        border-style: solid;
-        border-color: rgb(139, 139, 132) transparent;
-    }
-
-    &-fold-open:hover:after {
-        display: block;
-        content: '';
-        border-width: 6px 4px 0 4px;
-        border-style: solid;
-        border-color: rgb(200, 200, 200) transparent;
+    &-nums:hover .my-fold {
+        opacity: 1;
     }
 
     &-fold-close {
         opacity: 1;
-    }
-
-    &-fold-close:after {
-        display: block;
-        content: '';
-        border-width: 4px 0 4px 6px;
-        border-style: solid;
-        border-color: transparent rgb(139, 139, 132);
-    }
-
-    &-fold-close:hover:after {
-        display: block;
-        content: '';
-        border-width: 4px 0 4px 6px;
-        border-style: solid;
-        border-color: transparent rgb(200, 200, 200);
     }
 }

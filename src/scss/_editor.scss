@@ -24,12 +24,6 @@
         position: relative;
         float: left;
         overflow: hidden;
-
-        &:hover {
-            .my-fold {
-                opacity: 1;
-            }
-        }
     }
 
     &-num {

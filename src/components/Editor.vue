@@ -10,7 +10,7 @@
                 </span>
                 <span class="num">{{ line.num }}</span>
                 <!-- 折叠图标 -->
-                <span :class="[line.fold == 'open' ? 'my-fold-open' : 'my-fold-close']" @click="onToggleFold(line.num)" class="my-fold my-center-center" v-if="line.fold"></span>
+                <span :class="['iconfont', line.fold == 'open' ? 'my-fold-open icon-down1' : 'my-fold-close icon-right']" @click="onToggleFold(line.num)" class="my-fold my-center-center" v-if="line.fold"></span>
             </div>
         </div>
         <div :style="{ 'box-shadow': _leftShadow }" class="my-content-wrap">
