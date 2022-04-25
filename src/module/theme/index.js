@@ -267,7 +267,9 @@ export default class {
         // base
         function _base() {
             if (!result.colors['foreground']) {
-                if (isLight) {
+                if (result.colors['editor.foreground']) {
+                    result.colors['foreground'] = chroma(result.colors['editor.foreground']).alpha(0.8).css();
+                } else if (isLight) {
                     result.colors['foreground'] = '#575757';
                 } else {
                     result.colors['foreground'] = 'rgb(221, 221, 221)';
@@ -432,7 +434,7 @@ export default class {
                 }
             }
             if (!result.colors['list.activeSelectionForeground']) {
-                result.colors['list.activeSelectionForeground'] = foreground;
+                result.colors['list.activeSelectionForeground'] = result.colors['list.highlightForeground'] || foreground;
             }
             if (!result.colors['list.hoverForeground']) {
                 result.colors['list.hoverForeground'] = foreground;
