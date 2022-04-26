@@ -427,8 +427,8 @@ export default class {
         }
         // list
         function _list() {
-            if(!result.colors['list.highlightForeground']) {
-                if(isHc) {
+            if (!result.colors['list.highlightForeground']) {
+                if (isHc) {
                     result.colors['list.highlightForeground'] = contrastBorder;
                 } else {
                     result.colors['list.highlightForeground'] = foreground;
@@ -443,7 +443,13 @@ export default class {
                 }
             }
             if (!result.colors['list.activeSelectionForeground']) {
-                result.colors['list.activeSelectionForeground'] = foreground;
+                if (isHc) {
+                    result.colors['list.activeSelectionForeground'] = foreground;
+                } else if (isLight) {
+                    result.colors['list.activeSelectionForeground'] = 'rgba(51, 51, 51)';
+                } else {
+                    result.colors['list.activeSelectionForeground'] = 'rgba(255, 255, 255)';
+                }
             }
             if (!result.colors['list.hoverForeground']) {
                 result.colors['list.hoverForeground'] = foreground;
@@ -471,14 +477,20 @@ export default class {
                 if (result.colors['list.inactiveFocusForeground']) {
                     result.colors['quickInputList.focusForeground'] = result.colors['list.inactiveFocusForeground'];
                 } else {
-                    result.colors['quickInputList.focusForeground'] = foreground;
+                    result.colors['quickInputList.focusForeground'] = result.colors['list.activeSelectionForeground'];
                 }
             }
         }
         //menu
         function _menu() {
             if (!result.colors['menu.foreground']) {
-                result.colors['menu.foreground'] = foreground;
+                if (isHc) {
+                    result.colors['menu.foreground'] = foreground;
+                } else if (isLight) {
+                    result.colors['menu.foreground'] = 'rgba(51, 51, 51)';
+                } else {
+                    result.colors['menu.foreground'] = 'rgba(255, 255, 255)';
+                }
             }
             if (!result.colors['menu.background']) {
                 result.colors['menu.background'] = result.colors['dropdown.background'];
@@ -567,7 +579,7 @@ export default class {
                 }
             }
             if (!result.colors['editorLineNumber.foreground']) {
-                result.colors['editorLineNumber.foreground'] = chroma(result.colors['editor.foreground']).alpha(0.5).css()
+                result.colors['editorLineNumber.foreground'] = chroma(result.colors['editor.foreground']).alpha(0.5).css();
             }
             if (!result.colors['editorLineNumber.activeForeground']) {
                 result.colors['editorLineNumber.activeForeground'] = result.colors['editor.foreground'];
@@ -737,8 +749,8 @@ export default class {
             if (!result.colors['editorSuggestWidget.border']) {
                 result.colors['editorSuggestWidget.border'] = result.colors['editorWidget.border'];
             }
-            if(result.colors['editorSuggestWidget.border'] === transparent) {
-                result.colors['editorSuggestWidget.shadow'] = result.colors['widget.shadow']
+            if (result.colors['editorSuggestWidget.border'] === transparent) {
+                result.colors['editorSuggestWidget.shadow'] = result.colors['widget.shadow'];
             } else {
                 result.colors['editorSuggestWidget.shadow'] = transparent;
             }
