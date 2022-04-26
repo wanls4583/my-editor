@@ -1010,10 +1010,13 @@ class Context {
     // 点击自动提示替换输入的内容
     replaceTip(tip) {
         let word = tip.word || '';
-        let result = _getResult(tip);
+        let result = _getResult(tip) + tip.after;
         let ranges = _getRanges.call(this);
         this.replace(result, ranges);
         _updatePos.call(this);
+        if (tip.type === 'css-property') {
+            this.autocomplete.search();
+        }
 
         function _getResult(tip) {
             let result = '';

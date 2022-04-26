@@ -12,6 +12,7 @@ const path = require('path');
 
 const regs = {
     stringToken: /(?:\.|^)(?:string|regexp)(?:\.|$)/,
+    valueToken: /property-list|property-value|separator/,
 };
 
 class Autocomplete {
@@ -41,8 +42,10 @@ class Autocomplete {
         });
     }
     _search() {
-        let nowToken = this.getToken(this.nowCursorPos);
-        let word = nowToken && this.htmls[this.nowCursorPos.line - 1].text.slice(nowToken.startIndex, this.nowCursorPos.column);
+        let lineObj = this.htmls[this.nowCursorPos.line - 1];
+        let tokenIndex = this.getTokenIndex(this.nowCursorPos);
+        let nowToken = tokenIndex > -1 ? lineObj.tokens[tokenIndex] : null;
+        let word = nowToken && lineObj.text.slice(nowToken.startIndex, this.nowCursorPos.column);
         this.reset();
         this.setAutoTip(null);
         if (!word) {
@@ -52,28 +55,44 @@ class Autocomplete {
             let scope = nowToken.scopes.peek();
             if (scope.startsWith('text.')) {
                 //emmet表达式
-                this._searchEmmet(word, nowToken);
+                this._searchEmmet(word);
             } else if (scope.startsWith('entity.name.tag')) {
                 //标签名
-                this._searchTag(word, nowToken);
+                this._searchTag(word);
             }
         } else if (this._isCssToken(nowToken)) {
             let scope = nowToken.scopes.peek();
             if (scope.indexOf('property-name') > -1) {
-                //css属性
-                this._searchCssProperty(word, nowToken);
+                //css属性名
+                this._searchCssProperty(word);
+            } else if (regs.valueToken.test(scope)) {
+                //css属性值
+                let property = '';
+                for (let i = tokenIndex - 1; i >= 0; i--) {
+                    let token = lineObj.tokens[i];
+                    let scope = token.scopes.peek();
+                    if (scope.indexOf('property-name') > -1) {
+                        property = lineObj.text.slice(token.startIndex, token.endIndex);
+                        break;
+                    }
+                    if (!regs.valueToken.test(scope)) {
+                        break;
+                    }
+                }
+                if (property) {
+                    this._searchCssValue(word, property);
+                }
             }
         } else if (this._isSourceToken(nowToken)) {
             if (this.wordPattern.test(word)) {
-                this._searchWord(word, nowToken);
+                this._searchWord(word);
             }
         }
     }
-    _searchWord(word, nowToken) {
+    _searchWord(word) {
         let line = this.currentLine;
         let startTime = Date.now();
         let processedLines = 0;
-        let scope = nowToken.scopes.peek();
         while (line <= this.htmls.length) {
             let lineObj = this.htmls[line - 1];
             let tokens = lineObj.tokens;
@@ -88,7 +107,7 @@ class Autocomplete {
                     if (this._isTextToken(token) || this._isStringToken(token)) {
                         return;
                     }
-                    this._addTip({ word: word, value: text, scope: scope, type: 'word' });
+                    this._addTip({ word: word, value: text, type: 'word' });
                 }
             });
             processedLines++;
@@ -101,39 +120,36 @@ class Autocomplete {
         this._showTip();
         if (line <= this.htmls.length) {
             this.searchTimer = requestIdleCallback(() => {
-                this._searchWord(word, nowToken);
+                this._searchWord(word);
             });
         }
     }
-    _searchTag(word, nowToken) {
+    _searchTag(word) {
         const htmlData = this.getHtmlData();
-        const scope = nowToken.scopes.peek();
         htmlData.tags.forEach((item) => {
-            this._addTip({ word: word, value: item.name, scope: scope, type: 'html-tag' });
+            this._addTip({ word: word, value: item.name, type: 'html-tag' });
         });
         if (!this.results.length) {
-            this._addTip({ word: word, value: word, scope: scope, type: 'html-tag', skipMatch: true });
+            this._addTip({ word: word, value: word, type: 'html-tag', skipMatch: true });
         }
         this._showTip();
     }
-    _searchEmmet(word, nowToken) {
+    _searchEmmet(word) {
         const emmetObj = extract(word);
-        const scope = nowToken.scopes.peek();
         if (emmetObj && emmetObj.abbreviation) {
             let abbreviation = emmetObj.abbreviation;
             let lastChar = abbreviation[abbreviation.length - 1];
             if (lastChar === '+' || lastChar === '/') {
                 return;
             }
-            this._addTip({ word: abbreviation, value: abbreviation, scope: scope, type: 'emmet-html', skipMatch: true });
+            this._addTip({ word: abbreviation, value: abbreviation, type: 'emmet-html', skipMatch: true });
             this._showTip();
         }
     }
-    _searchCssProperty(word, nowToken) {
+    _searchCssProperty(word) {
         const cssData = this.getCssData();
-        const scope = nowToken.scopes.peek();
         cssData.properties.forEach((item) => {
-            this._addTip({ word: word, value: item.name, scope: scope, type: 'css-property' });
+            this._addTip({ word: word, value: item.name, type: 'css-property', after: ': ' });
         });
         if (!this.results.length) {
             const emmetObj = extract(word);
@@ -143,10 +159,28 @@ class Autocomplete {
                 if (lastChar === '+' || lastChar === '/') {
                     return;
                 }
-                this._addTip({ word: abbreviation, value: abbreviation, scope: scope, type: 'emmet-css', skipMatch: true });
+                this._addTip({ word: abbreviation, value: abbreviation, type: 'emmet-css', skipMatch: true });
             }
         }
         this._showTip();
+    }
+    _searchCssValue(word, property) {
+        const cssData = this.getCssData();
+        let values = cssData.propertyMap[property];
+        values = values && values.values;
+        if (values) {
+            let _word = word.trim();
+            if (_word === ':' || _word === '') {
+                values.forEach((item) => {
+                    this._addTip({ word: word, value: item.name, type: 'css-value', after: ';', skipMatch: true });
+                });
+            } else {
+                values.forEach((item) => {
+                    this._addTip({ word: word, value: item.name, type: 'css-value', after: ';' });
+                });
+            }
+            this._showTip(true);
+        }
     }
     _setTokenType(token) {
         token.isSourceToken = false;
@@ -204,15 +238,15 @@ class Autocomplete {
             if (this.doneMap[option.value]) {
                 return;
             }
-            result = Util.fuzzyMatch(option.word, option.value);
+            result = Util.fuzzyMatch(option.word.trim(), option.value);
         }
         if (result) {
             let obj = {
                 result: option.value,
                 word: option.word || '',
                 desc: option.desc || '',
-                scope: option.scope,
-                type: option.type,
+                type: option.type || '',
+                after: option.after || '',
                 icon: this.getIcon(option.scope),
                 indexs: result.indexs,
                 score: result.score,
@@ -242,18 +276,16 @@ class Autocomplete {
         }
         return !!regs.emmet.exec(text);
     }
-    getToken(cursorPos) {
+    getTokenIndex(cursorPos) {
         let tokens = this.htmls[cursorPos.line - 1].tokens;
-        let token = null;
         if (tokens) {
             for (let i = 0; i < tokens.length; i++) {
                 if (tokens[i].startIndex < cursorPos.column && tokens[i].endIndex >= cursorPos.column) {
-                    token = tokens[i];
-                    break;
+                    return i;
                 }
             }
         }
-        return token;
+        return -1;
     }
     getHtmlData() {
         if (this.htmlData) {
@@ -270,6 +302,10 @@ class Autocomplete {
         } else {
             const cssData = require(path.join(globalData.dirname, '/data/browsers.css-data'));
             this.cssData = cssData;
+            cssData.propertyMap = {};
+            cssData.properties.forEach((item) => {
+                cssData.propertyMap[item.name] = item;
+            });
             return this.cssData;
         }
     }
