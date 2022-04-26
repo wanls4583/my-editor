@@ -4,7 +4,6 @@
  * @Description:
  */
 import Util from '@/common/Util';
-import globalData from '@/data/globalData';
 
 const regs = {
     word: /[a-zA-Z0-9_]/,
@@ -1010,8 +1009,6 @@ class Context {
     // 点击自动提示替换输入的内容
     replaceTip(tip) {
         let word = tip.word || '';
-        let lookahead = tip.lookahead || 0;
-        let firstToken = null;
         let result = _getResult(tip);
         let ranges = _getRanges.call(this);
         this.replace(result, ranges);
@@ -1019,7 +1016,7 @@ class Context {
 
         function _getResult(tip) {
             let result = '';
-            if (tip.type === 'emmet-html') {
+            if (tip.scope.startsWith('text.')) {
                 //emmet语法
                 let index = 0;
                 let text = tip.result;
@@ -1029,7 +1026,7 @@ class Context {
                     result += '\n' + resObj.result;
                 }
                 result = result.slice(1);
-            } else if (tip.type === 'entity.name.tag.html') {
+            } else if (tip.scope.startsWith('entity.name.tag')) {
                 result += tip.result + `></${tip.result}>`;
             } else {
                 result = tip.result;
@@ -1039,35 +1036,12 @@ class Context {
 
         function _getRanges() {
             let ranges = [];
-            this.cursor.multiCursorPos.forEach((cursorPos, index) => {
+            this.cursor.multiCursorPos.forEach((cursorPos) => {
                 let range = null;
-                let token = this.autocomplete.getToken(cursorPos);
-                if (index === 0) {
-                    firstToken = token;
-                }
-                if (!index || (index > 0 && token.type === firstToken.type && token.value === firstToken.value)) {
-                    range = {
-                        start: {
-                            line: cursorPos.line,
-                            column: cursorPos.column - word.length + lookahead,
-                        },
-                        end: {
-                            line: cursorPos.line,
-                            column: cursorPos.column + lookahead,
-                        },
-                    };
-                } else {
-                    range = {
-                        start: {
-                            line: cursorPos.line,
-                            column: cursorPos.column,
-                        },
-                        end: {
-                            line: cursorPos.line,
-                            column: cursorPos.column,
-                        },
-                    };
-                }
+                range = {
+                    start: { line: cursorPos.line, column: cursorPos.column - word.length },
+                    end: { line: cursorPos.line, column: cursorPos.column },
+                };
                 ranges.push(range);
             });
             return ranges;
@@ -1172,7 +1146,7 @@ class Context {
         }
 
         function _updatePos() {
-            if (tip.type === 'emmet-html' || tip.type === 'entity.name.tag.html') {
+            if (tip.scope.startsWith('entity.name.tag') || tip.scope.startsWith('text.')) {
                 //生成标签后，光标定位到标签中间的位置
                 let exec = regs.endTag.exec(result);
                 let text = result.slice(exec.index);

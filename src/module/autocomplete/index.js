@@ -4,24 +4,10 @@
  * @Description:
  */
 import Util from '@/common/Util';
-import HtmlData from '@/data/browsers.html-data';
+import globalData from '@/data/globalData';
 
-const tagMap = {};
-HtmlData.tags.forEach((item) => {
-    tagMap[item.name] = true;
-});
-
-const iconMap = {
-    'entity.name.function.js': 'icon-function',
-    'entity.name.class.js': 'icon-class',
-    'support.function.js': 'icon-function',
-    'support.class.js': 'icon-class',
-    'support.type.property-name.css': 'icon-property',
-    'support.type.property-value.css': 'icon-value',
-    'entity.other.attribute-name.html': 'icon-property',
-    'entity.name.tag.html': 'icon-property',
-    'emmet-html': 'icon-property',
-};
+const require = window.require || window.parent.require || function () {};
+const path = require('path');
 
 const regs = {
     stringToken: /(?:\.|^)(?:string|regexp)(?:\.|$)/,
@@ -62,7 +48,18 @@ class Autocomplete {
         this.reset();
         //当前token为单词
         if (this.wordPattern.test(word) && word) {
-            this._searchWord(word, nowToken);
+            if (this._isSourceToken(nowToken)) {
+                this._searchWord(word, nowToken);
+            } else if (this._isTextToken(nowToken)) {
+                let scope = nowToken.scopes.peek();
+                if (scope.startsWith('text.')) {
+                    //emmet表达式
+                    this._searchEmmet(word, nowToken);
+                } else if (scope.startsWith('entity.name.tag')) {
+                    //标签名
+                    this._searchTag(word, nowToken);
+                }
+            }
         } else {
             this.setAutoTip(null);
         }
@@ -71,6 +68,7 @@ class Autocomplete {
         let line = this.currentLine;
         let startTime = Date.now();
         let processedLines = 0;
+        let scope = nowToken.scopes.peek();
         while (line <= this.htmls.length) {
             let lineObj = this.htmls[line - 1];
             let tokens = lineObj.tokens;
@@ -85,7 +83,7 @@ class Autocomplete {
                     if (this._isTextToken(token) || this._isStringToken(token)) {
                         return;
                     }
-                    this._addTip({ word: word, value: text });
+                    this._addTip({ word: word, value: text, scope: scope });
                 }
             });
             processedLines++;
@@ -102,6 +100,19 @@ class Autocomplete {
             });
         }
     }
+    _searchTag(word, nowToken) {
+        const htmlData = this.getHtmlData();
+        const scope = nowToken.scopes.peek();
+        htmlData.tags.forEach((item) => {
+            this._addTip({ word: word, value: item.name, scope: scope });
+        });
+        if (!this.results.length) {
+            this.doneMap[word] = false;
+            this._addTip({ word: word, value: word, scope: scope, skipMatch: true });
+        }
+        this._showTip();
+    }
+    _searchEmmet(word, nowToken) {}
     _setTokenType(token) {
         for (let i = token.scopes.length - 1; i >= 0; i--) {
             if (token.scopes[i].startsWith('source.')) {
@@ -141,7 +152,7 @@ class Autocomplete {
         if (option.skipMatch) {
             result = {
                 indexs: [],
-                score: 0,
+                score: 100,
             };
         } else {
             result = Util.fuzzyMatch(option.word, option.value);
@@ -151,8 +162,8 @@ class Autocomplete {
                 result: option.value,
                 word: option.word || '',
                 desc: option.desc || '',
-                type: option.type,
-                icon: iconMap[option.type] || '',
+                scope: option.scope,
+                icon: this.getIcon(option.scope),
                 indexs: result.indexs,
                 score: result.score,
                 lookahead: option.lookahead,
@@ -199,6 +210,23 @@ class Autocomplete {
         let column = this.nowCursorPos.column;
         let text = this.htmls[line - 1].text;
         return null;
+    }
+    getHtmlData() {
+        if (this.htmlData) {
+            return this.htmlData;
+        } else {
+            const htmlData = require(path.join(globalData.dirname, '/data/browsers.html-data'));
+            const tagMap = {};
+            htmlData.tags.forEach((item) => {
+                tagMap[item.name] = true;
+            });
+            htmlData.tagMap = tagMap;
+            this.htmlData = htmlData;
+            return this.htmlData;
+        }
+    }
+    getIcon(scope) {
+        return '';
     }
 }
 
