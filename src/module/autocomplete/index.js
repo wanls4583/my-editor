@@ -3,6 +3,7 @@
  * @Date: 2022-03-17 15:29:26
  * @Description:
  */
+import { extract } from 'emmet';
 import Util from '@/common/Util';
 import globalData from '@/data/globalData';
 
@@ -11,9 +12,6 @@ const path = require('path');
 
 const regs = {
     stringToken: /(?:\.|^)(?:string|regexp)(?:\.|$)/,
-    emmet: /^[a-zA-Z][a-zA-Z0-9\-]*(?:[\.\#][^\.\#\>\<\+\*\(\)]*)*(?:\*\d+)?(?:[\>\+][a-zA-Z][a-zA-Z0-9\-]*(?:[\.\#][^\.\#\>\<\+\*\(\)]*)*(?:\*\d+)?)*$/,
-    paremEmmet: /\([a-zA-Z][a-zA-Z0-9\-]*(?:[\.\#][^\.\#\>\<\+\*\(\)]*)*(?:\*\d+)?(?:[\>\+][a-zA-Z][a-zA-Z0-9\-]*(?:[\.\#][^\.\#\>\<\+\*\(\)]*)*(?:\*\d+)?)*\)/g,
-    invalidEmmetParen: /\)\>/,
 };
 
 class Autocomplete {
@@ -44,24 +42,25 @@ class Autocomplete {
     }
     _search() {
         let nowToken = this.getToken(this.nowCursorPos);
-        let word = nowToken && this.htmls[this.nowCursorPos.line - 1].text.slice(nowToken.startIndex, nowToken.endIndex);
+        let word = nowToken && this.htmls[this.nowCursorPos.line - 1].text.slice(nowToken.startIndex, this.nowCursorPos.column);
         this.reset();
-        //当前token为单词
-        if (this.wordPattern.test(word) && word) {
-            if (this._isSourceToken(nowToken)) {
-                this._searchWord(word, nowToken);
-            } else if (this._isTextToken(nowToken)) {
-                let scope = nowToken.scopes.peek();
-                if (scope.startsWith('text.')) {
-                    //emmet表达式
-                    this._searchEmmet(word, nowToken);
-                } else if (scope.startsWith('entity.name.tag')) {
-                    //标签名
-                    this._searchTag(word, nowToken);
-                }
+        this.setAutoTip(null);
+        if (!word) {
+            return;
+        }
+        if (this._isTextToken(nowToken)) {
+            let scope = nowToken.scopes.peek();
+            if (scope.startsWith('text.')) {
+                //emmet表达式
+                this._searchEmmet(word, nowToken);
+            } else if (scope.startsWith('entity.name.tag')) {
+                //标签名
+                this._searchTag(word, nowToken);
             }
-        } else {
-            this.setAutoTip(null);
+        } else if (this._isSourceToken(nowToken)) {
+            if (this.wordPattern.test(word)) {
+                this._searchWord(word, nowToken);
+            }
         }
     }
     _searchWord(word, nowToken) {
@@ -107,12 +106,20 @@ class Autocomplete {
             this._addTip({ word: word, value: item.name, scope: scope });
         });
         if (!this.results.length) {
-            this.doneMap[word] = false;
             this._addTip({ word: word, value: word, scope: scope, skipMatch: true });
         }
         this._showTip();
     }
-    _searchEmmet(word, nowToken) {}
+    _searchEmmet(word, nowToken) {
+        const emmetObj = extract(word);
+        const scope = nowToken.scopes.peek();
+        console.log(word, emmetObj);
+        if (emmetObj && emmetObj.abbreviation) {
+            word = emmetObj.abbreviation;
+            this._addTip({ word: word, value: word, scope: scope, skipMatch: true });
+            this._showTip();
+        }
+    }
     _setTokenType(token) {
         for (let i = token.scopes.length - 1; i >= 0; i--) {
             if (token.scopes[i].startsWith('source.')) {
@@ -145,9 +152,6 @@ class Autocomplete {
         return token.isStringToken;
     }
     _addTip(option) {
-        if (this.doneMap[option.value]) {
-            return;
-        }
         let result = null;
         if (option.skipMatch) {
             result = {
@@ -155,6 +159,9 @@ class Autocomplete {
                 score: 100,
             };
         } else {
+            if (this.doneMap[option.value]) {
+                return;
+            }
             result = Util.fuzzyMatch(option.word, option.value);
         }
         if (result) {

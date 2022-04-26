@@ -4,6 +4,7 @@
  * @Description:
  */
 import Util from '@/common/Util';
+import expand from 'emmet';
 
 const regs = {
     word: /[a-zA-Z0-9_]/,
@@ -1017,15 +1018,7 @@ class Context {
         function _getResult(tip) {
             let result = '';
             if (tip.scope.startsWith('text.')) {
-                //emmet语法
-                let index = 0;
-                let text = tip.result;
-                while (index < text.length) {
-                    let resObj = _emmet(text, index);
-                    index = resObj.index;
-                    result += '\n' + resObj.result;
-                }
-                result = result.slice(1);
+                result = expand(tip.result);
             } else if (tip.scope.startsWith('entity.name.tag')) {
                 result += tip.result + `></${tip.result}>`;
             } else {
@@ -1047,114 +1040,18 @@ class Context {
             return ranges;
         }
 
-        function _parenEmmet(text, index, tabNum) {
-            let result = '';
-            let exec = null;
-            while (index < text.length && text[index] != ')') {
-                let resObj = _emmet(text, index, tabNum);
-                index = resObj.index;
-                result += '\n' + resObj.result;
-            }
-            index++;
-            result = result.slice(1);
-            let _text = text.slice(index);
-            if ((exec = regs.emmetNum.exec(_text))) {
-                let num = exec[1] - 0 || 1;
-                index += exec[0].length;
-                result = _multiply(result, num);
-            }
-            return {
-                index: index + 1, //')'后面跟着'+'或者为结尾
-                result: result,
-            };
-        }
-
-        function _emmet(text, index, tabNum) {
-            tabNum = tabNum || 0;
-            let exec = null;
-            let tag = '';
-            let _text = text.slice(index);
-            let tab = _multiplyTab(tabNum);
-            if (text[index] === '(') {
-                index++;
-                return _parenEmmet(text, index, tabNum);
-            } else if ((exec = regs.emmetWord.exec(_text))) {
-                let cs = [];
-                let ids = [];
-                let num = 1;
-                let result = `${tab}<${exec[0]}`;
-                tag = exec[0];
-                index += exec[0].length;
-                _text = text.slice(index);
-                while ((exec = regs.emmetAttr.exec(_text))) {
-                    if (exec[0][0] === '.') {
-                        cs.push(exec[1]);
-                    } else {
-                        ids.push(exec[1]);
-                    }
-                    index += exec[0].length;
-                    _text = text.slice(index);
-                }
-                if (cs.length) {
-                    result += ` class="${cs.join(' ')}"`;
-                }
-                if (ids.length) {
-                    result += ` id="${ids.peek()}"`;
-                }
-                result += '>';
-                if ((exec = regs.emmetNum.exec(_text))) {
-                    num = exec[1] - 0 || 1;
-                    index += exec[0].length;
-                    _text = text.slice(index);
-                }
-                if (text[index] === '>') {
-                    let obj = _emmet(text, index + 1, tabNum + 1);
-                    index = obj.index;
-                    result = _multiply(result + '\n' + obj.result + `\n${tab}</${tag}>`, num);
-                } else if (text[index] === '+') {
-                    index++;
-                    result = _multiply(result + `</${tag}>`, num);
-                } else {
-                    result = _multiply(result + `</${tag}>`, num);
-                }
-                return {
-                    index: index,
-                    result: result,
-                };
-            } else {
-                return {
-                    index: index + 1,
-                    result: '',
-                };
-            }
-        }
-
-        function _multiply(text, num) {
-            let str = '';
-            for (let i = 0; i < num; i++) {
-                str += text + '\n';
-            }
-            return str.slice(0, -1);
-        }
-
-        function _multiplyTab(num) {
-            let str = '';
-            for (let i = 0; i < num; i++) {
-                str += '\t';
-            }
-            return str;
-        }
-
         function _updatePos() {
             if (tip.scope.startsWith('entity.name.tag') || tip.scope.startsWith('text.')) {
                 //生成标签后，光标定位到标签中间的位置
                 let exec = regs.endTag.exec(result);
-                let text = result.slice(exec.index);
-                let deltaArr = text.split('\n');
-                let multiCursorPos = this.cursor.multiCursorPos.toArray();
-                for (let i = multiCursorPos.length - 1; i >= 0; i--) {
-                    let cursorPos = _getDeltaPos.call(this, deltaArr, multiCursorPos[i]);
-                    this.cursor.updateCursorPos(multiCursorPos[i], cursorPos.line, cursorPos.column);
+                if(exec) {
+                    let text = result.slice(exec.index);
+                    let deltaArr = text.split('\n');
+                    let multiCursorPos = this.cursor.multiCursorPos.toArray();
+                    for (let i = multiCursorPos.length - 1; i >= 0; i--) {
+                        let cursorPos = _getDeltaPos.call(this, deltaArr, multiCursorPos[i]);
+                        this.cursor.updateCursorPos(multiCursorPos[i], cursorPos.line, cursorPos.column);
+                    }
                 }
             }
         }
