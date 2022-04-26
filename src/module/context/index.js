@@ -1017,13 +1017,17 @@ class Context {
 
         function _getResult(tip) {
             let result = '';
-            if (tip.scope.startsWith('text.')) {
+            if (tip.type === 'emmet-html' || tip.type === 'emmet-css') {
                 try {
-                    result = expand(tip.result);
+                    const config = {};
+                    if (tip.type === 'emmet-css') {
+                        config.type = 'stylesheet';
+                    }
+                    result = expand(tip.result, config);
                 } catch (e) {
                     result = tip.result;
                 }
-            } else if (tip.scope.startsWith('entity.name.tag')) {
+            } else if (tip.type === 'html-tag') {
                 result += tip.result + `></${tip.result}>`;
             } else {
                 result = tip.result;
@@ -1045,7 +1049,7 @@ class Context {
         }
 
         function _updatePos() {
-            if (tip.scope.startsWith('entity.name.tag') || tip.scope.startsWith('text.')) {
+            if (tip.type === 'html-tag' || tip.type === 'emmet-html') {
                 //生成标签后，光标定位到标签中间的位置
                 let exec = regs.endTag.exec(result);
                 if (exec) {

@@ -57,6 +57,12 @@ class Autocomplete {
                 //标签名
                 this._searchTag(word, nowToken);
             }
+        } else if (this._isCssToken(nowToken)) {
+            let scope = nowToken.scopes.peek();
+            if (scope.indexOf('property-name') > -1) {
+                //css属性
+                this._searchCssProperty(word, nowToken);
+            }
         } else if (this._isSourceToken(nowToken)) {
             if (this.wordPattern.test(word)) {
                 this._searchWord(word, nowToken);
@@ -82,7 +88,7 @@ class Autocomplete {
                     if (this._isTextToken(token) || this._isStringToken(token)) {
                         return;
                     }
-                    this._addTip({ word: word, value: text, scope: scope });
+                    this._addTip({ word: word, value: text, scope: scope, type: 'word' });
                 }
             });
             processedLines++;
@@ -103,10 +109,10 @@ class Autocomplete {
         const htmlData = this.getHtmlData();
         const scope = nowToken.scopes.peek();
         htmlData.tags.forEach((item) => {
-            this._addTip({ word: word, value: item.name, scope: scope });
+            this._addTip({ word: word, value: item.name, scope: scope, type: 'html-tag' });
         });
         if (!this.results.length) {
-            this._addTip({ word: word, value: word, scope: scope, skipMatch: true });
+            this._addTip({ word: word, value: word, scope: scope, type: 'html-tag', skipMatch: true });
         }
         this._showTip();
     }
@@ -115,23 +121,50 @@ class Autocomplete {
         const scope = nowToken.scopes.peek();
         if (emmetObj && emmetObj.abbreviation) {
             let abbreviation = emmetObj.abbreviation;
-            let lastChar = abbreviation[abbreviation.length-1];
-            if(lastChar === '+' || lastChar === '/') {
+            let lastChar = abbreviation[abbreviation.length - 1];
+            if (lastChar === '+' || lastChar === '/') {
                 return;
             }
-            this._addTip({ word: abbreviation, value: abbreviation, scope: scope, skipMatch: true });
+            this._addTip({ word: abbreviation, value: abbreviation, scope: scope, type: 'emmet-html', skipMatch: true });
             this._showTip();
         }
     }
+    _searchCssProperty(word, nowToken) {
+        const cssData = this.getCssData();
+        const scope = nowToken.scopes.peek();
+        cssData.properties.forEach((item) => {
+            this._addTip({ word: word, value: item.name, scope: scope, type: 'css-property' });
+        });
+        if (!this.results.length) {
+            const emmetObj = extract(word);
+            if (emmetObj && emmetObj.abbreviation) {
+                let abbreviation = emmetObj.abbreviation;
+                let lastChar = abbreviation[abbreviation.length - 1];
+                if (lastChar === '+' || lastChar === '/') {
+                    return;
+                }
+                this._addTip({ word: abbreviation, value: abbreviation, scope: scope, type: 'emmet-css', skipMatch: true });
+            }
+        }
+        this._showTip();
+    }
     _setTokenType(token) {
+        token.isSourceToken = false;
+        token.isCssToken = false;
+        token.isTextToken = false;
+        token.isStringToken = false;
         for (let i = token.scopes.length - 1; i >= 0; i--) {
-            if (token.scopes[i].startsWith('source.')) {
+            let scope = token.scopes[i];
+            if (scope.startsWith('source.')) {
                 token.isSourceToken = true;
+                if (scope.startsWith('source.css')) {
+                    token.isCssToken = true;
+                }
                 break;
-            } else if (token.scopes[i].startsWith('text.')) {
+            } else if (scope.startsWith('text.')) {
                 token.isTextToken = true;
                 break;
-            } else if (!token.isStringToken && regs.stringToken.test(token.scopes[i])) {
+            } else if (regs.stringToken.test(scope)) {
                 token.isStringToken = true;
             }
         }
@@ -148,6 +181,12 @@ class Autocomplete {
         }
         return token.isSourceToken;
     }
+    _isCssToken(token) {
+        if (token.isCssToken === undefined) {
+            this._setTokenType(token);
+        }
+        return token.isCssToken;
+    }
     _isStringToken(token) {
         if (token.isStringToken === undefined) {
             this._setTokenType(token);
@@ -159,7 +198,7 @@ class Autocomplete {
         if (option.skipMatch) {
             result = {
                 indexs: [],
-                score: 100,
+                score: 0,
             };
         } else {
             if (this.doneMap[option.value]) {
@@ -173,6 +212,7 @@ class Autocomplete {
                 word: option.word || '',
                 desc: option.desc || '',
                 scope: option.scope,
+                type: option.type,
                 icon: this.getIcon(option.scope),
                 indexs: result.indexs,
                 score: result.score,
@@ -215,24 +255,22 @@ class Autocomplete {
         }
         return token;
     }
-    getEmmetExpr(token) {
-        let line = this.nowCursorPos.line;
-        let column = this.nowCursorPos.column;
-        let text = this.htmls[line - 1].text;
-        return null;
-    }
     getHtmlData() {
         if (this.htmlData) {
             return this.htmlData;
         } else {
             const htmlData = require(path.join(globalData.dirname, '/data/browsers.html-data'));
-            const tagMap = {};
-            htmlData.tags.forEach((item) => {
-                tagMap[item.name] = true;
-            });
-            htmlData.tagMap = tagMap;
             this.htmlData = htmlData;
             return this.htmlData;
+        }
+    }
+    getCssData() {
+        if (this.cssData) {
+            return this.cssData;
+        } else {
+            const cssData = require(path.join(globalData.dirname, '/data/browsers.css-data'));
+            this.cssData = cssData;
+            return this.cssData;
         }
     }
     getIcon(scope) {
