@@ -1018,7 +1018,11 @@ class Context {
         function _getResult(tip) {
             let result = '';
             if (tip.scope.startsWith('text.')) {
-                result = expand(tip.result);
+                try {
+                    result = expand(tip.result);
+                } catch (e) {
+                    result = tip.result;
+                }
             } else if (tip.scope.startsWith('entity.name.tag')) {
                 result += tip.result + `></${tip.result}>`;
             } else {
@@ -1044,7 +1048,7 @@ class Context {
             if (tip.scope.startsWith('entity.name.tag') || tip.scope.startsWith('text.')) {
                 //生成标签后，光标定位到标签中间的位置
                 let exec = regs.endTag.exec(result);
-                if(exec) {
+                if (exec) {
                     let text = result.slice(exec.index);
                     let deltaArr = text.split('\n');
                     let multiCursorPos = this.cursor.multiCursorPos.toArray();

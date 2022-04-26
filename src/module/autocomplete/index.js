@@ -113,10 +113,13 @@ class Autocomplete {
     _searchEmmet(word, nowToken) {
         const emmetObj = extract(word);
         const scope = nowToken.scopes.peek();
-        console.log(word, emmetObj);
         if (emmetObj && emmetObj.abbreviation) {
-            word = emmetObj.abbreviation;
-            this._addTip({ word: word, value: word, scope: scope, skipMatch: true });
+            let abbreviation = emmetObj.abbreviation;
+            let lastChar = abbreviation[abbreviation.length-1];
+            if(lastChar === '+' || lastChar === '/') {
+                return;
+            }
+            this._addTip({ word: abbreviation, value: abbreviation, scope: scope, skipMatch: true });
             this._showTip();
         }
     }
