@@ -36,7 +36,7 @@ class Autocomplete {
     }
     initProperties(editor, context) {
         Util.defineProperties(this, editor, ['language', 'cursor', 'nowCursorPos', 'tokenizer', 'setAutoTip']);
-        Util.defineProperties(this, context, ['htmls']);
+        Util.defineProperties(this, context, ['htmls', 'replaceTip', 'insertContent']);
     }
     reset() {
         this.currentLine = 1;
@@ -52,10 +52,40 @@ class Autocomplete {
             this._search();
         });
     }
+    emmet() {
+        let lineObj = this.htmls[this.nowCursorPos.line - 1];
+        let tokenIndex = this.getTokenIndex(this.nowCursorPos);
+        let nowToken = lineObj.tokens[tokenIndex];
+        let word = nowToken && lineObj.text.slice(nowToken.startIndex, this.nowCursorPos.column);
+        let emmetObj = null;
+        if (word) {
+            let scope = nowToken.scopes.peek();
+            if (scope.startsWith('text.')) {
+                emmetObj = extract(word);
+                emmetObj = emmetObj && { word: emmetObj.abbreviation, result: emmetObj.abbreviation, type: Enum.TOKEN_TYPE.EMMET_HTML };
+            } else if (this._isCssToken(nowToken)) {
+                if (this._isCssPropertyToken(nowToken)) {
+                    emmetObj = extract(word, word.length, { type: 'stylesheet' });
+                } else if (this._isCssValueToken(nowToken)) {
+                    //p10将会被分成pd和10两个token
+                    let preToken = lineObj.tokens[tokenIndex - 1];
+                    if (preToken && this._isCssPropertyToken(preToken)) {
+                        word = lineObj.text.slice(preToken.startIndex, preToken.endIndex) + word;
+                        emmetObj = extract(word, word.length, { type: 'stylesheet' });
+                    }
+                }
+                emmetObj = emmetObj && { word: emmetObj.abbreviation, result: emmetObj.abbreviation, type: Enum.TOKEN_TYPE.EMMET_CSS };
+                emmetObj && this.replaceTip(emmetObj);
+            }
+        }
+        if (!emmetObj) {
+            this.insertContent('\t');
+        }
+    }
     _search() {
         let lineObj = this.htmls[this.nowCursorPos.line - 1];
         let tokenIndex = this.getTokenIndex(this.nowCursorPos);
-        let nowToken = tokenIndex > -1 ? lineObj.tokens[tokenIndex] : null;
+        let nowToken = lineObj.tokens[tokenIndex];
         let word = nowToken && lineObj.text.slice(nowToken.startIndex, this.nowCursorPos.column);
         this.reset();
         this.setAutoTip(null);
@@ -83,9 +113,19 @@ class Autocomplete {
                 this._searchCssProperty(word);
             } else if (this._isCssValueToken(nowToken)) {
                 //css属性值
-                let property = this._getPreCssProperty(tokenIndex, this.nowCursorPos.line);
-                if (property) {
-                    this._searchCssValue(word, property);
+                let preToken = lineObj.tokens[tokenIndex - 1];
+                //p10将会被分成pd和10两个token
+                if (preToken && this._isCssPropertyToken(preToken)) {
+                    let preToken = lineObj.tokens[tokenIndex - 1];
+                    if (preToken && this._isCssPropertyToken(preToken)) {
+                        word = lineObj.text.slice(preToken.startIndex, preToken.endIndex) + word;
+                        this._searchCssProperty(word);
+                    }
+                } else {
+                    let property = this._getPreCssProperty(tokenIndex, this.nowCursorPos.line);
+                    if (property) {
+                        this._searchCssValue(word, property);
+                    }
                 }
             } else if (this._isCssSelectorToken(nowToken)) {
                 if (this._isTagNameToken(nowToken)) {
@@ -251,14 +291,9 @@ class Autocomplete {
             this._addTip({ word: word, value: item.name, type: Enum.TOKEN_TYPE.CSS_PROPERTY, after: ': ' });
         });
         if (!this.results.length) {
-            const emmetObj = extract(word);
+            const emmetObj = extract(word, word.length, { type: 'stylesheet' });
             if (emmetObj && emmetObj.abbreviation) {
-                let abbreviation = emmetObj.abbreviation;
-                let lastChar = abbreviation[abbreviation.length - 1];
-                if (lastChar === '+' || lastChar === '/') {
-                    return;
-                }
-                this._addTip({ word: abbreviation, value: abbreviation, type: Enum.TOKEN_TYPE.EMMET_CSS, skipMatch: true });
+                this._addTip({ word: emmetObj.abbreviation, value: emmetObj.abbreviation, type: Enum.TOKEN_TYPE.EMMET_CSS, skipMatch: true });
             }
         }
         this._showTip();
@@ -285,12 +320,7 @@ class Autocomplete {
     _searchEmmet(word) {
         const emmetObj = extract(word);
         if (emmetObj && emmetObj.abbreviation) {
-            let abbreviation = emmetObj.abbreviation;
-            let lastChar = abbreviation[abbreviation.length - 1];
-            if (lastChar === '+' || lastChar === '/') {
-                return;
-            }
-            this._addTip({ word: abbreviation, value: abbreviation, type: Enum.TOKEN_TYPE.EMMET_HTML, skipMatch: true });
+            this._addTip({ word: emmetObj.abbreviation, value: emmetObj.abbreviation, type: Enum.TOKEN_TYPE.EMMET_HTML, skipMatch: true });
             this._showTip();
         }
     }

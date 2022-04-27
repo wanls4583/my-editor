@@ -1011,7 +1011,9 @@ class Context {
     // 点击自动提示替换输入的内容
     replaceTip(tip) {
         let word = tip.word || '';
-        let result = _getResult(tip) + tip.after;
+        let after = tip.after || '';
+        let before = tip.before || '';
+        let result = before + _getResult(tip) + after;
         let ranges = _getRanges.call(this);
         this.replace(result, ranges);
         _updatePos.call(this);

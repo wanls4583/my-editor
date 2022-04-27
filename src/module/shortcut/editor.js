@@ -148,7 +148,7 @@ export default class {
                     if (this.autoTipList && this.autoTipList.length) {
                         this.selectAutoTip();
                     } else {
-                        this.insertContent('\t');
+                        this.autocomplete.emmet();
                     }
                     break;
                 case 37: //left arrow
