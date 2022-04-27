@@ -96,13 +96,16 @@ class Autocomplete {
             }
         } else if (this._isSourceToken(nowToken)) {
             if (this.wordPattern.test(word)) {
-                this._searchWord(word);
+                this._searchWord(word, nowToken);
             }
         }
     }
-    _searchWord(word) {
+    _searchWord(word, nowToken) {
         this._searchDocument((lineObj) => {
             lineObj.tokens.forEach((token) => {
+                if (token === nowToken) {
+                    return;
+                }
                 let text = lineObj.text.slice(token.startIndex, token.endIndex);
                 if (this.wordPattern.test(text)) {
                     // 跳过标签和字符串
@@ -120,6 +123,9 @@ class Autocomplete {
         }
         this._searchDocument((lineObj) => {
             lineObj.tokens.forEach((token) => {
+                if (token === nowToken) {
+                    return;
+                }
                 if (this._isCssSelectorToken(token)) {
                     let text = lineObj.text.slice(token.startIndex, token.endIndex);
                     if (this._isCssClassToken(token)) {
@@ -345,6 +351,8 @@ class Autocomplete {
     }
     _addTip(option) {
         let result = null;
+        let fullMatch = option.fullMatch;
+        fullMatch = fullMatch === undefined ? true : fullMatch;
         if (this.doneMap[option.value] && !option.skipDone) {
             return;
         }
@@ -354,7 +362,7 @@ class Autocomplete {
                 score: 0,
             };
         } else {
-            result = Util.fuzzyMatch(option.word.trim(), option.value, option.fullMatch);
+            result = Util.fuzzyMatch(option.word.trim(), option.value, fullMatch);
         }
         if (result) {
             let obj = {
