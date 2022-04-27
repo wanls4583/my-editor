@@ -179,7 +179,7 @@ class Context {
         });
         if (text.length > 1) {
             // 换行对齐
-            if (!text[0].text && alignmentTab && lineObj.folds && lineObj.folds.length) {
+            if (!text[0].text && alignmentTab) {
                 let tabStr = _getTabStr.call(this, nowLineText, this.folder.getRangeFold(cursorPos.line, true));
                 if (tabStr) {
                     text[1].text = tabStr + text[1].text.trimLeft();

@@ -599,30 +599,15 @@ export default {
                 } else {
                     //空行
                     let _line = line - 1;
-                    let preTabNum = 0;
                     while (_line >= 1) {
                         if (wReg.exec(that.myContext.htmls[_line - 1].text)) {
-                            preTabNum = _getTabNum(_line);
+                            tabNum = _getTabNum(_line);
                             if (that.folder.getRangeFold(_line, true)) {
-                                preTabNum++;
+                                tabNum++;
                             }
                             break;
                         }
                         _line--;
-                    }
-                    if (preTabNum) {
-                        _line = line + 1;
-                        if (_getTabNum.nearNextLine && _getTabNum.nearNextLine > _line) {
-                            _line = _getTabNum.nearNextLine;
-                        }
-                        while (_line <= that.maxLine) {
-                            if (wReg.exec(that.myContext.htmls[_line - 1])) {
-                                _getTabNum.nearNextLine = _line;
-                                tabNum = Math.min(preTabNum, _getTabNum(_line));
-                                break;
-                            }
-                            _line++;
-                        }
                     }
                 }
                 return tabNum;
