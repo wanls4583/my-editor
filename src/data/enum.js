@@ -2,7 +2,7 @@ export default {
     TOKEN_TYPE: {
         TEXT: 'text',
         SOURCE: 'source',
-        TAG: 'tag',
+        TAG_NAME: 'tag-name',
         ATTR_NAME: 'attr-name',
         STRING: 'string',
         WORD: 'word',

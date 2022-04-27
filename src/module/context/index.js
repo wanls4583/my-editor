@@ -1032,7 +1032,7 @@ class Context {
                 } catch (e) {
                     result = tip.result;
                 }
-            } else if (tip.type === Enum.TOKEN_TYPE.TAG) {
+            } else if (tip.type === Enum.TOKEN_TYPE.TAG_NAME) {
                 result += tip.result + `></${tip.result}>`;
             } else {
                 result = tip.result;
@@ -1054,7 +1054,7 @@ class Context {
         }
 
         function _updatePos() {
-            if (tip.type === Enum.TOKEN_TYPE.TAG || tip.type === Enum.TOKEN_TYPE.EMMET_HTML) {
+            if (tip.type === Enum.TOKEN_TYPE.TAG_NAME || tip.type === Enum.TOKEN_TYPE.EMMET_HTML) {
                 //生成标签后，光标定位到标签中间的位置
                 let exec = regs.endTag.exec(result);
                 if (exec) {

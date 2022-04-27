@@ -13,14 +13,17 @@ const path = require('path');
 
 const regs = {
     stringToken: /(?:\.|^)(?:string|regexp)(?:\.|$)/,
-    tagToken: /entity.name.tag/,
-    tagAttrName: /attribute-name/,
+    tagToken: /meta\.tag/,
+    tagNameToken: /entity\.name\.tag/,
+    tagAttrName: /attribute\-name/,
     cssValueToken: /property\-list|property\-value|separator/,
-    cssPropertyToken: /property-name/,
-    cssSelectorToken: /selector/,
+    cssPropertyToken: /meta\.property-name/,
+    cssSelectorToken: /meta\.selector/,
     cssAttributeToken: /attribute\-selector/,
     cssClassToken: /attribute-name\.class/,
     cssPseudoToken: /pseudo\-element/,
+    styleCss: /([^\:\;\"\'\s]+)\s*\:\s*([^\:\;]+)?$/,
+    styleCssProperty: /(?:^|[\;\"\'])([^\:\;]+)$/,
 };
 
 class Autocomplete {
@@ -64,12 +67,12 @@ class Autocomplete {
             if (scope.startsWith('text.')) {
                 //emmet表达式
                 this._searchEmmet(word);
-            } else if (this._isTagToken(nowToken)) {
+            } else if (this._isTagNameToken(nowToken)) {
                 //标签名
-                this._searchTag(word);
+                this._searchTagName(word);
             } else if (this._isAttrNameToken(nowToken)) {
                 //属性名
-                let tag = this._getPreTag(tokenIndex, this.nowCursorPos.line);
+                let tag = this._getPreTagName(tokenIndex, this.nowCursorPos.line);
                 if (tag) {
                     this._searchTagAttrName(word, tag);
                 }
@@ -85,12 +88,15 @@ class Autocomplete {
                     this._searchCssValue(word, property);
                 }
             } else if (this._isCssSelectorToken(nowToken)) {
-                if (this._isTagToken(nowToken)) {
+                if (this._isTagNameToken(nowToken)) {
                     this._searchCssTag(word);
                 } else if (word.indexOf(':') > -1) {
                     this._searchCssPseudo(word);
                 }
                 this._searchSelector(word, nowToken);
+            } else if (this._isTagToken(nowToken)) {
+                //style种的css样式
+                this._searchStyle(word, nowToken);
             }
         } else if (this._isSourceToken(nowToken)) {
             if (this.wordPattern.test(word)) {
@@ -169,13 +175,13 @@ class Autocomplete {
             });
         }
     }
-    _searchTag(word) {
+    _searchTagName(word) {
         const htmlData = this.getHtmlData();
         htmlData.tags.forEach((item) => {
-            this._addTip({ word: word, value: item.name, type: Enum.TOKEN_TYPE.TAG });
+            this._addTip({ word: word, value: item.name, type: Enum.TOKEN_TYPE.TAG_NAME });
         });
         if (!this.results.length) {
-            this._addTip({ word: word, value: word, type: Enum.TOKEN_TYPE.TAG, skipMatch: true });
+            this._addTip({ word: word, value: word, type: Enum.TOKEN_TYPE.TAG_NAME, skipMatch: true });
         }
         this._showTip();
     }
@@ -219,16 +225,21 @@ class Autocomplete {
             }
         });
     }
-    _searchEmmet(word) {
-        const emmetObj = extract(word);
-        if (emmetObj && emmetObj.abbreviation) {
-            let abbreviation = emmetObj.abbreviation;
-            let lastChar = abbreviation[abbreviation.length - 1];
-            if (lastChar === '+' || lastChar === '/') {
-                return;
-            }
-            this._addTip({ word: abbreviation, value: abbreviation, type: Enum.TOKEN_TYPE.EMMET_HTML, skipMatch: true });
-            this._showTip();
+    _searchStyle(word, nowToken) {
+        let column = this.nowCursorPos.column;
+        let lineObj = this.htmls[this.nowCursorPos.line - 1];
+        let keyValue = null;
+        word = lineObj.text.slice(nowToken.startIndex, column);
+        keyValue = regs.styleCss.exec(word);
+        if (keyValue && keyValue[1]) {
+            let property = keyValue[1];
+            let value = keyValue[2] || '';
+            this._searchCssValue(value, property);
+            return;
+        }
+        keyValue = regs.styleCssProperty.exec(word);
+        if (keyValue && keyValue[1]) {
+            this._searchCssProperty(keyValue[1]);
         }
     }
     _searchCssProperty(word) {
@@ -268,13 +279,24 @@ class Autocomplete {
             }
         }
     }
+    _searchEmmet(word) {
+        const emmetObj = extract(word);
+        if (emmetObj && emmetObj.abbreviation) {
+            let abbreviation = emmetObj.abbreviation;
+            let lastChar = abbreviation[abbreviation.length - 1];
+            if (lastChar === '+' || lastChar === '/') {
+                return;
+            }
+            this._addTip({ word: abbreviation, value: abbreviation, type: Enum.TOKEN_TYPE.EMMET_HTML, skipMatch: true });
+            this._showTip();
+        }
+    }
     _setTokenType(token) {
         token.isSourceToken = false;
         token.isCssToken = false;
         token.isTextToken = false;
-        token.isStringToken = false;
         token.isTagToken = false;
-        token.isAttrNameToken = false;
+        token.isTagAttrNameToken = false;
         token.scope = token.scope || token.scopes.join(',');
         for (let i = token.scopes.length - 1; i >= 0; i--) {
             let scope = token.scopes[i];
@@ -286,11 +308,12 @@ class Autocomplete {
                 break;
             } else if (scope.startsWith('text.')) {
                 token.isTextToken = true;
-                token.isAttrNameToken = regs.tagAttrName.test(token.scope);
+                token.isTagAttrNameToken = regs.tagAttrName.test(token.scope);
                 break;
             }
         }
         token.isTagToken = regs.tagToken.test(token.scope);
+        token.isTagNameToken = regs.tagNameToken.test(token.scope);
         token.isStringToken = regs.stringToken.test(token.scope);
         if (token.isCssToken) {
             token.isCssValueToken = regs.cssValueToken.test(token.scope);
@@ -367,13 +390,19 @@ class Autocomplete {
         }
         return token.isTagToken;
     }
-    _isAttrNameToken(token) {
-        if (token.isAttrNameToken === undefined) {
+    _isTagNameToken(token) {
+        if (token.isTagNameToken === undefined) {
             this._setTokenType(token);
         }
-        return token.isAttrNameToken;
+        return token.isTagNameToken;
     }
-    _getPreTag(tokenIndex, line) {
+    _isAttrNameToken(token) {
+        if (token.isTagAttrNameToken === undefined) {
+            this._setTokenType(token);
+        }
+        return token.isTagAttrNameToken;
+    }
+    _getPreTagName(tokenIndex, line) {
         let tag = '';
         let count = 0;
         outerLoop: while (line >= 1) {
@@ -384,7 +413,7 @@ class Autocomplete {
             tokenIndex = tokenIndex > -1 ? tokenIndex : lineObj.tokens.length;
             for (let i = tokenIndex - 1; i >= 0; i--) {
                 let token = lineObj.tokens[i];
-                if (this._isTagToken(token)) {
+                if (this._isTagNameToken(token)) {
                     tag = lineObj.text.slice(token.startIndex, token.endIndex);
                     break outerLoop;
                 }
