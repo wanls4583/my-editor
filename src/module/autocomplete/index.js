@@ -132,6 +132,9 @@ class Autocomplete {
                 }
                 if (this._isCssSelectorToken(token)) {
                     let text = lineObj.text.slice(token.startIndex, token.endIndex);
+                    if (!this.wordPattern.test(text)) {
+                        return;
+                    }
                     if (this._isCssClassToken(token)) {
                         text = '.' + text;
                     }
@@ -171,7 +174,7 @@ class Autocomplete {
         this._showTip(showAll);
         if (line <= this.htmls.length) {
             this.searchTimer = requestIdleCallback(() => {
-                this._searchWord(callback);
+                this._searchDocument(callback, showAll);
             });
         }
     }
