@@ -319,7 +319,7 @@ class Util {
         let result = null;
         let _target = target.toLowerCase();
         if (word === target) {
-            return fullMatch ? { score: 100 } : null;
+            return fullMatch ? { score: 100, indexs: [] } : null;
         }
         _setMap();
         for (let i = 0; i < target.length; i++) {
