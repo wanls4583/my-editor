@@ -5,6 +5,7 @@
  */
 import { extract } from 'emmet';
 import Util from '@/common/Util';
+import Enum from '@/data/enum';
 import globalData from '@/data/globalData';
 
 const require = window.require || window.parent.require || function () {};
@@ -12,13 +13,14 @@ const path = require('path');
 
 const regs = {
     stringToken: /(?:\.|^)(?:string|regexp)(?:\.|$)/,
+    tagToken: /entity.name.tag/,
+    tagAttrName: /attribute-name/,
     cssValueToken: /property\-list|property\-value|separator/,
     cssPropertyToken: /property-name/,
     cssSelectorToken: /selector/,
     cssAttributeToken: /attribute\-selector/,
     cssClassToken: /attribute-name\.class/,
     cssPseudoToken: /pseudo\-element/,
-    tagToken: /entity.name.tag/,
 };
 
 class Autocomplete {
@@ -62,9 +64,15 @@ class Autocomplete {
             if (scope.startsWith('text.')) {
                 //emmet表达式
                 this._searchEmmet(word);
-            } else if (scope.startsWith('entity.name.tag')) {
+            } else if (this._isTagToken(nowToken)) {
                 //标签名
                 this._searchTag(word);
+            } else if (this._isAttrNameToken(nowToken)) {
+                //属性名
+                let tag = this._getPreTag(tokenIndex, this.nowCursorPos.line);
+                if (tag) {
+                    this._searchTagAttrName(word, tag);
+                }
             }
         } else if (this._isCssToken(nowToken)) {
             if (this._isCssPropertyToken(nowToken)) {
@@ -72,17 +80,7 @@ class Autocomplete {
                 this._searchCssProperty(word);
             } else if (this._isCssValueToken(nowToken)) {
                 //css属性值
-                let property = '';
-                for (let i = tokenIndex - 1; i >= 0; i--) {
-                    let token = lineObj.tokens[i];
-                    if (this._isCssPropertyToken(token)) {
-                        property = lineObj.text.slice(token.startIndex, token.endIndex);
-                        break;
-                    }
-                    if (!this._isCssValueToken(token)) {
-                        break;
-                    }
-                }
+                let property = this._getPreCssProperty(tokenIndex, this.nowCursorPos.line);
                 if (property) {
                     this._searchCssValue(word, property);
                 }
@@ -112,7 +110,7 @@ class Autocomplete {
                     if (this._isTextToken(token) || this._isStringToken(token)) {
                         return;
                     }
-                    this._addTip({ word: word, value: text, type: 'word' });
+                    this._addTip({ word: word, value: text, type: Enum.TOKEN_TYPE.WORD });
                 }
             });
         });
@@ -133,14 +131,14 @@ class Autocomplete {
                     }
                     if (word === '.') {
                         if (this._isCssClassToken(token) && text !== '..') {
-                            this._addTip({ word: word, value: text, type: 'css-selector', skipMatch: true });
+                            this._addTip({ word: word, value: text, type: Enum.TOKEN_TYPE.CSS_CLASS, skipMatch: true });
                         }
                     } else if (this._isCssClassToken(nowToken)) {
                         if (this._isCssClassToken(token)) {
-                            this._addTip({ word: word, value: text, type: 'css-selector' });
+                            this._addTip({ word: word, value: text, type: Enum.TOKEN_TYPE.CSS_CLASS });
                         }
                     } else {
-                        this._addTip({ word: word, value: text, type: 'css-selector' });
+                        this._addTip({ word: word, value: text, type: Enum.TOKEN_TYPE.CSS_SELECTOR });
                     }
                 }
             });
@@ -174,17 +172,33 @@ class Autocomplete {
     _searchTag(word) {
         const htmlData = this.getHtmlData();
         htmlData.tags.forEach((item) => {
-            this._addTip({ word: word, value: item.name, type: 'html-tag' });
+            this._addTip({ word: word, value: item.name, type: Enum.TOKEN_TYPE.TAG });
         });
         if (!this.results.length) {
-            this._addTip({ word: word, value: word, type: 'html-tag', skipMatch: true });
+            this._addTip({ word: word, value: word, type: Enum.TOKEN_TYPE.TAG, skipMatch: true });
         }
+        this._showTip();
+    }
+    _searchTagAttrName(word, tag) {
+        const htmlData = this.getHtmlData();
+        let attributes = htmlData.tagMap[tag];
+        attributes = attributes && attributes.attributes;
+        if (attributes) {
+            // 标签专有属性
+            attributes.forEach((item) => {
+                this._addTip({ word: word, value: item.name, type: Enum.TOKEN_TYPE.ATTR_NAME, after: '=""' });
+            });
+        }
+        // 公共属性
+        htmlData.globalAttributes.forEach((item) => {
+            this._addTip({ word: word, value: item.name, type: Enum.TOKEN_TYPE.ATTR_NAME, after: '=""' });
+        });
         this._showTip();
     }
     _searchCssTag(word) {
         const htmlData = this.getHtmlData();
         htmlData.tags.forEach((item) => {
-            this._addTip({ word: word, value: item.name, type: 'css-tag' });
+            this._addTip({ word: word, value: item.name, type: Enum.TOKEN_TYPE.CSS_TAG });
         });
     }
     _searchCssPseudo(word) {
@@ -192,16 +206,16 @@ class Autocomplete {
         const pseudo = word.split(':').peek().trim();
         cssData.pseudoClasses.forEach((item) => {
             if (pseudo) {
-                this._addTip({ word: word, value: item.name, type: 'css-pseudo' });
+                this._addTip({ word: word, value: item.name, type: Enum.TOKEN_TYPE.CSS_PSEUDO });
             } else {
-                this._addTip({ word: word, value: item.name, type: 'css-pseudo', skipMatch: true });
+                this._addTip({ word: word, value: item.name, type: Enum.TOKEN_TYPE.CSS_PSEUDO, skipMatch: true });
             }
         });
         cssData.pseudoElements.forEach((item) => {
             if (pseudo) {
-                this._addTip({ word: word, value: item.name, type: 'css-pseudo' });
+                this._addTip({ word: word, value: item.name, type: Enum.TOKEN_TYPE.CSS_PSEUDO });
             } else {
-                this._addTip({ word: word, value: item.name, type: 'css-pseudo', skipMatch: true });
+                this._addTip({ word: word, value: item.name, type: Enum.TOKEN_TYPE.CSS_PSEUDO, skipMatch: true });
             }
         });
     }
@@ -213,14 +227,14 @@ class Autocomplete {
             if (lastChar === '+' || lastChar === '/') {
                 return;
             }
-            this._addTip({ word: abbreviation, value: abbreviation, type: 'emmet-html', skipMatch: true });
+            this._addTip({ word: abbreviation, value: abbreviation, type: Enum.TOKEN_TYPE.EMMET_HTML, skipMatch: true });
             this._showTip();
         }
     }
     _searchCssProperty(word) {
         const cssData = this.getCssData();
         cssData.properties.forEach((item) => {
-            this._addTip({ word: word, value: item.name, type: 'css-property', after: ': ' });
+            this._addTip({ word: word, value: item.name, type: Enum.TOKEN_TYPE.CSS_PROPERTY, after: ': ' });
         });
         if (!this.results.length) {
             const emmetObj = extract(word);
@@ -230,7 +244,7 @@ class Autocomplete {
                 if (lastChar === '+' || lastChar === '/') {
                     return;
                 }
-                this._addTip({ word: abbreviation, value: abbreviation, type: 'emmet-css', skipMatch: true });
+                this._addTip({ word: abbreviation, value: abbreviation, type: Enum.TOKEN_TYPE.EMMET_CSS, skipMatch: true });
             }
         }
         this._showTip();
@@ -243,14 +257,15 @@ class Autocomplete {
             let _word = word.trim();
             if (_word === ':' || _word === '') {
                 values.forEach((item) => {
-                    this._addTip({ word: word, value: item.name, type: 'css-value', after: ';', skipMatch: true });
+                    this._addTip({ word: word, value: item.name, type: Enum.TOKEN_TYPE.CSS_VALUE, after: ';', skipMatch: true });
                 });
+                this._showTip(true);
             } else {
                 values.forEach((item) => {
-                    this._addTip({ word: word, value: item.name, type: 'css-value', after: ';' });
+                    this._addTip({ word: word, value: item.name, type: Enum.TOKEN_TYPE.CSS_VALUE, after: ';' });
                 });
+                this._showTip();
             }
-            this._showTip(true);
         }
     }
     _setTokenType(token) {
@@ -258,6 +273,8 @@ class Autocomplete {
         token.isCssToken = false;
         token.isTextToken = false;
         token.isStringToken = false;
+        token.isTagToken = false;
+        token.isAttrNameToken = false;
         token.scope = token.scope || token.scopes.join(',');
         for (let i = token.scopes.length - 1; i >= 0; i--) {
             let scope = token.scopes[i];
@@ -269,11 +286,12 @@ class Autocomplete {
                 break;
             } else if (scope.startsWith('text.')) {
                 token.isTextToken = true;
+                token.isAttrNameToken = regs.tagAttrName.test(token.scope);
                 break;
             }
         }
-        token.isStringToken = regs.stringToken.test(token.scope);
         token.isTagToken = regs.tagToken.test(token.scope);
+        token.isStringToken = regs.stringToken.test(token.scope);
         if (token.isCssToken) {
             token.isCssValueToken = regs.cssValueToken.test(token.scope);
             token.isCssPropertyToken = regs.cssPropertyToken.test(token.scope);
@@ -349,6 +367,62 @@ class Autocomplete {
         }
         return token.isTagToken;
     }
+    _isAttrNameToken(token) {
+        if (token.isAttrNameToken === undefined) {
+            this._setTokenType(token);
+        }
+        return token.isAttrNameToken;
+    }
+    _getPreTag(tokenIndex, line) {
+        let tag = '';
+        let count = 0;
+        outerLoop: while (line >= 1) {
+            let lineObj = this.htmls[line - 1];
+            if (!lineObj.tokens) {
+                break;
+            }
+            tokenIndex = tokenIndex > -1 ? tokenIndex : lineObj.tokens.length;
+            for (let i = tokenIndex - 1; i >= 0; i--) {
+                let token = lineObj.tokens[i];
+                if (this._isTagToken(token)) {
+                    tag = lineObj.text.slice(token.startIndex, token.endIndex);
+                    break outerLoop;
+                }
+                count++;
+                if (count > 100) {
+                    break outerLoop;
+                }
+            }
+            line--;
+            tokenIndex = -1;
+        }
+        return tag;
+    }
+    _getPreCssProperty(tokenIndex, line) {
+        let property = '';
+        let count = 0;
+        outerLoop: while (line >= 1) {
+            let lineObj = this.htmls[line - 1];
+            if (!lineObj.tokens) {
+                break;
+            }
+            tokenIndex = tokenIndex > -1 ? tokenIndex : lineObj.tokens.length;
+            for (let i = tokenIndex - 1; i >= 0; i--) {
+                let token = lineObj.tokens[i];
+                if (this._isCssPropertyToken(token)) {
+                    property = lineObj.text.slice(token.startIndex, token.endIndex);
+                    break outerLoop;
+                }
+                count++;
+                if (count > 100 || !this._isCssValueToken(token)) {
+                    break outerLoop;
+                }
+            }
+            line--;
+            tokenIndex = -1;
+        }
+        return property;
+    }
     _addTip(option) {
         let result = null;
         let fullMatch = option.fullMatch;
@@ -418,6 +492,10 @@ class Autocomplete {
         } else {
             const htmlData = require(path.join(globalData.dirname, '/data/browsers.html-data'));
             this.htmlData = htmlData;
+            htmlData.tagMap = {};
+            htmlData.tags.forEach((item) => {
+                htmlData.tagMap[item.name] = item;
+            });
             return this.htmlData;
         }
     }

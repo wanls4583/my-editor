@@ -4,6 +4,7 @@
  * @Description:
  */
 import Util from '@/common/Util';
+import Enum from '@/data/enum';
 import expand from 'emmet';
 
 const regs = {
@@ -1014,23 +1015,24 @@ class Context {
         let ranges = _getRanges.call(this);
         this.replace(result, ranges);
         _updatePos.call(this);
-        if (tip.type === 'css-property') {
+        if (tip.type === Enum.TOKEN_TYPE.CSS_PROPERTY) {
+            //选中css属性名后，自动弹出属性值列表
             this.autocomplete.search();
         }
 
         function _getResult(tip) {
             let result = '';
-            if (tip.type === 'emmet-html' || tip.type === 'emmet-css') {
+            if (tip.type === Enum.TOKEN_TYPE.EMMET_HTML || tip.type === Enum.TOKEN_TYPE.EMMET_CSS) {
                 try {
                     const config = {};
-                    if (tip.type === 'emmet-css') {
+                    if (tip.type === Enum.TOKEN_TYPE.EMMET_CSS) {
                         config.type = 'stylesheet';
                     }
                     result = expand(tip.result, config);
                 } catch (e) {
                     result = tip.result;
                 }
-            } else if (tip.type === 'html-tag') {
+            } else if (tip.type === Enum.TOKEN_TYPE.TAG) {
                 result += tip.result + `></${tip.result}>`;
             } else {
                 result = tip.result;
@@ -1052,7 +1054,7 @@ class Context {
         }
 
         function _updatePos() {
-            if (tip.type === 'html-tag' || tip.type === 'emmet-html') {
+            if (tip.type === Enum.TOKEN_TYPE.TAG || tip.type === Enum.TOKEN_TYPE.EMMET_HTML) {
                 //生成标签后，光标定位到标签中间的位置
                 let exec = regs.endTag.exec(result);
                 if (exec) {
@@ -1064,6 +1066,11 @@ class Context {
                         this.cursor.updateCursorPos(multiCursorPos[i], cursorPos.line, cursorPos.column);
                     }
                 }
+            } else if (tip.type === Enum.TOKEN_TYPE.ATTR_NAME) {
+                //选中标签属性后，光标移动端""内
+                this.cursor.multiCursorPos.forEach((item) => {
+                    this.cursor.moveCursor(item, 'left');
+                });
             }
         }
 
