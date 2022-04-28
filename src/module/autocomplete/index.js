@@ -35,7 +35,7 @@ class Autocomplete {
         this.wordPattern = new RegExp(`^(${this.wordPattern.source})$`);
     }
     initProperties(editor, context) {
-        Util.defineProperties(this, editor, ['language', 'cursor', 'nowCursorPos', 'tokenizer', 'setAutoTip']);
+        Util.defineProperties(this, editor, ['language', 'cursor', 'nowCursorPos', 'tokenizer', 'autoTipList', 'setAutoTip', 'selectAutoTip']);
         Util.defineProperties(this, context, ['htmls', 'replaceTip', 'insertContent']);
     }
     reset() {
@@ -58,11 +58,12 @@ class Autocomplete {
         let nowToken = lineObj.tokens[tokenIndex];
         let word = nowToken && lineObj.text.slice(nowToken.startIndex, this.nowCursorPos.column);
         let emmetObj = null;
+        let type = '';
         if (word) {
             let scope = nowToken.scopes.peek();
             if (scope.startsWith('text.')) {
                 emmetObj = extract(word);
-                emmetObj = emmetObj && { word: emmetObj.abbreviation, result: emmetObj.abbreviation, type: Enum.TOKEN_TYPE.EMMET_HTML };
+                type = Enum.TOKEN_TYPE.EMMET_HTML;
             } else if (this._isCssToken(nowToken)) {
                 if (this._isCssPropertyToken(nowToken)) {
                     emmetObj = extract(word, word.length, { type: 'stylesheet' });
@@ -74,11 +75,14 @@ class Autocomplete {
                         emmetObj = extract(word, word.length, { type: 'stylesheet' });
                     }
                 }
-                emmetObj = emmetObj && { word: emmetObj.abbreviation, result: emmetObj.abbreviation, type: Enum.TOKEN_TYPE.EMMET_CSS };
-                emmetObj && this.replaceTip(emmetObj);
+                type = Enum.TOKEN_TYPE.EMMET_CSS;
             }
         }
-        if (!emmetObj) {
+        if (emmetObj) {
+            this.replaceTip({ word: emmetObj.abbreviation, result: emmetObj.abbreviation, type: type });
+        } else if (this.autoTipList && this.autoTipList.length) {
+            this.selectAutoTip();
+        } else {
             this.insertContent('\t');
         }
     }
