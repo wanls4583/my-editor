@@ -12,7 +12,7 @@ export default function (hostname) {
             let errors = result.messages && result.messages.map((item) => {
                 return {
                     line: item.line,
-                    column: item.col,
+                    column: item.col - 1,
                     reason: item.message
                 }
             });

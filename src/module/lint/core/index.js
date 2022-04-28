@@ -17,7 +17,7 @@ export default class {
     }
     initProperties(editor, context) {
         Util.defineProperties(this, context, ['htmls', 'getAllText']);
-        Util.defineProperties(this, editor, ['setErrorMap']);
+        Util.defineProperties(this, editor, ['setErrors']);
     }
     initLanguage(language) {
         let that = this;
@@ -27,7 +27,7 @@ export default class {
         this.language = language;
         this.worker && this.worker.terminate();
         this.worker = null;
-        this.setErrorMap({});
+        this.setErrors([]);
         switch (language) {
             case 'html':
                 this.worker = this.createWorker(htmlLint);
@@ -45,35 +45,21 @@ export default class {
         this.worker.onmessage = (e) => {
             let parseId = e.data.parseId;
             let result = e.data.result;
-            let errorMap = {};
+            let errors = [];
             if (that.parseId != parseId || !result) {
-                that.setErrorMap(errorMap);
+                that.setErrors(errors);
                 return;
             }
             if (result instanceof Array) {
                 result.forEach((item) => {
-                    item.errors && _formatError(errorMap, item.errors);
+                    item.errors && errors.push(...item.errors);
                 });
             } else {
-                result.errors && _formatError(errorMap, result.errors);
+                result.errors && errors.push(...result.errors);
             }
-            that.setErrorMap(errorMap);
+            that.setErrors(errors);
         };
         this.parse();
-
-        function _formatError(errorMap, errors) {
-            let index = 0;
-            while (index < errors.length) {
-                let line = errors[index].line;
-                let arr = [];
-                while (index < errors.length && errors[index].line === line) {
-                    arr.push(errors[index].reason);
-                    index++;
-                }
-                line = line || that.htmls.length;
-                errorMap[line] = arr.join('<br>');
-            }
-        }
     }
     createWorker(mod) {
         var funStr = mod.toString().replace(/^[^\)]+?\)/, '');

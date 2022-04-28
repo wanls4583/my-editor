@@ -5,10 +5,8 @@
             <!-- 占位行号，避免行号宽度滚动时变化 -->
             <div class="my-num" style="visibility: hidden">{{ maxLine }}</div>
             <div :class="{ 'my-active': nowCursorPos.line === line.num }" :key="line.num" :style="{ height: _lineHeight, 'line-height': _lineHeight }" class="my-num" v-for="line in renderHtmls">
-                <span @mouseleave="onIconMouseLeave" @mouseover="onIconMouseOver(line.num, $event)" class="my-line-icon my-center-center">
-                    <i class="my-icon-error" style="margin-top: -2px" v-if="errorMap[line.num]"></i>
-                </span>
-                <span class="num">{{ line.num }}</span>
+                <span @mouseleave="onErrorMouseLeave" @mouseover="onErrorMouseOver(line.num, $event)" class="num my-num-error" v-if="errorMap[line.num]">{{ line.num }}</span>
+                <span class="num" v-else>{{ line.num }}</span>
                 <!-- 折叠图标 -->
                 <span
                     :class="['iconfont', line.fold == 'open' ? 'my-fold-open icon-down1' : 'my-fold-close icon-right']"
@@ -228,6 +226,7 @@ export default {
                 left: '50%',
             },
             errorMap: {},
+            errors: [],
             autoTipList: [],
             tipContent: null,
             menuVisible: false,
@@ -502,6 +501,7 @@ export default {
                 this.renderLine();
                 this.renderSelectedBg();
                 this.renderSelectionToken();
+                this.renderError();
                 this.renderCursor(forceCursorView);
                 this.$nextTick(() => {
                     this.scrollerArea = {
@@ -525,6 +525,7 @@ export default {
                         this.renderCursor();
                         this.renderSelectedBg();
                         this.renderSelectionToken(obj.line);
+                        this.renderError(obj.line);
                     }
                 }
                 return;
@@ -873,6 +874,25 @@ export default {
                 return left + 'px';
             }
         },
+        renderError(line) {
+            if (!this.errors.length) {
+                return;
+            }
+            let $render = $(this.$refs.render);
+            $render.find('span.my-token-error').removeClass('my-token-error');
+            this.errors.forEach((item) => {
+                if (line && item.line !== line) {
+                    return;
+                }
+                if (item.line >= this.startLine && item.line < this.startLine + this.maxVisibleLines) {
+                    let lineObj = this.myContext.htmls[item.line - 1];
+                    let token = this.getToken(item.line, item.column);
+                    if (token) {
+                        $render.find(`div.my-code[data-line="${item.line}"]`).find(`span[data-column="${token.startIndex}"]`).addClass('my-token-error');
+                    }
+                }
+            });
+        },
         // 折叠行
         foldLine(line) {
             let resultFold = this.folder.foldLine(line);
@@ -1036,8 +1056,31 @@ export default {
             this.startLine = this.folder.getRealLine(startLine);
             this.top = -scrollTop % this.charObj.charHight;
         },
-        setErrorMap(errorMap) {
-            this.errorMap = errorMap;
+        setErrors(errors) {
+            this.errorMap = {};
+            this.errors = errors;
+            _formatError(this.errorMap, errors);
+            this.renderError();
+
+            function _formatError(errorMap, errors) {
+                let index = 0;
+                while (index < errors.length) {
+                    let line = errors[index].line;
+                    let arr = [];
+                    while (index < errors.length && errors[index].line === line) {
+                        let key = line + ',' + errors[index].column;
+                        arr.push(errors[index].reason);
+                        if (errorMap[key]) {
+                            errorMap[key] += '<br>' + errors[index].reason;
+                        } else {
+                            errorMap[key] = errors[index].reason;
+                        }
+                        index++;
+                    }
+                    line = line || that.htmls.length;
+                    errorMap[line] = arr.join('<br>');
+                }
+            }
         },
         setAutoTip(results) {
             clearTimeout(this.setAutoTip.hideTimer);
@@ -1153,6 +1196,20 @@ export default {
             let text = lineObj.text.slice(token.startIndex, cursorPos.column);
             return $token[0].offsetLeft + this.getStrWidth(text);
         },
+        getToken(line, column) {
+            let lineObj = this.myContext.htmls[line - 1];
+            if (lineObj && lineObj.tokens) {
+                if (column > lineObj.tokens.peek().startIndex) {
+                    return lineObj.tokens.peek();
+                }
+                for (let i = 0; i < lineObj.tokens.length; i++) {
+                    if (lineObj.tokens[i].startIndex <= column && lineObj.tokens[i].endIndex > column) {
+                        return lineObj.tokens[i];
+                    }
+                }
+            }
+            return null;
+        },
         // 右键菜单事件
         onContextmenu(e) {
             let menuWidth = 0;
@@ -1200,12 +1257,12 @@ export default {
             this.focus();
         },
         // 提示图标hover事件
-        onIconMouseOver(line, e) {
+        onErrorMouseOver(key, e) {
             let $editor = $(this.$refs.editor);
             let $tip = $(this.$refs.tip.$el);
             let offset = $editor.offset();
             let top = e.clientY - offset.top + 10;
-            this.tipContent = this.errorMap[line];
+            this.tipContent = this.errorMap[key];
             this.$nextTick(() => {
                 if (top + $tip[0].clientHeight > this.scrollerArea.height) {
                     top = this.scrollerArea.height - $tip[0].clientHeight;
@@ -1216,7 +1273,7 @@ export default {
                 };
             });
         },
-        onIconMouseLeave() {
+        onErrorMouseLeave() {
             this.tipContent = null;
         },
         // 折叠/展开
@@ -1266,6 +1323,7 @@ export default {
             this.focus();
         },
         onContentMmove(e) {
+            let $target = $(e.target);
             if (this.mouseStartObj && Date.now() - this.mouseStartObj.time > 100) {
                 let end = this.getPosByEvent(e);
                 if (end && Util.comparePos(end, this.mouseStartObj.cursorPos)) {
@@ -1291,6 +1349,28 @@ export default {
                     // 删除区域范围内的光标
                     this.cursor.removeCursorInRange(this.mouseStartObj.preRange);
                 }
+            }
+            if ($target.hasClass('my-token-error')) {
+                let line = $target.parent().attr('data-line') - 0;
+                let column = $target.attr('data-column') - 0;
+                let lineObj = this.myContext.htmls[line - 1];
+                let lastToken = lineObj.tokens.peek();
+                let token = this.getToken(line, column);
+                for (let i = 0; i < this.errors.length; i++) {
+                    let error = this.errors[i];
+                    if (error.line === line) {
+                        if (token.endIndex === lastToken.endIndex && error.column > token.startIndex) {
+                            this.onErrorMouseOver(line + ',' + error.column, e);
+                            break;
+                        }
+                        if (error.column >= token.startIndex && token.endIndex > error.column) {
+                            this.onErrorMouseOver(line + ',' + error.column, e);
+                            break;
+                        }
+                    }
+                }
+            } else {
+                this.tipContent = '';
             }
         },
         // 鼠标移动事件

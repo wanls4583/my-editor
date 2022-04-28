@@ -28,10 +28,14 @@
 
     &-num {
         position: relative;
-        padding: 0 20px 0 25px;
+        padding: 0 20px;
         text-align: right;
 
         .num {
+            position: relative;
+            display: inline-block;
+            min-width: 10px;
+            text-align: center;
             color: var(--my-editorLineNumber-foreground);
         }
 
@@ -40,6 +44,20 @@
                 color: var(--my-editorLineNumber-activeForeground);
             }
         }
+    }
+
+    &-num-error {
+        font-weight: bold;
+        color: var(--my-errorForeground) !important;
+    }
+
+    &-token-error::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        border-bottom: 2px dotted var(--my-errorForeground);
     }
 
     &-scroller {
@@ -95,7 +113,10 @@
         min-width: 120px;
         border-radius: 4px;
         line-height: 1.2em;
-        border: 1px solid rgba(0, 0, 0, 0.2);
+        border: 1px solid var(--my-editorWidget-border);
+        background-color: var(--my-editorWidget-background);
+        box-shadow: 0px 0px 8px 2px var(--my-widget-shadow);
+        color: var(--my-editorWidget-foreground);
     }
 
     &-tip-content {

@@ -319,6 +319,7 @@ export default class {
         let states = (line > 1 && this.htmls[line - 2].states) || vsctm.INITIAL;
         let lineTokens = this.grammar.tokenizeLine(lineText, states);
         let stateFold = this.addFold(line, lineTokens.tokens, folds);
+        lineTokens.tokens.peek().endIndex = lineText.length; //某些情况下，会大于lineText.length
         return {
             tokens: lineTokens.tokens,
             states: lineTokens.ruleStack,

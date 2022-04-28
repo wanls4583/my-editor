@@ -37,7 +37,7 @@ export default function (hostname) {
             let errors = result.errors && result.errors.map((item) => {
                 return {
                     line: item.line,
-                    column: item.character,
+                    column: item.character - 1,
                     reason: item.reason
                 }
             });

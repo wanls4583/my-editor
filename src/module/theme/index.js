@@ -275,6 +275,9 @@ export default class {
                     result.colors['foreground'] = 'rgb(221, 221, 221)';
                 }
             }
+            if (!result.colors['errorForeground']) {
+                result.colors['errorForeground'] = '#ff0000';
+            }
             if (!result.colors['background']) {
                 if (result.colors['editor.background']) {
                     result.colors['background'] = chroma(result.colors['editor.background']).alpha(0.8).css();
