@@ -1,26 +1,21 @@
 /*
  * @Author: lisong
  * @Date: 2022-02-12 09:52:06
- * @Description: 
+ * @Description:
  */
-import Util from '@/common/Util';
+import Util from '@/common/util';
 
 export default class {
     constructor(editor, context, selecter) {
         this.selecter = selecter;
         this.initProperties(editor, context);
+        this.wordPattern = Util.getWordPattern(this.language);
+        this.wholeWordPattern = new RegExp(`^(${this.wordPattern.source})$`);
+        this.wordPattern = new RegExp(this.wordPattern.source, 'g');
     }
     initProperties(editor, context) {
-        Util.defineProperties(this, editor, [
-            'fSearcher',
-            'searcher',
-            'nowCursorPos',
-            'cursorFocus',
-            'cursor',
-            '$nextTick',
-            '$refs',
-        ]);
-        Util.defineProperties(this, context, ['htmls', 'getToSearchConfig', 'getAllText']);
+        Util.defineProperties(this, editor, ['language', 'fSearcher', 'searcher', 'nowCursorPos', 'cursor', '$nextTick', '$refs']);
+        Util.defineProperties(this, context, ['htmls', 'getRangeText', 'getAllText']);
     }
     search(searchObj) {
         let resultObj = null;
@@ -30,228 +25,322 @@ export default class {
         let config = null;
         searchObj = searchObj || {};
         if (hasCache) {
-            if (searchObj.direct === 'up') {
-                resultObj = this.prev();
-            } else {
-                resultObj = this.next();
-            }
+            resultObj = this.getFromCache(searchObj.direct, searchObj.increase);
         } else {
-            config = searchObj && searchObj.config || this.getToSearchConfig();
+            config = (searchObj && searchObj.config) || this.getSearchConfig();
             if (!config || !config.text) {
-                return {
-                    now: 0,
-                    count: 0
-                };
+                return { now: 0, count: 0 };
             }
             resultObj = this._search(config);
         }
         if (resultObj && resultObj.result) {
-            if (!hasCache) {
-                this.selecter.addRange(resultObj.list);
-            }
-            if (this.fSearcher === this) {
-                if (this.cursorFocus === false) {
-                    this.searcher.clearSearch();
-                    this.selecter.setActive(resultObj.result.end);
-                    this.cursor.setCursorPos(resultObj.result.end);
+            if (this.searcher === this || searchObj.increase) {
+                if (hasCache) {
+                    this.cursor.addCursorPos(resultObj.result.end);
+                    this.selecter.addActive(resultObj.result.end);
                 } else {
-                    this.clearNow();
+                    //当前光标已处于选中区域边界，则不处理（历史记录后退时可能存在多个选中区域的情况）
+                    if (this.selecter.activedRanges.size === 0) {
+                        this.cursor.setCursorPos(resultObj.result.end);
+                    } else {
+                        this.initIndexs();
+                    }
+                    this.selecter.addRange(resultObj.results);
                 }
             } else {
-                this.selecter.addActive(resultObj.result.end);
-                if (this.selecter.getRangeByCursorPos(this.nowCursorPos)) {
-                    this.cursor.removeCursor(resultObj.result.start);
-                    this.cursor.addCursorPos(resultObj.result.end);
-                } else {
+                if (hasCache) {
+                    this.selecter.setActive(resultObj.result.end);
                     this.cursor.setCursorPos(resultObj.result.end);
+                    this.searcher.clearSearch(); //搜索框确认搜索后，删除按键搜索
+                } else {
+                    this.selecter.addRange(resultObj.results);
+                    this.clearActive();
                 }
             }
             now = resultObj.now;
-            count = resultObj.list.length;
+            count = resultObj.results.length;
         }
 
         return {
             now: now,
-            count: count
-        }
+            count: count,
+        };
     }
     _search(config) {
-        let reg = null,
-            exec = null,
-            preExec = null,
-            start = null,
-            end = null,
-            result = null,
-            resultCaches = [],
-            resultIndexMap = {},
-            rangePos = null,
-            that = this,
-            line = 1,
-            column = 0,
-            index = 0;
+        let that = this;
+        let reg = null;
+        let exec = null;
+        let start = null;
+        let end = null;
+        let result = null;
+        let results = [];
+        let indexs = {};
+        let rangePos = null;
+        let line = 1;
+        let column = 0;
+        let index = 0;
         let text = this.getAllText();
-        let strs = config.text.split(/\n/);
-        let regStr = config.text.replace(/\\|\.|\*|\+|\-|\?|\(|\)|\[|\]|{|\}|\^|\$|\~|\!/g, '\\$&');
-        regStr = (config.wholeWord ? '(?:\\b|(?=[^0-9a-zA-Z]))' : '') + regStr + (config.wholeWord ? '(?:\\b|(?=[^0-9a-zA-Z]))' : '');
+        let lines = config.text.split(/\n/);
+        let source = config.text.replace(/\\|\.|\*|\+|\-|\?|\(|\)|\[|\]|\{|\}|\^|\$|\~|\!|\&|\|/g, '\\$&');
+        //完整匹配
+        if (this.wholeWordPattern.test(config.text) && config.wholeWord) {
+            source = '(?:\\b|(?<=[^0-9a-zA-Z]))' + source + '(?:\\b|(?=[^0-9a-zA-Z]))';
+        }
+        reg = new RegExp('[^\n]*?(' + source + ')|[^\n]*?\n', config.ignoreCase ? 'img' : 'mg');
         config = config || {};
-        reg = new RegExp('[^\n]*?(' + regStr + ')|[^\n]*?\n', config.ignoreCase ? 'img' : 'mg');
-        while (exec = reg.exec(text)) {
+        while ((exec = reg.exec(text))) {
             if (!exec[1]) {
                 line++;
                 column = 0;
             } else {
-                if (preExec && preExec[1] && preExec.index + preExec[0].length !== exec.index) {
-                    line++;
-                    column = 0;
-                }
                 start = {
                     line: line,
-                    column: column + exec[0].length - strs[0].length
-                }
+                    column: column + exec[0].length - exec[1].length,
+                };
                 end = {
-                    line: line + strs.length - 1,
-                    column: strs.length > 1 ? strs.peek().length : column + exec[0].length
-                }
+                    line: line + lines.length - 1,
+                    column: lines.length > 1 ? lines.peek().length : column + exec[0].length,
+                };
+                line = end.line;
                 column = end.column;
                 rangePos = {
                     start: start,
-                    end: end
+                    end: end,
                 };
-                resultCaches.push(rangePos);
-                if (!result && (!that.nowCursorPos || Util.comparePos(end, that.nowCursorPos) >= 0)) {
-                    if (!this.selecter.ranges.size || !this.selecter.getRangeByCursorPos(end)) {
-                        result = rangePos;
-                    }
-                    index = resultCaches.length - 1;
-                    resultIndexMap[resultCaches.length - 1] = true;
+                results.push(rangePos);
+                if (!result && Util.comparePos(end, that.nowCursorPos) >= 0) {
+                    result = rangePos;
+                    index = results.length - 1;
+                    indexs[results.length - 1] = true;
                 }
             }
-            preExec = exec;
         }
-        if (!resultCaches.length) {
+        if (!results.length) {
             return null;
         }
-        if (!result && resultCaches.length) {
+        if (!result && results.length) {
             index = 0;
-            result = resultCaches[0];
+            result = results[0];
         }
         this.cacheData = {
             config: config,
-            resultCaches: resultCaches,
-            resultIndexMap: resultIndexMap,
-            index: index
+            results: results,
+            indexs: indexs,
+            index: index,
         };
         return {
             now: this.cacheData.index + 1,
-            list: resultCaches,
-            result: result
+            results: results,
+            result: result,
         };
+    }
+    initIndexs() {
+        let ranges = this.selecter.activedRanges.toArray();
+        this.cacheData.indexs = {};
+        ranges.forEach((range) => {
+            for (let i = 0; i < this.cacheData.results.length; i++) {
+                let item = this.cacheData.results[i];
+                if (Util.comparePos(range.start, item.start) === 0) {
+                    this.cacheData.index = i;
+                    this.cacheData.indexs[i] = true;
+                    break;
+                }
+            }
+        });
     }
     // 重新搜索
     refreshSearch(config) {
         if (!this.hasCache() && !config) {
             return;
         }
-        let refreshSearchId = this.refreshSearch.id + 1 || 1;
-        this.refreshSearch.id = refreshSearchId;
-        this.$nextTick(() => {
-            if (this.refreshSearch.id !== refreshSearchId) {
-                return;
-            }
-            if (this.hasCache() || config) {
-                config = config || this.cacheData.config;
-                this.clearSearch();
-                this.search({
-                    config: config
-                });
-            }
+        return new Promise((resolve) => {
+            let refreshSearchId = this.refreshSearch.id + 1 || 1;
+            this.refreshSearch.id = refreshSearchId;
+            this.$nextTick(() => {
+                if (this.refreshSearch.id !== refreshSearchId) {
+                    return;
+                }
+                if (this.hasCache() || config) {
+                    config = config || this.cacheData.config;
+                    this.clearSearch();
+                    this.search({
+                        config: config,
+                    });
+                }
+                resolve();
+            });
         });
+    }
+    hasCache() {
+        return !!this.cacheData;
     }
     /**
      * 清除搜索
-     * @param {Boolean} retainActive 是否保留活动的选中区域 
+     * @param {Boolean} retainActive 是否保留活动的选中区域
      */
     clearSearch(retainActive) {
         if (retainActive) {
-            this.selecter.clearInactive();
+            this.selecter.clearInactiveRange();
         } else {
             this.selecter.clearRange();
         }
         this.cacheData = null;
     }
-    clearNow() {
+    clearActive() {
         if (this.cacheData) {
             this.cacheData.index = -1;
-            this.cacheData.resultIndexMap = {};
+            this.cacheData.indexs = {};
             this.selecter.clearActive();
         }
     }
-    hasCache() {
-        return !!this.cacheData;
-    }
-    now() {
-        return this.cacheData.resultCaches[this.cacheData.index];
-    }
-    next() {
-        return this.getFromCache();
-    }
-    prev() {
-        return this.getFromCache('up');
-    }
-    setNow(cursorPos) {
-        let resultCaches = this.cacheData.resultCaches;
-        this.cacheData.index = 0;
-        this.cacheData.resultIndexMap = {
-            0: true
-        };
-        for (let i = 0; i < resultCaches.length; i++) {
-            let item = resultCaches[i];
-            if (Util.comparePos(item.end, cursorPos) >= 0) {
+    setPrevActive(cursorPos) {
+        let results = this.cacheData.results;
+        let index = this.cacheData.index;
+        this.cacheData.index = results.length - 1;
+        for (let i = results.length - 1; i >= 0; i--) {
+            let item = results[i];
+            let res = Util.comparePos(item.end, cursorPos);
+            if (res < 0 || (index === -1 && res === 0)) {
                 this.cacheData.index = i;
-                this.cacheData.resultIndexMap = {
-                    i: true
-                };
                 break;
             }
         }
     }
-    getFromCache(direct) {
-        if (!this.selecter.getRangeByCursorPos(this.nowCursorPos) ||
-            this.cacheData.index < 0) {
-            this.setNow(this.nowCursorPos);
-            if (direct !== 'up') {
-                let resultCaches = this.cacheData.resultCaches;
-                return {
-                    now: this.cacheData.index + 1,
-                    list: resultCaches,
-                    result: resultCaches[this.cacheData.index]
-                }
+    setNextActive(cursorPos) {
+        let results = this.cacheData.results;
+        let index = this.cacheData.index;
+        this.cacheData.index = 0;
+        for (let i = 0; i < results.length; i++) {
+            let item = results[i];
+            let res = Util.comparePos(item.end, cursorPos);
+            if (res > 0 || (index === -1 && res === 0)) {
+                this.cacheData.index = i;
+                break;
             }
         }
-        let resultCaches = this.cacheData.resultCaches;
-        let resultIndexMap = this.cacheData.resultIndexMap;
-        let index = this.cacheData.index + (direct === 'up' ? -1 : 1);
+    }
+    removeNow() {
+        this.cacheData.results.splice(this.cacheData.index, 1);
+        this.cacheData.index--;
+    }
+    clone(cacheData) {
+        this.cacheData = cacheData;
+        if (cacheData) {
+            this.selecter.addRange(cacheData.results);
+        }
+    }
+    getCacheData() {
+        return this.cacheData;
+    }
+    getNowRange() {
+        return this.cacheData.results[this.cacheData.index];
+    }
+    getFromCache(direct, increase) {
+        let results = this.cacheData.results;
         let result = null;
-        if (index == resultCaches.length) {
-            index = 0;
-        } else if (index < 0) {
-            index = resultCaches.length - 1;
+        let index = 0;
+        if (this.fSearcher === this && !increase) {
+            // 搜索框移动活动区域
+            if (direct === 'up') {
+                this.setPrevActive(this.nowCursorPos);
+            } else {
+                this.setNextActive(this.nowCursorPos);
+            }
+            index = this.cacheData.index;
+            result = this.cacheData.results[index];
+            this.cacheData.indexs = { i: true };
+        } else {
+            //CTRL+D移动活动区域
+            let indexs = this.cacheData.indexs;
+            let delta = 0;
+            if (direct === 'up') {
+                delta = -1;
+            } else {
+                delta = 1;
+            }
+            index = this.cacheData.index + delta;
+            if (index == results.length) {
+                index = 0;
+            } else if (index < 0) {
+                index = results.length - 1;
+            }
+            // 已经没有非活动区域
+            if (!indexs[index]) {
+                result = results[index];
+                indexs[index] = true;
+                this.cacheData.index = index;
+            } else {
+                index = this.cacheData.index;
+            }
         }
-        if (!resultIndexMap[index] || this.fSearcher === this) {
-            result = resultCaches[index];
-            this.cacheData.index = index;
-            resultIndexMap[index] = true;
-        }
+
         return {
             now: index + 1,
             result: result,
-            list: resultCaches
-        }
+            results: results,
+        };
     }
     getConfig() {
         if (!this.cacheData) {
             return;
         }
         return Object.assign({}, this.cacheData.config);
+    }
+    // 获取待搜索的文本
+    getSearchConfig() {
+        let result = null;
+        let wholeWord = false;
+        let searchText = '';
+        let range = this.searcher.selecter.getRangeByCursorPos(this.nowCursorPos);
+        if (this.searcher === this && this.selecter.ranges.size > 0) {
+            return null;
+        }
+        if (range) {
+            searchText = this.getRangeText(range.start, range.end);
+        } else {
+            searchText = this.getNowWord().text;
+            wholeWord = true;
+        }
+        if (searchText) {
+            result = {
+                text: searchText,
+                wholeWord: wholeWord,
+                ignoreCase: wholeWord,
+            };
+        }
+        return result;
+    }
+    getNowWord() {
+        let text = this.htmls[this.nowCursorPos.line - 1].text;
+        let str = '';
+        let index = this.nowCursorPos.column;
+        let startColumn = index;
+        let endColumn = index;
+        let res = null;
+        while ((res = this.wordPattern.exec(text))) {
+            if (res.index <= index && res.index + res[0].length >= index) {
+                startColumn = res.index;
+                endColumn = res.index + res[0].length;
+                str = res[0];
+                break;
+            } else if (res.index > index) {
+                break;
+            }
+        }
+        this.wordPattern.lastIndex = 0;
+
+        return {
+            text: str,
+            range: {
+                start: {
+                    line: this.nowCursorPos.line,
+                    column: startColumn,
+                },
+                end: {
+                    line: this.nowCursorPos.line,
+                    column: endColumn,
+                },
+            },
+        };
     }
 }

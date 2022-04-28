@@ -4,9 +4,9 @@
  * @Description: 
 -->
 <template>
-	<div :style="styles" @mousedown.stop @wheel.stop class="my-auto my-shadow my-border" ref="auto">
+	<div :style="styles" @mousedown.stop @wheel.stop class="my-auto my-shadow my-border my-scroll-overlay my-scroll-mini" ref="auto">
 		<div>
-			<div :class="{'my-active': item.active}" @mousedown="onClick(item)" class="my-auto-item my-center-between my-hover" v-for="item in tipList">
+			<div :class="{'my-active': item.active}" @mousedown="onClick(item)" class="my-auto-item my-center-between" v-for="item in tipList">
 				<div class="my-center-between">
 					<div :class="[item.icon]" class="my-auto-icon my-center-center iconfont"></div>
 					<div class="my-auto-content">

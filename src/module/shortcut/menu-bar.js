@@ -3,14 +3,14 @@
  * @Date: 2022-02-18 16:13:15
  * @Description: 
  */
-import Util from '@/common/Util';
+import Util from '@/common/util';
 
 export default class {
-    constructor(menuBar) {
-        this.initProperties(menuBar);
+    constructor(titleBar) {
+        this.initProperties(titleBar);
     }
-    initProperties(menuBar) {
-        Util.defineProperties(this, menuBar, [
+    initProperties(titleBar) {
+        Util.defineProperties(this, titleBar, [
             'openFile',
             'openFolder'
         ]);

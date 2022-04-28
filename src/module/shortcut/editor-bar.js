@@ -3,7 +3,7 @@
  * @Date: 2022-02-18 16:13:15
  * @Description: 
  */
-import Util from '@/common/Util';
+import Util from '@/common/util';
 
 export default class {
     constructor(editorBar) {

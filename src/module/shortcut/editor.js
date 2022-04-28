@@ -3,7 +3,7 @@
  * @Date: 2022-02-18 16:13:15
  * @Description: 
  */
-import Util from '@/common/Util';
+import Util from '@/common/util';
 
 export default class {
     constructor(editor, context) {
@@ -102,7 +102,7 @@ export default class {
                     break;
                 case 68: //ctrl+D，搜素
                     e.preventDefault();
-                    this.searchWord();
+                    this.searchWord('down');
                     break;
                 case 70: //ctrl+F，搜素
                     e.preventDefault();
@@ -145,11 +145,7 @@ export default class {
             switch (e.keyCode) {
                 case 9: //tab键
                     e.preventDefault();
-                    if (this.autoTipList && this.autoTipList.length) {
-                        this.selectAutoTip();
-                    } else {
-                        this.insertContent('\t');
-                    }
+                    this.autocomplete.emmet();
                     break;
                 case 37: //left arrow
                     _moveCursor('left');
@@ -204,7 +200,7 @@ export default class {
             }
             that.setAutoTip(null); //取消自动提示
             that.searcher.clearSearch();
-            that.fSearcher.clearNow();
+            that.fSearcher.clearActive();
         }
     }
 }

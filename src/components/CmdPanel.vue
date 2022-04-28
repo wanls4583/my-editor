@@ -4,75 +4,105 @@
  * @Description: 
 -->
 <template>
-	<div @mousedown.stop class="my-cmd-panel my-shadow my-border" v-if="visible">
-		<div>
-			<div class="my-cmd-search">
-				<input type="text" v-model="searchText" />
-			</div>
-			<Menu :checkable="true" :menuList="_menuList" :value="value" @change="onChange" style="position:relative"></Menu>
-		</div>
-	</div>
+    <div @mousedown.stop class="my-cmd-panel my-list" v-if="visible">
+        <div>
+            <div class="my-cmd-search">
+                <input type="text" v-model="searchText" ref="input" />
+            </div>
+            <div>
+                <Menu
+                    :checkable="true"
+                    :menuList="cmdList"
+                    :value="value"
+                    @change="onChange"
+                    style="position: relative"
+                    class="my-scroll-overlay my-scroll-mini"
+                ></Menu>
+            </div>
+        </div>
+    </div>
 </template>
 <script>
-import Util from '@/common/Util';
+import Util from '@/common/util';
 import Theme from '@/module/theme';
 import Menu from './Menu';
+import EventBus from '@/event';
+
 export default {
     name: 'CmdPanel',
     components: {
-        Menu
-    },
-    props: {
-        menuList: {
-            type: Array,
-            default: []
-        },
-        value: {
-            type: [Number, String]
-        },
-        visible: Boolean
+        Menu,
     },
     data() {
         return {
             searchText: '',
-            _menuList: [],
-        }
+            cmdList: [],
+            visible: false,
+        };
     },
     watch: {
-        visible() {
-            this.searchText = '';
-        },
-        menuList() {
-            this.searchMenu();
-        },
         searchText() {
             this.searchMenu();
-        }
+        },
     },
     created() {
-        this._menuList = this.menuList;
         this.theme = new Theme();
+        this.initEventBus();
     },
     methods: {
+        initEventBus() {
+            EventBus.$on('close-menu', () => {
+                this.visible = false;
+            });
+            EventBus.$on('open-cmd-menu', (data) => {
+                this.visible = true;
+                this.searchText = '';
+                this.originCmdList = data.cmdList;
+                this.value = data.value;
+                if (this.originCmdList[0] && !(this.originCmdList[0] instanceof Array)) {
+                    this.originCmdList = [this.originCmdList];
+                }
+                this.searchMenu();
+                requestAnimationFrame(() => {
+                    this.$refs.input.focus();
+                });
+            });
+        },
         searchMenu() {
             if (this.searchText) {
-                let menu = this.menuList[0].filter((item) => {
-                    return Util.fuzzyMatch(this.searchText, item.name);
+                let menu = [];
+                this.originCmdList[0].forEach((item) => {
+                    let result = Util.fuzzyMatch(this.searchText, item.name, true);
+                    if (result) {
+                        menu.push([item, result]);
+                    }
                 });
-                this._menuList = [menu];
+                menu = menu
+                    .sort((a, b) => {
+                        return b[1].score - a[1].score;
+                    })
+                    .map((item) => {
+                        return item[0];
+                    });
+                this.cmdList = [menu];
             } else {
-                this._menuList = this.menuList.slice();
+                this.cmdList = this.originCmdList.slice();
             }
         },
         onChange(item) {
             switch (item.op) {
                 case 'changeTheme':
-                    this.theme.loadXml(item.value);
-                    window.globalData.nowTheme = item.value;
+                    this.theme.loadTheme(item);
+                    break;
+                case 'changeIconTheme':
+                    this.theme.loadIconTheme(item);
+                    break;
+                case 'selectLanguage':
+                    EventBus.$emit('language-change', item.value);
                     break;
             }
-            this.$emit('update:visible', false);
+            this.visible = false;
         },
-    }
-}
+    },
+};
 </script>

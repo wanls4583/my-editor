@@ -8,11 +8,16 @@
 @import 'editor-bar';
 @import 'search';
 @import 'side-bar';
-@import 'menu-status-bar';
+@import 'title-bar';
+@import 'status-bar';
 @import 'cmd-panel';
 
 * {
     box-sizing: border-box;
+    &::before,
+    &::after {
+        box-sizing: border-box;
+    }
 }
 
 html,
@@ -21,7 +26,16 @@ body {
     padding: 0;
     width: 100;
     height: 100%;
+    font-family: Segoe WPC, Segoe UI, sans-serif;
     color: #575757;
+}
+
+input,
+textarea {
+    font-family: Consolas, 'Courier New', monospace;
+    &::selection {
+        background-color: var(--my-selection-background);
+    }
 }
 
 #app {
@@ -29,9 +43,7 @@ body {
     height: 100%;
 }
 
-
 .my {
-
     &-position-relative {
         position: relative;
     }
@@ -48,12 +60,73 @@ body {
         height: 100%;
     }
 
-    &-hover {
-        cursor: pointer;
+    &-scroll-auto {
+        overflow: auto;
+
+        &::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+            background-color: transparent;
+        }
+
+        &::-webkit-scrollbar-corner {
+            background-color: transparent;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background-color: var(--my-scrollbarSlider-background);
+
+            &:hover {
+                background-color: var(--my-scrollbarSlider-hoverBackground);
+            }
+
+            &:active {
+                background-color: var(--my-scrollbarSlider-activeBackground);
+            }
+        }
+    }
+
+    &-scroll-overlay {
+        overflow: overlay;
+
+        &::-webkit-scrollbar {
+            width: 14px;
+            height: 14px;
+            background-color: transparent;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background-color: transparent;
+        }
+
+        &::-webkit-scrollbar-corner {
+            background-color: transparent;
+        }
 
         &:hover {
-            background-color: rgba(200, 200, 200, 0.4);
+            &::-webkit-scrollbar-thumb {
+                background-color: var(--my-scrollbarSlider-background);
+
+                &:hover {
+                    background-color: var(--my-scrollbarSlider-hoverBackground);
+                }
+
+                &:active {
+                    background-color: var(--my-scrollbarSlider-activeBackground);
+                }
+            }
         }
+    }
+
+    &-scroll-mini {
+        &::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+    }
+
+    &-hover {
+        cursor: pointer;
     }
 
     &-hover-danger {
@@ -65,20 +138,16 @@ body {
         }
     }
 
-    &-active {
-        background-color: rgba(200, 200, 200, 0.4);
-    }
-
-    &-light-bg {
-        background-color: rgba(200, 200, 200, 0.4);
-    }
-
-    &-shadow {
-        box-shadow: rgba(0, 0, 0, 0.2) 0 0 8px;
-    }
-
-    &-border {
-        border: 1px solid rgba(120, 120, 120, 0.4);
+    &-file-icon::before {
+        display: inline-block;
+        flex-shrink: 0;
+        width: 16px;
+        height: 22px;
+        line-height: 22px;
+        margin: 0 6px;
+        background-size: 16px;
+        background-position: 0;
+        background-repeat: no-repeat;
     }
 
     &-icon-error {
@@ -109,6 +178,11 @@ body {
         justify-content: space-between;
     }
 
+    &-center-start {
+        display: flex;
+        align-items: center;
+    }
+
     &-window {
         display: flex;
         position: relative;
@@ -116,7 +190,8 @@ body {
         height: 100%;
         overflow: hidden;
         font-size: 13px;
-        color: #575757;
+        background-color: var(--my-background);
+        color: var(--my-foreground);
     }
 
     &-right-wrap {
@@ -125,5 +200,6 @@ body {
         padding-top: 40px;
         height: 100%;
         overflow: hidden;
+        background-color: var(--my-editor-background);
     }
 }

@@ -4,57 +4,56 @@
  * @Description: 
 -->
 <template>
-	<div :style="{'padding-top':_topBarHeight,'padding-bottom':_statusHeight}" @mousedown="onWindMouseDown" class="my-window" ref="window">
-		<!-- 侧边栏 -->
-		<side-bar ref="sideBar" v-if="mode==='app'"></side-bar>
-		<div @contextmenu.prevent.stop="onContextmenu" class="my-right-wrap" ref="rightWrap">
-			<!-- tab栏 -->
-			<editor-bar
-				:editorList="editorList"
-				@change="onChangeTab"
-				@close="onCloseTab"
-				@close-all="onCloseAll"
-				@close-saved="onCloseSaved"
-				@close-to-left="onCloseToLeft"
-				@close-to-right="onCloseToRight"
-				ref="editorBar"
-				v-show="editorList.length"
-			></editor-bar>
-			<!-- 编辑区 -->
-			<template v-for="item in editorList">
-				<editor
-					:active="item.active"
-					:id="item.id"
-					:key="item.id"
-					:ref="'editor'+item.id"
-					@change="onFileChange(item.id)"
-					@save="onSaveFile(item.id)"
-					v-show="item.active"
-				></editor>
-			</template>
-			<window-menu ref="winMenu"></window-menu>
-		</div>
-		<!-- 顶部菜单栏 -->
-		<menu-bar :height="topBarHeight" @change="onMenuChange" ref="menuBar"></menu-bar>
-		<!-- 状态栏 -->
-		<status-bar :height="statusHeight" ref="statusBar"></status-bar>
-		<cmd-panel :menuList="cmdMenuList" :value="cmdValue" :visible.sync="cmdVisible"></cmd-panel>
-		<Dialog
-			:btns="dialogBtns"
-			:content="dialogContent"
-			:icon="this.dialogIcon"
-			:icon-color="this.dialogIconColor"
-			:overlay="true"
-			:title="dialogTilte"
-			@close="onDialogClose"
-			v-show="dialogVisible"
-		></Dialog>
-	</div>
+    <div
+        :style="{
+            'padding-top': _topBarHeight,
+            'padding-bottom': _statusHeight,
+        }"
+        @mousedown="onWindMouseDown"
+        class="my-window"
+        ref="window"
+    >
+        <!-- 侧边栏 -->
+        <side-bar ref="sideBar" v-if="mode === 'app'"></side-bar>
+        <div @contextmenu.prevent.stop="onContextmenu" class="my-right-wrap" ref="rightWrap">
+            <!-- tab栏 -->
+            <editor-bar
+                :editorList="editorList"
+                @change="onChangeTab"
+                @close="onCloseTab"
+                @close-all="onCloseAll"
+                @close-saved="onCloseSaved"
+                @close-to-left="onCloseToLeft"
+                @close-to-right="onCloseToRight"
+                v-show="editorList.length"
+            ></editor-bar>
+            <!-- 编辑区 -->
+            <template v-for="item in editorList">
+                <editor :active="item.active" :id="item.id" :key="item.id" :ref="'editor' + item.id" @change="onFileChange(item.id)" @save="onSaveFile(item.id)" v-show="item.active"></editor>
+            </template>
+            <window-menu ref="winMenu"></window-menu>
+        </div>
+        <!-- 顶部菜单栏 -->
+        <title-bar :height="topBarHeight" @change="onMenuChange" ref="titleBar"></title-bar>
+        <!-- 状态栏 -->
+        <status-bar :height="statusHeight" :languageList="languageList" ref="statusBar" @select-langeuage="onSelectLanguage"></status-bar>
+        <cmd-panel></cmd-panel>
+        <Dialog
+            :btns="dialogBtns"
+            :content="dialogContent"
+            :icon="this.dialogIcon"
+            :icon-color="this.dialogIconColor"
+            :overlay="true"
+            :title="dialogTilte"
+            @close="onDialogClose"
+            v-show="dialogVisible"
+        ></Dialog>
+    </div>
 </template>
 <script>
 import EditorBar from './EditorBar.vue';
 import Editor from './Editor.vue';
-import MenuBar from './MenuBar';
+import TitleBar from './TitleBar';
 import StatusBar from './StatusBar';
 import SideBar from './SideBar.vue';
 import Dialog from './Dialog.vue';
@@ -62,10 +61,14 @@ import WindowMenu from './WindowMenu.vue';
 import CmdPanel from './CmdPanel.vue';
 import Context from '@/module/context/index';
 import Theme from '@/module/theme';
-import $ from 'jquery';
+import EventBus from '@/event';
+import Util from '@/common/util';
+import globalData from '@/data/globalData';
+import stripJsonComments from 'strip-json-comments';
 
-const require = window.require || window.parent.require || function () { };
+const require = window.require || window.parent.require || function () {};
 const fs = require('fs');
+const path = require('path');
 const remote = require('@electron/remote');
 const contexts = Context.contexts;
 
@@ -73,7 +76,7 @@ export default {
     components: {
         Editor,
         EditorBar,
-        MenuBar,
+        TitleBar,
         StatusBar,
         SideBar,
         Dialog,
@@ -82,23 +85,22 @@ export default {
     },
     data() {
         return {
+            extensionsPath: path.join(globalData.dirname, 'extensions'),
+            languageList: [],
             statusHeight: 30,
             topBarHeight: 35,
             nowId: null,
             idCount: 1,
             titleCount: 1,
             editorList: [],
-            cmdMenuList: [],
-            cmdVisible: false,
-            cmdValue: '',
             dialogTilte: '',
             dialogContent: '',
             dialogVisible: false,
             dialogBtns: [],
             dialogIcon: '',
             dialogIconColor: '',
-            mode: remote ? 'app' : 'mode'
-        }
+            mode: remote ? 'app' : 'mode',
+        };
     },
     computed: {
         _topBarHeight() {
@@ -121,46 +123,61 @@ export default {
             },
             openFolder: () => {
                 this.openFolder();
-            }
-        }
+            },
+        };
     },
     created() {
+        window.globalData = globalData;
         if (this.mode === 'app') {
-            remote.getCurrentWindow().on('resize', () => {
-                let editor = this.getNowEditor();
-                editor && editor.showEditor();
-            });
-        } else {
-            $(window).on('resize', () => {
-                let editor = this.getNowEditor();
-                editor && editor.showEditor();
+            const currentWindow = remote.getCurrentWindow();
+            currentWindow.on('blur', () => {
+                EventBus.$emit('close-menu');
             });
         }
         this.theme = new Theme();
-        this.theme.loadXml(window.globalData.nowTheme);
+        this.loadExtensions().then((result) => {
+            let langeuages = result.languages;
+            let themes = result.themes;
+            let iconThemes = result.iconThemes;
+            let scopeFileList = result.scopeFileList;
+            langeuages.push({ name: 'Plain Text', value: '', checked: true });
+            globalData.languageList = langeuages.slice();
+            globalData.scopeFileList = scopeFileList.slice();
+            globalData.themes = themes.slice();
+            globalData.iconThemes = iconThemes.slice();
+            this.languageList = langeuages;
+            this.checkLanguage();
+            this.theme.loadTheme(globalData.nowTheme);
+            this.theme.loadIconTheme(globalData.nowIconTheme);
+        });
+        this.initEventBus();
     },
     mounted() {
         window.test = this;
         this.openFile();
     },
     methods: {
+        initEventBus() {
+            let iconFn = (value) => {
+                this.editorList.forEach((item) => {
+                    if (value) {
+                        let icon = Util.getIconByPath(globalData.nowIconData, item.path, globalData.nowTheme.type);
+                        item.icon = icon ? `my-file-icon my-file-icon-${icon}` : '';
+                    } else {
+                        item.icon = '';
+                    }
+                });
+                this.editorList.splice();
+            };
+            EventBus.$on('icon-change', iconFn);
+            EventBus.$on('theme-change', iconFn);
+        },
         onContextmenu(e) {
-            // this.$refs.winMenu.show(e);
+            // EventBus.$emit('open-win-menu');
         },
         // 点击编辑器
         onWindMouseDown() {
-            this.$refs.winMenu.hide();
-            this.$refs.statusBar.closeAllMenu();
-            this.$refs.menuBar.closeAllMenu();
-            this.$refs.editorBar.closeAllMenu();
-            if (this.mode === 'app') {
-                this.$refs.sideBar.closeAllMenu();
-            }
-            if (this.nowId) {
-                this.getNowEditor().closeAllMenu();
-                this.getNowEditor().menuVisble = false;
-            }
-            this.cmdVisible = false;
+            EventBus.$emit('close-menu');
         },
         onChangeTab(id) {
             let tab = this.getTabById(id);
@@ -170,7 +187,7 @@ export default {
                 });
                 tab.active = true;
                 this.nowId = id;
-                this.changStatus();
+                this.changeStatus();
             } else {
                 this.getNowEditor().focus();
             }
@@ -187,26 +204,29 @@ export default {
                     cancel: true,
                     icon: 'my-icon-warn',
                     iconColor: 'rgba(255,196,0)',
-                    btns: [{
-                        name: '保存',
-                        callback: () => {
-                            if (this.mode === 'app') {
-                                this.onSaveFile(id).then(() => {
+                    btns: [
+                        {
+                            name: '保存',
+                            callback: () => {
+                                if (this.mode === 'app') {
+                                    this.onSaveFile(id).then(() => {
+                                        _closeTab.call(this);
+                                        this.onDialogClose();
+                                    });
+                                } else {
                                     _closeTab.call(this);
                                     this.onDialogClose();
-                                });
-                            } else {
+                                }
+                            },
+                        },
+                        {
+                            name: '不保存',
+                            callback: () => {
                                 _closeTab.call(this);
                                 this.onDialogClose();
-                            }
-                        }
-                    }, {
-                        name: '不保存',
-                        callback: () => {
-                            _closeTab.call(this);
-                            this.onDialogClose();
-                        }
-                    }]
+                            },
+                        },
+                    ],
                 });
             } else {
                 _closeTab.call(this);
@@ -219,10 +239,10 @@ export default {
                     tab.active = false;
                     tab = this.editorList[index] || this.editorList[index - 1];
                     if (tab) {
-                        tab.active = true;
-                        this.nowId = tab.id;
+                        this.onChangeTab(tab.id);
                     } else {
                         this.nowId = null;
+                        EventBus.$emit('tab-change', null);
                     }
                 } else {
                     this.getNowEditor().focus();
@@ -248,7 +268,7 @@ export default {
         onCloseToLeft(id) {
             let tab = null;
             id = id || this.nowId;
-            while (tab = this.editorList[0]) {
+            while ((tab = this.editorList[0])) {
                 if (tab.id !== id) {
                     this.onCloseTab(tab.id);
                 } else {
@@ -259,7 +279,7 @@ export default {
         onCloseToRight(id) {
             let tab = null;
             id = id || this.nowId;
-            while (tab = this.editorList.peek()) {
+            while ((tab = this.editorList.peek())) {
                 if (tab.id !== id) {
                     this.onCloseTab(tab.id);
                 } else {
@@ -268,21 +288,47 @@ export default {
             }
         },
         onMenuChange(item) {
+            let cmdList = null;
             switch (item.op) {
                 case 'changeTheme':
-                    this.cmdMenuList = [[{
-                        op: 'changeTheme',
-                        name: 'Dark Monokai',
-                        value: '/theme/dark-monokai.tmTheme',
-                    }, {
-                        op: 'changeTheme',
-                        name: 'Light Amiga Rebel',
-                        value: '/theme/light-amiga-rebel.tmTheme'
-                    }]];
-                    this.cmdVisible = true;
-                    this.cmdValue = window.globalData.nowTheme;
+                    cmdList = globalData.themes.map((item) => {
+                        return item.map((item) => {
+                            return Object.assign({ op: 'changeTheme' }, item);
+                        });
+                    });
+                    EventBus.$emit('open-cmd-menu', {
+                        cmdList: cmdList,
+                        value: globalData.nowTheme.value,
+                    });
+                    break;
+                case 'changeIconTheme':
+                    cmdList = globalData.iconThemes.map((item) => {
+                        return Object.assign({ op: 'changeIconTheme' }, item);
+                    });
+                    cmdList.push({
+                        name: 'None',
+                        value: 'none',
+                        op: 'changeIconTheme',
+                    });
+                    EventBus.$emit('open-cmd-menu', {
+                        cmdList: cmdList,
+                        value: globalData.nowIconTheme.value,
+                    });
                     break;
             }
+        },
+        onSelectLanguage() {
+            let cmdList = globalData.languageList.map((item) => {
+                return {
+                    op: 'selectLanguage',
+                    name: item.name + (item.language ? `（${item.language}）` : ''),
+                    value: item.value,
+                };
+            });
+            EventBus.$emit('open-cmd-menu', {
+                cmdList: cmdList,
+                value: this.nowId && this.getNowEditor().language,
+            });
         },
         onFileChange(id) {
             let tab = this.getTabById(id);
@@ -301,10 +347,10 @@ export default {
                 } else {
                     let win = remote.getCurrentWindow();
                     let options = {
-                        title: "请选择要保存的文件名",
-                        buttonLabel: "保存",
+                        title: '请选择要保存的文件名',
+                        buttonLabel: '保存',
                     };
-                    return remote.dialog.showSaveDialog(win, options).then(result => {
+                    return remote.dialog.showSaveDialog(win, options).then((result) => {
                         if (!result.canceled && result.filePath) {
                             tab.path = result.filePath;
                             tab.name = tab.path.match(/[^\\\/]+$/)[0];
@@ -333,38 +379,42 @@ export default {
             let win = remote.getCurrentWindow();
             let options = {
                 title: '选择文件夹',
-                properties: ['openDirectory', 'multiSelections']
+                properties: ['openDirectory', 'multiSelections'],
             };
-            return remote.dialog.showOpenDialog(win, options).then(result => {
-                let results = [];
-                if (!result.canceled && result.filePaths) {
-                    result.filePaths.forEach((item) => {
-                        let obj = {
-                            name: item.match(/[^\\\/]+$/)[0],
-                            path: item,
-                            type: 'dir',
-                            active: false,
-                            open: false,
-                            children: []
-                        };
-                        results.push(Object.assign({}, obj));
-                    });
-                    return results;
-                }
-            }).catch(err => {
-                console.log(err)
-            })
+            return remote.dialog
+                .showOpenDialog(win, options)
+                .then((result) => {
+                    let results = [];
+                    if (!result.canceled && result.filePaths) {
+                        result.filePaths.forEach((item) => {
+                            let obj = {
+                                name: item.match(/[^\\\/]+$/)[0],
+                                path: item,
+                                type: 'dir',
+                                active: false,
+                                open: false,
+                                children: [],
+                            };
+                            results.push(Object.assign({}, obj));
+                        });
+                        return results;
+                    }
+                })
+                .catch((err) => {
+                    console.log(err);
+                });
         },
         openFile(fileObj, choseFile) {
             let tab = fileObj && this.getTabByPath(fileObj.path);
             if (!tab) {
                 let index = -1;
-                let name = fileObj && fileObj.name || `Untitled${this.titleCount++}`;
+                let name = (fileObj && fileObj.name) || `Untitled${this.titleCount++}`;
                 if (this.editorList.length) {
                     tab = this.getTabById(this.nowId);
                     index = this.editorList.indexOf(tab);
                 }
-                if (choseFile) { //从资源管理器中选择文件
+                if (choseFile) {
+                    //从资源管理器中选择文件
                     this.choseFile().then((results) => {
                         if (results) {
                             tab = results[0];
@@ -376,9 +426,14 @@ export default {
                     tab = {
                         id: this.idCount++,
                         name: name,
-                        path: fileObj && fileObj.path || '',
+                        path: (fileObj && fileObj.path) || '',
+                        icon: (fileObj && fileObj.icon) || '',
                         saved: true,
-                        active: false
+                        active: false,
+                    };
+                    if (!tab.icon) {
+                        let icon = Util.getIconByPath(globalData.nowIconData, '', globalData.nowTheme.type);
+                        tab.icon = icon ? `my-file-icon my-file-icon-${icon}` : '';
                     }
                     this.editorList.splice(index + 1, 0, tab);
                     _done.call(this);
@@ -390,23 +445,6 @@ export default {
             function _done() {
                 this.$nextTick(() => {
                     if (tab && tab.path && !tab.loaded) {
-                        let fileType = tab.name.match(/\.[^\.]+?$/i);
-                        let language = '';
-                        fileType = fileType && fileType[0].toLowerCase().slice(1) || '';
-                        switch (fileType) {
-                            case 'html':
-                            case 'xml':
-                            case 'vue':
-                                language = 'HTML';
-                                break;
-                            case 'js':
-                                language = 'JavaScript';
-                                break;
-                            case 'css':
-                                language = 'CSS';
-                                break;
-                        }
-                        this.getEditor(tab.id).language = language;
                         fs.readFile(tab.path, { encoding: 'utf8' }, (err, data) => {
                             if (err) {
                                 throw err;
@@ -417,6 +455,7 @@ export default {
                         });
                     }
                     this.onChangeTab(tab.id);
+                    this.checkLanguage();
                 });
             }
         },
@@ -424,26 +463,32 @@ export default {
             let win = remote.getCurrentWindow();
             let options = {
                 title: '选择文件',
-                properties: ['openFile', 'multiSelections']
+                properties: ['openFile', 'multiSelections'],
             };
-            return remote.dialog.showOpenDialog(win, options).then(result => {
-                let results = [];
-                if (!result.canceled && result.filePaths) {
-                    result.filePaths.forEach((item) => {
-                        let obj = {
-                            id: this.idCount++,
-                            name: item.match(/[^\\\/]+$/)[0],
-                            path: item,
-                            saved: true,
-                            active: false
-                        }
-                        results.push(Object.assign({}, obj));
-                    });
-                    return results;
-                }
-            }).catch(err => {
-                console.log(err)
-            })
+            return remote.dialog
+                .showOpenDialog(win, options)
+                .then((result) => {
+                    let results = [];
+                    if (!result.canceled && result.filePaths) {
+                        result.filePaths.forEach((item) => {
+                            let icon = Util.getIconByPath(globalData.nowIconData, item, globalData.nowTheme.type);
+                            icon = icon ? `my-file-icon my-file-icon-${icon}` : '';
+                            let obj = {
+                                id: this.idCount++,
+                                name: item.match(/[^\\\/]+$/)[0],
+                                path: item,
+                                icon: icon,
+                                saved: true,
+                                active: false,
+                            };
+                            results.push(Object.assign({}, obj));
+                        });
+                        return results;
+                    }
+                })
+                .catch((err) => {
+                    console.log(err);
+                });
         },
         sortFileList() {
             this.list.sort((a, b) => {
@@ -451,7 +496,7 @@ export default {
                     if (a.name === b.name) {
                         return 0;
                     } else if (a.name > b.name) {
-                        return 1
+                        return 1;
                     } else {
                         return -1;
                     }
@@ -473,25 +518,170 @@ export default {
         writeFile(path, text) {
             fs.writeFileSync(path, text, { encoding: 'utf-8' });
         },
-        changStatus() {
-            let changStatusId = this.changStatus.id || 1;
-            this.changStatus.id = changStatusId;
+        changeStatus() {
+            let changStatusId = this.changeStatus.id || 1;
+            this.changeStatus.id = changStatusId;
             this.$nextTick(() => {
-                if (this.changStatus.id !== changStatusId) {
+                if (this.changeStatus.id !== changStatusId) {
                     return;
                 }
                 let editor = this.getNowEditor();
-                let statusBar = this.$refs.statusBar;
-                statusBar.setLanguage(editor.language);
-                statusBar.setTabsize(editor.tabSize);
-                if (editor.nowCursorPos) {
-                    statusBar.setLine(editor.nowCursorPos.line);
-                    statusBar.setColumn(editor.nowCursorPos.column);
-                } else {
-                    statusBar.setLine('?');
-                    statusBar.setColumn('?');
-                }
+                let tab = this.getTabById(this.nowId);
+                EventBus.$emit(`tab-change`, {
+                    path: tab.path,
+                    language: editor.language,
+                    tabSize: editor.tabSize,
+                    line: editor.nowCursorPos ? editor.nowCursorPos.line : '?',
+                    column: editor.nowCursorPos ? editor.nowCursorPos.column : '?',
+                });
             });
+        },
+        // 检查当前打开的文件的语言
+        checkLanguage() {
+            if (this.nowId) {
+                let tab = this.getTabById(this.nowId);
+                let suffix = /\.[^\.]+$/.exec(tab.name);
+                if (!suffix) {
+                    return;
+                }
+                for (let i = 0; i < this.languageList.length; i++) {
+                    let language = this.languageList[i];
+                    if (language.extensions && language.extensions.indexOf(suffix[0]) > -1) {
+                        this.$nextTick(() => {
+                            EventBus.$emit('language-change', language.value);
+                        });
+                        break;
+                    }
+                }
+            }
+        },
+        // 加载语言支持
+        loadExtensions() {
+            let languages = [];
+            let scopeFileList = [];
+            let themes = [[], [], [], []];
+            let iconThemes = [];
+            let varMap = {};
+            return new Promise((resolve) => {
+                // 异步读取目录内容
+                fs.readdir(this.extensionsPath, { encoding: 'utf8' }, (err, files) => {
+                    if (err) {
+                        throw err;
+                    }
+                    files.forEach((item, index) => {
+                        let fullPath = path.join(this.extensionsPath, item);
+                        let packPath = path.join(fullPath, './package.json');
+                        let varConfigPath = path.join(fullPath, './package.nls.json');
+                        if (fs.existsSync(varConfigPath)) {
+                            const text = fs.readFileSync(varConfigPath, 'utf-8');
+                            try {
+                                varMap = JSON.parse(stripJsonComments(text));
+                            } catch (e) {
+                                console.log(e);
+                            }
+                        }
+                        if (fs.existsSync(packPath)) {
+                            const text = fs.readFileSync(packPath, 'utf-8');
+                            try {
+                                let json = JSON.parse(stripJsonComments(text));
+                                let contributes = json.contributes;
+                                _addLanguage(contributes, fullPath);
+                                _addTheme(contributes, fullPath);
+                                _addIconTheme(contributes, fullPath);
+                            } catch (e) {
+                                console.log(e);
+                            }
+                        }
+                    });
+                    themes = themes.filter((item) => {
+                        return item.length;
+                    });
+                    resolve({
+                        languages: languages,
+                        scopeFileList: scopeFileList,
+                        themes: themes,
+                        iconThemes: iconThemes,
+                    });
+                });
+            });
+
+            function _addLanguage(contributes, fullPath) {
+                let grammars = contributes.grammars;
+                let list = contributes.languages || [];
+                list.map((language) => {
+                    for (let i = 0; i < grammars.length; i++) {
+                        let grammar = grammars[i];
+                        scopeFileList.push({
+                            scopeName: grammar.scopeName,
+                            path: path.join(fullPath, grammar.path),
+                            configPath: language.configuration ? path.join(fullPath, language.configuration) : '',
+                        });
+                        if (language.id === grammar.language) {
+                            let name = language.aliases && language.aliases[0];
+                            name = name || grammar.language;
+                            languages.push({
+                                name: name,
+                                value: grammar.language,
+                                language: grammar.language,
+                                scopeName: grammar.scopeName,
+                                path: path.join(fullPath, grammar.path),
+                                configPath: language.configuration ? path.join(fullPath, language.configuration) : '',
+                                extensions: language.extensions,
+                            });
+                            break;
+                        }
+                    }
+                });
+            }
+
+            function _addTheme(contributes, fullPath) {
+                let list = contributes.themes || [];
+                list.map((theme) => {
+                    let type = 'light';
+                    let index = 0;
+                    let label = _getValue(theme.label);
+                    switch (theme.uiTheme) {
+                        case 'vs-dark':
+                            type = 'dark';
+                            index = 1;
+                            break;
+                        case 'hc-light':
+                            type = 'contrast light';
+                            index = 2;
+                            break;
+                        case 'hc-black':
+                            type = 'contrast dark';
+                            index = 3;
+                            break;
+                    }
+                    themes[index].push({
+                        name: theme.id || label,
+                        value: label || theme.id,
+                        type: type,
+                        path: path.join(fullPath, theme.path),
+                    });
+                });
+            }
+
+            function _addIconTheme(contributes, fullPath) {
+                let list = contributes.iconThemes || [];
+                list.map((theme) => {
+                    let label = _getValue(theme.label);
+                    iconThemes.push({
+                        name: label || theme.id,
+                        value: theme.id || label,
+                        path: path.join(fullPath, theme.path),
+                    });
+                });
+            }
+
+            function _getValue(name) {
+                name = name || '';
+                if (name[0] === '%' && name[name.length - 1] === '%') {
+                    name = varMap[name.slice(1, -1)] || name;
+                }
+                return name;
+            }
         },
         getTabById(id) {
             for (let i = 0; i < this.editorList.length; i++) {
@@ -520,6 +710,6 @@ export default {
         getNowContext() {
             return this.getContext(this.nowId);
         },
-    }
-}
+    },
+};
 </script>

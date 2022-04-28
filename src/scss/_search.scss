@@ -8,9 +8,10 @@
         display: flex;
         justify-content: space-between;
         padding: 5px 10px 5px 25px;
-        background-color: rgb(243, 243, 243);
-        border: 1px solid #dddddd;
-        color: #333;
+        box-shadow: 0 0 8px 2px var(--my-widget-shadow);
+        border: 1px solid var(--my-editorWidget-border);
+        background-color: var(--my-editorWidget-background);
+        color: var(--my-editorWidget-foreground);
 
         .iconfont {
             display: inline-block;
@@ -19,28 +20,41 @@
             line-height: 22px;
             font-size: 18px;
             text-align: center;
-            color: #000;
             cursor: pointer;
         }
 
-        .active-border {
-            border: 1px solid #0098fb;
+        .active-click {
+            border-radius: 4px;
+            border: 1px solid transparent;
+            outline: none;
         }
 
-        .active-click:active {
-            border: 1px solid #0098fb;
+        .active-click:hover {
+            background-color: var(--my-toolbar-hoverBackground);
+        }
+
+        .active-click:focus {
+            border-color: var(--my-focusBorder);
         }
 
         .disabled-color {
-            color: #999999;
+            opacity: 0.5;
+
+            &:hover {
+                background-color: transparent;
+            }
 
             &:active {
-                border: none;
+                border-color: transparent;
             }
         }
 
         .enable-color {
-            color: #000000;
+            color: var(--my-editorWidget-foreground);
+        }
+
+        .no-result.my-active {
+            color: red;
         }
 
         .my-search-suffix {
@@ -49,20 +63,21 @@
             line-height: 22px;
             text-align: center;
             margin-right: 4px;
-            color: #999999;
+            border-radius: 4px;
+            border: 1px solid transparent;
             cursor: pointer;
 
             &:hover {
-                color: #333;
+                background-color: var(--my-inputOption-hoverBackground);
             }
 
-            &.active-suffix {
-                background-color: rgb(204, 233, 252);
-                color: #000;
+            &.my-active {
+                border-color: var(--my-inputOption-activeBorder);
+                background-color: var(--my-inputOption-activeBackground);
+                color: var(--my-inputOption-activeForeground);
             }
         }
     }
-
 
     &-search-left {
         position: absolute;
@@ -81,7 +96,6 @@
     &-search-bottom {
         display: flex;
         align-items: center;
-        height: 30px;
     }
 
     &-search-input {
@@ -90,19 +104,31 @@
         justify-content: space-between;
         width: 280px;
         margin-right: 5px;
-        background-color: #fff;
+        background-color: var(--my-input-background);
+        color: var(--my-input-foreground);
+        border: 1px solid transparent;
+        border-color: var(--my-input-border);
 
-        input {
+        &.my-active {
+            border-color: var(--my-focusBorder);
+        }
+
+        textarea {
             flex-grow: 1;
-            height: 30px;
-            line-height: 30px;
-            padding: 0 5px;
+            line-height: 20px;
+            max-height: 150px;
+            padding: 5px;
             border-style: none;
             outline: none;
+            background-color: transparent;
+            color: var(--my-input-foreground);
+            resize: none;
+            white-space: pre;
+            overflow-wrap: normal;
+            
+            &::-webkit-scrollbar {
+                display: none;
+            }
         }
-    }
-
-    &-no-results {
-        color: red;
     }
 }

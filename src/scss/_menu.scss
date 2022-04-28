@@ -1,36 +1,94 @@
 .my {
+    &-list {
+        border: 1px solid var(--my-editorWidget-border);
+        box-shadow: 2px 2px 8px var(--my-widget-shadow);
+        background-color: var(--my-editorWidget-background);
+        color: var(--my-editorWidget-foreground);
+
+        .my-menu {
+            position: relative;
+            border: none;
+            box-shadow: none;
+            background-color: transparent;
+            color: var(--my-foreground);
+
+            .my-menu-item {
+                height: 26px;
+
+                &.my-active {
+                    border-style: solid;
+                    border-color: var(--my-contrastActiveBorder);
+                    background-color: var(--my-list-activeSelectionBackground);
+                    color: var(--my-list-activeSelectionForeground);
+                }
+            }
+        }
+    }
+
+    &-cmd-panel {
+        .my-menu .my-menu-item {
+            &.my-active {
+                border-style: dotted;
+                border-color: var(--my-contrastActiveBorder);
+                background-color: var(--my-quickInputList-focusBackground);
+                color: var(--my-quickInputList-focusForeground);
+            }
+        }
+    }
+
+    &-dropdown {
+        position: absolute;
+        z-index: 99;
+        border: 1px solid var(--my-dropdown-border);
+        background-color: var(--my-dropdown-background);
+        color: var(--my-dropdown-foreground);
+    }
+
+    &-title-bar {
+        .my-menu-item {
+            height: 30px !important;
+        }
+    }
+
     &-menu {
         position: absolute;
         z-index: 99;
         min-width: 200px;
         user-select: none;
-        background-color: #ffffff;
+        border: 1px solid var(--my-menu-border);
+        box-shadow: 2px 2px 8px var(--my-widget-shadow);
+        background-color: var(--my-menu-background);
+        color: var(--my-menu-foreground);
     }
 
-    &-menu-group {
-        padding: 5px 0;
-        border-bottom: 1px solid rgba(200, 200, 200, 0.5);
-
-        &:last-child {
-            border-bottom: none;
-        }
+    &-separator {
+        height: 1px;
+        margin: 5px 0;
+        background-color: var(--my-menu-separatorBackground);
     }
 
     &-menu-item {
         position: relative;
-        padding: 5px 10px 5px 10px;
+        padding: 0 10px;
         white-space: nowrap;
         min-width: 80px;
-        min-height: 30px;
+        height: 30px;
+        border: 1px solid transparent;
 
-        &:last-child {
-            .my-menu-content {
-                border-bottom: none;
-            }
+        &:hover {
+            border-style: dotted;
+            border-color: var(--my-contrastActiveBorder);
+            background-color: var(--my-list-hoverBackground);
+            color: var(--my-list-hoverForeground);
+        }
+
+        &.my-active {
+            border-color: var(--my-menu-selectionBorder);
+            background-color: var(--my-menu-selectionBackground);
+            color: var(--my-menu-selectionForeground);
         }
 
         &.disabled {
-
             &:hover {
                 background-color: transparent;
                 cursor: auto;

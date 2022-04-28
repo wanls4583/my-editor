@@ -1,5 +1,5 @@
 .my {
-    &-wrap {
+    &-editor-wrap {
         position: relative;
         height: 100%;
         overflow: hidden;
@@ -14,21 +14,16 @@
         font-size: 14px;
         line-height: 1.5em;
         letter-spacing: 0px;
-        font-family: Consolas, "Courier New", monospace;
+        font-family: Consolas, 'Courier New', monospace;
         user-select: none;
         -webkit-tap-highlight-color: rgab(0, 0, 0, 0);
+        color: var(--my-editor-foreground);
     }
 
     &-nums {
         position: relative;
         float: left;
         overflow: hidden;
-
-        &:hover {
-            .my-fold {
-                opacity: 1;
-            }
-        }
     }
 
     &-num {
@@ -37,13 +32,12 @@
         text-align: right;
 
         .num {
-            opacity: 0.6;
+            color: var(--my-editorLineNumber-foreground);
         }
 
-        &.active {
+        &.my-active {
             .num {
-                opacity: 1;
-                font-weight: bold;
+                color: var(--my-editorLineNumber-activeForeground);
             }
         }
     }
@@ -52,18 +46,6 @@
         position: relative;
         width: 100%;
         height: 100%;
-        overflow: auto;
-
-        &::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-            border-radius: 4px;
-        }
-
-        &::-webkit-scrollbar-thumb {
-            border-radius: 4px;
-            background-color: rgba(200, 200, 200, 0.6);
-        }
     }
 
     &-content {
@@ -91,7 +73,7 @@
         left: 0;
         z-index: 2;
         width: 2px;
-        background-color: #333333;
+        background-color: var(--my-editorCursor-foreground);
         pointer-events: none;
     }
 

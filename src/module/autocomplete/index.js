@@ -1,215 +1,535 @@
 /*
  * @Author: lisong
  * @Date: 2022-03-17 15:29:26
- * @Description: 
+ * @Description:
  */
-import Util from '@/common/Util';
-import HtmlData from '@/data/browsers.html-data';
+import { extract } from 'emmet';
+import Util from '@/common/util';
+import Enum from '@/data/enum';
+import globalData from '@/data/globalData';
 
-const tagMap = {};
-HtmlData.tags.forEach((item) => {
-    tagMap[item.name] = true;
-});
-
-const iconMap = {
-    'entity.name.function.js': 'icon-function',
-    'entity.name.class.js': 'icon-class',
-    'support.function.js': 'icon-function',
-    'support.class.js': 'icon-class',
-    'support.type.property-name.css': 'icon-property',
-    'support.type.property-value.css': 'icon-value',
-    'entity.other.attribute-name.html': 'icon-property',
-    'entity.name.tag.html': 'icon-property',
-    'emmet-html': 'icon-property',
-}
+const require = window.require || window.parent.require || function () {};
+const path = require('path');
 
 const regs = {
-    word: /^[a-zA-Z][a-zA-Z0-9]*$/,
-    emmetChar: /\w/,
-    emmetWord: /[^\s]+$/,
-    emmet: /^[a-zA-Z][a-zA-Z0-9\-]*(?:[\.\#][^\.\#\>\<\+\*\(\)]*)*(?:\*\d+)?(?:[\>\+][a-zA-Z][a-zA-Z0-9\-]*(?:[\.\#][^\.\#\>\<\+\*\(\)]*)*(?:\*\d+)?)*$/,
-    paremEmmet: /\([a-zA-Z][a-zA-Z0-9\-]*(?:[\.\#][^\.\#\>\<\+\*\(\)]*)*(?:\*\d+)?(?:[\>\+][a-zA-Z][a-zA-Z0-9\-]*(?:[\.\#][^\.\#\>\<\+\*\(\)]*)*(?:\*\d+)?)*\)/g,
-    invalidEmmetParen: /\)\>/,
-}
+    stringToken: /(?:\.|^)(?:string|regexp)(?:\.|$)/,
+    tagToken: /meta\.tag/,
+    tagNameToken: /entity\.name\.tag/,
+    tagAttrName: /attribute\-name/,
+    cssValueToken: /property\-list|property\-value|separator/,
+    cssPropertyToken: /meta\.property\-name/,
+    cssSelectorToken: /meta\.selector/,
+    cssAttributeToken: /attribute\-selector/,
+    cssClassToken: /attribute\-name\.class/,
+    cssPseudoToken: /pseudo\-element/,
+    styleCss: /([^\:\;\"\'\s]+)\s*\:\s*([^\:\;]+)?$/,
+    styleCssProperty: /(?:^|[\;\"\'])([^\:\;]+)$/,
+};
 
 class Autocomplete {
     constructor(editor, context) {
-        this.searcherId = 0;
         this.initProperties(editor, context);
+        this.doneMap = {};
+        this.results = [];
+        this.wordPattern = Util.getWordPattern(this.language);
+        this.wordPattern = new RegExp(`^(${this.wordPattern.source})$`);
     }
     initProperties(editor, context) {
-        Util.defineProperties(this, editor, ['language', 'cursor', 'tokenizer', 'setAutoTip']);
-        Util.defineProperties(this, context, ['htmls']);
+        Util.defineProperties(this, editor, ['language', 'cursor', 'nowCursorPos', 'tokenizer', 'autoTipList', 'setAutoTip', 'selectAutoTip']);
+        Util.defineProperties(this, context, ['htmls', 'replaceTip', 'insertContent']);
     }
     reset() {
-        this.startTime = Date.now();
-        this.nowIndex = 0;
-        this.preResults = [];
-        this.searcherId++;
+        this.currentLine = 1;
+        this.results = [];
+        this.doneMap = {};
     }
     stop() {
-        clearTimeout(this.timer);
+        cancelIdleCallback(this.searchTimer);
     }
     search() {
         this.stop();
-        this.reset();
-        this.searchTimer = setTimeout(() => {
-            this._search(this.searcherId);
+        this.searchTimer = requestIdleCallback(() => {
+            this._search();
         });
     }
-    _search(searcherId) {
-        let results = [];
-        let count = 0;
-        let startTime = Date.now();
-        let doneMap = {};
-        let nowRule = null;
-        this.cursorPos = this.cursor.multiCursorPos.toArray()[0];
-        let nowToken = this.getAutoToken();
+    emmet() {
+        let lineObj = this.htmls[this.nowCursorPos.line - 1];
+        let tokenIndex = this.getTokenIndex(this.nowCursorPos);
+        let nowToken = lineObj.tokens[tokenIndex];
+        let word = nowToken && lineObj.text.slice(nowToken.startIndex, this.nowCursorPos.column);
+        let emmetObj = null;
+        let type = '';
+        if (word) {
+            let scope = nowToken.scopes.peek();
+            if (scope.startsWith('text.')) {
+                emmetObj = extract(word);
+                type = Enum.TOKEN_TYPE.EMMET_HTML;
+            } else if (this._isCssToken(nowToken)) {
+                if (this._isCssPropertyToken(nowToken)) {
+                    emmetObj = extract(word, word.length, { type: 'stylesheet' });
+                } else if (this._isCssValueToken(nowToken)) {
+                    //p10将会被分成pd和10两个token
+                    let preToken = lineObj.tokens[tokenIndex - 1];
+                    if (preToken && this._isCssPropertyToken(preToken)) {
+                        word = lineObj.text.slice(preToken.startIndex, preToken.endIndex) + word;
+                        emmetObj = extract(word, word.length, { type: 'stylesheet' });
+                    }
+                }
+                type = Enum.TOKEN_TYPE.EMMET_CSS;
+            }
+        }
+        if (emmetObj) {
+            this.replaceTip({ word: emmetObj.abbreviation, result: emmetObj.abbreviation, type: type });
+        } else if (this.autoTipList && this.autoTipList.length) {
+            this.selectAutoTip();
+        } else {
+            this.insertContent('\t');
+        }
+    }
+    _search() {
+        let lineObj = this.htmls[this.nowCursorPos.line - 1];
+        let tokenIndex = this.getTokenIndex(this.nowCursorPos);
+        let nowToken = lineObj.tokens[tokenIndex];
+        let word = nowToken && lineObj.text.slice(nowToken.startIndex, this.nowCursorPos.column);
+        this.reset();
         this.setAutoTip(null);
-        if (!nowToken) {
-            nowRule = this.tokenizer.ruleIdMap[1];
-            nowToken = this.getToken(this.cursorPos);
-            if (nowToken && !nowToken.ruleId) {
-                if (nowRule.autoChild) {
-                    _findInList.call(this, nowRule.autoChild);
-                } else if (this.language === 'HTML') { //emmet语法
-                    let emmetExpr = this.getEmmetExpr(nowToken);
-                    if (emmetExpr) {
-                        _addTip({
-                            word: emmetExpr.word,
-                            value: emmetExpr.word,
-                            type: 'emmet-html',
-                            skipMatch: true,
-                            lookahead: emmetExpr.lookahead
-                        });
-                        _showTip.call(this);
-                    }
+        if (!word) {
+            return;
+        }
+        if (this._isTextToken(nowToken)) {
+            let scope = nowToken.scopes.peek();
+            if (scope.startsWith('text.')) {
+                //emmet表达式
+                this._searchEmmet(word);
+            } else if (this._isTagNameToken(nowToken)) {
+                //标签名
+                this._searchTagName(word);
+            } else if (this._isAttrNameToken(nowToken)) {
+                //属性名
+                let tag = this._getPreTagName(tokenIndex, this.nowCursorPos.line);
+                if (tag) {
+                    this._searchTagAttrName(word, tag);
                 }
             }
-            return;
+        } else if (this._isCssToken(nowToken)) {
+            if (this._isCssPropertyToken(nowToken)) {
+                //css属性名
+                this._searchCssProperty(word);
+            } else if (this._isCssValueToken(nowToken)) {
+                //css属性值
+                let preToken = lineObj.tokens[tokenIndex - 1];
+                //p10将会被分成pd和10两个token
+                if (preToken && this._isCssPropertyToken(preToken)) {
+                    let preToken = lineObj.tokens[tokenIndex - 1];
+                    if (preToken && this._isCssPropertyToken(preToken)) {
+                        word = lineObj.text.slice(preToken.startIndex, preToken.endIndex) + word;
+                        this._searchCssProperty(word);
+                    }
+                } else {
+                    let property = this._getPreCssProperty(tokenIndex, this.nowCursorPos.line);
+                    if (property) {
+                        this._searchCssValue(word, property);
+                    }
+                }
+            } else if (this._isCssSelectorToken(nowToken)) {
+                if (this._isTagNameToken(nowToken)) {
+                    this._searchCssTag(word);
+                } else if (word.indexOf(':') > -1) {
+                    this._searchCssPseudo(word);
+                }
+                this._searchSelector(word, nowToken);
+            } else if (this._isTagToken(nowToken)) {
+                //style种的css样式
+                this._searchStyle(word, nowToken);
+            }
+        } else if (this._isSourceToken(nowToken)) {
+            if (this.wordPattern.test(word)) {
+                this._searchWord(word, nowToken);
+            }
         }
-        nowRule = this.tokenizer.ruleIdMap[nowToken.ruleId];
-        if (!nowRule) {
-            let parentRule = this.tokenizer.ruleIdMap[nowToken.state];
-            _findInList.call(this, parentRule.autoChild);
-            return;
-        }
-        if (nowRule.auto instanceof Array) {
-            _findInList.call(this, nowRule.auto);
-            return;
-        }
-        if (nowRule.autoByPre) {
-            let list = this.getPreAutoList(nowToken) || {};
-            list && _findInList.call(this, list);
-            return;
-        }
-        if (nowRule.autoHintPre) {
-            let list = this.getPreAutoList(nowToken) || {};
-            list.forEach((item) => {
-                _addTip({
-                    value: item.value,
-                    type: item.type,
-                    skipMatch: true
-                });
+    }
+    _searchWord(word, nowToken) {
+        this._searchDocument((lineObj) => {
+            lineObj.tokens.forEach((token) => {
+                if (token === nowToken) {
+                    return;
+                }
+                let text = lineObj.text.slice(token.startIndex, token.endIndex);
+                if (this.wordPattern.test(text)) {
+                    // 跳过标签和字符串
+                    if (this._isTextToken(token) || this._isStringToken(token)) {
+                        return;
+                    }
+                    this._addTip({ word: word, value: text, type: Enum.TOKEN_TYPE.WORD });
+                }
             });
-            _showTip.call(this, true);
+        });
+    }
+    _searchSelector(word, nowToken) {
+        if (this._isCssClassToken(nowToken) && word !== '.') {
+            word = '.' + word;
+        }
+        this._searchDocument((lineObj) => {
+            lineObj.tokens.forEach((token) => {
+                if (token === nowToken) {
+                    return;
+                }
+                if (this._isCssSelectorToken(token)) {
+                    let text = lineObj.text.slice(token.startIndex, token.endIndex);
+                    if (!this.wordPattern.test(text)) {
+                        return;
+                    }
+                    if (this._isCssClassToken(token)) {
+                        text = '.' + text;
+                    }
+                    if (word === '.') {
+                        if (this._isCssClassToken(token) && text !== '..') {
+                            this._addTip({ word: word, value: text, type: Enum.TOKEN_TYPE.CSS_CLASS, skipMatch: true });
+                        }
+                    } else if (this._isCssClassToken(nowToken)) {
+                        if (this._isCssClassToken(token)) {
+                            this._addTip({ word: word, value: text, type: Enum.TOKEN_TYPE.CSS_CLASS });
+                        }
+                    } else {
+                        this._addTip({ word: word, value: text, type: Enum.TOKEN_TYPE.CSS_SELECTOR });
+                    }
+                }
+            });
+        }, true);
+    }
+    _searchDocument(callback, showAll) {
+        let line = this.currentLine;
+        let startTime = Date.now();
+        let processedLines = 0;
+        while (line <= this.htmls.length) {
+            let lineObj = this.htmls[line - 1];
+            line++;
+            if (!lineObj.tokens) {
+                continue;
+            }
+            callback(lineObj);
+            processedLines++;
+            // 避免卡顿
+            if (processedLines % 5 == 0 && Date.now() - startTime >= 20) {
+                break;
+            }
+        }
+        this.currentLine = line;
+        this._showTip(showAll);
+        if (line <= this.htmls.length) {
+            this.searchTimer = requestIdleCallback(() => {
+                this._searchDocument(callback, showAll);
+            });
+        }
+    }
+    _searchTagName(word) {
+        const htmlData = this.getHtmlData();
+        htmlData.tags.forEach((item) => {
+            this._addTip({ word: word, value: item.name, type: Enum.TOKEN_TYPE.TAG_NAME });
+        });
+        if (!this.results.length) {
+            this._addTip({ word: word, value: word, type: Enum.TOKEN_TYPE.TAG_NAME, skipMatch: true });
+        }
+        this._showTip();
+    }
+    _searchTagAttrName(word, tag) {
+        const htmlData = this.getHtmlData();
+        let attributes = htmlData.tagMap[tag];
+        attributes = attributes && attributes.attributes;
+        if (attributes) {
+            // 标签专有属性
+            attributes.forEach((item) => {
+                this._addTip({ word: word, value: item.name, type: Enum.TOKEN_TYPE.ATTR_NAME, after: '=""' });
+            });
+        }
+        // 公共属性
+        htmlData.globalAttributes.forEach((item) => {
+            this._addTip({ word: word, value: item.name, type: Enum.TOKEN_TYPE.ATTR_NAME, after: '=""' });
+        });
+        this._showTip();
+    }
+    _searchCssTag(word) {
+        const htmlData = this.getHtmlData();
+        htmlData.tags.forEach((item) => {
+            this._addTip({ word: word, value: item.name, type: Enum.TOKEN_TYPE.CSS_TAG });
+        });
+    }
+    _searchCssPseudo(word) {
+        const cssData = this.getCssData();
+        const pseudo = word.split(':').peek().trim();
+        cssData.pseudoClasses.forEach((item) => {
+            if (pseudo) {
+                this._addTip({ word: word, value: item.name, type: Enum.TOKEN_TYPE.CSS_PSEUDO });
+            } else {
+                this._addTip({ word: word, value: item.name, type: Enum.TOKEN_TYPE.CSS_PSEUDO, skipMatch: true });
+            }
+        });
+        cssData.pseudoElements.forEach((item) => {
+            if (pseudo) {
+                this._addTip({ word: word, value: item.name, type: Enum.TOKEN_TYPE.CSS_PSEUDO });
+            } else {
+                this._addTip({ word: word, value: item.name, type: Enum.TOKEN_TYPE.CSS_PSEUDO, skipMatch: true });
+            }
+        });
+    }
+    _searchStyle(word, nowToken) {
+        let column = this.nowCursorPos.column;
+        let lineObj = this.htmls[this.nowCursorPos.line - 1];
+        let keyValue = null;
+        word = lineObj.text.slice(nowToken.startIndex, column);
+        keyValue = regs.styleCss.exec(word);
+        if (keyValue && keyValue[1]) {
+            let property = keyValue[1];
+            let value = keyValue[2] || '';
+            this._searchCssValue(value, property);
             return;
         }
-        _findInToken.call(this);
-
-        function _findInList(list) {
-            for (let i = this.nowIndex; i < list.length; i++) {
-                let item = list[i];
-                _addTip({
-                    word: nowToken.value.slice(0, this.cursorPos.column - nowToken.column),
-                    value: item.value,
-                    type: item.type
-                });
-                if (++count % 100 == 0 && Date.now() - startTime > 20) {
-                    this.searchTimer = setTimeout(() => {
-                        this.nowIndex = i + 1;
-                        _findInList.call(this, list);
-                    });
-                    break;
-                }
-            }
-            _showTip.call(this);
+        keyValue = regs.styleCssProperty.exec(word);
+        if (keyValue && keyValue[1]) {
+            this._searchCssProperty(keyValue[1]);
         }
-
-        function _findInToken() {
-            for (let i = this.nowIndex; i < this.htmls.length; i++) {
-                let lineObj = this.htmls[i];
-                let tokens = lineObj.tokens || [];
-                if (lineObj.text.length > 10000) { //大于10000个字符，跳过该行
-                    continue;
-                }
-                tokens.forEach((item) => {
-                    let rule = this.tokenizer.ruleIdMap[item.ruleId];
-                    if (rule && rule.auto === nowRule.auto) {
-                        _addTip({
-                            word: nowToken.value.slice(0, this.cursorPos.column - nowToken.column),
-                            value: item.value,
-                            type: item.type
-                        });
-                    }
-                });
-                if (++count % 100 == 0 && Date.now() - startTime > 20) {
-                    this.searchTimer = setTimeout(() => {
-                        this.nowIndex = i + 1;
-                        _findInToken.call(this);
-                    });
-                    break;
-                }
+    }
+    _searchCssProperty(word) {
+        const cssData = this.getCssData();
+        cssData.properties.forEach((item) => {
+            this._addTip({ word: word, value: item.name, type: Enum.TOKEN_TYPE.CSS_PROPERTY, after: ': ' });
+        });
+        if (!this.results.length) {
+            const emmetObj = extract(word, word.length, { type: 'stylesheet' });
+            if (emmetObj && emmetObj.abbreviation) {
+                this._addTip({ word: emmetObj.abbreviation, value: emmetObj.abbreviation, type: Enum.TOKEN_TYPE.EMMET_CSS, skipMatch: true });
             }
-            _showTip.call(this);
         }
-
-        function _addTip(option) {
-            if (doneMap[option.value]) {
-                if (typeof doneMap[option.value] === 'object') {
-                    doneMap[option.value].icon = doneMap[option.value].icon || iconMap[option.type];
-                }
+        this._showTip();
+    }
+    _searchCssValue(word, property) {
+        const cssData = this.getCssData();
+        let values = cssData.propertyMap[property];
+        values = values && values.values;
+        if (values) {
+            let _word = word.trim();
+            if (_word === ':' || _word === '') {
+                values.forEach((item) => {
+                    this._addTip({ word: word, value: item.name, type: Enum.TOKEN_TYPE.CSS_VALUE, after: ';', skipMatch: true });
+                });
+                this._showTip(true);
             } else {
-                let result = null;
-                if (option.skipMatch) {
-                    result = {
-                        indexs: [],
-                        score: 0
-                    };
-                } else {
-                    result = Util.fuzzyMatch(option.word, option.value);
-                }
-                if (result) {
-                    let obj = {
-                        result: option.value,
-                        word: option.word || '',
-                        desc: option.desc || '',
-                        type: option.type,
-                        icon: iconMap[option.type] || '',
-                        indexs: result.indexs,
-                        score: result.score,
-                        lookahead: option.lookahead
-                    };
-                    results.push(obj);
-                    doneMap[option.value] = obj;
-                } else {
-                    doneMap[option.value] = true;
-                }
+                values.forEach((item) => {
+                    this._addTip({ word: word, value: item.name, type: Enum.TOKEN_TYPE.CSS_VALUE, after: ';' });
+                });
+                this._showTip();
             }
         }
-
-        function _showTip(all) {
-            if (searcherId === this.searcherId) {
-                results = results.concat(this.preResults);
-                if (!all) {
-                    results = results.sort((a, b) => {
-                        return b.score - a.score;
-                    }).slice(0, 10);
+    }
+    _searchEmmet(word) {
+        const emmetObj = extract(word);
+        if (emmetObj && emmetObj.abbreviation) {
+            this._addTip({ word: emmetObj.abbreviation, value: emmetObj.abbreviation, type: Enum.TOKEN_TYPE.EMMET_HTML, skipMatch: true });
+            this._showTip();
+        }
+    }
+    _setTokenType(token) {
+        token.isSourceToken = false;
+        token.isCssToken = false;
+        token.isTextToken = false;
+        token.isTagToken = false;
+        token.isTagAttrNameToken = false;
+        token.scope = token.scope || token.scopes.join(',');
+        for (let i = token.scopes.length - 1; i >= 0; i--) {
+            let scope = token.scopes[i];
+            if (scope.startsWith('source.')) {
+                token.isSourceToken = true;
+                if (scope.startsWith('source.css')) {
+                    token.isCssToken = true;
                 }
-                this.setAutoTip(results);
-                this.preResults = results;
+                break;
+            } else if (scope.startsWith('text.')) {
+                token.isTextToken = true;
+                token.isTagAttrNameToken = regs.tagAttrName.test(token.scope);
+                break;
             }
         }
+        token.isTagToken = regs.tagToken.test(token.scope);
+        token.isTagNameToken = regs.tagNameToken.test(token.scope);
+        token.isStringToken = regs.stringToken.test(token.scope);
+        if (token.isCssToken) {
+            token.isCssValueToken = regs.cssValueToken.test(token.scope);
+            token.isCssPropertyToken = regs.cssPropertyToken.test(token.scope);
+            token.isCssSelectorToken = regs.cssSelectorToken.test(token.scope);
+            token.isCssClassToken = regs.cssClassToken.test(token.scope);
+            token.isCssAttributeToken = regs.cssAttributeToken.test(token.scope);
+            token.isCssPseudoToken = regs.cssPseudoToken.test(token.scope);
+        }
+    }
+    _isTextToken(token) {
+        if (token.isTextToken === undefined) {
+            this._setTokenType(token);
+        }
+        return token.isTextToken;
+    }
+    _isSourceToken(token) {
+        if (token.isSourceToken === undefined) {
+            this._setTokenType(token);
+        }
+        return token.isSourceToken;
+    }
+    _isCssToken(token) {
+        if (token.isCssToken === undefined) {
+            this._setTokenType(token);
+        }
+        return token.isCssToken;
+    }
+    _isCssPropertyToken(token) {
+        if (token.isCssPropertyToken === undefined) {
+            this._setTokenType(token);
+        }
+        return token.isCssPropertyToken;
+    }
+    _isCssValueToken(token) {
+        if (token.isCssValueToken === undefined) {
+            this._setTokenType(token);
+        }
+        return token.isCssValueToken;
+    }
+    _isCssSelectorToken(token) {
+        if (token.isCssSelectorToken === undefined) {
+            this._setTokenType(token);
+        }
+        return token.isCssSelectorToken;
+    }
+    _isCssClassToken(token) {
+        if (token.isCssClassToken === undefined) {
+            this._setTokenType(token);
+        }
+        return token.isCssClassToken;
+    }
+    _isCssAttributeToken(token) {
+        if (token.isCssAttributeToken === undefined) {
+            this._setTokenType(token);
+        }
+        return token.isCssAttributeToken;
+    }
+    _isCssPseudoToken(token) {
+        if (token.isCssPseudoToken === undefined) {
+            this._setTokenType(token);
+        }
+        return token.isCssPseudoToken;
+    }
+    _isStringToken(token) {
+        if (token.isStringToken === undefined) {
+            this._setTokenType(token);
+        }
+        return token.isStringToken;
+    }
+    _isTagToken(token) {
+        if (token.isTagToken === undefined) {
+            this._setTokenType(token);
+        }
+        return token.isTagToken;
+    }
+    _isTagNameToken(token) {
+        if (token.isTagNameToken === undefined) {
+            this._setTokenType(token);
+        }
+        return token.isTagNameToken;
+    }
+    _isAttrNameToken(token) {
+        if (token.isTagAttrNameToken === undefined) {
+            this._setTokenType(token);
+        }
+        return token.isTagAttrNameToken;
+    }
+    _getPreTagName(tokenIndex, line) {
+        let tag = '';
+        let count = 0;
+        outerLoop: while (line >= 1) {
+            let lineObj = this.htmls[line - 1];
+            if (!lineObj.tokens) {
+                break;
+            }
+            tokenIndex = tokenIndex > -1 ? tokenIndex : lineObj.tokens.length;
+            for (let i = tokenIndex - 1; i >= 0; i--) {
+                let token = lineObj.tokens[i];
+                if (this._isTagNameToken(token)) {
+                    tag = lineObj.text.slice(token.startIndex, token.endIndex);
+                    break outerLoop;
+                }
+                count++;
+                if (count > 100) {
+                    break outerLoop;
+                }
+            }
+            line--;
+            tokenIndex = -1;
+        }
+        return tag;
+    }
+    _getPreCssProperty(tokenIndex, line) {
+        let property = '';
+        let count = 0;
+        outerLoop: while (line >= 1) {
+            let lineObj = this.htmls[line - 1];
+            if (!lineObj.tokens) {
+                break;
+            }
+            tokenIndex = tokenIndex > -1 ? tokenIndex : lineObj.tokens.length;
+            for (let i = tokenIndex - 1; i >= 0; i--) {
+                let token = lineObj.tokens[i];
+                if (this._isCssPropertyToken(token)) {
+                    property = lineObj.text.slice(token.startIndex, token.endIndex);
+                    break outerLoop;
+                }
+                count++;
+                if (count > 100 || !this._isCssValueToken(token)) {
+                    break outerLoop;
+                }
+            }
+            line--;
+            tokenIndex = -1;
+        }
+        return property;
+    }
+    _addTip(option) {
+        let result = null;
+        let fullMatch = option.fullMatch;
+        fullMatch = fullMatch === undefined ? true : fullMatch;
+        if (this.doneMap[option.value] && !option.skipDone) {
+            return;
+        }
+        if (option.skipMatch) {
+            result = {
+                indexs: [],
+                score: 0,
+            };
+        } else {
+            result = Util.fuzzyMatch(option.word.trim(), option.value, fullMatch);
+        }
+        if (result) {
+            let obj = {
+                result: option.value,
+                word: option.word || '',
+                desc: option.desc || '',
+                type: option.type || '',
+                before: option.before || '',
+                after: option.after || '',
+                icon: this.getIcon(option.scope),
+                indexs: result.indexs,
+                score: result.score,
+            };
+            this.results.push(obj);
+            this.doneMap[option.value] = obj;
+        } else {
+            this.doneMap[option.value] = true;
+        }
+    }
+    _showTip(all) {
+        let results = null;
+        let limit = all ? 200 : 10;
+        this.results.sort((a, b) => {
+            return b.score - a.score;
+        });
+        results = this.results.slice(0, limit);
+        this.setAutoTip(results);
     }
     checkEmmetValid(text) {
         let _text = '';
@@ -221,74 +541,45 @@ class Autocomplete {
         }
         return !!regs.emmet.exec(text);
     }
-    getPreAutoList(token) {
-        let tokens = this.htmls[this.cursorPos.line - 1].tokens;
-        let rule = this.tokenizer.ruleIdMap[token.ruleId];
-        if (tokens) {
-            for (let i = tokens.length - 1; i >= 0; i--) {
-                let _token = tokens[i];
-                let _rule = this.tokenizer.ruleIdMap[_token.ruleId];
-                if (_rule && _rule.autoByMap && (_rule.autoName === rule.autoByPre || _rule.autoName === rule.autoHintPre)) {
-                    return _rule.autoByMap[_token.value];
-                }
-            }
-        }
-        return null;
-    }
-    getAutoToken() {
-        let token = this.getToken(this.cursorPos);
-        let rule = token && token.ruleId && this.tokenizer.ruleIdMap[token.ruleId];
-        let auto = rule && (rule.auto || rule.autoByPre || rule.autoHintPre);
-        if (!rule && token && token.state) {
-            rule = this.tokenizer.ruleIdMap[token.state];
-            auto = rule.autoChild;
-        }
-        if (!token || !auto) {
-            return null;
-        }
-        return token;
-    }
-    getToken(cursorPos) {
+    getTokenIndex(cursorPos) {
         let tokens = this.htmls[cursorPos.line - 1].tokens;
-        let token = null;
         if (tokens) {
             for (let i = 0; i < tokens.length; i++) {
-                if (tokens[i].column < cursorPos.column &&
-                    tokens[i].column + tokens[i].value.length >= cursorPos.column) {
-                    token = tokens[i];
-                    break;
+                if (tokens[i].startIndex < cursorPos.column && tokens[i].endIndex >= cursorPos.column) {
+                    return i;
                 }
             }
         }
-        return token;
+        return -1;
     }
-    getEmmetExpr(token) {
-        let line = this.cursorPos.line;
-        let column = this.cursorPos.column;
-        let text = this.htmls[line - 1].text;
-        if (text[column - 1] === ')' || (!column || text[column - 1].match(/\w/)) &&
-            (column === text.length || !text[column].match(regs.emmetChar))) { //当前光标位置必须处于单词边界
-            let word = text.slice(token.column, column).match(regs.emmetWord);
-            let lookahead = 0;
-            while (word && !this.checkEmmetValid(word[0]) && text[column] === ')') {
-                column++;
-                lookahead++;
-                word = text.slice(token.column, column).match(regs.emmetWord);
-            }
-            if (word && this.checkEmmetValid(word[0])) {
-                word = word[0];
-                if (regs.word.test(word)) { //单个单词，判断是否为html标签名
-                    if (!tagMap[word]) {
-                        return null;
-                    }
-                }
-                return {
-                    word: word,
-                    lookahead: lookahead
-                };
-            }
+    getHtmlData() {
+        if (this.htmlData) {
+            return this.htmlData;
+        } else {
+            const htmlData = require(path.join(globalData.dirname, '/data/browsers.html-data'));
+            this.htmlData = htmlData;
+            htmlData.tagMap = {};
+            htmlData.tags.forEach((item) => {
+                htmlData.tagMap[item.name] = item;
+            });
+            return this.htmlData;
         }
-        return null;
+    }
+    getCssData() {
+        if (this.cssData) {
+            return this.cssData;
+        } else {
+            const cssData = require(path.join(globalData.dirname, '/data/browsers.css-data'));
+            this.cssData = cssData;
+            cssData.propertyMap = {};
+            cssData.properties.forEach((item) => {
+                cssData.propertyMap[item.name] = item;
+            });
+            return this.cssData;
+        }
+    }
+    getIcon(scope) {
+        return '';
     }
 }
 

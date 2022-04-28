@@ -4,38 +4,48 @@
  * @Description: 
 -->
 <template>
-	<div :style="{height:height+'px'}" @contextmenu.stop.prevent class="my-status-bar my-width-100">
-		<div class="my-height-100 my-center-between">
-			<div class="bar-left">
-				<div class="bar-item" v-if="editor">
-					<span>Line {{line}}, Column {{column}}</span>
-				</div>
-			</div>
-			<div class="bar-right">
-				<div @mousedown.stop="showTabsize" class="bar-item my-hover" v-if="editor">
-					<span>Tab Size:{{tabSize}}</span>
-					<Menu :menuList="tabSizeList" :styles="{right: 0, bottom: height+'px'}" :value="tabSize" @change="onTabsizeChange" v-show="tabsizeVisible"></Menu>
-				</div>
-				<div @mousedown.stop="showLanguage" class="bar-item my-hover" v-if="editor">
-					<span>{{_language}}</span>
-					<Menu :menuList="languageList" :styles="{right: 0, bottom: height+'px'}" :value="language" @change="onLnaguageChange" v-show="languageVisible"></Menu>
-				</div>
-			</div>
-		</div>
-	</div>
+    <div :style="{ height: height + 'px' }" @contextmenu.stop.prevent class="my-status-bar my-width-100">
+        <div class="my-height-100 my-center-between">
+            <div class="bar-left">
+                <div class="bar-item" v-if="hasEditor">
+                    <span>Line {{ line }}, Column {{ column }}</span>
+                </div>
+            </div>
+            <div class="bar-right">
+                <div @mousedown.stop="showTabsize" class="bar-item my-hover" v-if="hasEditor">
+                    <span>Tab Size:{{ tabSize }}</span>
+                    <div class="my-list" style="position: absolute; bottom: 30px">
+                        <Menu
+                            :menuList="tabSizeList"
+                            :styles="{ position: 'relative' }"
+                            :value="tabSize"
+                            @change="onTabsizeChange"
+                            v-if="tabsizeVisible"
+                        ></Menu>
+                    </div>
+                </div>
+                <div @mousedown.stop="showLanguage" class="bar-item my-hover" v-if="hasEditor">
+                    <span>{{ nowLanguage }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
 </template>
 <script>
 import Menu from './Menu';
+import EventBus from '@/event';
+
 export default {
     name: 'StatusBar',
     props: {
         height: {
             type: Number,
-            default: 25
+            default: 25,
         },
+        languageList: Array,
     },
     components: {
-        Menu
+        Menu,
     },
     data() {
         return {
@@ -44,82 +54,77 @@ export default {
             tabSize: 4,
             language: '',
             tabsizeVisible: false,
-            languageVisible: false,
-            tabSizeList: [[]],
+            hasEditor: false,
+            tabSizeList: [],
+            languages: [[]],
             languageMap: {},
-            languageList: [[
-                { name: 'JavaScript', value: 'JavaScript' },
-                { name: 'HTML', value: 'HTML' },
-                { name: 'CSS', value: 'CSS' },
-                { name: 'Plain Text', value: '', checked: true }
-            ]]
-        }
+        };
     },
     watch: {
+        languageList() {
+            let languageMap = {};
+            this.languageList.forEach((item) => {
+                languageMap[item.value] = item.name;
+            });
+            this.languages = [this.languageList];
+            this.languageMap = languageMap;
+        },
     },
     computed: {
-        editor() {
-            return this.getNowEditor();
-        },
-        _language() {
+        nowLanguage() {
             return this.languageMap[this.language];
-        }
+        },
     },
-    inject: ['getNowEditor'],
     created() {
+        this.initEventBus();
         for (let i = 1; i <= 8; i++) {
-            this.tabSizeList[0].push({
+            this.tabSizeList.push({
                 name: `Tab Width：${i}`,
-                value: i
+                value: i,
             });
         }
-        this.languageList[0].forEach((item) => {
-            this.languageMap[item.value] = item.name;
-        });
     },
-    mounted() {
-    },
+    mounted() {},
     methods: {
-        setLanguage(language) {
-            this.language = language;
-        },
-        setTabsize(tabSize) {
-            this.tabSize = tabSize;
-        },
-        setLine(line) {
-            this.line = line;
-        },
-        setColumn(column) {
-            this.column = column;
+        initEventBus() {
+            EventBus.$on('tab-change', (data) => {
+                if (data) {
+                    this.language = data.language;
+                    this.tabSize = data.tabSize;
+                    this.line = data.line;
+                    this.column = data.column;
+                    this.hasEditor = true;
+                } else {
+                    this.hasEditor = false;
+                }
+            });
+            EventBus.$on('cursor-change', (data) => {
+                this.line = data.line;
+                this.column = data.column;
+            });
+            EventBus.$on('language-change', (language) => {
+                this.language = language;
+            });
+            EventBus.$on('close-menu', (language) => {
+                this.tabsizeVisible = false;
+            });
         },
         showTabsize() {
             let visible = this.tabsizeVisible;
-            this.closeAllMenu();
+            EventBus.$emit('close-menu');
             this.tabsizeVisible = !visible;
         },
         showLanguage() {
-            let visible = this.languageVisible;
-            this.closeAllMenu();
-            this.languageVisible = !visible;
-        },
-        closeAllMenu() {
-            this.languageVisible = false;
-            this.tabsizeVisible = false;
+            EventBus.$emit('close-menu');
+            this.$emit('select-langeuage');
         },
         onTabsizeChange(item) {
             if (this.tabSize != item.value) {
+                EventBus.$emit('tab-size-change', item.value);
                 this.tabSize = item.value;
-                this.getNowEditor().tabSize = item.value;
             }
             this.tabsizeVisible = false;
         },
-        onLnaguageChange(item) {
-            if (this.language != item.name) {
-                this.language = item.value;
-                this.getNowEditor().language = item.value;
-            }
-            this.languageVisible = false;
-        }
-    }
-}
+    },
+};
 </script>

@@ -1,14 +1,20 @@
 /*
  * @Author: lisong
  * @Date: 2021-12-31 14:42:01
- * @Description: 
+ * @Description:
  */
-import Util from '@/common/Util';
-import Btree from '@/common/Btree';
+import Util from '@/common/util';
+import Btree from '@/common/btree';
 
 const comparator = function (a, b) {
     return a.start.line - b.start.line;
-}
+};
+
+const singleTag = ['br', 'hr', 'area', 'base', 'img', 'input', 'link', 'meta', 'basefont', 'param', 'col', 'frame', 'embed', 'keygen', 'source'];
+const singleTagMap = {};
+singleTag.forEach((tag) => {
+    singleTagMap[tag] = true;
+});
 
 export default class {
     constructor(editor, context) {
@@ -57,8 +63,7 @@ export default class {
             let endLine = fold.end.line;
             if (starLine <= preCursorPos.line) {
                 if (starLine < preCursorPos.line) {
-                    if (starLine >= cursorPos.line && starLine < preCursorPos.line ||
-                        starLine < cursorPos.line && endLine > cursorPos.line) {
+                    if ((starLine >= cursorPos.line && starLine < preCursorPos.line) || (starLine < cursorPos.line && endLine > cursorPos.line)) {
                         this.editorFunObj.unFold(starLine);
                     }
                 } else {
@@ -103,10 +108,26 @@ export default class {
         return fold;
     }
     getFoldByLine(line) {
-        let it = this.folds.search(null, (a, b) => {
-            return line - b.start.line;
+        let it = this.folds.search(line, (a, b) => {
+            return a - b.start.line;
         });
         return it && it.next();
+    }
+    getLineInFold(line) {
+        let it = this.folds.search(
+            line,
+            (a, b) => {
+                return a - b.start.line;
+            },
+            true
+        );
+        if (it) {
+            let fold = it.prev();
+            if (fold && fold.start.line < line && fold.end.line > line) {
+                return true;
+            }
+        }
+        return false;
     }
     /**
      * 获取折叠范围
@@ -117,54 +138,135 @@ export default class {
         let stack = [];
         let startLine = line;
         let lineObj = this.htmls[startLine - 1];
-        let resultFold = null;
-        line++;
+        let startFold = null;
         if (lineObj.folds && lineObj.folds.length) {
             for (let i = 0; i < lineObj.folds.length; i++) {
                 let fold = lineObj.folds[i];
-                if (fold.type == -1) {
-                    if (!stack.length || stack.peek().name == fold.name) {
-                        stack.push(fold);
+                if (fold.side <= 0) {
+                    stack.push(fold);
+                } else if (fold.side > 0) {
+                    for (let i = stack.length - 1; i >= 0; i--) {
+                        if (stack[i].side + fold.side === 0) {
+                            stack.splice(i, 1);
+                            break;
+                        }
                     }
                 }
             }
         }
-        while (stack.length && line <= this.htmls.length && (!foldIconCheck || line - startLine <= 1)) {
-            lineObj = this.htmls[line - 1];
+        if (stack.length) {
+            let foldStartText = '';
+            startFold = stack.peek();
+            startFold = Object.assign({ line: startLine }, startFold);
+            foldStartText = lineObj.text.slice(startFold.startIndex, startFold.endIndex);
+            // 单标签没有折叠
+            if (singleTagMap[foldStartText]) {
+                return false;
+            }
+            // 单行注释
+            if (startFold.type === Util.constData.LINE_COMMENT) {
+                let endLine = startLine;
+                let fold = null;
+                line = startLine + 1;
+                while (line <= this.htmls.length) {
+                    let lineObj = this.htmls[line - 1];
+                    let text = lineObj.text.trimLeft();
+                    let startIndex = lineObj.text.length - text.length;
+                    let _fold = lineObj.folds && lineObj.folds[0];
+                    if (_fold && _fold.type === Util.constData.LINE_COMMENT && _fold.startIndex === startIndex) {
+                        endLine = line;
+                        fold = _fold;
+                        if (foldIconCheck && endLine - startLine > 1) {
+                            return true;
+                        }
+                        line++;
+                    } else {
+                        break;
+                    }
+                }
+                if (foldIconCheck) {
+                    return endLine - startLine > 1;
+                } else {
+                    return {
+                        start: startFold,
+                        end: Object.assign({ line: endLine }, fold),
+                    };
+                }
+            }
+            return this.getRangeFoldByStartFold(startFold, foldIconCheck);
+        }
+        return false;
+    }
+    getRangeFoldByStartFold(startFold, foldIconCheck) {
+        let line = startFold.line;
+        let stack = [];
+        let resultFold = null;
+        while (line <= this.htmls.length && (!foldIconCheck || line - startFold.line <= 1)) {
+            let lineObj = this.htmls[line - 1];
             if (lineObj.folds && lineObj.folds.length) {
                 for (let i = 0; i < lineObj.folds.length; i++) {
                     let fold = lineObj.folds[i];
-                    if (fold.type == -1) {
-                        if (stack.peek().name == fold.name) {
-                            stack.push(fold);
+                    if (line === startFold.line && fold.startIndex <= startFold.startIndex) {
+                        continue;
+                    }
+                    if (fold.side === startFold.side) {
+                        stack.push(fold);
+                    } else if (startFold.side + fold.side === 0) {
+                        if (stack.length === 0) {
+                            resultFold = {
+                                start: startFold,
+                                end: Object.assign({ line: line }, fold),
+                            };
+                            return foldIconCheck ? line - startFold.line > 1 : resultFold;
+                        } else {
+                            stack.pop();
                         }
-                    } else if (stack.peek().name == fold.name) {
-                        if (stack.length == 1) {
-                            if (foldIconCheck) {
-                                return line - startLine > 1;
-                            } else {
-                                resultFold = {
-                                    start: {
-                                        line: startLine,
-                                        start: stack.peek().start
-                                    },
-                                    end: {
-                                        line: line,
-                                        end: fold.end
-                                    },
-                                    name: fold.name
-                                }
-                                stack.pop();
-                                break;
-                            }
-                        }
-                        stack.pop();
                     }
                 }
             }
             line++;
         }
-        return foldIconCheck ? line - startLine > 1 : resultFold;
+        return foldIconCheck ? line - startFold.line > 1 : resultFold;
+    }
+    /**
+     * 获取当前光标所处的范围
+     * @param {Object} cursorPos
+     */
+    getBracketMatch(cursorPos) {
+        let line = cursorPos.line;
+        let startFold = null;
+        let stack = [];
+        outerLoop: while (line >= 1 && !startFold) {
+            let folds = this.htmls[line - 1].folds || [];
+            for (let i = folds.length - 1; i >= 0; i--) {
+                let fold = folds[i];
+                // 跳过标签名
+                if(fold.type === Util.constData.TAG) {
+                    continue;
+                } else if (fold.side > 0 && (line < cursorPos.line || fold.endIndex < cursorPos.column)) {
+                    stack.push(fold);
+                } else if (fold.side < 0 && (line < cursorPos.line || fold.startIndex <= cursorPos.column)) {
+                    let exsitEnd = false;
+                    if (stack.length) {
+                        for (let i = stack.length - 1; i >= 0; i--) {
+                            if (stack[i].side + fold.side === 0) {
+                                stack.splice(i, 1);
+                                exsitEnd = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (!exsitEnd) {
+                        startFold = Object.assign({ line: line }, fold);
+                        break outerLoop;
+                    }
+                }
+            }
+            line--;
+        }
+        if (startFold) {
+            return this.getRangeFoldByStartFold(startFold);
+        }
     }
     // 根据相对行号获取真实行号(折叠后行号会改变)
     getRealLine(line) {
@@ -181,7 +283,8 @@ export default class {
                 break;
             }
             i++;
-            while (i < folds.length && folds[i].end.line <= fold.end.line) { //多级折叠
+            while (i < folds.length && folds[i].end.line <= fold.end.line) {
+                //多级折叠
                 i++;
             }
         }
@@ -201,7 +304,8 @@ export default class {
                 break;
             }
             i++;
-            while (i < folds.length && folds[i].end.line <= fold.end.line) { //多级折叠
+            while (i < folds.length && folds[i].end.line <= fold.end.line) {
+                //多级折叠
                 i++;
             }
         }

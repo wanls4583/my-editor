@@ -4,12 +4,16 @@
         flex-shrink: 0;
         width: 300px;
         height: 100%;
-        background-color: rgb(238, 238, 238);
+        padding: 0 4px;
+        border-right: 1px solid var(--my-sideBar-border);
+        background-color: var(--my-sideBar-background);
+        color: var(--my-sideBar-foreground);
 
         .side-bar-title {
             padding-left: 16px;
             height: 40px;
             line-height: 40px;
+            color: var(--my-sideBarTitle-foreground);
         }
 
         .side-tree {
@@ -21,22 +25,6 @@
                 bottom: 0;
                 left: 0;
                 right: 0;
-                overflow: overlay;
-
-                &::-webkit-scrollbar {
-                    width: 8px;
-                }
-
-                &::-webkit-scrollbar-thumb {
-                    background-color: transparent;
-                }
-
-                &:hover {
-                    &::-webkit-scrollbar-thumb {
-                        border-radius: 4px;
-                        background-color: rgba(0, 0, 0, 0.1);
-                    }
-                }
             }
 
             &-content {
@@ -46,21 +34,48 @@
             }
         }
 
-        .side-item {
+        .tree-item {
             position: relative;
             white-space: nowrap;
 
             &-title {
-                display: flex;
-                align-items: center;
                 height: 30px;
                 padding-right: 10px;
+                border: 1px solid transparent;
+                cursor: pointer;
+                
+                &:hover {
+                    border-style: dotted;
+                    border-color: var(--my-contrastActiveBorder);
+                    background-color: var(--my-list-hoverBackground);
+                    color: var(--my-list-hoverForeground);
+                }
+
+                &.my-active {
+                    border-color: var(--my-contrastActiveBorder);
+                    background-color: var(--my-list-activeSelectionBackground);
+                    color: var(--my-list-activeSelectionForeground);
+                }
             }
 
             &-text {
                 overflow: hidden;
                 text-overflow: ellipsis;
             }
+        }
+    }
+
+    &-sash-v {
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        z-index: 1;
+        width: 4px;
+        cursor: ew-resize;
+
+        &:hover {
+            background-color: var(--my-sash-hoverBorder);
         }
     }
 }
