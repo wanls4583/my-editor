@@ -1014,7 +1014,12 @@ class Context {
         let after = tip.after || '';
         let before = tip.before || '';
         let result = before + _getResult(tip) + after;
-        let ranges = _getRanges.call(this);
+        let ranges = null;
+        if (result === word) {
+            //替换前后一致，不做操作
+            return;
+        }
+        ranges = _getRanges.call(this);
         this.replace(result, ranges);
         _updatePos.call(this);
         if (tip.type === Enum.TOKEN_TYPE.CSS_PROPERTY) {
