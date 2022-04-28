@@ -1,7 +1,7 @@
 /*
  * @Author: lisong
  * @Date: 2022-01-05 14:28:42
- * @Description: 
+ * @Description:
  */
 import Util from '@/common/Util';
 import htmlLint from '../language/html';
@@ -29,13 +29,13 @@ export default class {
         this.worker = null;
         this.setErrorMap({});
         switch (language) {
-            case 'HTML':
+            case 'html':
                 this.worker = this.createWorker(htmlLint);
                 break;
-            case 'JavaScript':
+            case 'javascript':
                 this.worker = this.createWorker(jsLint);
                 break;
-            case 'CSS':
+            case 'css':
                 this.worker = this.createWorker(cssLint);
                 break;
         }
@@ -58,7 +58,7 @@ export default class {
                 result.errors && _formatError(errorMap, result.errors);
             }
             that.setErrorMap(errorMap);
-        }
+        };
         this.parse();
 
         function _formatError(errorMap, errors) {
@@ -77,8 +77,7 @@ export default class {
     }
     createWorker(mod) {
         var funStr = mod.toString().replace(/^[^\)]+?\)/, '');
-        var str =
-            `function fun(hostname)${funStr}
+        var str = `function fun(hostname)${funStr}
             var parser = fun('${config.webWorkerHost}');
             self.onmessage = function(e) {
                 var parseId = e.data.parseId;
@@ -113,7 +112,7 @@ export default class {
         this.parseId++;
         this.worker.postMessage({
             text: text,
-            parseId: this.parseId
+            parseId: this.parseId,
         });
     }
 }
