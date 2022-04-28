@@ -46,20 +46,6 @@
         }
     }
 
-    &-num-error {
-        font-weight: bold;
-        color: var(--my-errorForeground) !important;
-    }
-
-    &-token-error::after {
-        content: "";
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        border-bottom: 2px dotted var(--my-errorForeground);
-    }
-
     &-scroller {
         position: relative;
         width: 100%;

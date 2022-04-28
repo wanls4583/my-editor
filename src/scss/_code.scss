@@ -92,6 +92,13 @@
         }
     }
 
+    &-token-error {
+        position: absolute !important;
+        bottom: 0;
+        border-bottom: 2px dotted var(--my-errorForeground);
+        pointer-events: none;
+    }
+
     &-select-fg {
         color: var(--my-editor-selectionForeground) !important;
         span {
