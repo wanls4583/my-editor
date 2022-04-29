@@ -22,6 +22,7 @@ const globalData = {
     iconThemes: [],
     languageList: [],
     scopeFileList: [],
+    scopeTokenList: [],
     grammars: {},
     sourceWordMap: {},
     defaultWordPattern: "(-?\\d*\\.\\d\\w*)|([^\\`\\~\\!\\@\\%\\^\\&\\*\\(\\)\\-\\=\\+\\[\\{\\]\\}\\\\\\|\\;\\:\\'\\\"\\,\\.\\<\\>/\\?\\s]+)"

@@ -158,9 +158,7 @@ export default class {
     parseCss(data) {
         let css = '';
         let scopeId = 1;
-        let scopeList = [];
-        let regSource = [];
-        let scopeIdMap = {};
+        let scopeTokenList = [];
         let dotReg = /\./g;
         let sReg = /\s+/g;
         if (data.colors) {
@@ -178,15 +176,15 @@ export default class {
                 let selector = [];
                 let scope = token.scope instanceof Array ? token.scope.join(',') : token.scope;
                 scope = scope.replace(/\s+/g, ' ');
-                scope = scope.split(',');
+                scope = scope.split(/\s*\,\s*/);
                 scope.forEach((scope, index) => {
                     selector.push(`.my-scope-${scopeId}`);
-                    scopeIdMap[scopeId] = {
+                    scopeTokenList.push({
                         scopeId: scopeId,
                         scope: scope,
+                        scopes: scope.split(' '),
                         level: _getLevel(scope),
-                    };
-                    scopeList.push(scopeIdMap[scopeId]);
+                    });
                     scopeId++;
                 });
                 selector = selector.join(',');
@@ -197,21 +195,20 @@ export default class {
                 css += '}\n';
             });
         }
-        scopeList.sort((a, b) => {
+        scopeTokenList.sort((a, b) => {
             return b.level - a.level;
         });
-        scopeList.forEach((item) => {
-            let scope = item.scope
-                .split(' ')
-                .map((item) => {
-                    return `${item}(?:\\.[^\\.\\s]+)*?(?:\\s[^\\s]+)*?`;
-                })
-                .join(' ');
-            regSource.push(`(?<reg_${item.scopeId}>${scope})`);
+        scopeTokenList.forEach((item) => {
+            if (item.scopes.length > 1) {
+                item.regexp = item.scopes.join('(?:\\.[^\\.\\s]+)*?(?:\\s[^\\s]+)*? ');
+            } else {
+                item.regexp = item.scope;
+            }
+            item.regexp = new RegExp(item.regexp);
         });
-        globalData.scopeReg = new RegExp(regSource.join('|'));
-        globalData.scopeIdMap = scopeIdMap;
+        globalData.scopeTokenList = scopeTokenList;
         globalData.colors = data.colors;
+        console.log(scopeTokenList)
         return css;
 
         function _getLevel(scope) {

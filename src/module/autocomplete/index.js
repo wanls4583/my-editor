@@ -334,7 +334,7 @@ class Autocomplete {
         token.isTextToken = false;
         token.isTagToken = false;
         token.isTagAttrNameToken = false;
-        token.scope = token.scope || token.scopes.join(',');
+        token.scope = token.scope || token.scopes.join(' ');
         for (let i = token.scopes.length - 1; i >= 0; i--) {
             let scope = token.scopes[i];
             if (scope.startsWith('source.')) {

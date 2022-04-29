@@ -264,40 +264,31 @@ export default class {
                 } else if (item.scopes[0] === 'selected') {
                     selector = 'my-select-fg';
                 } else {
-                    selector = _getSelector(item.scopes);
+                    selector = _getSelector(item);
                     selector = (selector && `my-scope-${selector.scopeId}`) || '';
                 }
                 return `<span class="${selector}" data-column="${item.startIndex}">${Util.htmlTrans(value)}</span>`;
             })
             .join('');
 
-        function _getSelector(scopes) {
+        function _getSelector(token) {
             let result = null;
-            let selector = '';
-            for (let i = scopes.length - 1; i >= 0; i--) {
-                if (selector) {
-                    selector = scopes[i] + ' ' + selector;
-                } else {
-                    selector = scopes[i];
-                }
-                let exec = globalData.scopeReg.exec(selector);
-                if (exec) {
-                    let scopeId = _getScopeId(exec.groups);
-                    let _result = globalData.scopeIdMap[scopeId];
-                    if (!result || _result.level - result.level > 900) {
-                        result = _result;
+            let scopes = token.scopes;
+            token.scope = scopes.join(' ');
+            outerLoop: for (let i = scopes.length - 1; i >= 0; i--) {
+                let scope = scopes[i];
+                for (let i = 0; i < globalData.scopeTokenList.length; i++) {
+                    let item = globalData.scopeTokenList[i];
+                    let _scope = item.scopes.peek();
+                    if (scope.indexOf(_scope) > -1) {
+                        if (item.regexp.test(token.scope)) {
+                            result = item;
+                            break outerLoop;
+                        }
                     }
                 }
             }
             return result;
-        }
-
-        function _getScopeId(groups) {
-            for (let key in groups) {
-                if (groups[key]) {
-                    return key.split('_')[1];
-                }
-            }
         }
     }
     tokenizeLine(line) {
