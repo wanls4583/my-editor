@@ -306,10 +306,7 @@ export default {
                 lineObj.html = '';
             });
             this.lint.initLanguage(newVal);
-            this.tokenizer.initLanguage(newVal).then(() => {
-                this.tokenizer.tokenizeVisibleLins();
-                this.tokenizer.tokenizeLines(1);
-            });
+            this.tokenizer.initLanguage(newVal);
         },
         theme: function () {
             this.myContext.htmls.forEach((lineObj) => {

@@ -67,6 +67,7 @@ export default class {
         this.foldType = 1;
         this.sourceFoldMap = {};
         this.hasTextGrammar = false;
+        this.currentLine = 1;
         language = Util.getLanguageById(globalData.languageList, language);
         this.scopeName = (language && language.scopeName) || '';
         if (this.scopeName) {
@@ -83,9 +84,11 @@ export default class {
                         sourceFoldMap: this.sourceFoldMap,
                         hasTextGrammar: this.hasTextGrammar,
                     };
+                    this.tokenizeVisibleLins();
                 });
             }
         }
+        this.tokenizeVisibleLins();
         return Promise.resolve();
     }
     initProperties(editor, context) {
@@ -169,9 +172,6 @@ export default class {
             this.tokenizeVisibleLins();
         }
     }
-    onScroll() {
-        this.tokenizeVisibleLins();
-    }
     tokenizeVisibleLins() {
         let tokenizeVisibleLinsId = this.tokenizeVisibleLinsId + 1 || 1;
         this.tokenizeVisibleLinsId = tokenizeVisibleLinsId;
@@ -238,7 +238,7 @@ export default class {
                 }
                 processedLines++;
                 // 避免卡顿
-                if (processedLines % 5 == 0 && Date.now() - processedTime >= 30) {
+                if (processedLines % 5 == 0 && Date.now() - processedTime >= 20) {
                     startLine++;
                     break;
                 }
