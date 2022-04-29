@@ -208,7 +208,6 @@ export default class {
         });
         globalData.scopeTokenList = scopeTokenList;
         globalData.colors = data.colors;
-        console.log(scopeTokenList)
         return css;
 
         function _getLevel(scope) {
