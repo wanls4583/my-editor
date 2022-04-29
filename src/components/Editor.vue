@@ -1091,7 +1091,7 @@ export default {
         setErrors(errors) {
             this.errorMap = {};
             this.errors = errors;
-            _formatError(this.errorMap, errors);
+            _formatError.call(this, this.errorMap, errors);
             this.renderError();
 
             function _formatError(errorMap, errors) {
@@ -1109,7 +1109,7 @@ export default {
                         }
                         index++;
                     }
-                    line = line || that.htmls.length;
+                    line = line || this.htmls.length;
                     errorMap[line] = arr.join('<br>');
                 }
             }
