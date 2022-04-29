@@ -820,7 +820,7 @@ export default {
         },
         _clearSelectionToken(line) {
             let lineObj = this.myContext.htmls[line - 1];
-            if (!lineObj.fgTokens) {
+            if (!lineObj || !lineObj.fgTokens) {
                 return;
             }
             lineObj.fgTokens = null;
