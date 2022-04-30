@@ -17,6 +17,7 @@
                     @change="onChange"
                     style="position: relative"
                     class="my-scroll-overlay my-scroll-mini"
+                    spellcheck="false"
                 ></Menu>
             </div>
         </div>

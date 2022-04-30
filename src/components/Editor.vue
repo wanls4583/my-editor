@@ -923,6 +923,7 @@ export default {
                 if (line < this.startLine || line > this.startLine + this.maxVisibleLines) {
                     return;
                 }
+                let $render = $(this.$refs.render);
                 let lineObj = this.myContext.htmls[line - 1];
                 let token = this.getToken(line, column);
                 let $token = $render.find(`div.my-code[data-line="${line}"]`).find(`span[data-column="${token.startIndex}"]`);
@@ -936,6 +937,7 @@ export default {
                 if (line < this.startLine || line > this.startLine + this.maxVisibleLines) {
                     return;
                 }
+                let $render = $(this.$refs.render);
                 let html = `<span class="my-token-error" style="width:100%;left:0px" data-key="${key}"></span>`;
                 $render.find(`div.my-code[data-line="${line}"]`).append(html);
             }

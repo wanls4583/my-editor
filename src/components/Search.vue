@@ -42,6 +42,7 @@
                         :style="{ height: input2Height + 'px' }"
                         type="text"
                         v-model="replaceText"
+                        spellcheck="false"
                     ></textarea>
                 </div>
                 <span
