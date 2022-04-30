@@ -873,47 +873,56 @@ export default {
             }
         },
         renderError(line) {
-            let $render = $(this.$refs.render);
-            let keyMap = {};
-            $render.find('span.my-token-error').remove();
-            this.errors.forEach((item) => {
-                if ((line && item.line !== line) || keyMap[key]) {
-                    return;
-                }
-                if (item.line < this.startLine || item.line > this.startLine + this.maxVisibleLines) {
-                    return;
-                }
-                let key = item.line + ',' + item.column;
-                let lineObj = this.myContext.htmls[item.line - 1];
-                let token = this.getToken(item.line, item.column);
-                if (!token) {
-                    return;
-                }
-                if (item.column > token.endIndex) {
-                    item.column = token.endIndex - 1;
-                }
-                if (!item.endLine) {
-                    item.endLine = item.line;
-                }
-                if (!item.endColumn) {
-                    if (this.wordPattern.test(lineObj.text.slice(token.startIndex, token.endIndex))) {
-                        item.endColumn = token.endIndex;
-                    } else {
-                        item.endColumn = item.column + 1;
-                    }
-                }
-                if (item.line === item.endLine) {
-                    _renderError.call(this, item.line, item.column, item.endColumn, key);
-                } else {
-                    _renderError.call(this, item.line, item.column, lineObj.text.length, key);
-                    _renderError.call(this, item.endLine, 0, item.endColumn);
-                    for (let line = item.line + 1; line < item.endLine; line++) {
-                        _renderLineError.call(this, line, key);
-                    }
-                }
+            this.$nextTick(() => {
+                _renderError.call(this);
             });
 
-            function _renderError(line, column, endColumn, key) {
+            function _renderError() {
+                let $render = $(this.$refs.render);
+                let keyMap = {};
+                $render.find('span.my-token-error').remove();
+                this.errors.forEach((item) => {
+                    let key = item.line + ',' + item.column;
+                    let lineObj = null;
+                    let token = null;
+                    if ((line && item.line !== line) || keyMap[key]) {
+                        return;
+                    }
+                    keyMap[key] = true;
+                    token = this.getToken(item.line, item.column);
+                    lineObj = this.myContext.htmls[item.line - 1];
+                    if (!token) {
+                        return;
+                    }
+                    if (item.column > token.endIndex) {
+                        item.column = token.endIndex - 1;
+                    }
+                    if (!item.endLine) {
+                        item.endLine = item.line;
+                    }
+                    if (!item.endColumn) {
+                        if (this.wordPattern.test(lineObj.text.slice(token.startIndex, token.endIndex))) {
+                            item.endColumn = token.endIndex;
+                        } else {
+                            item.endColumn = item.column + 1;
+                        }
+                    }
+                    if (item.line === item.endLine) {
+                        _renderColError.call(this, item.line, item.column, item.endColumn, key);
+                    } else {
+                        _renderColError.call(this, item.line, item.column, lineObj.text.length, key);
+                        _renderColError.call(this, item.endLine, 0, item.endColumn, key);
+                        for (let line = item.line + 1; line < item.endLine; line++) {
+                            _renderLineError.call(this, line, key);
+                        }
+                    }
+                });
+            }
+
+            function _renderColError(line, column, endColumn, key) {
+                if (line < this.startLine || line > this.startLine + this.maxVisibleLines) {
+                    return;
+                }
                 let lineObj = this.myContext.htmls[line - 1];
                 let token = this.getToken(line, column);
                 let $token = $render.find(`div.my-code[data-line="${line}"]`).find(`span[data-column="${token.startIndex}"]`);
@@ -924,6 +933,9 @@ export default {
             }
 
             function _renderLineError(line, key) {
+                if (line < this.startLine || line > this.startLine + this.maxVisibleLines) {
+                    return;
+                }
                 let html = `<span class="my-token-error" style="width:100%;left:0px" data-key="${key}"></span>`;
                 $render.find(`div.my-code[data-line="${line}"]`).append(html);
             }
