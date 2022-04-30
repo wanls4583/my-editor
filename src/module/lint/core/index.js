@@ -32,18 +32,21 @@ export default class {
     initEvent() {
         worker.on('message', (data) => {
             if (data.parseId === this.parseId) {
+                console.log(data.results);
                 this.setErrors(data.results);
             }
         });
     }
     onInsertContentAfter(nowLine, newLine) {
         clearTimeout(this.parseTimer);
+        this.parseId = '';
         this.parseTimer = setTimeout(() => {
             this.parse();
         }, 300);
     }
     onDeleteContentAfter(nowLine, newLine) {
         clearTimeout(this.parseTimer);
+        this.parseId = '';
         this.parseTimer = setTimeout(() => {
             this.parse();
         }, 300);

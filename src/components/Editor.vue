@@ -873,57 +873,60 @@ export default {
             }
         },
         renderError(line) {
-            if (!this.errors.length) {
-                return;
-            }
             let $render = $(this.$refs.render);
             let keyMap = {};
             $render.find('span.my-token-error').remove();
             this.errors.forEach((item) => {
-                let key = item.line + ',' + item.column;
-                let lineObj = null;
-                let token = null;
-                let left = 0;
-                let width = 0;
                 if ((line && item.line !== line) || keyMap[key]) {
                     return;
                 }
-                keyMap[key] = true;
                 if (item.line < this.startLine || item.line > this.startLine + this.maxVisibleLines) {
                     return;
                 }
-                lineObj = this.myContext.htmls[item.line - 1];
-                token = this.getToken(item.line, item.column);
+                let key = item.line + ',' + item.column;
+                let lineObj = this.myContext.htmls[item.line - 1];
+                let token = this.getToken(item.line, item.column);
                 if (!token) {
                     return;
                 }
-                if (item.width) {
-                    width = item.width;
-                    left = item.left;
-                } else {
-                    let text = lineObj.text.slice(token.startIndex, token.endIndex);
-                    if (item.column >= token.endIndex) {
-                        left = this.getStrWidth(lineObj.text, token.startIndex, token.endIndex - 1);
-                        width = this.getStrWidth(lineObj.text, token.endIndex - 1, token.endIndex);
-                        item.column = token.endIndex - 1;
-                    } else {
-                        if (item.column > token.startIndex) {
-                            left = this.getStrWidth(lineObj.text, token.startIndex, item.column);
-                        }
-                        if (this.wordPattern.test(text)) {
-                            width = this.getStrWidth(lineObj.text, item.column, token.endIndex);
-                        } else {
-                            width = this.getStrWidth(lineObj.text, item.column, item.column + 1);
-                        }
-                    }
-                    item.width = width;
-                    item.left = left;
+                if (item.column > token.endIndex) {
+                    item.column = token.endIndex - 1;
                 }
-                $render
-                    .find(`div.my-code[data-line="${item.line}"]`)
-                    .find(`span[data-column="${token.startIndex}"]`)
-                    .append(`<span class="my-token-error" style="width:${width}px;left:${left}px" data-key="${key}"></span>`);
+                if (!item.endLine) {
+                    item.endLine = item.line;
+                }
+                if (!item.endColumn) {
+                    if (this.wordPattern.test(lineObj.text.slice(token.startIndex, token.endIndex))) {
+                        item.endColumn = token.endIndex;
+                    } else {
+                        item.endColumn = item.column + 1;
+                    }
+                }
+                if (item.line === item.endLine) {
+                    _renderError.call(this, item.line, item.column, item.endColumn, key);
+                } else {
+                    _renderError.call(this, item.line, item.column, lineObj.text.length, key);
+                    _renderError.call(this, item.endLine, 0, item.endColumn);
+                    for (let line = item.line + 1; line < item.endLine; line++) {
+                        _renderLineError.call(this, line, key);
+                    }
+                }
             });
+
+            function _renderError(line, column, endColumn, key) {
+                let lineObj = this.myContext.htmls[line - 1];
+                let token = this.getToken(line, column);
+                let $token = $render.find(`div.my-code[data-line="${line}"]`).find(`span[data-column="${token.startIndex}"]`);
+                let left = $token[0].offsetLeft + this.getStrWidth(lineObj.text, token.startIndex, column);
+                let width = this.getStrWidth(lineObj.text, column, endColumn);
+                let html = `<span class="my-token-error" style="width:${width}px;left:${left}px" data-key="${key}"></span>`;
+                $render.find(`div.my-code[data-line="${line}"]`).append(html);
+            }
+
+            function _renderLineError(line, key) {
+                let html = `<span class="my-token-error" style="width:100%;left:0px" data-key="${key}"></span>`;
+                $render.find(`div.my-code[data-line="${line}"]`).append(html);
+            }
         },
         // 折叠行
         foldLine(line) {
@@ -1288,23 +1291,6 @@ export default {
             this.autoTipList = null;
             this.focus();
         },
-        // 提示图标hover事件
-        onErrorMouseOver(e, key) {
-            let $editor = $(this.$refs.editor);
-            let $tip = $(this.$refs.tip.$el);
-            let offset = $editor.offset();
-            let top = e.clientY - offset.top + 10;
-            this.tipContent = this.errorMap[key];
-            this.$nextTick(() => {
-                if (top + $tip[0].clientHeight > this.scrollerArea.height) {
-                    top = this.scrollerArea.height - $tip[0].clientHeight;
-                }
-                this.tipStyle = {
-                    left: e.clientX - offset.left + 10 + 'px',
-                    top: top + 'px',
-                };
-            });
-        },
         // 折叠/展开
         onToggleFold(line) {
             if (this.folder.getFoldByLine(line)) {
@@ -1351,9 +1337,38 @@ export default {
             this.searcher.clearSearch(true);
             this.focus();
         },
+        onErrorMousemove(e, line) {
+            let $errors = $(`div.my-code[data-line=${line}]`).children('span.my-token-error');
+            let left = e.clientX - $(this.$refs.render).offset().left;
+            for (let i = 0; i < $errors.length; i++) {
+                let $error = $errors.eq(i);
+                let width = $error.width();
+                let _left = $error[0].offsetLeft;
+                if (left >= _left && left <= _left + width) {
+                    _showTip.call(this, e, $error.attr('data-key'));
+                    break;
+                }
+            }
+
+            function _showTip(e, key) {
+                let $editor = $(this.$refs.editor);
+                let $tip = $(this.$refs.tip.$el);
+                let offset = $editor.offset();
+                let top = e.clientY - offset.top;
+                let left = e.clientX - offset.left;
+                this.tipContent = this.errorMap[key];
+                this.$nextTick(() => {
+                    if (top + $tip[0].clientHeight > this.scrollerArea.height) {
+                        top = this.scrollerArea.height - $tip[0].clientHeight;
+                    }
+                    this.tipStyle = {
+                        left: left + 10 + 'px',
+                        top: top + 10 + 'px',
+                    };
+                });
+            }
+        },
         onContentMmove(e) {
-            let $target = $(e.target);
-            let $error = $target.children('span.my-token-error');
             if (this.mouseStartObj && Date.now() - this.mouseStartObj.time > 100) {
                 let end = this.getPosByEvent(e);
                 if (end && Util.comparePos(end, this.mouseStartObj.cursorPos)) {
@@ -1380,16 +1395,13 @@ export default {
                     this.cursor.removeCursorInRange(this.mouseStartObj.preRange);
                 }
             }
-            if ($error.length) {
-                let width = $error.width();
-                let left = $error[0].offsetLeft;
-                if (e.offsetX >= left && e.offsetX <= left + width) {
-                    this.onErrorMouseOver(e, $error.attr('data-key'));
-                } else {
-                    this.tipContent = '';
-                }
-            } else {
+            _checkErrorOver.call(this, e);
+
+            function _checkErrorOver(e) {
+                let $target = $(e.target);
+                let line = $target.parent().attr('data-line');
                 this.tipContent = '';
+                line && this.onErrorMousemove(e, line);
             }
         },
         // 鼠标移动事件

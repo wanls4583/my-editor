@@ -5,8 +5,13 @@ process.on('uncaughtException', (e) => {
 });
 
 process.on('message', (data) => {
-    if (data.language.toLowerCase() === 'css') {
-        lintCss(data);
+    let language = data.language.toLowerCase();
+    switch (language) {
+        case 'css':
+        case 'scss':
+        case 'less':
+            lintCss(data);
+            break;
     }
 });
 
@@ -22,7 +27,7 @@ function lintCss(data) {
                             line: warn.line,
                             endLine: warn.endLine,
                             column: warn.column - 1,
-                            endColumn: warn.endColumn - 1,
+                            endColumn: warn.endColumn,
                             reason: warn.text,
                         };
                     })

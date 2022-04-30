@@ -310,7 +310,7 @@ class Autocomplete {
             let _word = word.trim();
             if (_word === ':' || _word === '') {
                 values.forEach((item) => {
-                    this._addTip({ word: word, value: item.name, type: Enum.TOKEN_TYPE.CSS_VALUE, after: ';', skipMatch: true });
+                    this._addTip({ word: word, value: item.name, type: Enum.TOKEN_TYPE.CSS_VALUE, before: ' ', after: ';', skipMatch: true });
                 });
                 this._showTip(true);
             } else {
