@@ -1421,7 +1421,7 @@ export default {
             }
         },
         onContentMLeave() {
-            $(this.$refs.render).find('span.my-token-error').remove();
+            this.tipContent = '';
         },
         // 鼠标移动事件
         onDocumentMmove(e) {
