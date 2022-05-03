@@ -36,8 +36,8 @@ export default class {
             worker = child_process.fork(path.join(globalData.dirname, 'process/linter.js'));
         }
         worker.on('message', (data) => {
+            console.log(data);
             if (data.parseId === this.parseId) {
-                console.log(data.results);
                 this.setErrors(data.results);
             }
         });

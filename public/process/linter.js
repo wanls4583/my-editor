@@ -1,4 +1,5 @@
-const stylelint = require('stylelint');
+const CSSLint = require('csslint').CSSLint;
+const Stylelint = require('stylelint');
 
 process.on('uncaughtException', (e) => {
     process.send('uncaughtException:', e);
@@ -6,17 +7,36 @@ process.on('uncaughtException', (e) => {
 
 process.on('message', (data) => {
     let language = data.language.toLowerCase();
-    switch (language) {
-        case 'css':
-        case 'scss':
-        case 'less':
-            lintCss(data);
-            break;
+    try {
+        switch (language) {
+            case 'css':
+                lintCss(data);
+                break;
+            case 'scss':
+            case 'less':
+                lintScss(data);
+                break;
+        }
+    } catch (e) {
+        process.send({ error: e });
     }
 });
 
 function lintCss(data) {
-    stylelint.lint({ code: data.text, config: { rules: [] }, formatter: 'verbose' }).then(function (e) {
+    let messages = [];
+    let results = CSSLint.verify(data.text);
+    results.messages.forEach((item) => {
+        messages.push({
+            line: item.line,
+            column: item.col - 1,
+            reason: item.message,
+        });
+    });
+    process.send({ parseId: data.parseId, results: messages });
+}
+
+function lintScss(data) {
+    Stylelint.lint({ code: data.text, config: { rules: [] }, formatter: 'verbose' }).then(function (e) {
         let results = e.results;
         let warnings = [];
         results.forEach((item) => {

@@ -23,6 +23,7 @@
                     :style="{ minWidth: _contentMinWidth, height: contentHeight }"
                     @mousedown="onContentMdown"
                     @mousemove="onContentMmove"
+                    @mouseleave="onContentMLeave"
                     @selectend.prevent="onSelectend"
                     class="my-content"
                     ref="content"
@@ -882,7 +883,7 @@ export default {
                 let keyMap = {};
                 $render.find('span.my-token-error').remove();
                 this.errors.forEach((item) => {
-                    let key = item.line + ',' + item.column;
+                    let key = item.line + ',' + item.originColumn;
                     let lineObj = null;
                     let token = null;
                     if ((line && item.line !== line) || keyMap[key]) {
@@ -891,17 +892,14 @@ export default {
                     keyMap[key] = true;
                     token = this.getToken(item.line, item.column);
                     lineObj = this.myContext.htmls[item.line - 1];
-                    if (!token) {
-                        return;
-                    }
-                    if (item.column > token.endIndex) {
-                        item.column = token.endIndex - 1;
-                    }
                     if (!item.endLine) {
                         item.endLine = item.line;
                     }
+                    if (token && item.column >= token.endIndex) {
+                        item.column = token.endIndex - 1;
+                    }
                     if (!item.endColumn) {
-                        if (this.wordPattern.test(lineObj.text.slice(token.startIndex, token.endIndex))) {
+                        if (token && this.wordPattern.test(lineObj.text.slice(token.startIndex, token.endIndex))) {
                             item.endColumn = token.endIndex;
                         } else {
                             item.endColumn = item.column + 1;
@@ -926,9 +924,12 @@ export default {
                 let $render = $(this.$refs.render);
                 let lineObj = this.myContext.htmls[line - 1];
                 let token = this.getToken(line, column);
-                let $token = $render.find(`div.my-code[data-line="${line}"]`).find(`span[data-column="${token.startIndex}"]`);
-                let left = $token[0].offsetLeft + this.getStrWidth(lineObj.text, token.startIndex, column);
-                let width = this.getStrWidth(lineObj.text, column, endColumn);
+                let left = 0;
+                if (token) {
+                    let $token = $render.find(`div.my-code[data-line="${line}"]`).find(`span[data-column="${token.startIndex}"]`);
+                    left = $token[0].offsetLeft + this.getStrWidth(lineObj.text, token.startIndex, column);
+                }
+                let width = this.getStrWidth(lineObj.text, column, endColumn) || this.charObj.charWidth;
                 let html = `<span class="my-token-error" style="width:${width}px;left:${left}px" data-key="${key}"></span>`;
                 $render.find(`div.my-code[data-line="${line}"]`).append(html);
             }
@@ -1118,6 +1119,7 @@ export default {
                     let arr = [];
                     while (index < errors.length && errors[index].line === line) {
                         let key = line + ',' + errors[index].column;
+                        errors[index].originColumn = errors[index].column;
                         arr.push(errors[index].reason);
                         if (errorMap[key]) {
                             errorMap[key] += '<br>' + errors[index].reason;
@@ -1417,6 +1419,9 @@ export default {
                 this.tipContent = '';
                 line && this.onErrorMousemove(e, line);
             }
+        },
+        onContentMLeave() {
+            $(this.$refs.render).find('span.my-token-error').remove();
         },
         // 鼠标移动事件
         onDocumentMmove(e) {
