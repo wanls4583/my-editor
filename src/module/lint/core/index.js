@@ -32,17 +32,17 @@ export default class {
         this.parse();
     }
     initEvent() {
-        if (!worker) {
+        if (worker === null) {
             worker = child_process.fork(path.join(globalData.dirname, 'process/linter.js'));
+            worker.on('message', (data) => {
+                console.log(data);
+                if (data.parseId === this.parseId) {
+                    this.setErrors(data.results);
+                }
+            });
         }
-        worker.on('message', (data) => {
-            console.log(data);
-            if (data.parseId === this.parseId) {
-                this.setErrors(data.results);
-            }
-        });
         worker.on('close', () => {
-            worker = child_process.fork(path.join(globalData.dirname, 'process/linter.js'));
+            worker = null;
             this.initEvent();
         });
     }

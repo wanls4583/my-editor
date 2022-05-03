@@ -49,6 +49,7 @@ class Context {
             'render',
             'unFold',
             'setNowCursorPos',
+            'setErrors',
             'setAutoTip',
             'getStrWidth',
             '$emit',
@@ -205,9 +206,10 @@ class Context {
         this.tokenizer.onInsertContentAfter(cursorPos.line, newPos.line);
         this.folder.onInsertContentAfter(Object.assign({}, cursorPos), Object.assign({}, newPos));
         this.setLineWidth(text);
+        this.setErrors([]);
+        this.setAutoTip(null);
         this.render(true);
         this.$emit('change');
-        this.setAutoTip(null);
         let historyObj = {
             type: Util.command.DELETE,
             cursorPos: Object.assign({}, newPos),
@@ -447,9 +449,10 @@ class Context {
         this.lint.onDeleteContentAfter(originPos.line, newPos.line);
         this.tokenizer.onDeleteContentAfter(originPos.line, newPos.line);
         this.folder.onDeleteContentAfter(Object.assign({}, originPos), Object.assign({}, newPos));
+        this.setErrors([]);
+        this.setAutoTip(null);
         this.render(true);
         this.$emit('change');
-        this.setAutoTip(null);
         // 更新最大文本宽度
         if (startObj.width >= this.maxWidthObj.width) {
             this.setEditorData('maxWidthObj', {
