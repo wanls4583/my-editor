@@ -9,7 +9,8 @@ import globalData from '@/data/globalData';
 const require = window.require || window.parent.require || function () {};
 const path = require('path');
 const child_process = require('child_process');
-const worker = child_process.fork(path.join(globalData.dirname, 'process/linter.js'));
+
+let worker = null;
 
 export default class {
     constructor(editor, context) {
@@ -27,14 +28,22 @@ export default class {
         }
         this.language = language;
         this.setErrors([]);
+        this.initEvent();
         this.parse();
     }
     initEvent() {
+        if (!worker) {
+            worker = child_process.fork(path.join(globalData.dirname, 'process/linter.js'));
+        }
         worker.on('message', (data) => {
             if (data.parseId === this.parseId) {
                 console.log(data.results);
                 this.setErrors(data.results);
             }
+        });
+        worker.on('close', () => {
+            worker = child_process.fork(path.join(globalData.dirname, 'process/linter.js'));
+            this.initEvent();
         });
     }
     onInsertContentAfter(nowLine, newLine) {
