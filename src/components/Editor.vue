@@ -377,7 +377,7 @@ export default {
             this.cursor = new Cursor(this, this.myContext);
             this.cursor.addCursorPos(this.nowCursorPos);
             this.wordPattern = Util.getWordPattern(this.language);
-            this.wordPattern = new RegExp(`^(${this.wordPattern.source})$`);
+            this.wordPattern = new RegExp(`^(${this.wordPattern.source})`);
         },
         // 初始化文档事件
         initEvent() {
@@ -885,25 +885,27 @@ export default {
                 this.errors.forEach((item) => {
                     let key = item.line + ',' + item.originColumn;
                     let lineObj = null;
-                    let token = null;
                     if ((line && item.line !== line) || keyMap[key]) {
                         return;
                     }
                     keyMap[key] = true;
-                    token = this.getToken(item.line, item.column);
                     lineObj = this.myContext.htmls[item.line - 1];
                     if (!item.endLine) {
                         item.endLine = item.line;
                     }
-                    if (token && item.column >= token.endIndex) {
-                        item.column = token.endIndex - 1;
+                    if (item.column >= lineObj.text.length) {
+                        item.column = lineObj.text.length - 1;
                     }
                     if (!item.endColumn) {
-                        if (token && this.wordPattern.test(lineObj.text.slice(token.startIndex, token.endIndex))) {
-                            item.endColumn = token.endIndex;
+                        let res = null;
+                        if ((res = this.wordPattern.exec(lineObj.text.slice(item.column)))) {
+                            item.endColumn = item.column + res[0].length;
                         } else {
                             item.endColumn = item.column + 1;
                         }
+                    }
+                    if (item.endColumn > lineObj.text.length) {
+                        item.endColumn = lineObj.text.length;
                     }
                     if (item.line === item.endLine) {
                         _renderColError.call(this, item.line, item.column, item.endColumn, key);

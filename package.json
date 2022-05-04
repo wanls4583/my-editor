@@ -18,6 +18,7 @@
     "jquery": "^3.6.0",
     "strip-json-comments": "^4.0.0",
     "stylelint": "^14.8.0",
+    "stylelint-config-css-modules": "^4.1.0",
     "vscode-oniguruma": "^1.6.2",
     "vscode-textmate": "^6.0.0",
     "vue": "^2.6.14",
