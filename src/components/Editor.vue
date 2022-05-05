@@ -121,7 +121,7 @@
 
 <script>
 import Tokenizer from '@/module/tokenizer/index';
-import Lint from '@/module/lint/core/index';
+import Lint from '@/module/lint/index';
 import Autocomplete from '@/module/autocomplete/index';
 import Fold from '@/module/fold/index';
 import Search from '@/module/search/index';

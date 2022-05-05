@@ -2,39 +2,28 @@ const Css = require('./css');
 const JavaScript = require('./javascript');
 
 const regs = {
-    javascript: /(?<!\<[^\>]*?['"][^\>]*?)(\<script(?:\s[^\>]*?)?\>)([\s\S]*?)\<\/script\>/,
-    css: /(?<!\<[^\>]*?['"][^\>]*?)(\<style(?:\s[^\>]*?)?\>)([\s\S]*?)\<\/style\>/,
+    javascript: /(?<!\<[^\>]*?['"][^\>]*?)(?<=\<script(?:\s[^\>]*?)?\>)([\s\S]*?)\<\/script\>/g,
+    css: /(?<!\<[^\>]*?['"][^\>]*?)(?<=\<style(?:\s[^\>]*?)?\>)([\s\S]*?)\<\/style\>/g,
     enter: /\n/g,
     column: /\n([^\n]+)$/,
-    comment: /\<\!--[\s\S]*?--\>/,
+    comment: /\<\!--[\s\S]*?--\>/g,
 };
 
 function parseComentRange(text) {
     let exec = null;
-    let pos = {
-        line: 1,
-        column: 0,
-        index: 0,
-    };
-    let start = null;
-    let end = null;
     let comments = [];
     if (parseComentRange.cache && parseComentRange.cache.text === text) {
         return parseComentRange.cache.comments;
     }
     while ((exec = regs.comment.exec(text))) {
-        setLineColumn(text.slice(0, exec.index), pos);
-        pos.index += exec.index;
-        start = Object.assign({}, pos);
-        setLineColumn(exec[0], pos);
-        pos.index += exec[0].length;
-        end = Object.assign({}, pos);
-        text = text.slice(pos.index);
+        let start = getLineColumn(text.slice(0, exec.index));
+        let end = getLineColumn(text.slice(0, exec.index + exec[0].length));
         comments.push({
             start: start,
             end: end,
         });
     }
+    regs.comment.lastIndex = 0;
     parseComentRange.cache = {
         text: text,
         comments: comments,
@@ -42,16 +31,22 @@ function parseComentRange(text) {
     return comments;
 }
 
-function setLineColumn(text, pos) {
+function getLineColumn(text) {
+    let line = 1;
+    let column = 0;
     let lines = text.match(regs.enter);
     lines = (lines && lines.length) || 0;
-    pos.line += lines;
+    line += lines;
     if (lines) {
         let exec = regs.column.exec(text);
-        pos.column = (exec && exec[1].length) || 0;
+        column = (exec && exec[1].length) || 0;
     } else {
-        pos.column += text.length;
+        column += text.length;
     }
+    return {
+        line: line,
+        column: column,
+    };
 }
 
 function checkInComment(pos, comments) {
@@ -76,11 +71,6 @@ function checkInComment(pos, comments) {
 
 function _lint(text, language) {
     let exec = null;
-    let pos = {
-        line: 1,
-        column: 0,
-        index: 0,
-    };
     let results = [];
     let promises = [];
     let comments = parseComentRange(text);
@@ -95,37 +85,31 @@ function _lint(text, language) {
         linter = JavaScript.lint;
     }
     while ((exec = reg.exec(text))) {
-        setLineColumn(text.slice(0, exec.index), pos);
-        pos.index += exec.index;
-        if (!checkInComment(pos, comments)) {
-            text = text.slice(pos.index);
+        if (!exec[1]) {
             continue;
         }
-        setLineColumn(exec[1], pos);
-        pos.index += exec[1].length;
-        if (exec[2]) {
-            let _pos = Object.assign({}, pos);
-            let promise = linter(exec[2], language).then((errors) => {
-                errors.forEach((item) => {
-                    item.line += _pos.line - 1;
-                    if (item.line === 1) {
-                        item.column += _pos.column;
-                    }
-                    if (item.endLine) {
-                        item.endLine += _pos.line - 1;
-                        if (item.endLine === 1) {
-                            item.endColumn += _pos.endColumn;
-                        }
-                    }
-                });
-                results.push(...errors);
-            });
-            promises.push(promise);
+        let pos = getLineColumn(text.slice(0, exec.index));
+        if (!checkInComment(pos, comments)) {
+            continue;
         }
-        setLineColumn(exec[0].slice(exec[1].length), pos);
-        pos.index += exec[0].slice(exec[1].length).length;
-        text = text.slice(pos.index);
+        let promise = linter(exec[1], language).then((errors) => {
+            errors.forEach((item) => {
+                item.line += pos.line - 1;
+                if (item.line === 1) {
+                    item.column += pos.column;
+                }
+                if (item.endLine) {
+                    item.endLine += pos.line - 1;
+                    if (item.endLine === 1) {
+                        item.endColumn += pos.endColumn;
+                    }
+                }
+            });
+            results.push(...errors);
+        });
+        promises.push(promise);
     }
+    reg.lastIndex = 0;
     return Promise.all(promises).then(() => {
         return results;
     });
