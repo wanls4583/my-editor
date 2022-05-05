@@ -85,7 +85,7 @@ export default {
     },
     data() {
         return {
-            extensionsPath: path.join(globalData.dirname, 'extensions'),
+            extensionsPath: path.join(globalData.dirname, 'main/extensions'),
             languageList: [],
             statusHeight: 30,
             topBarHeight: 35,

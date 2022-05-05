@@ -11,11 +11,11 @@ const globalData = {
     nowTheme: {
         value: 'Default Dark+',
         type: 'dark',
-        path: path.join(dirname, '/extensions/theme-monokai/themes/monokai-color-theme.json'),
+        path: path.join(dirname, 'main/extensions/theme-monokai/themes/monokai-color-theme.json'),
     },
     nowIconTheme: {
         value: 'vs-seti',
-        path: path.join(dirname, '/extensions/theme-seti/icons/vs-seti-icon-theme.json'),
+        path: path.join(dirname, 'main/extensions/theme-seti/icons/vs-seti-icon-theme.json'),
     },
     nowIconData: {},
     themes: [],

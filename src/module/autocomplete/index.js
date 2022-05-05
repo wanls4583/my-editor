@@ -556,7 +556,7 @@ class Autocomplete {
         if (this.htmlData) {
             return this.htmlData;
         } else {
-            const htmlData = require(path.join(globalData.dirname, '/data/browsers.html-data'));
+            const htmlData = require(path.join(globalData.dirname, 'main/data/browsers.html-data'));
             this.htmlData = htmlData;
             htmlData.tagMap = {};
             htmlData.tags.forEach((item) => {
@@ -569,7 +569,7 @@ class Autocomplete {
         if (this.cssData) {
             return this.cssData;
         } else {
-            const cssData = require(path.join(globalData.dirname, '/data/browsers.css-data'));
+            const cssData = require(path.join(globalData.dirname, 'main/data/browsers.css-data'));
             this.cssData = cssData;
             cssData.propertyMap = {};
             cssData.properties.forEach((item) => {

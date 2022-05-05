@@ -24,7 +24,7 @@ export default class {
         this.initLanguage(editor.language);
     }
     initRegistry() {
-        const wasmBin = fs.readFileSync(path.join(globalData.dirname, 'lib/onig.wasm')).buffer;
+        const wasmBin = fs.readFileSync(path.join(globalData.dirname, 'main/lib/onig.wasm')).buffer;
         const vscodeOnigurumaLib = oniguruma.loadWASM(wasmBin).then(() => {
             return {
                 createOnigScanner(patterns) {

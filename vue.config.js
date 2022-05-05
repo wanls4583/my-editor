@@ -1,9 +1,10 @@
 /*
  * @Author: lisong
  * @Date: 2021-12-03 17:16:20
- * @Description: 
+ * @Description:
  */
 module.exports = {
     lintOnSave: false,
-    publicPath: './'
-}
+    publicPath: './',
+    outputDir: './dist/render',
+};

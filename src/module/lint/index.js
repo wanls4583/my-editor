@@ -33,7 +33,7 @@ export default class {
     }
     initEvent() {
         if (worker === null) {
-            worker = child_process.fork(path.join(globalData.dirname, 'process/lint/index.js'));
+            worker = child_process.fork(path.join(globalData.dirname, 'main/process/lint/index.js'));
             worker.on('message', (data) => {
                 console.log(data);
                 if (data.parseId === this.parseId) {

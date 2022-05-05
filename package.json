@@ -6,19 +6,16 @@
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
-    "client": "electron public/main.js"
+    "client": "electron dist/main.js development"
   },
   "dependencies": {
     "@electron/remote": "^2.0.5",
     "axios": "^0.26.1",
     "chroma-js": "^2.4.2",
     "core-js": "^3.8.3",
-    "csslint": "^1.0.5",
     "emmet": "^2.3.6",
     "jquery": "^3.6.0",
     "strip-json-comments": "^4.0.0",
-    "stylelint": "^14.8.0",
-    "stylelint-config-css-modules": "^4.1.0",
     "vscode-oniguruma": "^1.6.2",
     "vscode-textmate": "^6.0.0",
     "vue": "^2.6.14",
@@ -30,11 +27,12 @@
     "@vue/cli-plugin-babel": "~5.0.0",
     "@vue/cli-plugin-eslint": "~5.0.0",
     "@vue/cli-service": "~5.0.0",
-    "eslint": "^7.32.0",
     "eslint-plugin-vue": "^8.0.3",
-    "jshint": "^2.13.4",
     "node-sass": "^4.14.1",
     "sass-loader": "^12.6.0",
+    "eslint": "^7.32.0",
+    "stylelint": "^14.8.0",
+    "stylelint-config-css-modules": "^4.1.0",
     "vue-template-compiler": "^2.6.14"
   },
   "eslintConfig": {
