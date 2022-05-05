@@ -1,4 +1,5 @@
 const Css = require('./css');
+const JavaScript = require('./javascript');
 
 const regs = {
     javascript: /(?<!\<[^\>]*?['"][^\>]*?)(\<script(?:\s[^\>]*?)?\>)([\s\S]*?)\<\/script\>/,
@@ -91,6 +92,7 @@ function _lint(text, language) {
     }
     if (language === 'javascript') {
         reg = regs.javascript;
+        linter = JavaScript.lint;
     }
     while ((exec = reg.exec(text))) {
         setLineColumn(text.slice(0, exec.index), pos);
@@ -105,10 +107,16 @@ function _lint(text, language) {
             let _pos = Object.assign({}, pos);
             let promise = linter(exec[2], language).then((errors) => {
                 errors.forEach((item) => {
-                    if (item.line == 1) {
+                    item.line += _pos.line - 1;
+                    if (item.line === 1) {
                         item.column += _pos.column;
                     }
-                    item.line += _pos.line - 1;
+                    if (item.endLine) {
+                        item.endLine += _pos.line - 1;
+                        if (item.endLine === 1) {
+                            item.endColumn += _pos.endColumn;
+                        }
+                    }
                 });
                 results.push(...errors);
             });
@@ -124,7 +132,16 @@ function _lint(text, language) {
 }
 
 function lint(text) {
-    return _lint(text, 'css');
+    let results = [];
+    let ps1 = _lint(text, 'css').then((data) => {
+        results = results.concat(data);
+    });
+    let ps2 = _lint(text, 'javascript').then((data) => {
+        results = results.concat(data);
+    });
+    return Promise.all([ps1, ps2]).then(() => {
+        return results;
+    });
 }
 
 module.exports = {
