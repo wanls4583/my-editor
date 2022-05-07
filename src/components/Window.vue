@@ -157,7 +157,7 @@ export default {
                 this.theme.loadIconTheme(globalData.nowIconTheme);
                 console.timeEnd();
             });
-        }, 500);
+        }, 100);
     },
     methods: {
         initEventBus() {
