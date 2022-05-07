@@ -1,6 +1,5 @@
 import Vue from 'vue';
 import App from './App.vue';
-import router from './router';
 import axios from 'axios';
 import './scss/index.scss';
 
@@ -14,6 +13,5 @@ Vue.prototype.$http = axios.create({
 });
 
 new Vue({
-    router,
     render: (h) => h(App),
 }).$mount('#app');

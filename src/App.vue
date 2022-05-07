@@ -1,17 +1,17 @@
 <template>
-	<div id="app">
-		<keep-alive>
-			<router-view></router-view>
-		</keep-alive>
-	</div>
+    <div id="app">
+        <Window></Window>
+    </div>
 </template>
 
 <script>
-
+import Window from './components/Window.vue';
 export default {
     name: 'App',
-}
+    components: {
+        Window,
+    },
+};
 </script>
 
-<style>
-</style>
+<style></style>
