@@ -134,27 +134,30 @@ export default {
                 EventBus.$emit('close-menu');
             });
         }
-        this.theme = new Theme();
-        this.loadExtensions().then((result) => {
-            let langeuages = result.languages;
-            let themes = result.themes;
-            let iconThemes = result.iconThemes;
-            let scopeFileList = result.scopeFileList;
-            langeuages.push({ name: 'Plain Text', value: '', checked: true });
-            globalData.languageList = langeuages.slice();
-            globalData.scopeFileList = scopeFileList.slice();
-            globalData.themes = themes.slice();
-            globalData.iconThemes = iconThemes.slice();
-            this.languageList = langeuages;
-            this.checkLanguage();
-            this.theme.loadTheme(globalData.nowTheme);
-            this.theme.loadIconTheme(globalData.nowIconTheme);
-        });
         this.initEventBus();
     },
     mounted() {
         window.test = this;
-        this.openFile();
+        this.theme = new Theme();
+        setTimeout(() => {
+            this.openFile();
+            this.loadExtensions().then((result) => {
+                let langeuages = result.languages;
+                let themes = result.themes;
+                let iconThemes = result.iconThemes;
+                let scopeFileList = result.scopeFileList;
+                langeuages.push({ name: 'Plain Text', value: '', checked: true });
+                globalData.languageList = langeuages.slice();
+                globalData.scopeFileList = scopeFileList.slice();
+                globalData.themes = themes.slice();
+                globalData.iconThemes = iconThemes.slice();
+                this.languageList = langeuages;
+                this.checkLanguage();
+                this.theme.loadTheme(globalData.nowTheme);
+                this.theme.loadIconTheme(globalData.nowIconTheme);
+                console.timeEnd();
+            });
+        }, 500);
     },
     methods: {
         initEventBus() {
