@@ -12,6 +12,7 @@ let mainWin = null;
 
 function createWindow(name, url, type, parent) {
     const win = new BrowserWindow({
+        transparent: true,
         frame: false,
         show: false,
         parent: parent,

@@ -9,7 +9,7 @@ const globalData = {
     scopeReg: null,
     colors: {},
     nowTheme: {
-        value: 'Default Dark+',
+        value: 'Monokai',
         type: 'dark',
         path: path.join(dirname, 'main/extensions/theme-monokai/themes/monokai-color-theme.json'),
     },
@@ -25,7 +25,7 @@ const globalData = {
     scopeTokenList: [],
     grammars: {},
     sourceWordMap: {},
-    defaultWordPattern: "(-?\\d*\\.\\d\\w*)|([^\\`\\~\\!\\@\\%\\^\\&\\*\\(\\)\\-\\=\\+\\[\\{\\]\\}\\\\\\|\\;\\:\\'\\\"\\,\\.\\<\\>/\\?\\s]+)"
+    defaultWordPattern: '(-?\\d*\\.\\d\\w*)|([^\\`\\~\\!\\@\\%\\^\\&\\*\\(\\)\\-\\=\\+\\[\\{\\]\\}\\\\\\|\\;\\:\\\'\\"\\,\\.\\<\\>/\\?\\s]+)',
 };
 
 export default globalData;

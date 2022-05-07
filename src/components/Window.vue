@@ -561,7 +561,6 @@ export default {
             let scopeFileList = [];
             let themes = [[], [], [], []];
             let iconThemes = [];
-            let varMap = {};
             return new Promise((resolve) => {
                 // 异步读取目录内容
                 fs.readdir(this.extensionsPath, { encoding: 'utf8' }, (err, files) => {
@@ -575,8 +574,8 @@ export default {
                         let varConfigPath = path.join(fullPath, './package.nls.json');
                         if (fs.existsSync(varConfigPath)) {
                             promises.push(
-                                _readVarFile(varConfigPath).then(() => {
-                                    return _readConfigFile(packPath, fullPath);
+                                _readVarFile(varConfigPath).then((varMap) => {
+                                    return _readConfigFile(packPath, fullPath, varMap);
                                 })
                             );
                         } else if (fs.existsSync(packPath)) {
@@ -598,17 +597,15 @@ export default {
             });
 
             function _readVarFile(varConfigPath) {
-                return Util.loadJsonFile(varConfigPath).then((data) => {
-                    varMap = data;
-                });
+                return Util.loadJsonFile(varConfigPath);
             }
 
-            function _readConfigFile(packPath, fullPath) {
+            function _readConfigFile(packPath, fullPath, varMap) {
                 return Util.loadJsonFile(packPath).then((data) => {
                     let contributes = data.contributes;
-                    _addLanguage(contributes, fullPath);
-                    _addTheme(contributes, fullPath);
-                    _addIconTheme(contributes, fullPath);
+                    _addLanguage(contributes, fullPath, varMap);
+                    _addTheme(contributes, fullPath, varMap);
+                    _addIconTheme(contributes, fullPath, varMap);
                 });
             }
 
@@ -641,12 +638,12 @@ export default {
                 });
             }
 
-            function _addTheme(contributes, fullPath) {
+            function _addTheme(contributes, fullPath, varMap) {
                 let list = contributes.themes || [];
                 list.map((theme) => {
                     let type = 'light';
                     let index = 0;
-                    let label = _getValue(theme.label);
+                    let label = _getValue(theme.label, varMap);
                     switch (theme.uiTheme) {
                         case 'vs-dark':
                             type = 'dark';
@@ -670,10 +667,10 @@ export default {
                 });
             }
 
-            function _addIconTheme(contributes, fullPath) {
+            function _addIconTheme(contributes, fullPath, varMap) {
                 let list = contributes.iconThemes || [];
                 list.map((theme) => {
-                    let label = _getValue(theme.label);
+                    let label = _getValue(theme.label, varMap);
                     iconThemes.push({
                         name: label || theme.id,
                         value: theme.id || label,
@@ -682,7 +679,7 @@ export default {
                 });
             }
 
-            function _getValue(name) {
+            function _getValue(name, varMap) {
                 name = name || '';
                 if (name[0] === '%' && name[name.length - 1] === '%') {
                     name = varMap[name.slice(1, -1)] || name;
