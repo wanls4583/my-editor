@@ -138,26 +138,23 @@ export default {
     },
     mounted() {
         window.test = this;
-        this.theme = new Theme();
-        setTimeout(() => {
-            this.openFile();
-            this.loadExtensions().then((result) => {
-                let langeuages = result.languages;
-                let themes = result.themes;
-                let iconThemes = result.iconThemes;
-                let scopeFileList = result.scopeFileList;
-                langeuages.push({ name: 'Plain Text', value: '', checked: true });
-                globalData.languageList = langeuages.slice();
-                globalData.scopeFileList = scopeFileList.slice();
-                globalData.themes = themes.slice();
-                globalData.iconThemes = iconThemes.slice();
-                this.languageList = langeuages;
-                this.checkLanguage();
-                this.theme.loadTheme(globalData.nowTheme);
-                this.theme.loadIconTheme(globalData.nowIconTheme);
-                console.timeEnd();
-            });
-        }, 100);
+        const theme = new Theme();
+        theme.loadTheme(globalData.nowTheme);
+        theme.loadIconTheme(globalData.nowIconTheme);
+        this.openFile();
+        this.loadExtensions().then((result) => {
+            let langeuages = result.languages;
+            let themes = result.themes;
+            let iconThemes = result.iconThemes;
+            let scopeFileList = result.scopeFileList;
+            langeuages.push({ name: 'Plain Text', value: '', checked: true });
+            globalData.languageList = langeuages.slice();
+            globalData.scopeFileList = scopeFileList.slice();
+            globalData.themes = themes.slice();
+            globalData.iconThemes = iconThemes.slice();
+            this.languageList = langeuages;
+            this.checkLanguage();
+        });
     },
     methods: {
         initEventBus() {
@@ -571,42 +568,49 @@ export default {
                     if (err) {
                         throw err;
                     }
+                    const promises = [];
                     files.forEach((item, index) => {
                         let fullPath = path.join(this.extensionsPath, item);
                         let packPath = path.join(fullPath, './package.json');
                         let varConfigPath = path.join(fullPath, './package.nls.json');
                         if (fs.existsSync(varConfigPath)) {
-                            const text = fs.readFileSync(varConfigPath, 'utf-8');
-                            try {
-                                varMap = JSON.parse(stripJsonComments(text));
-                            } catch (e) {
-                                console.log(e);
-                            }
-                        }
-                        if (fs.existsSync(packPath)) {
-                            const text = fs.readFileSync(packPath, 'utf-8');
-                            try {
-                                let json = JSON.parse(stripJsonComments(text));
-                                let contributes = json.contributes;
-                                _addLanguage(contributes, fullPath);
-                                _addTheme(contributes, fullPath);
-                                _addIconTheme(contributes, fullPath);
-                            } catch (e) {
-                                console.log(e);
-                            }
+                            promises.push(
+                                _readVarFile(varConfigPath).then(() => {
+                                    return _readConfigFile(packPath, fullPath);
+                                })
+                            );
+                        } else if (fs.existsSync(packPath)) {
+                            promises.push(_readConfigFile(packPath, fullPath));
                         }
                     });
-                    themes = themes.filter((item) => {
-                        return item.length;
-                    });
-                    resolve({
-                        languages: languages,
-                        scopeFileList: scopeFileList,
-                        themes: themes,
-                        iconThemes: iconThemes,
+                    Promise.all(promises).then(() => {
+                        themes = themes.filter((item) => {
+                            return item.length;
+                        });
+                        resolve({
+                            languages: languages,
+                            scopeFileList: scopeFileList,
+                            themes: themes,
+                            iconThemes: iconThemes,
+                        });
                     });
                 });
             });
+
+            function _readVarFile(varConfigPath) {
+                return Util.loadJsonFile(varConfigPath).then((data) => {
+                    varMap = data;
+                });
+            }
+
+            function _readConfigFile(packPath, fullPath) {
+                return Util.loadJsonFile(packPath).then((data) => {
+                    let contributes = data.contributes;
+                    _addLanguage(contributes, fullPath);
+                    _addTheme(contributes, fullPath);
+                    _addIconTheme(contributes, fullPath);
+                });
+            }
 
             function _addLanguage(contributes, fullPath) {
                 let grammars = contributes.grammars;

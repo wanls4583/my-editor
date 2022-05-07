@@ -57,7 +57,7 @@ export default class {
             };
             globalData.nowIconData = null;
             EventBus.$emit('icon-change');
-            return;
+            return Promise.resolve();
         }
         let languages = globalData.languageList;
         let languageMap = {};
