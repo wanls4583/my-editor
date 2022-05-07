@@ -10,14 +10,9 @@ const wins = {};
 
 let mainWin = null;
 
-global.shareObject = {
-    globalData: {
-        contexts: {},
-    },
-};
-
 function createWindow(name, url, type, parent) {
     const win = new BrowserWindow({
+        transparent: true,
         frame: false,
         show: false,
         parent: parent,
@@ -40,17 +35,20 @@ function createWindow(name, url, type, parent) {
     }
     return win;
 }
+
 app.whenReady()
     .then(() => {
         initProtocol();
         main.initialize();
-        Menu.setApplicationMenu(null); //去掉默认菜单和快捷键
+        // Menu.setApplicationMenu(null); //去掉默认菜单和快捷键
         if (process.argv[2] === 'development') {
             mainWin = createWindow('main', 'http://localhost:8080/', 'remote');
         } else {
             mainWin = createWindow('main', 'render/index.html');
         }
-        mainWin.show();
+        mainWin.once('ready-to-show', function () {
+            mainWin.show();
+        });
         initEvent();
     })
     .catch((err) => {

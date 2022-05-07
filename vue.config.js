@@ -6,5 +6,5 @@
 module.exports = {
     lintOnSave: false,
     publicPath: './',
-    outputDir: './build/render',
+    outputDir: './electron/render',
 };
