@@ -8,18 +8,32 @@
         "build": "electron-builder"
     },
     "build": {
-        "appId": "lisong.hn.cn",
-        "productName": "my-editor",
+        "appId": "my-editor.lisong.hn.cn",
+        "asar": true,
+        "directories": {
+            "buildResources": "build",
+            "output": "dist"
+        },
         "win": {
-            "icon": "render/favicon.ico",
             "target": [
-                "nsis"
+                {
+                    "target": "nsis"
+                }
+            ],
+            "icon": "./render/favicon.ico",
+            "asarUnpack": [
+                "src/**",
+                "README.md"
             ]
         },
         "nsis": {
             "oneClick": false,
-            "perMachine": true,
-            "allowToChangeInstallationDirectory": true
+            "allowElevation": true,
+            "allowToChangeInstallationDirectory": true,
+            "installerIcon": "./render/favicon.ico",
+            "uninstallerIcon": "./render/favicon.ico",
+            "createDesktopShortcut": true,
+            "createStartMenuShortcut": true
         }
     },
     "devDependencies": {

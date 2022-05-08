@@ -12,7 +12,8 @@ let mainWin = null;
 
 function createWindow(name, url, type, parent) {
     const win = new BrowserWindow({
-        transparent: true,
+        // transparent: true,
+        backgroundColor: '#1e1f1c',
         frame: false,
         show: false,
         parent: parent,
@@ -46,7 +47,6 @@ app.whenReady()
         } else {
             mainWin = createWindow('main', 'render/index.html');
         }
-        mainWin.setBackgroundColor('#1e1f1c');
         mainWin.show();
         initEvent();
     })
