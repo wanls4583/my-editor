@@ -35,17 +35,23 @@ export default class {
         if (worker === null) {
             setTimeout(() => {
                 worker = child_process.fork(path.join(globalData.dirname, 'main/process/lint/index.js'));
-                worker.on('message', (data) => {
-                    console.log(data);
-                    if (data.parseId === this.parseId) {
-                        this.setErrors(data.results);
-                    }
-                });
-                worker.on('close', () => {
-                    worker = null;
-                    this.initEvent();
-                });
+                _bindMsg.call(this);
             }, 300);
+        } else {
+            _bindMsg.call(this);
+        }
+
+        function _bindMsg() {
+            worker.on('message', (data) => {
+                console.log(data);
+                if (data.parseId === this.parseId) {
+                    this.setErrors(data.results);
+                }
+            });
+            worker.on('close', () => {
+                worker = null;
+                this.initEvent();
+            });
         }
     }
     onInsertContentAfter(nowLine, newLine) {

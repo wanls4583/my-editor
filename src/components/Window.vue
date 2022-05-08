@@ -140,7 +140,6 @@ export default {
         window.test = this;
         const theme = new Theme();
         theme.loadTheme(globalData.nowTheme);
-        theme.loadIconTheme(globalData.nowIconTheme);
         this.openFile();
         this.loadExtensions().then((result) => {
             let langeuages = result.languages;
@@ -154,6 +153,8 @@ export default {
             globalData.iconThemes = iconThemes.slice();
             this.languageList = langeuages;
             this.checkLanguage();
+            // loadIconTheme需要用到globalData.languageList
+            theme.loadIconTheme(globalData.nowIconTheme);
         });
     },
     methods: {

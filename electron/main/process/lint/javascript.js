@@ -4,7 +4,8 @@ const linter = new Linter();
 function lint(text, language) {
     const rules = {};
     return new Promise((resolve) => {
-        let arr = linter.verify(text, { rules: rules, parserOptions: { ecmaVersion: 'latest' } });
+        let parserOptions = { ecmaVersion: 'latest', sourceType: 'module', allowImportExportEverywhere: true };
+        let arr = linter.verify(text, { rules: rules, parserOptions: parserOptions });
         let results = [];
         arr.forEach((item) => {
             results.push({

@@ -3,7 +3,7 @@
  * @Date: 2022-03-09 09:58:18
  * @Description:
  */
-const { BrowserWindow, app, Menu, protocol } = require('electron');
+const { BrowserWindow, app, protocol } = require('electron');
 const main = require('@electron/remote/main');
 const path = require('path');
 const wins = {};
@@ -12,8 +12,7 @@ let mainWin = null;
 
 function createWindow(name, url, type, parent) {
     const win = new BrowserWindow({
-        // transparent: true,
-        backgroundColor: '#1e1f1c',
+        transparent: true,
         frame: false,
         show: false,
         parent: parent,
@@ -41,7 +40,6 @@ app.whenReady()
     .then(() => {
         initProtocol();
         main.initialize();
-        Menu.setApplicationMenu(null); //去掉默认菜单和快捷键
         if (process.argv[2] === 'development') {
             mainWin = createWindow('main', 'http://localhost:8080/', 'remote');
         } else {
