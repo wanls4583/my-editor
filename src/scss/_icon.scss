@@ -1,0 +1,18 @@
+.my {
+    &-icon-files {
+        background-image: url(@/assets/icons/dark/files.svg);
+    }
+    &-icon-search {
+        background-image: url(@/assets/icons/dark/search.svg);
+    }
+}
+.my-theme-light {
+    .my {
+        &-icon-files {
+            background-image: url(@/assets/icons/light/files.svg);
+        }
+        &-icon-search {
+            background-image: url(@/assets/icons/light/search.svg);
+        }
+    }
+}

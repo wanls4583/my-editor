@@ -5,16 +5,18 @@
 -->
 <template>
     <div
-        :style="{
-            'padding-top': _topBarHeight,
-            'padding-bottom': _statusHeight,
-        }"
-        @mousedown="onWindMouseDown"
         class="my-window"
         ref="window"
+        :class="{ 'my-theme-dark': themeType === 'dark', 'my-theme-light': themeType === 'light' }"
+        :style="{ 'padding-top': _topBarHeight, 'padding-bottom': _statusHeight }"
+        @mousedown="onWindMouseDown"
     >
-        <!-- 侧边栏 -->
-        <side-bar ref="sideBar" v-if="mode === 'app'"></side-bar>
+        <div class="my-left-warp" :style="{ width: leftWidth + 'px' }">
+            <!-- 侧边栏 -->
+            <activity-bar ref="activityBar" v-if="mode === 'app'"></activity-bar>
+            <side-bar ref="sideBar" v-if="mode === 'app'" v-show="activity === 'files'"></side-bar>
+            <div class="my-sash-v" @mousedown="onLeftSashBegin"></div>
+        </div>
         <div @contextmenu.prevent.stop="onContextmenu" class="my-right-wrap" ref="rightWrap">
             <!-- tab栏 -->
             <editor-bar
@@ -56,6 +58,7 @@ import Editor from './Editor.vue';
 import TitleBar from './TitleBar';
 import StatusBar from './StatusBar';
 import SideBar from './SideBar.vue';
+import ActivityBar from './ActivityBar.vue';
 import Dialog from './Dialog.vue';
 import WindowMenu from './WindowMenu.vue';
 import CmdPanel from './CmdPanel.vue';
@@ -63,8 +66,8 @@ import Context from '@/module/context/index';
 import Theme from '@/module/theme';
 import EventBus from '@/event';
 import Util from '@/common/util';
+import $ from 'jquery';
 import globalData from '@/data/globalData';
-import stripJsonComments from 'strip-json-comments';
 
 const require = window.require || window.parent.require || function () {};
 const fs = require('fs');
@@ -78,6 +81,7 @@ export default {
         EditorBar,
         TitleBar,
         StatusBar,
+        ActivityBar,
         SideBar,
         Dialog,
         WindowMenu,
@@ -99,6 +103,9 @@ export default {
             dialogBtns: [],
             dialogIcon: '',
             dialogIconColor: '',
+            themeType: 'dark',
+            activity: 'files',
+            leftWidth: 350,
             mode: remote ? 'app' : 'mode',
         };
     },
@@ -134,6 +141,7 @@ export default {
                 EventBus.$emit('close-menu');
             });
         }
+        this.initEvent();
         this.initEventBus();
     },
     mounted() {
@@ -158,6 +166,20 @@ export default {
         });
     },
     methods: {
+        initEvent() {
+            $(document)
+                .on('mousemove', (e) => {
+                    if (this.leftSashMouseObj) {
+                        let width = (this.leftWidth += e.clientX - this.leftSashMouseObj.clientX);
+                        width = width > 50 ? width : 50;
+                        this.leftWidth = width;
+                        this.leftSashMouseObj = e;
+                    }
+                })
+                .on('mouseup', (e) => {
+                    this.leftSashMouseObj = null;
+                });
+        },
         initEventBus() {
             let iconFn = (value) => {
                 this.editorList.forEach((item) => {
@@ -171,7 +193,16 @@ export default {
                 this.editorList.splice();
             };
             EventBus.$on('icon-change', iconFn);
-            EventBus.$on('theme-change', iconFn);
+            EventBus.$on('theme-change', () => {
+                iconFn();
+                this.themeType = globalData.nowTheme.type;
+            });
+            EventBus.$on('activity-change', (activity) => {
+                this.activity = activity;
+            });
+        },
+        onLeftSashBegin(e) {
+            this.leftSashMouseObj = e;
         },
         onContextmenu(e) {
             // EventBus.$emit('open-win-menu');

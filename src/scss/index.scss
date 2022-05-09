@@ -1,11 +1,13 @@
 // @import url('//at.alicdn.com/t/font_3194546_u8br6ykv1ji.css');
 @import 'font';
+@import 'icon';
 @import 'auto-tip';
 @import 'code';
 @import 'dialog';
 @import 'editor';
 @import 'folder';
 @import 'menu';
+@import 'activity-bar';
 @import 'editor-bar';
 @import 'search';
 @import 'side-bar';
@@ -121,8 +123,15 @@ textarea {
 
     &-scroll-mini {
         &::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
+            width: 6px;
+            height: 6px;
+        }
+    }
+
+    &-scroll-small {
+        &::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
         }
     }
 
@@ -137,6 +146,15 @@ textarea {
             background-color: red;
             color: white;
         }
+    }
+
+    &-icon {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        background-size: 100%;
+        background-position: 0;
+        background-repeat: no-repeat;
     }
 
     &-file-icon::before {
@@ -193,6 +211,16 @@ textarea {
         font-size: 13px;
         background-color: var(--my-background);
         color: var(--my-foreground);
+    }
+
+    &-left-warp {
+        display: flex;
+        flex-shrink: 0;
+        position: relative;
+        height: 100%;
+        border-right: 1px solid var(--my-sideBar-border);
+        background-color: var(--my-sideBar-background);
+        color: var(--my-sideBar-foreground);
     }
 
     &-right-wrap {
