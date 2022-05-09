@@ -11,38 +11,60 @@
                 <div class="my-search-left active-click" style="border-radius: 0" tabindex="-1" @click="replaceVisible = !replaceVisible">
                     <span :class="{ 'icon-down1': replaceVisible, 'icon-right': !replaceVisible }" class="iconfont" style="font-size: 14px" title="Toggle Replace mode"></span>
                 </div>
-                <div style="flex-grow: 1">
-                    <div class="my-search-top">
-                        <div :class="{ 'my-active': input1Focus }" class="my-search-input">
-                            <textarea
-                                @blur="input1Focus = false"
-                                @focus="input1Focus = true"
-                                @keydown="onKeyDown"
-                                @input="onInput"
-                                ref="input1"
-                                :style="{ height: input1Height + 'px' }"
-                                type="text"
-                                spellcheck="false"
-                                v-model="text"
-                            ></textarea>
-                            <span :class="{ 'my-active': ignoreCase }" @click="changeCase" class="my-search-suffix" title="Match Case(Alt+C)">Aa</span>
-                            <span :class="{ 'my-active': wholeWord }" @click="changeWhole" class="my-search-suffix iconfont icon-whole-word" title="Match Whole Word(Alt+W)"></span>
-                        </div>
-                    </div>
-                    <div class="my-search-bottom">
-                        <div :class="{ 'my-active': input2Focus }" class="my-search-input" style="margin-top: 10px" v-show="replaceVisible">
-                            <textarea
-                                @blur="input2Focus = false"
-                                @focus="input2Focus = true"
-                                @keydown="onKeyDown2"
-                                ref="input2"
-                                :style="{ height: input2Height + 'px' }"
-                                type="text"
-                                v-model="replaceText"
-                                spellcheck="false"
-                            ></textarea>
-                        </div>
-                    </div>
+                <div :class="{ 'my-active': input1Focus }" class="my-search-input">
+                    <textarea
+                        @blur="input1Focus = false"
+                        @focus="input1Focus = true"
+                        @keydown="onKeyDown1"
+                        @input="onInput"
+                        ref="input1"
+                        :style="{ height: input1Height + 'px' }"
+                        type="text"
+                        spellcheck="false"
+                        v-model="text"
+                    ></textarea>
+                    <span :class="{ 'my-active': ignoreCase }" @click="changeCase" class="my-search-suffix" title="Match Case(Alt+C)">Aa</span>
+                    <span :class="{ 'my-active': wholeWord }" @click="changeWhole" class="my-search-suffix iconfont icon-whole-word" title="Match Whole Word(Alt+W)"></span>
+                </div>
+                <div :class="{ 'my-active': input2Focus }" class="my-search-input" style="margin-top: 10px" v-show="replaceVisible">
+                    <textarea
+                        @blur="input2Focus = false"
+                        @focus="input2Focus = true"
+                        @keydown="onKeyDown2"
+                        ref="input2"
+                        :style="{ height: input2Height + 'px' }"
+                        type="text"
+                        v-model="replaceText"
+                        spellcheck="false"
+                    ></textarea>
+                </div>
+            </div>
+            <div style="padding: 0 10px 0 20px">
+                <div style="line-height: 30px">files to include</div>
+                <div :class="{ 'my-active': input3Focus }" class="my-search-input">
+                    <textarea
+                        @blur="input3Focus = false"
+                        @focus="input3Focus = true"
+                        @keydown="onKeyDown3"
+                        ref="input2"
+                        :style="{ height: input3Height + 'px' }"
+                        type="text"
+                        v-model="includePath"
+                        spellcheck="false"
+                    ></textarea>
+                </div>
+                <div style="line-height: 30px">files to include</div>
+                <div :class="{ 'my-active': input4Focus }" class="my-search-input">
+                    <textarea
+                        @blur="input4Focus = false"
+                        @focus="input4Focus = true"
+                        @keydown="onKeyDown4"
+                        ref="input2"
+                        :style="{ height: input4Height + 'px' }"
+                        type="text"
+                        v-model="excludePath"
+                        spellcheck="false"
+                    ></textarea>
                 </div>
             </div>
         </div>
@@ -60,8 +82,14 @@ export default {
             ignoreCase: false,
             input1Focus: false,
             input2Focus: false,
+            input3Focus: false,
+            input4Focus: false,
             input1Height: 30,
             input2Height: 30,
+            input3Height: 30,
+            input4Height: 30,
+            includePath: '',
+            excludePath: '',
         };
     },
     mounted() {},
@@ -73,7 +101,7 @@ export default {
             this.wholeWord = !this.wholeWord;
         },
         replaceAll() {},
-        onKeyDown(e) {
+        onKeyDown1(e) {
             if (e.keyCode === 13 || e.keyCode === 100) {
                 e.preventDefault();
             }
@@ -82,6 +110,16 @@ export default {
             if (e.keyCode === 13 || e.keyCode === 100) {
                 e.preventDefault();
                 this.replaceAll();
+            }
+        },
+        onKeyDown3(e) {
+            if (e.keyCode === 13 || e.keyCode === 100) {
+                e.preventDefault();
+            }
+        },
+        onKeyDown4(e) {
+            if (e.keyCode === 13 || e.keyCode === 100) {
+                e.preventDefault();
             }
         },
         onInput() {},
