@@ -10,11 +10,15 @@
         :class="{ 'my-theme-dark': themeType === 'dark', 'my-theme-light': themeType === 'light' }"
         :style="{ 'padding-top': _topBarHeight, 'padding-bottom': _statusHeight }"
         @mousedown="onWindMouseDown"
+        @contextmenu.prevent.stop
     >
-        <div class="my-left-warp" :style="{ width: leftWidth + 'px' }">
+        <div class="my-left-warp" :style="{ width: leftWidth + 'px' }" v-if="mode === 'app'">
             <!-- 侧边栏 -->
-            <activity-bar ref="activityBar" v-if="mode === 'app'"></activity-bar>
-            <side-bar ref="sideBar" v-if="mode === 'app'" v-show="activity === 'files'"></side-bar>
+            <activity-bar ref="activityBar"></activity-bar>
+            <div style="width: 100%; flex-grow: 1">
+                <side-bar ref="sideBar" v-show="activity === 'files'"></side-bar>
+                <file-content-search v-show="activity === 'search'"></file-content-search>
+            </div>
             <div class="my-sash-v" @mousedown="onLeftSashBegin"></div>
         </div>
         <div @contextmenu.prevent.stop="onContextmenu" class="my-right-wrap" ref="rightWrap">
@@ -59,6 +63,7 @@ import TitleBar from './TitleBar';
 import StatusBar from './StatusBar';
 import SideBar from './SideBar.vue';
 import ActivityBar from './ActivityBar.vue';
+import FileContentSearch from './FileContentSearch.vue';
 import Dialog from './Dialog.vue';
 import WindowMenu from './WindowMenu.vue';
 import CmdPanel from './CmdPanel.vue';
@@ -82,6 +87,7 @@ export default {
         TitleBar,
         StatusBar,
         ActivityBar,
+        FileContentSearch,
         SideBar,
         Dialog,
         WindowMenu,

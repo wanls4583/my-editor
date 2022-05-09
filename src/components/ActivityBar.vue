@@ -11,7 +11,6 @@
 </template>
 <script>
 import EventBus from '@/event';
-import $ from 'jquery';
 
 export default {
     name: 'ActivityBar',

@@ -15,8 +15,6 @@
 <script>
 import SideTree from './SideTree';
 import SideBarMenu from './SideBarMenu';
-import EventBus from '@/event';
-import $ from 'jquery';
 
 export default {
     components: {
