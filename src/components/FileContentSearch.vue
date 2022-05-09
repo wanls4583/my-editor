@@ -26,17 +26,27 @@
                     <span :class="{ 'my-active': ignoreCase }" @click="changeCase" class="my-search-suffix" title="Match Case(Alt+C)">Aa</span>
                     <span :class="{ 'my-active': wholeWord }" @click="changeWhole" class="my-search-suffix iconfont icon-whole-word" title="Match Whole Word(Alt+W)"></span>
                 </div>
-                <div :class="{ 'my-active': input2Focus }" class="my-search-input" style="margin-top: 10px" v-show="replaceVisible">
-                    <textarea
-                        @blur="input2Focus = false"
-                        @focus="input2Focus = true"
-                        @keydown="onKeyDown2"
-                        ref="input2"
-                        :style="{ height: input2Height + 'px' }"
-                        type="text"
-                        v-model="replaceText"
-                        spellcheck="false"
-                    ></textarea>
+                <div class="my-center-start" style="margin-top: 10px">
+                    <div :class="{ 'my-active': input2Focus }" class="my-search-input" style="flex-grow:1" v-show="replaceVisible">
+                        <textarea
+                            @blur="input2Focus = false"
+                            @focus="input2Focus = true"
+                            @keydown="onKeyDown2"
+                            ref="input2"
+                            :style="{ height: input2Height + 'px' }"
+                            type="text"
+                            v-model="replaceText"
+                            spellcheck="false"
+                        ></textarea>
+                    </div>
+                    <span
+                        :class="{ 'enabled-color': results.length > 0, 'disabled-color': results.length == 0 }"
+                        @click="replaceAll"
+                        class="iconfont icon-replace-all active-click"
+                        style="margin-left: 10px"
+                        title="Replace All(Ctrl+Alt+Enter)"
+                        tabindex="-1"
+                    ></span>
                 </div>
             </div>
             <div style="padding: 0 10px 0 20px">
@@ -90,7 +100,18 @@ export default {
             input4Height: 30,
             includePath: '',
             excludePath: '',
+            results: [],
         };
+    },
+    watch: {
+        text() {
+            let lines = this.text.split(/\n/);
+            this.input1Height = lines.length * 20 + 10;
+        },
+        replaceText() {
+            let lines = this.replaceText.split(/\n/);
+            this.input2Height = lines.length * 20 + 10;
+        },
     },
     mounted() {},
     methods: {

@@ -18,12 +18,12 @@
     &-search,
     &-side-search {
         .iconfont {
-            display: inline-block;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             width: 22px;
             height: 22px;
-            line-height: 22px;
             font-size: 18px;
-            text-align: center;
             cursor: pointer;
         }
 
@@ -95,6 +95,11 @@
         cursor: pointer;
     }
 
+    &-search-right {
+        height: 32px;
+        align-self: flex-start;
+    }
+
     &-search-right,
     &-search-top,
     &-search-bottom {
@@ -106,7 +111,7 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        width: 260px;
+        width: 280px;
         margin-right: 5px;
         background-color: var(--my-input-background);
         color: var(--my-input-foreground);
