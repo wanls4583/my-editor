@@ -44,7 +44,7 @@ export default class {
         if (fs.statSync(searchObj.path).isDirectory()) {
             this.searchDir({
                 files: [],
-                path: searchObj.path,
+                dirs: [searchObj.path],
                 searchObj: searchObj,
                 searchId: this.searchId,
             });
@@ -56,6 +56,7 @@ export default class {
             };
             this.searchFiles({
                 files: [fileObj],
+                dirs: [],
                 searchObj: searchObj,
                 searchId: this.searchId,
             });
@@ -63,11 +64,12 @@ export default class {
         return this.eventBus;
     }
     searchDir(option) {
-        if (option.searchId !== this.searchId) {
+        if (option.searchId !== this.searchId || !option.dirs.length) {
             return;
         }
-        let dirPath = option.path;
+        let dirPath = option.dirs.shift();
         if (globalData.skipSearchDirs.test(dirPath)) {
+            this.searchDir(option);
             return;
         }
         fs.readdir(dirPath, { encoding: 'utf8' }, (err, files) => {
@@ -82,13 +84,12 @@ export default class {
                         name: item,
                         path: fullPath,
                     });
-                    this.searchFiles(option);
                 } else {
-                    option = Object.assign({}, option);
-                    option.path = fullPath;
-                    this.searchDir(option);
+                    option.dirs.push(fullPath);
                 }
             });
+            this.searchDir(option);
+            this.searchFiles(option);
         });
     }
     searchFiles(option) {
@@ -98,6 +99,7 @@ export default class {
         let fileObj = option.files.shift();
         let basename = path.basename(fileObj.path);
         if (globalData.skipSearchFiles.test(basename)) {
+            this.searchFiles(option);
             return;
         }
         this.readFile(
@@ -154,14 +156,13 @@ export default class {
         const es = require('event-stream');
         let lines = [];
         fs.createReadStream(fileObj.path, { flags: 'r' })
+            .on('end', endCb)
             .pipe(es.split())
             .pipe(
-                es
-                    .map(function (line) {
-                        lines.push(line);
-                        cb(lines);
-                    })
-                    .on('end', endCb)
+                es.map(function (line) {
+                    lines.push(line);
+                    cb(lines);
+                })
             );
     }
     parsePath(dirPath) {

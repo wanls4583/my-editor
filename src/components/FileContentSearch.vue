@@ -134,7 +134,8 @@ export default {
                     })
                     .$on('find', (result) => {
                         console.log(result);
-                    });
+                    })
+                    .$on('end', () => {});
             }, 300);
         },
         changeCase() {
