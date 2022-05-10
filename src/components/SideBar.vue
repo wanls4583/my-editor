@@ -15,6 +15,7 @@
 <script>
 import SideTree from './SideTree';
 import SideBarMenu from './SideBarMenu';
+import globalData from '@/data/globalData';
 
 export default {
     components: {
@@ -23,7 +24,7 @@ export default {
     },
     data() {
         return {
-            list: [],
+            list: globalData.fileTree,
         };
     },
     provide() {

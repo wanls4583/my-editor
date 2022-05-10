@@ -26,8 +26,8 @@
                     <span :class="{ 'my-active': ignoreCase }" @click="changeCase" class="my-search-suffix" title="Match Case(Alt+C)">Aa</span>
                     <span :class="{ 'my-active': wholeWord }" @click="changeWhole" class="my-search-suffix iconfont icon-whole-word" title="Match Whole Word(Alt+W)"></span>
                 </div>
-                <div class="my-center-start" style="margin-top: 10px">
-                    <div :class="{ 'my-active': input2Focus }" class="my-search-input" style="flex-grow:1" v-show="replaceVisible">
+                <div class="my-center-start" style="margin-top: 10px" v-show="replaceVisible">
+                    <div :class="{ 'my-active': input2Focus }" class="my-search-input" style="flex-grow: 1">
                         <textarea
                             @blur="input2Focus = false"
                             @focus="input2Focus = true"
@@ -81,6 +81,7 @@
     </div>
 </template>
 <script>
+import Searcher from '../module/file-content-search';
 export default {
     components: {},
     data() {
@@ -113,8 +114,29 @@ export default {
             this.input2Height = lines.length * 20 + 10;
         },
     },
+    created() {
+        this.searcher = new Searcher();
+    },
     mounted() {},
     methods: {
+        search() {
+            if (!this.includePath || this.includePath === this.excludePath) {
+                this.results = [];
+                return;
+            }
+            this.searchTimer = setTimeout(() => {
+                this.searcher
+                    .search({
+                        path: this.includePath,
+                        ignoreCase: this.ignoreCase,
+                        wholeWord: this.wholeWord,
+                        text: this.text,
+                    })
+                    .$on('find', (result) => {
+                        console.log(result);
+                    });
+            }, 300);
+        },
         changeCase() {
             this.ignoreCase = !this.ignoreCase;
         },
@@ -125,6 +147,7 @@ export default {
         onKeyDown1(e) {
             if (e.keyCode === 13 || e.keyCode === 100) {
                 e.preventDefault();
+                this.search();
             }
         },
         onKeyDown2(e) {
@@ -136,11 +159,13 @@ export default {
         onKeyDown3(e) {
             if (e.keyCode === 13 || e.keyCode === 100) {
                 e.preventDefault();
+                this.search();
             }
         },
         onKeyDown4(e) {
             if (e.keyCode === 13 || e.keyCode === 100) {
                 e.preventDefault();
+                this.search();
             }
         },
         onInput() {},

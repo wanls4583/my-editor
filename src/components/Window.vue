@@ -407,7 +407,8 @@ export default {
         openFolder() {
             this.choseFolder().then((results) => {
                 if (results) {
-                    this.$refs.sideBar.list = results;
+                    this.$refs.sideBar.list.empty();
+                    this.$refs.sideBar.list.push(...results);
                     this.editorList = [];
                     this.nowId = null;
                 }
