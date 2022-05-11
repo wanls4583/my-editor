@@ -26,7 +26,7 @@ export default class {
             if (this.wholeWordPattern.test(searchObj.text) && searchObj.wholeWord) {
                 searchObj.lines[0] = '(?:\\b|(?<=[^0-9a-zA-Z]))' + searchObj.text + '(?:\\b|(?=[^0-9a-zA-Z]))';
             }
-            searchObj.lines[0] = new RegExp(searchObj.lines[0], searchObj.ignoreCase ? 'i' : '');
+            searchObj.lines[0] = new RegExp(searchObj.lines[0], searchObj.ignoreCase ? 'ig' : 'g');
         }
         if (searchObj.lines.length > 1) {
             searchObj.lines.forEach((item, index) => {
@@ -108,11 +108,18 @@ export default class {
                 if (option.searchId !== this.searchId) {
                     return;
                 }
-                let result = _match(lines);
-                if (result) {
-                    result.path = fileObj.path;
-                    result.name = fileObj.name;
-                    this.eventBus.$emit('find', result);
+                let results = null;
+                if (option.searchObj.lines.length === 1) {
+                    results = _singleLineMatch(lines);
+                } else {
+                    results = _multiLineMatch(lines);
+                }
+                if (results && results.length) {
+                    results.forEach((item) => {
+                        item.path = fileObj.path;
+                        item.name = fileObj.name;
+                    });
+                    this.eventBus.$emit('find', results);
                 }
             },
             () => {
@@ -123,7 +130,26 @@ export default class {
             }
         );
 
-        function _match(lines) {
+        function _singleLineMatch(lines) {
+            let searchObj = option.searchObj;
+            let text = lines.peek();
+            let res = null;
+            let results = [];
+            let texts = [text];
+            while ((res = searchObj.lines[0].exec(text))) {
+                let range = {};
+                range.start = { line: lines.length, column: res.index };
+                range.end = { line: lines.length, column: res.index + res[0].length };
+                results.push({
+                    texts: texts,
+                    range: range,
+                });
+            }
+            searchObj.lines[0].lastIndex = 0;
+            return results;
+        }
+
+        function _multiLineMatch(lines) {
             let searchObj = option.searchObj;
             let texts = [];
             let range = {};
@@ -147,10 +173,12 @@ export default class {
                     j--;
                 }
                 texts.reverse();
-                return {
-                    texts: texts,
-                    range: range,
-                };
+                return [
+                    {
+                        texts: texts,
+                        range: range,
+                    },
+                ];
             }
         }
     }

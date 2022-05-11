@@ -4,7 +4,7 @@
  * @Description: 
 -->
 <template>
-    <div @scroll="onScroll" class="results-tree-warp my-scroll-overlay my-scroll-small" ref="wrap">
+    <div @scroll="onScroll" class="results-tree-warp my-scroll-overlay my-scroll-small test123 test123" ref="wrap">
         <div style="width: 100%; overflow: hidden">
             <div :style="{ height: _scrollHeight }" class="results-tree">
                 <div :style="{ top: _top }" class="results-tree-content">
@@ -22,7 +22,7 @@
                             </template>
                             <div class="tree-item-content my-center-start" :class="[item.icon]">
                                 <span class="tree-item-text" style="margin-left: 4px" v-html="item.html"></span>
-                                <!-- <span class="my-search-lines" v-if="item.texts.length > 1">+{{ item.texts.length }}</span> -->
+                                <span class="my-search-lines" v-if="item.texts && item.texts.length > 1">+{{ item.texts.length }}</span>
                             </div>
                         </div>
                     </div>
@@ -159,11 +159,11 @@ export default {
                 if (item.texts.length > 1) {
                     let plain = _text.slice(start.column);
                     text += plain;
-                    html += `<span class="my-search-bg my-active">${plain}</span>`;
+                    html += `<span class="search-results-bg">${plain}</span>`;
                 } else {
                     let plain = _text.slice(start.column, end.column);
                     text += plain;
-                    html += `<span class="my-search-bg my-active">${plain}</span>`;
+                    html += `<span class="search-results-bg">${plain}</span>`;
                     plain = _text.slice(end.column);
                     text += plain;
                     html += plain;

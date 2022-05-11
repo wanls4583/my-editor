@@ -17,7 +17,6 @@
                             @blur="input1Focus = false"
                             @focus="input1Focus = true"
                             @keydown="onKeyDown1"
-                            @input="onInput"
                             ref="input1"
                             :style="{ height: input1Height + 'px' }"
                             type="text"
@@ -120,6 +119,13 @@ export default {
         text() {
             let lines = this.text.split(/\n/);
             this.input1Height = lines.length * 20 + 10;
+            this.search();
+        },
+        includePath() {
+            this.search();
+        },
+        excludePath() {
+            this.search();
         },
         replaceText() {
             let lines = this.replaceText.split(/\n/);
@@ -132,12 +138,11 @@ export default {
     mounted() {},
     methods: {
         search() {
-            if (!this.includePath || this.includePath === this.excludePath) {
+            if (!this.includePath || !this.text || this.includePath === this.excludePath) {
                 this.results = [];
                 return;
             }
             this.searchTimer = setTimeout(() => {
-                let lines = this.text.split('\n').length;
                 let file = { path: '' };
                 this.results = [];
                 this.searcher
@@ -147,13 +152,13 @@ export default {
                         wholeWord: this.wholeWord,
                         text: this.text,
                     })
-                    .$on('find', (result) => {
-                        result.lines = lines;
+                    .$on('find', (results) => {
+                        let result = results[0];
                         if (result.path !== file.path) {
                             file = { path: result.path, name: result.name, children: [], open: true };
                             this.results.push(file);
                         }
-                        file.children.push(result);
+                        file.children.push(...results);
                         this.results = this.results.slice();
                     });
             }, 300);
@@ -189,7 +194,6 @@ export default {
                 this.search();
             }
         },
-        onInput() {},
     },
 };
 </script>

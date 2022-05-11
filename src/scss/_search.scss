@@ -226,9 +226,12 @@
             }
         }
 
-        .my-search-bg {
-            position: relative;
-            padding: 0 2px;
+        .my-search-lines {
+            flex-shrink: 0;
+        }
+
+        .search-results-bg {
+            background-color: var(--my-editor-findMatchBackground);
         }
 
         .my-file-icon::before {
