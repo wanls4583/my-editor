@@ -158,6 +158,7 @@ textarea {
     }
 
     &-file-icon::before {
+        position: relative;
         display: inline-block;
         flex-shrink: 0;
         width: 16px;

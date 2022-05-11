@@ -16,7 +16,7 @@
     }
 
     &-search,
-    &-side-search {
+    &-search-condition {
         .iconfont {
             display: flex;
             align-items: center;
@@ -143,6 +143,9 @@
 
     // 左侧文件搜索
     &-side-search {
+        position: relative;
+        height: 100%;
+
         .side-search-title {
             padding-left: 20px;
             height: 40px;
@@ -150,6 +153,15 @@
             color: var(--my-sideBarTitle-foreground);
         }
 
+        .my-search-wrap {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+        }
+    }
+
+    &-search-condition {
         .my-search-left {
             width: 20px;
         }
@@ -157,6 +169,72 @@
         .my-search-input {
             width: 100%;
             margin-right: 0;
+        }
+    }
+
+    &-search-results {
+        flex-grow: 1;
+        width: 100%;
+        overflow: hidden;
+
+        .results-tree {
+            position: relative;
+
+            &-warp {
+                width: 100%;
+                height: 100%;
+            }
+
+            &-content {
+                position: absolute;
+                left: 0;
+                width: 100%;
+            }
+        }
+
+        .tree-item {
+            position: relative;
+            white-space: nowrap;
+
+            &-title {
+                height: 30px;
+                padding-right: 10px;
+                border: 1px solid transparent;
+                cursor: pointer;
+
+                &:hover {
+                    border-style: dotted;
+                    border-color: var(--my-contrastActiveBorder);
+                    background-color: var(--my-list-hoverBackground);
+                    color: var(--my-list-hoverForeground);
+                }
+
+                &.my-active {
+                    border-color: var(--my-contrastActiveBorder);
+                    background-color: var(--my-list-activeSelectionBackground);
+                    color: var(--my-list-activeSelectionForeground);
+                }
+            }
+
+            &-content {
+                width: 100%;
+            }
+
+            &-text {
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+        }
+
+        .my-file-icon::before {
+            margin-left: 0;
+            margin-right: 0;
+        }
+
+        .iconfont {
+            position: relative;
+            top: 3px;
+            font-size: 14px;
         }
     }
 }

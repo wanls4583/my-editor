@@ -111,6 +111,7 @@ export default class {
                 let result = _match(lines);
                 if (result) {
                     result.path = fileObj.path;
+                    result.name = fileObj.name;
                     this.eventBus.$emit('find', result);
                 }
             },
@@ -145,8 +146,9 @@ export default class {
                     i--;
                     j--;
                 }
+                texts.reverse();
                 return {
-                    text: texts.reverse().join('\n'),
+                    texts: texts,
                     range: range,
                 };
             }

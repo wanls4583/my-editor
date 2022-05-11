@@ -99,7 +99,7 @@ export default class {
                     css += `.my-file-icon-${icon}::before{\n`;
                     icon = data.iconDefinitions[icon];
                     if (icon.fontCharacter) {
-                        css += 'margin-top:3px;';
+                        css += 'top:3px;';
                         css += `content:"${icon.fontCharacter}";\n`;
                         css += `color:${icon.fontColor};\n`;
                     } else if (icon.iconPath) {
