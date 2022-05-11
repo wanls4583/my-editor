@@ -12,7 +12,7 @@
                         <div
                             :class="[item.active ? 'my-active' : '']"
                             :style="{ 'padding-left': _paddingLeft(item) }"
-                            :title="item.path"
+                            :title="item.deep === 1 ? item.path : item.text"
                             @contextmenu.stop.prevent
                             class="tree-item-title my-center-start"
                         >
@@ -21,7 +21,8 @@
                                 <span class="left-icon iconfont icon-right" v-else></span>
                             </template>
                             <div class="tree-item-content my-center-start" :class="[item.icon]">
-                                <span class="tree-item-text" style="margin-left: 4px">{{ item.name }}</span>
+                                <span class="tree-item-text" style="margin-left: 4px" v-html="item.html"></span>
+                                <!-- <span class="my-search-lines" v-if="item.texts.length > 1">+{{ item.texts.length }}</span> -->
                             </div>
                         </div>
                     </div>
@@ -54,6 +55,7 @@ export default {
             maxVisibleLines: 100,
         };
     },
+    inject: ['openFile'],
     computed: {
         _top() {
             return (this.startLine - 1) * this.itemHeight + 'px';
@@ -115,6 +117,11 @@ export default {
                     item.icon = Util.getIconByPath(globalData.nowIconData, item.path, globalData.nowTheme.type, item.type, item.open);
                     item.icon = item.icon ? `my-file-icon my-file-icon-${item.icon}` : '';
                 }
+                if (!item.html) {
+                    let obj = this.getHtml(item);
+                    item.html = obj.html;
+                    item.text = obj.text;
+                }
             });
         },
         sortFileList(results) {
@@ -134,6 +141,38 @@ export default {
                     }
                 });
             }
+        },
+        getHtml(item) {
+            let html = '';
+            let text = '';
+            if (item.deep === 1) {
+                html = item.name;
+            } else {
+                let _text = item.texts[0].trimRight();
+                let start = item.range.start;
+                let end = item.range.end;
+                let res = null;
+                html = _text.slice(0, start.column).slice(-20).trimLeft();
+                res = /[^0-9a-zA-Z\s]/.exec(html);
+                html = (res && html.slice(res.index + 1)) || html;
+                text = html;
+                if (item.texts.length > 1) {
+                    let plain = _text.slice(start.column);
+                    text += plain;
+                    html += `<span class="my-search-bg my-active">${plain}</span>`;
+                } else {
+                    let plain = _text.slice(start.column, end.column);
+                    text += plain;
+                    html += `<span class="my-search-bg my-active">${plain}</span>`;
+                    plain = _text.slice(end.column);
+                    text += plain;
+                    html += plain;
+                }
+            }
+            return {
+                html: html,
+                text: text,
+            };
         },
         focusItem(path) {
             let index = 0;
