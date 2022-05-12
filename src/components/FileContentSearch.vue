@@ -155,6 +155,10 @@ export default {
                     })
                     .$on('find', (results) => {
                         let result = results[0];
+                        results.forEach((item) => {
+                            item.open = false;
+                            item.active = false;
+                        });
                         if (result.path !== file.path) {
                             file = { path: result.path, name: result.name, children: [], open: true };
                             this.results.push(file);

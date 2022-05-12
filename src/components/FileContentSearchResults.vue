@@ -217,15 +217,12 @@ export default {
                 }
                 item.active = true;
                 preActiveItem = item;
-                if (item.deep == 1) {
-                    item.open = !item.open;
-                    _changOpen.call(this, item);
-                } else {
-                    this.openFile(item);
-                }
-            } else if (item.deep == 1) {
+            }
+            if (item.deep == 1) {
                 item.open = !item.open;
                 _changOpen.call(this, item);
+            } else if (item.deep > 1) {
+                this.openFile(item);
             }
             return Promise.resolve();
 
