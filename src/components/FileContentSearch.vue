@@ -85,11 +85,13 @@
                 <file-content-search-results :list="results"></file-content-search-results>
             </div>
         </div>
+        <div class="my-search-replacing" v-if="replacing"></div>
     </div>
 </template>
 <script>
 import FileContentSearchResults from './FileContentSearchResults.vue';
 import Searcher from '../module/file-content-search';
+import Util from '@/common/util';
 export default {
     components: {
         FileContentSearchResults,
@@ -105,6 +107,7 @@ export default {
             input2Focus: false,
             input3Focus: false,
             input4Focus: false,
+            replacing: false,
             input1Height: 30,
             input2Height: 30,
             input3Height: 30,
@@ -145,6 +148,7 @@ export default {
             }
             this.searchTimer = setTimeout(() => {
                 let file = { path: '' };
+                this.searching = true;
                 this.searcher
                     .search({
                         path: this.includePath,
@@ -176,6 +180,7 @@ export default {
                             this.results = [];
                             this.count = 0;
                         }
+                        this.searching = false;
                     });
             }, 300);
         },
@@ -187,7 +192,33 @@ export default {
             this.wholeWord = !this.wholeWord;
             this.search();
         },
-        replaceAll() {},
+        replaceAll() {
+            if (!this.results.length || this.searching) {
+                return;
+            }
+            let reg = this.text.replace(/\\|\.|\*|\+|\-|\?|\(|\)|\[|\]|\{|\}|\^|\$|\~|\!|\&|\|/g, '\\$&');
+            if (!/\n/.test(reg) && this.searcher.wholeWordPattern.test(reg) && this.wholeWord) {
+                reg = '(?:\\b|(?<=[^0-9a-zA-Z]))' + reg + '(?:\\b|(?=[^0-9a-zA-Z]))';
+            }
+            reg = new RegExp(reg, this.ignoreCase ? 'igm' : 'gm');
+            this.replacing = true;
+            _replace.call(this, this.results.slice().reverse());
+
+            function _replace(results) {
+                if (!results.length) {
+                    this.replacing = false;
+                    this.search();
+                    return;
+                }
+                let filePath = results.pop().path;
+                Util.readFile(filePath).then((text) => {
+                    text = text.replace(reg, this.replaceText);
+                    Util.writeFile(filePath, text).then(() => {
+                        _replace.call(this, results);
+                    });
+                });
+            }
+        },
         onKeyDown1(e) {
             if (e.keyCode === 13 || e.keyCode === 100) {
                 e.preventDefault();
@@ -197,7 +228,7 @@ export default {
         onKeyDown2(e) {
             if (e.keyCode === 13 || e.keyCode === 100) {
                 e.preventDefault();
-                this.replaceAll();
+                this.search();
             }
         },
         onKeyDown3(e) {

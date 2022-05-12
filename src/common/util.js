@@ -288,7 +288,12 @@ class Util {
     }
     static readFile(path) {
         return new Promise((resolve, reject) => {
-            fs.readFile(path, (error, data) => (error ? reject(error) : resolve(data)));
+            fs.readFile(path, { encoding: 'utf8' }, (error, data) => (error ? reject(error) : resolve(data)));
+        });
+    }
+    static writeFile(path, data) {
+        return new Promise((resolve, reject) => {
+            fs.writeFile(path, data, { encoding: 'utf8' }, (error) => (error ? reject(error) : resolve()));
         });
     }
     static loadJsonFile(fullPath) {

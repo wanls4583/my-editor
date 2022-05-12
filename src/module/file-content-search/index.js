@@ -20,6 +20,9 @@ export default class {
         this.searchId = Util.getUUID();
         this.eventBus = new Vue();
         if (!fs.existsSync(searchObj.path)) {
+            setTimeout(() => {
+                this.eventBus.$emit('end');
+            });
             return this.eventBus;
         }
         if (searchObj.excludePath) {
@@ -28,7 +31,7 @@ export default class {
         if (searchObj.lines.length == 1) {
             searchObj.lines[0] = searchObj.lines[0].replace(/\\|\.|\*|\+|\-|\?|\(|\)|\[|\]|\{|\}|\^|\$|\~|\!|\&|\|/g, '\\$&');
             if (this.wholeWordPattern.test(searchObj.text) && searchObj.wholeWord) {
-                searchObj.lines[0] = '(?:\\b|(?<=[^0-9a-zA-Z]))' + searchObj.text + '(?:\\b|(?=[^0-9a-zA-Z]))';
+                searchObj.lines[0] = '(?:\\b|(?<=[^0-9a-zA-Z]))' + searchObj.lines[0] + '(?:\\b|(?=[^0-9a-zA-Z]))';
             }
             searchObj.lines[0] = new RegExp(searchObj.lines[0], searchObj.ignoreCase ? 'ig' : 'g');
         }
@@ -53,10 +56,9 @@ export default class {
                 searchId: this.searchId,
             });
         } else {
-            let name = /[^\\\/]+$/.exec(path);
             let fileObj = {
-                name: name[0],
-                path: path,
+                name: path.basename(searchObj.path),
+                path: searchObj.path,
             };
             this.searchFiles({
                 files: [fileObj],
