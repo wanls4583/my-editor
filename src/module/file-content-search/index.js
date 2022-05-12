@@ -69,6 +69,7 @@ export default class {
     }
     searchDir(option) {
         if (option.searchId !== this.searchId || !option.dirs.length) {
+            option.dirs.length === 0 && this.searchFiles(option);
             return;
         }
         let dirPath = option.dirs.shift();
@@ -81,7 +82,6 @@ export default class {
             if (err) {
                 throw err;
             }
-            let fileLength = option.files.length;
             files.forEach((item, index) => {
                 let fullPath = path.join(dirPath, item);
                 let state = fs.statSync(fullPath);
@@ -92,15 +92,14 @@ export default class {
                     });
                 } else {
                     option.dirs.push(fullPath);
-                    console.log(fullPath);
                 }
             });
             this.searchDir(option);
-            fileLength === 0 && this.searchFiles(option);
         });
     }
     searchFiles(option) {
         if (option.searchId !== this.searchId || !option.files.length) {
+            option.files.length === 0 && this.eventBus.$emit('end');
             return;
         }
         let fileObj = option.files[0];

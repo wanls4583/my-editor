@@ -138,14 +138,13 @@ export default {
     mounted() {},
     methods: {
         search() {
-            if (!this.includePath || !this.text || this.includePath === this.excludePath) {
+            if (!this.includePath || !this.text || (this.excludePath && this.includePath.startsWith(this.excludePath))) {
                 this.results = [];
+                this.count = 0;
                 return;
             }
             this.searchTimer = setTimeout(() => {
                 let file = { path: '' };
-                this.results = [];
-                this.count = 0;
                 this.searcher
                     .search({
                         path: this.includePath,
@@ -160,6 +159,10 @@ export default {
                             item.open = false;
                             item.active = false;
                         });
+                        if (!file.path) {
+                            this.results = [];
+                            this.count = 0;
+                        }
                         if (result.path !== file.path) {
                             file = { path: result.path, name: result.name, children: [], open: true };
                             this.results.push(file);
@@ -167,6 +170,12 @@ export default {
                         file.children.push(...results);
                         this.results = this.results.slice();
                         this.count += results.length;
+                    })
+                    .$on('end', () => {
+                        if (!file.path) {
+                            this.results = [];
+                            this.count = 0;
+                        }
                     });
             }, 300);
         },
