@@ -493,11 +493,11 @@ export default {
                             tab.loaded = true;
                             //点击搜索结果
                             if (fileObj && fileObj.range) {
-                                this.getEditor(tab.id).cursor.setCursorPos(Object.assign({}, fileObj.range.end));
+                                this.getEditor(tab.id).cursor.setCursorPos(Object.assign({}, fileObj.range.start));
                             }
                         });
                     } else if (fileObj && fileObj.range) {
-                        this.getEditor(tab.id).cursor.setCursorPos(Object.assign({}, fileObj.range.end));
+                        this.getEditor(tab.id).cursor.setCursorPos(Object.assign({}, fileObj.range.start));
                     }
                     this.onChangeTab(tab.id);
                     this.checkLanguage();
