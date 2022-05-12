@@ -15,11 +15,15 @@ export default class {
     search(searchObj) {
         searchObj = Object.assign({}, searchObj);
         searchObj.path = this.parsePath(searchObj.path);
+        searchObj.excludePath = this.parsePath(searchObj.excludePath);
         searchObj.lines = searchObj.text.split('\n');
         this.searchId = Util.getUUID();
         this.eventBus = new Vue();
         if (!fs.existsSync(searchObj.path)) {
             return this.eventBus;
+        }
+        if (searchObj.excludePath) {
+            searchObj.excludePath = new RegExp(searchObj.excludePath.replace(/\\/g, '\\\\'));
         }
         if (searchObj.lines.length == 1) {
             searchObj.lines[0] = searchObj.lines[0].replace(/\\|\.|\*|\+|\-|\?|\(|\)|\[|\]|\{|\}|\^|\$|\~|\!|\&|\|/g, '\\$&');
@@ -68,7 +72,8 @@ export default class {
             return;
         }
         let dirPath = option.dirs.shift();
-        if (globalData.skipSearchDirs.test(dirPath)) {
+        let excludePath = option.searchObj.excludePath;
+        if (globalData.skipSearchDirs.test(dirPath) || (excludePath && excludePath.test(dirPath))) {
             this.searchDir(option);
             return;
         }
@@ -76,6 +81,7 @@ export default class {
             if (err) {
                 throw err;
             }
+            let fileLength = option.files.length;
             files.forEach((item, index) => {
                 let fullPath = path.join(dirPath, item);
                 let state = fs.statSync(fullPath);
@@ -86,19 +92,22 @@ export default class {
                     });
                 } else {
                     option.dirs.push(fullPath);
+                    console.log(fullPath);
                 }
             });
             this.searchDir(option);
-            this.searchFiles(option);
+            fileLength === 0 && this.searchFiles(option);
         });
     }
     searchFiles(option) {
         if (option.searchId !== this.searchId || !option.files.length) {
             return;
         }
-        let fileObj = option.files.shift();
+        let fileObj = option.files[0];
         let basename = path.basename(fileObj.path);
-        if (globalData.skipSearchFiles.test(basename)) {
+        let excludePath = option.searchObj.excludePath;
+        if (globalData.skipSearchFiles.test(basename) || (excludePath && excludePath.test(fileObj.path))) {
+            option.files.shift();
             this.searchFiles(option);
             return;
         }
@@ -123,6 +132,7 @@ export default class {
                 }
             },
             () => {
+                option.files.shift();
                 if (option.searchId !== this.searchId) {
                     return;
                 }
@@ -197,6 +207,10 @@ export default class {
     }
     parsePath(dirPath) {
         const fileTree = globalData.fileTree;
+        dirPath = dirPath || '';
+        if (!dirPath) {
+            return dirPath;
+        }
         if (dirPath.startsWith('./')) {
             let res = /\.\/([^\\\/]+)(?:\\|\/|$)/.exec(dirPath);
             let project = (res && res[1]) || '';
@@ -206,6 +220,13 @@ export default class {
                     break;
                 }
             }
+        }
+        try {
+            dirPath = path.normalize(dirPath);
+            dirPath = path.parse(dirPath);
+            dirPath = path.join(dirPath.dir, dirPath.base);
+        } catch (e) {
+            dirPath = '';
         }
         return dirPath;
     }

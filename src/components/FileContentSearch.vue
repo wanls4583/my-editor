@@ -149,6 +149,7 @@ export default {
                 this.searcher
                     .search({
                         path: this.includePath,
+                        excludePath: this.excludePath,
                         ignoreCase: this.ignoreCase,
                         wholeWord: this.wholeWord,
                         text: this.text,
