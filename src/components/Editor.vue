@@ -1087,7 +1087,9 @@ export default {
                             }
                         });
                     }
-                    this.renderCursor(true);
+                    requestAnimationFrame(()=>{
+                        this.renderCursor(true);
+                    });
                 });
             }
         },
