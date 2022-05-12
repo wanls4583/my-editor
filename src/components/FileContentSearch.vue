@@ -141,6 +141,7 @@ export default {
     mounted() {},
     methods: {
         search() {
+            clearTimeout(this.searchTimer);
             if (!this.includePath || !this.text || (this.excludePath && this.includePath.startsWith(this.excludePath))) {
                 this.results = [];
                 this.count = 0;
