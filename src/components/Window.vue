@@ -471,7 +471,7 @@ export default {
                         active: false,
                     };
                     if (!tab.icon) {
-                        let icon = Util.getIconByPath(globalData.nowIconData, '', globalData.nowTheme.type);
+                        let icon = Util.getIconByPath(globalData.nowIconData, (fileObj && fileObj.path) || '', globalData.nowTheme.type);
                         tab.icon = icon ? `my-file-icon my-file-icon-${icon}` : '';
                     }
                     this.editorList.splice(index + 1, 0, tab);

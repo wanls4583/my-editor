@@ -259,6 +259,7 @@ export default class {
         _editorWidget();
         _input();
         _toolbar();
+        _badge();
 
         // base
         function _base() {
@@ -826,6 +827,19 @@ export default class {
             }
             if (!result.colors['toolbar.hoverOutline']) {
                 result.colors['toolbar.hoverOutline'] = contrastActiveBorder;
+            }
+        }
+        //badge
+        function _badge() {
+            if (!result.colors['badge.foreground']) {
+                result.colors['badge.foreground'] = foreground;
+            }
+            if (!result.colors['badge.backround']) {
+                if (isHc) {
+                    result.colors['badge.backround'] = result.colors['contrastActiveBorder'];
+                } else {
+                    result.colors['badge.backround'] = result.colors['focusBorder'];
+                }
             }
         }
     }

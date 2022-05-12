@@ -23,6 +23,7 @@
                             <div class="tree-item-content my-center-start" :class="[item.icon]">
                                 <span class="tree-item-text" style="margin-left: 4px" v-html="item.html"></span>
                                 <span class="my-search-lines" v-if="item.texts && item.texts.length > 1">+{{ item.texts.length }}</span>
+                                <span class="my-search-count" v-if="item.deep === 1">{{ item.children.length }}</span>
                             </div>
                         </div>
                     </div>

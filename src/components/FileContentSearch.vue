@@ -145,6 +145,7 @@ export default {
             this.searchTimer = setTimeout(() => {
                 let file = { path: '' };
                 this.results = [];
+                this.count = 0;
                 this.searcher
                     .search({
                         path: this.includePath,
@@ -160,14 +161,17 @@ export default {
                         }
                         file.children.push(...results);
                         this.results = this.results.slice();
+                        this.count += results.length;
                     });
             }, 300);
         },
         changeCase() {
             this.ignoreCase = !this.ignoreCase;
+            this.search();
         },
         changeWhole() {
             this.wholeWord = !this.wholeWord;
+            this.search();
         },
         replaceAll() {},
         onKeyDown1(e) {
