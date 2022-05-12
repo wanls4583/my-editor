@@ -101,8 +101,10 @@ export default {
             });
             EventBus.$on('tab-change', (data) => {
                 let path = data && data.path;
-                if (path && preActiveItem && preActiveItem.path !== path) {
-                    preActiveItem.active = false;
+                if (path && !(preActiveItem && preActiveItem.path === path)) {
+                    if (preActiveItem) {
+                        preActiveItem.active = false;
+                    }
                     this.focusItem(path);
                 } else if (!path && preActiveItem) {
                     preActiveItem.active = false;

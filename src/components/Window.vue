@@ -491,7 +491,13 @@ export default {
                             this.getContext(tab.id).insertContent(data);
                             tab.saved = true;
                             tab.loaded = true;
+                            //点击搜索结果
+                            if (fileObj && fileObj.range) {
+                                this.getEditor(tab.id).cursor.setCursorPos(Object.assign({}, fileObj.range.end));
+                            }
                         });
+                    } else if (fileObj && fileObj.range) {
+                        this.getEditor(tab.id).cursor.setCursorPos(Object.assign({}, fileObj.range.end));
                     }
                     this.onChangeTab(tab.id);
                     this.checkLanguage();
