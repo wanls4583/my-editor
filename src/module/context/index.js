@@ -77,6 +77,9 @@ class Context {
         }
         this[prop] = value;
     }
+    destory() {
+        cancelIdleCallback(this.setLineWidthTimer);
+    }
     insertContent(text, command) {
         let historyArr = null;
         let cursorPosList = [];
@@ -517,12 +520,13 @@ class Context {
     setLineWidth(texts) {
         let that = this;
         let index = 0;
-        let startTime = Date.now();
         let maxWidthObj = this.maxWidthObj;
-        clearTimeout(this.setLineWidthTimer);
+        cancelIdleCallback(this.setLineWidthTimer);
         _setLineWidth();
 
         function _setLineWidth() {
+            let startTime = Date.now();
+            let count = 0;
             while (index < texts.length) {
                 let lineObj = texts[index];
                 if (that.lineIdMap.has(lineObj.lineId)) {
@@ -537,16 +541,16 @@ class Context {
                     }
                 }
                 index++;
-                if (Date.now() - startTime > 20) {
+                count++;
+                if (count % 5 === 0 && Date.now() - startTime > 20) {
                     break;
                 }
             }
+            that.setEditorData('maxWidthObj', maxWidthObj);
             if (index < texts.length) {
-                that.setLineWidthTimer = setTimeout(() => {
+                that.setLineWidthTimer = requestIdleCallback(() => {
                     _setLineWidth();
-                }, 20);
-            } else {
-                that.setEditorData('maxWidthObj', maxWidthObj);
+                });
             }
         }
     }

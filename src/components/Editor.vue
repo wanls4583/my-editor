@@ -357,6 +357,7 @@ export default {
     },
     destroyed() {
         this.unbindEvent();
+        this.myContext.destory();
     },
     methods: {
         // 初始化数据
