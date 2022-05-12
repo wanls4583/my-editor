@@ -202,7 +202,7 @@ export default {
             }
             reg = new RegExp(reg, this.ignoreCase ? 'igm' : 'gm');
             this.replacing = true;
-            _replace.call(this, this.results.slice().reverse());
+            _replace.call(this, this.results);
 
             function _replace(results) {
                 if (!results.length) {
@@ -210,7 +210,7 @@ export default {
                     this.search();
                     return;
                 }
-                let filePath = results.pop().path;
+                let filePath = results.shift().path;
                 Util.readFile(filePath).then((text) => {
                     text = text.replace(reg, this.replaceText);
                     Util.writeFile(filePath, text).then(() => {
