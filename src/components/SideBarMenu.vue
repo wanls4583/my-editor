@@ -5,19 +5,13 @@
 -->
 <template>
     <div ref="wrap" v-show="menuVisible">
-        <Menu
-            :checkable="false"
-            :menuList="menuList"
-            :styles="menuStyle"
-            @change="onMenuChange"
-            ref="menu"
-        ></Menu>
+        <Menu :checkable="false" :menuList="menuList" :styles="menuStyle" @change="onMenuChange" ref="menu"></Menu>
     </div>
 </template>
 <script>
-import Menu from "./Menu";
-import EventBus from "@/event";
-import $ from "jquery";
+import Menu from './Menu';
+import EventBus from '@/event';
+import $ from 'jquery';
 
 export default {
     components: {
@@ -29,8 +23,8 @@ export default {
             menuList: [],
             menuVisible: false,
             menuStyle: {
-                left: "10px",
-                top: "40px",
+                left: '10px',
+                top: '40px',
             },
         };
     },
@@ -44,15 +38,13 @@ export default {
     },
     methods: {
         initEventBus() {
-            EventBus.$on("close-menu", () => {
+            EventBus.$on('close-menu', () => {
                 this.menuVisible = false;
-            });
-            EventBus.$on("open-side-menu", () => {
-                this.menuVisible = true;
             });
         },
         show(e) {
             let $parent = $(this.$refs.wrap).parent();
+            this.menuVisible = true;
             this.$nextTick(() => {
                 let menuWidth = 0;
                 let menuHeight = 0;
@@ -60,12 +52,11 @@ export default {
                 menuHeight = this.$refs.menu.$el.clientHeight;
                 let offset = $parent.offset();
                 if (menuHeight + e.clientY > offset.top + $parent.height()) {
-                    this.menuStyle.top =
-                        e.clientY - offset.top - menuHeight + "px";
+                    this.menuStyle.top = e.clientY - offset.top - menuHeight + 'px';
                 } else {
-                    this.menuStyle.top = e.clientY - offset.top + "px";
+                    this.menuStyle.top = e.clientY - offset.top + 'px';
                 }
-                this.menuStyle.left = e.clientX - offset.left + "px";
+                this.menuStyle.left = e.clientX - offset.left + 'px';
             });
         },
         onMenuChange(item) {

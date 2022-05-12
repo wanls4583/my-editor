@@ -111,7 +111,7 @@ export default {
             dialogIconColor: '',
             themeType: 'dark',
             activity: 'files',
-            leftWidth: 350,
+            leftWidth: 400,
             mode: remote ? 'app' : 'mode',
         };
     },

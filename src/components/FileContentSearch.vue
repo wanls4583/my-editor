@@ -14,14 +14,15 @@
                     </div>
                     <div :class="{ 'my-active': input1Focus }" class="my-search-input">
                         <textarea
+                            ref="input1"
+                            type="text"
+                            spellcheck="false"
+                            placeholder="Search"
+                            :style="{ height: input1Height + 'px' }"
+                            v-model="text"
                             @blur="input1Focus = false"
                             @focus="input1Focus = true"
                             @keydown="onKeyDown1"
-                            ref="input1"
-                            :style="{ height: input1Height + 'px' }"
-                            type="text"
-                            spellcheck="false"
-                            v-model="text"
                         ></textarea>
                         <span :class="{ 'my-active': ignoreCase }" @click="changeCase" class="my-search-suffix" title="Match Case(Alt+C)">Aa</span>
                         <span :class="{ 'my-active': wholeWord }" @click="changeWhole" class="my-search-suffix iconfont icon-whole-word" title="Match Whole Word(Alt+W)"></span>
@@ -29,14 +30,15 @@
                     <div class="my-center-start" style="margin-top: 10px" v-show="replaceVisible">
                         <div :class="{ 'my-active': input2Focus }" class="my-search-input" style="flex-grow: 1">
                             <textarea
+                                ref="input2"
+                                type="text"
+                                spellcheck="false"
+                                placeholder="Replace"
+                                :style="{ height: input2Height + 'px' }"
+                                v-model="replaceText"
                                 @blur="input2Focus = false"
                                 @focus="input2Focus = true"
                                 @keydown="onKeyDown2"
-                                ref="input2"
-                                :style="{ height: input2Height + 'px' }"
-                                type="text"
-                                v-model="replaceText"
-                                spellcheck="false"
                             ></textarea>
                         </div>
                         <span
@@ -89,9 +91,11 @@
     </div>
 </template>
 <script>
+import EventBus from '@/event';
 import FileContentSearchResults from './FileContentSearchResults.vue';
 import Searcher from '../module/file-content-search';
 import Util from '@/common/util';
+
 export default {
     components: {
         FileContentSearchResults,
@@ -137,9 +141,24 @@ export default {
     },
     created() {
         this.searcher = new Searcher();
+        this.initEvent();
     },
     mounted() {},
     methods: {
+        initEvent() {
+            EventBus.$on('find-in-folder', (option) => {
+                option = option || {};
+                if (option.path) {
+                    this.includePath = option.path;
+                }
+                if (option.replace) {
+                    this.replaceVisible = true;
+                }
+                requestAnimationFrame(() => {
+                    this.$refs.input1.focus();
+                });
+            });
+        },
         search() {
             clearTimeout(this.searchTimer);
             if (!this.includePath || !this.text || (this.excludePath && this.includePath.startsWith(this.excludePath))) {

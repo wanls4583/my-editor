@@ -13,7 +13,7 @@
                             :class="[item.active ? 'my-active' : '']"
                             :style="{ 'padding-left': _paddingLeft(item) }"
                             :title="item.path"
-                            @contextmenu.stop.prevent
+                            @contextmenu.stop.prevent="onContextmenu($event, item)"
                             class="tree-item-title my-center-start"
                         >
                             <template v-if="item.type === 'dir'">
@@ -233,6 +233,7 @@ export default {
                             item.children = data;
                             item.loaded = true;
                             data.forEach((_item) => {
+                                _item.parent = item;
                                 _item.deep = item.deep + 1;
                             });
                             _changOpen.call(this, item);
@@ -273,6 +274,9 @@ export default {
             let scrollTop = e.target.scrollTop;
             this.startLine = Math.floor(scrollTop / this.itemHeight) + 1;
             this.render();
+        },
+        onContextmenu(e, item) {
+            this.$parent.$refs.sideTreeMenu.show(e, item);
         },
     },
 };

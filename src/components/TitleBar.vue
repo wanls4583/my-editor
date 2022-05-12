@@ -9,43 +9,19 @@
             <div class="menu-bar">
                 <div @mousedown.stop="showMemu('fileMenuVisible')" class="bar-item my-hover">
                     <span>File</span>
-                    <Menu
-                        :hoverCheck="true"
-                        :menuList="fileMenuList"
-                        :styles="{ left: 0, top: _top }"
-                        @change="onFileMenuChange"
-                        v-if="fileMenuVisible"
-                    ></Menu>
+                    <Menu :hoverCheck="true" :menuList="fileMenuList" :styles="{ left: 0, top: _top }" @change="onFileMenuChange" v-if="fileMenuVisible"></Menu>
                 </div>
                 <div @mousedown.stop="showMemu('editMenuVisible')" class="bar-item my-hover">
                     <span>Edit</span>
-                    <Menu
-                        :hoverCheck="true"
-                        :menuList="editMenuList"
-                        :styles="{ left: 0, top: _top }"
-                        @change="onEditMenuChange"
-                        v-if="editMenuVisible"
-                    ></Menu>
+                    <Menu :hoverCheck="true" :menuList="editMenuList" :styles="{ left: 0, top: _top }" @change="onEditMenuChange" v-if="editMenuVisible"></Menu>
                 </div>
                 <div @mousedown.stop="showMemu('selectionMenuVisible')" class="bar-item my-hover">
                     <span>Selection</span>
-                    <Menu
-                        :hoverCheck="true"
-                        :menuList="selectionMenuList"
-                        :styles="{ left: 0, top: _top }"
-                        @change="onSelectionMenuChange"
-                        v-if="selectionMenuVisible"
-                    ></Menu>
+                    <Menu :hoverCheck="true" :menuList="selectionMenuList" :styles="{ left: 0, top: _top }" @change="onSelectionMenuChange" v-if="selectionMenuVisible"></Menu>
                 </div>
                 <div @mousedown.stop="showMemu('preferenceMenuVisible')" class="bar-item my-hover">
                     <span>Preference</span>
-                    <Menu
-                        :hoverCheck="true"
-                        :menuList="preferenceMenuList"
-                        :styles="{ left: 0, top: _top }"
-                        @change="onPreferenceMenuChange"
-                        v-if="preferenceMenuVisible"
-                    ></Menu>
+                    <Menu :hoverCheck="true" :menuList="preferenceMenuList" :styles="{ left: 0, top: _top }" @change="onPreferenceMenuChange" v-if="preferenceMenuVisible"></Menu>
                 </div>
             </div>
             <div class="bar-right" v-if="mode === 'app'">
@@ -154,6 +130,18 @@ export default {
                         name: 'Replace',
                         op: 'replace',
                         shortcut: 'Ctrl+H',
+                    },
+                ],
+                [
+                    {
+                        name: 'Find in Files',
+                        op: 'findInFiles',
+                        shortcut: 'Ctrl+Shift+F',
+                    },
+                    {
+                        name: 'Replace in Files',
+                        op: 'replaceInFiles',
+                        shortcut: 'Ctrl+Shift+H',
                     },
                 ],
             ],
@@ -324,6 +312,14 @@ export default {
             this.fileMenuVisible = false;
         },
         onEditMenuChange(item) {
+            switch (item.op) {
+                case 'findInFiles':
+                    EventBus.$emit('find-in-folder');
+                    break;
+                case 'replaceInFiles':
+                    EventBus.$emit('find-in-folder', { replace: true });
+                    break;
+            }
             if (!this.editor) {
                 this.editMenuVisible = false;
                 return;
@@ -331,32 +327,39 @@ export default {
             switch (item.op) {
                 case 'undo':
                     this.editor.history.undo();
+                    this.editor.focus();
                     break;
                 case 'redo':
                     this.editor.history.redo();
+                    this.editor.focus();
                     break;
                 case 'cut':
                     Util.writeClipboard(this.context.getCopyText(true));
+                    this.editor.focus();
                     break;
                 case 'copy':
                     Util.writeClipboard(this.context.getCopyText());
+                    this.editor.focus();
                     break;
                 case 'paste':
                     Util.readClipboard().then((text) => {
                         this.context.insertContent(text);
                     });
+                    this.editor.focus();
                     break;
                 case 'deleteLine':
                     this.context.deleteLine();
+                    this.editor.focus();
                     break;
                 case 'find':
                     this.editor.openSearch();
+                    this.editor.focus();
                     break;
                 case 'replace':
                     this.editor.openSearch(true);
+                    this.editor.focus();
                     break;
             }
-            this.editor.focus();
             this.editMenuVisible = false;
         },
         onSelectionMenuChange(item) {

@@ -2,11 +2,11 @@
     &-side-bar {
         position: relative;
         height: 100%;
-        padding: 0 4px;
+        padding-right: 4px;
         user-select: none;
 
         .side-bar-title {
-            padding-left: 16px;
+            padding-left: 20px;
             height: 40px;
             line-height: 40px;
             color: var(--my-sideBarTitle-foreground);

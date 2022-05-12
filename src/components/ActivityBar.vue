@@ -20,14 +20,22 @@ export default {
             activity: 'files',
         };
     },
+    watch: {
+        activity() {
+            EventBus.$emit('activity-change', this.activity);
+        }
+    },
     mounted() {
         this.initEvent();
     },
     methods: {
-        initEvent() {},
+        initEvent() {
+            EventBus.$on('find-in-folder', () => {
+                this.activity = 'search';
+            });
+        },
         onChange(activity) {
             this.activity = activity;
-            EventBus.$emit('activity-change', activity);
         },
     },
 };

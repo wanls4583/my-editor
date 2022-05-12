@@ -10,17 +10,20 @@
             <side-tree :list="list"></side-tree>
         </div>
         <SideBarMenu ref="sideBarMenu"></SideBarMenu>
+        <SideTreMenu ref="sideTreeMenu"></SideTreMenu>
     </div>
 </template>
 <script>
 import SideTree from './SideTree';
 import SideBarMenu from './SideBarMenu';
+import SideTreMenu from './SideTreMenu';
 import globalData from '@/data/globalData';
 
 export default {
     components: {
         SideTree,
         SideBarMenu,
+        SideTreMenu,
     },
     data() {
         return {
@@ -39,9 +42,7 @@ export default {
     },
     methods: {
         initEvent() {},
-        onContextmenu(e) {
-            // EventBus.$emit("open-side-menu");
-        },
+        onContextmenu(e) {},
     },
 };
 </script>
