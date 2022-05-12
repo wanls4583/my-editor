@@ -481,7 +481,7 @@ export default class {
     splitLongToken(tokens) {
         let result = [];
         tokens.forEach((token) => {
-            let length = token.endIndex - token.startIndex;
+            let length = token.endIndex - token.startIndex + 1;
             if (length > 100) {
                 //将文本数量大于100的token分隔
                 let startCol = token.startIndex;
@@ -489,10 +489,9 @@ export default class {
                 for (let i = 0; i < count; i++) {
                     let startIndex = i * 100;
                     let endIndex = (i + 1) * 100;
-                    endIndex = endIndex > token.endIndex ? token.endIndex : endIndex;
                     result.push({
                         startIndex: startIndex + startCol,
-                        endIndex: endIndex,
+                        endIndex: endIndex + startCol,
                         scopes: token.scopes,
                     });
                 }
