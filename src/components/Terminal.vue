@@ -45,9 +45,8 @@ export default {
 	},
 	methods: {
 		addLine(data) {
-			let sendCmd = this.sendCmd;
 			let texts = iconvLite.decode(data, 'cp936').split(/\r\n|\n|\r/);
-			if (sendCmd) {
+			if (this.sendCmd) {
 				texts = texts.slice(1);
 			}
 			if (texts.peek() === '') {
@@ -64,9 +63,10 @@ export default {
 			this.text = '';
 			this.list.push(...texts);
 			this.sendCmd = false;
+			this.added = true;
 			requestAnimationFrame(() => {
 				this.$refs.textarea[0].scrollIntoView({ behavior: 'instant' }); //"auto","instant"或"smooth"
-				if (sendCmd) {
+				if (this.added) {
 					setTimeout(() => {
 						this.focus();
 					}, 500);
