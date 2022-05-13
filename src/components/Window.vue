@@ -37,6 +37,10 @@
 			<template v-for="item in editorList">
 				<editor :active="item.active" :id="item.id" :key="item.id" :path="item.path" :ref="'editor' + item.id" @change="onFileChange(item.id)" @save="onSaveFile(item.id)" v-show="item.active"></editor>
 			</template>
+            <div @mousedown="onTerminalSashBegin" class="my-sash-h"></div>
+			<div :style="{height: terminalHeight+'px'}" class="my-terminal-wrap">
+				<div class="my-terminal"></div>
+			</div>
 		</div>
 		<!-- 顶部菜单栏 -->
 		<title-bar :height="topBarHeight" @change="onMenuChange" ref="titleBar"></title-bar>
@@ -100,6 +104,7 @@ export default {
 			themeType: 'dark',
 			activity: 'files',
 			leftWidth: 400,
+			terminalHeight: 260,
 			mode: remote ? 'app' : 'mode',
 		};
 	},
@@ -171,9 +176,16 @@ export default {
 						this.leftWidth = width;
 						this.leftSashMouseObj = e;
 					}
+					if (this.terminaSashMouseObj) {
+						let width = (this.terminalHeight -= e.clientY - this.terminaSashMouseObj.clientY);
+						width = width > 0 ? width : 0;
+						this.terminalHeight = width;
+						this.terminaSashMouseObj = e;
+					}
 				})
 				.on('mouseup', (e) => {
 					this.leftSashMouseObj = null;
+					this.terminaSashMouseObj = null;
 				});
 		},
 		initEventBus() {
@@ -199,6 +211,9 @@ export default {
 		},
 		onLeftSashBegin(e) {
 			this.leftSashMouseObj = e;
+		},
+		onTerminalSashBegin(e) {
+			this.terminaSashMouseObj = e;
 		},
 		// 点击编辑器
 		onWindMouseDown() {

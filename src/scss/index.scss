@@ -16,221 +16,249 @@
 @import 'cmd-panel';
 
 * {
-    box-sizing: border-box;
-    &::before,
-    &::after {
-        box-sizing: border-box;
-    }
+	box-sizing: border-box;
+	&::before,
+	&::after {
+		box-sizing: border-box;
+	}
 }
 
 html,
 body {
-    margin: 0;
-    padding: 0;
-    width: 100;
-    height: 100%;
-    font-family: Segoe WPC, Segoe UI, sans-serif;
-    color: #575757;
+	margin: 0;
+	padding: 0;
+	width: 100;
+	height: 100%;
+	font-family: Segoe WPC, Segoe UI, sans-serif;
+	color: #575757;
 }
 
 input,
 textarea {
-    font-family: Consolas, 'Courier New', monospace;
-    &::selection {
-        background-color: var(--my-selection-background);
-    }
+	font-family: Consolas, 'Courier New', monospace;
+	&::selection {
+		background-color: var(--my-selection-background);
+	}
 }
 
 #app {
-    width: 100;
-    height: 100%;
+	width: 100;
+	height: 100%;
 }
 
 .my {
-    &-position-relative {
-        position: relative;
-    }
+	&-position-relative {
+		position: relative;
+	}
 
-    &-position-absolute {
-        position: absolute;
-    }
+	&-position-absolute {
+		position: absolute;
+	}
 
-    &-width-100 {
-        width: 100%;
-    }
+	&-width-100 {
+		width: 100%;
+	}
 
-    &-height-100 {
-        height: 100%;
-    }
+	&-height-100 {
+		height: 100%;
+	}
 
-    &-scroll-auto {
-        overflow: auto;
+	&-scroll-auto {
+		overflow: auto;
 
-        &::-webkit-scrollbar {
-            width: 12px;
-            height: 12px;
-            background-color: transparent;
-        }
+		&::-webkit-scrollbar {
+			width: 12px;
+			height: 12px;
+			background-color: transparent;
+		}
 
-        &::-webkit-scrollbar-corner {
-            background-color: transparent;
-        }
+		&::-webkit-scrollbar-corner {
+			background-color: transparent;
+		}
 
-        &::-webkit-scrollbar-thumb {
-            background-color: var(--my-scrollbarSlider-background);
+		&::-webkit-scrollbar-thumb {
+			background-color: var(--my-scrollbarSlider-background);
 
-            &:hover {
-                background-color: var(--my-scrollbarSlider-hoverBackground);
-            }
+			&:hover {
+				background-color: var(--my-scrollbarSlider-hoverBackground);
+			}
 
-            &:active {
-                background-color: var(--my-scrollbarSlider-activeBackground);
-            }
-        }
-    }
+			&:active {
+				background-color: var(--my-scrollbarSlider-activeBackground);
+			}
+		}
+	}
 
-    &-scroll-overlay {
-        overflow: overlay;
+	&-scroll-overlay {
+		overflow: overlay;
 
-        &::-webkit-scrollbar {
-            width: 14px;
-            height: 14px;
-            background-color: transparent;
-        }
+		&::-webkit-scrollbar {
+			width: 14px;
+			height: 14px;
+			background-color: transparent;
+		}
 
-        &::-webkit-scrollbar-thumb {
-            background-color: transparent;
-        }
+		&::-webkit-scrollbar-thumb {
+			background-color: transparent;
+		}
 
-        &::-webkit-scrollbar-corner {
-            background-color: transparent;
-        }
+		&::-webkit-scrollbar-corner {
+			background-color: transparent;
+		}
 
-        &:hover {
-            &::-webkit-scrollbar-thumb {
-                background-color: var(--my-scrollbarSlider-background);
+		&:hover {
+			&::-webkit-scrollbar-thumb {
+				background-color: var(--my-scrollbarSlider-background);
 
-                &:hover {
-                    background-color: var(--my-scrollbarSlider-hoverBackground);
-                }
+				&:hover {
+					background-color: var(--my-scrollbarSlider-hoverBackground);
+				}
 
-                &:active {
-                    background-color: var(--my-scrollbarSlider-activeBackground);
-                }
-            }
-        }
-    }
+				&:active {
+					background-color: var(--my-scrollbarSlider-activeBackground);
+				}
+			}
+		}
+	}
 
-    &-scroll-mini {
-        &::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-    }
+	&-scroll-mini {
+		&::-webkit-scrollbar {
+			width: 6px;
+			height: 6px;
+		}
+	}
 
-    &-scroll-small {
-        &::-webkit-scrollbar {
-            width: 10px;
-            height: 10px;
-        }
-    }
+	&-scroll-small {
+		&::-webkit-scrollbar {
+			width: 10px;
+			height: 10px;
+		}
+	}
 
-    &-hover {
-        cursor: pointer;
-    }
+	&-hover {
+		cursor: pointer;
+	}
 
-    &-hover-danger {
-        cursor: pointer;
+	&-hover-danger {
+		cursor: pointer;
 
-        &:hover {
-            background-color: red;
-            color: white;
-        }
-    }
+		&:hover {
+			background-color: red;
+			color: white;
+		}
+	}
 
-    &-icon {
-        display: inline-block;
-        width: 16px;
-        height: 16px;
-        background-size: 100%;
-        background-position: 0;
-        background-repeat: no-repeat;
-    }
+	&-icon {
+		display: inline-block;
+		width: 16px;
+		height: 16px;
+		background-size: 100%;
+		background-position: 0;
+		background-repeat: no-repeat;
+	}
 
-    &-file-icon::before {
-        position: relative;
-        display: inline-block;
-        flex-shrink: 0;
-        width: 16px;
-        height: 22px;
-        line-height: 22px;
-        margin: 0 6px;
-        background-size: 16px;
-        background-position: 0;
-        background-repeat: no-repeat;
-    }
+	&-file-icon::before {
+		position: relative;
+		display: inline-block;
+		flex-shrink: 0;
+		width: 16px;
+		height: 22px;
+		line-height: 22px;
+		margin: 0 6px;
+		background-size: 16px;
+		background-position: 0;
+		background-repeat: no-repeat;
+	}
 
-    &-icon-error {
-        width: 14px;
-        height: 14px;
-        background: url(@/assets/image/error.svg);
-        background-size: contain;
-        background-position: center;
-    }
+	&-icon-error {
+		width: 14px;
+		height: 14px;
+		background: url(@/assets/image/error.svg);
+		background-size: contain;
+		background-position: center;
+	}
 
-    &-icon-warn {
-        width: 14px;
-        height: 14px;
-        background: url(@/assets/image/warn.svg);
-        background-size: contain;
-        background-position: center;
-    }
+	&-icon-warn {
+		width: 14px;
+		height: 14px;
+		background: url(@/assets/image/warn.svg);
+		background-size: contain;
+		background-position: center;
+	}
 
-    &-center-center {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
+	&-center-center {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
 
-    &-center-between {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
+	&-center-between {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
 
-    &-center-start {
-        display: flex;
-        align-items: center;
-    }
+	&-center-start {
+		display: flex;
+		align-items: center;
+	}
 
-    &-window {
-        display: flex;
-        position: relative;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-        font-size: 13px;
-        background-color: var(--my-background);
-        color: var(--my-foreground);
-    }
+	&-window {
+		display: flex;
+		position: relative;
+		width: 100%;
+		height: 100%;
+		overflow: hidden;
+		font-size: 13px;
+		background-color: var(--my-background);
+		color: var(--my-foreground);
+	}
 
-    &-left-warp {
-        display: flex;
-        flex-shrink: 0;
-        position: relative;
-        height: 100%;
-        border-right: 1px solid var(--my-sideBar-border);
-        background-color: var(--my-sideBar-background);
-        color: var(--my-sideBar-foreground);
-    }
+	&-left-warp {
+		display: flex;
+		flex-shrink: 0;
+		position: relative;
+		height: 100%;
+		border-right: 1px solid var(--my-sideBar-border);
+		background-color: var(--my-sideBar-background);
+		color: var(--my-sideBar-foreground);
+	}
 
-    &-right-wrap {
-        flex-grow: 1;
-        display: flex;
-        flex-direction: column;
-        position: relative;
-        height: 100%;
-        overflow: hidden;
-        background-color: var(--my-editor-background);
-    }
+	&-right-wrap {
+		flex-grow: 1;
+		display: flex;
+		flex-direction: column;
+		position: relative;
+		height: 100%;
+		overflow: hidden;
+		background-color: var(--my-editor-background);
+	}
+
+	&-terminal-wrap {
+		flex-shrink: 0;
+		position: relative;
+		border-top: 1px solid var(--my-terminal-border);
+		background-color: var(--my-terminal-background);
+		color: var(--my-terminal-foreground);
+	}
+
+	&-sash-v {
+		flex-shrink: 0;
+		width: 4px;
+		cursor: ew-resize;
+
+		&:hover {
+			background-color: var(--my-sash-hoverBorder);
+		}
+	}
+
+	&-sash-h {
+		flex-shrink: 0;
+		height: 4px;
+		cursor: ns-resize;
+
+		&:hover {
+			background-color: var(--my-sash-hoverBorder);
+		}
+	}
 }

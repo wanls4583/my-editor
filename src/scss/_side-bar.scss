@@ -1,81 +1,66 @@
 .my {
-    &-side-bar {
-        position: relative;
-        height: 100%;
-        padding-right: 4px;
-        user-select: none;
+	&-side-bar {
+		position: relative;
+		height: 100%;
+		user-select: none;
 
-        .side-bar-title {
-            padding-left: 20px;
-            height: 40px;
-            line-height: 40px;
-            color: var(--my-sideBarTitle-foreground);
-        }
+		.side-bar-title {
+			padding-left: 20px;
+			height: 40px;
+			line-height: 40px;
+			color: var(--my-sideBarTitle-foreground);
+		}
 
-        .side-tree {
-            position: relative;
+		.side-tree {
+			position: relative;
 
-            &-warp {
-                position: absolute;
-                top: 40px;
-                bottom: 0;
-                left: 0;
-                right: 0;
-            }
+			&-warp {
+				position: absolute;
+				top: 40px;
+				bottom: 0;
+				left: 0;
+				right: 0;
+			}
 
-            &-content {
-                position: absolute;
-                left: 0;
-                width: 100%;
-            }
-        }
+			&-content {
+				position: absolute;
+				left: 0;
+				width: 100%;
+			}
+		}
 
-        .tree-item {
-            position: relative;
-            white-space: nowrap;
+		.tree-item {
+			position: relative;
+			white-space: nowrap;
 
-            &-title {
-                height: 30px;
-                padding-right: 10px;
-                border: 1px solid transparent;
-                cursor: pointer;
+			&-title {
+				height: 30px;
+				padding-right: 10px;
+				border: 1px solid transparent;
+				cursor: pointer;
 
-                &:hover {
-                    border-style: dotted;
-                    border-color: var(--my-contrastActiveBorder);
-                    background-color: var(--my-list-hoverBackground);
-                    color: var(--my-list-hoverForeground);
-                }
+				&:hover {
+					border-style: dotted;
+					border-color: var(--my-contrastActiveBorder);
+					background-color: var(--my-list-hoverBackground);
+					color: var(--my-list-hoverForeground);
+				}
 
-                &.my-active {
-                    border-color: var(--my-contrastActiveBorder);
-                    background-color: var(--my-list-activeSelectionBackground);
-                    color: var(--my-list-activeSelectionForeground);
-                }
-            }
+				&.my-active {
+					border-color: var(--my-contrastActiveBorder);
+					background-color: var(--my-list-activeSelectionBackground);
+					color: var(--my-list-activeSelectionForeground);
+				}
+			}
 
-            &-content {
-                width: 100%;
-            }
+			&-content {
+				width: 100%;
+			}
 
-            &-text {
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
-        }
-    }
-
-    &-sash-v {
-        position: absolute;
-        right: 0;
-        top: 0;
-        bottom: 0;
-        z-index: 1;
-        width: 4px;
-        cursor: ew-resize;
-
-        &:hover {
-            background-color: var(--my-sash-hoverBorder);
-        }
-    }
+			&-text {
+				overflow: hidden;
+				text-overflow: ellipsis;
+			}
+		}
+	}
 }
