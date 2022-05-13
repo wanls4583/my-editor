@@ -226,8 +226,9 @@ textarea {
 
     &-right-wrap {
         flex-grow: 1;
+        display: flex;
+        flex-direction: column;
         position: relative;
-        padding-top: 40px;
         height: 100%;
         overflow: hidden;
         background-color: var(--my-editor-background);
