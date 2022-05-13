@@ -20,7 +20,7 @@
                     >
                         <div class="my-menu-title">{{ item.name }}</div>
                         <div class="my-menu-shortcut" v-if="item.shortcut">
-                            {{ item.shortcut }}
+                            <span v-if="item.shortcut != 'ignore'">{{ item.shortcut }}</span>
                         </div>
                     </div>
                 </div>

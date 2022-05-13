@@ -153,6 +153,7 @@ export default {
         id: {
             type: Number,
         },
+        path: '',
         active: {
             type: Boolean,
             default: false,
@@ -194,6 +195,13 @@ export default {
                 width: 0,
             },
             menuList: [
+                [
+                    {
+                        name: 'Reveal in File Explorer',
+                        op: 'revealInFileExplorer',
+                        shortcut: 'ignore'
+                    },
+                ],
                 [
                     {
                         name: 'Cut',
@@ -1087,7 +1095,7 @@ export default {
                             }
                         });
                     }
-                    requestAnimationFrame(()=>{
+                    requestAnimationFrame(() => {
                         this.renderCursor(true);
                     });
                 });
@@ -1292,6 +1300,9 @@ export default {
         // 选中菜单
         onClickMenu(menu) {
             switch (menu.op) {
+                case 'revealInFileExplorer':
+                    EventBus.$emit('reveal-in-file-explorer', this.path);
+                    break;
                 case 'cut':
                 case 'copy':
                     Util.writeClipboard(this.myContext.getCopyText(menu.op === 'cut'));

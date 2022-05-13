@@ -35,7 +35,16 @@
             ></editor-bar>
             <!-- 编辑区 -->
             <template v-for="item in editorList">
-                <editor :active="item.active" :id="item.id" :key="item.id" :ref="'editor' + item.id" @change="onFileChange(item.id)" @save="onSaveFile(item.id)" v-show="item.active"></editor>
+                <editor
+                    :active="item.active"
+                    :id="item.id"
+                    :path="item.path"
+                    :key="item.id"
+                    :ref="'editor' + item.id"
+                    @change="onFileChange(item.id)"
+                    @save="onSaveFile(item.id)"
+                    v-show="item.active"
+                ></editor>
             </template>
             <window-menu ref="winMenu"></window-menu>
         </div>
@@ -71,13 +80,13 @@ import Context from '@/module/context/index';
 import Theme from '@/module/theme';
 import EventBus from '@/event';
 import Util from '@/common/util';
+import CommonEvent from '@/common/event';
 import $ from 'jquery';
 import globalData from '@/data/globalData';
 
-const require = window.require || window.parent.require || function () {};
-const fs = require('fs');
-const path = require('path');
-const remote = require('@electron/remote');
+const fs = window.require('fs');
+const path = window.require('path');
+const remote = window.require('@electron/remote');
 const contexts = Context.contexts;
 
 export default {
@@ -147,6 +156,8 @@ export default {
                 EventBus.$emit('close-menu');
             });
         }
+        this.commonEvent = new CommonEvent();
+        this.commonEvent.init();
         this.initEvent();
         this.initEventBus();
     },

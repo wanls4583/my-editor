@@ -13,9 +13,7 @@ import Menu from './Menu';
 import EventBus from '@/event';
 import $ from 'jquery';
 
-const require = window.require || window.parent.require || function () {};
-const path = require('path');
-const remote = require('@electron/remote');
+const path = window.require('path');
 
 export default {
     name: 'SideTreMenu',
@@ -86,7 +84,7 @@ export default {
         onMenuChange(item) {
             switch (item.op) {
                 case 'revealInFileExplorer':
-                    remote.shell.showItemInFolder(this.treeItem.path);
+                    EventBus.$emit('reveal-in-file-explorer', this.treeItem.path);
                     break;
                 case 'findInFolder':
                     let treeItem = this.treeItem;
