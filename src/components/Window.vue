@@ -37,10 +37,12 @@
 			<template v-for="item in editorList">
 				<editor :active="item.active" :id="item.id" :key="item.id" :path="item.path" :ref="'editor' + item.id" @change="onFileChange(item.id)" @save="onSaveFile(item.id)" v-show="item.active"></editor>
 			</template>
-            <div @mousedown="onTerminalSashBegin" class="my-sash-h"></div>
-			<div :style="{height: terminalHeight+'px'}" class="my-terminal-wrap">
-				<div class="my-terminal"></div>
-			</div>
+			<template v-show="terminalVisible">
+				<div @mousedown="onTerminalSashBegin" class="my-sash-h"></div>
+				<div :style="{height: terminalHeight+'px'}" class="my-terminal-wrap">
+					<terminal></terminal>
+				</div>
+			</template>
 		</div>
 		<!-- 顶部菜单栏 -->
 		<title-bar :height="topBarHeight" @change="onMenuChange" ref="titleBar"></title-bar>
@@ -60,6 +62,7 @@ import ActivityBar from './ActivityBar.vue';
 import FileContentSearch from './FileContentSearch.vue';
 import Dialog from './Dialog.vue';
 import CmdPanel from './CmdPanel.vue';
+import Terminal from './Terminal.vue';
 import Context from '@/module/context/index';
 import Theme from '@/module/theme';
 import EventBus from '@/event';
@@ -84,6 +87,7 @@ export default {
 		SideBar,
 		Dialog,
 		CmdPanel,
+		Terminal,
 	},
 	data() {
 		return {
@@ -98,6 +102,7 @@ export default {
 			dialogTilte: '',
 			dialogContent: '',
 			dialogVisible: false,
+			terminalVisible: false,
 			dialogBtns: [],
 			dialogIcon: '',
 			dialogIconColor: '',

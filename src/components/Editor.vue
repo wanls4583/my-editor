@@ -468,13 +468,13 @@ export default {
         showCursor() {
             this.cursorFocus = true;
             if (!this.cursor.multiCursorPos.size) {
-                this.showCursor.show = false;
+                this.hasShowCursor = false;
                 return;
             }
-            if (this.showCursor.show) {
+            if (this.hasShowCursor) {
                 return;
             }
-            this.showCursor.show = true;
+            this.hasShowCursor = true;
             this.cursorVisible = true;
             let _timer = () => {
                 clearTimeout(this.curserTimer);
@@ -488,7 +488,7 @@ export default {
         // 隐藏光标
         hideCursor() {
             clearTimeout(this.curserTimer);
-            this.showCursor.show = false;
+            this.hasShowCursor = false;
             this.cursorFocus = false;
         },
         // 聚焦

@@ -1,0 +1,37 @@
+.my {
+	&-terminal {
+		height: 100%;
+		padding: 10px 15px;
+		font-size: 14px;
+		line-height: 1.5em;
+		letter-spacing: 0px;
+		font-family: Consolas, 'Courier New', monospace;
+		cursor: text;
+
+		&-cursor {
+			position: relative;
+			display: inline-block;
+			width: 2px;
+			background-color: var(--my-editorCursor-foreground);
+			pointer-events: none;
+			white-space: pre;
+			opacity: 0;
+
+			&::before {
+				content: ' ';
+			}
+		}
+
+		&-textarea {
+			position: absolute;
+			top: 100%;
+			left: 0;
+			width: 1px;
+            height: 100%;
+			padding: 0;
+			border: none;
+			outline: none;
+			opacity: 0;
+		}
+	}
+}
