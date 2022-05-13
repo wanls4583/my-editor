@@ -50,6 +50,9 @@ export default {
 			if (sendCmd) {
 				texts = texts.slice(1);
 			}
+			if (texts.peek() === '') {
+				texts.pop();
+			}
 			texts = texts.map((item) => {
 				return {
 					text: item,
@@ -62,7 +65,7 @@ export default {
 			this.list.push(...texts);
 			this.sendCmd = false;
 			requestAnimationFrame(() => {
-				this.$refs.textarea[0].scrollIntoView();
+				this.$refs.textarea[0].scrollIntoView({ behavior: 'instant' }); //"auto","instant"或"smooth"
 				if (sendCmd) {
 					setTimeout(() => {
 						this.focus();
