@@ -54,21 +54,20 @@ class Util {
         });
     }
     //获取字符宽度
-    static getCharWidth(wrap) {
+    static getCharWidth(wrap, template) {
         var str1 = '------------------------------------------------------------------------------------';
         var str2 = '一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一';
         var id1 = 'char-width-' + Util.getUUID();
         var id2 = 'char-width-' + Util.getUUID();
-        var $tempDom = $(`<div class="my-line">
-        <div class="my-code"><span id="${id1}">${str1}</span><span id="${id2}">${str2}</span></div>
-        </div>`);
-        $(wrap).append($tempDom);
-        var dom = $('#' + id1)[0];
-        var charWidth = dom.scrollWidth / str1.length;
-        var charHight = dom.clientHeight;
-        var fontSize = window.getComputedStyle ? window.getComputedStyle(dom, null).fontSize : dom.currentStyle.fontSize;
-        var fullAngleCharWidth = $('#' + id2)[0].scrollWidth / str2.length;
-        $tempDom.remove();
+        var $tempDom1 = $(template.replace('[dom]', `<span id="${id1}">${str1}</span>`));
+        var $tempDom2 = $(template.replace('[dom]', `<span id="${id2}">${str2}</span>`));
+        $(wrap).append($tempDom1).append($tempDom2);
+        var charWidth = $tempDom1[0].scrollWidth / str1.length;
+        var charHight = $tempDom1[0].clientHeight;
+        var fontSize = window.getComputedStyle ? window.getComputedStyle($tempDom1[0], null).fontSize : $tempDom1[0].currentStyle.fontSize;
+        var fullAngleCharWidth = $tempDom2[0].scrollWidth / str2.length;
+        $tempDom1.remove();
+        $tempDom2.remove();
         return {
             charWidth: charWidth,
             fullAngleCharWidth: fullAngleCharWidth,

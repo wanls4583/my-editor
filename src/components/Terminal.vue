@@ -6,8 +6,8 @@
 <template>
 	<div class="my-terminal" ref="terminal">
 		<div @click="onClickTerminal" @contextmenu.stop.prevent="onContextmenu" @scroll="onScroll" class="my-terminal-scroller my-scroll-overlay my-scroll-small" ref="scroller">
-			<div :style="{ height: _scrollHeight }" class="my-terminal-content">
-				<div :style="{ top: _top }" class="my-terminal-render">
+			<div :style="{ height: _scrollHeight, 'min-width': _scrollWidth }" class="my-terminal-content">
+				<div :style="{ top: _top }" class="my-terminal-render" ref="render">
 					<div :style="{height: _lineHeight, 'line-height': _lineHeight}" class="my-terminal-line" v-for="(item, index) in renderList" v-if="index < renderList.length - 1">
 						<span>{{item.text || '&nbsp;'}}</span>
 					</div>
@@ -30,20 +30,28 @@
 	</div>
 </template>
 <script>
+import Util from '@/common/util';
+
 const iconvLite = window.require('iconv-lite');
 const spawn = window.require('child_process').spawn;
 export default {
 	name: 'Terminal',
 	data() {
 		return {
+			charObj: {
+				charWidth: 7.15,
+				fullAngleCharWidth: 15,
+				charHight: 19,
+			},
+			tabSize: 4,
 			list: [],
 			renderList: [],
 			opacity: 0,
 			text: '',
-			lineHeight: 21,
 			scrollLeft: 0,
 			scrollTop: 0,
 			startLine: 1,
+			maxWidth: 0,
 			textareaPos: {
 				left: 0,
 				top: 0,
@@ -52,7 +60,7 @@ export default {
 	},
 	computed: {
 		_lineHeight() {
-			return this.lineHeight + 'px';
+			return this.charObj.charHight + 'px';
 		},
 		_lastLine() {
 			if (this.renderList.length) {
@@ -62,10 +70,13 @@ export default {
 			}
 		},
 		_scrollHeight() {
-			return this.list.length * this.lineHeight + 'px';
+			return this.list.length * this.charObj.charHight + 'px';
+		},
+		_scrollWidth() {
+			return this.maxWidth + 'px';
 		},
 		_top() {
-			return (this.startLine - 1) * this.lineHeight + 'px';
+			return (this.startLine - 1) * this.charObj.charHight + 'px';
 		},
 	},
 	watch: {
@@ -91,6 +102,7 @@ export default {
 		});
 	},
 	mounted() {
+		this.charObj = Util.getCharWidth(this.$refs.render, '<div class="my-terminal-line">[dom]</div>');
 		this.initResizeEvent();
 	},
 	methods: {
@@ -102,6 +114,8 @@ export default {
 		},
 		addLine(data) {
 			let texts = iconvLite.decode(data, 'cp936').split(/\r\n|\n|\r/);
+			let widthStart = this.list.length - 1;
+			widthStart = widthStart >= 0 ? widthStart : 0;
 			texts = texts.map((item) => {
 				item = item.replace(/(?<=\s)\s+$/, '');
 				return {
@@ -116,6 +130,7 @@ export default {
 			this.list.push(...texts);
 			this.render();
 			this.scrollToCursor();
+			this.setLineWidth(this.list.slice(widthStart));
 			requestAnimationFrame(() => {
 				if (this.added) {
 					setTimeout(() => {
@@ -147,7 +162,7 @@ export default {
 			this.opacity = 0;
 		},
 		render(forceCursorView) {
-			this.maxVisibleLines = Math.ceil(this.$refs.terminal.clientHeight / this.lineHeight) + 1;
+			this.maxVisibleLines = Math.ceil(this.$refs.terminal.clientHeight / this.charObj.charHight) + 1;
 			this.renderList = this.list.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines);
 			this.renderList.map((item, index) => {
 				item.line = this.startLine + index;
@@ -166,7 +181,7 @@ export default {
 					left = left > width - 10 ? width - 10 : left;
 					left = left < 0 ? 0 : left;
 				}
-				top = top > height - this.lineHeight ? height - this.lineHeight : top;
+				top = top > height - this.charObj.charHight ? height - this.charObj.charHight : top;
 				top = top < 0 ? 0 : top;
 				this.textareaPos = {
 					left: left,
@@ -181,8 +196,8 @@ export default {
 				requestAnimationFrame(() => {
 					let width = $scroller.clientWidth;
 					let $cursor = this.$refs.cursor;
-					if ($cursor.offsetLeft - this.scrollLeft > width - 10) {
-						$scroller.scrollLeft = $cursor.offsetLeft - width + 10;
+					if ($cursor.offsetLeft - this.scrollLeft > width - 35) {
+						$scroller.scrollLeft = $cursor.offsetLeft - width + 35;
 					}
 				});
 			});
@@ -192,6 +207,42 @@ export default {
 			requestAnimationFrame(() => {
 				this.$refs.textarea.focus();
 			});
+		},
+		/**
+		 * 设置每行文本的宽度
+		 * @param {Array} texts
+		 */
+		setLineWidth(texts) {
+			let that = this;
+			let index = 0;
+			cancelIdleCallback(this.setLineWidthTimer);
+			_setLineWidth();
+
+			function _setLineWidth() {
+				let startTime = Date.now();
+				let count = 0;
+				while (index < texts.length) {
+					let text = texts[index].text;
+					let width = that.getStrWidth(text);
+					if (width > that.maxWidth) {
+						that.maxWidth = width;
+					}
+					index++;
+					count++;
+					if (count % 5 === 0 && Date.now() - startTime > 20) {
+						break;
+					}
+				}
+				if (index < texts.length) {
+					that.setLineWidthTimer = requestIdleCallback(() => {
+						_setLineWidth();
+					});
+				}
+			}
+		},
+		// 获取文本在浏览器中的宽度
+		getStrWidth(str, start, end) {
+			return Util.getStrWidth(str, this.charObj.charWidth, this.charObj.fullAngleCharWidth, this.tabSize, start, end);
 		},
 		onFocus() {
 			this.showCursor();
@@ -212,7 +263,7 @@ export default {
 		onScroll(e) {
 			this.scrollTop = e.target.scrollTop;
 			this.scrollLeft = e.target.scrollLeft;
-			this.startLine = Math.floor(this.scrollTop / this.lineHeight) + 1;
+			this.startLine = Math.floor(this.scrollTop / this.charObj.charHight) + 1;
 			this.render();
 		},
 	},

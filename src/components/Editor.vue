@@ -457,7 +457,7 @@ export default {
                 this.$nextTick(() => {
                     this.language = this._language || '';
                     this.theme = this._theme || '';
-                    this.charObj = Util.getCharWidth(this.$refs.content);
+                    this.charObj = Util.getCharWidth(this.$refs.content, '<div class="my-line"><div class="my-code">[dom]</div></div>');
                     this.maxVisibleLines = Math.ceil(this.$refs.scroller.clientHeight / this.charObj.charHight) + 1;
                     this.render();
                     this.focus();
