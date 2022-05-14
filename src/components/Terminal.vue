@@ -22,7 +22,6 @@
 			:style="{left: textareaPos.left + 'px', top: textareaPos.top + 'px', height: _lineHeight, 'line-height': _lineHeight }"
 			@blur="onBlur"
 			@focus="onFocus"
-			@input="onInput"
 			@keydown="onKeydown"
 			class="my-terminal-textarea"
 			ref="textarea"
@@ -77,6 +76,8 @@ export default {
 				let text = texts.slice(0, texts.length - 1).join('\r\n');
 				this.text = texts.pop();
 				this.cmdProcess.stdin.write(iconvLite.encode(text + '\r\n', 'cp936'));
+			} else {
+				this.scrollToCursor();
 			}
 		},
 	},
@@ -181,7 +182,7 @@ export default {
 					let width = $scroller.clientWidth;
 					let $cursor = this.$refs.cursor;
 					if ($cursor.offsetLeft - this.scrollLeft > width - 10) {
-						this.$refs.scroller.scrollLeft = $cursor.offsetLeft - width + 10;
+						$scroller.scrollLeft = $cursor.offsetLeft - width + 10;
 					}
 				});
 			});
@@ -203,9 +204,6 @@ export default {
 				e.preventDefault();
 				this.text += '\r\n';
 			}
-		},
-		onInput(e) {
-			this.scrollToCursor();
 		},
 		onClickTerminal(e) {
 			this.focus();
