@@ -5,13 +5,17 @@
 -->
 <template>
 	<div class="my-terminal" ref="terminal">
-		<div @click="onClickTerminal" @contextmenu.stop.prevent="onContextmenu" @scroll="onScroll" class="my-terminal-scroller my-scroll-overlay my-scroll-small">
-			<div :style="{'line-height': _lineHeight}" class="my-terminal-line" v-for="(item, index) in list" v-if="index < list.length - 1">
-				<span>{{item.text || '&nbsp;'}}</span>
-			</div>
-			<div class="my-terminal-line">
-				<span>{{_lastLine.text}}{{text}}</span>
-				<span :style="{opacity: opacity}" class="my-terminal-cursor" ref="cursor"></span>
+		<div @click="onClickTerminal" @contextmenu.stop.prevent="onContextmenu" @scroll="onScroll" class="my-terminal-scroller my-scroll-overlay my-scroll-small" ref="scroller">
+			<div :style="{ height: _scrollHeight }" class="my-terminal-content">
+				<div :style="{ top: _top }" class="my-terminal-render">
+					<div :style="{'line-height': _lineHeight}" class="my-terminal-line" v-for="(item, index) in renderList" v-if="index < renderList.length - 1">
+						<span>{{item.text || '&nbsp;'}}</span>
+					</div>
+					<div class="my-terminal-line">
+						<span>{{_lastLine.text}}{{text}}</span>
+						<span :style="{opacity: opacity}" class="my-terminal-cursor" ref="cursor"></span>
+					</div>
+				</div>
 			</div>
 		</div>
 		<textarea
@@ -33,11 +37,13 @@ export default {
 	data() {
 		return {
 			list: [],
+			renderList: [],
 			opacity: 0,
 			text: '',
 			lineHeight: 21,
 			scrollLeft: 0,
 			scrollTop: 0,
+			startLine: 1,
 			textareaPos: {
 				left: 0,
 				top: 0,
@@ -49,11 +55,17 @@ export default {
 			return this.lineHeight + 'px';
 		},
 		_lastLine() {
-			if (this.list.length) {
-				return this.list.peek();
+			if (this.renderList.length) {
+				return this.renderList.peek();
 			} else {
 				return { text: '' };
 			}
+		},
+		_scrollHeight() {
+			return this.list.length * this.lineHeight + 'px';
+		},
+		_top() {
+			return (this.startLine - 1) * this.lineHeight + 'px';
 		},
 	},
 	watch: {
@@ -82,7 +94,7 @@ export default {
 	methods: {
 		initResizeEvent() {
 			const resizeObserver = new ResizeObserver((entries) => {
-				this.renderCursor();
+				this.render();
 			});
 			resizeObserver.observe(this.$refs.terminal);
 		},
@@ -100,9 +112,9 @@ export default {
 				this.list.peek().text += firstLine;
 			}
 			this.list.push(...texts);
+			this.render();
+			this.scrollToBottom();
 			requestAnimationFrame(() => {
-				this.$refs.cursor.scrollIntoView();
-				this.renderCursor();
 				if (this.added) {
 					setTimeout(() => {
 						this.focus();
@@ -132,10 +144,14 @@ export default {
 			this.cursorVisible = false;
 			this.opacity = 0;
 		},
+		render(forceCursorView) {
+			this.maxVisibleLines = Math.ceil(this.$refs.terminal.clientHeight / this.lineHeight) + 1;
+			this.renderList = this.list.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines);
+			this.renderCursor();
+		},
 		renderCursor() {
 			this.$nextTick(() => {
-				let terminal = this.$refs.terminal;
-				let height = terminal.clientHeight;
+				let height = this.$refs.terminal.clientHeight;
 				let cursor = this.$refs.cursor;
 				let left = cursor.offsetLeft - this.scrollLeft;
 				let top = cursor.offsetTop - this.scrollTop;
@@ -147,6 +163,9 @@ export default {
 					top: top,
 				};
 			});
+		},
+		scrollToBottom() {
+			this.$refs.scroller.scrollTop = this.list.length * this.lineHeight;
 		},
 		focus() {
 			this.$refs.textarea.focus();
@@ -173,7 +192,8 @@ export default {
 		onScroll(e) {
 			this.scrollTop = e.target.scrollTop;
 			this.scrollLeft = e.target.scrollLeft;
-			this.renderCursor();
+			this.startLine = Math.floor(this.scrollTop / this.lineHeight) + 1;
+			this.render();
 		},
 	},
 };

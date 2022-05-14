@@ -8,6 +8,16 @@
 		font-family: Consolas, 'Courier New', monospace;
 		cursor: text;
 
+		&-content {
+			position: relative;
+		}
+
+		&-render {
+			position: absolute;
+			left: 0;
+			min-width: 100%;
+		}
+
 		&-cursor {
 			position: relative;
 			display: inline-block;
