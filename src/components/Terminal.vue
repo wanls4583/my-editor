@@ -22,6 +22,7 @@
 			:style="{left: textareaPos.left + 'px', top: textareaPos.top + 'px', height: _lineHeight, 'line-height': _lineHeight }"
 			@blur="onBlur"
 			@focus="onFocus"
+			@input="onInput"
 			@keydown="onKeydown"
 			class="my-terminal-textarea"
 			ref="textarea"
@@ -58,7 +59,7 @@ export default {
 			if (this.renderList.length) {
 				return this.renderList.peek();
 			} else {
-				return { text: '' };
+				return { text: '', line: 1 };
 			}
 		},
 		_scrollHeight() {
@@ -113,8 +114,8 @@ export default {
 			}
 			this.list.push(...texts);
 			this.render();
+			this.scrollToCursor();
 			requestAnimationFrame(() => {
-				this.scrollToBottom();
 				if (this.added) {
 					setTimeout(() => {
 						this.focus();
@@ -147,17 +148,23 @@ export default {
 		render(forceCursorView) {
 			this.maxVisibleLines = Math.ceil(this.$refs.terminal.clientHeight / this.lineHeight) + 1;
 			this.renderList = this.list.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines);
+			this.renderList.map((item, index) => {
+				item.line = this.startLine + index;
+			});
 			this.renderCursor();
 		},
 		renderCursor() {
 			this.$nextTick(() => {
-				let cursor = this.$refs.cursor;
-				let width = this.$refs.terminal.clientWidth;
-				let height = this.$refs.terminal.clientHeight;
-				let left = cursor.offsetLeft - this.scrollLeft;
+				let width = this.$refs.scroller.clientWidth;
+				let height = this.$refs.scroller.clientHeight;
+				let left = this.textareaPos.left;
 				let top = this.$refs.lastLine.offsetTop;
-				left = left > width - 10 ? width - 10 : left;
-				left = left < 0 ? 0 : left;
+				if (this._lastLine.line === this.list.length) {
+					let $cursor = this.$refs.cursor;
+					left = $cursor.offsetLeft - this.scrollLeft;
+					left = left > width - 10 ? width - 10 : left;
+					left = left < 0 ? 0 : left;
+				}
 				top = top > height - this.lineHeight ? height - this.lineHeight : top;
 				top = top < 0 ? 0 : top;
 				this.textareaPos = {
@@ -166,8 +173,18 @@ export default {
 				};
 			});
 		},
-		scrollToBottom() {
-			this.$refs.scroller.scrollTop = this.list.length * this.lineHeight;
+		scrollToCursor() {
+			requestAnimationFrame(() => {
+				let $scroller = this.$refs.scroller;
+				$scroller.scrollTop = $scroller.scrollHeight - $scroller.clientHeight;
+				requestAnimationFrame(() => {
+					let width = $scroller.clientWidth;
+					let $cursor = this.$refs.cursor;
+					if ($cursor.offsetLeft - this.scrollLeft > width - 10) {
+						this.$refs.scroller.scrollLeft = $cursor.offsetLeft - width + 10;
+					}
+				});
+			});
 		},
 		focus() {
 			this.$refs.textarea.focus();
@@ -186,6 +203,9 @@ export default {
 				e.preventDefault();
 				this.text += '\r\n';
 			}
+		},
+		onInput(e) {
+			this.scrollToCursor();
 		},
 		onClickTerminal(e) {
 			this.focus();
