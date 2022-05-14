@@ -11,7 +11,7 @@
 					<div :style="{height: _lineHeight, 'line-height': _lineHeight}" class="my-terminal-line" v-for="(item, index) in renderList" v-if="index < renderList.length - 1">
 						<span>{{item.text || '&nbsp;'}}</span>
 					</div>
-					<div :style="{height: _lineHeight, 'line-height': _lineHeight}" class="my-terminal-line">
+					<div :style="{height: _lineHeight, 'line-height': _lineHeight}" class="my-terminal-line" ref="lastLine">
 						<span>{{_lastLine.text}}{{text}}</span>
 						<span :style="{opacity: opacity}" class="my-terminal-cursor" ref="cursor"></span>
 					</div>
@@ -113,8 +113,8 @@ export default {
 			}
 			this.list.push(...texts);
 			this.render();
-			this.scrollToBottom();
 			requestAnimationFrame(() => {
+				this.scrollToBottom();
 				if (this.added) {
 					setTimeout(() => {
 						this.focus();
@@ -151,10 +151,12 @@ export default {
 		},
 		renderCursor() {
 			this.$nextTick(() => {
-				let height = this.$refs.terminal.clientHeight;
 				let cursor = this.$refs.cursor;
+				let width = this.$refs.terminal.clientWidth;
+				let height = this.$refs.terminal.clientHeight;
 				let left = cursor.offsetLeft - this.scrollLeft;
-				let top = cursor.offsetTop - this.scrollTop;
+				let top = this.$refs.lastLine.offsetTop;
+				left = left > width - 10 ? width - 10 : left;
 				left = left < 0 ? 0 : left;
 				top = top > height - this.lineHeight ? height - this.lineHeight : top;
 				top = top < 0 ? 0 : top;
