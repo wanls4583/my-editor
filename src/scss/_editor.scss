@@ -93,6 +93,9 @@
 		border-style: none;
 		outline: none;
 		opacity: 0;
+		resize: none;
+		white-space: pre;
+		pointer-events: none;
 	}
 
 	&-tip {

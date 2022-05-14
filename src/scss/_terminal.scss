@@ -1,9 +1,9 @@
 .my {
 	&-terminal {
+		position: relative;
 		height: 100%;
 		padding: 10px 15px;
 		font-size: 14px;
-		line-height: 1.5em;
 		letter-spacing: 0px;
 		font-family: Consolas, 'Courier New', monospace;
 		cursor: text;
@@ -24,14 +24,20 @@
 
 		&-textarea {
 			position: absolute;
-			top: 100%;
-			left: 0;
 			width: 1px;
-            height: 100%;
 			padding: 0;
 			border: none;
 			outline: none;
 			opacity: 0;
+			overflow: hidden;
+			resize: none;
+            white-space: pre;
+			pointer-events: none;
+		}
+
+		&-line {
+			display: inline-block;
+			white-space: pre;
 		}
 	}
 }
