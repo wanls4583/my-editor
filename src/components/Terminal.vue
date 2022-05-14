@@ -5,13 +5,14 @@
 -->
 <template>
 	<div class="my-terminal" ref="terminal">
-		<div :style="{'padding-bottom': _lineHeight}" @click="onClickTerminal" @contextmenu.stop.prevent="onContextmenu" @scroll="onScroll" class="my-height-100 my-scroll-overlay my-scroll-small">
-			<template v-for="(item, index) in list">
-				<span :style="{'line-height': _lineHeight}" class="my-terminal-line">{{item.text || '&nbsp;'}}</span>
-				<br v-if="index < list.length - 1" />
-			</template>
-			<span class="my-terminal-line">{{text}}</span>
-			<span :style="{opacity: opacity}" class="my-terminal-cursor" ref="cursor"></span>
+		<div @click="onClickTerminal" @contextmenu.stop.prevent="onContextmenu" @scroll="onScroll" class="my-terminal-scroller my-scroll-overlay my-scroll-small">
+			<div :style="{'line-height': _lineHeight}" class="my-terminal-line" v-for="(item, index) in list" v-if="index < list.length - 1">
+				<span>{{item.text || '&nbsp;'}}</span>
+			</div>
+			<div class="my-terminal-line">
+				<span>{{_lastLine.text}}{{text}}</span>
+				<span :style="{opacity: opacity}" class="my-terminal-cursor" ref="cursor"></span>
+			</div>
 		</div>
 		<textarea
 			:style="{left: textareaPos.left + 'px', top: textareaPos.top + 'px', height: _lineHeight, 'line-height': _lineHeight }"
@@ -47,6 +48,13 @@ export default {
 		_lineHeight() {
 			return this.lineHeight + 'px';
 		},
+		_lastLine() {
+			if (this.list.length) {
+				return this.list.peek();
+			} else {
+				return { text: '' };
+			}
+		},
 	},
 	watch: {
 		text() {
@@ -81,6 +89,7 @@ export default {
 		addLine(data) {
 			let texts = iconvLite.decode(data, 'cp936').split(/\r\n|\n|\r/);
 			texts = texts.map((item) => {
+				item = item.replace(/(?<=\s)\s+$/, '');
 				return {
 					text: item,
 				};
@@ -91,7 +100,6 @@ export default {
 				this.list.peek().text += firstLine;
 			}
 			this.list.push(...texts);
-			this.added = true;
 			requestAnimationFrame(() => {
 				this.$refs.cursor.scrollIntoView();
 				this.renderCursor();

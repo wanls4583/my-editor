@@ -31,12 +31,16 @@
 			opacity: 0;
 			overflow: hidden;
 			resize: none;
-            white-space: pre;
+			white-space: pre;
 			pointer-events: none;
 		}
 
+		&-scroller {
+			height: 100%;
+			padding-bottom: 10px;
+		}
+
 		&-line {
-			display: inline-block;
 			white-space: pre;
 		}
 	}
