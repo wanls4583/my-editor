@@ -8,10 +8,10 @@
 		<div @click="onClickTerminal" @contextmenu.stop.prevent="onContextmenu" @scroll="onScroll" class="my-terminal-scroller my-scroll-overlay my-scroll-small" ref="scroller">
 			<div :style="{ height: _scrollHeight }" class="my-terminal-content">
 				<div :style="{ top: _top }" class="my-terminal-render">
-					<div :style="{'line-height': _lineHeight}" class="my-terminal-line" v-for="(item, index) in renderList" v-if="index < renderList.length - 1">
+					<div :style="{height: _lineHeight, 'line-height': _lineHeight}" class="my-terminal-line" v-for="(item, index) in renderList" v-if="index < renderList.length - 1">
 						<span>{{item.text || '&nbsp;'}}</span>
 					</div>
-					<div class="my-terminal-line">
+					<div :style="{height: _lineHeight, 'line-height': _lineHeight}" class="my-terminal-line">
 						<span>{{_lastLine.text}}{{text}}</span>
 						<span :style="{opacity: opacity}" class="my-terminal-cursor" ref="cursor"></span>
 					</div>
