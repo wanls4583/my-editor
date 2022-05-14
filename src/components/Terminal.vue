@@ -174,7 +174,7 @@ export default {
 			});
 		},
 		scrollToCursor() {
-			requestAnimationFrame(() => {
+			this.$nextTick(() => {
 				let $scroller = this.$refs.scroller;
 				$scroller.scrollTop = $scroller.scrollHeight - $scroller.clientHeight;
 				requestAnimationFrame(() => {
