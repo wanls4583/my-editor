@@ -89,6 +89,7 @@ export default {
 				this.cmdProcess.stdin.write(iconvLite.encode(text + '\r\n', 'cp936'));
 			} else {
 				this.scrollToCursor();
+				this.setLineWidth([{ text: this._lastLine.text + this.text }]);
 			}
 		},
 	},

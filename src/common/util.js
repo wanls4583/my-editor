@@ -59,13 +59,13 @@ class Util {
         var str2 = '一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一';
         var id1 = 'char-width-' + Util.getUUID();
         var id2 = 'char-width-' + Util.getUUID();
-        var $tempDom1 = $(template.replace('[dom]', `<span id="${id1}">${str1}</span>`));
-        var $tempDom2 = $(template.replace('[dom]', `<span id="${id2}">${str2}</span>`));
+        var $tempDom1 = $(template.replace('[dom]', `<span style="display:inline-block" id="${id1}">${str1}</span>`));
+        var $tempDom2 = $(template.replace('[dom]', `<span style="display:inline-block" id="${id2}">${str2}</span>`));
         $(wrap).append($tempDom1).append($tempDom2);
-        var charWidth = $tempDom1[0].scrollWidth / str1.length;
-        var charHight = $tempDom1[0].clientHeight;
-        var fontSize = window.getComputedStyle ? window.getComputedStyle($tempDom1[0], null).fontSize : $tempDom1[0].currentStyle.fontSize;
-        var fullAngleCharWidth = $tempDom2[0].scrollWidth / str2.length;
+        var charWidth = $(`#${id1}`)[0].scrollWidth / str1.length;
+        var charHight = $(`#${id1}`)[0].clientHeight;
+        var fontSize = window.getComputedStyle ? window.getComputedStyle($(`#${id1}`)[0], null).fontSize : $tempDom1[0].currentStyle.fontSize;
+        var fullAngleCharWidth = $(`#${id2}`)[0].scrollWidth / str2.length;
         $tempDom1.remove();
         $tempDom2.remove();
         return {
