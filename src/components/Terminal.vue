@@ -34,6 +34,17 @@ export default {
 			text: '',
 		};
 	},
+	watch: {
+		text() {
+			this.text = this.text.replace(/\r\n|\n|\r/, '\r\n');
+			if (/\r\n/.test(this.text)) {
+				let texts = this.text.split('\r\n');
+				let text = texts.slice(0, texts.length - 1).join('\r\n');
+				this.text = texts.pop();
+				this.cmdProcess.stdin.write(iconvLite.encode(text + '\r\n', 'cp936'));
+			}
+		},
+	},
 	created() {
 		this.cmdProcess = spawn('powershell');
 		this.cmdProcess.stdout.on('data', (data) => {
@@ -46,23 +57,17 @@ export default {
 	methods: {
 		addLine(data) {
 			let texts = iconvLite.decode(data, 'cp936').split(/\r\n|\n|\r/);
-			if (this.sendCmd) {
-				texts = texts.slice(1);
-			}
-			if (texts.peek() === '') {
-				texts.pop();
-			}
 			texts = texts.map((item) => {
 				return {
 					text: item,
 				};
 			});
 			if (this.list.length) {
-				this.list.peek().text += this.text;
+				let firstLine = texts[0].text;
+				texts = texts.slice(1);
+				this.list.peek().text += firstLine;
 			}
-			this.text = '';
 			this.list.push(...texts);
-			this.sendCmd = false;
 			this.added = true;
 			requestAnimationFrame(() => {
 				this.$refs.textarea[0].scrollIntoView({ behavior: 'instant' }); //"auto","instant"或"smooth"
@@ -110,8 +115,7 @@ export default {
 		onKeydown(e) {
 			if (e.keyCode === 13 || e.keyCode === 100) {
 				e.preventDefault();
-				this.sendCmd = true;
-				this.cmdProcess.stdin.write(iconvLite.encode(this.text + '\r\n', 'cp936'));
+				this.text += '\r\n';
 			}
 		},
 		onClickTerminal(e) {
