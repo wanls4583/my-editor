@@ -53,6 +53,18 @@
 
 		&-line {
 			white-space: pre;
+
+			span {
+				display: inline-block;
+
+				&::selection {
+					background-color: var(--my-terminal-selectionBackground);
+				}
+			}
+		}
+
+		&-selection {
+			background-color: var(--my-terminal-selectionBackground);
 		}
 	}
 }

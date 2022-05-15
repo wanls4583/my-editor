@@ -667,6 +667,9 @@ export default class {
 			if (!result.colors['terminal.foreground']) {
 				result.colors['terminal.foreground'] = result.colors['editor.foreground'];
 			}
+			if (!result.colors['terminal.selectionBackground']) {
+				result.colors['terminal.selectionBackground'] = result.colors['selection.background'];
+			}
 			if (!result.colors['terminal.border']) {
 				if (contrastBorder === transparent) {
 					if (isHc) {

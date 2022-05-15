@@ -12,7 +12,8 @@
 						<span>{{item.text || '&nbsp;'}}</span>
 					</div>
 					<div :style="{height: _lineHeight, 'line-height': _lineHeight}" class="my-terminal-line" ref="lastLine">
-						<span>{{_lastLine.text}}{{text}}</span>
+						<span>{{_lastLine.text}}</span>
+						<span :class="{'my-terminal-selection': selected}">{{text}}</span>
 						<span :style="{opacity: opacity}" class="my-terminal-cursor" ref="cursor"></span>
 					</div>
 				</div>
@@ -21,8 +22,11 @@
 		<textarea
 			:style="{left: textareaPos.left + 'px', top: textareaPos.top + 'px', height: _lineHeight, 'line-height': _lineHeight }"
 			@blur="onBlur"
+			@copy.prevent="onCopy"
+			@cut.prevent="onCopy"
 			@focus="onFocus"
-			@keydown="onKeydown"
+			@keydown="onKeyDown"
+			@paste.prevent="onPaste"
 			class="my-terminal-textarea"
 			ref="textarea"
 			v-model="text"
@@ -31,6 +35,7 @@
 </template>
 <script>
 import Util from '@/common/util';
+import $ from 'jquery';
 
 const iconvLite = window.require('iconv-lite');
 const spawn = window.require('child_process').spawn;
@@ -43,6 +48,10 @@ export default {
 				fullAngleCharWidth: 15,
 				charHight: 19,
 			},
+			textareaPos: {
+				left: 0,
+				top: 0,
+			},
 			tabSize: 4,
 			list: [],
 			renderList: [],
@@ -52,10 +61,7 @@ export default {
 			scrollTop: 0,
 			startLine: 1,
 			maxWidth: 0,
-			textareaPos: {
-				left: 0,
-				top: 0,
-			},
+			selected: false,
 		};
 	},
 	computed: {
@@ -91,6 +97,7 @@ export default {
 				this.scrollToCursor();
 				this.setLineWidth([{ text: this._lastLine.text + this.text }]);
 			}
+			this.selected = false;
 		},
 	},
 	created() {
@@ -101,6 +108,7 @@ export default {
 		this.cmdProcess.stderr.on('data', (data) => {
 			this.addLine(data);
 		});
+		window.terminal = this;
 	},
 	mounted() {
 		this.charObj = Util.getCharWidth(this.$refs.render, '<div class="my-terminal-line">[dom]</div>');
@@ -205,8 +213,13 @@ export default {
 		},
 		focus() {
 			this.$refs.textarea.focus();
+		},
+		cancelSelect() {
+			let text = this.text;
+			this.selected = false;
+			this.text = ''; //取消textare全选
 			requestAnimationFrame(() => {
-				this.$refs.textarea.focus();
+				this.text = text;
 			});
 		},
 		/**
@@ -245,20 +258,50 @@ export default {
 		getStrWidth(str, start, end) {
 			return Util.getStrWidth(str, this.charObj.charWidth, this.charObj.fullAngleCharWidth, this.tabSize, start, end);
 		},
+		onKeyDown(e) {
+			if (e.ctrlKey) {
+				switch (e.keyCode) {
+					case 65: //全选
+						this.selected = true;
+						break;
+				}
+			} else {
+				switch (e.keyCode) {
+					case 13: //回车
+					case 100:
+						e.preventDefault();
+						this.text += '\r\n';
+						break;
+				}
+			}
+		},
+		// 复制事件
+		onCopy(e) {
+			let mime = window.clipboardData ? 'Text' : 'text/plain';
+			let clipboardData = e.clipboardData || window.clipboardData;
+			let text = window.getSelection().toString();
+			clipboardData.setData(mime, text);
+		},
+		// 粘贴事件
+		onPaste(e) {
+			let mime = window.clipboardData ? 'Text' : 'text/plain';
+			let clipboardData = e.clipboardData || window.clipboardData;
+			let copyText = '';
+			copyText = clipboardData.getData(mime);
+			this.text += copyText;
+		},
 		onFocus() {
 			this.showCursor();
 		},
 		onBlur() {
 			this.hideCursor();
 		},
-		onKeydown(e) {
-			if (e.keyCode === 13 || e.keyCode === 100) {
-				e.preventDefault();
-				this.text += '\r\n';
-			}
-		},
 		onClickTerminal(e) {
+			if (window.getSelection().toString()) {
+				return;
+			}
 			this.focus();
+			this.cancelSelect();
 		},
 		onContextmenu(e) {},
 		onScroll(e) {
