@@ -115,7 +115,9 @@ export default {
 				this.scrollToCursor();
 			}
 			this.selected = false;
-			this.cursorColumn = this.text.length;
+		},
+		cursorColumn() {
+			this.showCursor(true);
 		},
 	},
 	created() {
@@ -171,8 +173,8 @@ export default {
 			});
 		},
 		// 显示光标
-		showCursor() {
-			if (this.cursorVisible) {
+		showCursor(force) {
+			if (this.cursorVisible && !force) {
 				return;
 			}
 			this.cursorVisible = true;
@@ -325,6 +327,9 @@ export default {
 						this.selected = false;
 				}
 			}
+			requestAnimationFrame(() => {
+				this.cursorColumn = this.$refs.textarea.selectionEnd;
+			});
 		},
 		// 复制事件
 		onCopy(e) {
