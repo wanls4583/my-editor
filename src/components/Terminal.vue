@@ -97,7 +97,7 @@ export default {
 			let result = preText + '<span class="my-terminal-anchor">' + nextText;
 			this.$nextTick(() => {
 				this.cursorLeft = $('.my-terminal-anchor')[0].offsetLeft;
-				this.renderCursor();
+				this.setTextareaPos();
 			});
 			return result;
 		},
@@ -171,6 +171,9 @@ export default {
 				}
 			});
 		},
+		focus() {
+			this.$refs.textarea.focus();
+		},
 		// 显示光标
 		showCursor(force) {
 			if (this.cursorVisible && !force) {
@@ -196,28 +199,7 @@ export default {
 		render(forceCursorView) {
 			this.maxVisibleLines = Math.ceil(this.$refs.terminal.clientHeight / this.charObj.charHight) + 1;
 			this.renderList = this.list.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines);
-			this.renderCursor();
-		},
-		renderCursor() {
-			this.$nextTick(() => {
-				let width = this.$refs.scroller.clientWidth;
-				let height = this.$refs.scroller.clientHeight;
-				let left = this.textareaPos.left;
-				let top = this.$refs.lastLine.offsetTop;
-				if (this._lastLine.line === this.list.length) {
-					let $cursor = this.$refs.cursor;
-					let $lastDir = this.$refs.lastDir;
-					left = $cursor.offsetLeft + $lastDir.offsetWidth - this.scrollLeft;
-					left = left > width - 10 ? width - 10 : left;
-					left = left < 0 ? 0 : left;
-				}
-				top = top > height - this.charObj.charHight ? height - this.charObj.charHight : top;
-				top = top < 0 ? 0 : top;
-				this.textareaPos = {
-					left: left,
-					top: top,
-				};
-			});
+			this.setTextareaPos();
 		},
 		scrollToCursor() {
 			this.$nextTick(() => {
@@ -233,8 +215,26 @@ export default {
 				});
 			});
 		},
-		focus() {
-			this.$refs.textarea.focus();
+		setTextareaPos() {
+			this.$nextTick(() => {
+				let width = this.$refs.scroller.clientWidth;
+				let height = this.$refs.scroller.clientHeight;
+				let left = this.textareaPos.left;
+				let top = this.$refs.lastLine.offsetTop;
+				if (this._lastLine.line === this.list.length) {
+					let $cursor = this.$refs.cursor;
+					let $lastDir = this.$refs.lastDir;
+					left = $cursor.offsetLeft + $lastDir.offsetWidth - this.scrollLeft;
+					left = left > width - 10 ? width - 10 : left;
+					left = left < 0 ? 0 : left;
+				}
+				top = top > height - this.charObj.charHight ? height - this.charObj.charHight : top;
+				top = top < 0 ? 0 : top;
+				this.textareaPos = {
+					left: left + 15,
+					top: top + 10,
+				};
+			});
 		},
 		/**
 		 * 设置每行文本的宽度
