@@ -14,7 +14,7 @@
 					<div :style="{height: _lineHeight}" class="my-terminal-line" ref="lastLine">
 						<span ref="lastDir">{{_lastLine.text}}</span>
 						<span ref="text" style="position:relative">
-							<span :class="{'my-terminal-selection': selected}" v-html="_text"></span>
+							<span :class="{'my-terminal-selection': textSelected}" v-html="_text"></span>
 							<span :style="{opacity: opacity, height: _lineHeight, left: cursorLeft + 'px'}" class="my-terminal-cursor" ref="cursor"></span>
 						</span>
 					</div>
@@ -68,7 +68,7 @@ export default {
 				width: 0,
 				line: '',
 			},
-			selected: false,
+			textSelected: false,
 		};
 	},
 	computed: {
@@ -114,7 +114,6 @@ export default {
 				this.updateLineWidth();
 				this.scrollToCursor();
 			}
-			this.selected = false;
 		},
 		cursorColumn() {
 			this.showCursor(true);
@@ -237,14 +236,6 @@ export default {
 		focus() {
 			this.$refs.textarea.focus();
 		},
-		cancelSelect() {
-			let text = this.text;
-			this.selected = false;
-			this.text = ''; //取消textare全选
-			requestAnimationFrame(() => {
-				this.text = text;
-			});
-		},
 		/**
 		 * 设置每行文本的宽度
 		 * @param {Array} texts
@@ -308,27 +299,17 @@ export default {
 			return Util.getStrWidth(str, this.charObj.charWidth, this.charObj.fullAngleCharWidth, this.tabSize, start, end);
 		},
 		onKeyDown(e) {
-			if (e.ctrlKey) {
-				switch (e.keyCode) {
-					case 65: //全选
-						this.selected = true;
-						break;
-					default:
-						this.selected = false;
-				}
-			} else {
-				switch (e.keyCode) {
-					case 13: //回车
-					case 100:
-						e.preventDefault();
-						this.text += '\r\n';
-						break;
-					default:
-						this.selected = false;
-				}
+			switch (e.keyCode) {
+				case 13: //回车
+				case 100:
+					e.preventDefault();
+					this.text += '\r\n';
+					break;
 			}
 			requestAnimationFrame(() => {
-				this.cursorColumn = this.$refs.textarea.selectionEnd;
+				const $textarea = this.$refs.textarea;
+				this.textSelected = $textarea.selectionEnd != $textarea.selectionStart;
+				this.cursorColumn = $textarea.selectionEnd;
 			});
 		},
 		// 复制事件
@@ -357,7 +338,6 @@ export default {
 				return;
 			}
 			this.focus();
-			this.cancelSelect();
 		},
 		onContextmenu(e) {},
 		onScroll(e) {
