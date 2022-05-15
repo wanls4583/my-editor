@@ -19,17 +19,13 @@
 		}
 
 		&-cursor {
-			position: relative;
-			display: inline-block;
+			position: absolute;
+			top: 0;
 			width: 2px;
 			background-color: var(--my-editorCursor-foreground);
 			pointer-events: none;
 			white-space: pre;
 			opacity: 0;
-
-			&::before {
-				content: ' ';
-			}
 		}
 
 		&-textarea {

@@ -8,13 +8,15 @@
 		<div @click="onClickTerminal" @contextmenu.stop.prevent="onContextmenu" @scroll="onScroll" class="my-terminal-scroller my-scroll-overlay my-scroll-small" ref="scroller">
 			<div :style="{ height: _scrollHeight, 'min-width': _scrollWidth }" class="my-terminal-content">
 				<div :style="{ top: _top }" class="my-terminal-render" ref="render">
-					<div :style="{height: _lineHeight, 'line-height': _lineHeight}" class="my-terminal-line" v-for="(item, index) in renderList" v-if="index < renderList.length - 1">
+					<div :style="{height: _lineHeight}" class="my-terminal-line" v-for="(item, index) in renderList" v-if="index < renderList.length - 1">
 						<span>{{item.text || '&nbsp;'}}</span>
 					</div>
-					<div :style="{height: _lineHeight, 'line-height': _lineHeight}" class="my-terminal-line" ref="lastLine">
-						<span>{{_lastLine.text}}</span>
-						<span :class="{'my-terminal-selection': selected}">{{text}}</span>
-						<span :style="{opacity: opacity}" class="my-terminal-cursor" ref="cursor"></span>
+					<div :style="{height: _lineHeight}" class="my-terminal-line" ref="lastLine">
+						<span ref="lastDir">{{_lastLine.text}}</span>
+						<span ref="text" style="position:relative">
+							<span :class="{'my-terminal-selection': selected}" v-html="_text"></span>
+							<span :style="{opacity: opacity, height: _lineHeight, left: cursorLeft + 'px'}" class="my-terminal-cursor" ref="cursor"></span>
+						</span>
 					</div>
 				</div>
 			</div>
@@ -52,6 +54,8 @@ export default {
 				left: 0,
 				top: 0,
 			},
+			cursorColumn: 0,
+			cursorLeft: 0,
 			tabSize: 4,
 			list: [],
 			renderList: [],
@@ -60,7 +64,10 @@ export default {
 			scrollLeft: 0,
 			scrollTop: 0,
 			startLine: 1,
-			maxWidth: 0,
+			maxWidthObj: {
+				width: 0,
+				line: '',
+			},
 			selected: false,
 		};
 	},
@@ -72,17 +79,27 @@ export default {
 			if (this.renderList.length) {
 				return this.renderList.peek();
 			} else {
-				return { text: '', line: 1 };
+				return { text: '', line: '' };
 			}
 		},
 		_scrollHeight() {
 			return this.list.length * this.charObj.charHight + 'px';
 		},
 		_scrollWidth() {
-			return this.maxWidth + 'px';
+			return this.maxWidthObj.width + 'px';
 		},
 		_top() {
 			return (this.startLine - 1) * this.charObj.charHight + 'px';
+		},
+		_text() {
+			let preText = this.text.slice(0, this.cursorColumn);
+			let nextText = this.text.slice(this.cursorColumn);
+			let result = preText + '<span class="my-terminal-anchor">' + nextText;
+			this.$nextTick(() => {
+				this.cursorLeft = $('.my-terminal-anchor')[0].offsetLeft;
+				this.renderCursor();
+			});
+			return result;
 		},
 	},
 	watch: {
@@ -94,13 +111,15 @@ export default {
 				this.text = texts.pop();
 				this.cmdProcess.stdin.write(iconvLite.encode(text + '\r\n', 'cp936'));
 			} else {
+				this.updateLineWidth();
 				this.scrollToCursor();
-				this.setLineWidth([{ text: this._lastLine.text + this.text }]);
 			}
 			this.selected = false;
+			this.cursorColumn = this.text.length;
 		},
 	},
 	created() {
+		this.line = 1;
 		this.cmdProcess = spawn('powershell');
 		this.cmdProcess.stdout.on('data', (data) => {
 			this.addLine(data);
@@ -136,6 +155,9 @@ export default {
 				texts = texts.slice(1);
 				this.list.peek().text += firstLine;
 			}
+			texts.forEach((item) => {
+				item.line = this.line++;
+			});
 			this.list.push(...texts);
 			this.render();
 			this.scrollToCursor();
@@ -173,9 +195,6 @@ export default {
 		render(forceCursorView) {
 			this.maxVisibleLines = Math.ceil(this.$refs.terminal.clientHeight / this.charObj.charHight) + 1;
 			this.renderList = this.list.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines);
-			this.renderList.map((item, index) => {
-				item.line = this.startLine + index;
-			});
 			this.renderCursor();
 		},
 		renderCursor() {
@@ -186,7 +205,8 @@ export default {
 				let top = this.$refs.lastLine.offsetTop;
 				if (this._lastLine.line === this.list.length) {
 					let $cursor = this.$refs.cursor;
-					left = $cursor.offsetLeft - this.scrollLeft;
+					let $lastDir = this.$refs.lastDir;
+					left = $cursor.offsetLeft + $lastDir.offsetWidth - this.scrollLeft;
 					left = left > width - 10 ? width - 10 : left;
 					left = left < 0 ? 0 : left;
 				}
@@ -205,8 +225,9 @@ export default {
 				requestAnimationFrame(() => {
 					let width = $scroller.clientWidth;
 					let $cursor = this.$refs.cursor;
-					if ($cursor.offsetLeft - this.scrollLeft > width - 35) {
-						$scroller.scrollLeft = $cursor.offsetLeft - width + 35;
+					let $lastDir = this.$refs.lastDir;
+					if ($cursor.offsetLeft + $lastDir.offsetWidth - this.scrollLeft > width - 35) {
+						$scroller.scrollLeft = $cursor.offsetLeft + $lastDir.offsetWidth - width + 35;
 					}
 				});
 			});
@@ -229,6 +250,15 @@ export default {
 		setLineWidth(texts) {
 			let that = this;
 			let index = 0;
+			if (!texts) {
+				let last = this.list.peek();
+				this.maxWidthObj = { width: 0 };
+				texts = this.list.slice(0, -1);
+				texts.push({
+					text: last.text + this.text,
+					line: last.line,
+				});
+			}
 			cancelIdleCallback(this.setLineWidthTimer);
 			_setLineWidth();
 
@@ -236,10 +266,13 @@ export default {
 				let startTime = Date.now();
 				let count = 0;
 				while (index < texts.length) {
-					let text = texts[index].text;
-					let width = that.getStrWidth(text);
-					if (width > that.maxWidth) {
-						that.maxWidth = width;
+					let textObj = texts[index];
+					let width = that.getStrWidth(textObj.text);
+					if (width > that.maxWidthObj.width) {
+						that.maxWidthObj = {
+							line: textObj.line,
+							width: width,
+						};
 					}
 					index++;
 					count++;
@@ -254,6 +287,20 @@ export default {
 				}
 			}
 		},
+		updateLineWidth() {
+			cancelAnimationFrame(this.updateLineWidthTimer);
+			this.updateLineWidthTimer = requestAnimationFrame(() => {
+				let width = this.getStrWidth(this._lastLine.text + this.text);
+				if (width >= this.maxWidthObj.width) {
+					this.maxWidthObj = {
+						line: this.list.peek().line,
+						width: width,
+					};
+				} else if (this.maxWidthObj.line === this.list.length) {
+					this.setLineWidth();
+				}
+			});
+		},
 		// 获取文本在浏览器中的宽度
 		getStrWidth(str, start, end) {
 			return Util.getStrWidth(str, this.charObj.charWidth, this.charObj.fullAngleCharWidth, this.tabSize, start, end);
@@ -264,6 +311,8 @@ export default {
 					case 65: //全选
 						this.selected = true;
 						break;
+					default:
+						this.selected = false;
 				}
 			} else {
 				switch (e.keyCode) {
@@ -272,6 +321,8 @@ export default {
 						e.preventDefault();
 						this.text += '\r\n';
 						break;
+					default:
+						this.selected = false;
 				}
 			}
 		},
