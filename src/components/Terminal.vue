@@ -41,6 +41,17 @@ import $ from 'jquery';
 
 const iconvLite = window.require('iconv-lite');
 const spawn = window.require('child_process').spawn;
+const ANSI = {
+	CSI: '\x1B',
+	CURSOR_UP: 'A',
+	CURSOR_DOWN: 'B',
+	CURSOR_FORWARD: 'C',
+	CURSOR_BACK: 'D',
+	CURSOR_YX: 'H',
+	CLEAN_LINE: 'K',
+	CLEAN_AREA: 'J',
+	COLOR: 'm',
+};
 export default {
 	name: 'Terminal',
 	data() {
