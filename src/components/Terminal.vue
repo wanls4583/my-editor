@@ -40,17 +40,16 @@ import $ from 'jquery';
 
 const iconvLite = window.require('iconv-lite');
 const spawn = window.require('child_process').spawn;
-const ANSI = {
-	CSI: /\x1B\[/g,
-	CURSOR_UP: /\x1B\[(\d+)A/,
-	CURSOR_DOWN: /\x1B\[(\d+)B/,
-	CURSOR_FORWARD: /\x1B\[(\d+)C/,
-	CURSOR_BACK: /\x1B\[(\d+)D/,
-	CURSOR_YX: /\x1B\[(\d+):(\d+)H/,
-	CLEAN_LINE: /\x1B\[([012])K/, //0:清空光标之后区域,1:清空光标之前区域,2:清空之后的一整行
-	CLEAN_AREA: /\x1B\[([012])J/, //0:清空光标以下区域,1:清空光标以上区域,2:清空全部
-	COLOR: 'm',
-};
+const CSI = /\x1B\[/g;
+const ANSI_ESCAPE_SOURCE = [
+	'(?<CURSOR_UP>\\x1B\\[(\\d+)A)',
+	// '(?<CURSOR_FORWARD>\\x1B\\[(\\d+)C)',
+	// '(?<CURSOR_BACK>\\x1B\\[(\\d+)D)',
+	// '(?<CURSOR_YX>\\x1B\\[(\\d(\\d+)H)',
+	'(?<CLEAN_LINE>\\x1B\\[([012])K)',
+	'(?<CLEAN_AREA>\\x1B\\[([012])J)',
+];
+const ANSI_ESCAPE = new RegExp(ANSI_ESCAPE_SOURCE.join('|'));
 export default {
 	name: 'Terminal',
 	data() {
@@ -169,10 +168,17 @@ export default {
 					line: this.list.length + 1,
 				};
 				this.list.push(lineObj);
-				_cursorUp.call(this, i);
-				_clearLine.call(this);
-				_clearArea.call(this);
-				lineObj.text = lineObj.text.replace(ANSI.CSI, '');
+				while ((res = ANSI_ESCAPE.exec(lineObj.text))) {
+					var execObj = _getExecObj(res);
+					if (res.groups.CURSOR_UP) {
+						_cursorUp.call(this, execObj, i);
+					} else if (res.groups.CLEAN_LINE) {
+						_clearLine(execObj);
+					} else if (res.groups.CLEAN_AREA) {
+						_clearArea(execObj);
+					}
+				}
+				lineObj.text = lineObj.text.replace(CSI, '');
 			}
 			this.render();
 			this.scrollToCursor();
@@ -185,9 +191,17 @@ export default {
 				}
 			});
 
-			function _cursorUp(i) {
-				let res = ANSI.CURSOR_UP.exec(lineObj.text);
-				if (res && this.list.length > this.startCmdLine) {
+			function _getExecObj(res) {
+				var result = [];
+				res.slice(1).forEach((item) => {
+					item && result.push(item);
+				});
+				result.index = res.index;
+				return result;
+			}
+
+			function _cursorUp(res, i) {
+				if (this.list.length > this.startCmdLine) {
 					let lines = res[1] - 0;
 					let afterText = lineObj.text.slice(res.index + res[0].length);
 					let beforeText = lineObj.text.slice(0, res.index);
@@ -201,45 +215,39 @@ export default {
 					if (i < texts.length - 1) {
 						texts[i + 1] = texts[i + 1] + beforeText.slice(texts[i + 1].length);
 					}
-				} else if (res) {
+				} else {
 					lineObj.text = lineObj.text.slice(0, res.index) + lineObj.text.slice(res.index + res[0].length);
 				}
 			}
 
-			function _clearLine() {
-				let res = null;
-				if ((res = ANSI.CLEAN_LINE.exec(lineObj.text))) {
-					let code = res[1] - 0;
-					if (code === 0) {
-						//清空之后的区域
-						lineObj.text = lineObj.text.slice(0, res.index) + lineObj.text.slice(res.index + res[0].length, startDelIndex);
-					} else if (code === 1) {
-						//清空之前的区域
-						lineObj.text = Util.space(res.index) + lineObj.text.slice(res.index + res[0].length);
-					} else if (code === 2) {
-						//清空整行
-						lineObj.text = Util.space(res.index) + lineObj.text.slice(res.index + res[0].length, startDelIndex);
-					}
+			function _clearLine(res) {
+				let code = res[1] - 0;
+				if (code === 0) {
+					//清空之后的区域
+					lineObj.text = lineObj.text.slice(0, res.index) + lineObj.text.slice(res.index + res[0].length, startDelIndex);
+				} else if (code === 1) {
+					//清空之前的区域
+					lineObj.text = Util.space(res.index) + lineObj.text.slice(res.index + res[0].length);
+				} else if (code === 2) {
+					//清空整行
+					lineObj.text = Util.space(res.index) + lineObj.text.slice(res.index + res[0].length, startDelIndex);
 				}
 			}
 
-			function _clearArea() {
-				let res = null;
-				if ((res = ANSI.CLEAN_LINE.exec(lineObj.text))) {
-					let code = res[1] - 0;
-					if (code === 0) {
-						//清空之后的区域
-						lineObj.text = lineObj.text.slice(0, res.index) + lineObj.text.slice(res.index + res[0].length, startDelIndex);
-					} else if (code === 1) {
-						//清空之前的区域
-						for (let i = 0; i < this.list.length - 1; i++) {
-							this.list[i].text = '';
-						}
-						lineObj.text = Util.space(res.index) + lineObj.text.slice(res.index + res[0].length);
-					} else if (code === 2) {
-						//清空全部
-						lineObj.text += Util.space(res.index) + lineObj.text.slice(res.index + res[0].length, startDelIndex);
+			function _clearArea(res) {
+				let code = res[1] - 0;
+				if (code === 0) {
+					//清空之后的区域
+					lineObj.text = lineObj.text.slice(0, res.index) + lineObj.text.slice(res.index + res[0].length, startDelIndex);
+				} else if (code === 1) {
+					//清空之前的区域
+					for (let i = 0; i < this.list.length - 1; i++) {
+						this.list[i].text = '';
 					}
+					lineObj.text = Util.space(res.index) + lineObj.text.slice(res.index + res[0].length);
+				} else if (code === 2) {
+					//清空全部
+					lineObj.text += Util.space(res.index) + lineObj.text.slice(res.index + res[0].length, startDelIndex);
 				}
 			}
 		},
