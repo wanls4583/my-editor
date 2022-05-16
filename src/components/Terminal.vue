@@ -169,7 +169,7 @@ export default {
 					line: this.list.length + 1,
 				};
 				this.list.push(lineObj);
-				_cursorUp.call(this);
+				_cursorUp.call(this, i);
 				_clearLine.call(this);
 				_clearArea.call(this);
 				lineObj.text = lineObj.text.replace(ANSI.CSI, '');
@@ -185,7 +185,7 @@ export default {
 				}
 			});
 
-			function _cursorUp() {
+			function _cursorUp(i) {
 				let res = ANSI.CURSOR_UP.exec(lineObj.text);
 				if (res && this.list.length > this.startCmdLine) {
 					let lines = res[1] - 0;
