@@ -28,7 +28,6 @@
 			@cut.prevent="onCopy"
 			@focus="onFocus"
 			@keydown="onKeyDown"
-			@paste.prevent="onPaste"
 			class="my-terminal-textarea"
 			ref="textarea"
 			v-model="text"
@@ -42,14 +41,14 @@ import $ from 'jquery';
 const iconvLite = window.require('iconv-lite');
 const spawn = window.require('child_process').spawn;
 const ANSI = {
-	CSI: '\x1B',
-	CURSOR_UP: 'A',
-	CURSOR_DOWN: 'B',
-	CURSOR_FORWARD: 'C',
-	CURSOR_BACK: 'D',
-	CURSOR_YX: 'H',
-	CLEAN_LINE: 'K',
-	CLEAN_AREA: 'J',
+	CSI: /\x1B\[/g,
+	CURSOR_UP: /\x1B\[(\d+)A/,
+	CURSOR_DOWN: /\x1B\[(\d+)B/,
+	CURSOR_FORWARD: /\x1B\[(\d+)C/,
+	CURSOR_BACK: /\x1B\[(\d+)D/,
+	CURSOR_YX: /\x1B\[(\d+):(\d+)H/,
+	CLEAN_LINE: /\x1B\[([012])K/, //0:清空光标之后区域,1:清空光标之前区域,2:清空之后的一整行
+	CLEAN_AREA: /\x1B\[([012])J/, //0:清空光标以下区域,1:清空光标以上区域,2:清空全部
 	COLOR: 'm',
 };
 export default {
@@ -120,6 +119,7 @@ export default {
 				let texts = this.text.split('\r\n');
 				let text = texts.slice(0, texts.length - 1).join('\r\n');
 				this.text = texts.pop();
+				this.startCmdLine = this.list.length + 1;
 				this.cmdProcess.stdin.write(iconvLite.encode(text + '\r\n', 'cp936'));
 			} else {
 				this.updateLineWidth();
@@ -131,7 +131,7 @@ export default {
 		},
 	},
 	created() {
-		this.line = 1;
+		this.list.push({ text: '', line: 1 });
 		this.cmdProcess = spawn('powershell');
 		this.cmdProcess.stdout.on('data', (data) => {
 			this.addLine(data);
@@ -154,26 +154,29 @@ export default {
 		},
 		addLine(data) {
 			let texts = iconvLite.decode(data, 'cp936').split(/\r\n|\n|\r/);
-			let widthStart = this.list.length - 1;
-			widthStart = widthStart >= 0 ? widthStart : 0;
-			texts = texts.map((item) => {
-				item = item.replace(/(?<=\s)\s+$/, '');
-				return {
-					text: item,
+			let lineObj = null;
+			let startDelIndex = Infinity;
+			for (let i = 0; i < texts.length; i++) {
+				let text = texts[i];
+				let res = null;
+				lineObj = null;
+				startDelIndex = Infinity;
+				if (i === 0) {
+					text = this.list.pop().text + text;
+				}
+				lineObj = {
+					text: text,
+					line: this.list.length + 1,
 				};
-			});
-			if (this.list.length) {
-				let firstLine = texts[0].text;
-				texts = texts.slice(1);
-				this.list.peek().text += firstLine;
+				this.list.push(lineObj);
+				_cursorUp.call(this);
+				_clearLine.call(this);
+				_clearArea.call(this);
+				lineObj.text = lineObj.text.replace(ANSI.CSI, '');
 			}
-			texts.forEach((item) => {
-				item.line = this.line++;
-			});
-			this.list.push(...texts);
 			this.render();
 			this.scrollToCursor();
-			this.setLineWidth(this.list.slice(widthStart));
+			this.setLineWidth();
 			requestAnimationFrame(() => {
 				if (this.added) {
 					setTimeout(() => {
@@ -181,6 +184,64 @@ export default {
 					}, 500);
 				}
 			});
+
+			function _cursorUp() {
+				let res = ANSI.CURSOR_UP.exec(lineObj.text);
+				if (res && this.list.length > this.startCmdLine) {
+					let lines = res[1] - 0;
+					let afterText = lineObj.text.slice(res.index + res[0].length);
+					let beforeText = lineObj.text.slice(0, res.index);
+					this.list = this.list.slice(0, -lines);
+					lineObj = this.list.peek();
+					if (this.list.length) {
+						let _text = this.list[this.list.length - 1].text;
+						this.list[this.list.length - 1].text = _text.slice(0, res.index) + afterText + _text.slice(res.index);
+						startDelIndex = res.index + afterText.length;
+					}
+					if (i < texts.length - 1) {
+						texts[i + 1] = texts[i + 1] + beforeText.slice(texts[i + 1].length);
+					}
+				} else if (res) {
+					lineObj.text = lineObj.text.slice(0, res.index) + lineObj.text.slice(res.index + res[0].length);
+				}
+			}
+
+			function _clearLine() {
+				let res = null;
+				if ((res = ANSI.CLEAN_LINE.exec(lineObj.text))) {
+					let code = res[1] - 0;
+					if (code === 0) {
+						//清空之后的区域
+						lineObj.text = lineObj.text.slice(0, res.index) + lineObj.text.slice(res.index + res[0].length, startDelIndex);
+					} else if (code === 1) {
+						//清空之前的区域
+						lineObj.text = Util.space(res.index) + lineObj.text.slice(res.index + res[0].length);
+					} else if (code === 2) {
+						//清空整行
+						lineObj.text = Util.space(res.index) + lineObj.text.slice(res.index + res[0].length, startDelIndex);
+					}
+				}
+			}
+
+			function _clearArea() {
+				let res = null;
+				if ((res = ANSI.CLEAN_LINE.exec(lineObj.text))) {
+					let code = res[1] - 0;
+					if (code === 0) {
+						//清空之后的区域
+						lineObj.text = lineObj.text.slice(0, res.index) + lineObj.text.slice(res.index + res[0].length, startDelIndex);
+					} else if (code === 1) {
+						//清空之前的区域
+						for (let i = 0; i < this.list.length - 1; i++) {
+							this.list[i].text = '';
+						}
+						lineObj.text = Util.space(res.index) + lineObj.text.slice(res.index + res[0].length);
+					} else if (code === 2) {
+						//清空全部
+						lineObj.text += Util.space(res.index) + lineObj.text.slice(res.index + res[0].length, startDelIndex);
+					}
+				}
+			}
 		},
 		focus() {
 			this.$refs.textarea.focus();
@@ -238,12 +299,14 @@ export default {
 					left = $cursor.offsetLeft + $lastDir.offsetWidth - this.scrollLeft;
 					left = left > width - 10 ? width - 10 : left;
 					left = left < 0 ? 0 : left;
+					left += 15;
 				}
 				top = top > height - this.charObj.charHight ? height - this.charObj.charHight : top;
 				top = top < 0 ? 0 : top;
+				top += 10;
 				this.textareaPos = {
-					left: left + 15,
-					top: top + 10,
+					left: left,
+					top: top,
 				};
 			});
 		},
@@ -329,14 +392,6 @@ export default {
 			let clipboardData = e.clipboardData || window.clipboardData;
 			let text = window.getSelection().toString();
 			clipboardData.setData(mime, text);
-		},
-		// 粘贴事件
-		onPaste(e) {
-			let mime = window.clipboardData ? 'Text' : 'text/plain';
-			let clipboardData = e.clipboardData || window.clipboardData;
-			let copyText = '';
-			copyText = clipboardData.getData(mime);
-			this.text += copyText;
 		},
 		onFocus() {
 			this.showCursor();
