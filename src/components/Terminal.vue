@@ -38,6 +38,7 @@
 import Util from '@/common/util';
 import $ from 'jquery';
 
+const ansiHTML = window.require('ansi-html');
 const iconvLite = window.require('iconv-lite');
 const spawn = window.require('child_process').spawn;
 const CSI = /\x1B\[/g;
@@ -178,7 +179,7 @@ export default {
 						_clearArea(execObj);
 					}
 				}
-				lineObj.text = lineObj.text.replace(CSI, '');
+				lineObj.text = Util.htmlTrans(lineObj.text);
 			}
 			this.render();
 			this.scrollToCursor();
