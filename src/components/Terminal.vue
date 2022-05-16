@@ -179,7 +179,7 @@ export default {
 						_clearArea(execObj);
 					}
 				}
-				lineObj.text = Util.htmlTrans(lineObj.text);
+				// lineObj.text = Util.htmlTrans(lineObj.text);
 			}
 			this.render();
 			this.scrollToCursor();
