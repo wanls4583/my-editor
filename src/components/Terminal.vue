@@ -8,15 +8,15 @@
 		<div @click="onClickTerminal" @contextmenu.stop.prevent="onContextmenu" @scroll="onScroll" class="my-terminal-scroller my-scroll-overlay my-scroll-small" ref="scroller">
 			<div :style="{ height: _scrollHeight, 'min-width': _scrollWidth }" class="my-terminal-content">
 				<div :style="{ top: _top }" class="my-terminal-render" ref="render">
-					<div :style="{height: _lineHeight}" class="my-terminal-line" v-for="(item, index) in renderList" v-if="index < renderList.length - 1">
-						<span>{{item.text || '&nbsp;'}}</span>
-					</div>
-					<div :style="{height: _lineHeight}" class="my-terminal-line" ref="lastLine">
-						<span ref="lastDir">{{_lastLine.text}}</span>
-						<span ref="text" style="position:relative">
-							<span :class="{'my-terminal-selection': textSelected}" v-html="_text"></span>
-							<span :style="{opacity: opacity, height: _lineHeight, left: cursorLeft + 'px'}" class="my-terminal-cursor" ref="cursor"></span>
-						</span>
+					<div :style="{height: _lineHeight}" class="my-terminal-line" v-for="(item, index) in renderList">
+						<template v-if="item.line === cmdCursorLine">
+							<span ref="lastDir">{{item.text || '&nbsp;'}}</span>
+							<span ref="text" style="position:relative">
+								<span :class="{'my-terminal-selection': textSelected}" v-html="_text"></span>
+								<span :style="{opacity: opacity, height: _lineHeight, left: cursorLeft + 'px'}" class="my-terminal-cursor" ref="cursor"></span>
+							</span>
+						</template>
+						<span v-else>{{item.text || '&nbsp;'}}</span>
 					</div>
 				</div>
 			</div>
@@ -77,6 +77,7 @@ export default {
 			scrollLeft: 0,
 			scrollTop: 0,
 			startLine: 1,
+			cmdCursorLine: 1,
 			maxWidthObj: {
 				width: 0,
 				line: '',
@@ -87,13 +88,6 @@ export default {
 	computed: {
 		_lineHeight() {
 			return this.charObj.charHight + 'px';
-		},
-		_lastLine() {
-			if (this.renderList.length) {
-				return this.renderList.peek();
-			} else {
-				return { text: '', line: '' };
-			}
 		},
 		_scrollHeight() {
 			return this.list.length * this.charObj.charHight + 'px';
@@ -133,7 +127,6 @@ export default {
 		},
 	},
 	created() {
-		this.cmdCursorLine = 1;
 		this.cmdProcess = spawn('powershell', { cwd: 'E:\\Users\\Administrator\\Desktop\\新建文件夹' });
 		this.cmdProcess.stdout.on('data', (data) => {
 			this.addLine(data);
@@ -162,49 +155,41 @@ export default {
 			if (this.cmdList.length && !this.cmdId) {
 				const cmd = this.cmdList.shift();
 				this.cmdId = Util.getUUID();
-				this.cmdCursorLine = this.list.length;
-				this.startCmdLine = this.list.length + 1;
+				this.endCmd = `echo ${this.cmdId}`;
+				this.cmdSartLine = this.cmdCursorLine;
 				this.cmdProcess.stdin.write(iconvLite.encode(cmd + '\r\n', 'cp936'));
-				this.cmdProcess.stdin.write(`echo ${this.cmdId}` + '\r\n');
+				this.cmdProcess.stdin.write(this.endCmd + '\r\n');
 			}
 		},
-		checkEnd(lintText) {
-			if (lintText.endsWith(this.cmdId)) {
+		checkEnd(text) {
+			// 检测命令是否结束
+			if (this.cmdId && text.endsWith(this.cmdId)) {
+				// 结束命令可能跟在上条命令的文件目录后
+				if (text.endsWith(this.endCmd) && text.length > this.endCmd.length) {
+					this.writeLine(0, text.slice(0, -this.endCmd.length));
+				}
+				this.cmdHasEnd = true;
 				return true;
 			}
-			return false;
+			// 命令结束时会输出当前文件目录
+			if (this.cmdHasEnd) {
+				if (text) {
+					this.cmdHasEnd = false;
+					EventBus.$emit('cmd-end');
+				}
+				return true;
+			}
 		},
 		addLine(data) {
 			let texts = iconvLite.decode(data, 'cp936').split(/\r\n|\n|\r/);
-			// 检测命令是否结束
-			if (texts[0].endsWith(this.cmdId)) {
-				let endCmd = `echo ${this.cmdId}`;
-				// 结束命令可能跟在上条命令的文件目录后
-				if (texts[0].endsWith(endCmd) && texts[0].length > endCmd.length) {
-					this.cmdCursorLine++;
-					this.writeLine(0, texts[0].slice(0, -endCmd.length));
-					_render.call(this);
-				}
-				// 结束命令内容和目录同时输出了
-				if ((texts[0].startsWith(this.cmdId) && texts[1]) || (texts[1] && texts[1].startsWith(this.cmdId) && texts[2])) {
-					this.cmdEnd = '';
-					EventBus.$emit('cmd-end');
-				} else {
-					this.cmdEnd = this.cmdId;
-				}
-				return;
-			}
-			// 命令结束时会输出当前文件目录
-			if (this.cmdEnd) {
-				this.cmdEnd = '';
-				EventBus.$emit('cmd-end');
-				return;
-			}
 			for (let i = 0; i < texts.length; i++) {
 				let text = texts[i];
 				let res = null;
+				if (this.checkEnd(text)) {
+					continue;
+				}
 				if (i === 0) {
-					if (this.cmdCursorLine + 1 === this.startCmdLine) {
+					if (this.cmdCursorLine === this.cmdSartLine) {
 						text = this.list[this.cmdCursorLine - 1].text + text;
 					}
 				} else {
@@ -273,10 +258,8 @@ export default {
 			let beforeText = res.input.slice(0, res.index);
 			let afterText = res.input.slice(res.index + res[0].length);
 			this.writeLine(col, beforeText);
-			if (this.cmdCursorLine > this.startCmdLine) {
-				this.cmdCursorLine -= lines;
-				this.cmdCursorLine = this.cmdCursorLine < this.startCmdLine ? this.startCmdLine : this.cmdCursorLine;
-			}
+			this.cmdCursorLine -= lines;
+			this.cmdCursorLine = this.cmdCursorLine < 1 ? 1 : this.cmdCursorLine;
 			this.writeLine(beforeText.length, afterText);
 		},
 		cursorDown(res, col) {
@@ -310,7 +293,7 @@ export default {
 			let beforeText = res.input.slice(0, res.index);
 			let afterText = res.input.slice(res.index + res[0].length);
 			this.writeLine(col, beforeText);
-			this.cmdCursorLine = this.startCmdLine + rowTo - 1;
+			this.cmdCursorLine = rowTo;
 			for (let i = this.list.length; i < this.cmdCursorLine; i++) {
 				this.list.push({ text: '', line: i + 1 });
 			}
@@ -393,34 +376,41 @@ export default {
 		scrollToCursor() {
 			this.$nextTick(() => {
 				let $scroller = this.$refs.scroller;
-				$scroller.scrollTop = $scroller.scrollHeight - $scroller.clientHeight;
+				let paddingLR = 15;
+				let paddingTB = 10;
+				$scroller.scrollTop = this.cmdCursorLine * this.charObj.charHight + paddingTB - ($scroller.clientHeight - paddingTB);
 				requestAnimationFrame(() => {
 					let width = $scroller.clientWidth;
-					let $cursor = this.$refs.cursor;
-					let $lastDir = this.$refs.lastDir;
-					if ($cursor.offsetLeft + $lastDir.offsetWidth - this.scrollLeft > width - 35) {
-						$scroller.scrollLeft = $cursor.offsetLeft + $lastDir.offsetWidth - width + 35;
+					let $cursor = this.$refs.cursor[0];
+					let $lastDir = this.$refs.lastDir[0];
+					if ($cursor.offsetLeft + $lastDir.offsetWidth + paddingLR - this.scrollLeft > width - paddingLR) {
+						$scroller.scrollLeft = $cursor.offsetLeft + $lastDir.offsetWidth + paddingLR * 2 - width;
 					}
 				});
 			});
 		},
 		setTextareaPos() {
 			this.$nextTick(() => {
+				if (!this.$refs.cursor.length) {
+					return;
+				}
+				let paddingLR = 15;
+				let paddingTB = 10;
+				let $cursor = this.$refs.cursor[0];
+				let $lastDir = this.$refs.lastDir[0];
 				let width = this.$refs.scroller.clientWidth;
 				let height = this.$refs.scroller.clientHeight;
 				let left = this.textareaPos.left;
-				let top = this.$refs.lastLine.offsetTop;
-				if (this._lastLine.line === this.list.length) {
-					let $cursor = this.$refs.cursor;
-					let $lastDir = this.$refs.lastDir;
-					left = $cursor.offsetLeft + $lastDir.offsetWidth - this.scrollLeft;
-					left = left > width - 10 ? width - 10 : left;
-					left = left < 0 ? 0 : left;
-					left += 15;
+				let top = $($lastDir).parents('.my-terminal-line')[0].offsetTop + paddingTB;
+				left = $cursor.offsetLeft + $lastDir.offsetWidth + paddingLR - this.scrollLeft;
+				if (left > width - paddingLR) {
+					left = width - paddingLR;
 				}
-				top = top > height - this.charObj.charHight ? height - this.charObj.charHight : top;
+				if (top > height - this.charObj.charHight - paddingTB) {
+					top = height - this.charObj.charHight - paddingTB;
+				}
+				left = left < 0 ? 0 : left;
 				top = top < 0 ? 0 : top;
-				top += 10;
 				this.textareaPos = {
 					left: left,
 					top: top,
@@ -474,13 +464,13 @@ export default {
 		updateLineWidth() {
 			cancelAnimationFrame(this.updateLineWidthTimer);
 			this.updateLineWidthTimer = requestAnimationFrame(() => {
-				let width = this.getStrWidth(this._lastLine.text + this.text);
+				let width = this.getStrWidth(this.list[this.cmdCursorLine - 1].text + this.text);
 				if (width >= this.maxWidthObj.width) {
 					this.maxWidthObj = {
 						line: this.list.peek().line,
 						width: width,
 					};
-				} else if (this.maxWidthObj.line === this.list.length) {
+				} else if (this.maxWidthObj.line === this.cmdCursorLine) {
 					this.setLineWidth();
 				}
 			});
