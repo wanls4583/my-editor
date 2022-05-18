@@ -142,6 +142,7 @@ export default {
 			this.addLine(data);
 		});
 		EventBus.$on('cmd-end', () => {
+			this.cmdId = '';
 			this.execCmd();
 		});
 		window.terminal = this;
@@ -158,16 +159,13 @@ export default {
 			resizeObserver.observe(this.$refs.terminal);
 		},
 		execCmd() {
-			cancelIdleCallback(this.execCmdTimer);
-			if (this.cmdList.length) {
-				this.execCmdTimer = requestIdleCallback(() => {
-					const cmd = this.cmdList.shift();
-					this.cmdId = Util.getUUID();
-					this.cmdCursorLine = this.list.length;
-					this.startCmdLine = this.list.length + 1;
-					this.cmdProcess.stdin.write(iconvLite.encode(cmd + '\r\n', 'cp936'));
-					this.cmdProcess.stdin.write(`echo ${this.cmdId}` + '\r\n');
-				});
+			if (this.cmdList.length && !this.cmdId) {
+				const cmd = this.cmdList.shift();
+				this.cmdId = Util.getUUID();
+				this.cmdCursorLine = this.list.length;
+				this.startCmdLine = this.list.length + 1;
+				this.cmdProcess.stdin.write(iconvLite.encode(cmd + '\r\n', 'cp936'));
+				this.cmdProcess.stdin.write(`echo ${this.cmdId}` + '\r\n');
 			}
 		},
 		checkEnd(lintText) {
@@ -187,7 +185,13 @@ export default {
 					this.writeLine(0, texts[0].slice(0, -endCmd.length));
 					_render.call(this);
 				}
-				this.cmdEnd = this.cmdId;
+				// 结束命令内容和目录同时输出了
+				if ((texts[0].startsWith(this.cmdId) && texts[1]) || (texts[1] && texts[1].startsWith(this.cmdId) && texts[2])) {
+					this.cmdEnd = '';
+					EventBus.$emit('cmd-end');
+				} else {
+					this.cmdEnd = this.cmdId;
+				}
 				return;
 			}
 			// 命令结束时会输出当前文件目录
