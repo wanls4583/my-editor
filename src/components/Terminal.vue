@@ -195,6 +195,8 @@ export default {
 				} else {
 					this.cmdCursorLine++;
 				}
+				// 去除尾部多余空格
+				text = text.replace(/\s+$/, ' ');
 				this.writeLine(0, text);
 			}
 			_render.call(this);
@@ -375,16 +377,24 @@ export default {
 		},
 		scrollToCursor() {
 			this.$nextTick(() => {
-				let $scroller = this.$refs.scroller;
 				let paddingLR = 15;
 				let paddingTB = 10;
-				$scroller.scrollTop = this.cmdCursorLine * this.charObj.charHight + paddingTB - ($scroller.clientHeight - paddingTB);
+				let $scroller = this.$refs.scroller;
+				let width = $scroller.clientWidth;
+				let height = $scroller.clientHeight;
+				if (this.scrollTop > (this.cmdCursorLine - 1) * this.charObj.charHight + paddingTB) {
+					$scroller.scrollTop = (this.cmdCursorLine - 1) * this.charObj.charHight + paddingTB;
+				} else if (this.scrollTop < this.cmdCursorLine * this.charObj.charHight + paddingTB - (height - paddingTB)) {
+					$scroller.scrollTop = this.cmdCursorLine * this.charObj.charHight + paddingTB - (height - paddingTB);
+				}
 				requestAnimationFrame(() => {
-					let width = $scroller.clientWidth;
 					let $cursor = this.$refs.cursor[0];
 					let $lastDir = this.$refs.lastDir[0];
-					if ($cursor.offsetLeft + $lastDir.offsetWidth + paddingLR - this.scrollLeft > width - paddingLR) {
-						$scroller.scrollLeft = $cursor.offsetLeft + $lastDir.offsetWidth + paddingLR * 2 - width;
+					let offsetLeft = $cursor.offsetLeft + $lastDir.offsetWidth + paddingLR;
+					if (offsetLeft - this.scrollLeft > width - paddingLR) {
+						$scroller.scrollLeft = offsetLeft + paddingLR - width;
+					} else if (offsetLeft < this.scrollLeft + paddingLR) {
+						$scroller.scrollLeft = offsetLeft - paddingLR;
 					}
 				});
 			});
