@@ -160,7 +160,9 @@ export default {
 				let text = texts[i];
 				let res = null;
 				if (i === 0) {
-					text = this.list[this.cmdCursorLine - 1].text + text;
+					if (this.cmdCursorLine + 1 === this.startCmdLine) {
+						text = this.list[this.cmdCursorLine - 1].text + text;
+					}
 				} else {
 					this.cmdCursorLine++;
 				}
@@ -181,6 +183,8 @@ export default {
 			let line = this.cmdCursorLine;
 			let lineObj = this.list[line - 1];
 			let res = ANSI_ESCAPE.exec(text);
+			col = col || 0;
+			col = col < 0 ? 0 : col;
 			if (res) {
 				var execObj = _getExecObj(res);
 				if (res.groups.CURSOR_UP) {
@@ -210,8 +214,8 @@ export default {
 					line: line,
 					text: text,
 				};
+				this.list.push(lineObj);
 			}
-			this.list.splice(line - 1, 1, lineObj);
 
 			function _getExecObj(res) {
 				var result = [];
@@ -230,7 +234,7 @@ export default {
 			this.writeLine(col, beforeText);
 			if (this.cmdCursorLine > this.startCmdLine) {
 				this.cmdCursorLine -= lines;
-				this.cmdCursorLine = this.cmdCursorLine > this.startCmdLine ? this.startCmdLine : this.cmdCursorLine;
+				this.cmdCursorLine = this.cmdCursorLine < this.startCmdLine ? this.startCmdLine : this.cmdCursorLine;
 			}
 			this.writeLine(beforeText.length, afterText);
 		},
@@ -256,10 +260,8 @@ export default {
 			let cols = res[1] - 0;
 			let beforeText = res.input.slice(0, res.index);
 			let afterText = res.input.slice(res.index + res[0].length);
-			col -= cols;
-			col = col >= 0 ? col : 0;
 			this.writeLine(col, beforeText);
-			this.writeLine(beforeText.length + col, afterText);
+			this.writeLine(beforeText.length - cols, afterText);
 		},
 		cursorTo(res, col) {
 			let rowTo = (res[1] && res[1] - 0) || 1;
