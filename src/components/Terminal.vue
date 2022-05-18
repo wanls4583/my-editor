@@ -36,6 +36,7 @@
 </template>
 <script>
 import Util from '@/common/util';
+import EventBus from '@/event';
 import $ from 'jquery';
 
 const ansiHTML = window.require('ansi-html');
@@ -70,6 +71,7 @@ export default {
 			tabSize: 4,
 			list: [{ text: '', line: 1 }],
 			renderList: [],
+			cmdList: [],
 			opacity: 0,
 			text: '',
 			scrollLeft: 0,
@@ -118,11 +120,9 @@ export default {
 			this.text = this.text.replace(/\r\n|\n|\r/, '\r\n');
 			if (/\r\n/.test(this.text)) {
 				let texts = this.text.split('\r\n');
-				let text = texts.slice(0, texts.length - 1).join('\r\n');
 				this.text = texts.pop();
-				this.cmdCursorLine = this.list.length;
-				this.startCmdLine = this.list.length + 1;
-				this.cmdProcess.stdin.write(iconvLite.encode(text + '\r\n', 'cp936'));
+				this.cmdList.push(...texts);
+				this.execCmd();
 			} else {
 				this.updateLineWidth();
 				this.scrollToCursor();
@@ -134,12 +134,15 @@ export default {
 	},
 	created() {
 		this.cmdCursorLine = 1;
-		this.cmdProcess = spawn('powershell');
+		this.cmdProcess = spawn('powershell', { cwd: 'E:\\Users\\Administrator\\Desktop\\新建文件夹' });
 		this.cmdProcess.stdout.on('data', (data) => {
 			this.addLine(data);
 		});
 		this.cmdProcess.stderr.on('data', (data) => {
 			this.addLine(data);
+		});
+		EventBus.$on('cmd-end', () => {
+			this.execCmd();
 		});
 		window.terminal = this;
 	},
@@ -154,8 +157,45 @@ export default {
 			});
 			resizeObserver.observe(this.$refs.terminal);
 		},
+		execCmd() {
+			cancelIdleCallback(this.execCmdTimer);
+			if (this.cmdList.length) {
+				this.execCmdTimer = requestIdleCallback(() => {
+					const cmd = this.cmdList.shift();
+					this.cmdId = Util.getUUID();
+					this.cmdCursorLine = this.list.length;
+					this.startCmdLine = this.list.length + 1;
+					this.cmdProcess.stdin.write(iconvLite.encode(cmd + '\r\n', 'cp936'));
+					this.cmdProcess.stdin.write(`echo ${this.cmdId}` + '\r\n');
+				});
+			}
+		},
+		checkEnd(lintText) {
+			if (lintText.endsWith(this.cmdId)) {
+				return true;
+			}
+			return false;
+		},
 		addLine(data) {
 			let texts = iconvLite.decode(data, 'cp936').split(/\r\n|\n|\r/);
+			// 检测命令是否结束
+			if (texts[0].endsWith(this.cmdId)) {
+				let endCmd = `echo ${this.cmdId}`;
+				// 结束命令可能跟在上条命令的文件目录后
+				if (texts[0].endsWith(endCmd) && texts[0].length > endCmd.length) {
+					this.cmdCursorLine++;
+					this.writeLine(0, texts[0].slice(0, -endCmd.length));
+					_render.call(this);
+				}
+				this.cmdEnd = this.cmdId;
+				return;
+			}
+			// 命令结束时会输出当前文件目录
+			if (this.cmdEnd) {
+				this.cmdEnd = '';
+				EventBus.$emit('cmd-end');
+				return;
+			}
 			for (let i = 0; i < texts.length; i++) {
 				let text = texts[i];
 				let res = null;
@@ -168,16 +208,13 @@ export default {
 				}
 				this.writeLine(0, text);
 			}
-			this.render();
-			this.scrollToCursor();
-			this.setLineWidth();
-			requestAnimationFrame(() => {
-				if (this.added) {
-					setTimeout(() => {
-						this.focus();
-					}, 500);
-				}
-			});
+			_render.call(this);
+
+			function _render() {
+				this.render();
+				this.scrollToCursor();
+				this.setLineWidth();
+			}
 		},
 		writeLine(col, text) {
 			let line = this.cmdCursorLine;
