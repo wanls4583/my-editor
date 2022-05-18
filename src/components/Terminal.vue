@@ -44,9 +44,10 @@ const spawn = window.require('child_process').spawn;
 const CSI = /\x1B\[/g;
 const ANSI_ESCAPE_SOURCE = [
 	'(?<CURSOR_UP>\\x1B\\[(\\d+)A)',
-	// '(?<CURSOR_FORWARD>\\x1B\\[(\\d+)C)',
-	// '(?<CURSOR_BACK>\\x1B\\[(\\d+)D)',
-	// '(?<CURSOR_YX>\\x1B\\[(\\d(\\d+)H)',
+	'(?<CURSOR_DOWN>\\x1B\\[(\\d+)B)',
+	'(?<CURSOR_FORWARD>\\x1B\\[(\\d+)C)',
+	'(?<CURSOR_BACK>\\x1B\\[(\\d+)D)',
+	'(?<CURSOR_YX>\\x1B\\[(?:(\\d+);(\\d+))?H)',
 	'(?<CLEAN_LINE>\\x1B\\[([012])K)',
 	'(?<CLEAN_AREA>\\x1B\\[([012])J)',
 ];
@@ -67,7 +68,7 @@ export default {
 			cursorColumn: 0,
 			cursorLeft: 0,
 			tabSize: 4,
-			list: [],
+			list: [{ text: '', line: 1 }],
 			renderList: [],
 			opacity: 0,
 			text: '',
@@ -119,7 +120,7 @@ export default {
 				let texts = this.text.split('\r\n');
 				let text = texts.slice(0, texts.length - 1).join('\r\n');
 				this.text = texts.pop();
-				this.cmdCursorLine = this.list.length + 1;
+				this.cmdCursorLine = this.list.length;
 				this.startCmdLine = this.list.length + 1;
 				this.cmdProcess.stdin.write(iconvLite.encode(text + '\r\n', 'cp936'));
 			} else {
@@ -132,8 +133,7 @@ export default {
 		},
 	},
 	created() {
-		this.list.push({ text: '', line: 1 });
-		this.cmdCursorLine = 2;
+		this.cmdCursorLine = 1;
 		this.cmdProcess = spawn('powershell');
 		this.cmdProcess.stdout.on('data', (data) => {
 			this.addLine(data);
@@ -160,11 +160,11 @@ export default {
 				let text = texts[i];
 				let res = null;
 				if (i === 0) {
-					this.cmdCursorLine--;
 					text = this.list[this.cmdCursorLine - 1].text + text;
+				} else {
+					this.cmdCursorLine++;
 				}
-				_writeLine.call(this, 0, text);
-				this.cmdCursorLine++;
+				this.writeLine(0, text);
 			}
 			this.render();
 			this.scrollToCursor();
@@ -176,6 +176,42 @@ export default {
 					}, 500);
 				}
 			});
+		},
+		writeLine(col, text) {
+			let line = this.cmdCursorLine;
+			let lineObj = this.list[line - 1];
+			let res = ANSI_ESCAPE.exec(text);
+			if (res) {
+				var execObj = _getExecObj(res);
+				if (res.groups.CURSOR_UP) {
+					this.cursorUp(execObj, col);
+				} else if (res.groups.CURSOR_DOWN) {
+					this.cursorDown(execObj, col);
+				} else if (res.groups.CURSOR_FORWARD) {
+					this.cursorForward(execObj, col);
+				} else if (res.groups.CURSOR_BACK) {
+					this.cursorBack(execObj, col);
+				} else if (res.groups.CURSOR_YX) {
+					this.cursorTo(execObj, col);
+				} else if (res.groups.CLEAN_LINE) {
+					this.clearLine(execObj, col);
+				} else if (res.groups.CLEAN_AREA) {
+					this.clearArea(execObj, col);
+				}
+			} else if (lineObj) {
+				let originText = lineObj.text;
+				lineObj.text = originText.slice(0, col);
+				lineObj.text += Util.space(col - lineObj.text.length);
+				lineObj.text += text;
+				lineObj.text += originText.slice(lineObj.text.length);
+			} else {
+				text = Util.space(col) + text;
+				lineObj = {
+					line: line,
+					text: text,
+				};
+			}
+			this.list.splice(line - 1, 1, lineObj);
 
 			function _getExecObj(res) {
 				var result = [];
@@ -186,90 +222,100 @@ export default {
 				result.input = res.input;
 				return result;
 			}
-
-			function _writeLine(col, text) {
-				let line = this.cmdCursorLine;
-				let lineObj = this.list[line - 1];
-				let res = ANSI_ESCAPE.exec(text);
-				if (res) {
-					var execObj = _getExecObj(res);
-					if (res.groups.CURSOR_UP) {
-						_cursorUp.call(this, execObj, col);
-					} else if (res.groups.CLEAN_LINE) {
-						_clearLine.call(this, execObj, col);
-					} else if (res.groups.CLEAN_AREA) {
-						_clearArea.call(this, execObj, col);
-					}
-				} else if (lineObj) {
-					let originText = lineObj.text;
-					lineObj.text = originText.slice(0, col) + text;
-					lineObj.text += originText.slice(lineObj.text.length);
-				} else {
-					lineObj = {
-						line: line,
-						text: text,
-					};
-				}
-				this.list.splice(line - 1, 1, lineObj);
+		},
+		cursorUp(res, col) {
+			let lines = res[1] - 0;
+			let beforeText = res.input.slice(0, res.index);
+			let afterText = res.input.slice(res.index + res[0].length);
+			this.writeLine(col, beforeText);
+			if (this.cmdCursorLine > this.startCmdLine) {
+				this.cmdCursorLine -= lines;
+				this.cmdCursorLine = this.cmdCursorLine > this.startCmdLine ? this.startCmdLine : this.cmdCursorLine;
 			}
-
-			function _cursorUp(res, col) {
-				let lines = res[1] - 0;
-				let afterText = res.input.slice(res.index + res[0].length);
-				let beforeText = res.input.slice(0, res.index);
-				if (this.cmdCursorLine > this.startCmdLine) {
-					this.cmdCursorLine -= lines;
-					this.cmdCursorLine = this.cmdCursorLine > this.startCmdLine ? this.startCmdLine : this.cmdCursorLine;
-				}
-				_writeLine.call(this, col, beforeText);
-				_writeLine.call(this, beforeText.length, afterText);
+			this.writeLine(beforeText.length, afterText);
+		},
+		cursorDown(res, col) {
+			let lines = res[1] - 0;
+			let beforeText = res.input.slice(0, res.index);
+			let afterText = res.input.slice(res.index + res[0].length);
+			this.writeLine(col, beforeText);
+			this.cmdCursorLine += lines;
+			for (let i = this.list.length; i < this.cmdCursorLine; i++) {
+				this.list.push({ text: '', line: i + 1 });
 			}
-
-			function _clearLine(res, col) {
-				let lineObj = this.list[this.cmdCursorLine - 1];
-				let afterText = res.input.slice(res.index + res[0].length);
-				let beforeText = res.input.slice(0, res.index);
-				let code = res[1] - 0;
-				if (code === 0) {
-					//清空之后的区域
-					lineObj.text = lineObj.text.slice(0, res.index);
-					_writeLine.call(this, col, beforeText);
-				} else if (code === 1) {
-					//清空之前的区域
-					lineObj.text = Util.space(res.index) + lineObj.text.slice(res.index + res[0].length);
-				} else if (code === 2) {
-					//清空整行
-					lineObj.text = '';
-				}
-				_writeLine.call(this, beforeText.length, afterText);
+			this.writeLine(beforeText.length, afterText);
+		},
+		cursorForward(res, col) {
+			let cols = res[1] - 0;
+			let beforeText = res.input.slice(0, res.index);
+			let afterText = res.input.slice(res.index + res[0].length);
+			this.writeLine(col, beforeText);
+			this.writeLine(beforeText.length + cols, afterText);
+		},
+		cursorBack(res, col) {
+			let cols = res[1] - 0;
+			let beforeText = res.input.slice(0, res.index);
+			let afterText = res.input.slice(res.index + res[0].length);
+			col -= cols;
+			col = col >= 0 ? col : 0;
+			this.writeLine(col, beforeText);
+			this.writeLine(beforeText.length + col, afterText);
+		},
+		cursorTo(res, col) {
+			let rowTo = (res[1] && res[1] - 0) || 1;
+			let colTo = (res[2] && res[2] - 0) || 1;
+			let beforeText = res.input.slice(0, res.index);
+			let afterText = res.input.slice(res.index + res[0].length);
+			this.writeLine(col, beforeText);
+			this.cmdCursorLine = this.startCmdLine + rowTo - 1;
+			for (let i = this.list.length; i < this.cmdCursorLine; i++) {
+				this.list.push({ text: '', line: i + 1 });
 			}
-
-			function _clearArea(res, col) {
-				let lineObj = this.list[this.cmdCursorLine - 1];
-				let afterText = res.input.slice(res.index + res[0].length);
-				let beforeText = res.input.slice(0, res.index);
-				let code = res[1] - 0;
-				if (code === 0) {
-					//清空之后的区域
-					for (let i = this.cmdCursorLine; i < this.list.length; i++) {
-						this.list[i] = '';
-					}
-					lineObj.text = lineObj.text.slice(0, res.index);
-					_writeLine.call(this, col, beforeText);
-				} else if (code === 1) {
-					//清空之前的区域
-					for (let i = 0; i < this.cmdCursorLine - 1; i++) {
-						this.list[i].text = '';
-					}
-					lineObj.text = Util.space(res.index) + lineObj.text.slice(res.index + res[0].length);
-				} else if (code === 2) {
-					//清空全部
-					for (let i = 0; i < this.list.length; i++) {
-						this.list[i].text = '';
-					}
-				}
-				_writeLine.call(this, beforeText.length, afterText);
+			this.writeLine(colTo, afterText);
+		},
+		clearLine(res, col) {
+			let lineObj = this.list[this.cmdCursorLine - 1];
+			let afterText = res.input.slice(res.index + res[0].length);
+			let beforeText = res.input.slice(0, res.index);
+			let code = res[1] - 0;
+			if (code === 0) {
+				//清空之后的区域
+				lineObj.text = lineObj.text.slice(0, res.index);
+				this.writeLine(col, beforeText);
+			} else if (code === 1) {
+				//清空之前的区域
+				lineObj.text = Util.space(res.index) + lineObj.text.slice(res.index + res[0].length);
+			} else if (code === 2) {
+				//清空整行
+				lineObj.text = '';
 			}
+			this.writeLine(beforeText.length, afterText);
+		},
+		clearArea(res, col) {
+			let lineObj = this.list[this.cmdCursorLine - 1];
+			let afterText = res.input.slice(res.index + res[0].length);
+			let beforeText = res.input.slice(0, res.index);
+			let code = res[1] - 0;
+			if (code === 0) {
+				//清空之后的区域
+				for (let i = this.cmdCursorLine; i < this.list.length; i++) {
+					this.list[i] = '';
+				}
+				lineObj.text = lineObj.text.slice(0, res.index);
+				this.writeLine(col, beforeText);
+			} else if (code === 1) {
+				//清空之前的区域
+				for (let i = 0; i < this.cmdCursorLine - 1; i++) {
+					this.list[i].text = '';
+				}
+				lineObj.text = Util.space(res.index) + lineObj.text.slice(res.index + res[0].length);
+			} else if (code === 2) {
+				//清空全部
+				for (let i = 0; i < this.list.length; i++) {
+					this.list[i].text = '';
+				}
+			}
+			this.writeLine(beforeText.length, afterText);
 		},
 		focus() {
 			this.$refs.textarea.focus();
