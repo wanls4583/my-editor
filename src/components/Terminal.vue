@@ -156,7 +156,7 @@ export default {
 				const cmd = this.cmdList.shift();
 				this.cmdId = Util.getUUID();
 				this.endCmd = `echo ${this.cmdId}`;
-				this.cmdSartLine = this.cmdCursorLine;
+				this.cmdHasStart = true;
 				this.cmdProcess.stdin.write(iconvLite.encode(cmd + '\r\n', 'cp936'));
 				this.cmdProcess.stdin.write(this.endCmd + '\r\n');
 			}
@@ -189,7 +189,8 @@ export default {
 					continue;
 				}
 				if (i === 0) {
-					if (this.cmdCursorLine === this.cmdSartLine) {
+					if (this.cmdHasStart) {
+						this.cmdHasStart = false;
 						text = this.list[this.cmdCursorLine - 1].text + text;
 					}
 				} else {
