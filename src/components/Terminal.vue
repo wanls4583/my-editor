@@ -39,9 +39,11 @@ import Util from '@/common/util';
 import EventBus from '@/event';
 import $ from 'jquery';
 
+const os = window.require('os');
+const pty = window.require('node-pty');
 const ansiHTML = window.require('ansi-html');
 const iconvLite = window.require('iconv-lite');
-const spawn = window.require('child_process').spawn;
+const shell = os.platform() === 'win32' ? 'powershell.exe' : 'bash';
 const CSI = /\x1B\[/g;
 const ANSI_ESCAPE_SOURCE = [
 	'(?<CURSOR_UP>\\x1B\\[(\\d+)A)',
@@ -127,11 +129,14 @@ export default {
 		},
 	},
 	created() {
-		this.cmdProcess = spawn('powershell', { cwd: 'E:\\Users\\Administrator\\Desktop\\新建文件夹' });
-		this.cmdProcess.stdout.on('data', (data) => {
-			this.addLine(data);
+		this.cmdProcess = pty.spawn(shell, [], {
+			name: 'xterm-color',
+			cols: 80,
+			rows: 30,
+			cwd: 'E:\\Users\\Administrator\\Desktop\\新建文件夹',
+			env: process.env,
 		});
-		this.cmdProcess.stderr.on('data', (data) => {
+		this.cmdProcess.on('data', (data) => {
 			this.addLine(data);
 		});
 		EventBus.$on('cmd-end', () => {
