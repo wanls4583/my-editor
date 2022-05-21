@@ -34,9 +34,11 @@
 				v-show="editorList.length"
 			></editor-bar>
 			<!-- 编辑区 -->
-			<template v-for="item in editorList">
-				<editor :active="item.active" :id="item.id" :key="item.id" :path="item.path" :ref="'editor' + item.id" @change="onFileChange(item.id)" @save="onSaveFile(item.id)" v-show="item.active"></editor>
-			</template>
+			<div class="my-editor-groups" style="flex-grow:1;overflow:hidden;">
+				<template v-for="item in editorList">
+					<editor :active="item.active" :id="item.id" :key="item.id" :path="item.path" :ref="'editor' + item.id" @change="onFileChange(item.id)" @save="onSaveFile(item.id)" v-show="item.active"></editor>
+				</template>
+			</div>
 			<template v-show="terminalVisible">
 				<div @mousedown="onTerminalSashBegin" class="my-sash-h"></div>
 				<div :style="{height: terminalHeight+'px'}" class="my-terminal-wrap">
