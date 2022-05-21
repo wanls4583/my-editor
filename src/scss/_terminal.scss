@@ -2,64 +2,32 @@
 	&-terminal {
 		position: relative;
 		height: 100%;
-		font-size: 14px;
-		line-height: 1.5em;
-		letter-spacing: 0px;
-		font-family: Consolas, 'Courier New', monospace;
+		padding: 10px 0 10px 15px;
 
-		&-content {
-			position: relative;
-			cursor: text;
-		}
+		.xterm .xterm-viewport {
+			overflow-y: auto;
 
-		&-render {
-			position: absolute;
-			left: 0;
-			min-width: 100%;
-		}
+			&::-webkit-scrollbar {
+				width: 10px;
+				height: 10px;
+				background-color: transparent;
+			}
 
-		&-cursor {
-			position: absolute;
-			top: 0;
-			width: 2px;
-			background-color: var(--my-editorCursor-foreground);
-			pointer-events: none;
-			white-space: pre;
-			opacity: 0;
-		}
+			&::-webkit-scrollbar-corner {
+				background-color: transparent;
+			}
 
-		&-textarea {
-			position: absolute;
-			width: 1px;
-			padding: 0;
-			border: none;
-			outline: none;
-			opacity: 0;
-			overflow: hidden;
-			resize: none;
-			white-space: pre;
-			pointer-events: none;
-		}
+			&::-webkit-scrollbar-thumb {
+				background-color: var(--my-scrollbarSlider-background);
 
-		&-scroller {
-			height: 100%;
-			padding: 10px 15px;
-		}
+				&:hover {
+					background-color: var(--my-scrollbarSlider-hoverBackground);
+				}
 
-		&-line {
-			white-space: pre;
-
-			span {
-				display: inline-block;
-
-				&::selection {
-					background-color: var(--my-terminal-selectionBackground);
+				&:active {
+					background-color: var(--my-scrollbarSlider-activeBackground);
 				}
 			}
-		}
-
-		&-selection {
-			background-color: var(--my-terminal-selectionBackground);
 		}
 	}
 }

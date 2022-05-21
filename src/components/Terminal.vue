@@ -4,536 +4,118 @@
  * @Description: 
 -->
 <template>
-	<div class="my-terminal" ref="terminal">
-		<div @click="onClickTerminal" @contextmenu.stop.prevent="onContextmenu" @scroll="onScroll" class="my-terminal-scroller my-scroll-overlay my-scroll-small" ref="scroller">
-			<div :style="{ height: _scrollHeight, 'min-width': _scrollWidth }" class="my-terminal-content">
-				<div :style="{ top: _top }" class="my-terminal-render" ref="render">
-					<div :style="{height: _lineHeight}" class="my-terminal-line" v-for="(item, index) in renderList">
-						<template v-if="item.line === cmdCursorLine">
-							<span ref="lastDir">{{item.text || '&nbsp;'}}</span>
-							<span ref="text" style="position:relative">
-								<span :class="{'my-terminal-selection': textSelected}" v-html="_text"></span>
-								<span :style="{opacity: opacity, height: _lineHeight, left: cursorLeft + 'px'}" class="my-terminal-cursor" ref="cursor"></span>
-							</span>
-						</template>
-						<span v-else>{{item.text || '&nbsp;'}}</span>
-					</div>
-				</div>
-			</div>
-		</div>
-		<textarea
-			:style="{left: textareaPos.left + 'px', top: textareaPos.top + 'px', height: _lineHeight, 'line-height': _lineHeight }"
-			@blur="onBlur"
-			@copy.prevent="onCopy"
-			@cut.prevent="onCopy"
-			@focus="onFocus"
-			@keydown="onKeyDown"
-			class="my-terminal-textarea"
-			ref="textarea"
-			v-model="text"
-		></textarea>
+	<div class="my-terminal">
+		<div :id="_id" @contextmenu="onContextmenu" class="my-width-100 my-height-100" ref="terminal"></div>
 	</div>
 </template>
 <script>
+import { Terminal } from 'xterm';
+import { FitAddon } from 'xterm-addon-fit';
+import globalData from '@/data/globalData';
 import Util from '@/common/util';
 import EventBus from '@/event';
 import $ from 'jquery';
 
-const os = window.require('os');
-const pty = window.require('node-pty');
-const ansiHTML = window.require('ansi-html');
-const iconvLite = window.require('iconv-lite');
-const shell = os.platform() === 'win32' ? 'powershell.exe' : 'bash';
-const CSI = /\x1B\[/g;
-const ANSI_ESCAPE_SOURCE = [
-	'(?<CURSOR_UP>\\x1B\\[(\\d+)A)',
-	'(?<CURSOR_DOWN>\\x1B\\[(\\d+)B)',
-	'(?<CURSOR_FORWARD>\\x1B\\[(\\d+)C)',
-	'(?<CURSOR_BACK>\\x1B\\[(\\d+)D)',
-	'(?<CURSOR_YX>\\x1B\\[(?:(\\d+);(\\d+))?H)',
-	'(?<CLEAN_LINE>\\x1B\\[([012])K)',
-	'(?<CLEAN_AREA>\\x1B\\[([012])J)',
-];
-const ANSI_ESCAPE = new RegExp(ANSI_ESCAPE_SOURCE.join('|'));
+const { ipcRenderer } = window.require('electron');
+
 export default {
 	name: 'Terminal',
+	props: {
+		id: { type: Number, default: 0 },
+	},
 	data() {
-		return {
-			charObj: {
-				charWidth: 7.15,
-				fullAngleCharWidth: 15,
-				charHight: 19,
-			},
-			textareaPos: {
-				left: 0,
-				top: 0,
-			},
-			cursorColumn: 0,
-			cursorLeft: 0,
-			tabSize: 4,
-			list: [{ text: '', line: 1 }],
-			renderList: [],
-			cmdList: [],
-			opacity: 0,
-			text: '',
-			scrollLeft: 0,
-			scrollTop: 0,
-			startLine: 1,
-			cmdCursorLine: 1,
-			maxWidthObj: {
-				width: 0,
-				line: '',
-			},
-			textSelected: false,
-		};
+		return {};
 	},
 	computed: {
-		_lineHeight() {
-			return this.charObj.charHight + 'px';
-		},
-		_scrollHeight() {
-			return this.list.length * this.charObj.charHight + 'px';
-		},
-		_scrollWidth() {
-			return this.maxWidthObj.width + 'px';
-		},
-		_top() {
-			return (this.startLine - 1) * this.charObj.charHight + 'px';
-		},
-		_text() {
-			let preText = this.text.slice(0, this.cursorColumn);
-			let nextText = this.text.slice(this.cursorColumn);
-			let result = preText + '<span class="my-terminal-anchor">' + nextText;
-			this.$nextTick(() => {
-				this.cursorLeft = $('.my-terminal-anchor')[0].offsetLeft;
-				this.setTextareaPos();
-			});
-			return result;
-		},
-	},
-	watch: {
-		text() {
-			this.text = this.text.replace(/\r\n|\n|\r/, '\r\n');
-			if (/\r\n/.test(this.text)) {
-				let texts = this.text.split('\r\n');
-				this.text = texts.pop();
-				this.cmdList.push(...texts);
-				this.execCmd();
-			} else {
-				this.updateLineWidth();
-				this.scrollToCursor();
-			}
-		},
-		cursorColumn() {
-			this.showCursor(true);
+		_id() {
+			return 'terminal-' + this.id;
 		},
 	},
 	created() {
-		this.cmdProcess = pty.spawn(shell, [], {
-			name: 'xterm-color',
-			cols: 80,
-			rows: 30,
-			cwd: 'E:\\Users\\Administrator\\Desktop\\新建文件夹',
-			env: process.env,
-		});
-		this.cmdProcess.on('data', (data) => {
-			this.addLine(data);
-		});
-		EventBus.$on('cmd-end', () => {
-			this.cmdId = '';
-			this.execCmd();
-		});
 		window.terminal = this;
 	},
 	mounted() {
-		this.charObj = Util.getCharWidth(this.$refs.render, '<div class="my-terminal-line">[dom]</div>');
+		this.terminal = new Terminal({
+			windowsMode: true,
+			fontFamily: 'Consolas',
+			theme: {
+				lineHeight: 21,
+			},
+		});
+		this.fitAddon = new FitAddon(); //自适应容器大小插件
+		this.terminal.loadAddon(this.fitAddon);
+		this.terminal.open(this.$refs.terminal);
+		this.fitAddon.fit();
+		this.createTerminal();
+		this.initEvent();
+		this.initTerminalEvent();
 		this.initResizeEvent();
 	},
 	methods: {
+		setResize(data) {
+			ipcRenderer.send('terminal-resize', {
+				id: this.id,
+				rows: data.rows,
+				cols: data.cols,
+			});
+		},
+		createTerminal() {
+			ipcRenderer.send('terminal-add', {
+				id: this.id,
+				rows: this.terminal.options.rows,
+				cols: this.terminal.options.cols,
+			});
+		},
+		initEvent() {
+			EventBus.$on('theme-change', () => {
+				this.terminal.setOption('theme', {
+					foreground: globalData.colors['terminal.foreground'],
+					background: globalData.colors['terminal.background'],
+					selection: globalData.colors['terminal.selectionBackground'],
+				});
+			});
+		},
 		initResizeEvent() {
 			const resizeObserver = new ResizeObserver((entries) => {
-				this.render();
+				this.fitAddon.fit();
 			});
 			resizeObserver.observe(this.$refs.terminal);
 		},
-		execCmd() {
-			if (this.cmdList.length && !this.cmdId) {
-				const cmd = this.cmdList.shift();
-				this.cmdId = Util.getUUID();
-				this.endCmd = `echo ${this.cmdId}`;
-				this.cmdHasStart = true;
-				this.cmdProcess.stdin.write(iconvLite.encode(cmd + '\r\n', 'cp936'));
-				this.cmdProcess.stdin.write(this.endCmd + '\r\n');
-			}
-		},
-		checkEnd(text) {
-			// 检测命令是否结束
-			if (this.cmdId && text.endsWith(this.cmdId)) {
-				// 结束命令可能跟在上条命令的文件目录后
-				if (text.endsWith(this.endCmd) && text.length > this.endCmd.length) {
-					this.writeLine(0, text.slice(0, -this.endCmd.length));
-				}
-				this.cmdHasEnd = true;
-				return true;
-			}
-			// 命令结束时会输出当前文件目录
-			if (this.cmdHasEnd) {
-				if (text) {
-					this.cmdHasEnd = false;
-					EventBus.$emit('cmd-end');
-				}
-				return true;
-			}
-		},
-		addLine(data) {
-			let texts = iconvLite.decode(data, 'cp936').split(/\r\n|\n|\r/);
-			for (let i = 0; i < texts.length; i++) {
-				let text = texts[i];
-				let res = null;
-				if (this.checkEnd(text)) {
-					continue;
-				}
-				if (i === 0) {
-					if (this.cmdHasStart) {
-						this.cmdHasStart = false;
-						text = this.list[this.cmdCursorLine - 1].text + text;
-					}
-				} else {
-					this.cmdCursorLine++;
-				}
-				// 去除尾部多余空格
-				text = text.replace(/\s+$/, ' ');
-				this.writeLine(0, text);
-			}
-			_render.call(this);
-
-			function _render() {
-				this.render();
-				this.scrollToCursor();
-				this.setLineWidth();
-			}
-		},
-		writeLine(col, text) {
-			let line = this.cmdCursorLine;
-			let lineObj = this.list[line - 1];
-			let res = ANSI_ESCAPE.exec(text);
-			col = col || 0;
-			col = col < 0 ? 0 : col;
-			if (res) {
-				var execObj = _getExecObj(res);
-				if (res.groups.CURSOR_UP) {
-					this.cursorUp(execObj, col);
-				} else if (res.groups.CURSOR_DOWN) {
-					this.cursorDown(execObj, col);
-				} else if (res.groups.CURSOR_FORWARD) {
-					this.cursorForward(execObj, col);
-				} else if (res.groups.CURSOR_BACK) {
-					this.cursorBack(execObj, col);
-				} else if (res.groups.CURSOR_YX) {
-					this.cursorTo(execObj, col);
-				} else if (res.groups.CLEAN_LINE) {
-					this.clearLine(execObj, col);
-				} else if (res.groups.CLEAN_AREA) {
-					this.clearArea(execObj, col);
-				}
-			} else if (lineObj) {
-				let originText = lineObj.text;
-				lineObj.text = originText.slice(0, col);
-				lineObj.text += Util.space(col - lineObj.text.length);
-				lineObj.text += text;
-				lineObj.text += originText.slice(lineObj.text.length);
-			} else {
-				text = Util.space(col) + text;
-				lineObj = {
-					line: line,
+		initTerminalEvent() {
+			ipcRenderer.on('terminal-data', (event, data) => {
+				this.terminal.write(data.text);
+			});
+			this.terminal.onData((text) => {
+				ipcRenderer.send('terminal-write', {
+					id: this.id,
 					text: text,
-				};
-				this.list.push(lineObj);
-			}
-
-			function _getExecObj(res) {
-				var result = [];
-				res.slice(1).forEach((item) => {
-					item && result.push(item);
-				});
-				result.index = res.index;
-				result.input = res.input;
-				return result;
-			}
-		},
-		cursorUp(res, col) {
-			let lines = res[1] - 0;
-			let beforeText = res.input.slice(0, res.index);
-			let afterText = res.input.slice(res.index + res[0].length);
-			this.writeLine(col, beforeText);
-			this.cmdCursorLine -= lines;
-			this.cmdCursorLine = this.cmdCursorLine < 1 ? 1 : this.cmdCursorLine;
-			this.writeLine(beforeText.length, afterText);
-		},
-		cursorDown(res, col) {
-			let lines = res[1] - 0;
-			let beforeText = res.input.slice(0, res.index);
-			let afterText = res.input.slice(res.index + res[0].length);
-			this.writeLine(col, beforeText);
-			this.cmdCursorLine += lines;
-			for (let i = this.list.length; i < this.cmdCursorLine; i++) {
-				this.list.push({ text: '', line: i + 1 });
-			}
-			this.writeLine(beforeText.length, afterText);
-		},
-		cursorForward(res, col) {
-			let cols = res[1] - 0;
-			let beforeText = res.input.slice(0, res.index);
-			let afterText = res.input.slice(res.index + res[0].length);
-			this.writeLine(col, beforeText);
-			this.writeLine(beforeText.length + cols, afterText);
-		},
-		cursorBack(res, col) {
-			let cols = res[1] - 0;
-			let beforeText = res.input.slice(0, res.index);
-			let afterText = res.input.slice(res.index + res[0].length);
-			this.writeLine(col, beforeText);
-			this.writeLine(beforeText.length - cols, afterText);
-		},
-		cursorTo(res, col) {
-			let rowTo = (res[1] && res[1] - 0) || 1;
-			let colTo = (res[2] && res[2] - 0) || 1;
-			let beforeText = res.input.slice(0, res.index);
-			let afterText = res.input.slice(res.index + res[0].length);
-			this.writeLine(col, beforeText);
-			this.cmdCursorLine = rowTo;
-			for (let i = this.list.length; i < this.cmdCursorLine; i++) {
-				this.list.push({ text: '', line: i + 1 });
-			}
-			this.writeLine(colTo, afterText);
-		},
-		clearLine(res, col) {
-			let lineObj = this.list[this.cmdCursorLine - 1];
-			let afterText = res.input.slice(res.index + res[0].length);
-			let beforeText = res.input.slice(0, res.index);
-			let code = res[1] - 0;
-			if (code === 0) {
-				//清空之后的区域
-				lineObj.text = lineObj.text.slice(0, res.index);
-				this.writeLine(col, beforeText);
-			} else if (code === 1) {
-				//清空之前的区域
-				lineObj.text = Util.space(res.index) + lineObj.text.slice(res.index + res[0].length);
-			} else if (code === 2) {
-				//清空整行
-				lineObj.text = '';
-			}
-			this.writeLine(beforeText.length, afterText);
-		},
-		clearArea(res, col) {
-			let lineObj = this.list[this.cmdCursorLine - 1];
-			let afterText = res.input.slice(res.index + res[0].length);
-			let beforeText = res.input.slice(0, res.index);
-			let code = res[1] - 0;
-			if (code === 0) {
-				//清空之后的区域
-				for (let i = this.cmdCursorLine; i < this.list.length; i++) {
-					this.list[i] = '';
-				}
-				lineObj.text = lineObj.text.slice(0, res.index);
-				this.writeLine(col, beforeText);
-			} else if (code === 1) {
-				//清空之前的区域
-				for (let i = 0; i < this.cmdCursorLine - 1; i++) {
-					this.list[i].text = '';
-				}
-				lineObj.text = Util.space(res.index) + lineObj.text.slice(res.index + res[0].length);
-			} else if (code === 2) {
-				//清空全部
-				for (let i = 0; i < this.list.length; i++) {
-					this.list[i].text = '';
-				}
-			}
-			this.writeLine(beforeText.length, afterText);
-		},
-		focus() {
-			this.$refs.textarea.focus();
-		},
-		// 显示光标
-		showCursor(force) {
-			if (this.cursorVisible && !force) {
-				return;
-			}
-			this.cursorVisible = true;
-			this.opacity = 1;
-			let _timer = () => {
-				clearTimeout(this.curserTimer);
-				this.curserTimer = setTimeout(() => {
-					this.opacity = this.opacity === 1 ? 0 : 1;
-					_timer();
-				}, 500);
-			};
-			_timer();
-		},
-		// 隐藏光标
-		hideCursor() {
-			clearTimeout(this.curserTimer);
-			this.cursorVisible = false;
-			this.opacity = 0;
-		},
-		render(forceCursorView) {
-			this.maxVisibleLines = Math.ceil(this.$refs.terminal.clientHeight / this.charObj.charHight) + 1;
-			this.renderList = this.list.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines);
-			this.setTextareaPos();
-		},
-		scrollToCursor() {
-			this.$nextTick(() => {
-				let paddingLR = 15;
-				let paddingTB = 10;
-				let $scroller = this.$refs.scroller;
-				let width = $scroller.clientWidth;
-				let height = $scroller.clientHeight;
-				if (this.scrollTop > (this.cmdCursorLine - 1) * this.charObj.charHight + paddingTB) {
-					$scroller.scrollTop = (this.cmdCursorLine - 1) * this.charObj.charHight + paddingTB;
-				} else if (this.scrollTop < this.cmdCursorLine * this.charObj.charHight + paddingTB - (height - paddingTB)) {
-					$scroller.scrollTop = this.cmdCursorLine * this.charObj.charHight + paddingTB - (height - paddingTB);
-				}
-				requestAnimationFrame(() => {
-					let $cursor = this.$refs.cursor[0];
-					let $lastDir = this.$refs.lastDir[0];
-					let offsetLeft = $cursor.offsetLeft + $lastDir.offsetWidth + paddingLR;
-					if (offsetLeft - this.scrollLeft > width - paddingLR) {
-						$scroller.scrollLeft = offsetLeft + paddingLR - width;
-					} else if (offsetLeft < this.scrollLeft + paddingLR) {
-						$scroller.scrollLeft = offsetLeft - paddingLR;
-					}
 				});
 			});
-		},
-		setTextareaPos() {
-			this.$nextTick(() => {
-				if (!this.$refs.cursor.length) {
-					return;
+			this.terminal.onResize((data) => {
+				this.setResize(data);
+			});
+			this.terminal.attachCustomKeyEventHandler((e) => {
+				if (e.ctrlKey && e.code === 'KeyC' && e.type === 'keydown') {
+					const selection = this.terminal.getSelection();
+					if (selection) {
+						this.terminal.clearSelection();
+						Util.writeClipboard(selection);
+						return false;
+					}
 				}
-				let paddingLR = 15;
-				let paddingTB = 10;
-				let $cursor = this.$refs.cursor[0];
-				let $lastDir = this.$refs.lastDir[0];
-				let width = this.$refs.scroller.clientWidth;
-				let height = this.$refs.scroller.clientHeight;
-				let left = this.textareaPos.left;
-				let top = $($lastDir).parents('.my-terminal-line')[0].offsetTop + paddingTB;
-				left = $cursor.offsetLeft + $lastDir.offsetWidth + paddingLR - this.scrollLeft;
-				if (left > width - paddingLR) {
-					left = width - paddingLR;
-				}
-				if (top > height - this.charObj.charHight - paddingTB) {
-					top = height - this.charObj.charHight - paddingTB;
-				}
-				left = left < 0 ? 0 : left;
-				top = top < 0 ? 0 : top;
-				this.textareaPos = {
-					left: left,
-					top: top,
-				};
+				return true;
 			});
 		},
-		/**
-		 * 设置每行文本的宽度
-		 * @param {Array} texts
-		 */
-		setLineWidth(texts) {
-			let that = this;
-			let index = 0;
-			if (!texts) {
-				let last = this.list.peek();
-				this.maxWidthObj = { width: 0 };
-				texts = this.list.slice(0, -1);
-				texts.push({
-					text: last.text + this.text,
-					line: last.line,
+		onContextmenu(e) {
+			let selection = terminal.terminal.getSelection();
+			if (selection) {
+				this.terminal.clearSelection();
+				Util.writeClipboard(selection);
+			} else {
+				Util.readClipboard().then((data) => {
+					this.terminal.paste(data);
 				});
 			}
-			cancelIdleCallback(this.setLineWidthTimer);
-			_setLineWidth();
-
-			function _setLineWidth() {
-				let startTime = Date.now();
-				let count = 0;
-				while (index < texts.length) {
-					let textObj = texts[index];
-					let width = that.getStrWidth(textObj.text);
-					if (width > that.maxWidthObj.width) {
-						that.maxWidthObj = {
-							line: textObj.line,
-							width: width,
-						};
-					}
-					index++;
-					count++;
-					if (count % 5 === 0 && Date.now() - startTime > 20) {
-						break;
-					}
-				}
-				if (index < texts.length) {
-					that.setLineWidthTimer = requestIdleCallback(() => {
-						_setLineWidth();
-					});
-				}
-			}
-		},
-		updateLineWidth() {
-			cancelAnimationFrame(this.updateLineWidthTimer);
-			this.updateLineWidthTimer = requestAnimationFrame(() => {
-				let width = this.getStrWidth(this.list[this.cmdCursorLine - 1].text + this.text);
-				if (width >= this.maxWidthObj.width) {
-					this.maxWidthObj = {
-						line: this.list.peek().line,
-						width: width,
-					};
-				} else if (this.maxWidthObj.line === this.cmdCursorLine) {
-					this.setLineWidth();
-				}
-			});
-		},
-		// 获取文本在浏览器中的宽度
-		getStrWidth(str, start, end) {
-			return Util.getStrWidth(str, this.charObj.charWidth, this.charObj.fullAngleCharWidth, this.tabSize, start, end);
-		},
-		onKeyDown(e) {
-			switch (e.keyCode) {
-				case 13: //回车
-				case 100:
-					e.preventDefault();
-					this.text += '\r\n';
-					break;
-			}
-			requestAnimationFrame(() => {
-				const $textarea = this.$refs.textarea;
-				this.textSelected = $textarea.selectionEnd != $textarea.selectionStart;
-				this.cursorColumn = $textarea.selectionEnd;
-			});
-		},
-		// 复制事件
-		onCopy(e) {
-			let mime = window.clipboardData ? 'Text' : 'text/plain';
-			let clipboardData = e.clipboardData || window.clipboardData;
-			let text = window.getSelection().toString();
-			clipboardData.setData(mime, text);
-		},
-		onFocus() {
-			this.showCursor();
-		},
-		onBlur() {
-			this.hideCursor();
-		},
-		onClickTerminal(e) {
-			if (window.getSelection().toString()) {
-				return;
-			}
-			this.focus();
-		},
-		onContextmenu(e) {},
-		onScroll(e) {
-			this.scrollTop = e.target.scrollTop;
-			this.scrollLeft = e.target.scrollLeft;
-			this.startLine = Math.floor(this.scrollTop / this.charObj.charHight) + 1;
-			this.render();
 		},
 	},
 };
