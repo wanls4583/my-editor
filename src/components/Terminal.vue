@@ -62,8 +62,8 @@ export default {
 		createTerminal() {
 			ipcRenderer.send('terminal-add', {
 				id: this.id,
-				rows: this.terminal.options.rows,
-				cols: this.terminal.options.cols,
+				rows: this.terminal.rows,
+				cols: this.terminal.cols,
 			});
 		},
 		initEvent() {
