@@ -128,6 +128,8 @@ export default class {
 			if (data.light) {
 				data.light.fileExtensions = data.light.fileExtensions || {};
 				data.light.fileNames = data.light.fileNames || {};
+				data.light.folderNames = data.light.folderNames || {};
+				data.light.folderNamesExpanded = data.light.folderNamesExpanded || {};
 				data.light.languageIds && _parseLanguageIds(data.light.languageIds, data.light.fileExtensions);
 				for (let key in data.fileExtensions) {
 					data.light.fileExtensions[key] = data.light.fileExtensions[key] || data.fileExtensions[key];
@@ -135,10 +137,18 @@ export default class {
 				for (let key in data.fileNames) {
 					data.light.fileNames[key] = data.light.fileNames[key] || data.fileNames[key];
 				}
+				for (let key in data.folderNames) {
+					data.light.folderNames[key] = data.light.folderNames[key] || data.folderNames[key];
+				}
+				for (let key in data.folderNamesExpanded) {
+					data.light.folderNamesExpanded[key] = data.light.folderNamesExpanded[key] || data.folderNamesExpanded[key];
+				}
 			} else {
 				data.light = {
 					fileExtensions: data.fileExtensions,
 					fileNames: data.fileNames,
+					folderNames: data.folderNames,
+					folderNamesExpanded: data.folderNamesExpanded,
 				};
 			}
 		}
