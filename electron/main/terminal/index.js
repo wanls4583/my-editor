@@ -24,7 +24,7 @@ class Terminal {
 		option = Object.assign({}, option);
 		this.terminals[option.id] = pty.spawn(shell, [], {
 			name: 'xterm-' + option.id,
-			cols: option.cols || 80,
+			cols: option.cols || 100,
 			rows: option.rows || 10,
 			cwd: option.cwd || process.env.HOME,
 			env: process.env,
