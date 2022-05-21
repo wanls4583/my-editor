@@ -11,6 +11,8 @@
 <script>
 import { Terminal } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
+import { WebLinksAddon } from 'xterm-addon-web-links';
+import { SearchAddon } from 'xterm-addon-search';
 import globalData from '@/data/globalData';
 import Util from '@/common/util';
 import EventBus from '@/event';
@@ -43,7 +45,10 @@ export default {
 			},
 		});
 		this.fitAddon = new FitAddon(); //自适应容器大小插件
+		this.searchAddon = new SearchAddon();
 		this.terminal.loadAddon(this.fitAddon);
+		this.terminal.loadAddon(this.searchAddon);
+		this.terminal.loadAddon(new WebLinksAddon());
 		this.terminal.open(this.$refs.terminal);
 		this.fitAddon.fit();
 		this.createTerminal();
