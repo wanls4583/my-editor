@@ -2,10 +2,20 @@
 	&-terminal {
 		position: relative;
 		height: 100%;
-		padding: 15px 0 0 15px;
+
+		.xterm {
+			width: 100%;
+			height: 100%;
+			padding-top: 15px;
+			padding-left: 20px;
+		}
 
 		.xterm .xterm-viewport {
-			overflow-y: auto;
+			z-index: 99;
+			width: 100% !important;
+			height: 100%;
+			overflow-y: overlay;
+			background-color: transparent !important;
 
 			&::-webkit-scrollbar {
 				width: 10px;
@@ -13,19 +23,25 @@
 				background-color: transparent;
 			}
 
+			&::-webkit-scrollbar-thumb {
+				background-color: transparent;
+			}
+
 			&::-webkit-scrollbar-corner {
 				background-color: transparent;
 			}
 
-			&::-webkit-scrollbar-thumb {
-				background-color: var(--my-scrollbarSlider-background);
+			&:hover {
+				&::-webkit-scrollbar-thumb {
+					background-color: var(--my-scrollbarSlider-background);
 
-				&:hover {
-					background-color: var(--my-scrollbarSlider-hoverBackground);
-				}
+					&:hover {
+						background-color: var(--my-scrollbarSlider-hoverBackground);
+					}
 
-				&:active {
-					background-color: var(--my-scrollbarSlider-activeBackground);
+					&:active {
+						background-color: var(--my-scrollbarSlider-activeBackground);
+					}
 				}
 			}
 		}

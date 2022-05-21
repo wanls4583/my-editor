@@ -41,7 +41,7 @@ export default {
 			windowsMode: true,
 			fontFamily: 'Consolas',
 			theme: {
-				lineHeight: 21,
+				lineHeight: 20,
 			},
 		});
 		this.fitAddon = new FitAddon(); //自适应容器大小插件
@@ -50,11 +50,13 @@ export default {
 		this.terminal.loadAddon(this.searchAddon);
 		this.terminal.loadAddon(new WebLinksAddon());
 		this.terminal.open(this.$refs.terminal);
-		this.fitAddon.fit();
-		this.createTerminal();
 		this.initEvent();
 		this.initTerminalEvent();
 		this.initResizeEvent();
+		requestAnimationFrame(() => {
+			this.fitAddon.fit();
+			this.createTerminal();
+		});
 	},
 	methods: {
 		setResize(data) {

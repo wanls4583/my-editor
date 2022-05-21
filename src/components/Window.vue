@@ -111,7 +111,7 @@ export default {
 			themeType: 'dark',
 			activity: 'files',
 			leftWidth: 400,
-			terminalHeight: 260,
+			terminalHeight: 255,
 			mode: remote ? 'app' : 'mode',
 		};
 	},
