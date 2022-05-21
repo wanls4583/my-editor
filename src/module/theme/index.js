@@ -682,7 +682,7 @@ export default class {
 			}
 			if (!result.colors['terminal.border']) {
 				if (contrastBorder === transparent) {
-					if (isHc) {
+					if (isLight) {
 						result.colors['terminal.border'] = chroma(result.colors['editor.background']).darken().css();
 					} else {
 						result.colors['terminal.border'] = chroma(result.colors['editor.background']).brighten().css();

@@ -199,7 +199,12 @@ export default {
 			let iconFn = (value) => {
 				this.editorList.forEach((item) => {
 					if (value) {
-						let icon = Util.getIconByPath(globalData.nowIconData, item.path, globalData.nowTheme.type);
+						let icon = Util.getIconByPath({
+							iconData: globalData.nowIconData,
+							filePath: item.path,
+							fileType: 'file',
+							themeType: globalData.nowTheme.type,
+						});
 						item.icon = icon ? `my-file-icon my-file-icon-${icon}` : '';
 					} else {
 						item.icon = '';
@@ -208,8 +213,8 @@ export default {
 				this.editorList.splice();
 			};
 			EventBus.$on('icon-change', iconFn);
-			EventBus.$on('theme-change', () => {
-				iconFn();
+			EventBus.$on('theme-change', (value) => {
+				iconFn(value);
 				this.themeType = globalData.nowTheme.type;
 			});
 			EventBus.$on('activity-change', (activity) => {
@@ -480,7 +485,12 @@ export default {
 						active: false,
 					};
 					if (!tab.icon) {
-						let icon = Util.getIconByPath(globalData.nowIconData, (fileObj && fileObj.path) || '', globalData.nowTheme.type);
+						let icon = Util.getIconByPath({
+							iconData: globalData.nowIconData,
+							filePath: (fileObj && fileObj.path) || '',
+							fileType: 'file',
+							themeType: globalData.nowTheme.type,
+						});
 						tab.icon = icon ? `my-file-icon my-file-icon-${icon}` : '';
 					}
 					this.editorList.splice(index + 1, 0, tab);
@@ -493,18 +503,19 @@ export default {
 			function _done() {
 				this.$nextTick(() => {
 					if (tab && tab.path && !tab.loaded) {
-						fs.readFile(tab.path, { encoding: 'utf8' }, (err, data) => {
-							if (err) {
-								throw err;
-							}
-							this.getContext(tab.id).insertContent(data);
-							tab.saved = true;
-							tab.loaded = true;
-							//点击搜索结果
-							if (fileObj && fileObj.range) {
-								this.getEditor(tab.id).cursor.setCursorPos(Object.assign({}, fileObj.range.start));
-							}
-						});
+						tab.loaded = true;
+						Util.readFile(tab.path)
+							.then((data) => {
+								this.getContext(tab.id).insertContent(data);
+								tab.saved = true;
+								//点击搜索结果
+								if (fileObj && fileObj.range) {
+									this.getEditor(tab.id).cursor.setCursorPos(Object.assign({}, fileObj.range.start));
+								}
+							})
+							.catch(() => {
+								tab.loaded = false;
+							});
 					} else if (fileObj && fileObj.range) {
 						this.getEditor(tab.id).cursor.setCursorPos(Object.assign({}, fileObj.range.start));
 					}
@@ -525,7 +536,12 @@ export default {
 					let results = [];
 					if (!result.canceled && result.filePaths) {
 						result.filePaths.forEach((item) => {
-							let icon = Util.getIconByPath(globalData.nowIconData, item, globalData.nowTheme.type);
+							let icon = Util.getIconByPath({
+								iconData: globalData.nowIconData,
+								filePath: item,
+								fileType: 'file',
+								thmeType: globalData.nowTheme.type,
+							});
 							icon = icon ? `my-file-icon my-file-icon-${icon}` : '';
 							let obj = {
 								id: this.idCount++,

@@ -254,8 +254,8 @@ class Util {
 		}
 		return new RegExp(wordPattern);
 	}
-	static getIconByPath(iconData, path, type, fileType, opened) {
-		let fileName = /[^\\\/]+$/.exec(path);
+	static getIconByPath({ iconData, filePath, themType, fileType, opened, isRoot }) {
+		let fileName = /[^\\\/]+$/.exec(filePath);
 		let suffix1 = '';
 		let suffix2 = '';
 		fileName = fileName && fileName[0];
@@ -268,7 +268,7 @@ class Util {
 			suffix1 = suffix1 && suffix1[0];
 			suffix2 = suffix2 && suffix2[0];
 		}
-		if (type === 'light' || type === 'contrast light') {
+		if (themType === 'light' || themType === 'contrast light') {
 			iconData = iconData.light;
 		}
 		if (fileType === 'dir') {
@@ -276,10 +276,16 @@ class Util {
 				if (iconData.folderNamesExpanded && iconData.folderNamesExpanded[fileName]) {
 					return iconData.folderNamesExpanded[fileName];
 				}
+				if (isRoot && iconData.rootFolderExpanded) {
+					return iconData.rootFolderExpanded;
+				}
 				return iconData.folderExpanded;
 			} else {
 				if (iconData.folderNames && iconData.folderNames[fileName]) {
 					return iconData.folderNames[fileName];
+				}
+				if (isRoot && iconData.rootFolder) {
+					return iconData.rootFolder;
 				}
 				return iconData.folder;
 			}
