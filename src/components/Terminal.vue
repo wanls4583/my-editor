@@ -34,13 +34,12 @@ export default {
 			return 'terminal-' + this.id;
 		},
 	},
-	created() {
-		window.terminal = this;
-	},
+	created() {},
 	mounted() {
 		this.terminal = new Terminal({
 			windowsMode: true,
 			fontFamily: 'Consolas',
+			cursorBlink: true,
 			theme: {
 				lineHeight: 20,
 				foreground: globalData.colors['terminal.foreground'],

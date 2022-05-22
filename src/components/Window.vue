@@ -42,8 +42,8 @@
 			<template v-if="terminalVisible && terminalList.length">
 				<div @mousedown="onTerminalSashBegin" class="my-sash-h"></div>
 				<!-- tab栏 -->
-				<terminal-bar :terminalList="terminalList"></terminal-bar>
 				<div :style="{height: terminalHeight+'px'}" class="my-terminal-groups">
+					<terminal-bar :terminalList="terminalList"></terminal-bar>
 					<template v-for="item in terminalList">
 						<terminal :active="item.active" :id="item.id" :key="item.id" :path="item.path" :ref="'terminal' + item.id" v-show="item.active"></terminal>
 					</template>

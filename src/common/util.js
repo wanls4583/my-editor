@@ -302,6 +302,29 @@ class Util {
 			return iconData.file;
 		}
 	}
+	static getMemnuPos(e, menuEl, areaEl) {
+		let menuWidth = 0;
+		let menuHeight = 0;
+		let menuPos = {};
+		let $menu = $(menuEl);
+		let $parent = $menu.parent();
+		let $area = areaEl ? $(areaEl) : $parent;
+		let offset = $area.offset();
+		let parentOffset = $parent.offset();
+		menuWidth = $menu[0].clientWidth;
+		menuHeight = $menu[0].clientHeight;
+		if (menuHeight + e.clientY > offset.top + $area[0].clientHeight) {
+			menuPos.top = e.clientY - parentOffset.top - menuHeight + 'px';
+		} else {
+			menuPos.top = e.clientY - parentOffset.top + 'px';
+		}
+		if (menuWidth + e.clientX > offset.left + $area[0].clientWidth) {
+			menuPos.left = e.clientX - parentOffset.left - menuWidth + 'px';
+		} else {
+			menuPos.left = e.clientX - parentOffset.left + 'px';
+		}
+		return menuPos;
+	}
 	static readFile(path) {
 		return new Promise((resolve, reject) => {
 			fs.readFile(path, { encoding: 'utf8' }, (error, data) => (error ? reject(error) : resolve(data)));
@@ -451,6 +474,7 @@ Array.prototype.peek = function (index) {
 };
 Array.prototype.empty = function () {
 	this.length = 0;
+	this.splice();
 	return this;
 };
 Array.prototype.insert = function (item, sort) {

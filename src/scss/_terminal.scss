@@ -1,12 +1,14 @@
 .my {
 	&-terminal {
+		flex-grow: 1;
 		position: relative;
-		height: 100%;
+		width: 100%;
+		overflow: hidden;
 
 		.xterm {
 			width: 100%;
 			height: 100%;
-			padding-top: 15px;
+			padding-top: 10px;
 			padding-left: 20px;
 
 			.xterm-viewport {
@@ -47,6 +49,8 @@
 
 	&-terminal-groups {
 		flex-shrink: 0;
+		display: flex;
+		flex-direction: column;
 		position: relative;
 		box-sizing: content-box;
 		background-color: var(--my-terminal-background);

@@ -4,12 +4,11 @@
  * @Description: 
 -->
 <template>
-	<div ref="wrap">
-		<Menu :checkable="false" :menuList="menuList" :styles="menuStyle" @change="onMenuChange" ref="menu" v-show="menuVisible"></Menu>
-	</div>
+	<Menu :checkable="false" :menuList="menuList" :styles="menuStyle" @change="onMenuChange" ref="menu" v-show="menuVisible"></Menu>
 </template>
 <script>
 import $ from 'jquery';
+import Util from '@/common/util';
 import Menu from './Menu';
 import EventBus from '@/event';
 
@@ -33,6 +32,10 @@ export default {
 					{
 						name: 'Close to the Right',
 						op: 'closeToRight',
+					},
+					{
+						name: 'Close Ohter',
+						op: 'closeOther',
 					},
 					{
 						name: 'Close All',
@@ -59,31 +62,26 @@ export default {
 		show(e, id) {
 			this.tabId = id;
 			this.menuVisible = true;
-			let $parent = $(this.$refs.wrap).parent();
 			this.$nextTick(() => {
-				let offset = $parent.offset();
-				let menuWidth = this.$refs.menu.$el.clientWidth;
-				if (menuWidth + e.clientX > offset.left + $parent[0].clientWidth) {
-					this.menuStyle.left = e.clientX - offset.left - menuWidth + 'px';
-				} else {
-					this.menuStyle.left = e.clientX - offset.left + 'px';
-				}
-				this.menuStyle.top = e.clientY - offset.top + 'px';
+				this.menuStyle = Util.getMemnuPos(e, this.$refs.menu.$el, document.body);
 			});
 		},
 		onMenuChange(item) {
 			switch (item.op) {
 				case 'close':
-					this.$parent.$emit('close', this.tabId);
+					EventBus.$emit('terminal-close', this.tabId);
 					break;
 				case 'closeToLeft':
-					this.$parent.$emit('close-to-left', this.tabId);
+					EventBus.$emit('terminal-close-to-left', this.tabId);
 					break;
 				case 'closeToRight':
-					this.$parent.$emit('close-to-right', this.tabId);
+					EventBus.$emit('terminal-close-to-right', this.tabId);
+					break;
+				case 'closeOther':
+					EventBus.$emit('terminal-close-other', this.tabId);
 					break;
 				case 'closeAll':
-					this.$parent.$emit('close-all', this.tabId);
+					EventBus.$emit('terminal-close-all', this.tabId);
 					break;
 			}
 			this.menuVisible = false;
