@@ -105,7 +105,7 @@ export default {
 			themeType: 'dark',
 			activity: 'files',
 			leftWidth: 400,
-			terminalHeight: 255,
+			terminalHeight: 300,
 			mode: remote ? 'app' : 'mode',
 		};
 	},
@@ -129,6 +129,7 @@ export default {
 	},
 	created() {
 		window.globalData = globalData;
+		globalData.$mainWin = this;
 		if (this.mode === 'app') {
 			const currentWindow = remote.getCurrentWindow();
 			currentWindow.on('blur', () => {

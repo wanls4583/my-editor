@@ -7,8 +7,7 @@ const remote = window.require('@electron/remote');
 const contexts = Context.contexts;
 
 export default class {
-	constructor(win) {
-		this.win = win;
+	constructor() {
 		this.idCount = 1;
 		this.titleCount = 1;
 		this.editorList = globalData.editorList;
@@ -117,14 +116,14 @@ export default class {
 						tab.saved = true;
 						//点击搜索结果
 						if (fileObj && fileObj.range) {
-							this.win.getEditor(tab.id).cursor.setCursorPos(Object.assign({}, fileObj.range.start));
+							globalData.$mainWin.getEditor(tab.id).cursor.setCursorPos(Object.assign({}, fileObj.range.start));
 						}
 					})
 					.catch(() => {
 						tab.loaded = false;
 					});
 			} else if (fileObj && fileObj.range) {
-				this.win.getEditor(tab.id).cursor.setCursorPos(Object.assign({}, fileObj.range.start));
+				globalData.$mainWin.getEditor(tab.id).cursor.setCursorPos(Object.assign({}, fileObj.range.start));
 			}
 			EventBus.$emit('editor-change', tab.id);
 			EventBus.$emit('language-check');

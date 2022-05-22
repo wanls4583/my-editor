@@ -7,12 +7,11 @@ import Util from '@/common/util';
 const contexts = Context.contexts;
 
 export default class {
-	constructor(win) {
-		this.win = win;
+	constructor() {
 		this.editorList = globalData.editorList;
-		this.init(win);
+		this.init();
 	}
-	init(win) {
+	init() {
 		EventBus.$on('icon-change', () => {
 			this.changeBarIcon();
 		});
@@ -89,7 +88,7 @@ export default class {
 			if (this.changeStatus.id !== changStatusId) {
 				return;
 			}
-			let editor = this.getNowEditor();
+			let editor = globalData.$mainWin.getNowEditor();
 			let tab = Util.getTabById(this.editorList, globalData.nowId);
 			EventBus.$emit(`editor-changed`, {
 				id: tab.id,
@@ -234,11 +233,8 @@ export default class {
 		cancelAnimationFrame(this.closeTabTimer);
 		this.closeTabTimer = requestAnimationFrame(() => {
 			if (globalData.nowId) {
-				this.getNowEditor().focus();
+				globalData.$mainWin.getNowEditor().focus();
 			}
 		});
-	}
-	getNowEditor() {
-		return this.win.getEditor(globalData.nowId);
 	}
 }

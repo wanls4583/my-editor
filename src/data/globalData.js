@@ -36,6 +36,7 @@ const globalData = {
 	terminalList: [],
 	editorList: [],
 	nowFileItem: null,
+	$mainWin: null,
 };
 
 export default globalData;
