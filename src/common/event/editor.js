@@ -35,6 +35,9 @@ export default class {
 		EventBus.$on('editor-close-to-right', id => {
 			this.closeToRight(id);
 		});
+		EventBus.$on('editor-close-saved', id => {
+			this.closeSaved(id);
+		});
 		EventBus.$on('editor-close-other', id => {
 			this.closeOther(id);
 		});
@@ -77,7 +80,7 @@ export default class {
 	}
 	changeTab(id) {
 		let tab = this.getTabById(id);
-		if (!tab.active) {
+		if (tab && !tab.active) {
 			this.editorList.forEach(item => {
 				item.active = false;
 			});
