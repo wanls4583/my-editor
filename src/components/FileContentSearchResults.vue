@@ -164,17 +164,18 @@ export default {
 				res = /[^0-9a-zA-Z\s]/.exec(html);
 				html = (res && html.slice(res.index + 1)) || html;
 				text = html;
+				html = Util.htmlTrans(html);
 				if (item.texts.length > 1) {
 					let plain = _text.slice(start.column);
 					text += plain;
-					html += `<span class="search-results-bg">${plain}</span>`;
+					html += `<span class="search-results-bg">${Util.htmlTrans(plain)}</span>`;
 				} else {
 					let plain = _text.slice(start.column, end.column);
 					text += plain;
-					html += `<span class="search-results-bg">${plain}</span>`;
+					html += `<span class="search-results-bg">${Util.htmlTrans(plain)}</span>`;
 					plain = _text.slice(end.column);
 					text += plain;
-					html += plain;
+					html += Util.htmlTrans(plain);
 				}
 			}
 			return {
