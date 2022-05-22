@@ -4,16 +4,12 @@ import EventBus from '@/event';
 import globalData from '@/data/globalData';
 import Util from '@/common/util';
 
-const remote = window.require('@electron/remote');
 const contexts = Context.contexts;
 
 export default class {
 	constructor(win) {
 		this.win = win;
 		this.editorList = globalData.editorList;
-		this.nowId = 0;
-		this.idCount = 1;
-		this.titleCount = 1;
 		this.init(win);
 	}
 	init(win) {
@@ -45,21 +41,16 @@ export default class {
 			this.closeAll();
 		});
 		EventBus.$on('editor-content-change', id => {
-			let tab = this.getTabById(id);
+			let tab = Util.getTabById(this.editorList, id);
 			tab.saved = false;
 			this.editorList.splice();
 		});
-		EventBus.$on('file-open', (fileObj, choseFile) => {
-			this.openFile(fileObj, choseFile);
-		});
-		EventBus.$on('file-save', id => {
-			this.saveFile(id);
-		});
-		EventBus.$on('folder-open', () => {
-			this.openFolder();
-		});
 		EventBus.$on('language-check', () => {
 			this.checkLanguage();
+		});
+		EventBus.$on('folder-opened', () => {
+			this.editorList.empty();
+			globalData.nowId = null;
 		});
 	}
 	changeBarIcon() {
@@ -79,14 +70,13 @@ export default class {
 		this.editorList.splice();
 	}
 	changeTab(id) {
-		let tab = this.getTabById(id);
+		let tab = Util.getTabById(this.editorList, id);
 		if (tab && !tab.active) {
 			this.editorList.forEach(item => {
 				item.active = false;
 			});
 			tab.active = true;
-			this.nowId = id;
-			this.win.nowId = id;
+			globalData.nowId = id;
 			this.changeStatus();
 		} else {
 			this.focusNowEditor();
@@ -100,7 +90,7 @@ export default class {
 				return;
 			}
 			let editor = this.getNowEditor();
-			let tab = this.getTabById(this.nowId);
+			let tab = Util.getTabById(this.editorList, globalData.nowId);
 			EventBus.$emit(`editor-changed`, {
 				id: tab.id,
 				path: tab.path,
@@ -113,8 +103,8 @@ export default class {
 	}
 	// 检查当前打开的文件的语言
 	checkLanguage() {
-		if (this.nowId) {
-			let tab = this.getTabById(this.nowId);
+		if (globalData.nowId) {
+			let tab = Util.getTabById(this.editorList, globalData.nowId);
 			let suffix = /\.[^\.]+$/.exec(tab.name);
 			if (!suffix) {
 				return;
@@ -131,7 +121,7 @@ export default class {
 		}
 	}
 	closeTab(id) {
-		let tab = this.getTabById(id || this.nowId);
+		let tab = Util.getTabById(this.editorList, id || globalData.nowId);
 		let index = this.editorList.indexOf(tab);
 		return new Promise((resolve, reject) => {
 			if (!tab.saved) {
@@ -145,7 +135,7 @@ export default class {
 			this.editorList.splice(index, 1);
 			contexts[id] = null;
 			if (tab.active) {
-				this.nowId = null;
+				globalData.nowId = null;
 				tab.active = false;
 				tab = this.editorList[index] || this.editorList[index - 1];
 				if (tab) {
@@ -216,7 +206,7 @@ export default class {
 	}
 	closeToLeft(id) {
 		let editorList = [];
-		id = id || this.nowId;
+		id = id || globalData.nowId;
 		for (let i = 0; i < this.editorList.length; i++) {
 			let tab = this.editorList[i];
 			if (tab.id !== id) {
@@ -229,7 +219,7 @@ export default class {
 	}
 	closeToRight(id) {
 		let editorList = [];
-		id = id || this.nowId;
+		id = id || globalData.nowId;
 		for (let i = this.editorList.length - 1; i >= 0; i++) {
 			let tab = this.editorList[i];
 			if (tab.id !== id) {
@@ -243,206 +233,12 @@ export default class {
 	focusNowEditor() {
 		cancelAnimationFrame(this.closeTabTimer);
 		this.closeTabTimer = requestAnimationFrame(() => {
-			if (this.nowId) {
+			if (globalData.nowId) {
 				this.getNowEditor().focus();
 			}
 		});
 	}
-	openFolder() {
-		this.choseFolder().then(results => {
-			if (results) {
-				globalData.fileTree.empty();
-				globalData.fileTree.push(...results);
-				this.editorList.empty();
-				this.nowId = null;
-			}
-		});
-	}
-	choseFolder() {
-		let win = remote.getCurrentWindow();
-		let options = {
-			title: '选择文件夹',
-			properties: ['openDirectory', 'multiSelections'],
-		};
-		return remote.dialog
-			.showOpenDialog(win, options)
-			.then(result => {
-				let results = [];
-				if (!result.canceled && result.filePaths) {
-					result.filePaths.forEach(item => {
-						let obj = {
-							name: item.match(/[^\\\/]+$/)[0],
-							path: item,
-							type: 'dir',
-							active: false,
-							open: false,
-							children: [],
-						};
-						results.push(Object.assign({}, obj));
-					});
-					return results;
-				}
-			})
-			.catch(err => {
-				console.log(err);
-			});
-	}
-	openFile(fileObj, choseFile) {
-		let tab = fileObj && this.getTabByPath(fileObj.path);
-		if (!tab) {
-			let index = -1;
-			let name = (fileObj && fileObj.name) || `Untitled${this.titleCount++}`;
-			if (this.editorList.length) {
-				tab = this.getTabById(this.nowId);
-				index = this.editorList.indexOf(tab);
-			}
-			if (choseFile) {
-				//从资源管理器中选择文件
-				this.choseFile().then(results => {
-					if (results) {
-						let editorList = this.editorList.slice(0, index).concat(results).concat(this.editorList.slice(index));
-						tab = results[0];
-						this.editorList.empty();
-						this.editorList.push(...editorList);
-						_done.call(this);
-					}
-				});
-			} else {
-				tab = {
-					id: this.idCount++,
-					name: name,
-					path: (fileObj && fileObj.path) || '',
-					icon: (fileObj && fileObj.icon) || '',
-					saved: true,
-					active: false,
-				};
-				if (!tab.icon) {
-					let icon = Util.getIconByPath({
-						iconData: globalData.nowIconData,
-						filePath: (fileObj && fileObj.path) || '',
-						fileType: 'file',
-						themeType: globalData.nowTheme.type,
-					});
-					tab.icon = icon ? `my-file-icon my-file-icon-${icon}` : '';
-				}
-				this.editorList.splice(index + 1, 0, tab);
-				_done.call(this);
-			}
-		} else {
-			_done.call(this);
-		}
-
-		function _done() {
-			if (tab && tab.path && !tab.loaded) {
-				tab.loaded = true;
-				Util.readFile(tab.path)
-					.then(data => {
-						this.getContext(tab.id).insertContent(data);
-						tab.saved = true;
-						//点击搜索结果
-						if (fileObj && fileObj.range) {
-							this.win.getEditor(tab.id).cursor.setCursorPos(Object.assign({}, fileObj.range.start));
-						}
-					})
-					.catch(() => {
-						tab.loaded = false;
-					});
-			} else if (fileObj && fileObj.range) {
-				this.win.getEditor(tab.id).cursor.setCursorPos(Object.assign({}, fileObj.range.start));
-			}
-			this.changeTab(tab.id);
-			this.checkLanguage();
-		}
-	}
-	choseFile() {
-		let win = remote.getCurrentWindow();
-		let options = {
-			title: '选择文件',
-			properties: ['openFile', 'multiSelections'],
-		};
-		return remote.dialog
-			.showOpenDialog(win, options)
-			.then(result => {
-				let results = [];
-				if (!result.canceled && result.filePaths) {
-					result.filePaths.forEach(item => {
-						let icon = Util.getIconByPath({
-							iconData: globalData.nowIconData,
-							filePath: item,
-							fileType: 'file',
-							thmeType: globalData.nowTheme.type,
-						});
-						icon = icon ? `my-file-icon my-file-icon-${icon}` : '';
-						let obj = {
-							id: this.idCount++,
-							name: item.match(/[^\\\/]+$/)[0],
-							path: item,
-							icon: icon,
-							saved: true,
-							active: false,
-						};
-						results.push(Object.assign({}, obj));
-					});
-					return results;
-				}
-			})
-			.catch(err => {
-				console.log(err);
-			});
-	}
-	saveFile(id) {
-		let tab = this.getTabById(id);
-		if (this.mode === 'web') {
-			return Promise.resolve();
-		}
-		if (!tab.saved) {
-			if (tab.path) {
-				this.writeFile(tab.path, contexts[id].getAllText());
-				tab.saved = true;
-				return Promise.resolve();
-			} else {
-				let win = remote.getCurrentWindow();
-				let options = {
-					title: '请选择要保存的文件名',
-					buttonLabel: '保存',
-				};
-				return remote.dialog.showSaveDialog(win, options).then(result => {
-					if (!result.canceled && result.filePath) {
-						tab.path = result.filePath;
-						tab.name = tab.path.match(/[^\\\/]+$/)[0];
-						this.writeFile(tab.path, contexts[id].getAllText());
-						tab.saved = true;
-					} else {
-						return Promise.reject();
-					}
-				});
-			}
-		}
-	}
-	writeFile(path, text) {
-		fs.writeFileSync(path, text, { encoding: 'utf-8' });
-	}
-	getTabById(id) {
-		for (let i = 0; i < this.editorList.length; i++) {
-			if (this.editorList[i].id === id) {
-				return this.editorList[i];
-			}
-		}
-	}
-	getTabByPath(path) {
-		for (let i = 0; i < this.editorList.length; i++) {
-			if (this.editorList[i].path === path) {
-				return this.editorList[i];
-			}
-		}
-	}
 	getNowEditor() {
-		return this.win.getEditor(this.nowId);
-	}
-	getContext(id) {
-		return contexts[id];
-	}
-	getNowContext() {
-		return this.getContext(this.nowId);
+		return this.win.getEditor(globalData.nowId);
 	}
 }

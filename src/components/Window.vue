@@ -44,7 +44,7 @@
 		<!-- 顶部菜单栏 -->
 		<title-bar :height="topBarHeight" @change="onMenuChange" ref="titleBar"></title-bar>
 		<!-- 状态栏 -->
-		<status-bar :height="statusHeight" :languageList="languageList" @select-langeuage="onSelectLanguage" ref="statusBar"></status-bar>
+		<status-bar :height="statusHeight" @select-langeuage="onSelectLanguage" ref="statusBar"></status-bar>
 		<cmd-panel></cmd-panel>
 		<Dialog :btns="dialogBtns" :content="dialogContent" :icon="this.dialogIcon" :icon-color="this.dialogIconColor" :overlay="true" :title="dialogTilte" @close="closeDialog" v-show="dialogVisible"></Dialog>
 	</div>
@@ -91,10 +91,8 @@ export default {
 	data() {
 		return {
 			extensionsPath: path.join(globalData.dirname, 'main/extensions'),
-			languageList: [],
 			statusHeight: 30,
 			topBarHeight: 35,
-			nowId: null,
 			editorList: globalData.editorList,
 			terminalList: globalData.terminalList,
 			dialogTilte: '',
@@ -152,13 +150,11 @@ export default {
 			let iconThemes = result.iconThemes;
 			let scopeFileList = result.scopeFileList;
 			langeuages.push({ name: 'Plain Text', value: '', checked: true });
-			globalData.languageList = langeuages.slice();
-			globalData.scopeFileList = scopeFileList.slice();
-			globalData.themes = themes.slice();
-			globalData.iconThemes = iconThemes.slice();
-			this.languageList = langeuages;
-			// loadIconTheme需要用到globalData.languageList
-			theme.loadIconTheme(globalData.nowIconTheme);
+			globalData.languageList.empty().push(...langeuages);
+			globalData.scopeFileList.empty().push(...scopeFileList);
+			globalData.themes.empty().push(...themes);
+			globalData.iconThemes.empty().push(...iconThemes);
+			theme.loadIconTheme(globalData.nowIconTheme); // loadIconTheme需要用到globalData.languageList
 			EventBus.$emit('language-check');
 		});
 	},
@@ -254,7 +250,7 @@ export default {
 			});
 			EventBus.$emit('open-cmd-menu', {
 				cmdList: cmdList,
-				value: this.nowId && this.getNowEditor().language,
+				value: globalData.nowId && this.getNowEditor().language,
 			});
 		},
 		showDialog(option) {
@@ -412,13 +408,13 @@ export default {
 			return editor && editor[0];
 		},
 		getNowEditor() {
-			return this.getEditor(this.nowId);
+			return this.getEditor(globalData.nowId);
 		},
 		getContext(id) {
 			return contexts[id];
 		},
 		getNowContext() {
-			return this.getContext(this.nowId);
+			return this.getContext(globalData.nowId);
 		},
 	},
 };

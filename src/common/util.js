@@ -302,6 +302,20 @@ class Util {
 			return iconData.file;
 		}
 	}
+	static getTabById(editorList, id) {
+		for (let i = 0; i < editorList.length; i++) {
+			if (editorList[i].id === id) {
+				return editorList[i];
+			}
+		}
+	}
+	static getTabByPath(editorList, path) {
+		for (let i = 0; i < editorList.length; i++) {
+			if (editorList[i].path === path) {
+				return editorList[i];
+			}
+		}
+	}
 	static getMemnuPos(e, menuEl, areaEl) {
 		let menuWidth = 0;
 		let menuHeight = 0;

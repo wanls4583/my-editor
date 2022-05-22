@@ -28,6 +28,7 @@
 <script>
 import Menu from './Menu';
 import EventBus from '@/event';
+import globalData from '@/data/globalData';
 
 export default {
 	name: 'StatusBar',
@@ -36,7 +37,6 @@ export default {
 			type: Number,
 			default: 25,
 		},
-		languageList: Array,
 	},
 	components: {
 		Menu,
@@ -50,21 +50,16 @@ export default {
 			tabsizeVisible: false,
 			hasEditor: false,
 			tabSizeList: [],
-			languageMap: {},
+			languageList: globalData.languageList,
 		};
-	},
-	watch: {
-		languageList() {
-			let languageMap = {};
-			this.languageList.forEach((item) => {
-				languageMap[item.value] = item.name;
-			});
-			this.languageMap = languageMap;
-		},
 	},
 	computed: {
 		nowLanguage() {
-			return this.languageMap[this.language];
+			for (let i = 0; i < this.languageList.length; i++) {
+				if (this.languageList[i].value === this.language) {
+					return this.languageList[i].name;
+				}
+			}
 		},
 	},
 	created() {

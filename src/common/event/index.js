@@ -1,6 +1,7 @@
 import EventBus from '@/event';
 import TerminalEvent from './terminal';
 import EditorEvent from './editor';
+import FileEvent from './file';
 
 const remote = window.require('@electron/remote');
 
@@ -16,5 +17,6 @@ export default class {
 		});
 		this.terminalEvent = new TerminalEvent(win);
 		this.editorEvent = new EditorEvent(win);
+		this.fileEvent = new FileEvent(win);
 	}
 }
