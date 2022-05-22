@@ -333,27 +333,25 @@ export default class {
 		}
 
 		function _done() {
-			Vue.prototype.$nextTick(() => {
-				if (tab && tab.path && !tab.loaded) {
-					tab.loaded = true;
-					Util.readFile(tab.path)
-						.then(data => {
-							this.getContext(tab.id).insertContent(data);
-							tab.saved = true;
-							//点击搜索结果
-							if (fileObj && fileObj.range) {
-								this.win.getEditor(tab.id).cursor.setCursorPos(Object.assign({}, fileObj.range.start));
-							}
-						})
-						.catch(() => {
-							tab.loaded = false;
-						});
-				} else if (fileObj && fileObj.range) {
-					this.win.getEditor(tab.id).cursor.setCursorPos(Object.assign({}, fileObj.range.start));
-				}
-				this.changeTab(tab.id);
-				this.checkLanguage();
-			});
+			if (tab && tab.path && !tab.loaded) {
+				tab.loaded = true;
+				Util.readFile(tab.path)
+					.then(data => {
+						this.getContext(tab.id).insertContent(data);
+						tab.saved = true;
+						//点击搜索结果
+						if (fileObj && fileObj.range) {
+							this.win.getEditor(tab.id).cursor.setCursorPos(Object.assign({}, fileObj.range.start));
+						}
+					})
+					.catch(() => {
+						tab.loaded = false;
+					});
+			} else if (fileObj && fileObj.range) {
+				this.win.getEditor(tab.id).cursor.setCursorPos(Object.assign({}, fileObj.range.start));
+			}
+			this.changeTab(tab.id);
+			this.checkLanguage();
 		}
 	}
 	choseFile() {
