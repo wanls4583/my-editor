@@ -1,23 +1,15 @@
 import EventBus from '@/event';
-import globalData from '../data/globalData';
+import globalData from '@/data/globalData';
 
-const remote = window.require('@electron/remote');
 const path = window.require('path');
 
 export default class {
 	constructor() {
 		this.terminalList = globalData.terminalList;
 		this.terminalId = 1;
+		this.init();
 	}
 	init() {
-		EventBus.$on('reveal-in-file-explorer', path => {
-			if (path) {
-				remote.shell.showItemInFolder(path);
-			}
-		});
-		this.initTerminalEvent();
-	}
-	initTerminalEvent() {
 		EventBus.$on('terminal-new', dirPath => {
 			let nowFileItem = globalData.nowFileItem;
 			let tab = {};

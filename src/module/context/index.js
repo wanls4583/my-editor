@@ -3,6 +3,7 @@
  * @Date: 2022-02-18 13:42:22
  * @Description:
  */
+import EventBus from '@/event';
 import Util from '@/common/util';
 import Enum from '@/data/enum';
 import expand from 'emmet';
@@ -31,6 +32,7 @@ class Context {
     }
     initProperties(editor) {
         Util.defineProperties(this, editor, [
+            'editorId',
             'language',
             'tabSize',
             'nowCursorPos',
@@ -52,7 +54,6 @@ class Context {
             'setErrors',
             'setAutoTip',
             'getStrWidth',
-            '$emit',
         ]);
         this.setEditorData = (prop, value) => {
             editor.setData(prop, value);
@@ -212,7 +213,7 @@ class Context {
         this.setErrors([]);
         this.setAutoTip(null);
         this.render(true);
-        this.$emit('change');
+        EventBus.$emit('editor-content-change', this.editorId);
         let historyObj = {
             type: Util.command.DELETE,
             cursorPos: Object.assign({}, newPos),
@@ -455,7 +456,7 @@ class Context {
         this.setErrors([]);
         this.setAutoTip(null);
         this.render(true);
-        this.$emit('change');
+        EventBus.$emit('editor-content-change', this.editorId);
         // 更新最大文本宽度
         if (startObj.width >= this.maxWidthObj.width) {
             this.setEditorData('maxWidthObj', {

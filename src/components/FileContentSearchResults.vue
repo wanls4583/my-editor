@@ -56,7 +56,6 @@ export default {
 			maxVisibleLines: 100,
 		};
 	},
-	inject: ['openFile'],
 	computed: {
 		_top() {
 			return (this.startLine - 1) * this.itemHeight + 'px';
@@ -99,7 +98,7 @@ export default {
 				});
 				this.render();
 			});
-			EventBus.$on('tab-change', (data) => {
+			EventBus.$on('editor-changed', (data) => {
 				let path = data && data.path;
 				if (path && !(preActiveItem && preActiveItem.path === path)) {
 					if (preActiveItem) {
@@ -228,7 +227,7 @@ export default {
 				item.open = !item.open;
 				_changOpen.call(this, item);
 			} else if (item.deep > 1) {
-				this.openFile(item);
+				EventBus.$emit('file-open', item);
 			}
 			return Promise.resolve();
 

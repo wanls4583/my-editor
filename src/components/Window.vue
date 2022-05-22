@@ -23,20 +23,11 @@
 		</div>
 		<div class="my-right-wrap" ref="rightWrap">
 			<!-- tab栏 -->
-			<editor-bar
-				:editorList="editorList"
-				@change="onChangeTab"
-				@close="onCloseTab"
-				@close-all="onCloseAll"
-				@close-saved="onCloseSaved"
-				@close-to-left="onCloseToLeft"
-				@close-to-right="onCloseToRight"
-				v-show="editorList.length"
-			></editor-bar>
+			<editor-bar :editorList="editorList" v-show="editorList.length"></editor-bar>
 			<!-- 编辑区 -->
 			<div class="my-editor-groups" style="flex-grow:1;overflow:hidden;">
 				<template v-for="item in editorList">
-					<editor :active="item.active" :id="item.id" :key="item.id" :path="item.path" :ref="'editor' + item.id" @change="onFileChange(item.id)" @save="onSaveFile(item.id)" v-show="item.active"></editor>
+					<editor :active="item.active" :id="item.id" :key="item.id" :path="item.path" :ref="'editor' + item.id" v-show="item.active"></editor>
 				</template>
 			</div>
 			<template v-if="terminalVisible && terminalList.length">
@@ -55,7 +46,7 @@
 		<!-- 状态栏 -->
 		<status-bar :height="statusHeight" :languageList="languageList" @select-langeuage="onSelectLanguage" ref="statusBar"></status-bar>
 		<cmd-panel></cmd-panel>
-		<Dialog :btns="dialogBtns" :content="dialogContent" :icon="this.dialogIcon" :icon-color="this.dialogIconColor" :overlay="true" :title="dialogTilte" @close="onDialogClose" v-show="dialogVisible"></Dialog>
+		<Dialog :btns="dialogBtns" :content="dialogContent" :icon="this.dialogIcon" :icon-color="this.dialogIconColor" :overlay="true" :title="dialogTilte" @close="closeDialog" v-show="dialogVisible"></Dialog>
 	</div>
 </template>
 <script>
@@ -104,9 +95,7 @@ export default {
 			statusHeight: 30,
 			topBarHeight: 35,
 			nowId: null,
-			idCount: 1,
-			titleCount: 1,
-			editorList: [],
+			editorList: globalData.editorList,
 			terminalList: globalData.terminalList,
 			dialogTilte: '',
 			dialogContent: '',
@@ -138,12 +127,6 @@ export default {
 			getNowContext: () => {
 				return this.getNowContext();
 			},
-			openFile: (fileObj, choseFile) => {
-				this.openFile(fileObj, choseFile);
-			},
-			openFolder: () => {
-				this.openFolder();
-			},
 		};
 	},
 	created() {
@@ -154,8 +137,7 @@ export default {
 				EventBus.$emit('close-menu');
 			});
 		}
-		this.commonEvent = new CommonEvent();
-		this.commonEvent.init();
+		this.commonEvent = new CommonEvent(this);
 		this.initEvent();
 		this.initEventBus();
 	},
@@ -163,7 +145,7 @@ export default {
 		window.test = this;
 		const theme = new Theme();
 		theme.loadTheme(globalData.nowTheme);
-		this.openFile();
+		EventBus.$emit('file-open');
 		this.loadExtensions().then((result) => {
 			let langeuages = result.languages;
 			let themes = result.themes;
@@ -175,9 +157,9 @@ export default {
 			globalData.themes = themes.slice();
 			globalData.iconThemes = iconThemes.slice();
 			this.languageList = langeuages;
-			this.checkLanguage();
 			// loadIconTheme需要用到globalData.languageList
 			theme.loadIconTheme(globalData.nowIconTheme);
+			EventBus.$emit('language-check');
 		});
 	},
 	methods: {
@@ -203,25 +185,7 @@ export default {
 				});
 		},
 		initEventBus() {
-			let iconFn = (value) => {
-				this.editorList.forEach((item) => {
-					if (value) {
-						let icon = Util.getIconByPath({
-							iconData: globalData.nowIconData,
-							filePath: item.path,
-							fileType: 'file',
-							themeType: globalData.nowTheme.type,
-						});
-						item.icon = icon ? `my-file-icon my-file-icon-${icon}` : '';
-					} else {
-						item.icon = '';
-					}
-				});
-				this.editorList.splice();
-			};
-			EventBus.$on('icon-change', iconFn);
 			EventBus.$on('theme-change', (value) => {
-				iconFn(value);
 				this.themeType = globalData.nowTheme.type;
 			});
 			EventBus.$on('activity-change', (activity) => {
@@ -233,6 +197,12 @@ export default {
 			EventBus.$on('terminal-toggle', () => {
 				this.terminalVisible = !this.terminalVisible;
 			});
+			EventBus.$on('dialog-show', (option) => {
+				this.showDialog(option);
+			});
+			EventBus.$on('dialog-hide', () => {
+				this.closeDialog();
+			});
 		},
 		onLeftSashBegin(e) {
 			this.leftSashMouseObj = e;
@@ -243,114 +213,6 @@ export default {
 		// 点击编辑器
 		onWindMouseDown() {
 			EventBus.$emit('close-menu');
-		},
-		onChangeTab(id) {
-			let tab = this.getTabById(id);
-			if (!tab.active) {
-				this.editorList.forEach((item) => {
-					item.active = false;
-				});
-				tab.active = true;
-				this.nowId = id;
-				this.changeStatus();
-			} else {
-				this.getNowEditor().focus();
-			}
-		},
-		onCloseTab(id) {
-			if (!this.nowId) {
-				return;
-			}
-			let tab = this.getTabById(id || this.nowId);
-			let index = this.editorList.indexOf(tab);
-			if (!tab.saved) {
-				this.showDialog({
-					content: '文件尚未保存，是否先保存文件？',
-					cancel: true,
-					icon: 'my-icon-warn',
-					iconColor: 'rgba(255,196,0)',
-					btns: [
-						{
-							name: '保存',
-							callback: () => {
-								if (this.mode === 'app') {
-									this.onSaveFile(id).then(() => {
-										_closeTab.call(this);
-										this.onDialogClose();
-									});
-								} else {
-									_closeTab.call(this);
-									this.onDialogClose();
-								}
-							},
-						},
-						{
-							name: '不保存',
-							callback: () => {
-								_closeTab.call(this);
-								this.onDialogClose();
-							},
-						},
-					],
-				});
-			} else {
-				_closeTab.call(this);
-			}
-
-			function _closeTab() {
-				this.editorList.splice(index, 1);
-				contexts[id] = null;
-				if (tab.active) {
-					tab.active = false;
-					tab = this.editorList[index] || this.editorList[index - 1];
-					if (tab) {
-						this.onChangeTab(tab.id);
-					} else {
-						this.nowId = null;
-						EventBus.$emit('tab-change', null);
-					}
-				} else {
-					this.getNowEditor().focus();
-				}
-			}
-		},
-		onCloseAll() {
-			this.editorList = this.editorList.filter((item) => {
-				return !item.saved;
-			});
-			this.editorList.forEach((item) => {
-				this.onCloseTab(item.id);
-			});
-			this.nowId = null;
-		},
-		onCloseSaved() {
-			this.editorList.slice().forEach((item) => {
-				if (item.saved) {
-					this.onCloseTab(item.id);
-				}
-			});
-		},
-		onCloseToLeft(id) {
-			let tab = null;
-			id = id || this.nowId;
-			while ((tab = this.editorList[0])) {
-				if (tab.id !== id) {
-					this.onCloseTab(tab.id);
-				} else {
-					break;
-				}
-			}
-		},
-		onCloseToRight(id) {
-			let tab = null;
-			id = id || this.nowId;
-			while ((tab = this.editorList.peek())) {
-				if (tab.id !== id) {
-					this.onCloseTab(tab.id);
-				} else {
-					break;
-				}
-			}
 		},
 		onMenuChange(item) {
 			let cmdList = null;
@@ -395,201 +257,6 @@ export default {
 				value: this.nowId && this.getNowEditor().language,
 			});
 		},
-		onFileChange(id) {
-			let tab = this.getTabById(id);
-			tab.saved = false;
-		},
-		onSaveFile(id) {
-			let tab = this.getTabById(id);
-			if (this.mode === 'web') {
-				return Promise.resolve();
-			}
-			if (!tab.saved) {
-				if (tab.path) {
-					this.writeFile(tab.path, contexts[id].getAllText());
-					tab.saved = true;
-					return Promise.resolve();
-				} else {
-					let win = remote.getCurrentWindow();
-					let options = {
-						title: '请选择要保存的文件名',
-						buttonLabel: '保存',
-					};
-					return remote.dialog.showSaveDialog(win, options).then((result) => {
-						if (!result.canceled && result.filePath) {
-							tab.path = result.filePath;
-							tab.name = tab.path.match(/[^\\\/]+$/)[0];
-							this.writeFile(tab.path, contexts[id].getAllText());
-							tab.saved = true;
-						} else {
-							return Promise.reject();
-						}
-					});
-				}
-			}
-		},
-		onDialogClose() {
-			this.dialogVisible = false;
-		},
-		openFolder() {
-			this.choseFolder().then((results) => {
-				if (results) {
-					this.$refs.sideBar.list.empty();
-					this.$refs.sideBar.list.push(...results);
-					this.editorList = [];
-					this.nowId = null;
-				}
-			});
-		},
-		choseFolder() {
-			let win = remote.getCurrentWindow();
-			let options = {
-				title: '选择文件夹',
-				properties: ['openDirectory', 'multiSelections'],
-			};
-			return remote.dialog
-				.showOpenDialog(win, options)
-				.then((result) => {
-					let results = [];
-					if (!result.canceled && result.filePaths) {
-						result.filePaths.forEach((item) => {
-							let obj = {
-								name: item.match(/[^\\\/]+$/)[0],
-								path: item,
-								type: 'dir',
-								active: false,
-								open: false,
-								children: [],
-							};
-							results.push(Object.assign({}, obj));
-						});
-						return results;
-					}
-				})
-				.catch((err) => {
-					console.log(err);
-				});
-		},
-		openFile(fileObj, choseFile) {
-			let tab = fileObj && this.getTabByPath(fileObj.path);
-			if (!tab) {
-				let index = -1;
-				let name = (fileObj && fileObj.name) || `Untitled${this.titleCount++}`;
-				if (this.editorList.length) {
-					tab = this.getTabById(this.nowId);
-					index = this.editorList.indexOf(tab);
-				}
-				if (choseFile) {
-					//从资源管理器中选择文件
-					this.choseFile().then((results) => {
-						if (results) {
-							tab = results[0];
-							this.editorList = this.editorList.slice(0, index).concat(results).concat(this.editorList.slice(index));
-							_done.call(this);
-						}
-					});
-				} else {
-					tab = {
-						id: this.idCount++,
-						name: name,
-						path: (fileObj && fileObj.path) || '',
-						icon: (fileObj && fileObj.icon) || '',
-						saved: true,
-						active: false,
-					};
-					if (!tab.icon) {
-						let icon = Util.getIconByPath({
-							iconData: globalData.nowIconData,
-							filePath: (fileObj && fileObj.path) || '',
-							fileType: 'file',
-							themeType: globalData.nowTheme.type,
-						});
-						tab.icon = icon ? `my-file-icon my-file-icon-${icon}` : '';
-					}
-					this.editorList.splice(index + 1, 0, tab);
-					_done.call(this);
-				}
-			} else {
-				_done.call(this);
-			}
-
-			function _done() {
-				this.$nextTick(() => {
-					if (tab && tab.path && !tab.loaded) {
-						tab.loaded = true;
-						Util.readFile(tab.path)
-							.then((data) => {
-								this.getContext(tab.id).insertContent(data);
-								tab.saved = true;
-								//点击搜索结果
-								if (fileObj && fileObj.range) {
-									this.getEditor(tab.id).cursor.setCursorPos(Object.assign({}, fileObj.range.start));
-								}
-							})
-							.catch(() => {
-								tab.loaded = false;
-							});
-					} else if (fileObj && fileObj.range) {
-						this.getEditor(tab.id).cursor.setCursorPos(Object.assign({}, fileObj.range.start));
-					}
-					this.onChangeTab(tab.id);
-					this.checkLanguage();
-				});
-			}
-		},
-		choseFile() {
-			let win = remote.getCurrentWindow();
-			let options = {
-				title: '选择文件',
-				properties: ['openFile', 'multiSelections'],
-			};
-			return remote.dialog
-				.showOpenDialog(win, options)
-				.then((result) => {
-					let results = [];
-					if (!result.canceled && result.filePaths) {
-						result.filePaths.forEach((item) => {
-							let icon = Util.getIconByPath({
-								iconData: globalData.nowIconData,
-								filePath: item,
-								fileType: 'file',
-								thmeType: globalData.nowTheme.type,
-							});
-							icon = icon ? `my-file-icon my-file-icon-${icon}` : '';
-							let obj = {
-								id: this.idCount++,
-								name: item.match(/[^\\\/]+$/)[0],
-								path: item,
-								icon: icon,
-								saved: true,
-								active: false,
-							};
-							results.push(Object.assign({}, obj));
-						});
-						return results;
-					}
-				})
-				.catch((err) => {
-					console.log(err);
-				});
-		},
-		sortFileList() {
-			this.list.sort((a, b) => {
-				if (a.type === b.type) {
-					if (a.name === b.name) {
-						return 0;
-					} else if (a.name > b.name) {
-						return 1;
-					} else {
-						return -1;
-					}
-				}
-				if (a.type === 'dir') {
-					return -1;
-				}
-				return 1;
-			});
-		},
 		showDialog(option) {
 			this.dialogTilte = option.title || '';
 			this.dialogContent = option.content || '';
@@ -598,45 +265,8 @@ export default {
 			this.dialogIconColor = option.iconColor || '';
 			this.dialogIcon = option.icon || '';
 		},
-		writeFile(path, text) {
-			fs.writeFileSync(path, text, { encoding: 'utf-8' });
-		},
-		changeStatus() {
-			let changStatusId = this.changeStatus.id || 1;
-			this.changeStatus.id = changStatusId;
-			this.$nextTick(() => {
-				if (this.changeStatus.id !== changStatusId) {
-					return;
-				}
-				let editor = this.getNowEditor();
-				let tab = this.getTabById(this.nowId);
-				EventBus.$emit(`tab-change`, {
-					path: tab.path,
-					language: editor.language,
-					tabSize: editor.tabSize,
-					line: editor.nowCursorPos ? editor.nowCursorPos.line : '?',
-					column: editor.nowCursorPos ? editor.nowCursorPos.column : '?',
-				});
-			});
-		},
-		// 检查当前打开的文件的语言
-		checkLanguage() {
-			if (this.nowId) {
-				let tab = this.getTabById(this.nowId);
-				let suffix = /\.[^\.]+$/.exec(tab.name);
-				if (!suffix) {
-					return;
-				}
-				for (let i = 0; i < this.languageList.length; i++) {
-					let language = this.languageList[i];
-					if (language.extensions && language.extensions.indexOf(suffix[0]) > -1) {
-						this.$nextTick(() => {
-							EventBus.$emit('language-change', language.value);
-						});
-						break;
-					}
-				}
-			}
+		closeDialog() {
+			this.dialogVisible = false;
 		},
 		// 加载语言支持
 		loadExtensions() {
@@ -773,18 +403,6 @@ export default {
 		getTabById(id) {
 			for (let i = 0; i < this.editorList.length; i++) {
 				if (this.editorList[i].id === id) {
-					return this.editorList[i];
-				}
-			}
-		},
-		getNowTab() {
-			if (this.nowId) {
-				return this.editorList[this.nowId];
-			}
-		},
-		getTabByPath(path) {
-			for (let i = 0; i < this.editorList.length; i++) {
-				if (this.editorList[i].path === path) {
 					return this.editorList[i];
 				}
 			}

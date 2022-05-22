@@ -75,8 +75,8 @@ export default {
 			fileMenuVisible: false,
 			editMenuVisible: false,
 			selectionMenuVisible: false,
-			preferenceMenuVisible: false,
 			terminalMenuVisible: false,
+			preferenceMenuVisible: false,
 			maximize: false,
 			mode: remote ? 'app' : 'web',
 			fileMenuList: [
@@ -256,7 +256,7 @@ export default {
 			return this.getNowContext();
 		},
 	},
-	inject: ['getNowEditor', 'getNowContext', 'openFile', 'openFolder'],
+	inject: ['getNowEditor', 'getNowContext'],
 	created() {
 		if (this.mode === 'app') {
 			this.fileMenuList.push([
@@ -289,8 +289,8 @@ export default {
 				this.fileMenuVisible = false;
 				this.editMenuVisible = false;
 				this.selectionMenuVisible = false;
-				this.preferenceMenuVisible = false;
 				this.terminalMenuVisible = false;
+				this.preferenceMenuVisible = false;
 			});
 		},
 		showMemu(prop) {
@@ -318,13 +318,13 @@ export default {
 		onFileMenuChange(item) {
 			switch (item.op) {
 				case 'newFile':
-					this.openFile();
+					EventBus.$emit('file-open');
 					break;
 				case 'openFile':
-					this.openFile(null, true);
+					EventBus.$emit('file-open', null, true);
 					break;
 				case 'openFolder':
-					this.openFolder();
+					EventBus.$emit('folder-open');
 					break;
 			}
 			this.fileMenuVisible = false;
@@ -443,8 +443,8 @@ export default {
 				case 'newTerminal':
 					EventBus.$emit('terminal-new');
 					break;
-				case 'changeIconTheme':
-					EventBus.$emit('terminal-toogle');
+				case 'toogleTerminal':
+					EventBus.$emit('terminal-toggle');
 					break;
 			}
 			this.terminalMenuVisible = false;

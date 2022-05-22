@@ -441,13 +441,15 @@ export default {
 		},
 		showEditor() {
 			if (this.active) {
-				this.$nextTick(() => {
-					this.language = this._language || '';
-					this.theme = this._theme || '';
-					this.charObj = Util.getCharWidth(this.$refs.content, '<div class="my-line"><div class="my-code">[dom]</div></div>');
-					this.maxVisibleLines = Math.ceil(this.$refs.scroller.clientHeight / this.charObj.charHight) + 1;
-					this.render();
-					this.focus();
+				requestAnimationFrame(() => {
+					if (this.$refs.scroller) {
+						this.language = this._language || '';
+						this.theme = this._theme || '';
+						this.charObj = Util.getCharWidth(this.$refs.content, '<div class="my-line"><div class="my-code">[dom]</div></div>');
+						this.maxVisibleLines = Math.ceil(this.$refs.scroller.clientHeight / this.charObj.charHight) + 1;
+						this.render();
+						this.focus();
+					}
 				});
 			}
 		},

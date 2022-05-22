@@ -11,6 +11,7 @@ export default class {
     }
     initProperties(editor, context) {
         Util.defineProperties(this, editor, [
+            'editorId',
             'nowCursorPos',
             'cursor',
             'selecter',
@@ -113,7 +114,7 @@ export default class {
                     this.openSearch(true);
                     break;
                 case 83: //ctrl+s 保存
-                    this.$emit('save');
+                    this.$emit('file-save', this.editorId);
                     break;
                 case 90: //ctrl+Z，撤销
                 case 122:

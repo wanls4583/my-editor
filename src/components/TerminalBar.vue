@@ -60,7 +60,7 @@ export default {
 	},
 	methods: {
 		initEventBus() {
-			EventBus.$on('terminal-tab-change', (data) => {
+			EventBus.$on('terminal-editor-changed', (data) => {
 				this.$nextTick(() => {
 					let $tab = $(this.$refs.terminalBar).find('div.my-active');
 					$tab.length && $tab[0].scrollIntoView();

@@ -45,7 +45,6 @@ export default {
 			type: Array,
 		},
 	},
-	inject: ['openFile'],
 	data() {
 		return {
 			itemHeight: 30,
@@ -99,7 +98,7 @@ export default {
 				});
 				this.render();
 			});
-			EventBus.$on('tab-change', (data) => {
+			EventBus.$on('editor-changed', (data) => {
 				let path = data && data.path;
 				if (path && !(preActiveItem && preActiveItem.path === path)) {
 					if (preActiveItem) {
@@ -250,7 +249,7 @@ export default {
 						_changOpen.call(this, item);
 					}
 				} else {
-					this.openFile(item);
+					EventBus.$emit('file-open', item);
 				}
 			} else if (item.type === 'dir') {
 				item.open = !item.open;

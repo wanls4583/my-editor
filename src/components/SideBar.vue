@@ -18,6 +18,7 @@ import SideTree from './SideTree';
 import SideBarMenu from './SideBarMenu';
 import SideTreMenu from './SideTreMenu';
 import globalData from '@/data/globalData';
+import EventBus from '@/event';
 
 export default {
     components: {
@@ -41,7 +42,8 @@ export default {
         this.initEvent();
     },
     methods: {
-        initEvent() {},
+        initEvent() {
+        },
         onContextmenu(e) {},
     },
 };
