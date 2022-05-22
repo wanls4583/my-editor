@@ -421,7 +421,7 @@ export default {
 				})
 			);
 			EventBus.$on(
-				'theme-change',
+				'theme-changed',
 				(this.initEventBus.fn4 = (theme) => {
 					this.selectedFg = !!globalData.colors['editor.selectionForeground'];
 					if (this.active) {
@@ -437,7 +437,7 @@ export default {
 			EventBus.$off('language-change', this.initEventBus.fn1);
 			EventBus.$off('tab-size-change', this.initEventBus.fn2);
 			EventBus.$off('close-menu', this.initEventBus.fn3);
-			EventBus.$off('theme-change', this.initEventBus.fn4);
+			EventBus.$off('theme-changed', this.initEventBus.fn4);
 		},
 		showEditor() {
 			if (this.active) {

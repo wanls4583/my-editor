@@ -13,10 +13,6 @@ const globalData = {
 		type: 'dark',
 		path: path.join(dirname, 'main/extensions/theme-monokai/themes/monokai-color-theme.json'),
 	},
-	// nowIconTheme: {
-	//     value: 'vs-seti',
-	//     path: path.join(dirname, 'main/extensions/theme-seti/icons/vs-seti-icon-theme.json'),
-	// },
 	nowIconTheme: {
 		value: 'material-icon-theme',
 		path: path.join(dirname, 'main/extensions/theme-material-icon/dist/material-icons.json'),

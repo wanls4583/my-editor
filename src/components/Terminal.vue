@@ -83,7 +83,7 @@ export default {
 			});
 		},
 		initEvent() {
-			EventBus.$on('theme-change', () => {
+			EventBus.$on('theme-changed', () => {
 				this.terminal.setOption('theme', {
 					foreground: globalData.colors['terminal.foreground'],
 					background: globalData.colors['terminal.background'],

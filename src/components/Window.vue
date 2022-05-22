@@ -42,7 +42,7 @@
 			</template>
 		</div>
 		<!-- 顶部菜单栏 -->
-		<title-bar :height="topBarHeight" @change="onMenuChange" ref="titleBar"></title-bar>
+		<title-bar :height="topBarHeight" ref="titleBar"></title-bar>
 		<!-- 状态栏 -->
 		<status-bar :height="statusHeight" @select-langeuage="onSelectLanguage" ref="statusBar"></status-bar>
 		<cmd-panel></cmd-panel>
@@ -182,7 +182,7 @@ export default {
 				});
 		},
 		initEventBus() {
-			EventBus.$on('theme-change', (value) => {
+			EventBus.$on('theme-changed', (value) => {
 				this.themeType = globalData.nowTheme.type;
 			});
 			EventBus.$on('activity-change', (activity) => {
@@ -197,7 +197,7 @@ export default {
 			EventBus.$on('dialog-show', (option) => {
 				this.showDialog(option);
 			});
-			EventBus.$on('dialog-hide', () => {
+			EventBus.$on('dialog-close', () => {
 				this.closeDialog();
 			});
 		},
@@ -211,36 +211,6 @@ export default {
 		onWindMouseDown() {
 			EventBus.$emit('close-menu');
 		},
-		onMenuChange(item) {
-			let cmdList = null;
-			switch (item.op) {
-				case 'changeTheme':
-					cmdList = globalData.themes.map((item) => {
-						return item.map((item) => {
-							return Object.assign({ op: 'changeTheme' }, item);
-						});
-					});
-					EventBus.$emit('open-cmd-menu', {
-						cmdList: cmdList,
-						value: globalData.nowTheme.value,
-					});
-					break;
-				case 'changeIconTheme':
-					cmdList = globalData.iconThemes.map((item) => {
-						return Object.assign({ op: 'changeIconTheme' }, item);
-					});
-					cmdList.push({
-						name: 'None',
-						value: 'none',
-						op: 'changeIconTheme',
-					});
-					EventBus.$emit('open-cmd-menu', {
-						cmdList: cmdList,
-						value: globalData.nowIconTheme.value,
-					});
-					break;
-			}
-		},
 		onSelectLanguage() {
 			let cmdList = globalData.languageList.map((item) => {
 				return {
@@ -249,7 +219,7 @@ export default {
 					value: item.value,
 				};
 			});
-			EventBus.$emit('open-cmd-menu', {
+			EventBus.$emit('cmd-menu-open', {
 				cmdList: cmdList,
 				value: globalData.nowId && this.getNowEditor().language,
 			});

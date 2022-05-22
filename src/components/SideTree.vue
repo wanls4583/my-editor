@@ -86,13 +86,13 @@ export default {
 	},
 	methods: {
 		initEventBus() {
-			EventBus.$on('icon-change', () => {
+			EventBus.$on('icon-changed', () => {
 				this.openedList.forEach((item) => {
 					item.icon = '';
 				});
 				this.render();
 			});
-			EventBus.$on('theme-change', () => {
+			EventBus.$on('theme-changed', () => {
 				this.openedList.forEach((item) => {
 					item.icon = '';
 				});

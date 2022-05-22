@@ -431,10 +431,10 @@ export default {
 		onPreferenceMenuChange(item) {
 			switch (item.op) {
 				case 'changeTheme':
-					this.$emit('change', item);
+					EventBus.$emit('cmd-menu-theme-open');
 					break;
 				case 'changeIconTheme':
-					this.$emit('change', item);
+					EventBus.$emit('cmd-menu-icon-theme-open');
 			}
 			this.preferenceMenuVisible = false;
 		},

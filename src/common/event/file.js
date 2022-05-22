@@ -4,6 +4,7 @@ import globalData from '@/data/globalData';
 import Util from '@/common/util';
 
 const remote = window.require('@electron/remote');
+const fs = window.require('fs');
 const contexts = Context.contexts;
 
 export default class {
@@ -17,11 +18,18 @@ export default class {
 		EventBus.$on('file-open', (fileObj, choseFile) => {
 			this.openFile(fileObj, choseFile);
 		});
-		EventBus.$on('file-save', id => {
-			this.saveFile(id);
+		EventBus.$on('file-save', option => {
+			this.saveFile(option.id).then(() => {
+				option.success && option.success();
+			});
 		});
 		EventBus.$on('folder-open', () => {
 			this.openFolder();
+		});
+		EventBus.$on('reveal-in-file-explorer', path => {
+			if (path) {
+				remote.shell.showItemInFolder(path);
+			}
 		});
 	}
 	openFolder() {

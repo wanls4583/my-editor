@@ -4,20 +4,16 @@ import EventBus from '@/event';
 import globalData from '@/data/globalData';
 import Util from '@/common/util';
 
+const remote = window.require('@electron/remote');
 const contexts = Context.contexts;
 
 export default class {
 	constructor() {
 		this.editorList = globalData.editorList;
+		this.mode = remote ? 'app' : 'mode';
 		this.init();
 	}
 	init() {
-		EventBus.$on('icon-change', () => {
-			this.changeBarIcon();
-		});
-		EventBus.$on('theme-change', () => {
-			this.changeBarIcon();
-		});
 		EventBus.$on('editor-close', id => {
 			this.closeTab(id);
 		});
@@ -51,22 +47,6 @@ export default class {
 			this.editorList.empty();
 			globalData.nowId = null;
 		});
-	}
-	changeBarIcon() {
-		this.editorList.forEach(item => {
-			if (globalData.nowIconTheme.value) {
-				let icon = Util.getIconByPath({
-					iconData: globalData.nowIconData,
-					filePath: item.path,
-					fileType: 'file',
-					themeType: globalData.nowTheme.type,
-				});
-				item.icon = icon ? `my-file-icon my-file-icon-${icon}` : '';
-			} else {
-				item.icon = '';
-			}
-		});
-		this.editorList.splice();
 	}
 	changeTab(id) {
 		let tab = Util.getTabById(this.editorList, id);
@@ -149,7 +129,7 @@ export default class {
 		}
 
 		function _saveDialog(resolve) {
-			this.win.showDialog({
+			EventBus.$emit('dialog-show', {
 				content: '文件尚未保存，是否先保存文件？',
 				cancel: true,
 				icon: 'my-icon-warn',
@@ -159,13 +139,16 @@ export default class {
 						name: '保存',
 						callback: () => {
 							if (this.mode === 'app') {
-								this.saveFile(id).then(() => {
-									_closeTab.call(this, resolve);
-									this.win.closeDialog();
+								EventBus.$emit('file-save', {
+									id: id,
+									success: () => {
+										_closeTab.call(this, resolve);
+										EventBus.$emit('dialog-close');
+									},
 								});
 							} else {
 								_closeTab.call(this, resolve);
-								this.win.closeDialog();
+								EventBus.$emit('dialog-close');
 							}
 						},
 					},
@@ -173,7 +156,7 @@ export default class {
 						name: '不保存',
 						callback: () => {
 							_closeTab.call(this, resolve);
-							this.win.closeDialog();
+							EventBus.$emit('dialog-close');
 						},
 					},
 				],

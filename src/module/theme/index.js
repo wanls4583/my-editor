@@ -30,7 +30,7 @@ export default class {
 				type: option.type,
 				path: option.path,
 			};
-			EventBus.$emit('theme-change', option.value);
+			EventBus.$emit('theme-changed', option.value);
 		});
 
 		function _loadTheme(fullPath) {
@@ -56,7 +56,7 @@ export default class {
 				value: option.value,
 			};
 			globalData.nowIconData = null;
-			EventBus.$emit('icon-change');
+			EventBus.$emit('icon-changed');
 			return Promise.resolve();
 		}
 		let languages = globalData.languageList;
@@ -119,7 +119,7 @@ export default class {
 					path: option.path,
 				};
 				globalData.nowIconData = data;
-				EventBus.$emit('icon-change', option.value);
+				EventBus.$emit('icon-changed', option.value);
 			});
 		}
 
