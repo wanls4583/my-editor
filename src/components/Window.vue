@@ -39,10 +39,14 @@
 					<editor :active="item.active" :id="item.id" :key="item.id" :path="item.path" :ref="'editor' + item.id" @change="onFileChange(item.id)" @save="onSaveFile(item.id)" v-show="item.active"></editor>
 				</template>
 			</div>
-			<template v-show="terminalVisible">
+			<template v-if="terminalVisible && terminalList.length">
 				<div @mousedown="onTerminalSashBegin" class="my-sash-h"></div>
-				<div :style="{height: terminalHeight+'px'}" class="my-terminal-wrap">
-					<terminal></terminal>
+				<!-- tab栏 -->
+				<terminal-bar :terminalList="terminalList"></terminal-bar>
+				<div :style="{height: terminalHeight+'px'}" class="my-terminal-groups">
+					<template v-for="item in terminalList">
+						<terminal :active="item.active" :id="item.id" :key="item.id" :path="item.path" :ref="'terminal' + item.id" v-show="item.active"></terminal>
+					</template>
 				</div>
 			</template>
 		</div>
@@ -55,8 +59,8 @@
 	</div>
 </template>
 <script>
-import EditorBar from './EditorBar.vue';
 import Editor from './Editor.vue';
+import EditorBar from './EditorBar.vue';
 import TitleBar from './TitleBar';
 import StatusBar from './StatusBar';
 import SideBar from './SideBar.vue';
@@ -65,6 +69,7 @@ import FileContentSearch from './FileContentSearch.vue';
 import Dialog from './Dialog.vue';
 import CmdPanel from './CmdPanel.vue';
 import Terminal from './Terminal.vue';
+import TerminalBar from './TerminalBar.vue';
 import Context from '@/module/context/index';
 import Theme from '@/module/theme';
 import EventBus from '@/event';
@@ -90,6 +95,7 @@ export default {
 		Dialog,
 		CmdPanel,
 		Terminal,
+		TerminalBar,
 	},
 	data() {
 		return {
@@ -101,6 +107,7 @@ export default {
 			idCount: 1,
 			titleCount: 1,
 			editorList: [],
+			terminalList: globalData.terminalList,
 			dialogTilte: '',
 			dialogContent: '',
 			dialogVisible: false,
@@ -219,6 +226,12 @@ export default {
 			});
 			EventBus.$on('activity-change', (activity) => {
 				this.activity = activity;
+			});
+			EventBus.$on('terminal-new', () => {
+				this.terminalVisible = true;
+			});
+			EventBus.$on('terminal-toggle', () => {
+				this.terminalVisible = !this.terminalVisible;
 			});
 		},
 		onLeftSashBegin(e) {
@@ -762,6 +775,11 @@ export default {
 				if (this.editorList[i].id === id) {
 					return this.editorList[i];
 				}
+			}
+		},
+		getNowTab() {
+			if (this.nowId) {
+				return this.editorList[this.nowId];
 			}
 		},
 		getTabByPath(path) {

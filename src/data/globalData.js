@@ -33,6 +33,8 @@ const globalData = {
 	fileTree: [],
 	skipSearchDirs: /[\\\/](node_modules|dist|\.git|\.vscode|\.idea|\.DS_Store)(?=[\\\/]|$)/,
 	skipSearchFiles: /^npm-debug.log|^yarn-debug.log|^yarn-error.log|^pnpm-debug.log|\.suo|\.ntvs|\.njsproj|\.sln|\.sw/,
+	terminalList: [],
+	nowFileItem: null,
 };
 
 export default globalData;

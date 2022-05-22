@@ -235,15 +235,6 @@ textarea {
 		background-color: var(--my-editor-background);
 	}
 
-	&-terminal-wrap {
-		flex-shrink: 0;
-		position: relative;
-		box-sizing: content-box;
-		border-top: 1px solid var(--my-terminal-border);
-		background-color: var(--my-terminal-background);
-		color: var(--my-terminal-foreground);
-	}
-
 	&-sash-v {
 		position: relative;
 		z-index: 99;

@@ -233,6 +233,7 @@ export default {
 				}
 				item.active = true;
 				preActiveItem = item;
+				globalData.nowFileItem = item;
 				if (item.type === 'dir') {
 					item.open = !item.open;
 					if (!item.loaded) {

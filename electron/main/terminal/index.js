@@ -11,13 +11,23 @@ class Terminal {
 	}
 	initEvent() {
 		ipcMain.on('terminal-write', (e, data) => {
-			this.terminals[data.id].write(data.text);
+			if (this.terminals[data.id]) {
+				this.terminals[data.id].write(data.text);
+			}
 		});
 		ipcMain.on('terminal-resize', (e, data) => {
-			this.terminals[data.id].resize(data.cols, data.rows);
+			if (this.terminals[data.id]) {
+				this.terminals[data.id].resize(data.cols, data.rows);
+			}
 		});
 		ipcMain.on('terminal-add', (e, data) => {
 			this.addTerminal(data);
+		});
+		ipcMain.on('terminal-destroy', (e, data) => {
+			if (this.terminals[data.id]) {
+				this.terminals[data.id].kill();
+				this.terminals[data.id] = undefined;
+			}
 		});
 	}
 	addTerminal(option) {

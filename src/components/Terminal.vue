@@ -24,6 +24,7 @@ export default {
 	name: 'Terminal',
 	props: {
 		id: { type: Number, default: 0 },
+		path: String,
 	},
 	data() {
 		return {};
@@ -42,6 +43,9 @@ export default {
 			fontFamily: 'Consolas',
 			theme: {
 				lineHeight: 20,
+				foreground: globalData.colors['terminal.foreground'],
+				background: globalData.colors['terminal.background'],
+				selection: globalData.colors['terminal.selectionBackground'],
 			},
 		});
 		this.fitAddon = new FitAddon(); //自适应容器大小插件
@@ -58,6 +62,11 @@ export default {
 			this.createTerminal();
 		});
 	},
+	destroyed() {
+		ipcRenderer.send('terminal-destroy', {
+			id: this.id,
+		});
+	},
 	methods: {
 		setResize(data) {
 			ipcRenderer.send('terminal-resize', {
@@ -71,6 +80,7 @@ export default {
 				id: this.id,
 				rows: this.terminal.rows,
 				cols: this.terminal.cols,
+				cwd: this.path,
 			});
 		},
 		initEvent() {
@@ -84,13 +94,20 @@ export default {
 		},
 		initResizeEvent() {
 			const resizeObserver = new ResizeObserver((entries) => {
-				this.fitAddon.fit();
+				cancelAnimationFrame(this.fitTimer);
+				this.fitTimer = requestAnimationFrame(() => {
+					if (this.$refs.terminal && this.$refs.terminal.clientHeight) {
+						this.fitAddon.fit();
+					}
+				});
 			});
 			resizeObserver.observe(this.$refs.terminal);
 		},
 		initTerminalEvent() {
 			ipcRenderer.on('terminal-data', (event, data) => {
-				this.terminal.write(data.text);
+				if (this.id === data.id) {
+					this.terminal.write(data.text);
+				}
 			});
 			this.terminal.onData((text) => {
 				ipcRenderer.send('terminal-write', {
