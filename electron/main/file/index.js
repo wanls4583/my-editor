@@ -1,5 +1,6 @@
 const { ipcMain } = require('electron');
 const fs = require('fs');
+const path = require('path');
 
 class FileOp {
 	constructor(contents) {
@@ -13,6 +14,9 @@ class FileOp {
 		ipcMain.on('file-cut', (e, filePaths) => {
 			this.cutFileToClip(filePaths);
 		});
+		ipcMain.on('file-paste', (e, destPath) => {
+			this.pasteFile(destPath);
+		});
 	}
 	copyToClip(filePaths) {
 		const clipboard = require('clipboard-files');
@@ -23,7 +27,7 @@ class FileOp {
 	}
 	copyFileToClip(filePaths) {
 		try {
-			this.copyToClip();
+			this.copyToClip(filePaths);
 			this.contents.send('file-copyed', filePaths);
 		} catch (e) {
 			this.contents.send('file-copy-fail', filePaths);
@@ -31,10 +35,37 @@ class FileOp {
 	}
 	cutFileToClip(filePaths) {
 		try {
-			this.copyToClip();
+			this.copyToClip(filePaths);
 			this.contents.send('file-cuted', filePaths);
 		} catch (e) {
 			this.contents.send('file-cut-fail', filePaths);
+		}
+	}
+	pasteFile(destPath) {
+		const clipboard = require('clipboard-files');
+		const fse = require('fs-extra');
+		if (!fs.existsSync(destPath)) {
+			console.log(`dir "${destPath}" not exsit`);
+			this.contents.send('file-paste-fail', destPath);
+			return;
+		}
+		try {
+			const filePaths = clipboard.readFiles();
+			filePaths.forEach(filePath => {
+				if (fs.existsSync(filePath)) {
+					let target = path.join(destPath, path.basename(filePath));
+					fse.copy(filePath, target)
+						.then(() => {
+							this.contents.send('file-pasted', filePath);
+						})
+						.catch(() => {
+							console.log(`copy "${filePath}" to "${target}" fail`);
+						});
+				}
+			});
+		} catch (e) {
+			this.contents.send('file-paste-fail', destPath);
+			console.log(`copy to "${destPath}" fail`);
 		}
 	}
 }

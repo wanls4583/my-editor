@@ -37,6 +37,12 @@ export default class {
 		EventBus.$on('file-cut', fileObj => {
 			this.cutFileToClip(fileObj);
 		});
+		EventBus.$on('file-paste', fileObj => {
+			this.pasteFileFromClip(fileObj);
+		});
+		ipcRenderer.on('file-pasted', filePath => {
+			EventBus.$emit('file-pasted', filePath);
+		});
 	}
 	openFolder() {
 		this.choseFolder().then(results => {
@@ -219,5 +225,8 @@ export default class {
 	}
 	cutFileToClip(fileObj) {
 		ipcRenderer.send('file-cut', [fileObj.path]);
+	}
+	pasteFileFromClip(fileObj) {
+		ipcRenderer.send('file-paste', fileObj.path);
 	}
 }

@@ -164,29 +164,37 @@ export default {
 			return this.createItems(dirPath, files);
 		},
 		refreshDir(item) {
-			let idMap = {};
-			let list = this.readdir(item.path);
-			item.children.forEach((item) => {
-				idMap[item.id] = item;
-			});
-			item.children = list.map((item) => {
-				let obj = idMap[item.id];
-				if (obj) {
-					if (obj.path != item.path) {
-						obj.name = item.name;
-						obj.path = item.path;
-						// 递归更新路径
-						this.updateParentPath(obj, item.parentPath);
+			this.refreshFolderTimer = this.refreshFolderTimer || {};
+			clearTimeout(this.refreshFolderTimer[item.id]);
+			this.refreshFolderTimer[item.id] = setTimeout(() => {
+				_refresh.call(this);
+			}, 100);
+
+			function _refresh() {
+				let idMap = {};
+				let list = this.readdir(item.path);
+				item.children.forEach((item) => {
+					idMap[item.id] = item;
+				});
+				item.children = list.map((item) => {
+					let obj = idMap[item.id];
+					if (obj) {
+						if (obj.path != item.path) {
+							obj.name = item.name;
+							obj.path = item.path;
+							// 递归更新路径
+							this.updateParentPath(obj, item.parentPath);
+						}
+						return obj;
 					}
-					return obj;
+					return item;
+				});
+				if (item.open) {
+					this.closeFolder(item);
+					this.openFolder(item);
 				}
-				return item;
-			});
-			if (item.open) {
-				this.closeFolder(item);
-				this.openFolder(item);
+				this.render();
 			}
-			this.render();
 		},
 		closeFolder(item) {
 			let index = this.openedList.indexOf(item) + 1;
@@ -204,17 +212,13 @@ export default {
 				.concat(this.openedList.slice(index + 1));
 		},
 		watchFolder(item) {
-			this.refreshFolderTimer = this.refreshFolderTimer || {};
 			if (!this.watchIdMap[item.id]) {
 				this.watchIdMap[item.id] = fs.watch(item.path, { recursive: true }, (event, filename) => {
 					if (event === 'rename') {
 						let dirPath = path.dirname(path.join(item.path, filename));
 						let treeItem = this.getItemByPath(dirPath);
-						if (treeItem && treeItem.children.length) {
-							clearTimeout(this.refreshFolderTimer[treeItem.id]);
-							this.refreshFolderTimer[treeItem.id] = setTimeout(() => {
-								this.refreshDir(treeItem);
-							}, 100);
+						if (treeItem && (treeItem.children.length || treeItem.open)) {
+							this.refreshDir(treeItem);
 						}
 					}
 				});
