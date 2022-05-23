@@ -87,6 +87,11 @@ export default {
 		this.maxVisibleLines = Math.ceil(this.$refs.wrap.clientHeight / this.itemHeight) + 1;
 		this.render();
 	},
+	destroyed() {
+		for (let key in this.watchPathMap) {
+			this.watchPathMap[key].close();
+		}
+	},
 	methods: {
 		initEventBus() {
 			EventBus.$on('icon-changed', () => {
