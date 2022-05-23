@@ -53,6 +53,7 @@ export default {
 			itemPadding: 16,
 			openedList: [],
 			renderList: [],
+			watchPathMap: {},
 			startLine: 1,
 			maxVisibleLines: 100,
 		};
@@ -199,6 +200,20 @@ export default {
 				.concat(this.getRenderList(item.children, item.deep))
 				.concat(this.openedList.slice(index + 1));
 		},
+		watchFolder(item) {
+			const dirPath = item.path;
+			this.watchFolderTimer = this.watchFolderTimer || {};
+			if (!this.watchPathMap[dirPath]) {
+				fs.watch(dirPath, (event, filename) => {
+					if (event === 'rename') {
+						clearTimeout(this.watchFolderTimer[dirPath]);
+						this.watchFolderTimer[dirPath] = setTimeout(() => {
+							this.refreshDir(item);
+						}, 100);
+					}
+				});
+			}
+		},
 		sortFileList(results) {
 			results.sort((a, b) => {
 				if (a.type === 'dir' && b.type === 'file') {
@@ -281,6 +296,7 @@ export default {
 								_item.parent = item;
 								_item.deep = item.deep + 1;
 							});
+							this.watchFolder(item);
 							_changOpen.call(this, item);
 						});
 					} else {
