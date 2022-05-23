@@ -10,7 +10,6 @@ const contexts = Context.contexts;
 
 export default class {
 	constructor() {
-		this.idCount = 1;
 		this.titleCount = 1;
 		this.editorList = globalData.editorList;
 		this.init();
@@ -60,7 +59,9 @@ export default class {
 				let results = [];
 				if (!result.canceled && result.filePaths) {
 					result.filePaths.forEach(item => {
+						let stat = fs.statSync(item);
 						let obj = {
+							id: stat.dev + ',' + stat.ino,
 							name: item.match(/[^\\\/]+$/)[0],
 							path: item,
 							type: 'dir',
@@ -79,9 +80,12 @@ export default class {
 	}
 	openFile(fileObj, choseFile) {
 		let tab = fileObj && Util.getTabByPath(this.editorList, fileObj.path);
+		let titleCount = this.titleCount++;
+		titleCount += '';
+		fileObj = fileObj || {};
 		if (!tab) {
 			let index = -1;
-			let name = (fileObj && fileObj.name) || `Untitled${this.titleCount++}`;
+			let name = fileObj.name || `Untitled${titleCount}`;
 			if (this.editorList.length) {
 				tab = Util.getTabById(this.editorList, globalData.nowId);
 				index = this.editorList.indexOf(tab); //在当前活动标签之后新增
@@ -99,17 +103,17 @@ export default class {
 				});
 			} else {
 				tab = {
-					id: this.idCount++,
+					id: fileObj.id || titleCount,
 					name: name,
-					path: (fileObj && fileObj.path) || '',
-					icon: (fileObj && fileObj.icon) || '',
+					path: fileObj.path || '',
+					icon: fileObj.icon || '',
 					saved: true,
 					active: false,
 				};
 				if (!tab.icon) {
 					let icon = Util.getIconByPath({
 						iconData: globalData.nowIconData,
-						filePath: (fileObj && fileObj.path) || '',
+						filePath: fileObj.path || '',
 						fileType: 'file',
 						themeType: globalData.nowTheme.type,
 					});
@@ -130,14 +134,14 @@ export default class {
 						contexts[tab.id].insertContent(data);
 						tab.saved = true;
 						//点击搜索结果
-						if (fileObj && fileObj.range) {
+						if (fileObj.range) {
 							globalData.$mainWin.getEditor(tab.id).cursor.setCursorPos(Object.assign({}, fileObj.range.start));
 						}
 					})
 					.catch(() => {
 						tab.loaded = false;
 					});
-			} else if (fileObj && fileObj.range) {
+			} else if (fileObj.range) {
 				globalData.$mainWin.getEditor(tab.id).cursor.setCursorPos(Object.assign({}, fileObj.range.start));
 			}
 			EventBus.$emit('editor-change', tab.id);
@@ -163,8 +167,9 @@ export default class {
 							thmeType: globalData.nowTheme.type,
 						});
 						icon = icon ? `my-file-icon my-file-icon-${icon}` : '';
+						let stat = fs.statSync(item);
 						let obj = {
-							id: this.idCount++,
+							id: stat.dev + ',' + stat.ino,
 							name: item.match(/[^\\\/]+$/)[0],
 							path: item,
 							icon: icon,

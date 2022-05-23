@@ -53,7 +53,7 @@ export default {
 			itemPadding: 16,
 			openedList: [],
 			renderList: [],
-			watchPathMap: {},
+			watchIdMap: {},
 			startLine: 1,
 			maxVisibleLines: 100,
 		};
@@ -82,14 +82,15 @@ export default {
 	created() {
 		this.openedList = this.getRenderList(this.list, 0);
 		this.initEventBus();
+		window.tree = this;
 	},
 	mounted() {
 		this.maxVisibleLines = Math.ceil(this.$refs.wrap.clientHeight / this.itemHeight) + 1;
 		this.render();
 	},
 	destroyed() {
-		for (let key in this.watchPathMap) {
-			this.watchPathMap[key].close();
+		for (let key in this.watchIdMap) {
+			this.watchIdMap[key].close();
 		}
 	},
 	methods: {
@@ -141,6 +142,7 @@ export default {
 				let fullPath = path.join(dirPath, item);
 				let state = fs.statSync(fullPath);
 				let obj = {
+					id: state.dev + ',' + state.ino,
 					name: item,
 					path: fullPath,
 					parentPath: dirPath,
@@ -158,29 +160,25 @@ export default {
 			return this.sortFileList(results);
 		},
 		readdir(dirPath) {
-			return new Promise((resolve) => {
-				// 异步读取目录内容
-				fs.readdir(dirPath, { encoding: 'utf8' }, (err, files) => {
-					if (err) {
-						throw err;
-					}
-					resolve(this.createItems(dirPath, files));
-				});
-			});
-		},
-		readdirSync(dirPath) {
 			let files = fs.readdirSync(dirPath, { encoding: 'utf8' });
 			return this.createItems(dirPath, files);
 		},
 		refreshDir(item) {
-			let pathMap = {};
-			let list = this.readdirSync(item.path);
+			let idMap = {};
+			let list = this.readdir(item.path);
 			item.children.forEach((item) => {
-				pathMap[item.path] = item;
+				idMap[item.id] = item;
 			});
 			item.children = list.map((item) => {
-				if (pathMap[item.path]) {
-					return pathMap[item.path];
+				let obj = idMap[item.id];
+				if (obj) {
+					if (obj.path != item.path) {
+						obj.name = item.name;
+						obj.path = item.path;
+						// 递归更新路径
+						this.updateParentPath(obj, item.parentPath);
+					}
+					return obj;
 				}
 				return item;
 			});
@@ -206,18 +204,29 @@ export default {
 				.concat(this.openedList.slice(index + 1));
 		},
 		watchFolder(item) {
-			const dirPath = item.path;
-			this.watchFolderTimer = this.watchFolderTimer || {};
-			if (!this.watchPathMap[dirPath]) {
-				fs.watch(dirPath, (event, filename) => {
+			this.refreshFolderTimer = this.refreshFolderTimer || {};
+			if (!this.watchIdMap[item.id]) {
+				this.watchIdMap[item.id] = fs.watch(item.path, { recursive: true }, (event, filename) => {
 					if (event === 'rename') {
-						clearTimeout(this.watchFolderTimer[dirPath]);
-						this.watchFolderTimer[dirPath] = setTimeout(() => {
-							this.refreshDir(item);
-						}, 100);
+						let dirPath = path.dirname(path.join(item.path, filename));
+						let treeItem = this.getItemByPath(dirPath);
+						if (treeItem && treeItem.children.length) {
+							clearTimeout(this.refreshFolderTimer[treeItem.id]);
+							this.refreshFolderTimer[treeItem.id] = setTimeout(() => {
+								this.refreshDir(treeItem);
+							}, 100);
+						}
 					}
 				});
 			}
+		},
+		updateParentPath(item, parentPath) {
+			item.path = path.join(parentPath, item.name);
+			item.parentPath = parentPath;
+			parentPath = item.path;
+			item.children.forEach((item) => {
+				this.updateParentPath(item, parentPath);
+			});
 		},
 		sortFileList(results) {
 			results.sort((a, b) => {
@@ -283,6 +292,20 @@ export default {
 				});
 			}
 		},
+		getItemByPath(path) {
+			return _findItem(this.list);
+
+			function _findItem(list) {
+				for (let i = 0; i < list.length; i++) {
+					let item = list[i];
+					if (path === item.path) {
+						return item;
+					} else if (path.startsWith(item.path)) {
+						return _findItem(item.children);
+					}
+				}
+			}
+		},
 		onClickItem(item) {
 			if (!item.active) {
 				if (preActiveItem) {
@@ -294,16 +317,17 @@ export default {
 				if (item.type === 'dir') {
 					item.open = !item.open;
 					if (!item.loaded) {
-						return this.readdir(item.path).then((data) => {
-							item.children = data;
-							item.loaded = true;
-							data.forEach((_item) => {
-								_item.parent = item;
-								_item.deep = item.deep + 1;
-							});
-							this.watchFolder(item);
-							_changOpen.call(this, item);
+						let list = this.readdir(item.path);
+						item.children = list;
+						item.loaded = true;
+						list.forEach((_item) => {
+							_item.parent = item;
+							_item.deep = item.deep + 1;
 						});
+						if (!item.parentPath) {
+							this.watchIdMap[item.id] = this.watchFolder(item);
+						}
+						_changOpen.call(this, item);
 					} else {
 						_changOpen.call(this, item);
 					}
