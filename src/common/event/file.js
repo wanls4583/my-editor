@@ -3,6 +3,7 @@ import Context from '@/module/context/index';
 import globalData from '@/data/globalData';
 import Util from '@/common/util';
 
+const { ipcRenderer } = window.require('electron');
 const remote = window.require('@electron/remote');
 const fs = window.require('fs');
 const contexts = Context.contexts;
@@ -30,6 +31,12 @@ export default class {
 			if (path) {
 				remote.shell.showItemInFolder(path);
 			}
+		});
+		EventBus.$on('file-copy', fileObj => {
+			this.copyFileToClip(fileObj);
+		});
+		EventBus.$on('file-cut', fileObj => {
+			this.cutFileToClip(fileObj);
 		});
 	}
 	openFolder() {
@@ -180,7 +187,7 @@ export default class {
 		}
 		if (!tab.saved) {
 			if (tab.path) {
-				this.writeFile(tab.path, contexts[id].getAllText());
+				Util.writeFile(tab.path, contexts[id].getAllText());
 				tab.saved = true;
 				return Promise.resolve();
 			} else {
@@ -193,7 +200,7 @@ export default class {
 					if (!result.canceled && result.filePath) {
 						tab.path = result.filePath;
 						tab.name = tab.path.match(/[^\\\/]+$/)[0];
-						this.writeFile(tab.path, contexts[id].getAllText());
+						Util.writeFile(tab.path, contexts[id].getAllText());
 						tab.saved = true;
 					} else {
 						return Promise.reject();
@@ -202,7 +209,10 @@ export default class {
 			}
 		}
 	}
-	writeFile(path, text) {
-		fs.writeFileSync(path, text, { encoding: 'utf-8' });
+	copyFileToClip(fileObj) {
+		ipcRenderer.send('file-copy', [fileObj.path]);
+	}
+	cutFileToClip(fileObj) {
+		ipcRenderer.send('file-cut', [fileObj.path]);
 	}
 }

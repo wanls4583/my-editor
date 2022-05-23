@@ -13,6 +13,7 @@
     "ansi-html": "^0.0.9",
     "axios": "^0.26.1",
     "chroma-js": "^2.4.2",
+    "clipboard-files": "^1.0.4",
     "core-js": "^3.8.3",
     "emmet": "^2.3.6",
     "event-stream": "^4.0.1",

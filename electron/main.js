@@ -7,6 +7,7 @@ const { BrowserWindow, app, protocol } = require('electron');
 const main = require('@electron/remote/main');
 const path = require('path');
 const Terminal = require('./main/terminal').Terminal;
+const FileOp = require('./main/file').FileOp;
 const wins = {};
 
 let mainWin = null;
@@ -48,6 +49,7 @@ app.whenReady()
 		}
 		mainWin.show();
 		mainWin.terminal = new Terminal(mainWin.webContents);
+		mainWin.fileOp = new FileOp(mainWin.webContents);
 		initEvent();
 	})
 	.catch(err => {

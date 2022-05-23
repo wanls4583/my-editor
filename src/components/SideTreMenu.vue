@@ -37,6 +37,20 @@ export default {
 						op: 'openInTerminal',
 					},
 				],
+				[
+					{
+						name: 'Cut',
+						op: 'cut',
+					},
+					{
+						name: 'Copy',
+						op: 'copy',
+					},
+					{
+						name: 'Paste',
+						op: 'paste',
+					},
+				],
 			],
 			fileMenu: [
 				[
@@ -47,6 +61,16 @@ export default {
 					{
 						name: 'Open in Terminal',
 						op: 'openInTerminal',
+					},
+				],
+				[
+					{
+						name: 'Cut',
+						op: 'cut',
+					},
+					{
+						name: 'Copy',
+						op: 'copy',
 					},
 				],
 			],
@@ -114,6 +138,14 @@ export default {
 					}
 					EventBus.$emit('terminal-new', dirPath);
 					break;
+				case 'cut':
+					EventBus.$emit('file-cut', Object.assign({}, treeItem));
+					break;
+				case 'copy':
+					EventBus.$emit('file-copy', Object.assign({}, treeItem));
+					break;
+				case 'paste':
+					EventBus.$emit('file-paste', Object.assign({}, treeItem));
 			}
 			this.menuVisible = false;
 		},

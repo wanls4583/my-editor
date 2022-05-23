@@ -35,7 +35,9 @@ import EventBus from '@/event';
 import Util from '@/common/util';
 import globalData from '@/data/globalData';
 
-const require = window.require || window.parent.require || function () {};
+const fs = window.require('fs');
+const path = window.require('path');
+
 let preActiveItem = null;
 
 export default {
@@ -127,39 +129,75 @@ export default {
 				}
 			});
 		},
+		createItems(dirPath, files) {
+			let results = [];
+			files.forEach((item, index) => {
+				let fullPath = path.join(dirPath, item);
+				let state = fs.statSync(fullPath);
+				let obj = {
+					name: item,
+					path: fullPath,
+					parentPath: dirPath,
+					active: false,
+					children: [],
+				};
+				if (state.isFile()) {
+					obj.type = 'file';
+				} else {
+					obj.type = 'dir';
+					obj.open = false;
+				}
+				results.push(obj);
+			});
+			return this.sortFileList(results);
+		},
 		readdir(dirPath) {
-			const fs = require('fs');
-			const path = require('path');
 			return new Promise((resolve) => {
-				let results = [];
 				// 异步读取目录内容
 				fs.readdir(dirPath, { encoding: 'utf8' }, (err, files) => {
 					if (err) {
 						throw err;
 					}
-					files.forEach((item, index) => {
-						let fullPath = path.join(dirPath, item);
-						let state = fs.statSync(fullPath);
-						let obj = {
-							name: item,
-							path: fullPath,
-							parentPath: dirPath,
-							active: false,
-							children: [],
-						};
-						if (state.isFile()) {
-							obj.type = 'file';
-						} else {
-							obj.type = 'dir';
-							obj.open = false;
-						}
-						results.push(obj);
-						if (index === files.length - 1) {
-							resolve(this.sortFileList(results));
-						}
-					});
+					resolve(this.createItems(dirPath, files));
 				});
 			});
+		},
+		readdirSync(dirPath) {
+			let files = fs.readdirSync(dirPath, { encoding: 'utf8' });
+			return this.createItems(dirPath, files);
+		},
+		refreshDir(item) {
+			let pathMap = {};
+			let list = this.readdirSync(item.path);
+			item.children.forEach((item) => {
+				pathMap[item.path] = item;
+			});
+			item.children = list.map((item) => {
+				if (pathMap[item.path]) {
+					return pathMap[item.path];
+				}
+				return item;
+			});
+			if (item.open) {
+				this.closeFolder(item);
+				this.openFolder(item);
+			}
+			this.render();
+		},
+		closeFolder(item) {
+			let index = this.openedList.indexOf(item) + 1;
+			let endIn = index;
+			while (endIn < this.openedList.length && this.openedList[endIn].parentPath != item.parentPath) {
+				endIn++;
+			}
+			this.openedList.splice(index, endIn - index);
+		},
+		openFolder(item) {
+			let index = this.openedList.indexOf(item);
+			this.openedList = this.openedList
+				.slice(0, index + 1)
+				.concat(this.getRenderList(item.children, item.deep))
+				.concat(this.openedList.slice(index + 1));
 		},
 		sortFileList(results) {
 			results.sort((a, b) => {
@@ -176,21 +214,6 @@ export default {
 				}
 			});
 			return results;
-		},
-		getRenderList(list, deep) {
-			let results = [];
-			_loopList(list, deep);
-			return results;
-
-			function _loopList(list, deep) {
-				list.forEach((item) => {
-					item.deep = deep + 1;
-					results.push(item);
-					if (item.open && item.children.length) {
-						_loopList(item.children, item.deep);
-					}
-				});
-			}
 		},
 		focusItem(path) {
 			let index = 0;
@@ -223,6 +246,21 @@ export default {
 						}
 					}
 				}
+			}
+		},
+		getRenderList(list, deep) {
+			let results = [];
+			_loopList(list, deep);
+			return results;
+
+			function _loopList(list, deep) {
+				list.forEach((item) => {
+					item.deep = deep + 1;
+					results.push(item);
+					if (item.open && item.children.length) {
+						_loopList(item.children, item.deep);
+					}
+				});
 			}
 		},
 		onClickItem(item) {
@@ -260,18 +298,9 @@ export default {
 			function _changOpen(item) {
 				if (item.children.length) {
 					if (item.open) {
-						let index = this.openedList.indexOf(item);
-						this.openedList = this.openedList
-							.slice(0, index + 1)
-							.concat(this.getRenderList(item.children, item.deep))
-							.concat(this.openedList.slice(index + 1));
+						this.openFolder(item);
 					} else {
-						let index = this.openedList.indexOf(item) + 1;
-						let endIn = index;
-						while (endIn < this.openedList.length && this.openedList[endIn].parentPath != item.parentPath) {
-							endIn++;
-						}
-						this.openedList.splice(index, endIn - index);
+						this.closeFolder(item);
 					}
 					this.render();
 				}
