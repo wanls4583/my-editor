@@ -15,11 +15,11 @@
 		<div :style="{ width: leftWidth + 'px' }" class="my-left-warp" v-if="mode === 'app'">
 			<!-- 侧边栏 -->
 			<activity-bar ref="activityBar"></activity-bar>
-			<div style="width: 100%; flex-grow: 1">
+			<div style="flex-grow:1">
 				<side-bar ref="sideBar" v-show="activity === 'files'"></side-bar>
 				<file-content-search v-show="activity === 'search'"></file-content-search>
 			</div>
-			<div @mousedown="onLeftSashBegin" class="my-sash-v"></div>
+			<div @mousedown="onLeftSashBegin" class="my-sash-v" style="position:absolute;right:0"></div>
 		</div>
 		<div class="my-right-wrap" ref="rightWrap">
 			<!-- tab栏 -->
