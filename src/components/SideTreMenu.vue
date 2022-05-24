@@ -11,6 +11,7 @@
 <script>
 import Menu from './Menu';
 import EventBus from '@/event';
+import Util from '@/common/util';
 import $ from 'jquery';
 
 const path = window.require('path');
@@ -22,6 +23,42 @@ export default {
 	},
 	data() {
 		return {
+			rootMenu: [
+				[
+					{
+						name: 'Reveal in File Explorer',
+						op: 'revealInFileExplorer',
+					},
+					{
+						name: 'Find in Folder',
+						op: 'findInFolder',
+					},
+					{
+						name: 'Open in Terminal',
+						op: 'openInTerminal',
+					},
+				],
+				[
+					{
+						name: 'Copy',
+						op: 'copy',
+					},
+					{
+						name: 'Paste',
+						op: 'paste',
+					},
+				],
+				[
+					{
+						name: 'Copy Path',
+						op: 'copyPath',
+					},
+					{
+						name: 'Copy Relative Path',
+						op: 'copyRelativePath',
+					},
+				],
+			],
 			dirMenu: [
 				[
 					{
@@ -49,6 +86,16 @@ export default {
 					{
 						name: 'Paste',
 						op: 'paste',
+					},
+				],
+				[
+					{
+						name: 'Copy Path',
+						op: 'copyPath',
+					},
+					{
+						name: 'Copy Relative Path',
+						op: 'copyRelativePath',
 					},
 				],
 				[
@@ -85,6 +132,16 @@ export default {
 				],
 				[
 					{
+						name: 'Copy Path',
+						op: 'copyPath',
+					},
+					{
+						name: 'Copy Relative Path',
+						op: 'copyRelativePath',
+					},
+				],
+				[
+					{
 						name: 'Reaname',
 						op: 'rename',
 					},
@@ -117,7 +174,11 @@ export default {
 			this.menuVisible = true;
 			this.treeItem = treeItem;
 			if (treeItem.type === 'dir') {
-				this.menuList = this.dirMenu;
+				if (!treeItem.parentPath) {
+					this.menuList = this.rootMenu;
+				} else {
+					this.menuList = this.dirMenu;
+				}
 			} else {
 				this.menuList = this.fileMenu;
 			}
@@ -166,6 +227,17 @@ export default {
 					break;
 				case 'paste':
 					EventBus.$emit('file-paste', treeItem);
+					break;
+				case 'copyPath':
+					Util.writeClipboard(treeItem.path);
+					break;
+				case 'copyRelativePath':
+					dirPath = treeItem.name;
+					while (treeItem.parent && treeItem.parent.parent) {
+						dirPath = path.join(treeItem.parent.name, dirPath);
+						treeItem = treeItem.parent;
+					}
+					Util.writeClipboard(dirPath);
 					break;
 				case 'rename':
 					EventBus.$emit('file-rename-input', treeItem);

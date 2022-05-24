@@ -79,6 +79,8 @@ export default class {
 							type: 'dir',
 							active: false,
 							open: false,
+							parent: null,
+							parentPath: '',
 							children: [],
 						};
 						results.push(Object.assign({}, obj));

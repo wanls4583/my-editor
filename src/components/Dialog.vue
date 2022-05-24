@@ -19,7 +19,7 @@
 			</div>
 			<div class="dialog-btns">
 				<div @click="onClickBtn(item)" class="dialog-btn" v-for="item in btns">{{item.name}}</div>
-				<div @click="onClose()" class="dialog-btn">取消</div>
+				<div @click="onClose()" class="dialog-btn">{{cancelText||'取消'}}</div>
 			</div>
 		</div>
 	</div>
@@ -35,6 +35,7 @@ export default {
         styles: Object,
         icon: String,
         iconColor: String,
+        cancelText: String
     },
     data() {
         return {

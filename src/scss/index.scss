@@ -237,7 +237,6 @@ textarea {
 
 	&-sash-v {
 		position: relative;
-		z-index: 99;
 		width: 0;
 		height: 100%;
 		cursor: ew-resize;
@@ -258,7 +257,6 @@ textarea {
 
 	&-sash-h {
 		position: relative;
-		z-index: 99;
 		width: 100%;
 		height: 0;
 		cursor: ns-resize;
