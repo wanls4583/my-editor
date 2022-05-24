@@ -179,7 +179,9 @@ export default {
 			this.refreshFolderTimer = this.refreshFolderTimer || {};
 			clearTimeout(this.refreshFolderTimer[item.id]);
 			this.refreshFolderTimer[item.id] = setTimeout(() => {
-				_refresh.call(this);
+				if (fs.existsSync(item.path)) {
+					_refresh.call(this);
+				}
 			}, 100);
 
 			function _refresh() {
@@ -227,6 +229,7 @@ export default {
 				if (!this.watchIdMap[item.id]) {
 					this.watchIdMap[item.id] = fs.watch(item.path, { recursive: true }, (event, filename) => {
 						if (event === 'rename') {
+							console.log(filename);
 							let dirPath = path.dirname(path.join(item.path, filename));
 							let treeItem = this.getItemByPath(dirPath);
 							if (treeItem && (treeItem.children.length || treeItem.open)) {
