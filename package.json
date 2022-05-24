@@ -21,6 +21,7 @@
     "iconv-lite": "^0.6.3",
     "jquery": "^3.6.0",
     "node-pty": "^0.11.0-beta11",
+    "simple-git": "^3.7.1",
     "strip-json-comments": "^4.0.0",
     "vscode-oniguruma": "^1.6.2",
     "vscode-textmate": "^6.0.0",
