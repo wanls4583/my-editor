@@ -166,8 +166,13 @@ export default {
 					break;
 				case 'paste':
 					EventBus.$emit('file-paste', treeItem);
+					break;
 				case 'rename':
 					EventBus.$emit('file-rename-input', treeItem);
+					break;
+				case 'delete':
+					EventBus.$emit('file-delete', treeItem);
+					break;
 			}
 			this.menuVisible = false;
 		},

@@ -15,10 +15,13 @@ class FileOp {
 			this.cutFileToClip(filePaths);
 		});
 		ipcMain.on('file-paste', (e, destPath, move) => {
-			this.pasteFile(destPath, move);
+			this.paste(destPath, move);
 		});
 		ipcMain.on('file-rename', (e, filePath, newName) => {
 			this.rename(filePath, newName);
+		});
+		ipcMain.on('file-delete', (e, filePath) => {
+			this.delete(filePath);
 		});
 	}
 	copyToClip(filePaths) {
@@ -44,7 +47,7 @@ class FileOp {
 			this.contents.send('file-cut-fail', filePaths);
 		}
 	}
-	pasteFile(destPath, cutPath) {
+	paste(destPath, cutPath) {
 		const clipboard = require('clipboard-files');
 		const fse = require('fs-extra');
 		if (!fs.existsSync(destPath)) {
@@ -78,6 +81,17 @@ class FileOp {
 			if (err) throw err;
 			this.contents.send('file-renamed', filePath, newName);
 		});
+	}
+	delete(filePath) {
+		const fse = require('fs-extra');
+		fse.remove(filePath)
+			.then(() => {
+				this.contents.send('file-deleted', filePath);
+			})
+			.catch(err => {
+				this.contents.send('file-delete-fail', filePath);
+				console.error(err);
+			});
 	}
 }
 

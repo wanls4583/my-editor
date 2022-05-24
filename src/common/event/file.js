@@ -46,8 +46,8 @@ export default class {
 		EventBus.$on('file-rename', (filePath, newFileNmme) => {
 			ipcRenderer.send('file-rename', filePath, newFileNmme);
 		});
-		ipcRenderer.on('file-pasted', filePath => {
-			EventBus.$emit('file-pasted', filePath);
+		EventBus.$on('file-delete', fileObj => {
+			ipcRenderer.send('file-delete', fileObj.path);
 		});
 	}
 	openFolder() {
