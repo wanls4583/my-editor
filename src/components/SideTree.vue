@@ -68,7 +68,7 @@ export default {
 		},
 		_paddingLeft() {
 			return function (item) {
-				return item.deep * this.itemPadding - 4 + 'px';
+				return item.deep * this.itemPadding - 10 + 'px';
 			};
 		},
 	},
