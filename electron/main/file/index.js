@@ -14,8 +14,8 @@ class FileOp {
 		ipcMain.on('file-cut', (e, filePaths) => {
 			this.cutFileToClip(filePaths);
 		});
-		ipcMain.on('file-paste', (e, destPath) => {
-			this.pasteFile(destPath);
+		ipcMain.on('file-paste', (e, destPath, move) => {
+			this.pasteFile(destPath, move);
 		});
 	}
 	copyToClip(filePaths) {
@@ -41,7 +41,7 @@ class FileOp {
 			this.contents.send('file-cut-fail', filePaths);
 		}
 	}
-	pasteFile(destPath) {
+	pasteFile(destPath, cutPath) {
 		const clipboard = require('clipboard-files');
 		const fse = require('fs-extra');
 		if (!fs.existsSync(destPath)) {
@@ -54,7 +54,8 @@ class FileOp {
 			filePaths.forEach(filePath => {
 				if (fs.existsSync(filePath)) {
 					let target = path.join(destPath, path.basename(filePath));
-					fse.copy(filePath, target)
+					let copy = cutPath === filePath ? fse.move : fse.copy;
+					copy(filePath, target)
 						.then(() => {
 							this.contents.send('file-pasted', filePath);
 						})

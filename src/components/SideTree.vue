@@ -10,7 +10,7 @@
 				<div :style="{ top: _top }" class="side-tree-content">
 					<div @click.stop="onClickItem(item)" class="tree-item" v-for="item in renderList">
 						<div
-							:class="[item.active ? 'my-active' : '']"
+							:class="[item.active ? 'my-active' : '', cutPath === item.path ? 'tree-item-cut' : '']"
 							:style="{ 'padding-left': _paddingLeft(item) }"
 							:title="item.path"
 							@contextmenu.stop.prevent="onContextmenu($event, item)"
@@ -50,12 +50,13 @@ export default {
 	data() {
 		return {
 			itemHeight: 30,
-			itemPadding: 16,
+			itemPadding: 20,
 			openedList: [],
 			renderList: [],
 			watchIdMap: {},
 			startLine: 1,
 			maxVisibleLines: 100,
+			cutPath: '',
 		};
 	},
 	computed: {
@@ -67,7 +68,7 @@ export default {
 		},
 		_paddingLeft() {
 			return function (item) {
-				return item.deep * this.itemPadding + 'px';
+				return item.deep * this.itemPadding - 4 + 'px';
 			};
 		},
 	},
@@ -76,12 +77,14 @@ export default {
 			this.openedList = [];
 			this.renderList = [];
 			this.openedList = this.getRenderList(this.list, 0);
+			this.watchFolder();
 			this.render();
 		},
 	},
 	created() {
 		this.openedList = this.getRenderList(this.list, 0);
 		this.initEventBus();
+		this.watchFolder();
 		window.tree = this;
 	},
 	mounted() {
@@ -118,6 +121,15 @@ export default {
 					preActiveItem.active = false;
 					preActiveItem = null;
 				}
+			});
+			EventBus.$on('file-copy', (item) => {
+				this.cutPath = '';
+			});
+			EventBus.$on('file-cut', (item) => {
+				this.cutPath = item.path;
+			});
+			EventBus.$on('file-paste', (item) => {
+				this.cutPath = '';
 			});
 		},
 		render() {
@@ -211,18 +223,20 @@ export default {
 				.concat(this.getRenderList(item.children, item.deep))
 				.concat(this.openedList.slice(index + 1));
 		},
-		watchFolder(item) {
-			if (!this.watchIdMap[item.id]) {
-				this.watchIdMap[item.id] = fs.watch(item.path, { recursive: true }, (event, filename) => {
-					if (event === 'rename') {
-						let dirPath = path.dirname(path.join(item.path, filename));
-						let treeItem = this.getItemByPath(dirPath);
-						if (treeItem && (treeItem.children.length || treeItem.open)) {
-							this.refreshDir(treeItem);
+		watchFolder() {
+			this.list.forEach((item) => {
+				if (!this.watchIdMap[item.id]) {
+					this.watchIdMap[item.id] = fs.watch(item.path, { recursive: true }, (event, filename) => {
+						if (event === 'rename') {
+							let dirPath = path.dirname(path.join(item.path, filename));
+							let treeItem = this.getItemByPath(dirPath);
+							if (treeItem && (treeItem.children.length || treeItem.open)) {
+								this.refreshDir(treeItem);
+							}
 						}
-					}
-				});
-			}
+					});
+				}
+			});
 		},
 		updateParentPath(item, parentPath) {
 			item.path = path.join(parentPath, item.name);
@@ -328,9 +342,6 @@ export default {
 							_item.parent = item;
 							_item.deep = item.deep + 1;
 						});
-						if (!item.parentPath) {
-							this.watchIdMap[item.id] = this.watchFolder(item);
-						}
 						_changOpen.call(this, item);
 					} else {
 						_changOpen.call(this, item);

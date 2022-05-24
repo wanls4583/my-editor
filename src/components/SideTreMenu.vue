@@ -39,7 +39,7 @@ export default {
 				],
 				[
 					{
-						name: 'Cut',
+						name: 'Cut (Intergrated Explorer)',
 						op: 'cut',
 					},
 					{
@@ -65,7 +65,7 @@ export default {
 				],
 				[
 					{
-						name: 'Cut',
+						name: 'Cut (Intergrated Explorer)',
 						op: 'cut',
 					},
 					{

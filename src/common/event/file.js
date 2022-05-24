@@ -32,13 +32,16 @@ export default class {
 			}
 		});
 		EventBus.$on('file-copy', fileObj => {
+			this.cutPath = '';
 			this.copyFileToClip(fileObj);
 		});
 		EventBus.$on('file-cut', fileObj => {
+			this.cutPath = fileObj.path;
 			this.cutFileToClip(fileObj);
 		});
 		EventBus.$on('file-paste', fileObj => {
-			this.pasteFileFromClip(fileObj);
+			this.pasteFileFromClip(fileObj, this.cutPath);
+			this.cutPath = '';
 		});
 		ipcRenderer.on('file-pasted', filePath => {
 			EventBus.$emit('file-pasted', filePath);
@@ -226,7 +229,7 @@ export default class {
 	cutFileToClip(fileObj) {
 		ipcRenderer.send('file-cut', [fileObj.path]);
 	}
-	pasteFileFromClip(fileObj) {
-		ipcRenderer.send('file-paste', fileObj.path);
+	pasteFileFromClip(fileObj, cutPath) {
+		ipcRenderer.send('file-paste', fileObj.path, cutPath);
 	}
 }

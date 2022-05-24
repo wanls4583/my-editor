@@ -57,9 +57,17 @@
 				width: 100%;
 			}
 
+			&-cut {
+				opacity: 0.5;
+			}
+
 			&-text {
 				overflow: hidden;
 				text-overflow: ellipsis;
+			}
+
+			.iconfont {
+				margin-left: 6px;
 			}
 		}
 	}
