@@ -51,6 +51,16 @@ export default {
 						op: 'paste',
 					},
 				],
+				[
+					{
+						name: 'Reaname',
+						op: 'rename',
+					},
+					{
+						name: 'Delete',
+						op: 'delete',
+					},
+				],
 			],
 			fileMenu: [
 				[
@@ -71,6 +81,16 @@ export default {
 					{
 						name: 'Copy',
 						op: 'copy',
+					},
+				],
+				[
+					{
+						name: 'Reaname',
+						op: 'rename',
+					},
+					{
+						name: 'Delete',
+						op: 'delete',
 					},
 				],
 			],
@@ -115,7 +135,7 @@ export default {
 		},
 		onMenuChange(item) {
 			let dirPath = '';
-			let treeItem = this.treeItem;
+			let treeItem = Object.assign({}, this.treeItem);
 			switch (item.op) {
 				case 'revealInFileExplorer':
 					EventBus.$emit('reveal-in-file-explorer', this.treeItem.path);
@@ -139,13 +159,15 @@ export default {
 					EventBus.$emit('terminal-new', dirPath);
 					break;
 				case 'cut':
-					EventBus.$emit('file-cut', Object.assign({}, treeItem));
+					EventBus.$emit('file-cut', treeItem);
 					break;
 				case 'copy':
-					EventBus.$emit('file-copy', Object.assign({}, treeItem));
+					EventBus.$emit('file-copy', treeItem);
 					break;
 				case 'paste':
-					EventBus.$emit('file-paste', Object.assign({}, treeItem));
+					EventBus.$emit('file-paste', treeItem);
+				case 'rename':
+					EventBus.$emit('file-rename-input', treeItem);
 			}
 			this.menuVisible = false;
 		},

@@ -43,6 +43,9 @@ export default class {
 			this.pasteFileFromClip(fileObj, this.cutPath);
 			this.cutPath = '';
 		});
+		EventBus.$on('file-rename', (filePath, newFileNmme) => {
+			ipcRenderer.send('file-rename', filePath, newFileNmme);
+		});
 		ipcRenderer.on('file-pasted', filePath => {
 			EventBus.$emit('file-pasted', filePath);
 		});
@@ -70,7 +73,7 @@ export default class {
 					result.filePaths.forEach(item => {
 						let stat = fs.statSync(item);
 						let obj = {
-							id: stat.dev + ',' + stat.ino,
+							id: 'file-' + stat.dev + '-' + stat.ino,
 							name: item.match(/[^\\\/]+$/)[0],
 							path: item,
 							type: 'dir',
@@ -178,7 +181,7 @@ export default class {
 						icon = icon ? `my-file-icon my-file-icon-${icon}` : '';
 						let stat = fs.statSync(item);
 						let obj = {
-							id: stat.dev + ',' + stat.ino,
+							id: 'file-' + stat.dev + '-' + stat.ino,
 							name: item.match(/[^\\\/]+$/)[0],
 							path: item,
 							icon: icon,

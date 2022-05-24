@@ -8,7 +8,7 @@
 		<div style="width: 100%; overflow: hidden">
 			<div :style="{ height: _scrollHeight }" class="side-tree">
 				<div :style="{ top: _top }" class="side-tree-content">
-					<div @click.stop="onClickItem(item)" class="tree-item" v-for="item in renderList">
+					<div :id="item.id" @click.stop="onClickItem(item)" class="tree-item" v-for="item in renderList">
 						<div
 							:class="[item.active ? 'my-active' : '', cutPath === item.path ? 'tree-item-cut' : '']"
 							:style="{ 'padding-left': _paddingLeft(item) }"
@@ -152,16 +152,16 @@ export default {
 			let results = [];
 			files.forEach((item, index) => {
 				let fullPath = path.join(dirPath, item);
-				let state = fs.statSync(fullPath);
+				let stat = fs.statSync(fullPath);
 				let obj = {
-					id: state.dev + ',' + state.ino,
+					id: 'file-' + stat.dev + '-' + stat.ino,
 					name: item,
 					path: fullPath,
 					parentPath: dirPath,
 					active: false,
 					children: [],
 				};
-				if (state.isFile()) {
+				if (stat.isFile()) {
 					obj.type = 'file';
 				} else {
 					obj.type = 'dir';
@@ -193,7 +193,6 @@ export default {
 					if (obj) {
 						if (obj.path != item.path) {
 							obj.name = item.name;
-							obj.path = item.path;
 							// 递归更新路径
 							this.updateParentPath(obj, item.parentPath);
 						}

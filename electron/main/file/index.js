@@ -17,6 +17,9 @@ class FileOp {
 		ipcMain.on('file-paste', (e, destPath, move) => {
 			this.pasteFile(destPath, move);
 		});
+		ipcMain.on('file-rename', (e, filePath, newName) => {
+			this.rename(filePath, newName);
+		});
 	}
 	copyToClip(filePaths) {
 		const clipboard = require('clipboard-files');
@@ -68,6 +71,13 @@ class FileOp {
 			this.contents.send('file-paste-fail', destPath);
 			console.log(`copy to "${destPath}" fail`);
 		}
+	}
+	rename(filePath, newName) {
+		let target = path.join(path.dirname(filePath), newName);
+		fs.rename(filePath, target, err => {
+			if (err) throw err;
+			this.contents.send('file-renamed', filePath, newName);
+		});
 	}
 }
 

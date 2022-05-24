@@ -71,4 +71,25 @@
 			}
 		}
 	}
+
+	&-rename-overlay {
+		position: absolute;
+		z-index: 99;
+		top: 0;
+		bottom: 0;
+		left: 0;
+		right: 0;
+	}
+
+	&-rename-input {
+		position: absolute;
+		height: 30px;
+		line-height: 30px;
+		padding: 0;
+		background-color: var(--my-input-background);
+		color: var(--my-input-foreground);
+		border: 1px solid transparent;
+		border-color: var(--my-focusBorder);
+		outline: none;
+	}
 }
