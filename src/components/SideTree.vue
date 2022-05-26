@@ -5,7 +5,7 @@
 -->
 <template>
 	<div @scroll="onScroll" class="side-tree-warp my-scroll-overlay my-scroll-small" ref="wrap">
-		<div style="width: 100%; overflow: hidden">
+		<div style="width:100%;overflow:hidden">
 			<div :style="{ height: _scrollHeight }" class="side-tree">
 				<div :style="{ top: _top }" class="side-tree-content">
 					<div :id="item.id" @click.stop="onClickItem(item)" class="tree-item" v-for="item in renderList">
@@ -20,8 +20,11 @@
 								<span class="left-icon iconfont icon-down1" v-if="item.open"></span>
 								<span class="left-icon iconfont icon-right" v-else></span>
 							</template>
-							<div :class="[item.icon, item.status]" class="tree-item-content my-center-start">
-								<span class="tree-item-text" style="margin-left: 4px">{{ item.name }}</span>
+							<div :class="[item.icon, item.statusColor]" class="tree-item-content my-center-start">
+								<div class="my-center-between" style="width:100%;overflow:hidden">
+									<span class="tree-item-text">{{item.name}}</span>
+									<span style="margin:0 5px 0 10px;flex-shrink:0" v-if="item.type === 'file'">{{item.status}}</span>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -145,12 +148,6 @@ export default {
 		render() {
 			this.renderList = this.openedList.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines);
 			this.renderList.forEach((item) => {
-				let fileStatus = globalData.fileStatus[item.rootPath] || {};
-				let untracked = fileStatus.untracked || {};
-				let added = fileStatus.added || {};
-				let conflicted = fileStatus.conflicted || {};
-				let modified = fileStatus.modified || {};
-				let deleted = fileStatus.deleted || {};
 				if (globalData.nowIconData) {
 					item.icon = Util.getIconByPath({
 						iconData: globalData.nowIconData,
@@ -162,18 +159,9 @@ export default {
 					});
 					item.icon = item.icon ? `my-file-icon my-file-icon-${item.icon}` : '';
 				}
-				item.status = '';
-				if (untracked[item.relativePath]) {
-					item.status = 'my-status-untracked';
-				} else if (added[item.relativePath]) {
-					item.status = 'my-status-added';
-				} else if (conflicted[item.relativePath]) {
-					item.status = 'my-status-conflicted';
-				} else if (modified[item.relativePath]) {
-					item.status = 'my-status-modified';
-				} else if (deleted[item.relativePath]) {
-					item.status = 'my-status-deleted';
-				}
+				item.status = Util.getFileStatus(globalData.fileStatus, item.relativePath, item.rootPath);
+				item.statusColor = item.status.statusColor;
+				item.status = item.status.status;
 			});
 		},
 		createItems(item, files) {

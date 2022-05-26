@@ -15,7 +15,10 @@
 				v-for="item in editorList"
 			>
 				<div :class="[item.icon]" class="bar-content">
-					<span :class="[item.status]" class="bar-text">{{ item.name }}</span>
+					<span :class="[item.statusColor]">
+						<span class="bar-text">{{ item.name }}</span>
+						<span style="margin-left:10px">{{item.status}}</span>
+					</span>
 					<div class="bar-icon">
 						<span @click.stop="onClose(item.id)" class="bar-close-icon iconfont icon-close" title="close" v-show="item.saved"></span>
 						<span class="bar-dot" v-show="!item.saved"></span>
@@ -32,6 +35,7 @@ import ShortCut from '@/module/shortcut/editor-bar';
 import EventBus from '@/event';
 import Util from '@/common/util';
 import $ from 'jquery';
+import globalData from '@/data/globalData';
 
 export default {
 	name: 'EditorBar',
@@ -71,24 +75,9 @@ export default {
 			EventBus.$on('git-statused', () => {
 				this.editorList.forEach((item) => {
 					let fileObj = Util.getFileItemByPath(globalData.fileTree, item.path) || {};
-					let fileStatus = globalData.fileStatus[fileObj.rootPath] || {};
-					let untracked = fileStatus.untracked || {};
-					let added = fileStatus.added || {};
-					let conflicted = fileStatus.conflicted || {};
-					let modified = fileStatus.modified || {};
-					let deleted = fileStatus.deleted || {};
-					item.status = '';
-					if (untracked[item.relativePath]) {
-						item.status = 'my-status-untracked';
-					} else if (added[item.relativePath]) {
-						item.status = 'my-status-added';
-					} else if (conflicted[item.relativePath]) {
-						item.status = 'my-status-conflicted';
-					} else if (modified[item.relativePath]) {
-						item.status = 'my-status-modified';
-					} else if (deleted[item.relativePath]) {
-						item.status = 'my-status-deleted';
-					}
+					item.status = Util.getFileStatus(globalData.fileStatus, fileObj.relativePath, fileObj.rootPath);
+					item.statusColor = item.status.statusColor;
+					item.status = item.status.status;
 				});
 			});
 		},

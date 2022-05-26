@@ -123,6 +123,7 @@ export default class {
 					path: fileObj.path || '',
 					icon: fileObj.icon || '',
 					status: fileObj.status || '',
+					statusColor: fileObj.statusColor || '',
 					saved: true,
 					active: false,
 				};
@@ -176,6 +177,10 @@ export default class {
 				let results = [];
 				if (!result.canceled && result.filePaths) {
 					result.filePaths.forEach(item => {
+						let statusColor = '';
+						let status = '';
+						let fileObj = Util.getFileItemByPath(globalData.fileTree, item) || {};
+						let stat = fs.statSync(item);
 						let icon = Util.getIconByPath({
 							iconData: globalData.nowIconData,
 							filePath: item,
@@ -183,13 +188,18 @@ export default class {
 							thmeType: globalData.nowTheme.type,
 						});
 						icon = icon ? `my-file-icon my-file-icon-${icon}` : '';
-						let stat = fs.statSync(item);
+						if (fileObj) {
+							status = Util.getFileStatus(globalData.fileStatus, fileObj.relativePath, fileObj.rootPath);
+							statusColor = status.statusColor;
+							status = obj.status.status;
+						}
 						let obj = {
 							id: 'file-' + stat.dev + '-' + stat.ino,
 							name: item.match(/[^\\\/]+$/)[0],
 							path: item,
 							icon: icon,
-							status: '',
+							status: status,
+							statusColor: statusColor,
 							saved: true,
 							active: false,
 						};

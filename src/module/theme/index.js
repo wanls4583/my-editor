@@ -883,42 +883,49 @@ export default class {
 				if (isLight) {
 					result.colors['gitDecoration.untrackedResourceForeground'] = '#28a745';
 				} else {
-					result.colors['gitDecoration.untrackedResourceForeground'] = '#34d058';
+					result.colors['gitDecoration.untrackedResourceForeground'] = '#73c991';
 				}
 			}
 			if (!result.colors['gitDecoration.addedResourceForeground']) {
 				if (isLight) {
 					result.colors['gitDecoration.addedResourceForeground'] = '#28a745';
 				} else {
-					result.colors['gitDecoration.addedResourceForeground'] = '#34d058';
+					result.colors['gitDecoration.addedResourceForeground'] = '#81b88b';
 				}
 			}
 			if (!result.colors['gitDecoration.conflictingResourceForeground']) {
 				if (isLight) {
 					result.colors['gitDecoration.conflictingResourceForeground'] = '#e36209';
 				} else {
-					result.colors['gitDecoration.conflictingResourceForeground'] = '#ffab70';
+					result.colors['gitDecoration.conflictingResourceForeground'] = '#e4676b';
 				}
 			}
 			if (!result.colors['gitDecoration.modifiedResourceForeground']) {
 				if (isLight) {
 					result.colors['gitDecoration.modifiedResourceForeground'] = '#005cc5';
 				} else {
-					result.colors['gitDecoration.modifiedResourceForeground'] = '#79b8ff';
+					result.colors['gitDecoration.modifiedResourceForeground'] = '#e2c08d';
+				}
+			}
+			if (!result.colors['gitDecoration.renamedResourceForeground']) {
+				if (isLight) {
+					result.colors['gitDecoration.renamedResourceForeground'] = '#28a745';
+				} else {
+					result.colors['gitDecoration.renamedResourceForeground'] = '#73c991';
 				}
 			}
 			if (!result.colors['gitDecoration.deletedResourceForeground']) {
 				if (isLight) {
 					result.colors['gitDecoration.deletedResourceForeground'] = '#d73a49';
 				} else {
-					result.colors['gitDecoration.deletedResourceForeground'] = '#ea4a5a';
+					result.colors['gitDecoration.deletedResourceForeground'] = '#c74e39';
 				}
 			}
 			if (!result.colors['gitDecoration.ignoredResourceForeground']) {
 				if (isLight) {
 					result.colors['gitDecoration.ignoredResourceForeground'] = '#959da5';
 				} else {
-					result.colors['gitDecoration.ignoredResourceForeground'] = '#6a737d';
+					result.colors['gitDecoration.ignoredResourceForeground'] = '#8c8c8c';
 				}
 			}
 		}

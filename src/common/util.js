@@ -330,6 +330,40 @@ class Util {
 			}
 		}
 	}
+	static getFileStatus(allFileStatusData, relativePath, rootPath) {
+		let fileStatus = allFileStatusData[rootPath] || {};
+		let untracked = fileStatus.untracked || {};
+		let added = fileStatus.added || {};
+		let conflicted = fileStatus.conflicted || {};
+		let modified = fileStatus.modified || {};
+		let renamed = fileStatus.renamed || {};
+		let deleted = fileStatus.deleted || {};
+		let status = '';
+		let statusColor = '';
+		if (untracked[relativePath]) {
+			status = 'U';
+			statusColor = 'my-status-untracked';
+		} else if (added[relativePath]) {
+			status = 'A';
+			statusColor = 'my-status-added';
+		} else if (conflicted[relativePath]) {
+			status = 'C';
+			statusColor = 'my-status-conflicted';
+		} else if (modified[relativePath]) {
+			status = 'M';
+			statusColor = 'my-status-modified';
+		} else if (renamed[relativePath]) {
+			status = 'R';
+			statusColor = 'my-status-renamed';
+		} else if (deleted[relativePath]) {
+			status = 'D';
+			statusColor = 'my-status-deleted';
+		}
+		return {
+			status: status,
+			statusColor: statusColor,
+		};
+	}
 	static getMemnuPos(e, menuEl, areaEl) {
 		let menuWidth = 0;
 		let menuHeight = 0;

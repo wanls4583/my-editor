@@ -23,6 +23,7 @@ export default class {
 					let conflicted = {};
 					let modified = {};
 					let deleted = {};
+					let renamed = {};
 					if (result.not_added.length) {
 						result.not_added.forEach(item => {
 							_addPathMap(item, untracked);
@@ -49,21 +50,22 @@ export default class {
 					}
 					if (result.renamed.length) {
 						result.renamed.forEach(item => {
-							_addPathMap(item, modified);
+							_addPathMap(item, renamed);
 						});
-						modified[''] = true;
+						renamed[''] = true;
 					}
 					if (result.deleted.length) {
 						result.deleted.forEach(item => {
 							_addPathMap(item, deleted);
 						});
-						modified[''] = true;
+						deleted[''] = true;
 					}
 					globalData.fileStatus[fileObj.path] = {
 						untracked: untracked,
 						added: added,
 						conflicted: conflicted,
 						modified: modified,
+						renamed: renamed,
 						deleted: deleted,
 					};
 					EventBus.$emit('git-statused', fileObj);

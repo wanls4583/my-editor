@@ -11,6 +11,9 @@
 	&-status-modified {
 		color: var(--my-gitDecoration-modifiedResourceForeground);
 	}
+    &-status-renamed {
+		color: var(--my-gitDecoration-renamedResourceForeground);
+	}
 	&-status-deleted {
 		color: var(--my-gitDecoration-deletedResourceForeground);
 	}
