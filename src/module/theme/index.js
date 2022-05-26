@@ -271,6 +271,7 @@ export default class {
 		_input();
 		_toolbar();
 		_badge();
+		_git();
 
 		// base
 		function _base() {
@@ -873,6 +874,51 @@ export default class {
 					result.colors['badge.backround'] = result.colors['contrastActiveBorder'];
 				} else {
 					result.colors['badge.backround'] = result.colors['focusBorder'];
+				}
+			}
+		}
+		//git
+		function _git() {
+			if (!result.colors['gitDecoration.untrackedResourceForeground']) {
+				if (isLight) {
+					result.colors['gitDecoration.untrackedResourceForeground'] = '#28a745';
+				} else {
+					result.colors['gitDecoration.untrackedResourceForeground'] = '#34d058';
+				}
+			}
+			if (!result.colors['gitDecoration.addedResourceForeground']) {
+				if (isLight) {
+					result.colors['gitDecoration.addedResourceForeground'] = '#28a745';
+				} else {
+					result.colors['gitDecoration.addedResourceForeground'] = '#34d058';
+				}
+			}
+			if (!result.colors['gitDecoration.conflictingResourceForeground']) {
+				if (isLight) {
+					result.colors['gitDecoration.conflictingResourceForeground'] = '#e36209';
+				} else {
+					result.colors['gitDecoration.conflictingResourceForeground'] = '#ffab70';
+				}
+			}
+			if (!result.colors['gitDecoration.modifiedResourceForeground']) {
+				if (isLight) {
+					result.colors['gitDecoration.modifiedResourceForeground'] = '#005cc5';
+				} else {
+					result.colors['gitDecoration.modifiedResourceForeground'] = '#79b8ff';
+				}
+			}
+			if (!result.colors['gitDecoration.deletedResourceForeground']) {
+				if (isLight) {
+					result.colors['gitDecoration.deletedResourceForeground'] = '#d73a49';
+				} else {
+					result.colors['gitDecoration.deletedResourceForeground'] = '#ea4a5a';
+				}
+			}
+			if (!result.colors['gitDecoration.ignoredResourceForeground']) {
+				if (isLight) {
+					result.colors['gitDecoration.ignoredResourceForeground'] = '#959da5';
+				} else {
+					result.colors['gitDecoration.ignoredResourceForeground'] = '#6a737d';
 				}
 			}
 		}

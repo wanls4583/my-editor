@@ -3,6 +3,7 @@ import TerminalEvent from './terminal';
 import EditorEvent from './editor';
 import FileEvent from './file';
 import ThemeEvent from './theme';
+import GitEvent from './git';
 
 const remote = window.require('@electron/remote');
 
@@ -15,5 +16,6 @@ export default class {
 		this.editorEvent = new EditorEvent();
 		this.fileEvent = new FileEvent();
 		this.themeEvent = new ThemeEvent();
+		this.gitEvent = new GitEvent();
 	}
 }

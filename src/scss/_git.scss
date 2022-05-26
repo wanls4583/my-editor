@@ -1,0 +1,17 @@
+.my {
+	&-status-untracked {
+		color: var(--my-gitDecoration-untrackedResourceForeground);
+	}
+	&-status-added {
+		color: var(--my-gitDecoration-addedResourceForeground);
+	}
+	&-status-conflicted {
+		color: var(--my-gitDecoration-conflictingResourceForeground);
+	}
+	&-status-modified {
+		color: var(--my-gitDecoration-modifiedResourceForeground);
+	}
+	&-status-deleted {
+		color: var(--my-gitDecoration-deletedResourceForeground);
+	}
+}

@@ -76,11 +76,13 @@ export default class {
 							id: 'file-' + stat.dev + '-' + stat.ino,
 							name: item.match(/[^\\\/]+$/)[0],
 							path: item,
+							parentPath: '',
+							relativePath: '',
+							rootPath: item,
+							parent: null,
 							type: 'dir',
 							active: false,
 							open: false,
-							parent: null,
-							parentPath: '',
 							children: [],
 						};
 						results.push(Object.assign({}, obj));
@@ -99,7 +101,6 @@ export default class {
 		fileObj = fileObj || {};
 		if (!tab) {
 			let index = -1;
-			let name = fileObj.name || `Untitled${titleCount}`;
 			if (this.editorList.length) {
 				tab = Util.getTabById(this.editorList, globalData.nowId);
 				index = this.editorList.indexOf(tab); //在当前活动标签之后新增
@@ -118,9 +119,10 @@ export default class {
 			} else {
 				tab = {
 					id: fileObj.id || titleCount,
-					name: name,
+					name: fileObj.name || `Untitled${titleCount}`,
 					path: fileObj.path || '',
 					icon: fileObj.icon || '',
+					status: fileObj.status || '',
 					saved: true,
 					active: false,
 				};
@@ -187,6 +189,7 @@ export default class {
 							name: item.match(/[^\\\/]+$/)[0],
 							path: item,
 							icon: icon,
+							status: '',
 							saved: true,
 							active: false,
 						};

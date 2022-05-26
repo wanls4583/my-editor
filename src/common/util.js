@@ -309,10 +309,24 @@ class Util {
 			}
 		}
 	}
-	static getTabByPath(editorList, path) {
+	static getTabByPath(editorList, filePath) {
 		for (let i = 0; i < editorList.length; i++) {
-			if (editorList[i].path === path) {
+			if (editorList[i].path === filePath) {
 				return editorList[i];
+			}
+		}
+	}
+	static getFileItemByPath(fileTree, filePath) {
+		return _findItem(fileTree);
+
+		function _findItem(list) {
+			for (let i = 0; i < list.length; i++) {
+				let item = list[i];
+				if (filePath === item.path) {
+					return item;
+				} else if (filePath.startsWith(item.path)) {
+					return _findItem(item.children);
+				}
 			}
 		}
 	}

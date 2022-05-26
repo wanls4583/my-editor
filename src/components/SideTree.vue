@@ -20,7 +20,7 @@
 								<span class="left-icon iconfont icon-down1" v-if="item.open"></span>
 								<span class="left-icon iconfont icon-right" v-else></span>
 							</template>
-							<div :class="[item.icon]" class="tree-item-content my-center-start">
+							<div :class="[item.icon, item.status]" class="tree-item-content my-center-start">
 								<span class="tree-item-text" style="margin-left: 4px">{{ item.name }}</span>
 							</div>
 						</div>
@@ -77,6 +77,7 @@ export default {
 			this.openedList = [];
 			this.renderList = [];
 			this.openedList = this.getRenderList(this.list, 0);
+			this.initFileStatus();
 			this.watchFolder();
 			this.render();
 		},
@@ -84,6 +85,7 @@ export default {
 	created() {
 		this.openedList = this.getRenderList(this.list, 0);
 		this.initEventBus();
+		this.initFileStatus();
 		this.watchFolder();
 		window.tree = this;
 	},
@@ -131,10 +133,24 @@ export default {
 			EventBus.$on('file-paste', (item) => {
 				this.cutPath = '';
 			});
+			EventBus.$on('git-statused', (item) => {
+				this.render();
+			});
+		},
+		initFileStatus() {
+			this.list.forEach((item) => {
+				EventBus.$emit('git-status', item);
+			});
 		},
 		render() {
 			this.renderList = this.openedList.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines);
 			this.renderList.forEach((item) => {
+				let fileStatus = globalData.fileStatus[item.rootPath] || {};
+				let untracked = fileStatus.untracked || {};
+				let added = fileStatus.added || {};
+				let conflicted = fileStatus.conflicted || {};
+				let modified = fileStatus.modified || {};
+				let deleted = fileStatus.deleted || {};
 				if (globalData.nowIconData) {
 					item.icon = Util.getIconByPath({
 						iconData: globalData.nowIconData,
@@ -146,18 +162,34 @@ export default {
 					});
 					item.icon = item.icon ? `my-file-icon my-file-icon-${item.icon}` : '';
 				}
+				item.status = '';
+				if (untracked[item.relativePath]) {
+					item.status = 'my-status-untracked';
+				} else if (added[item.relativePath]) {
+					item.status = 'my-status-added';
+				} else if (conflicted[item.relativePath]) {
+					item.status = 'my-status-conflicted';
+				} else if (modified[item.relativePath]) {
+					item.status = 'my-status-modified';
+				} else if (deleted[item.relativePath]) {
+					item.status = 'my-status-deleted';
+				}
 			});
 		},
-		createItems(dirPath, files) {
+		createItems(item, files) {
 			let results = [];
-			files.forEach((item, index) => {
-				let fullPath = path.join(dirPath, item);
+			files.forEach((name, index) => {
+				let fullPath = path.join(item.path, name);
 				let stat = fs.statSync(fullPath);
 				let obj = {
 					id: 'file-' + stat.dev + '-' + stat.ino,
-					name: item,
+					name: name,
 					path: fullPath,
-					parentPath: dirPath,
+					parentPath: item.path,
+					relativePath: path.join(item.relativePath, name),
+					rootPath: item.rootPath,
+					parent: item,
+					deep: item.deep + 1,
 					active: false,
 					children: [],
 				};
@@ -171,9 +203,9 @@ export default {
 			});
 			return this.sortFileList(results);
 		},
-		readdir(dirPath) {
-			let files = fs.readdirSync(dirPath, { encoding: 'utf8' });
-			return this.createItems(dirPath, files);
+		readdir(item) {
+			let files = fs.readdirSync(item.path, { encoding: 'utf8' });
+			return this.createItems(item, files);
 		},
 		refreshDir(item) {
 			this.refreshFolderTimer = this.refreshFolderTimer || {};
@@ -186,7 +218,7 @@ export default {
 
 			function _refresh() {
 				let idMap = {};
-				let list = this.readdir(item.path);
+				let list = this.readdir(item);
 				item.children.forEach((item) => {
 					idMap[item.id] = item;
 				});
@@ -229,12 +261,14 @@ export default {
 				if (!this.watchIdMap[item.id]) {
 					this.watchIdMap[item.id] = fs.watch(item.path, { recursive: true }, (event, filename) => {
 						if (event === 'rename') {
-							console.log(filename);
 							let dirPath = path.dirname(path.join(item.path, filename));
-							let treeItem = this.getItemByPath(dirPath);
+							let treeItem = Util.getFileItemByPath(this.list, dirPath);
 							if (treeItem && (treeItem.children.length || treeItem.open)) {
 								this.refreshDir(treeItem);
 							}
+						}
+						if (filename && filename != '.git' && !filename.startsWith('.git' + path.sep)) {
+							EventBus.$emit('git-status', item.path);
 						}
 					});
 				}
@@ -312,20 +346,6 @@ export default {
 				});
 			}
 		},
-		getItemByPath(path) {
-			return _findItem(this.list);
-
-			function _findItem(list) {
-				for (let i = 0; i < list.length; i++) {
-					let item = list[i];
-					if (path === item.path) {
-						return item;
-					} else if (path.startsWith(item.path)) {
-						return _findItem(item.children);
-					}
-				}
-			}
-		},
 		onClickItem(item) {
 			if (!item.active) {
 				if (preActiveItem) {
@@ -337,13 +357,9 @@ export default {
 				if (item.type === 'dir') {
 					item.open = !item.open;
 					if (!item.loaded) {
-						let list = this.readdir(item.path);
+						let list = this.readdir(item);
 						item.children = list;
 						item.loaded = true;
-						list.forEach((_item) => {
-							_item.parent = item;
-							_item.deep = item.deep + 1;
-						});
 						_changOpen.call(this, item);
 					} else {
 						_changOpen.call(this, item);

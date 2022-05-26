@@ -27,6 +27,7 @@ const globalData = {
 	sourceWordMap: {},
 	defaultWordPattern: '(-?\\d*\\.\\d\\w*)|([^\\`\\~\\!\\@\\%\\^\\&\\*\\(\\)\\-\\=\\+\\[\\{\\]\\}\\\\\\|\\;\\:\\\'\\"\\,\\.\\<\\>/\\?\\s]+)',
 	fileTree: [],
+	fileStatus: {},
 	skipSearchDirs: /[\\\/](node_modules|dist|\.git|\.vscode|\.idea|\.DS_Store)(?=[\\\/]|$)/,
 	skipSearchFiles: /^npm-debug.log|^yarn-debug.log|^yarn-error.log|^pnpm-debug.log|\.suo|\.ntvs|\.njsproj|\.sln|\.sw/,
 	terminalList: [],
