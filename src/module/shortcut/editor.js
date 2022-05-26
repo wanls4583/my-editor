@@ -33,7 +33,7 @@ export default class {
 			editor.setData(prop, value);
 		};
 	}
-	onKeyDown(e) {
+	onKeydown(e) {
 		let that = this;
 		if (e.ctrlKey && e.shiftKey) {
 			e.preventDefault();

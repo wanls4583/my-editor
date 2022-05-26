@@ -14,7 +14,7 @@ export default class {
             '$emit',
         ]);
     }
-    onKeyDown(e) {
+    onKeydown(e) {
         if (e.ctrlKey) {
             if (this.pressK) {
                 this.pressK = false;

@@ -14,7 +14,7 @@
                     <textarea
                         @blur="input1Focus = false"
                         @focus="input1Focus = true"
-                        @keydown="onKeyDown"
+                        @keydown="onKeydown"
                         @input="onInput"
                         ref="input1"
                         :style="{ height: input1Height + 'px' }"
@@ -217,7 +217,7 @@ export default {
             this.searchPrevActive = false;
             this.searchNextActive = false;
         },
-        onKeyDown(e) {
+        onKeydown(e) {
             if (e.keyCode === 13 || e.keyCode === 100) {
                 e.preventDefault();
                 this.$emit('next');

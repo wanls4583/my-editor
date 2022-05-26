@@ -3554,7 +3554,7 @@ export default {
       }
     },
     {
-      "name": "onkeydown",
+      "name": "onKeydown",
       "description": {
         "kind": "markdown",
         "value": "A key is pressed down."

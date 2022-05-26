@@ -10,7 +10,7 @@ export default class {
 		this.initProperties(titleBar);
 	}
 	initProperties(titleBar) {}
-	onKeyDown(e) {
+	onKeydown(e) {
 		if (e.ctrlKey) {
 			if (this.pressK) {
 				this.pressK = false;

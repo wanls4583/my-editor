@@ -12,7 +12,7 @@ export default class {
 	initProperties(terminalBar) {
 		Util.defineProperties(this, terminalBar, ['$emit']);
 	}
-	onKeyDown(e) {
+	onKeydown(e) {
 		if (e.ctrlKey) {
 			if (this.pressK) {
 				this.pressK = false;

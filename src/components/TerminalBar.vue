@@ -55,7 +55,7 @@ export default {
 		this.shortcut = new ShortCut(this);
 		this.initEventBus();
 		$(window).on('keydown', (e) => {
-			this.shortcut.onKeyDown(e);
+			this.shortcut.onKeydown(e);
 		});
 	},
 	methods: {

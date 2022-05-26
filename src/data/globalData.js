@@ -5,6 +5,7 @@ const dirname = remote.app.getAppPath();
 
 const globalData = {
 	dirname: dirname,
+	zoomLevel: 0.5,
 	scopeIdMap: {},
 	scopeReg: null,
 	colors: {},

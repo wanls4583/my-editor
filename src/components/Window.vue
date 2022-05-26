@@ -66,6 +66,7 @@ import Theme from '@/module/theme';
 import EventBus from '@/event';
 import Util from '@/common/util';
 import CommonEvent from '@/common/event';
+import WinShorcut from '@/module/shortcut/window';
 import $ from 'jquery';
 import globalData from '@/data/globalData';
 
@@ -135,8 +136,10 @@ export default {
 			currentWindow.on('blur', () => {
 				EventBus.$emit('close-menu');
 			});
+			remote.getCurrentWindow().webContents.setZoomLevel(globalData.zoomLevel);
 		}
 		this.commonEvent = new CommonEvent(this);
+		this.winShorcut = new WinShorcut(this);
 		this.initEvent();
 		this.initEventBus();
 	},
@@ -179,6 +182,9 @@ export default {
 				.on('mouseup', (e) => {
 					this.leftSashMouseObj = null;
 					this.terminaSashMouseObj = null;
+				})
+				.on('keydown', (e) => {
+					this.winShorcut.onKeydown(e);
 				});
 		},
 		initEventBus() {

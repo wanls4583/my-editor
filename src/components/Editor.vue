@@ -78,7 +78,7 @@
 						@cut.prevent="onCut"
 						@focus="onFocus"
 						@input="onInput"
-						@keydown="onKeyDown"
+						@keydown="onKeydown"
 						@paste.prevent="onPaste"
 						class="my-textarea"
 						ref="textarea"
@@ -1568,8 +1568,8 @@ export default {
 			this.hideCursor();
 		},
 		// 键盘按下事件
-		onKeyDown(e) {
-			this.shortcut.onKeyDown(e);
+		onKeydown(e) {
+			this.shortcut.onKeydown(e);
 		},
 		// 搜索框首次搜索
 		onSearch(config) {

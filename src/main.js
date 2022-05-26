@@ -4,6 +4,8 @@ import axios from 'axios';
 import 'xterm/css/xterm.css';
 import './scss/index.scss';
 
+window.require = window.require || function () {};
+
 Vue.config.productionTip = false;
 Vue.prototype.$http = axios.create({
 	timeout: 1000 * 30,
