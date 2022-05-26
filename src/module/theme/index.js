@@ -908,11 +908,7 @@ export default class {
 				}
 			}
 			if (!result.colors['gitDecoration.renamedResourceForeground']) {
-				if (isLight) {
-					result.colors['gitDecoration.renamedResourceForeground'] = '#28a745';
-				} else {
-					result.colors['gitDecoration.renamedResourceForeground'] = '#73c991';
-				}
+				result.colors['gitDecoration.renamedResourceForeground'] = result.colors['gitDecoration.untrackedResourceForeground'];
 			}
 			if (!result.colors['gitDecoration.deletedResourceForeground']) {
 				if (isLight) {

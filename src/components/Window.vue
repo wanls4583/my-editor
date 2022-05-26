@@ -131,17 +131,22 @@ export default {
 	created() {
 		window.globalData = globalData;
 		globalData.$mainWin = this;
-		if (this.mode === 'app') {
-			const currentWindow = remote.getCurrentWindow();
-			currentWindow.on('blur', () => {
-				EventBus.$emit('close-menu');
-			});
-			remote.getCurrentWindow().webContents.setZoomLevel(globalData.zoomLevel);
-		}
 		this.commonEvent = new CommonEvent(this);
 		this.winShorcut = new WinShorcut(this);
 		this.initEvent();
 		this.initEventBus();
+		if (this.mode === 'app') {
+			const currentWindow = remote.getCurrentWindow();
+			const size = remote.screen.getPrimaryDisplay().size;
+			currentWindow.on('blur', () => {
+				EventBus.$emit('close-menu');
+			});
+			// 大尺寸屏幕上，放大显示比例
+			if (size.width > 1400) {
+				globalData.zoomLevel += 0.5;
+			}
+			remote.getCurrentWindow().webContents.setZoomLevel(globalData.zoomLevel);
+		}
 	},
 	mounted() {
 		window.test = this;
