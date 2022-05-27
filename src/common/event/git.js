@@ -1,6 +1,7 @@
 import EventBus from '@/event';
 import globalData from '@/data/globalData';
 
+const fs = window.require('fs');
 const path = window.require('path');
 const SimpleGit = window.require('simple-git');
 
@@ -13,6 +14,9 @@ export default class {
 	}
 	init() {
 		EventBus.$on('git-status', fileObj => {
+			if (!fs.existsSync(path.join(fileObj.path, '.git'))) {
+				return;
+			}
 			this.gitTimerMap[fileObj.path] = setTimeout(() => {
 				if (this.cwd != fileObj.path) {
 					this.simpleGit.cwd(fileObj.path);

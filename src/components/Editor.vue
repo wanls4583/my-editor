@@ -5,7 +5,7 @@
 			<!-- 占位行号，避免行号宽度滚动时变化 -->
 			<div class="my-num" style="visibility: hidden">{{ maxLine }}</div>
 			<div :class="{ 'my-active': nowCursorPos.line === line.num }" :key="line.num" :style="{ height: _lineHeight, 'line-height': _lineHeight }" class="my-num" v-for="line in renderHtmls">
-				<span class="num">{{ line.num }}</span>
+				<span class="num">{{ _num(line.num) }}</span>
 				<!-- 折叠图标 -->
 				<span :class="['iconfont', line.fold == 'open' ? 'my-fold-open icon-down1' : 'my-fold-close icon-right']" @click="onToggleFold(line.num)" class="my-fold my-center-center" v-if="line.fold"></span>
 			</div>
@@ -140,6 +140,10 @@ export default {
 		id: {
 			type: String,
 		},
+		diffLength: {
+			type: Number,
+			default: 0,
+		},
 		path: '',
 		active: {
 			type: Boolean,
@@ -233,6 +237,11 @@ export default {
 		};
 	},
 	computed: {
+		_num() {
+			return (line) => {
+				return line - this.diffLength > 0 ? line - this.diffLength : '';
+			};
+		},
 		_numTop() {
 			return this.top - this.charObj.charHight + 'px';
 		},

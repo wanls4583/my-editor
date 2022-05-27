@@ -256,7 +256,7 @@ export default {
 							}
 						}
 						if (filename && filename != '.git' && !filename.startsWith('.git' + path.sep)) {
-							EventBus.$emit('git-status', item.path);
+							EventBus.$emit('git-status', item);
 						}
 					});
 				}

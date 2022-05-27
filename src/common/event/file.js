@@ -188,7 +188,7 @@ export default class {
 							thmeType: globalData.nowTheme.type,
 						});
 						icon = icon ? `my-file-icon my-file-icon-${icon}` : '';
-						if (fileObj) {
+						if (fileObj.rootPath) {
 							status = Util.getFileStatus(globalData.fileStatus, fileObj.relativePath, fileObj.rootPath);
 							statusColor = status.statusColor;
 							status = obj.status.status;
