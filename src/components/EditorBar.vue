@@ -74,10 +74,12 @@ export default {
 			});
 			EventBus.$on('git-statused', () => {
 				this.editorList.forEach((item) => {
-					let fileObj = Util.getFileItemByPath(globalData.fileTree, item.path) || {};
-					item.status = Util.getFileStatus(globalData.fileStatus, fileObj.relativePath, fileObj.rootPath);
-					item.statusColor = item.status.statusColor;
-					item.status = item.status.status;
+					let fileObj = Util.getFileItemByPath(globalData.fileTree, item.path);
+					if (fileObj) {
+						item.status = Util.getFileStatus(globalData.fileStatus, fileObj.relativePath, fileObj.rootPath);
+						item.statusColor = item.status.statusColor;
+						item.status = item.status.status;
+					}
 				});
 			});
 		},

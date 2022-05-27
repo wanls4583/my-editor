@@ -179,7 +179,7 @@ export default class {
 					result.filePaths.forEach(item => {
 						let statusColor = '';
 						let status = '';
-						let fileObj = Util.getFileItemByPath(globalData.fileTree, item) || {};
+						let fileObj = Util.getFileItemByPath(globalData.fileTree, item);
 						let stat = fs.statSync(item);
 						let icon = Util.getIconByPath({
 							iconData: globalData.nowIconData,
@@ -188,7 +188,7 @@ export default class {
 							thmeType: globalData.nowTheme.type,
 						});
 						icon = icon ? `my-file-icon my-file-icon-${icon}` : '';
-						if (fileObj.rootPath) {
+						if (fileObj) {
 							status = Util.getFileStatus(globalData.fileStatus, fileObj.relativePath, fileObj.rootPath);
 							statusColor = status.statusColor;
 							status = obj.status.status;
