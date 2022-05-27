@@ -1,3 +1,4 @@
+import Btree from '@/common/btree';
 import EventBus from '@/event';
 import globalData from '@/data/globalData';
 
@@ -11,6 +12,7 @@ export default class {
 		this.cwd = '';
 		this.simpleGit = new SimpleGit();
 		this.gitTimerMap = {};
+		this.diffCache = {};
 		this.init();
 	}
 	init() {
@@ -96,6 +98,11 @@ export default class {
 		if (!fs.existsSync(path.join(fileObj.rootPath, '.git'))) {
 			return;
 		}
+		const stat = fs.statSync(fileObj.path);
+		const fileKey = stat.dev + '-' + stat.ino + '-' + stat.mtimeMs;
+		if (this.diffCache[fileKey]) {
+			return this.diffCache[fileKey];
+		}
 		const iconv = window.require('iconv-lite');
 		let line = 1;
 		let result = '';
@@ -104,33 +111,28 @@ export default class {
 			result += iconv.decode(data, 'cp936');
 		});
 		child.on('close', () => {
-			let fileDiffObjs = [];
+			let fileDiffObj = new Btree((a, b) => {
+				return a.line - b.line;
+			});
 			result = result.split(/\r\n|\n/);
-			_diff.call(this, fileDiffObjs);
-			console.log(fileDiffObjs);
+			_diff.call(this, fileDiffObj);
+			this.diffCache[fileKey] = fileDiffObj;
+			console.log(fileDiffObj);
 		});
 
-		function _diff(fileDiffObjs) {
+		function _diff(fileDiffObj) {
 			while (line <= result.length) {
 				let text = result[line - 1];
-				let relativePath = '';
 				// 文件比较开始
 				if (text.startsWith('diff --git')) {
-					let fileDiffObj = { path: '', ranges: [] };
-					line += 3;
-					text = result[line - 1];
-					relativePath = text.slice('+++ b/'.length).trimEnd();
-					fileDiffObj.path = path.join(fileObj.rootPath, relativePath);
-					line++;
-					_diffBlock.call(this, fileDiffObj.ranges);
-					fileDiffObjs.push(fileDiffObj);
-				} else {
+					line += 4;
+					_diffBlock.call(this, fileDiffObj);
 					break;
 				}
 			}
 		}
 
-		function _diffBlock(ranges) {
+		function _diffBlock(fileDiffObj) {
 			while (line <= result.length) {
 				let text = result[line - 1];
 				// 区域比较开始
@@ -138,14 +140,14 @@ export default class {
 					let res = /\-(\d+)\,(\d+) \+(\d+)\,(\d+)/.exec(text);
 					let startLine = res[1] - 0;
 					line++;
-					_diffLines.call(this, startLine, ranges);
+					_diffLines.call(this, startLine, fileDiffObj);
 				} else {
 					break;
 				}
 			}
 		}
 
-		function _diffLines(startLine, ranges) {
+		function _diffLines(startLine, fileDiffObj) {
 			let delTexts = [];
 			let addTexts = [];
 			while (line <= result.length) {
@@ -167,7 +169,7 @@ export default class {
 					}
 					range.deleted = delTexts;
 					range.added = addTexts;
-					ranges.push(range);
+					fileDiffObj.insert(range);
 				} else if (text[0] === '+') {
 					range.line = startLine;
 					addTexts.push(text.slice(1));
@@ -179,7 +181,7 @@ export default class {
 						startLine++;
 					}
 					range.added = addTexts;
-					ranges.push(range);
+					fileDiffObj.insert(range);
 				} else if (text[0] === ' ') {
 					line++;
 					startLine++;
