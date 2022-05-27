@@ -248,11 +248,16 @@ export default {
 			this.list.forEach((item) => {
 				if (!this.watchIdMap[item.id]) {
 					this.watchIdMap[item.id] = fs.watch(item.path, { recursive: true }, (event, filename) => {
+						let changedPath = path.dirname(path.join(item.path, filename));
 						if (event === 'rename') {
-							let dirPath = path.dirname(path.join(item.path, filename));
-							let treeItem = Util.getFileItemByPath(this.list, dirPath);
+							let treeItem = Util.getFileItemByPath(this.list, changedPath);
 							if (treeItem && (treeItem.children.length || treeItem.open)) {
 								this.refreshDir(treeItem);
+							}
+						} else if (event === 'change') {
+							let editorTab = Util.getTabByPath(changedPath);
+							if (editorTab) {
+								EventBus.$emit('git-diff', changedPath);
 							}
 						}
 						if (filename && filename != '.git' && !filename.startsWith('.git' + path.sep)) {

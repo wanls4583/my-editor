@@ -37,12 +37,8 @@ export default class {
 		});
 		EventBus.$on('editor-content-change', data => {
 			let tab = Util.getTabById(this.editorList, data.id);
-			let fileObj = Util.getFileItemByPath(globalData.fileTree, data.path);
 			tab.saved = false;
 			this.editorList.splice();
-			if (fileObj) {
-				EventBus.$emit('git-diff', fileObj);
-			}
 		});
 		EventBus.$on('language-check', () => {
 			this.checkLanguage();

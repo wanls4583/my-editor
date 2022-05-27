@@ -8,6 +8,9 @@
 				<span class="num">{{ _num(line.num) }}</span>
 				<!-- 折叠图标 -->
 				<span :class="['iconfont', line.fold == 'open' ? 'my-fold-open icon-down1' : 'my-fold-close icon-right']" @click="onToggleFold(line.num)" class="my-fold my-center-center" v-if="line.fold"></span>
+				<span v-if="_addLine(line.num)"></span>
+				<span v-else-if="_modifyLine(line.num)"></span>
+				<span v-else-if="_deleteLine(line.num)"></span>
 			</div>
 		</div>
 		<div :style="{ 'box-shadow': _leftShadow }" class="my-content-wrap">
@@ -152,15 +155,6 @@ export default {
 	},
 	data() {
 		return {
-			charObj: {
-				charWidth: 7.15,
-				fullAngleCharWidth: 15,
-				charHight: 19,
-			},
-			nowCursorPos: {
-				line: 1,
-				column: 0,
-			},
 			cursorVisible: true,
 			cursorFocus: true,
 			language: '',
@@ -176,6 +170,26 @@ export default {
 			maxLine: 1,
 			contentHeight: '100%',
 			scrollerArea: {},
+			errorMap: {},
+			errors: [],
+			autoTipList: [],
+			diffTree: null,
+			tipContent: null,
+			menuVisible: false,
+			searchVisible: false,
+			selectedFg: false,
+			activeLineBg: true,
+			searchNow: 1,
+			searchCount: 0,
+			charObj: {
+				charWidth: 7.15,
+				fullAngleCharWidth: 15,
+				charHight: 19,
+			},
+			nowCursorPos: {
+				line: 1,
+				column: 0,
+			},
 			bracketMatch: {
 				start: {},
 				end: {},
@@ -184,6 +198,19 @@ export default {
 				lineId: null,
 				text: '',
 				width: 0,
+			},
+			tipStyle: {
+				top: '0px',
+				left: '0px',
+			},
+			autoTipStyle: {
+				top: '50%',
+				left: '50%',
+			},
+			menuStyle: {
+				top: '0px',
+				left: '0px',
+				'min-width': '200px',
 			},
 			menuList: [
 				[
@@ -211,29 +238,6 @@ export default {
 					},
 				],
 			],
-			menuStyle: {
-				top: '0px',
-				left: '0px',
-				'min-width': '200px',
-			},
-			tipStyle: {
-				top: '0px',
-				left: '0px',
-			},
-			autoTipStyle: {
-				top: '50%',
-				left: '50%',
-			},
-			errorMap: {},
-			errors: [],
-			autoTipList: [],
-			tipContent: null,
-			menuVisible: false,
-			searchVisible: false,
-			selectedFg: false,
-			activeLineBg: true,
-			searchNow: 1,
-			searchCount: 0,
 		};
 	},
 	computed: {
@@ -241,6 +245,15 @@ export default {
 			return (line) => {
 				return line - this.diffLength > 0 ? line - this.diffLength : '';
 			};
+		},
+		_addLine() {
+			return (line) => {};
+		},
+		_modifyLine() {
+			return (line) => {};
+		},
+		_deleteLine() {
+			return (line) => {};
 		},
 		_numTop() {
 			return this.top - this.charObj.charHight + 'px';
@@ -439,6 +452,17 @@ export default {
 					this._theme = theme;
 				})
 			);
+			EventBus.$on('git-diffed', (filePath) => {
+				if (filePath === this.path) {
+					const fs = window.require('fs');
+					const stat = fs.statSync(filePath);
+					const fileKey = stat.dev + '-' + stat.ino + '-' + stat.mtimeMs;
+					if (globalData.fileDiff[fileKey]) {
+						this.diffTree = globalData.fileDiff[fileKey];
+					}
+					console.log(this.diffTree);
+				}
+			});
 		},
 		unbindEvent() {
 			$(document).unbind('mousemove', this.initEvent.fn1);
@@ -458,6 +482,8 @@ export default {
 						this.maxVisibleLines = Math.ceil(this.$refs.scroller.clientHeight / this.charObj.charHight) + 1;
 						this.render();
 						this.focus();
+						// 获取文件git修改记录
+						EventBus.$emit('git-diff', this.path);
 					}
 				});
 			}

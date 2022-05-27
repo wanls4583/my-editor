@@ -12,15 +12,20 @@ export default class {
 		this.cwd = '';
 		this.simpleGit = new SimpleGit();
 		this.gitTimerMap = {};
-		this.diffCache = {};
 		this.init();
 	}
 	init() {
 		EventBus.$on('git-status', fileObj => {
-			this.gitStatus(fileObj);
+			clearTimeout(this.gitStatusTimer);
+			this.gitStatusTimer = setTimeout(() => {
+				this.gitStatus(fileObj);
+			}, 100);
 		});
-		EventBus.$on('git-diff', fileObj => {
-			this.gitDiff(fileObj);
+		EventBus.$on('git-diff', filePath => {
+			clearTimeout(this.gitDiffTimer);
+			this.gitDiffTimer = setTimeout(() => {
+				this.gitDiff(filePath);
+			}, 100);
 		});
 	}
 	gitStatus(fileObj) {
@@ -94,19 +99,19 @@ export default class {
 			}
 		}
 	}
-	gitDiff(fileObj) {
-		if (!fs.existsSync(path.join(fileObj.rootPath, '.git'))) {
+	gitDiff(filePath) {
+		if (!fs.existsSync(filePath)) {
 			return;
 		}
-		const stat = fs.statSync(fileObj.path);
+		const stat = fs.statSync(filePath);
 		const fileKey = stat.dev + '-' + stat.ino + '-' + stat.mtimeMs;
-		if (this.diffCache[fileKey]) {
-			return this.diffCache[fileKey];
+		if (stat.isDirectory() || globalData.fileDiff[fileKey]) {
+			return;
 		}
 		const iconv = window.require('iconv-lite');
 		let line = 1;
 		let result = '';
-		let child = spawn('git', ['diff', fileObj.path], { cwd: fileObj.rootPath });
+		let child = spawn('git', ['diff', path.basename(filePath)], { cwd: path.dirname(filePath) });
 		child.stdout.on('data', data => {
 			result += iconv.decode(data, 'cp936');
 		});
@@ -116,8 +121,8 @@ export default class {
 			});
 			result = result.split(/\r\n|\n/);
 			_diff.call(this, fileDiffObj);
-			this.diffCache[fileKey] = fileDiffObj;
-			console.log(fileDiffObj);
+			globalData.fileDiff[fileKey] = fileDiffObj;
+			EventBus.$emit('git-diffed', filePath);
 		});
 
 		function _diff(fileDiffObj) {
@@ -129,6 +134,7 @@ export default class {
 					_diffBlock.call(this, fileDiffObj);
 					break;
 				}
+				line++;
 			}
 		}
 
