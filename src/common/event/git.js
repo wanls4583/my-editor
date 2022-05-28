@@ -162,7 +162,6 @@ export default class {
 					range.line = startLine;
 					range.deleted.push(text.slice(1));
 					line++;
-					startLine++;
 					deletedCount++;
 					while (line <= result.length && result[line - 1][0] === '-') {
 						range.deleted.push(result[line - 1].slice(1));
