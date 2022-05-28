@@ -105,7 +105,11 @@ export default class {
 		}
 		const stat = fs.statSync(filePath);
 		const fileKey = stat.dev + '-' + stat.ino + '-' + stat.mtimeMs;
-		if (stat.isDirectory() || globalData.fileDiff[fileKey]) {
+		if (stat.isDirectory()) {
+			return;
+		}
+		if (globalData.fileDiff[fileKey]) {
+			EventBus.$emit('git-diffed', filePath);
 			return;
 		}
 		const iconv = window.require('iconv-lite');
