@@ -179,6 +179,7 @@ export default {
 			diffLength: 0,
 			diffBeforeLine: 0,
 			diffMaxLine: 0,
+			diffStartStates: null,
 			charObj: {
 				charWidth: 7.15,
 				fullAngleCharWidth: 15,
@@ -511,11 +512,12 @@ export default {
 					if (this.type === 'diff') {
 						this.$nextTick(() => {
 							this.language = data.language;
+							this._language = data.language;
 							this.diffBeforeLine = data.diff.line - 1;
 							this.diffLength = data.diff.deleted.length;
 							this.diffMaxLine = data.maxLine;
+							this.diffStartStates = data.states; // 设置tokenizer开始状态
 							this.myContext.insertContent(data.diff.deleted.concat(data.diff.added).join('\n'));
-							this.render();
 							this.$nextTick(() => {
 								let line = 1;
 								let column = 0;
@@ -1739,10 +1741,11 @@ export default {
 			EventBus.$emit('git-diff-show', {
 				id: this.id,
 				pah: this.path,
-				diff: preDiff,
-				line: line,
 				maxLine: this.maxLine,
 				language: this.language,
+				states: preDiff.line > 1 ? this.myContext.htmls[preDiff.line - 2].states : null,
+				diff: preDiff,
+				line: line,
 				top: top,
 			});
 		},

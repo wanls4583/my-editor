@@ -8,9 +8,8 @@ import globalData from '@/data/globalData';
 import * as vsctm from 'vscode-textmate';
 import * as oniguruma from 'vscode-oniguruma';
 
-const require = window.require || window.parent.require || function () {};
-const fs = require('fs');
-const path = require('path');
+const fs = window.require('fs');
+const path = window.require('path');
 
 const regs = {
 	stringToken: /(\.|^)string(\.|$)/,
@@ -92,7 +91,7 @@ export default class {
 		return Promise.resolve();
 	}
 	initProperties(editor, context) {
-		Util.defineProperties(this, editor, ['startLine', 'diffLength', 'maxVisibleLines', 'maxLine', 'renderLine', 'folder', '$nextTick']);
+		Util.defineProperties(this, editor, ['startLine', 'diffLength', 'diffStartStates', 'maxVisibleLines', 'maxLine', 'renderLine', 'folder', '$nextTick']);
 		Util.defineProperties(this, context, ['htmls']);
 	}
 	initLanguageConifg(foldMap, data) {
@@ -307,7 +306,16 @@ export default class {
 				states: vsctm.INITIAL,
 			};
 		}
-		let states = (line > 1 && this.htmls[line - 2].states) || vsctm.INITIAL;
+		let states = null;
+		if (this.diffStartStates) {
+			if (line === this.diffLength + 1) {
+				states = this.diffStartStates;
+			} else {
+				states = this.htmls[line - 2].states || vsctm.INITIAL;
+			}
+		} else {
+			states = (this.htmls[line - 2] && this.htmls[line - 2].states) || vsctm.INITIAL;
+		}
 		let lineTokens = this.grammar.tokenizeLine(lineText, states);
 		let stateFold = this.addFold(line, lineTokens.tokens, folds);
 		lineTokens.tokens.peek().endIndex = lineText.length; //某些情况下，会大于lineText.length
