@@ -24,7 +24,6 @@ class Context {
 		this.serial = 1;
 		this.initProperties(editor);
 		this.reset();
-		this.initData();
 	}
 	initProperties(editor) {
 		Util.defineProperties(this, editor, [
@@ -56,7 +55,12 @@ class Context {
 			editor.setData(prop, value);
 		};
 	}
-	initData() {
+	reset() {
+		this.htmls = [];
+		this.fgLines = [];
+		this.lineIdMap = new Map(); //htmls的唯一标识对象
+		this.renderedIdMap = new Map(); //renderHtmls的唯一标识对象
+		this.renderedLineMap = new Map(); //renderHtmls的唯一标识对象
 		this.htmls.push({
 			lineId: this.lineId++,
 			text: '',
@@ -68,13 +72,6 @@ class Context {
 			stateFold: null,
 		});
 		this.lineIdMap.set(this.htmls[0].lineId, this.htmls[0]);
-	}
-	reset() {
-		this.htmls = [];
-		this.fgLines = [];
-		this.lineIdMap = new Map(); //htmls的唯一标识对象
-		this.renderedIdMap = new Map(); //renderHtmls的唯一标识对象
-		this.renderedLineMap = new Map(); //renderHtmls的唯一标识对象
 	}
 	setData(prop, value) {
 		if (typeof this[prop] === 'function') {

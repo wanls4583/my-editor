@@ -47,7 +47,7 @@ export default class {
 		});
 		EventBus.$on('folder-opened', () => {
 			this.editorList.empty();
-			globalData.nowId = null;
+			globalData.nowEditorId = null;
 		});
 	}
 	changeTab(id) {
@@ -57,7 +57,7 @@ export default class {
 				item.active = false;
 			});
 			tab.active = true;
-			globalData.nowId = id;
+			globalData.nowEditorId = id;
 			this.changeStatus();
 		} else {
 			this.focusNowEditor();
@@ -71,7 +71,7 @@ export default class {
 				return;
 			}
 			let editor = globalData.$mainWin.getNowEditor();
-			let tab = Util.getTabById(this.editorList, globalData.nowId);
+			let tab = Util.getTabById(this.editorList, globalData.nowEditorId);
 			EventBus.$emit(`editor-changed`, {
 				id: tab.id,
 				path: tab.path,
@@ -84,8 +84,8 @@ export default class {
 	}
 	// 检查当前打开的文件的语言
 	checkLanguage() {
-		if (globalData.nowId) {
-			let tab = Util.getTabById(this.editorList, globalData.nowId);
+		if (globalData.nowEditorId) {
+			let tab = Util.getTabById(this.editorList, globalData.nowEditorId);
 			let suffix = /\.[^\.]+$/.exec(tab.name);
 			if (!suffix) {
 				return;
@@ -102,7 +102,7 @@ export default class {
 		}
 	}
 	closeTab(id) {
-		let tab = Util.getTabById(this.editorList, id || globalData.nowId);
+		let tab = Util.getTabById(this.editorList, id || globalData.nowEditorId);
 		let index = this.editorList.indexOf(tab);
 		return new Promise((resolve, reject) => {
 			if (!tab.saved) {
@@ -116,7 +116,7 @@ export default class {
 			this.editorList.splice(index, 1);
 			contexts[id] = null;
 			if (tab.active) {
-				globalData.nowId = null;
+				globalData.nowEditorId = null;
 				tab.active = false;
 				tab = this.editorList[index] || this.editorList[index - 1];
 				if (tab) {
@@ -190,7 +190,7 @@ export default class {
 	}
 	closeToLeft(id) {
 		let editorList = [];
-		id = id || globalData.nowId;
+		id = id || globalData.nowEditorId;
 		for (let i = 0; i < this.editorList.length; i++) {
 			let tab = this.editorList[i];
 			if (tab.id !== id) {
@@ -203,7 +203,7 @@ export default class {
 	}
 	closeToRight(id) {
 		let editorList = [];
-		id = id || globalData.nowId;
+		id = id || globalData.nowEditorId;
 		for (let i = this.editorList.length - 1; i >= 0; i++) {
 			let tab = this.editorList[i];
 			if (tab.id !== id) {
@@ -217,7 +217,7 @@ export default class {
 	focusNowEditor() {
 		cancelAnimationFrame(this.closeTabTimer);
 		this.closeTabTimer = requestAnimationFrame(() => {
-			if (globalData.nowId) {
+			if (globalData.nowEditorId) {
 				globalData.$mainWin.getNowEditor().focus();
 			}
 		});

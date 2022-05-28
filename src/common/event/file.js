@@ -102,7 +102,7 @@ export default class {
 		if (!tab) {
 			let index = -1;
 			if (this.editorList.length) {
-				tab = Util.getTabById(this.editorList, globalData.nowId);
+				tab = Util.getTabById(this.editorList, globalData.nowEditorId);
 				index = this.editorList.indexOf(tab); //在当前活动标签之后新增
 			}
 			if (choseFile) {

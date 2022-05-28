@@ -168,7 +168,7 @@ export default {
 		window.test = this;
 		const theme = new Theme();
 		theme.loadTheme(globalData.nowTheme);
-		EventBus.$emit('file-open');
+		// EventBus.$emit('file-open');
 		this.loadExtensions().then((result) => {
 			let langeuages = result.languages;
 			let themes = result.themes;
@@ -236,6 +236,24 @@ export default {
 			EventBus.$on('dialog-close', () => {
 				this.closeDialog();
 			});
+			EventBus.$on('git-diff-show', (data) => {
+				this.diffVisible = true;
+				this.nowDiffEditor = data.id;
+				this.diffTop = data.top - 26;
+				this.diffName = Util.getTabById(globalData.editorList, data.id).name;
+				this.diffHeight = (data.diff.added.length + data.diff.deleted.length) * this.getNowEditor().charObj.charHight + 26;
+				if (this.diffHeight > 200) {
+					this.diffHeight = 200;
+				}
+			});
+			EventBus.$on('git-diff-scroll', (top) => {
+				this.diffTop = top;
+			});
+			EventBus.$on('editor-changed', (data) => {
+				if (!data || data.id !== this.nowEditorId) {
+					this.diffVisible = false;
+				}
+			});
 		},
 		onLeftSashBegin(e) {
 			this.leftSashMouseObj = e;
@@ -260,7 +278,7 @@ export default {
 			});
 			EventBus.$emit('cmd-menu-open', {
 				cmdList: cmdList,
-				value: globalData.nowId && this.getNowEditor().language,
+				value: globalData.nowEditorId && this.getNowEditor().language,
 			});
 		},
 		showDialog(option) {
@@ -421,13 +439,13 @@ export default {
 			return editor && editor[0];
 		},
 		getNowEditor() {
-			return this.getEditor(globalData.nowId);
+			return this.getEditor(globalData.nowEditorId);
 		},
 		getContext(id) {
 			return contexts[id];
 		},
 		getNowContext() {
-			return this.getContext(globalData.nowId);
+			return this.getContext(globalData.nowEditorId);
 		},
 	},
 };

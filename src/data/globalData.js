@@ -34,6 +34,7 @@ const globalData = {
 	skipSearchFiles: /^npm-debug.log|^yarn-debug.log|^yarn-error.log|^pnpm-debug.log|\.suo|\.ntvs|\.njsproj|\.sln|\.sw/,
 	terminalList: [],
 	editorList: [],
+	nowEditorId: null,
 	nowFileItem: null,
 	$mainWin: null,
 };

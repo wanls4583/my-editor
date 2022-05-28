@@ -145,7 +145,7 @@ export default class {
 				// 区域比较开始
 				if (text.startsWith('@@')) {
 					let res = /\-(\d+)\,(\d+) \+(\d+)\,(\d+)/.exec(text);
-					let startLine = res[1] - 0;
+					let startLine = res[3] - 0;
 					line++;
 					_diffLines.call(this, startLine, fileDiffObj);
 				} else {

@@ -9,9 +9,7 @@
 				<!-- 折叠图标 -->
 				<span :class="['iconfont', line.fold == 'open' ? 'my-fold-open icon-down1' : 'my-fold-close icon-right']" @click="onToggleFold(line.num)" class="my-fold my-center-center" v-if="line.fold"></span>
 				<template v-if="type !== 'diff'">
-					<span class="my-diff-num my-diff-add" v-if="_diffType(line.num) === 'add'"></span>
-					<span class="my-diff-num my-diff-modify" v-else-if="_diffType(line.num) === 'modify'"></span>
-					<span class="my-diff-num my-diff-delete" v-else-if="_diffType(line.num) === 'delete'"></span>
+					<span :class="['my-diff-'+_diffType(line.num)]" @click="onShowDiff(line.num)" class="my-diff-num my-diff-add" v-if="_diffType(line.num)"></span>
 				</template>
 			</div>
 		</div>
@@ -493,14 +491,24 @@ export default {
 					console.log(this.diffTree);
 				}
 			});
-			EventBus.$on('git-diff-editor', (data) => {
+			EventBus.$on('git-diff-show', (data) => {
 				if (this.type === 'diff') {
-					this.myContext.reset();
-					this.history.reset();
-					this.diffBeforeLine = data.line - 1;
-					this.diffLength = data.deleted.length;
-					this.insertContent(data.deleted.concat(data.added).join('\n'));
+					this.$nextTick(() => {
+						this.showEditor(); //先设置字体大小等参数
+						requestAnimationFrame(() => {
+							this.myContext.reset();
+							this.history.reset();
+							this.diffBeforeLine = data.diff.line - 1;
+							this.diffLength = data.diff.deleted.length;
+							this.language = data.language;
+							this.cursor.setCursorPos({ line: 1, column: 0 });
+							this.myContext.insertContent(data.diff.deleted.concat(data.diff.added).join('\n'));
+						});
+					});
 				}
+			});
+			EventBus.$on('git-diff-close', () => {
+				this.diffLine = 0;
 			});
 		},
 		unbindEvent() {
@@ -1170,7 +1178,7 @@ export default {
 			let contentHeight = 0;
 			maxLine = this.folder.getRelativeLine(maxLine);
 			contentHeight = maxLine * this.charObj.charHight;
-			if (this.scrollerArea) {
+			if (this.scrollerArea.height) {
 				contentHeight += this.scrollerArea.height - this.charObj.charHight;
 			}
 			this.contentHeight = contentHeight + 'px';
@@ -1577,6 +1585,10 @@ export default {
 			this.scrollTop = e.target.scrollTop;
 			this.scrollLeft = e.target.scrollLeft;
 			this.$refs.scroller.scrollLeft = this.scrollLeft;
+			if (this.diffLine) {
+				let top = (this.folder.getRelativeLine(this.diffLine) - 1) * this.charObj.charHight - this.scrollTop;
+				EventBus.$emit('git-diff-scroll', top);
+			}
 		},
 		// 滚动滚轮
 		onWheel(e) {
@@ -1675,6 +1687,18 @@ export default {
 			}
 			this.fSearcher.clearSearch();
 			this.searchVisible = false;
+		},
+		onShowDiff(line) {
+			let preDiff = Util.getPrevDiff(this.diffTree, line);
+			let top = (this.folder.getRelativeLine(line) - 1) * this.charObj.charHight - this.scrollTop;
+			this.diffLine = line;
+			EventBus.$emit('git-diff-show', {
+				id: this.id,
+				pah: this.path,
+				diff: preDiff,
+				language: this.language,
+				top: top,
+			});
 		},
 	},
 };
