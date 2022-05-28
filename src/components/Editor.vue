@@ -492,43 +492,62 @@ export default {
 					this._theme = theme;
 				})
 			);
-			EventBus.$on('git-diffed', (filePath) => {
-				if (filePath === this.path) {
-					const fs = window.require('fs');
-					const stat = fs.statSync(filePath);
-					const fileKey = stat.dev + '-' + stat.ino + '-' + stat.mtimeMs;
-					if (globalData.fileDiff[fileKey]) {
-						this.diffTree = globalData.fileDiff[fileKey];
+			EventBus.$on(
+				'git-diffed',
+				(this.initEventBus.fn5 = (filePath) => {
+					if (filePath === this.path) {
+						const fs = window.require('fs');
+						const stat = fs.statSync(filePath);
+						const fileKey = stat.dev + '-' + stat.ino + '-' + stat.mtimeMs;
+						if (globalData.fileDiff[fileKey]) {
+							this.diffTree = globalData.fileDiff[fileKey];
+						}
 					}
-				}
-			});
-			EventBus.$on('git-diff-show', (data) => {
-				if (this.type === 'diff') {
-					this.$nextTick(() => {
-						this.initRenderData(); //设置字体大小等参数
-						this.myContext.reset();
-						this.history.reset();
-						this.startLine = 1;
-						this.language = data.language;
-						this.diffBeforeLine = data.diff.line - 1;
-						this.diffLength = data.diff.deleted.length;
-						this.diffMaxLine = data.maxLine;
-						this.cursor.setCursorPos({ line: 1, column: 0 });
-						this.myContext.insertContent(data.diff.deleted.concat(data.diff.added).join('\n'));
-						this.render();
-						this.$nextTick(()=>{
-							if (data.diff.added.length) {
-								this.cursor.setCursorPos({ line: this.diffLength + 1, column: data.diff.added[0].length });
-							} else {
-								this.cursor.setCursorPos({ line: 1, column: data.diff.deleted[0].length });
-							}
-						})
-					});
-				}
-			});
-			EventBus.$on('git-diff-close', () => {
-				this.diffLine = 0;
-			});
+				})
+			);
+			EventBus.$on(
+				'git-diff-editor',
+				(this.initEventBus.fn6 = (data) => {
+					if (this.type === 'diff') {
+						this.$nextTick(() => {
+							this.language = data.language;
+							this.diffBeforeLine = data.diff.line - 1;
+							this.diffLength = data.diff.deleted.length;
+							this.diffMaxLine = data.maxLine;
+							this.myContext.insertContent(data.diff.deleted.concat(data.diff.added).join('\n'));
+							this.render();
+							this.$nextTick(() => {
+								let line = 1;
+								let column = 0;
+								if (data.diff.added.length) {
+									let delta = data.line - data.diff.line;
+									// 删除的行数比新增行数多
+									if (delta > data.diff.added.length - 1) {
+										line = delta + 1;
+										column = data.diff.deleted[delta].length;
+									} else {
+										line = this.diffLength + delta + 1;
+										column = data.diff.added[delta].length;
+									}
+								} else {
+									line = this.diffLength;
+									column = data.diff.deleted.peek().length;
+								}
+								let scrollTop = (line - 1) * this.charObj.charHight;
+								if (scrollTop > this.contentHeight - this.scrollerArea.height) {
+									scrollTop = scrollTop > this.contentHeight - this.scrollerArea.height;
+								}
+								this.$nextTick(() => {
+									this.$refs.scroller.scrollTop = scrollTop;
+									this.scrollTop = scrollTop;
+									this.setStartLine(scrollTop);
+									this.cursor.setCursorPos({ line: line, column: column });
+								});
+							});
+						});
+					}
+				})
+			);
 		},
 		unbindEvent() {
 			$(document).unbind('mousemove', this.initEvent.fn1);
@@ -537,6 +556,8 @@ export default {
 			EventBus.$off('tab-size-change', this.initEventBus.fn2);
 			EventBus.$off('close-menu', this.initEventBus.fn3);
 			EventBus.$off('theme-changed', this.initEventBus.fn4);
+			EventBus.$off('git-diffed', this.initEventBus.fn5);
+			EventBus.$off('git-diff-editor', this.initEventBus.fn6);
 		},
 		showEditor() {
 			// 元素暂时不可见
@@ -1170,10 +1191,13 @@ export default {
 						return;
 					}
 					let height = this.folder.getRelativeLine(nowCursorPos.line + 1) * this.charObj.charHight;
-					if (height > this.scrollTop + this.scrollerArea.height && height <= this.contentHeight) {
+					if (height > this.scrollTop + this.scrollerArea.height) {
 						requestAnimationFrame(() => {
-							this.setStartLine(height - this.scrollerArea.height);
-							this.$refs.scroller.scrollTop = height - this.scrollerArea.height;
+							height = height > this.contentHeight ? this.contentHeight : height;
+							height -= this.scrollerArea.height;
+							this.setStartLine(height);
+							this.scrollTop = height;
+							this.$refs.scroller.scrollTop = height;
 						});
 					} else if (nowCursorPos.line <= this.startLine) {
 						requestAnimationFrame(() => {
@@ -1716,6 +1740,7 @@ export default {
 				id: this.id,
 				pah: this.path,
 				diff: preDiff,
+				line: line,
 				maxLine: this.maxLine,
 				language: this.language,
 				top: top,

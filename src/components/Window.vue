@@ -29,7 +29,7 @@
 				<template v-for="item in editorList">
 					<editor :active="item.active" :id="item.id" :key="item.id" :path="item.path" :ref="'editor' + item.id" v-show="item.active"></editor>
 				</template>
-				<div :style="{top: diffTop + 'px', height: diffHeight+'px'}" class="my-diff-editor" ref="diff" v-show="diffVisible">
+				<div :style="{top: diffTop + 'px', height: diffHeight+'px'}" class="my-diff-editor" ref="diff" v-if="diffVisible">
 					<div class="my-diff-bar">
 						<span>{{diffName}}</span>
 						<div class="bar-right">
@@ -245,6 +245,9 @@ export default {
 				if (this.diffHeight > 200) {
 					this.diffHeight = 200;
 				}
+				this.$nextTick(() => {
+					EventBus.$emit('git-diff-editor', data);
+				});
 			});
 			EventBus.$on('git-diff-scroll', (top) => {
 				this.diffTop = top;
