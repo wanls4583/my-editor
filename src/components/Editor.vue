@@ -260,17 +260,11 @@ export default {
 				}
 				if (preDiff.deleted.length) {
 					if (preDiff.added.length) {
-						if (preDiff.added.length >= preDiff.deleted.length) {
+						if (line < preDiff.line + preDiff.added.length) {
 							if (line < preDiff.line + preDiff.deleted.length) {
 								type = 'modify';
-							} else if (line < preDiff.line + preDiff.added.length) {
+							} else {
 								type = 'add';
-							}
-						} else {
-							if (line < preDiff.line + preDiff.added.length) {
-								type = 'modify';
-							} else if (line === preDiff.line + preDiff.added.length) {
-								type = 'delete';
 							}
 						}
 					} else if (preDiff.line === line) {
@@ -523,14 +517,8 @@ export default {
 								let column = 0;
 								if (data.diff.added.length) {
 									let delta = data.line - data.diff.line;
-									// 删除的行数比新增行数多
-									if (delta > data.diff.added.length - 1) {
-										line = delta + 1;
-										column = data.diff.deleted[delta].length;
-									} else {
-										line = this.diffLength + delta + 1;
-										column = data.diff.added[delta].length;
-									}
+									line = this.diffLength + delta + 1;
+									column = data.diff.added[delta].length;
 								} else {
 									line = this.diffLength;
 									column = data.diff.deleted.peek().length;
