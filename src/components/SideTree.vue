@@ -249,16 +249,17 @@ export default {
 				if (!this.watchIdMap[item.id]) {
 					this.watchIdMap[item.id] = fs.watch(item.path, { recursive: true }, (event, filename) => {
 						if (filename) {
-							let changedPath = path.dirname(path.join(item.path, filename));
 							if (event === 'rename') {
-								let treeItem = Util.getFileItemByPath(this.list, changedPath);
+								let dirPath = path.dirname(path.join(item.path, filename));
+								let treeItem = Util.getFileItemByPath(this.list, dirPath);
 								if (treeItem && (treeItem.children.length || treeItem.open)) {
 									this.refreshDir(treeItem);
 								}
 							} else if (event === 'change') {
-								let editorTab = Util.getTabByPath(changedPath);
+								let filePath = path.join(item.path, filename);
+								let editorTab = Util.getTabByPath(globalData.editorList, filePath);
 								if (editorTab) {
-									EventBus.$emit('git-diff', changedPath);
+									EventBus.$emit('git-diff', filePath);
 								}
 							}
 							if (filename != '.git' && !filename.startsWith('.git' + path.sep)) {
