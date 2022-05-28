@@ -11,10 +11,30 @@
 	&-status-modified {
 		color: var(--my-gitDecoration-modifiedResourceForeground);
 	}
-    &-status-renamed {
+	&-status-renamed {
 		color: var(--my-gitDecoration-renamedResourceForeground);
 	}
 	&-status-deleted {
 		color: var(--my-gitDecoration-deletedResourceForeground);
+	}
+	&-diff-num {
+		position: absolute;
+		top: 0;
+		height: 100%;
+		width: 3px;
+		right: 16px;
+		cursor: pointer;
+	}
+	&-num:hover .my-diff-num {
+		transform: scaleX(2.5);
+	}
+	&-diff-add {
+		background-color: var(--my-gitDecoration-addedResourceForeground);
+	}
+	&-diff-modify {
+		background-color: var(--my-gitDecoration-modifiedResourceForeground);
+	}
+	&-diff-delete {
+		background-color: var(--my-gitDecoration-deletedResourceForeground);
 	}
 }

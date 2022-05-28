@@ -8,9 +8,11 @@
 				<span class="num">{{ _num(line.num) }}</span>
 				<!-- 折叠图标 -->
 				<span :class="['iconfont', line.fold == 'open' ? 'my-fold-open icon-down1' : 'my-fold-close icon-right']" @click="onToggleFold(line.num)" class="my-fold my-center-center" v-if="line.fold"></span>
-				<span v-if="_addLine(line.num)"></span>
-				<span v-else-if="_modifyLine(line.num)"></span>
-				<span v-else-if="_deleteLine(line.num)"></span>
+				<template v-if="type !== 'diff'">
+					<span class="my-diff-num my-diff-add" v-if="_diffType(line.num) === 'add'"></span>
+					<span class="my-diff-num my-diff-modify" v-else-if="_diffType(line.num) === 'modify'"></span>
+					<span class="my-diff-num my-diff-delete" v-else-if="_diffType(line.num) === 'delete'"></span>
+				</template>
 			</div>
 		</div>
 		<div :style="{ 'box-shadow': _leftShadow }" class="my-content-wrap">
@@ -140,14 +142,17 @@ export default {
 		Tip,
 	},
 	props: {
-		id: {
-			type: String,
-		},
+		id: String,
+		path: String,
+		type: String,
 		diffLength: {
 			type: Number,
 			default: 0,
 		},
-		path: '',
+		diffBeforeLine: {
+			type: Number,
+			default: 0,
+		},
 		active: {
 			type: Boolean,
 			default: false,
@@ -243,17 +248,42 @@ export default {
 	computed: {
 		_num() {
 			return (line) => {
-				return line - this.diffLength > 0 ? line - this.diffLength : '';
+				if (this.type === 'diff') {
+					return line - this.diffLength > 0 ? line - this.diffLength + this.diffBeforeLine : '';
+				}
+				return line;
 			};
 		},
-		_addLine() {
-			return (line) => {};
-		},
-		_modifyLine() {
-			return (line) => {};
-		},
-		_deleteLine() {
-			return (line) => {};
+		_diffType() {
+			return (line) => {
+				let type = '';
+				let preDiff = this.getPrevDiff(line);
+				if (!preDiff) {
+					return '';
+				}
+				if (preDiff.deleted.length) {
+					if (preDiff.added.length) {
+						if (preDiff.added.length >= preDiff.deleted.length) {
+							if (line < preDiff.line + preDiff.deleted.length) {
+								type = 'modify';
+							} else if (line < preDiff.line + preDiff.added.length) {
+								type = 'add';
+							}
+						} else {
+							if (line < preDiff.line + preDiff.added.length) {
+								type = 'modify';
+							} else if (line === preDiff.line + preDiff.added.length) {
+								type = 'delete';
+							}
+						}
+					} else if (preDiff.line === line) {
+						type = 'delete';
+					}
+				} else if (line < preDiff.line + preDiff.added.length) {
+					type = 'add';
+				}
+				return type;
+			};
 		},
 		_numTop() {
 			return this.top - this.charObj.charHight + 'px';
@@ -1259,6 +1289,19 @@ export default {
 				line: line,
 				column: column,
 			};
+		},
+		getPrevDiff(line) {
+			let result = null;
+			if (this.diffTree) {
+				let it = this.diffTree.search({ line: line });
+				if (it) {
+					result = it.next();
+				} else {
+					it = this.diffTree.search({ line: line }, null, true);
+					result = it && it.prev();
+				}
+			}
+			return result;
 		},
 		// 获取光标真实位置
 		getExactLeft(cursorPos) {

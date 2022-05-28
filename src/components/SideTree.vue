@@ -248,20 +248,22 @@ export default {
 			this.list.forEach((item) => {
 				if (!this.watchIdMap[item.id]) {
 					this.watchIdMap[item.id] = fs.watch(item.path, { recursive: true }, (event, filename) => {
-						let changedPath = path.dirname(path.join(item.path, filename));
-						if (event === 'rename') {
-							let treeItem = Util.getFileItemByPath(this.list, changedPath);
-							if (treeItem && (treeItem.children.length || treeItem.open)) {
-								this.refreshDir(treeItem);
+						if (filename) {
+							let changedPath = path.dirname(path.join(item.path, filename));
+							if (event === 'rename') {
+								let treeItem = Util.getFileItemByPath(this.list, changedPath);
+								if (treeItem && (treeItem.children.length || treeItem.open)) {
+									this.refreshDir(treeItem);
+								}
+							} else if (event === 'change') {
+								let editorTab = Util.getTabByPath(changedPath);
+								if (editorTab) {
+									EventBus.$emit('git-diff', changedPath);
+								}
 							}
-						} else if (event === 'change') {
-							let editorTab = Util.getTabByPath(changedPath);
-							if (editorTab) {
-								EventBus.$emit('git-diff', changedPath);
+							if (filename != '.git' && !filename.startsWith('.git' + path.sep)) {
+								EventBus.$emit('git-status', item);
 							}
-						}
-						if (filename && filename != '.git' && !filename.startsWith('.git' + path.sep)) {
-							EventBus.$emit('git-status', item);
 						}
 					});
 				}

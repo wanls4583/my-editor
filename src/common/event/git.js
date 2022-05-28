@@ -111,6 +111,7 @@ export default class {
 		const iconv = window.require('iconv-lite');
 		let line = 1;
 		let result = '';
+		let deletedCount = 0;
 		let child = spawn('git', ['diff', path.basename(filePath)], { cwd: path.dirname(filePath) });
 		child.stdout.on('data', data => {
 			result += iconv.decode(data, 'cp936');
@@ -154,39 +155,36 @@ export default class {
 		}
 
 		function _diffLines(startLine, fileDiffObj) {
-			let delTexts = [];
-			let addTexts = [];
 			while (line <= result.length) {
-				let range = {};
+				let range = { deleted: [], added: [], deletedCount: deletedCount };
 				let text = result[line - 1];
 				if (text[0] === '-') {
 					range.line = startLine;
-					delTexts.push(text.slice(1));
+					range.deleted.push(text.slice(1));
 					line++;
 					startLine++;
+					deletedCount++;
 					while (line <= result.length && result[line - 1][0] === '-') {
-						delTexts.push(result[line - 1].slice(1));
+						range.deleted.push(result[line - 1].slice(1));
 						line++;
+						deletedCount++;
 					}
 					while (line <= result.length && result[line - 1][0] === '+') {
-						addTexts.push(result[line - 1].slice(1));
+						range.added.push(result[line - 1].slice(1));
 						line++;
 						startLine++;
 					}
-					range.deleted = delTexts;
-					range.added = addTexts;
 					fileDiffObj.insert(range);
 				} else if (text[0] === '+') {
 					range.line = startLine;
-					addTexts.push(text.slice(1));
+					range.added.push(text.slice(1));
 					line++;
 					startLine++;
 					while (line <= result.length && result[line - 1][0] === '+') {
-						addTexts.push(result[line - 1].slice(1));
+						range.added.push(result[line - 1].slice(1));
 						line++;
 						startLine++;
 					}
-					range.added = addTexts;
 					fileDiffObj.insert(range);
 				} else if (text[0] === ' ') {
 					line++;
