@@ -25,10 +25,22 @@
 			<!-- tab栏 -->
 			<editor-bar :editorList="editorList" v-show="editorList.length"></editor-bar>
 			<!-- 编辑区 -->
-			<div class="my-editor-groups" style="flex-grow:1;overflow:hidden;">
+			<div class="my-editor-groups">
 				<template v-for="item in editorList">
 					<editor :active="item.active" :id="item.id" :key="item.id" :path="item.path" :ref="'editor' + item.id" v-show="item.active"></editor>
 				</template>
+				<div :style="{top: diffTop + 'px', height: diffHeight+'px'}" class="my-diff-editor" ref="diff" v-show="diffVisible">
+					<div class="my-diff-bar">
+						<span>{{diffName}}</span>
+						<div class="bar-right">
+							<div @click="onCloseDiff" class="bar-item my-hover-danger">
+								<span class="iconfont icon-close" style="font-size: 18px"></span>
+							</div>
+						</div>
+					</div>
+					<editor :active="true" style="flex:1" type="diff"></editor>
+					<div @mousedown="onDiffBottomSashBegin" class="my-sash-h"></div>
+				</div>
 			</div>
 			<template v-if="terminalVisible && terminalList.length">
 				<div @mousedown="onTerminalSashBegin" class="my-sash-h"></div>
@@ -96,17 +108,21 @@ export default {
 			topBarHeight: 35,
 			editorList: globalData.editorList,
 			terminalList: globalData.terminalList,
+			dialogVisible: false,
 			dialogTilte: '',
 			dialogContent: '',
-			dialogVisible: false,
-			terminalVisible: false,
 			dialogBtns: [],
 			dialogIcon: '',
 			dialogIconColor: '',
+			terminalVisible: false,
+			terminalHeight: 300,
+			diffVisible: false,
+			diffName: '',
+			diffHeight: 200,
+			diffTop: 0,
 			themeType: 'dark',
 			activity: 'files',
 			leftWidth: 400,
-			terminalHeight: 300,
 			mode: remote ? 'app' : 'mode',
 		};
 	},
@@ -178,15 +194,24 @@ export default {
 						this.leftSashMouseObj = e;
 					}
 					if (this.terminaSashMouseObj) {
-						let width = (this.terminalHeight -= e.clientY - this.terminaSashMouseObj.clientY);
-						width = width > 0 ? width : 0;
-						this.terminalHeight = width;
+						let height = (this.terminalHeight -= e.clientY - this.terminaSashMouseObj.clientY);
+						height = height > 0 ? height : 0;
+						this.terminalHeight = height;
 						this.terminaSashMouseObj = e;
+					}
+					if (this.diffBottomSashMouseObj) {
+						let height = (this.diffHeight += e.clientY - this.diffBottomSashMouseObj.clientY);
+						let pHeight = $(this.$refs.diff).parent()[0].clientHeight;
+						height = height > 50 ? height : 50;
+						height = this.diffTop + height > pHeight ? pHeight - this.diffTop : height;
+						this.diffHeight = height;
+						this.diffBottomSashMouseObj = e;
 					}
 				})
 				.on('mouseup', (e) => {
 					this.leftSashMouseObj = null;
 					this.terminaSashMouseObj = null;
+					this.diffBottomSashMouseObj = null;
 				})
 				.on('keydown', (e) => {
 					this.winShorcut.onKeydown(e);
@@ -218,6 +243,9 @@ export default {
 		onTerminalSashBegin(e) {
 			this.terminaSashMouseObj = e;
 		},
+		onDiffBottomSashBegin(e) {
+			this.diffBottomSashMouseObj = e;
+		},
 		// 点击编辑器
 		onWindMouseDown() {
 			EventBus.$emit('close-menu');
@@ -245,6 +273,9 @@ export default {
 		},
 		closeDialog() {
 			this.dialogVisible = false;
+		},
+		onCloseDiff() {
+			this.diffVisible = false;
 		},
 		// 加载语言支持
 		loadExtensions() {

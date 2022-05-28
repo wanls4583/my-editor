@@ -145,14 +145,6 @@ export default {
 		id: String,
 		path: String,
 		type: String,
-		diffLength: {
-			type: Number,
-			default: 0,
-		},
-		diffBeforeLine: {
-			type: Number,
-			default: 0,
-		},
 		active: {
 			type: Boolean,
 			default: false,
@@ -186,6 +178,8 @@ export default {
 			activeLineBg: true,
 			searchNow: 1,
 			searchCount: 0,
+			diffLength: 0,
+			diffBeforeLine: 0,
 			charObj: {
 				charWidth: 7.15,
 				fullAngleCharWidth: 15,
@@ -257,9 +251,12 @@ export default {
 		_diffType() {
 			return (line) => {
 				let type = '';
-				let preDiff = this.getPrevDiff(line);
-				if (!preDiff) {
-					return '';
+				let preDiff = null;
+				if (this.type === 'diff') {
+					return;
+				}
+				if (!(preDiff = Util.getPrevDiff(this.diffTree, line))) {
+					return;
 				}
 				if (preDiff.deleted.length) {
 					if (preDiff.added.length) {
@@ -342,6 +339,9 @@ export default {
 		},
 		myContext() {
 			return contexts[this.id];
+		},
+		editAble() {
+			return this.type !== 'diff';
 		},
 	},
 	watch: {
@@ -491,6 +491,15 @@ export default {
 						this.diffTree = globalData.fileDiff[fileKey];
 					}
 					console.log(this.diffTree);
+				}
+			});
+			EventBus.$on('git-diff-editor', (data) => {
+				if (this.type === 'diff') {
+					this.myContext.reset();
+					this.history.reset();
+					this.diffBeforeLine = data.line - 1;
+					this.diffLength = data.deleted.length;
+					this.insertContent(data.deleted.concat(data.added).join('\n'));
 				}
 			});
 		},
@@ -1290,19 +1299,6 @@ export default {
 				column: column,
 			};
 		},
-		getPrevDiff(line) {
-			let result = null;
-			if (this.diffTree) {
-				let it = this.diffTree.search({ line: line });
-				if (it) {
-					result = it.next();
-				} else {
-					it = this.diffTree.search({ line: line }, null, true);
-					result = it && it.prev();
-				}
-			}
-			return result;
-		},
 		// 获取光标真实位置
 		getExactLeft(cursorPos) {
 			let lineObj = this.myContext.htmls[cursorPos.line - 1];
@@ -1589,6 +1585,9 @@ export default {
 		},
 		// 中文输入开始
 		onCompositionstart() {
+			if (!this.editAble) {
+				return;
+			}
 			clearTimeout(this.compositionendTimer);
 			this.compositionstart = true;
 		},
@@ -1609,6 +1608,9 @@ export default {
 		},
 		// 输入事件
 		onInput() {
+			if (!this.editAble) {
+				return;
+			}
 			if (!this.compositionstart) {
 				let text = this.$refs.textarea.value || '';
 				if (text) {
@@ -1627,10 +1629,13 @@ export default {
 		onCut(e) {
 			let mime = window.clipboardData ? 'Text' : 'text/plain';
 			let clipboardData = e.clipboardData || window.clipboardData;
-			clipboardData.setData(mime, this.myContext.getCopyText(true));
+			clipboardData.setData(mime, this.myContext.getCopyText(this.editAble));
 		},
 		// 粘贴事件
 		onPaste(e) {
+			if (!this.editAble) {
+				return;
+			}
 			let mime = window.clipboardData ? 'Text' : 'text/plain';
 			let clipboardData = e.clipboardData || window.clipboardData;
 			let copyText = '';
@@ -1647,6 +1652,9 @@ export default {
 		},
 		// 键盘按下事件
 		onKeydown(e) {
+			if (!this.editAble) {
+				return;
+			}
 			this.shortcut.onKeydown(e);
 		},
 		// 搜索框首次搜索

@@ -37,8 +37,10 @@ export default class {
 		});
 		EventBus.$on('editor-content-change', data => {
 			let tab = Util.getTabById(this.editorList, data.id);
-			tab.saved = false;
-			this.editorList.splice();
+			if (tab) {
+				tab.saved = false;
+				this.editorList.splice();
+			}
 		});
 		EventBus.$on('language-check', () => {
 			this.checkLanguage();

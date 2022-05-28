@@ -364,6 +364,19 @@ class Util {
 			statusColor: statusColor,
 		};
 	}
+	static getPrevDiff(diffTree, line) {
+		let result = null;
+		if (diffTree) {
+			let it = diffTree.search({ line: line });
+			if (it) {
+				result = it.next();
+			} else {
+				it = diffTree.search({ line: line }, null, true);
+				result = it && it.prev();
+			}
+		}
+		return result;
+	}
 	static getMemnuPos(e, menuEl, areaEl) {
 		let menuWidth = 0;
 		let menuHeight = 0;

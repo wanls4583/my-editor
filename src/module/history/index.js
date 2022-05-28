@@ -25,6 +25,9 @@ export default class {
             'replace',
         ]);
     }
+    reset() {
+        this.history = [];
+    }
     // 撤销操作
     undo() {
         if (this.history.index > 0) {

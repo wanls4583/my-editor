@@ -22,12 +22,8 @@ class Context {
 	constructor(editor) {
 		this.lineId = Number.MIN_SAFE_INTEGER;
 		this.serial = 1;
-		this.htmls = [];
-		this.fgLines = [];
-		this.lineIdMap = new Map(); //htmls的唯一标识对象
-		this.renderedIdMap = new Map(); //renderHtmls的唯一标识对象
-		this.renderedLineMap = new Map(); //renderHtmls的唯一标识对象
 		this.initProperties(editor);
+		this.reset();
 		this.initData();
 	}
 	initProperties(editor) {
@@ -72,6 +68,13 @@ class Context {
 			stateFold: null,
 		});
 		this.lineIdMap.set(this.htmls[0].lineId, this.htmls[0]);
+	}
+	reset() {
+		this.htmls = [];
+		this.fgLines = [];
+		this.lineIdMap = new Map(); //htmls的唯一标识对象
+		this.renderedIdMap = new Map(); //renderHtmls的唯一标识对象
+		this.renderedLineMap = new Map(); //renderHtmls的唯一标识对象
 	}
 	setData(prop, value) {
 		if (typeof this[prop] === 'function') {

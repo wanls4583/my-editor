@@ -1,4 +1,10 @@
 .my {
+	&-editor-groups {
+		flex-grow: 1;
+		position: relative;
+		overflow: hidden;
+	}
+
 	&-editor-wrap {
 		position: relative;
 		width: 100%;
