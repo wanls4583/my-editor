@@ -239,9 +239,9 @@ export default {
 			EventBus.$on('git-diff-show', (data) => {
 				this.diffVisible = true;
 				this.nowDiffEditor = data.id;
-				this.diffTop = data.top - 26;
+				this.diffTop = data.top - 27;
 				this.diffName = Util.getTabById(globalData.editorList, data.id).name;
-				this.diffHeight = (data.diff.added.length + data.diff.deleted.length) * this.getNowEditor().charObj.charHight + 26;
+				this.diffHeight = (data.diff.added.length + data.diff.deleted.length) * this.getNowEditor().charObj.charHight + 28 + 14;
 				if (this.diffHeight > 200) {
 					this.diffHeight = 200;
 				}
