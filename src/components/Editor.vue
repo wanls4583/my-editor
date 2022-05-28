@@ -18,7 +18,7 @@
 			<div @scroll="onScroll" class="my-scroller my-scroll-overlay" ref="scroller">
 				<!-- 内如区域 -->
 				<div
-					:style="{ minWidth: _contentMinWidth, height: contentHeight }"
+					:style="{ minWidth: _contentMinWidth, height: _contentHeight }"
 					@mousedown="onContentMdown"
 					@mouseleave="onContentMLeave"
 					@mousemove="onContentMmove"
@@ -308,6 +308,9 @@ export default {
 			width = this.scrollerArea.width > width ? this.scrollerArea.width : width;
 			return width + 'px';
 		},
+		_contentHeight() {
+			return typeof this.contentHeight === 'number' ? this.contentHeight + 'px' : this.contentHeight;
+		},
 		_textAreaPos() {
 			let left = this.cursorLeft;
 			let top = this.top;
@@ -426,6 +429,10 @@ export default {
 			this.wordPattern = Util.getWordPattern(this.language);
 			this.wordPattern = new RegExp(`^(${this.wordPattern.source})`);
 		},
+		initRenderData() {
+			this.charObj = Util.getCharWidth(this.$refs.content, '<div class="my-line"><div class="my-code">[dom]</div></div>');
+			this.maxVisibleLines = Math.ceil(this.$refs.scroller.clientHeight / this.charObj.charHight) + 1;
+		},
 		// 初始化文档事件
 		initEvent() {
 			this.initEvent.fn1 = (e) => {
@@ -493,30 +500,29 @@ export default {
 					if (globalData.fileDiff[fileKey]) {
 						this.diffTree = globalData.fileDiff[fileKey];
 					}
-					console.log(this.diffTree);
 				}
 			});
 			EventBus.$on('git-diff-show', (data) => {
 				if (this.type === 'diff') {
 					this.$nextTick(() => {
-						this.showEditor(); //设置字体大小等参数
-						this.$nextTick(() => {
-							this.myContext.reset();
-							this.history.reset();
-							this.startLine = 1;
-							this.language = data.language;
-							this.diffBeforeLine = data.diff.line - 1;
-							this.diffLength = data.diff.deleted.length;
-							this.diffMaxLine = data.maxLine;
-							this.cursor.setCursorPos({ line: 1, column: 0 });
-							this.myContext.insertContent(data.diff.deleted.concat(data.diff.added).join('\n'));
-							this.render();
+						this.initRenderData(); //设置字体大小等参数
+						this.myContext.reset();
+						this.history.reset();
+						this.startLine = 1;
+						this.language = data.language;
+						this.diffBeforeLine = data.diff.line - 1;
+						this.diffLength = data.diff.deleted.length;
+						this.diffMaxLine = data.maxLine;
+						this.cursor.setCursorPos({ line: 1, column: 0 });
+						this.myContext.insertContent(data.diff.deleted.concat(data.diff.added).join('\n'));
+						this.render();
+						this.$nextTick(()=>{
 							if (data.diff.added.length) {
 								this.cursor.setCursorPos({ line: this.diffLength + 1, column: data.diff.added[0].length });
 							} else {
 								this.cursor.setCursorPos({ line: 1, column: data.diff.deleted[0].length });
 							}
-						});
+						})
 					});
 				}
 			});
@@ -533,10 +539,13 @@ export default {
 			EventBus.$off('theme-changed', this.initEventBus.fn4);
 		},
 		showEditor() {
+			// 元素暂时不可见
+			if (!this.$refs.scroller.clientHeight) {
+				return;
+			}
 			this.language = this._language || '';
 			this.theme = this._theme || '';
-			this.charObj = Util.getCharWidth(this.$refs.content, '<div class="my-line"><div class="my-code">[dom]</div></div>');
-			this.maxVisibleLines = Math.ceil(this.$refs.scroller.clientHeight / this.charObj.charHight) + 1;
+			this.initRenderData();
 			this.render();
 			this.focus();
 			// 获取文件git修改记录
@@ -1161,7 +1170,7 @@ export default {
 						return;
 					}
 					let height = this.folder.getRelativeLine(nowCursorPos.line + 1) * this.charObj.charHight;
-					if (height > this.scrollTop + this.scrollerArea.height && height < this.contentHeight) {
+					if (height > this.scrollTop + this.scrollerArea.height && height <= this.contentHeight) {
 						requestAnimationFrame(() => {
 							this.setStartLine(height - this.scrollerArea.height);
 							this.$refs.scroller.scrollTop = height - this.scrollerArea.height;
@@ -1192,7 +1201,7 @@ export default {
 			} else if (this.scrollerArea.height) {
 				contentHeight += this.scrollerArea.height - this.charObj.charHight;
 			}
-			this.contentHeight = contentHeight + 'px';
+			this.contentHeight = contentHeight;
 		},
 		setStartLine(scrollTop) {
 			let startLine = 1;
