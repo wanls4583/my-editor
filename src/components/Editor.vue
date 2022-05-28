@@ -30,7 +30,7 @@
 						<div
 							:class="{ 'my-active': _activeLine(line.num) }"
 							:data-line="line.num"
-							:id="'line_' + line.num"
+							:id="id+'_line_' + line.num"
 							:key="line.num"
 							:style="{ height: _lineHeight, 'line-height': _lineHeight }"
 							class="my-line"
@@ -1368,7 +1368,7 @@ export default {
 					break;
 				}
 			}
-			let $token = $('#line_' + cursorPos.line)
+			let $token = $(`#${this.id}_line_${cursorPos.line}`)
 				.children('.my-code')
 				.children('span[data-column="' + token.startIndex + '"]');
 			if (!$token.length) {
