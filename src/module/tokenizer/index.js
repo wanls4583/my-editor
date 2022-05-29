@@ -91,7 +91,7 @@ export default class {
 		return Promise.resolve();
 	}
 	initProperties(editor, context) {
-		Util.defineProperties(this, editor, ['startLine', 'diffLength', 'diffStartStates', 'maxVisibleLines', 'maxLine', 'renderLine', 'folder', '$nextTick']);
+		Util.defineProperties(this, editor, ['startLine', 'diffObj', 'maxVisibleLines', 'maxLine', 'renderLine', 'folder', '$nextTick']);
 		Util.defineProperties(this, context, ['htmls']);
 	}
 	initLanguageConifg(foldMap, data) {
@@ -293,7 +293,7 @@ export default class {
 	tokenizeLine(line) {
 		let lineText = this.htmls[line - 1].text;
 		let folds = [];
-		if (lineText.length > 10000 || !this.scopeName || line <= this.diffLength) {
+		if (lineText.length > 10000 || !this.scopeName || line <= this.diffObj.deletedLength) {
 			return {
 				tokens: [
 					{
@@ -307,9 +307,9 @@ export default class {
 			};
 		}
 		let states = null;
-		if (this.diffStartStates) {
-			if (line === this.diffLength + 1) {
-				states = this.diffStartStates;
+		if (this.diffObj.states) {
+			if (line === this.diffObj.deletedLength + 1) {
+				states = this.diffObj.states;
 			} else {
 				states = this.htmls[line - 2].states || vsctm.INITIAL;
 			}

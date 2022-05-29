@@ -1,9 +1,9 @@
 <template>
-	<div @contextmenu.prevent.stop="onContextmenu" @selectstart.prevent @wheel.prevent="onWheel" class="my-editor-wrap" ref="editor">
+	<div @contextmenu.prevent.stop="onContextmenu" @selectstart.prevent @wheel.stop="onWheel" class="my-editor-wrap" ref="editor">
 		<!-- 行号 -->
 		<div :style="{ top: _numTop }" class="my-nums" v-if="active">
 			<!-- 占位行号，避免行号宽度滚动时变化 -->
-			<div class="my-num" style="visibility: hidden">{{ diffMaxLine || maxLine }}</div>
+			<div class="my-num" style="visibility: hidden">{{ diffObj.maxLine || maxLine }}</div>
 			<div :class="{ 'my-active': nowCursorPos.line === line.num }" :key="line.num" :style="{ height: _lineHeight, 'line-height': _lineHeight }" class="my-num" v-for="line in renderHtmls">
 				<span class="num">{{ _num(line.num) }}</span>
 				<!-- 折叠图标 -->
@@ -15,7 +15,7 @@
 		</div>
 		<div :style="{ 'box-shadow': _leftShadow }" class="my-content-wrap">
 			<!-- 可滚动区域 -->
-			<div @scroll="onScroll" class="my-scroller my-scroll-overlay" ref="scroller">
+			<div @scroll.stop="onScroll" class="my-scroller my-scroll-overlay" ref="scroller">
 				<!-- 内如区域 -->
 				<div
 					:style="{ minWidth: _contentMinWidth, height: _contentHeight }"
@@ -106,6 +106,16 @@
 		<!-- 右键菜单 -->
 		<Menu :checkable="false" :menuList="menuList" :styles="menuStyle" @change="onClickMenu" ref="menu" v-show="menuVisible"></Menu>
 		<tip :content="tipContent" :styles="tipStyle" ref="tip" v-show="tipContent"></tip>
+		<div :style="{top: diffTop + 'px', height: diffHeight+'px'}" class="my-diff-editor" ref="diff" v-if="diffVisible">
+			<div class="my-diff-bar">
+				<span style="margin-right: 20px">{{name}}</span>
+				<div @click="onCloseDiff" class="bar-item my-hover-danger">
+					<span class="iconfont icon-close" style="font-size: 18px"></span>
+				</div>
+			</div>
+			<editor :active="true" :diff-obj="toShowdiffObj" style="flex:1" type="diff"></editor>
+			<div @mousedown="onDiffBottomSashBegin" class="my-sash-h"></div>
+		</div>
 	</div>
 </template>
 
@@ -142,10 +152,23 @@ export default {
 	props: {
 		id: String,
 		path: String,
+		name: String,
 		type: String,
 		active: {
 			type: Boolean,
 			default: false,
+		},
+		diffObj: {
+			type: Object,
+			default: () => {
+				return {
+					diff: null,
+					deletedLength: 0,
+					beforeLine: 0,
+					maxLine: 0,
+					states: null,
+				};
+			},
 		},
 	},
 	data() {
@@ -176,10 +199,11 @@ export default {
 			activeLineBg: true,
 			searchNow: 1,
 			searchCount: 0,
-			diffLength: 0,
-			diffBeforeLine: 0,
-			diffMaxLine: 0,
-			diffStartStates: null,
+			diffVisible: false,
+			diffHeight: 200,
+			diffTop: 0,
+			diffMarginTop: 0,
+			toShowdiffObj: null,
 			charObj: {
 				charWidth: 7.15,
 				fullAngleCharWidth: 15,
@@ -243,7 +267,7 @@ export default {
 		_num() {
 			return (line) => {
 				if (this.type === 'diff') {
-					return line - this.diffLength > 0 ? line - this.diffLength + this.diffBeforeLine : '';
+					return line - this.diffObj.deletedLength > 0 ? line - this.diffObj.deletedLength + this.diffObj.beforeLine : '';
 				}
 				return line;
 			};
@@ -261,7 +285,7 @@ export default {
 				if (preDiff.deleted.length) {
 					if (preDiff.added.length) {
 						if (line < preDiff.line + preDiff.added.length) {
-							if (line < preDiff.line + preDiff.deleted.length) {
+							if (preDiff.deleted.length) {
 								type = 'modify';
 							} else {
 								type = 'add';
@@ -400,6 +424,9 @@ export default {
 		this.initResizeEvent();
 		this.setScrollerArea();
 		this.setContentHeight();
+		if (this.diffObj.diff) {
+			this.showDiff();
+		}
 	},
 	destroyed() {
 		this.unbindEvent();
@@ -503,14 +530,6 @@ export default {
 					}
 				})
 			);
-			EventBus.$on(
-				'git-diff-editor',
-				(this.initEventBus.fn6 = (data) => {
-					if (this.type === 'diff') {
-						this.showDiff(data);
-					}
-				})
-			);
 		},
 		unbindEvent() {
 			$(document).unbind('mousemove', this.initEvent.fn1);
@@ -520,7 +539,6 @@ export default {
 			EventBus.$off('close-menu', this.initEventBus.fn3);
 			EventBus.$off('theme-changed', this.initEventBus.fn4);
 			EventBus.$off('git-diffed', this.initEventBus.fn5);
-			EventBus.$off('git-diff-editor', this.initEventBus.fn6);
 		},
 		showEditor() {
 			// 元素暂时不可见
@@ -532,37 +550,33 @@ export default {
 			this.initRenderData();
 			this.render();
 			this.focus();
-			// 获取文件git修改记录
-			if (this.type !== 'diff') {
+			if (!this.diffObj.diff) {
+				// 获取文件git修改记录
 				EventBus.$emit('git-diff', this.path);
 			}
 		},
-		showDiff(data) {
+		showDiff() {
 			let line = 1;
 			let column = 0;
-			this.language = data.language;
-			this._language = data.language;
-			this.diffBeforeLine = data.diff.line - 1;
-			this.diffLength = data.diff.deleted.length;
-			this.diffMaxLine = data.maxLine;
-			this.diffStartStates = data.states; // 设置tokenizer开始状态
-			this.myContext.insertContent(data.diff.deleted.concat(data.diff.added).join('\n'));
-			if (data.diff.added.length) {
-				let delta = data.line - data.diff.line;
-				line = this.diffLength + delta + 1;
-				column = data.diff.added[delta].length;
+			this.language = this.diffObj.language;
+			this._language = this.diffObj.language;
+			this.myContext.insertContent(this.diffObj.diff.deleted.concat(this.diffObj.diff.added).join('\n'));
+			if (this.diffObj.diff.added.length) {
+				let delta = this.diffObj.line - this.diffObj.diff.line;
+				line = this.diffObj.deletedLength + delta + 1;
+				column = this.diffObj.diff.added[delta].length;
 			} else {
-				line = this.diffLength;
-				column = data.diff.deleted.peek().length;
+				line = this.diffObj.deletedLength;
+				column = this.diffObj.diff.deleted.peek().length;
 			}
 			this.$nextTick(() => {
 				let scrollTop = (line - 1) * this.charObj.charHight;
 				scrollTop = scrollTop > 0 ? scrollTop : 0;
 				if (scrollTop > this.contentHeight - this.scrollerArea.height) {
 					let top = scrollTop - (this.contentHeight - this.scrollerArea.height);
-					top = data.top - top;
-					EventBus.$emit('git-diff-scroll', top);
 					scrollTop = this.contentHeight - this.scrollerArea.height;
+					this.$parent.diffMarginTop = -top;
+					this.$parent.setDiffTop();
 				}
 				this.$refs.scroller.scrollTop = scrollTop;
 				this.scrollTop = scrollTop;
@@ -1183,6 +1197,7 @@ export default {
 					let height = this.folder.getRelativeLine(nowCursorPos.line + 1) * this.charObj.charHight;
 					if (height > this.scrollTop + this.scrollerArea.height) {
 						requestAnimationFrame(() => {
+							height = height > this.contentHeight ? this.contentHeight : height;
 							this.scrollTop = height - this.scrollerArea.height;
 							this.setStartLine(this.scrollTop);
 							this.$refs.scroller.scrollTop = this.scrollTop;
@@ -1220,6 +1235,13 @@ export default {
 				contentHeight += this.scrollerArea.height - this.charObj.charHight;
 			}
 			this.contentHeight = contentHeight;
+		},
+		setDiffTop() {
+			let top = (this.folder.getRelativeLine(this.diffLine) - 1) * this.charObj.charHight - this.scrollTop;
+			this.diffTop = top + this.diffMarginTop;
+			if (this.diffTop - 30 < -this.scrollTop) {
+				this.diffTop = -this.scrollTop + 30;
+			}
 		},
 		setStartLine(scrollTop) {
 			let startLine = 1;
@@ -1556,6 +1578,17 @@ export default {
 					_move('right', e.clientX - offset.left - this.scrollerArea.width, line);
 				}
 			}
+			if (this.diffBottomSashMouseObj) {
+				let height = (this.diffHeight += e.clientY - this.diffBottomSashMouseObj.clientY);
+				if (height < this.charObj.charHight + 16) {
+					height = this.charObj.charHight + 16;
+				}
+				if (height + this.diffTop > this.scrollerArea.height) {
+					height = this.scrollerArea.height - this.diffTop;
+				}
+				this.diffHeight = height;
+				this.diffBottomSashMouseObj = e;
+			}
 			function _move(autoDirect, speed, line) {
 				let originLine = line || that.folder.getRelativeLine(that.nowCursorPos.line);
 				let originColumn = that.nowCursorPos.column;
@@ -1614,8 +1647,13 @@ export default {
 			// 停止滚动选中
 			cancelAnimationFrame(this.selectMoveTimer);
 			this.mouseStartObj = null;
+			this.diffBottomSashMouseObj = null;
 			this.mouseUpTime = Date.now();
 			this.$refs.searchDialog && this.$refs.searchDialog.directBlur();
+		},
+		// 调整diff弹框高度开始
+		onDiffBottomSashBegin(e) {
+			this.diffBottomSashMouseObj = e;
 		},
 		// 左右滚动事件
 		onScroll(e) {
@@ -1626,6 +1664,7 @@ export default {
 			if (this.diffLine) {
 				let top = (this.folder.getRelativeLine(this.diffLine) - 1) * this.charObj.charHight - this.scrollTop;
 				EventBus.$emit('git-diff-scroll', { top: top, scrollTop: this.scrollTop });
+				this.setDiffTop();
 			}
 		},
 		// 滚动滚轮
@@ -1728,19 +1767,27 @@ export default {
 		},
 		onShowDiff(line) {
 			let preDiff = Util.getPrevDiff(this.diffTree, line);
-			let top = (this.folder.getRelativeLine(line) - 1) * this.charObj.charHight - this.scrollTop;
 			this.diffLine = line;
-			EventBus.$emit('git-diff-show', {
-				id: this.id,
-				pah: this.path,
-				maxLine: this.maxLine,
-				language: this.language,
-				states: preDiff.line > 1 ? this.myContext.htmls[preDiff.line - 2].states : null,
-				diff: preDiff,
-				line: line,
-				top: top,
-				scrollTop: this.scrollTop,
+			this.diffVisible = false;
+			this.diffMarginTop = 0;
+			this.diffHeight = (preDiff.added.length + preDiff.deleted.length) * this.charObj.charHight + 16;
+			this.diffHeight = this.diffHeight > 200 ? 200 : this.diffHeight;
+			this.setDiffTop();
+			this.$nextTick(() => {
+				this.diffVisible = true;
+				this.toShowdiffObj = {
+					maxLine: this.maxLine,
+					language: this.language,
+					states: preDiff.line > 1 ? this.myContext.htmls[preDiff.line - 2].states : null,
+					diff: preDiff,
+					line: line,
+					beforeLine: preDiff.line - 1,
+					deletedLength: preDiff.deleted.length,
+				};
 			});
+		},
+		onCloseDiff() {
+			this.diffVisible = false;
 		},
 	},
 };
