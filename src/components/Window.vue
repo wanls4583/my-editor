@@ -236,19 +236,15 @@ export default {
 				this.closeDialog();
 			});
 			EventBus.$on('git-diff-show', (data) => {
-				this.diffVisible = true;
-				this.nowDiffEditor = data.id;
-				this.diffTop = data.top;
-				this.diffTop = -this.diffTop + 30 > data.scrollTop ? -data.scrollTop + 30 : this.diffTop;
-				this.diffName = Util.getTabById(globalData.editorList, data.id).name;
-				this.diffMaxLine = data.maxLine;
-				this.diffHeight = (data.diff.added.length + data.diff.deleted.length) * this.getNowEditor().charObj.charHight + 16;
-				if (this.diffHeight > 200) {
-					this.diffHeight = 200;
+				// 先销毁组件
+				if (this.diffVisible) {
+					this.diffVisible = false;
+					this.$nextTick(() => {
+						this.showDiff(data);
+					});
+				} else {
+					this.showDiff(data);
 				}
-				this.$nextTick(() => {
-					EventBus.$emit('git-diff-editor', data);
-				});
 			});
 			EventBus.$on('git-diff-scroll', (data) => {
 				this.diffTop = data.top;
@@ -293,6 +289,21 @@ export default {
 			this.dialogVisible = true;
 			this.dialogIconColor = option.iconColor || '';
 			this.dialogIcon = option.icon || '';
+		},
+		showDiff(data) {
+			this.diffVisible = true;
+			this.nowDiffEditor = data.id;
+			this.diffTop = data.top;
+			this.diffTop = -this.diffTop + 30 > data.scrollTop ? -data.scrollTop + 30 : this.diffTop;
+			this.diffName = Util.getTabById(globalData.editorList, data.id).name;
+			this.diffMaxLine = data.maxLine;
+			this.diffHeight = (data.diff.added.length + data.diff.deleted.length) * this.getNowEditor().charObj.charHight + 16;
+			if (this.diffHeight > 200) {
+				this.diffHeight = 200;
+			}
+			this.$nextTick(() => {
+				EventBus.$emit('git-diff-editor', data);
+			});
 		},
 		closeDialog() {
 			this.dialogVisible = false;
