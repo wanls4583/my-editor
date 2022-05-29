@@ -89,4 +89,12 @@
 			}
 		}
 	}
+
+	&-diff-inserted {
+		background-color: var(--my-diffEditor-insertedTextBackground);
+	}
+
+	&-diff-removed {
+		background-color: var(--my-diffEditor-removedTextBackground);
+	}
 }

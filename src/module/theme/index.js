@@ -924,6 +924,20 @@ export default class {
 					result.colors['gitDecoration.ignoredResourceForeground'] = '#8c8c8c';
 				}
 			}
+			if (!result.colors['diffEditor.removedTextBackground']) {
+				if (isLight) {
+					result.colors['diffEditor.removedTextBackground'] = 'rgba(255, 0, 0, 0.2';
+				} else {
+					result.colors['diffEditor.removedTextBackground'] = 'rgba(144, 39, 74, 0.44)';
+				}
+			}
+			if (!result.colors['diffEditor.insertedTextBackground']) {
+				if (isLight) {
+					result.colors['diffEditor.insertedTextBackground'] = 'rgba(155, 185, 85, 0.2)';
+				} else {
+					result.colors['diffEditor.insertedTextBackground'] = 'rgba(75, 102, 22, 0.5)';
+				}
+			}
 		}
 	}
 }

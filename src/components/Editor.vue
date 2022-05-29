@@ -28,7 +28,7 @@
 				>
 					<div :style="{ top: _top }" class="my-render" ref="render" v-if="active">
 						<div
-							:class="{ 'my-active': _activeLine(line.num) }"
+							:class="[_diffBg(line.num), _activeLine(line.num) ? 'my-active' : '']"
 							:data-line="line.num"
 							:id="id+'_line_' + line.num"
 							:key="line.num"
@@ -268,6 +268,18 @@ export default {
 			return (line) => {
 				if (this.type === 'diff') {
 					return line - this.diffObj.deletedLength > 0 ? line - this.diffObj.deletedLength + this.diffObj.beforeLine : '';
+				}
+				return line;
+			};
+		},
+		_diffBg() {
+			return (line) => {
+				if (this.type === 'diff') {
+					if (line > this.diffObj.deletedLength) {
+						return 'my-diff-inserted';
+					} else {
+						return 'my-diff-removed';
+					}
 				}
 				return line;
 			};
@@ -1043,7 +1055,7 @@ export default {
 			}
 
 			function _renderColError(line, column, endColumn, key) {
-				if (line < this.startLine || line > this.startLine + this.maxVisibleLines) {
+				if (line < this.startLine || line >= this.startLine + this.maxVisibleLines || line > this.maxLine) {
 					return;
 				}
 				let $render = $(this.$refs.render);
@@ -1060,7 +1072,7 @@ export default {
 			}
 
 			function _renderLineError(line, key) {
-				if (line < this.startLine || line > this.startLine + this.maxVisibleLines) {
+				if (line < this.startLine || line >= this.startLine + this.maxVisibleLines || line > this.maxLin) {
 					return;
 				}
 				let $render = $(this.$refs.render);
