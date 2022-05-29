@@ -163,7 +163,7 @@ export default {
 			scrollTop: 0,
 			maxVisibleLines: 1,
 			maxLine: 1,
-			contentHeight: '100%',
+			contentHeight: 0,
 			scrollerArea: {},
 			errorMap: {},
 			errors: [],
@@ -399,6 +399,7 @@ export default {
 		this.showEditor();
 		this.initResizeEvent();
 		this.setScrollerArea();
+		this.setContentHeight();
 	},
 	destroyed() {
 		this.unbindEvent();
@@ -556,6 +557,7 @@ export default {
 			}
 			this.$nextTick(() => {
 				let scrollTop = (line - 1) * this.charObj.charHight;
+				scrollTop = scrollTop > 0 ? scrollTop : 0;
 				if (scrollTop > this.contentHeight - this.scrollerArea.height) {
 					let top = scrollTop - (this.contentHeight - this.scrollerArea.height);
 					top = data.top - top;
@@ -1181,11 +1183,9 @@ export default {
 					let height = this.folder.getRelativeLine(nowCursorPos.line + 1) * this.charObj.charHight;
 					if (height > this.scrollTop + this.scrollerArea.height) {
 						requestAnimationFrame(() => {
-							height = height > this.contentHeight ? this.contentHeight : height;
-							height -= this.scrollerArea.height;
-							this.setStartLine(height);
-							this.scrollTop = height;
-							this.$refs.scroller.scrollTop = height;
+							this.scrollTop = height - this.scrollerArea.height;
+							this.setStartLine(this.scrollTop);
+							this.$refs.scroller.scrollTop = this.scrollTop;
 						});
 					} else if (nowCursorPos.line <= this.startLine) {
 						requestAnimationFrame(() => {
@@ -1625,7 +1625,7 @@ export default {
 			this.$refs.scroller.scrollLeft = this.scrollLeft;
 			if (this.diffLine) {
 				let top = (this.folder.getRelativeLine(this.diffLine) - 1) * this.charObj.charHight - this.scrollTop;
-				EventBus.$emit('git-diff-scroll', top);
+				EventBus.$emit('git-diff-scroll', { top: top, scrollTop: this.scrollTop });
 			}
 		},
 		// 滚动滚轮
@@ -1739,6 +1739,7 @@ export default {
 				diff: preDiff,
 				line: line,
 				top: top,
+				scrollTop: this.scrollTop,
 			});
 		},
 	},

@@ -239,7 +239,7 @@ export default {
 				this.diffVisible = true;
 				this.nowDiffEditor = data.id;
 				this.diffTop = data.top;
-				this.diffTop = this.diffTop <= 0 ? 0 : this.diffTop;
+				this.diffTop = -this.diffTop + 30 > data.scrollTop ? -data.scrollTop + 30 : this.diffTop;
 				this.diffName = Util.getTabById(globalData.editorList, data.id).name;
 				this.diffMaxLine = data.maxLine;
 				this.diffHeight = (data.diff.added.length + data.diff.deleted.length) * this.getNowEditor().charObj.charHight + 16;
@@ -250,9 +250,9 @@ export default {
 					EventBus.$emit('git-diff-editor', data);
 				});
 			});
-			EventBus.$on('git-diff-scroll', (top) => {
-				this.diffTop = top;
-				this.diffTop = this.diffTop <= 0 ? 0 : this.diffTop;
+			EventBus.$on('git-diff-scroll', (data) => {
+				this.diffTop = data.top;
+				this.diffTop = -this.diffTop + 30 > data.scrollTop ? -data.scrollTop + 30 : this.diffTop;
 			});
 			EventBus.$on('editor-changed', (data) => {
 				if (!data || data.id !== this.nowEditorId) {
