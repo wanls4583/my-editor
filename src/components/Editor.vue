@@ -505,35 +505,7 @@ export default {
 				(this.initEventBus.fn6 = (data) => {
 					if (this.type === 'diff') {
 						this.$nextTick(() => {
-							this.language = data.language;
-							this._language = data.language;
-							this.diffBeforeLine = data.diff.line - 1;
-							this.diffLength = data.diff.deleted.length;
-							this.diffMaxLine = data.maxLine;
-							this.diffStartStates = data.states; // 设置tokenizer开始状态
-							this.myContext.insertContent(data.diff.deleted.concat(data.diff.added).join('\n'));
-							this.$nextTick(() => {
-								let line = 1;
-								let column = 0;
-								if (data.diff.added.length) {
-									let delta = data.line - data.diff.line;
-									line = this.diffLength + delta + 1;
-									column = data.diff.added[delta].length;
-								} else {
-									line = this.diffLength;
-									column = data.diff.deleted.peek().length;
-								}
-								let scrollTop = (line - 1) * this.charObj.charHight;
-								if (scrollTop > this.contentHeight - this.scrollerArea.height) {
-									scrollTop = scrollTop > this.contentHeight - this.scrollerArea.height;
-								}
-								this.$nextTick(() => {
-									this.$refs.scroller.scrollTop = scrollTop;
-									this.scrollTop = scrollTop;
-									this.setStartLine(scrollTop);
-									this.cursor.setCursorPos({ line: line, column: column });
-								});
-							});
+							this.showDiff(data);
 						});
 					}
 				})
@@ -563,6 +535,38 @@ export default {
 			if (this.type !== 'diff') {
 				EventBus.$emit('git-diff', this.path);
 			}
+		},
+		showDiff(data) {
+			let line = 1;
+			let column = 0;
+			this.language = data.language;
+			this._language = data.language;
+			this.diffBeforeLine = data.diff.line - 1;
+			this.diffLength = data.diff.deleted.length;
+			this.diffMaxLine = data.maxLine;
+			this.diffStartStates = data.states; // 设置tokenizer开始状态
+			this.myContext.insertContent(data.diff.deleted.concat(data.diff.added).join('\n'));
+			if (data.diff.added.length) {
+				let delta = data.line - data.diff.line;
+				line = this.diffLength + delta + 1;
+				column = data.diff.added[delta].length;
+			} else {
+				line = this.diffLength;
+				column = data.diff.deleted.peek().length;
+			}
+			this.$nextTick(() => {
+				let scrollTop = (line - 1) * this.charObj.charHight;
+				if (scrollTop > this.contentHeight - this.scrollerArea.height) {
+					let top = scrollTop - (this.contentHeight - this.scrollerArea.height);
+					top = data.top - top;
+					EventBus.$emit('git-diff-scroll', top);
+					scrollTop = this.contentHeight - this.scrollerArea.height;
+				}
+				this.$refs.scroller.scrollTop = scrollTop;
+				this.scrollTop = scrollTop;
+				this.setStartLine(scrollTop);
+				this.cursor.setCursorPos({ line: line, column: column });
+			});
 		},
 		// 显示光标
 		showCursor() {

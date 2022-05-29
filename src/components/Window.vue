@@ -31,11 +31,9 @@
 				</template>
 				<div :style="{top: diffTop + 'px', height: diffHeight+'px'}" class="my-diff-editor" ref="diff" v-if="diffVisible">
 					<div class="my-diff-bar">
-						<span>{{diffName}}</span>
-						<div class="bar-right">
-							<div @click="onCloseDiff" class="bar-item my-hover-danger">
-								<span class="iconfont icon-close" style="font-size: 18px"></span>
-							</div>
+						<span style="margin-right: 20px">{{diffName}}</span>
+						<div @click="onCloseDiff" class="bar-item my-hover-danger">
+							<span class="iconfont icon-close" style="font-size: 18px"></span>
 						</div>
 					</div>
 					<editor :active="true" style="flex:1" type="diff"></editor>
@@ -120,6 +118,7 @@ export default {
 			diffName: '',
 			diffHeight: 200,
 			diffTop: 0,
+			diffMaxLine: 1,
 			themeType: 'dark',
 			activity: 'files',
 			leftWidth: 400,
@@ -239,9 +238,11 @@ export default {
 			EventBus.$on('git-diff-show', (data) => {
 				this.diffVisible = true;
 				this.nowDiffEditor = data.id;
-				this.diffTop = data.top - 27;
+				this.diffTop = data.top;
+				this.diffTop = this.diffTop <= 0 ? 0 : this.diffTop;
 				this.diffName = Util.getTabById(globalData.editorList, data.id).name;
-				this.diffHeight = (data.diff.added.length + data.diff.deleted.length) * this.getNowEditor().charObj.charHight + 28 + 14;
+				this.diffMaxLine = data.maxLine;
+				this.diffHeight = (data.diff.added.length + data.diff.deleted.length) * this.getNowEditor().charObj.charHight + 16;
 				if (this.diffHeight > 200) {
 					this.diffHeight = 200;
 				}
@@ -251,6 +252,7 @@ export default {
 			});
 			EventBus.$on('git-diff-scroll', (top) => {
 				this.diffTop = top;
+				this.diffTop = this.diffTop <= 0 ? 0 : this.diffTop;
 			});
 			EventBus.$on('editor-changed', (data) => {
 				if (!data || data.id !== this.nowEditorId) {
