@@ -398,6 +398,7 @@ export default {
 		this.selectedFg = !!globalData.colors['editor.selectionForeground'];
 		this.showEditor();
 		this.initResizeEvent();
+		this.setScrollerArea();
 	},
 	destroyed() {
 		this.unbindEvent();
@@ -444,6 +445,7 @@ export default {
 				if (this.active) {
 					this.$nextTick(() => {
 						if (this.$refs.scroller) {
+							this.setScrollerArea();
 							this.showEditor();
 						}
 					});
@@ -504,9 +506,7 @@ export default {
 				'git-diff-editor',
 				(this.initEventBus.fn6 = (data) => {
 					if (this.type === 'diff') {
-						this.$nextTick(() => {
-							this.showDiff(data);
-						});
+						this.showDiff(data);
 					}
 				})
 			);
@@ -615,12 +615,6 @@ export default {
 				this.renderSelectionToken();
 				this.renderError();
 				this.renderCursor(forceCursorView);
-				this.$nextTick(() => {
-					this.scrollerArea = {
-						height: this.$refs.scroller.clientHeight,
-						width: this.$refs.scroller.clientWidth,
-					};
-				});
 			});
 		},
 		// 渲染代码
@@ -1207,6 +1201,12 @@ export default {
 					});
 				});
 			}
+		},
+		setScrollerArea() {
+			this.scrollerArea = {
+				height: this.$refs.scroller.clientHeight,
+				width: this.$refs.scroller.clientWidth,
+			};
 		},
 		// 设置滚动区域真实高度
 		setContentHeight() {
