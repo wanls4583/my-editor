@@ -9,7 +9,7 @@
 				<!-- 折叠图标 -->
 				<span :class="['iconfont', line.fold == 'open' ? 'my-fold-open icon-down1' : 'my-fold-close icon-right']" @click="onToggleFold(line.num)" class="my-fold my-center-center" v-if="line.fold"></span>
 				<template v-if="type !== 'diff'">
-					<span :class="['my-diff-'+_diffType(line.num)]" @click="onShowDiff(line.num)" class="my-diff-num my-diff-add" v-if="_diffType(line.num)"></span>
+					<span :class="['my-diff-'+_diffType(line.num)]" @click="onShowDiff(line.num)" class="my-diff-num" v-if="_diffType(line.num)"></span>
 				</template>
 			</div>
 		</div>
@@ -73,7 +73,7 @@
 					</div>
 					<!-- 输入框 -->
 					<textarea
-						:style="{ top: _textAreaPos.top, left: _textAreaPos.left }"
+						:style="{ top: _textAreaPos.top, left: _textAreaPos.left, height: _lineHeight  }"
 						@blur="onBlur"
 						@compositionend="onCompositionend"
 						@compositionstart="onCompositionstart"
@@ -113,7 +113,7 @@
 					<span class="iconfont icon-close" style="font-size: 18px"></span>
 				</div>
 			</div>
-			<editor :active="true" :diff-obj="toShowdiffObj" style="flex:1" type="diff"></editor>
+			<editor :active="true" :diff-obj="toShowdiffObj" :id="'diff-'+id" style="flex:1" type="diff"></editor>
 			<div @mousedown="onDiffBottomSashBegin" class="my-sash-h"></div>
 		</div>
 	</div>
@@ -436,7 +436,7 @@ export default {
 		this.initResizeEvent();
 		this.setScrollerArea();
 		this.setContentHeight();
-		if (this.diffObj.diff) {
+		if (this.type === 'diff') {
 			this.showDiff();
 		}
 	},
@@ -562,7 +562,7 @@ export default {
 			this.initRenderData();
 			this.render();
 			this.focus();
-			if (!this.diffObj.diff) {
+			if (this.type !== 'diff') {
 				// 获取文件git修改记录
 				EventBus.$emit('git-diff', this.path);
 			}
@@ -1241,9 +1241,7 @@ export default {
 			let contentHeight = 0;
 			maxLine = this.folder.getRelativeLine(maxLine);
 			contentHeight = maxLine * this.charObj.charHight;
-			if (this.type === 'diff') {
-				contentHeight += 14;
-			} else if (this.scrollerArea.height) {
+			if (this.type !== 'diff' && this.scrollerArea.height) {
 				contentHeight += this.scrollerArea.height - this.charObj.charHight;
 			}
 			this.contentHeight = contentHeight;
@@ -1782,7 +1780,7 @@ export default {
 			this.diffLine = line;
 			this.diffVisible = false;
 			this.diffMarginTop = 0;
-			this.diffHeight = (preDiff.added.length + preDiff.deleted.length) * this.charObj.charHight + 16;
+			this.diffHeight = (preDiff.added.length + preDiff.deleted.length) * this.charObj.charHight + 2;
 			this.diffHeight = this.diffHeight > 200 ? 200 : this.diffHeight;
 			this.setDiffTop();
 			this.$nextTick(() => {

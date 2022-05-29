@@ -17,6 +17,13 @@
 		}
 	}
 
+	&-diff-inserted,
+	&-diff-removed {
+		&.my-active::after {
+			background-color: transparent;
+		}
+	}
+
 	&-line-icon {
 		position: absolute;
 		top: 0;

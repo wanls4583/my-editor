@@ -83,6 +83,7 @@
 		left: 0;
 		z-index: 2;
 		width: 2px;
+		overflow: hidden;
 		background-color: var(--my-editorCursor-foreground);
 		pointer-events: none;
 	}
@@ -99,6 +100,7 @@
 		opacity: 0;
 		resize: none;
 		white-space: pre;
+		overflow: hidden;
 		pointer-events: none;
 	}
 

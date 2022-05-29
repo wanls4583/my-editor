@@ -60,6 +60,10 @@
 		border-top: 1px solid var(--my-terminal-border);
 		border-bottom: 1px solid var(--my-terminal-border);
 		background-color: var(--my-editor-background);
+
+		.my-scroller {
+			overflow-x: auto !important;
+		}
 	}
 
 	&-diff-bar {
