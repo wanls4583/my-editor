@@ -4,6 +4,7 @@
  * @Description:
  */
 import Util from '@/common/util';
+import EventBus from '@/event';
 import globalData from '@/data/globalData';
 import * as vsctm from 'vscode-textmate';
 import * as oniguruma from 'vscode-oniguruma';
@@ -91,7 +92,7 @@ export default class {
 		return Promise.resolve();
 	}
 	initProperties(editor, context) {
-		Util.defineProperties(this, editor, ['startLine', 'diffObj', 'maxVisibleLines', 'maxLine', 'renderLine', 'folder', '$nextTick']);
+		Util.defineProperties(this, editor, ['editorId', 'startLine', 'diffObj', 'maxVisibleLines', 'maxLine', 'folder', '$nextTick']);
 		Util.defineProperties(this, context, ['htmls']);
 	}
 	initLanguageConifg(foldMap, data) {
@@ -225,7 +226,7 @@ export default class {
 				if (this.checkLineVisible(startLine)) {
 					lineObj.tokens = this.splitLongToken(lineObj.tokens);
 					lineObj.html = this.createHtml(lineObj.tokens, lineObj.text);
-					this.renderLine(lineObj.lineId);
+					EventBus.$emit('render-line', { editorId: this.editorId, lineId: lineObj.lineId });
 				}
 				if (!lineObj.states || (lineObj.states.equals && !lineObj.states.equals(data.states)) || lineObj.states.toString() !== data.states.toString()) {
 					lineObj.states = data.states;

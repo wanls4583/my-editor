@@ -104,7 +104,7 @@
 			></search-dialog>
 		</div>
 		<div class="my-minimap-wrap">
-			<minimap ref="minimap"></minimap>
+			<minimap :content-height="contentHeight" :scroll-top="scrollTop" ref="minimap"></minimap>
 		</div>
 		<!-- 右键菜单 -->
 		<Menu :checkable="false" :menuList="menuList" :styles="menuStyle" @change="onClickMenu" ref="menu" v-show="menuVisible"></Menu>
@@ -544,6 +544,14 @@ export default {
 						if (globalData.fileDiff[fileKey]) {
 							this.diffTree = globalData.fileDiff[fileKey];
 						}
+					}
+				})
+			);
+			EventBus.$on(
+				'render-line',
+				(this.initEventBus.fn6 = (data) => {
+					if (this.editorId === data.editorId) {
+						this.renderLine(data.lineId);
 					}
 				})
 			);
