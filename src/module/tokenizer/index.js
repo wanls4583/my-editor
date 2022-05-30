@@ -263,32 +263,35 @@ export default class {
 				} else if (item.scopes[0] === 'selected') {
 					selector = 'my-select-fg';
 				} else {
-					selector = _getSelector(item);
-					selector = (selector && `my-scope-${selector.scopeId}`) || '';
+					selector = this.getScopeId(item);
+					selector = (selector && `my-scope-${selector}`) || '';
 				}
 				return `<span class="${selector}" data-column="${item.startIndex}">${Util.htmlTrans(value)}</span>`;
 			})
 			.join('');
-
-		function _getSelector(token) {
-			let result = null;
-			let scopes = token.scopes;
-			token.scope = scopes.join(' ');
-			outerLoop: for (let i = scopes.length - 1; i >= 0; i--) {
-				let scope = scopes[i];
-				for (let i = 0; i < globalData.scopeTokenList.length; i++) {
-					let item = globalData.scopeTokenList[i];
-					let _scope = item.scopes.peek();
-					if (scope.indexOf(_scope) > -1) {
-						if (item.regexp.test(token.scope)) {
-							result = item;
-							break outerLoop;
-						}
+	}
+	getScopeId(token) {
+		let result = null;
+		let scopes = token.scopes;
+		if (token.scopeId) {
+			return token.scopeId;
+		}
+		token.scope = scopes.join(' ');
+		outerLoop: for (let i = scopes.length - 1; i >= 0; i--) {
+			let scope = scopes[i];
+			for (let i = 0; i < globalData.scopeTokenList.length; i++) {
+				let item = globalData.scopeTokenList[i];
+				let _scope = item.scopes.peek();
+				if (scope.indexOf(_scope) > -1) {
+					if (item.regexp.test(token.scope)) {
+						result = item.scopeId;
+						token.scopeId = item.scopeId;
+						break outerLoop;
 					}
 				}
 			}
-			return result;
 		}
+		return result;
 	}
 	tokenizeLine(line) {
 		let lineText = this.htmls[line - 1].text;

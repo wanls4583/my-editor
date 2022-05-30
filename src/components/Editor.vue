@@ -103,6 +103,9 @@
 				v-show="searchVisible"
 			></search-dialog>
 		</div>
+		<div class="my-minimap-wrap">
+			<minimap ref="minimap"></minimap>
+		</div>
 		<!-- 右键菜单 -->
 		<Menu :checkable="false" :menuList="menuList" :styles="menuStyle" @change="onClickMenu" ref="menu" v-show="menuVisible"></Menu>
 		<tip :content="tipContent" :styles="tipStyle" ref="tip" v-show="tipContent"></tip>
@@ -134,6 +137,7 @@ import SearchDialog from './Search';
 import Menu from './Menu';
 import AutoTip from './AutoTip';
 import Tip from './Tip';
+import Minimap from './Minimap.vue';
 import Util from '@/common/util';
 import EventBus from '@/event';
 import $ from 'jquery';
@@ -148,6 +152,7 @@ export default {
 		Menu,
 		AutoTip,
 		Tip,
+		Minimap,
 	},
 	props: {
 		id: String,

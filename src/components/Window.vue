@@ -152,7 +152,7 @@ export default {
 		window.test = this;
 		const theme = new Theme();
 		theme.loadTheme(globalData.nowTheme);
-		// EventBus.$emit('file-open');
+		EventBus.$emit('file-open');
 		this.loadExtensions().then((result) => {
 			let langeuages = result.languages;
 			let themes = result.themes;

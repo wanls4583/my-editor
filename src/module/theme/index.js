@@ -194,6 +194,7 @@ export default class {
 						scope: scope,
 						scopes: scope.split(' '),
 						level: _getLevel(scope),
+						settings: token.settings,
 					});
 					scopeId++;
 				});
@@ -208,7 +209,9 @@ export default class {
 		scopeTokenList.sort((a, b) => {
 			return b.level - a.level;
 		});
+		globalData.scopeIdMap = {};
 		scopeTokenList.forEach(item => {
+			globalData.scopeIdMap[item.scopeId] = item;
 			if (item.scopes.length > 1) {
 				item.regexp = item.scopes.join('(?:\\.[^\\.\\s]+)*?(?:\\s[^\\s]+)*? ');
 			} else {
