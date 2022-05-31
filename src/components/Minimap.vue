@@ -70,6 +70,8 @@ export default {
 				if (this.$refs.wrap) {
 					this.height = this.$refs.wrap.clientHeight / this.scale;
 					this.maxVisibleLines = Math.ceil(this.height / this.$parent.charObj.charHight) + 1;
+					this.ctx.restore();
+					this.ctx.save();
 				}
 			});
 			resizeObserver.observe(this.$refs.wrap);
@@ -101,7 +103,6 @@ export default {
 					lineObj.html = this.$parent.tokenizer.createHtml(lineObj.tokens, lineObj.text);
 				}
 			}
-			top += charHight / 2;
 			html = lineObj.html || lineObj.text;
 			if (cache && cache.html === html) {
 				this.ctx.drawImage(cache.canvas, 20, top);
@@ -110,7 +111,7 @@ export default {
 				let ctx = canvas.getContext('2d');
 				canvas.width = this.$refs.canvas.width;
 				canvas.height = charHight;
-				ctx.font = `${charHight}px Consolas`;
+				ctx.font = `${charHight - 4}px Consolas`;
 				ctx.textBaseline = 'middle';
 				if (tokens) {
 					let left = 20;
@@ -124,7 +125,7 @@ export default {
 								ctx.fillStyle = scope.settings.foreground;
 							}
 						}
-						ctx.fillText(text, left, 0);
+						ctx.fillText(text, left, charHight / 2);
 						left += ctx.measureText(text).width;
 						// 退出无效渲染
 						if (left > this.width) {
@@ -133,7 +134,7 @@ export default {
 					}
 				} else {
 					ctx.fillStyle = globalData.colors['editor.foreground'];
-					ctx.fillText(lineObj.text, 20, 0);
+					ctx.fillText(lineObj.text, 20, charHight / 2);
 				}
 				this.ctx.drawImage(canvas, 20, top);
 				this.renderedIdMap[lineObj.lineId] = {
