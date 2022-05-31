@@ -5,12 +5,14 @@
 -->
 <template>
 	<div class="my-minimap" ref="wrap">
-		<canvas :height="height" :width="width" ref="canvas"></canvas>
+		<canvas :height="canvasHeight" :width="canvasWidth" ref="canvas"></canvas>
+		<div :style="{top: _top}" @mousedown="onBlockMDown" class="my-minimap-block"></div>
 	</div>
 </template>
 <script>
 import EventBus from '@/event';
 import globalData from '@/data/globalData';
+import $ from 'jquery';
 
 export default {
 	name: 'Minimap',
@@ -18,12 +20,15 @@ export default {
 	props: {
 		contentHeight: Number,
 		scrollTop: Number,
+		nowLine: Number,
 	},
 	data() {
 		return {
 			startLine: 1,
 			maxVisibleLines: 1,
-			width: 0,
+			canvasWidth: 0,
+			canvasHeight: 0,
+			width: 120,
 			height: 0,
 			scale: 0.1,
 			top: 0,
@@ -33,21 +38,34 @@ export default {
 		scrollTop() {
 			this.setStartLine();
 		},
-		startLine() {
-			this.render();
+	},
+	computed: {
+		_top() {
+			let top = (this.nowLine - this.startLine) * this.$parent.charObj.charHight - this.top;
+			return top * this.scale + 'px';
 		},
 	},
-	computed: {},
 	created() {
-		this.width = 120 / this.scale;
+		this.canvasWidth = this.width / this.scale;
 		this.renderedIdMap = {};
 	},
 	mounted() {
 		this.ctx = this.$refs.canvas.getContext('2d');
 		this.initEvent();
 	},
+	destroyed() {
+		this.unbindEvent();
+	},
 	methods: {
 		initEvent() {
+			this.initEvent.fn1 = (e) => {
+				this.$parent.active && this.onDocumentMmove(e);
+			};
+			this.initEvent.fn2 = (e) => {
+				this.$parent.active && this.onDocumentMouseUp(e);
+			};
+			$(document).on('mousemove', this.initEvent.fn1);
+			$(document).on('mouseup', this.initEvent.fn2);
 			this.initResizeEvent();
 			this.initEventBus();
 		},
@@ -68,21 +86,27 @@ export default {
 		initResizeEvent() {
 			const resizeObserver = new ResizeObserver((entries) => {
 				if (this.$refs.wrap) {
-					this.height = this.$refs.wrap.clientHeight / this.scale;
-					this.maxVisibleLines = Math.ceil(this.height / this.$parent.charObj.charHight) + 1;
+					this.height = this.$refs.wrap.clientHeight;
+					this.canvasHeight = this.height / this.scale;
+					this.maxVisibleLines = Math.ceil(this.canvasHeight / this.$parent.charObj.charHight) + 1;
 					this.ctx.restore();
 					this.ctx.save();
 				}
 			});
 			resizeObserver.observe(this.$refs.wrap);
 		},
+		unbindEvent() {
+			$(document).unbind('mousemove', this.initEvent.fn1);
+			$(document).unbind('mouseup', this.initEvent.fn2);
+			EventBus.$off('render-line', this.initEventBus.fn1);
+		},
 		setStartLine() {
-			let height = this.height;
-			let maxScrollTop = this.contentHeight - height;
-			let scrollTop = this.scrollTop - height / 2;
-			maxScrollTop = maxScrollTop < 0 ? 0 : maxScrollTop;
-			scrollTop = scrollTop < 0 ? 0 : scrollTop;
-			scrollTop = scrollTop > maxScrollTop ? maxScrollTop : scrollTop;
+			let maxScrollTop1 = this.contentHeight - this.canvasHeight;
+			let maxScrollTop2 = this.contentHeight - this.height;
+			let scrollTop = 0;
+			maxScrollTop1 = maxScrollTop1 < 0 ? 0 : maxScrollTop1;
+			scrollTop = this.scrollTop * (maxScrollTop1 / maxScrollTop2);
+			scrollTop = scrollTop > maxScrollTop1 ? maxScrollTop1 : scrollTop;
 			this.startLine = Math.floor(scrollTop / this.$parent.charObj.charHight);
 			this.startLine++;
 			this.top = scrollTop % this.$parent.charObj.charHight;
@@ -95,7 +119,7 @@ export default {
 			let tokens = lineObj.tokens;
 			let html = '';
 			if (clear) {
-				this.ctx.clearRect(0, top, this.width / this.scale, charHight);
+				this.ctx.clearRect(0, top, this.canvasWidth / this.scale, charHight);
 			}
 			if (!lineObj.html) {
 				if (lineObj.tokens && lineObj.tokens.length) {
@@ -128,7 +152,7 @@ export default {
 						ctx.fillText(text, left, charHight / 2);
 						left += ctx.measureText(text).width;
 						// 退出无效渲染
-						if (left > this.width) {
+						if (left > this.canvasWidth) {
 							break;
 						}
 					}
@@ -151,7 +175,7 @@ export default {
 			});
 		},
 		renderLine() {
-			this.ctx.clearRect(0, 0, this.width / this.scale, this.height / this.scale);
+			this.ctx.clearRect(0, 0, this.canvasWidth / this.scale, this.canvasHeight / this.scale);
 			for (let line = this.startLine, i = 0; line <= this.$parent.myContext.htmls.length && i < this.maxVisibleLines; i++) {
 				let fold = this.$parent.folder.getFoldByLine(line);
 				this.drawLine(line);
@@ -161,6 +185,19 @@ export default {
 					line++;
 				}
 			}
+		},
+		onBlockMDown(e) {
+			this.startBlockMouseObj = e;
+		},
+		onDocumentMmove(e) {
+			if (this.startBlockMouseObj) {
+				let delta = e.clientY - this.startBlockMouseObj.clientY;
+				this.$parent.$refs.scrollBar.scrollTop += delta / this.scale * 2;
+				this.startBlockMouseObj = e;
+			}
+		},
+		onDocumentMouseUp(e) {
+			this.startBlockMouseObj = null;
 		},
 	},
 };

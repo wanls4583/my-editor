@@ -103,8 +103,8 @@
 				v-show="searchVisible"
 			></search-dialog>
 		</div>
-		<div :style="{'box-shadow': _rightShadow}" class="my-minimap-wrap">
-			<minimap :content-height="contentHeight" :scroll-top="scrollTop" ref="minimap"></minimap>
+		<div :style="{'box-shadow': _rightShadow}" class="my-minimap-wrap" v-if="type !== 'diff'">
+			<minimap :content-height="contentHeight" :now-line="startLine" :scroll-top="scrollTop" ref="minimap"></minimap>
 		</div>
 		<div @scroll="onBarScroll" class="my-editor-scrollbar" ref="scrollBar">
 			<div :style="{height: _contentHeight}"></div>
@@ -571,6 +571,7 @@ export default {
 			EventBus.$off('close-menu', this.initEventBus.fn3);
 			EventBus.$off('theme-changed', this.initEventBus.fn4);
 			EventBus.$off('git-diffed', this.initEventBus.fn5);
+			EventBus.$off('render-line', this.initEventBus.fn5);
 		},
 		showEditor() {
 			// 元素暂时不可见
@@ -610,7 +611,7 @@ export default {
 					this.$parent.diffMarginTop = -top;
 					this.$parent.setDiffTop();
 				}
-				this.$refs.scroller.scrollTop = scrollTop;
+				this.$refs.scrollBar.scrollTop = scrollTop;
 				this.scrollTop = scrollTop;
 				this.setStartLine(scrollTop);
 				this.cursor.setCursorPos({ line: line, column: column });
@@ -1233,14 +1234,14 @@ export default {
 							height = height > this.contentHeight ? this.contentHeight : height;
 							this.scrollTop = height - this.scrollerArea.height;
 							this.setStartLine(this.scrollTop);
-							this.$refs.scroller.scrollTop = this.scrollTop;
+							this.$refs.scrollBar.scrollTop = this.scrollTop;
 						});
 					} else if (nowCursorPos.line <= this.startLine) {
 						requestAnimationFrame(() => {
 							if (nowCursorPos.line <= this.startLine) {
 								//此时this.startLine可能已经通过onScrll而改变
 								this.startLine = nowCursorPos.line;
-								this.$refs.scroller.scrollTop = (this.folder.getRelativeLine(nowCursorPos.line) - 1) * this.charObj.charHight;
+								this.$refs.scrollBar.scrollTop = (this.folder.getRelativeLine(nowCursorPos.line) - 1) * this.charObj.charHight;
 							}
 						});
 					}

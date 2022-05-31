@@ -1,11 +1,35 @@
 .my {
 	&-minimap {
+		position: relative;
 		width: 100%;
 		height: 100%;
 
 		canvas {
 			width: 100%;
 			height: 100%;
+		}
+
+		&-block {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 10%;
+		}
+
+		&:hover {
+			.my-minimap-block {
+				opacity: 0.8;
+				background-color: var(--my-scrollbarSlider-background);
+
+				&:hover {
+					background-color: var(--my-scrollbarSlider-hoverBackground);
+				}
+
+				&:active {
+					background-color: var(--my-scrollbarSlider-activeBackground);
+				}
+			}
 		}
 	}
 }
