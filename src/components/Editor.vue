@@ -653,12 +653,8 @@ export default {
 		},
 		// 渲染
 		render(forceCursorView) {
-			let renderId = this.renderId + 1 || 1;
-			this.renderId = renderId;
-			this.$nextTick(() => {
-				if (this.renderId !== renderId) {
-					return;
-				}
+			cancelAnimationFrame(this.renderTimer);
+			this.renderTimer = requestAnimationFrame(() => {
 				this.renderLine();
 				this.renderSelectedBg();
 				this.renderSelectionToken();
