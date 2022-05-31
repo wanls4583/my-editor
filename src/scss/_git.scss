@@ -52,10 +52,10 @@
 		position: absolute;
 		top: 0;
 		left: 0;
+		right: 135px;
 		z-index: 1;
 		display: flex;
 		flex-direction: column;
-		width: 100%;
 		margin-top: -1px;
 		border-top: 1px solid var(--my-terminal-border);
 		border-bottom: 1px solid var(--my-terminal-border);
@@ -69,7 +69,7 @@
 	&-diff-bar {
 		position: absolute;
 		top: -30px;
-		right: 5px;
+		right: 0px;
 		z-index: 99;
 		display: flex;
 		align-items: center;
