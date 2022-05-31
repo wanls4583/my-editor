@@ -25,6 +25,22 @@
 		user-select: none;
 		-webkit-tap-highlight-color: rgab(0, 0, 0, 0);
 		color: var(--my-editor-foreground);
+
+		&:hover {
+			.my-editor-scrollbar {
+				&::-webkit-scrollbar-thumb {
+					background-color: var(--my-scrollbarSlider-background);
+
+					&:hover {
+						background-color: var(--my-scrollbarSlider-hoverBackground);
+					}
+
+					&:active {
+						background-color: var(--my-scrollbarSlider-activeBackground);
+					}
+				}
+			}
+		}
 	}
 
 	&-nums {
@@ -56,6 +72,27 @@
 		position: relative;
 		width: 100%;
 		height: 100%;
+		overflow-y: hidden !important;
+	}
+
+	&-editor-scrollbar {
+		flex-shrink: 0;
+		width: 14px;
+		height: 100%;
+		overflow: overlay;
+
+		&::-webkit-scrollbar {
+			width: 14px;
+			background-color: transparent;
+		}
+
+		&::-webkit-scrollbar-thumb {
+			background-color: transparent;
+		}
+
+		&::-webkit-scrollbar-corner {
+			background-color: transparent;
+		}
 	}
 
 	&-content {

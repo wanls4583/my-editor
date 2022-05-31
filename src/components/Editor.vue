@@ -18,7 +18,7 @@
 			<div @scroll.stop="onScroll" class="my-scroller my-scroll-overlay" ref="scroller">
 				<!-- 内如区域 -->
 				<div
-					:style="{ minWidth: _contentMinWidth, height: _contentHeight }"
+					:style="{ minWidth: _contentMinWidth + 'px', height: _contentHeight }"
 					@mousedown="onContentMdown"
 					@mouseleave="onContentMLeave"
 					@mousemove="onContentMmove"
@@ -103,8 +103,11 @@
 				v-show="searchVisible"
 			></search-dialog>
 		</div>
-		<div class="my-minimap-wrap">
+		<div :style="{'box-shadow': _rightShadow}" class="my-minimap-wrap">
 			<minimap :content-height="contentHeight" :scroll-top="scrollTop" ref="minimap"></minimap>
+		</div>
+		<div @scroll="onBarScroll" class="my-editor-scrollbar" ref="scrollBar">
+			<div :style="{height: _contentHeight}"></div>
 		</div>
 		<!-- 右键菜单 -->
 		<Menu :checkable="false" :menuList="menuList" :styles="menuStyle" @change="onClickMenu" ref="menu" v-show="menuVisible"></Menu>
@@ -321,7 +324,14 @@ export default {
 			return this.top - this.charObj.charHight + 'px';
 		},
 		_leftShadow() {
-			return this.scrollLeft ? '17px 0 16px -16px rgba(0, 0, 0, 0.8) inset' : 'none';
+			let shadow = [];
+			if (this.scrollLeft) {
+				shadow.push('17px 0 16px -16px rgba(0, 0, 0, 0.8) inset');
+			}
+			return shadow.length ? shadow.join(',') : 'none';
+		},
+		_rightShadow() {
+			return this.scrollLeft + this.scrollerArea.width < this._contentMinWidth - 2 ? '-6px 0px 5px -5px rgba(0, 0, 0, 0.8)' : 'none';
 		},
 		_top() {
 			return (this.folder.getRelativeLine(this.startLine) - 1) * this.charObj.charHight + 'px';
@@ -332,9 +342,6 @@ export default {
 		_cursorVisible() {
 			return this.cursorVisible && this.cursorFocus ? 'visible' : 'hidden';
 		},
-		_hScrollWidth() {
-			return this._contentMinWidth;
-		},
 		_contentMinWidth() {
 			let width = 0;
 			if (this.$refs.content) {
@@ -342,10 +349,10 @@ export default {
 				width += this.charObj.fullAngleCharWidth;
 			}
 			width = this.scrollerArea.width > width ? this.scrollerArea.width : width;
-			return width + 'px';
+			return width;
 		},
 		_contentHeight() {
-			return typeof this.contentHeight === 'number' ? this.contentHeight + 'px' : this.contentHeight;
+			return this.contentHeight + 'px';
 		},
 		_textAreaPos() {
 			let left = this.cursorLeft;
@@ -1679,22 +1686,23 @@ export default {
 		onDiffBottomSashBegin(e) {
 			this.diffBottomSashMouseObj = e;
 		},
-		// 左右滚动事件
+		// 滚动事件
 		onScroll(e) {
-			this.setStartLine(e.target.scrollTop);
-			this.scrollTop = e.target.scrollTop;
 			this.scrollLeft = e.target.scrollLeft;
-			this.$refs.scroller.scrollLeft = this.scrollLeft;
-			if (this.diffLine) {
-				let top = (this.folder.getRelativeLine(this.diffLine) - 1) * this.charObj.charHight - this.scrollTop;
-				EventBus.$emit('git-diff-scroll', { top: top, scrollTop: this.scrollTop });
-				this.setDiffTop();
-			}
 		},
 		// 滚动滚轮
 		onWheel(e) {
-			this.$refs.scroller.scrollTop = this.scrollTop + e.deltaY;
+			this.$refs.scrollBar.scrollTop = this.scrollTop + e.deltaY;
 			this.$refs.scroller.scrollLeft = this.scrollLeft + e.deltaX;
+		},
+		// 右侧滚动条滚动事件
+		onBarScroll(e) {
+			this.setStartLine(e.target.scrollTop);
+			this.scrollTop = e.target.scrollTop;
+			if (this.diffLine) {
+				this.setDiffTop();
+			}
+			this.$refs.scroller.scrollTop = this.scrollTop;
 		},
 		// 中文输入开始
 		onCompositionstart() {
