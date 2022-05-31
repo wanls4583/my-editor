@@ -56,8 +56,9 @@ export default {
 				'render-line',
 				(this.initEventBus.fn1 = (data) => {
 					if (this.$parent.editorId === data.editorId) {
-						if (this.renderedIdMap[data.lineId]) {
-							this.drawLine(this.renderedIdMap[data.lineId].line, true);
+						let line = this.renderedIdMap[data.lineId];
+						if (line && this.$parent.myContext.htmls[line - 1] && this.$parent.myContext.htmls[line - 1].lineId === data.lineId) {
+							this.drawLine(line, true);
 						}
 					}
 				})
@@ -76,6 +77,7 @@ export default {
 			let height = this.height;
 			let maxScrollTop = this.contentHeight - height;
 			let scrollTop = this.scrollTop - height / 2;
+			maxScrollTop = maxScrollTop < 0 ? 0 : maxScrollTop;
 			scrollTop = scrollTop < 0 ? 0 : scrollTop;
 			scrollTop = scrollTop > maxScrollTop ? maxScrollTop : scrollTop;
 			this.startLine = Math.floor(scrollTop / this.$parent.charObj.charHight);
@@ -98,7 +100,7 @@ export default {
 					lineObj.html = this.$parent.tokenizer.createHtml(lineObj.tokens, lineObj.text);
 				}
 			}
-			top -= charHight / 2;
+			top += charHight / 2;
 			html = lineObj.html || lineObj.text;
 			if (cache && cache.html === html) {
 				this.ctx.drawImage(cache.canvas, 20, top);
