@@ -223,11 +223,7 @@ export default class {
 				lineObj.tokens = data.tokens;
 				lineObj.folds = data.folds;
 				lineObj.stateFold = data.stateFold;
-				if (this.checkLineVisible(startLine)) {
-					lineObj.tokens = this.splitLongToken(lineObj.tokens);
-					lineObj.html = this.createHtml(lineObj.tokens, lineObj.text);
-					EventBus.$emit('render-line', { editorId: this.editorId, lineId: lineObj.lineId });
-				}
+				EventBus.$emit('render-line', { editorId: this.editorId, lineId: lineObj.lineId });
 				if (!lineObj.states || (lineObj.states.equals && !lineObj.states.equals(data.states)) || lineObj.states.toString() !== data.states.toString()) {
 					lineObj.states = data.states;
 					lineObj = this.htmls[startLine];
@@ -520,14 +516,5 @@ export default class {
 			}
 		});
 		return result;
-	}
-	checkLineVisible(line) {
-		let endLine = this.startLine + this.maxVisibleLines;
-		endLine = this.folder.getRealLine(endLine);
-		if (this.folder.getLineInFold(line)) {
-			//该行被包裹
-			return false;
-		}
-		return line >= this.startLine && line <= endLine;
 	}
 }

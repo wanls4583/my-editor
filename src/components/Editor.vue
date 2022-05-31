@@ -656,6 +656,7 @@ export default {
 				this.renderSelectionToken();
 				this.renderError();
 				this.renderCursor(forceCursorView);
+				this.$refs.minimap.render();
 			});
 		},
 		// 渲染代码
