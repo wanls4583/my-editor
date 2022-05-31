@@ -6,7 +6,7 @@
 <template>
 	<div class="my-minimap" ref="wrap">
 		<canvas :height="canvasHeight" :width="canvasWidth" ref="canvas"></canvas>
-		<div :style="{top: _top}" @mousedown="onBlockMDown" class="my-minimap-block"></div>
+		<div :style="{top: _top + 'px', height: blockHeight + 'px'}" @mousedown="onBlockMDown" class="my-minimap-block"></div>
 	</div>
 </template>
 <script>
@@ -30,6 +30,7 @@ export default {
 			canvasHeight: 0,
 			width: 120,
 			height: 0,
+			blockHeight: 0,
 			scale: 0.1,
 			top: 0,
 		};
@@ -42,7 +43,7 @@ export default {
 	computed: {
 		_top() {
 			let top = (this.nowLine - this.startLine) * this.$parent.charObj.charHight - this.top;
-			return top * this.scale + 'px';
+			return top * this.scale;
 		},
 	},
 	created() {
@@ -87,6 +88,7 @@ export default {
 			const resizeObserver = new ResizeObserver((entries) => {
 				if (this.$refs.wrap) {
 					this.height = this.$refs.wrap.clientHeight;
+					this.blockHeight = this.height * this.scale;
 					this.canvasHeight = this.height / this.scale;
 					this.maxVisibleLines = Math.ceil(this.canvasHeight / this.$parent.charObj.charHight) + 1;
 					this.ctx.restore();
@@ -188,11 +190,16 @@ export default {
 		},
 		onBlockMDown(e) {
 			this.startBlockMouseObj = e;
+			this.bTop = this._top;
 		},
 		onDocumentMmove(e) {
 			if (this.startBlockMouseObj) {
+				let maxScrollTop1 = this.contentHeight - this.height;
+				let maxScrollTop2 = this.height - this.blockHeight;
 				let delta = e.clientY - this.startBlockMouseObj.clientY;
-				this.$parent.$refs.scrollBar.scrollTop += delta / this.scale * 2;
+				this.bTop += delta;
+				this.bTop = this.bTop > maxScrollTop2 ? maxScrollTop2 : this.bTop;
+				this.$parent.$refs.scrollBar.scrollTop = this.bTop * (maxScrollTop1 / maxScrollTop2);
 				this.startBlockMouseObj = e;
 			}
 		},
