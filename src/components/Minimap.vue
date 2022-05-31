@@ -57,6 +57,7 @@ export default {
 				(this.initEventBus.fn1 = (data) => {
 					if (this.$parent.editorId === data.editorId) {
 						let line = this.renderedIdMap[data.lineId];
+						line = (line && line.line) || 0;
 						if (line && this.$parent.myContext.htmls[line - 1] && this.$parent.myContext.htmls[line - 1].lineId === data.lineId) {
 							this.drawLine(line, true);
 						}
