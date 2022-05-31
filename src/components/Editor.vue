@@ -1,16 +1,22 @@
 <template>
 	<div @contextmenu.prevent.stop="onContextmenu" @selectstart.prevent @wheel.stop="onWheel" class="my-editor-wrap" ref="editor">
 		<!-- 行号 -->
-		<div :style="{ top: _numTop }" class="my-nums" v-if="active">
+		<div class="my-num-wrap" v-if="active">
 			<!-- 占位行号，避免行号宽度滚动时变化 -->
 			<div class="my-num" style="visibility: hidden">{{ diffObj.maxLine || maxLine }}</div>
-			<div :class="{ 'my-active': nowCursorPos.line === line.num }" :key="line.num" :style="{ height: _lineHeight, 'line-height': _lineHeight }" class="my-num" v-for="line in renderHtmls">
-				<span class="num">{{ _num(line.num) }}</span>
-				<!-- 折叠图标 -->
-				<span :class="['iconfont', line.fold == 'open' ? 'my-fold-open icon-down1' : 'my-fold-close icon-right']" @click="onToggleFold(line.num)" class="my-fold my-center-center" v-if="line.fold"></span>
-				<template v-if="type !== 'diff'">
-					<span :class="['my-diff-'+_diffType(line.num)]" @click="onShowDiff(line.num)" class="my-diff-num" v-if="_diffType(line.num)"></span>
-				</template>
+			<div class="my-num-scroller" ref="numScroller">
+				<div :style="{ height: _contentHeight }" class="my-num-content">
+					<div :style="{ top: _top, height: _renderHeight }" class="my-num-render">
+						<div :class="{ 'my-active': nowCursorPos.line === line.num }" :key="line.num" :style="{ height: _lineHeight, 'line-height': _lineHeight }" class="my-num" v-for="line in renderHtmls">
+							<span class="num">{{ _num(line.num) }}</span>
+							<!-- 折叠图标 -->
+							<span :class="['iconfont', line.fold == 'open' ? 'my-fold-open icon-down1' : 'my-fold-close icon-right']" @click="onToggleFold(line.num)" class="my-fold my-center-center" v-if="line.fold"></span>
+							<template v-if="type !== 'diff'">
+								<span :class="['my-diff-'+_diffType(line.num)]" @click="onShowDiff(line.num)" class="my-diff-num" v-if="_diffType(line.num)"></span>
+							</template>
+						</div>
+					</div>
+				</div>
 			</div>
 		</div>
 		<div :style="{ 'box-shadow': _leftShadow }" class="my-content-wrap">
@@ -26,7 +32,7 @@
 					class="my-content"
 					ref="content"
 				>
-					<div :style="{ top: _top }" class="my-render" ref="render" v-if="active">
+					<div :style="{ top: _top, height: _renderHeight }" class="my-render" ref="render" v-if="active">
 						<div
 							:class="[_diffBg(line.num), _activeLine(line.num) ? 'my-active' : '']"
 							:data-line="line.num"
@@ -320,9 +326,6 @@ export default {
 				return type;
 			};
 		},
-		_numTop() {
-			return this.top - this.charObj.charHight + 'px';
-		},
 		_leftShadow() {
 			let shadow = [];
 			if (this.scrollLeft) {
@@ -354,9 +357,12 @@ export default {
 		_contentHeight() {
 			return this.contentHeight + 'px';
 		},
+		_renderHeight() {
+			return this.maxVisibleLines * this.charObj.charHight + 'px';
+		},
 		_textAreaPos() {
 			let left = this.cursorLeft;
-			let top = this.top;
+			let top = 0;
 			if (this.nowCursorPos) {
 				let line = this.nowCursorPos.line < this.startLine ? this.startLine : this.nowCursorPos.line;
 				top = this.folder.getRelativeLine(line) * this.charObj.charHight;
@@ -1276,7 +1282,6 @@ export default {
 			startLine = Math.floor(scrollTop / this.charObj.charHight);
 			startLine++;
 			this.startLine = this.folder.getRealLine(startLine);
-			this.top = -scrollTop % this.charObj.charHight;
 		},
 		setErrors(errors) {
 			this.errorMap = {};
@@ -1700,6 +1705,7 @@ export default {
 				this.setDiffTop();
 			}
 			this.$refs.scroller.scrollTop = this.scrollTop;
+			this.$refs.numScroller.scrollTop = this.scrollTop;
 		},
 		// 中文输入开始
 		onCompositionstart() {

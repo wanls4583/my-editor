@@ -43,15 +43,37 @@
 		}
 	}
 
-	&-nums {
-		flex-shrink: 0;
-		position: relative;
-	}
-
 	&-num {
 		position: relative;
 		padding: 0 22px 0 20px;
 		text-align: right;
+
+		&-wrap {
+			flex-shrink: 0;
+			position: relative;
+			height: 100%;
+		}
+
+		&-scroller {
+			position: absolute;
+			top: 0;
+			width: 100%;
+			height: 100%;
+			overflow: hidden;
+		}
+
+		&-content {
+			position: relative;
+			min-height: 100%;
+			overflow: hidden;
+		}
+
+		&-render {
+			position: absolute;
+			left: 0;
+			width: 100%;
+			transform: translate3d(0px, 0px, 0px);
+		}
 
 		.num {
 			position: relative;
@@ -114,6 +136,7 @@
 		position: absolute;
 		left: 0;
 		width: 100%;
+		transform: translate3d(0px, 0px, 0px);
 	}
 
 	&-cursor {
