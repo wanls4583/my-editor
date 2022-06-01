@@ -103,7 +103,7 @@ export default {
 			EventBus.$off('render-line', this.initEventBus.fn1);
 		},
 		setStartLine() {
-			let maxScrollTop1 = this.contentHeight - this.canvasHeight;
+			let maxScrollTop1 = this.contentHeight - this.canvasHeight + 1; //容器高度可能存在小数
 			let maxScrollTop2 = this.contentHeight - this.height;
 			let scrollTop = 0;
 			maxScrollTop1 = maxScrollTop1 < 0 ? 0 : maxScrollTop1;
@@ -194,7 +194,7 @@ export default {
 		},
 		onDocumentMmove(e) {
 			if (this.startBlockMouseObj) {
-				let maxScrollTop1 = this.contentHeight - this.height;
+				let maxScrollTop1 = this.contentHeight - this.height + 1; //容器高度可能存在小数
 				let maxScrollTop2 = this.height - this.blockHeight;
 				let delta = e.clientY - this.startBlockMouseObj.clientY;
 				let top = this.bTop;
