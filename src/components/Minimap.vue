@@ -197,10 +197,12 @@ export default {
 				let maxScrollTop1 = this.contentHeight - this.height;
 				let maxScrollTop2 = this.height - this.blockHeight;
 				let delta = e.clientY - this.startBlockMouseObj.clientY;
-				this.bTop += delta;
-				this.bTop = this.bTop > maxScrollTop2 ? maxScrollTop2 : this.bTop;
-				this.$parent.$refs.scrollBar.scrollTop = this.bTop * (maxScrollTop1 / maxScrollTop2);
+				let top = this.bTop;
+				top += delta;
+				top = top > maxScrollTop2 ? maxScrollTop2 : top;
+				this.$parent.$refs.scrollBar.scrollTop = top * (maxScrollTop1 / maxScrollTop2);
 				this.startBlockMouseObj = e;
+				this.bTop += delta;
 			}
 		},
 		onDocumentMouseUp(e) {
