@@ -6,7 +6,7 @@
 			<div class="my-num" style="visibility: hidden">{{ diffObj.maxLine || maxLine }}</div>
 			<div class="my-num-scroller" ref="numScroller">
 				<div :style="{ height: _contentHeight }" class="my-num-content">
-					<div :style="{ top: _top, height: _renderHeight }" class="my-num-render">
+					<div :style="{ top: _top }" class="my-num-render">
 						<div :class="{ 'my-active': nowCursorPos.line === line.num }" :key="line.num" :style="{ height: _lineHeight, 'line-height': _lineHeight }" class="my-num" v-for="line in renderHtmls">
 							<span class="num">{{ _num(line.num) }}</span>
 							<!-- 折叠图标 -->
@@ -32,7 +32,7 @@
 					class="my-content"
 					ref="content"
 				>
-					<div :style="{ top: _top, height: _renderHeight }" class="my-render" ref="render" v-if="active">
+					<div :style="{ top: _top }" class="my-render" ref="render" v-if="active">
 						<div
 							:class="[_diffBg(line.num), _activeLine(line.num) ? 'my-active' : '']"
 							:data-line="line.num"
@@ -357,9 +357,6 @@ export default {
 		_contentHeight() {
 			return this.contentHeight + 'px';
 		},
-		_renderHeight() {
-			return this.maxVisibleLines * this.charObj.charHight + 'px';
-		},
 		_textAreaPos() {
 			let left = this.cursorLeft;
 			let top = 0;
@@ -659,8 +656,12 @@ export default {
 		},
 		// 渲染
 		render(forceCursorView) {
-			cancelAnimationFrame(this.renderTimer);
-			this.renderTimer = requestAnimationFrame(() => {
+			let renderId = this.renderId + 1 || 1;
+			this.renderId = renderId;
+			this.$nextTick(() => {
+				if (renderId !== this.renderId) {
+					return;
+				}
 				this.renderLine();
 				this.renderSelectedBg();
 				this.renderSelectionToken();
@@ -1237,13 +1238,18 @@ export default {
 							this.scrollTop = height - this.scrollerArea.height;
 							this.setStartLine(this.scrollTop);
 							this.$refs.scrollBar.scrollTop = this.scrollTop;
+							this.$refs.scroller.scrollTop = this.scrollTop;
+							this.$refs.numScroller.scrollTop = this.scrollTop;
 						});
 					} else if (nowCursorPos.line <= this.startLine) {
 						requestAnimationFrame(() => {
 							if (nowCursorPos.line <= this.startLine) {
+								let scrollTop = (this.folder.getRelativeLine(nowCursorPos.line) - 1) * this.charObj.charHight;
 								//此时this.startLine可能已经通过onScrll而改变
 								this.startLine = nowCursorPos.line;
-								this.$refs.scrollBar.scrollTop = (this.folder.getRelativeLine(nowCursorPos.line) - 1) * this.charObj.charHight;
+								this.$refs.scrollBar.scrollTop = scrollTop;
+								this.$refs.scroller.scrollTop = scrollTop;
+								this.$refs.numScroller.scrollTop = scrollTop;
 							}
 						});
 					}
