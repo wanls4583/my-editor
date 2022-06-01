@@ -1,20 +1,24 @@
 <template>
 	<div @contextmenu.prevent.stop="onContextmenu" @selectstart.prevent @wheel.stop="onWheel" class="my-editor-wrap" ref="editor">
 		<!-- 行号 -->
-		<div class="my-num-wrap" v-if="active">
+		<div class="my-num-wrap">
 			<!-- 占位行号，避免行号宽度滚动时变化 -->
-			<div class="my-num" style="visibility: hidden">{{ diffObj.maxLine || maxLine }}</div>
+			<div class="my-num" style="position: relative; visibility: hidden;">{{ diffObj.maxLine || maxLine }}</div>
 			<div class="my-num-scroller" ref="numScroller">
 				<div :style="{ height: _contentHeight }" class="my-num-content">
-					<div :style="{ top: _top }" class="my-num-render">
-						<div :class="{ 'my-active': nowCursorPos.line === line.num }" :key="line.num" :style="{ height: _lineHeight, 'line-height': _lineHeight }" class="my-num" v-for="line in renderHtmls">
-							<span class="num">{{ _num(line.num) }}</span>
-							<!-- 折叠图标 -->
-							<span :class="['iconfont', line.fold == 'open' ? 'my-fold-open icon-down1' : 'my-fold-close icon-right']" @click="onToggleFold(line.num)" class="my-fold my-center-center" v-if="line.fold"></span>
-							<template v-if="type !== 'diff'">
-								<span :class="['my-diff-'+_diffType(line.num)]" @click="onShowDiff(line.num)" class="my-diff-num" v-if="_diffType(line.num)"></span>
-							</template>
-						</div>
+					<div
+						:class="{ 'my-active': nowCursorPos.line === line.num }"
+						:key="line.num"
+						:style="{ height: _lineHeight, 'line-height': _lineHeight, top: line.top }"
+						class="my-num"
+						v-for="line in renderHtmls"
+					>
+						<span class="num">{{ _num(line.num) }}</span>
+						<!-- 折叠图标 -->
+						<span :class="['iconfont', line.fold == 'open' ? 'my-fold-open icon-down1' : 'my-fold-close icon-right']" @click="onToggleFold(line.num)" class="my-fold my-center-center" v-if="line.fold"></span>
+						<template v-if="type !== 'diff'">
+							<span :class="['my-diff-'+_diffType(line.num)]" @click="onShowDiff(line.num)" class="my-diff-num" v-if="_diffType(line.num)"></span>
+						</template>
 					</div>
 				</div>
 			</div>
@@ -32,50 +36,48 @@
 					class="my-content"
 					ref="content"
 				>
-					<div :style="{ top: _top }" class="my-render" ref="render" v-if="active">
+					<div
+						:class="[_diffBg(line.num), _activeLine(line.num) ? 'my-active' : '']"
+						:data-line="line.num"
+						:id="id+'_line_' + line.num"
+						:key="line.num"
+						:style="{ height: _lineHeight, 'line-height': _lineHeight, top: line.top }"
+						class="my-line"
+						v-for="line in renderHtmls"
+					>
+						<!-- my-select-bg为选中状态 -->
 						<div
-							:class="[_diffBg(line.num), _activeLine(line.num) ? 'my-active' : '']"
-							:data-line="line.num"
-							:id="id+'_line_' + line.num"
-							:key="line.num"
-							:style="{ height: _lineHeight, 'line-height': _lineHeight }"
-							class="my-line"
-							v-for="line in renderHtmls"
-						>
-							<!-- my-select-bg为选中状态 -->
-							<div
-								:class="[
+							:class="[
                                     line.active ? 'my-active' : '',
                                     line.selected ? (line.isFsearch ? 'my-search-bg' : 'my-select-bg') : '',
                                     line.selected && selectedFg ? 'my-select-fg' : '',
                                     line.fold == 'close' ? 'fold-close' : '',
                                 ]"
-								:data-line="line.num"
-								class="my-code"
-								v-html="line.html"
-							></div>
-							<!-- 当前光标所处范围-begin -->
-							<div :style="{ left: bracketMatch.start.left + 'px', width: bracketMatch.start.width + 'px' }" class="my-bracket-match" v-if="bracketMatch && line.num == bracketMatch.start.line"></div>
-							<!-- 当前光标所处范围-end -->
-							<div :style="{ left: bracketMatch.end.left + 'px', width: bracketMatch.end.width + 'px' }" class="my-bracket-match" v-if="bracketMatch && line.num == bracketMatch.end.line"></div>
-							<!-- 选中时的首行背景 -->
-							<div
-								:class="{ 'my-active': range.active, 'my-search-bg': range.isFsearch }"
-								:style="{ left: range.left + 'px', width: range.width + 'px' }"
-								class="my-line-bg my-select-bg"
-								v-for="range in line.selectStarts"
-							></div>
-							<!-- 选中时的末行背景 -->
-							<div
-								:class="{ 'my-active': range.active, 'my-search-bg': range.isFsearch }"
-								:style="{ left: range.left + 'px', width: range.width + 'px' }"
-								class="my-line-bg my-select-bg"
-								v-for="range in line.selectEnds"
-							></div>
-							<span :style="{ left: _tabLineLeft(tab) }" class="my-tab-line" v-for="tab in line.tabNum"></span>
-							<!-- 模拟光标 -->
-							<div :style="{ height: _lineHeight, left: left, visibility: _cursorVisible }" class="my-cursor" style="top: 0px" v-for="left in line.cursorList"></div>
-						</div>
+							:data-line="line.num"
+							class="my-code"
+							v-html="line.html"
+						></div>
+						<!-- 当前光标所处范围-begin -->
+						<div :style="{ left: bracketMatch.start.left + 'px', width: bracketMatch.start.width + 'px' }" class="my-bracket-match" v-if="bracketMatch && line.num == bracketMatch.start.line"></div>
+						<!-- 当前光标所处范围-end -->
+						<div :style="{ left: bracketMatch.end.left + 'px', width: bracketMatch.end.width + 'px' }" class="my-bracket-match" v-if="bracketMatch && line.num == bracketMatch.end.line"></div>
+						<!-- 选中时的首行背景 -->
+						<div
+							:class="{ 'my-active': range.active, 'my-search-bg': range.isFsearch }"
+							:style="{ left: range.left + 'px', width: range.width + 'px' }"
+							class="my-line-bg my-select-bg"
+							v-for="range in line.selectStarts"
+						></div>
+						<!-- 选中时的末行背景 -->
+						<div
+							:class="{ 'my-active': range.active, 'my-search-bg': range.isFsearch }"
+							:style="{ left: range.left + 'px', width: range.width + 'px' }"
+							class="my-line-bg my-select-bg"
+							v-for="range in line.selectEnds"
+						></div>
+						<span :style="{ left: _tabLineLeft(tab) }" class="my-tab-line" v-for="tab in line.tabNum"></span>
+						<!-- 模拟光标 -->
+						<div :style="{ height: _lineHeight, left: left, visibility: _cursorVisible }" class="my-cursor" style="top: 0px" v-for="left in line.cursorList"></div>
 					</div>
 					<!-- 输入框 -->
 					<textarea
@@ -335,9 +337,6 @@ export default {
 		},
 		_rightShadow() {
 			return this.scrollLeft + this.scrollerArea.width < this._contentMinWidth - 2 ? '-6px 0px 5px -5px rgba(0, 0, 0, 0.8)' : 'none';
-		},
-		_top() {
-			return (this.folder.getRelativeLine(this.startLine) - 1) * this.charObj.charHight + 'px';
 		},
 		_lineHeight() {
 			return this.charObj.charHight + 'px';
@@ -710,6 +709,7 @@ export default {
 			function _getObj(item, line) {
 				let tabNum = _getTabNum(line);
 				let fold = '';
+				let top = (that.folder.getRelativeLine(line) - 1) * that.charObj.charHight + 'px';
 				if (that.folder.getFoldByLine(line)) {
 					//该行已经折叠
 					fold = 'close';
@@ -731,6 +731,7 @@ export default {
 				return {
 					html: html,
 					num: line,
+					top: top,
 					tabNum: tabNum,
 					selectStarts: [],
 					selectEnds: [],
@@ -1039,9 +1040,9 @@ export default {
 			});
 
 			function _renderError() {
-				let $render = $(this.$refs.render);
+				let $content = $(this.$refs.content);
 				let keyMap = {};
-				$render.find('span.my-token-error').remove();
+				$content.find('span.my-token-error').remove();
 				this.errors.forEach((item) => {
 					let key = item.line + ',' + item.originColumn;
 					let lineObj = null;
@@ -1083,26 +1084,26 @@ export default {
 				if (line < this.startLine || line >= this.startLine + this.maxVisibleLines || line > this.maxLine) {
 					return;
 				}
-				let $render = $(this.$refs.render);
+				let $content = $(this.$refs.content);
 				let lineObj = this.myContext.htmls[line - 1];
 				let token = this.getToken(line, column);
 				let left = 0;
 				if (token) {
-					let $token = $render.find(`div.my-code[data-line="${line}"]`).find(`span[data-column="${token.startIndex}"]`);
+					let $token = $content.find(`div.my-code[data-line="${line}"]`).find(`span[data-column="${token.startIndex}"]`);
 					left = $token[0].offsetLeft + this.getStrWidth(lineObj.text, token.startIndex, column);
 				}
 				let width = this.getStrWidth(lineObj.text, column, endColumn) || this.charObj.charWidth;
 				let html = `<span class="my-token-error" style="width:${width}px;left:${left}px" data-key="${key}"></span>`;
-				$render.find(`div.my-code[data-line="${line}"]`).append(html);
+				$content.find(`div.my-code[data-line="${line}"]`).append(html);
 			}
 
 			function _renderLineError(line, key) {
 				if (line < this.startLine || line >= this.startLine + this.maxVisibleLines || line > this.maxLin) {
 					return;
 				}
-				let $render = $(this.$refs.render);
+				let $content = $(this.$refs.content);
 				let html = `<span class="my-token-error" style="width:100%;left:0px" data-key="${key}"></span>`;
-				$render.find(`div.my-code[data-line="${line}"]`).append(html);
+				$content.find(`div.my-code[data-line="${line}"]`).append(html);
 			}
 		},
 		// 折叠行
@@ -1288,6 +1289,7 @@ export default {
 			startLine = Math.floor(scrollTop / this.charObj.charHight);
 			startLine++;
 			this.startLine = this.folder.getRealLine(startLine);
+			this.startLineTop = (this.folder.getRelativeLine(this.startLine) - 1) * this.charObj.charHight;
 		},
 		setErrors(errors) {
 			this.errorMap = {};
@@ -1329,7 +1331,7 @@ export default {
 					let height = this.$refs.autoTip.$el.clientHeight;
 					this.autoTipStyle.top = this.folder.getRelativeLine(this.nowCursorPos.line) * this.charObj.charHight;
 					this.autoTipStyle.left = this.getExactLeft(this.nowCursorPos);
-					if (this.autoTipStyle.top + height > Util.getNum(this._top) + this.$refs.scroller.clientHeight) {
+					if (this.autoTipStyle.top + height > this.startLineTop + this.$refs.scroller.clientHeight) {
 						this.autoTipStyle.top -= height + this.charObj.charHight;
 					}
 					if (this.autoTipStyle.left + width > this.scrollLeft + this.scrollerArea.width) {
@@ -1526,7 +1528,7 @@ export default {
 		},
 		onErrorMousemove(e, line) {
 			let $errors = $(`div.my-code[data-line=${line}]`).children('span.my-token-error');
-			let left = e.clientX - $(this.$refs.render).offset().left;
+			let left = e.clientX - $(this.$refs.content).offset().left;
 			for (let i = 0; i < $errors.length; i++) {
 				let $error = $errors.eq(i);
 				let width = $error.width();

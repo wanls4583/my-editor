@@ -44,7 +44,9 @@
 	}
 
 	&-num {
-		position: relative;
+		position: absolute;
+		left: 0;
+		right: 0;
 		padding: 0 22px 0 20px;
 		text-align: right;
 
