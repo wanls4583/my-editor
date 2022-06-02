@@ -36,43 +36,26 @@
 					class="my-content"
 					ref="content"
 				>
-					<!-- <div
-						:class="[_diffBg(line.num), _activeLine(line.num) ? 'my-active' : '']"
-						:data-line="line.num"
-						:id="id+'_line_' + line.num"
-						:key="line.num"
-						:style="{ height: _lineHeight, 'line-height': _lineHeight, top: line.top }"
-						class="my-line"
-						v-for="line in renderObjs"
-					>
-						<div
-							:class="[
-                                    line.active ? 'my-active' : '',
-                                    line.selected ? (line.isFsearch ? 'my-search-bg' : 'my-select-bg') : '',
-                                    line.selected && selectedFg ? 'my-select-fg' : '',
-                                    line.fold == 'close' ? 'fold-close' : '',
-                                ]"
-							:data-line="line.num"
-							class="my-code"
-							v-html="line.html"
-						></div>
-						<div :style="{ left: bracketMatch.start.left + 'px', width: bracketMatch.start.width + 'px' }" class="my-bracket-match" v-if="bracketMatch && line.num == bracketMatch.start.line"></div>
-						<div :style="{ left: bracketMatch.end.left + 'px', width: bracketMatch.end.width + 'px' }" class="my-bracket-match" v-if="bracketMatch && line.num == bracketMatch.end.line"></div>
-						<div
-							:class="{ 'my-active': range.active, 'my-search-bg': range.isFsearch }"
-							:style="{ left: range.left + 'px', width: range.width + 'px' }"
-							class="my-line-bg my-select-bg"
-							v-for="range in line.selectStarts"
-						></div>
-						<div
-							:class="{ 'my-active': range.active, 'my-search-bg': range.isFsearch }"
-							:style="{ left: range.left + 'px', width: range.width + 'px' }"
-							class="my-line-bg my-select-bg"
-							v-for="range in line.selectEnds"
-						></div>
-						<span :style="{ left: _tabLineLeft(tab) }" class="my-tab-line" v-for="tab in line.tabNum"></span>
-						<div :style="{ height: _lineHeight, left: left, visibility: _cursorVisible }" class="my-cursor" style="top: 0px" v-for="left in line.cursorList"></div>
-					</div>-->
+					<div class="my-lines-view" ref="lineView"></div>
+					<div class="my-cursor-view" ref="cursorView">
+						<template v-for="line in renderObjs">
+							<div :key="line.num" v-if="line.cursorList.length">
+								<div :style="{ height: _lineHeight, left: left, top: line.top, visibility: _cursorVisible }" class="my-cursor" style="top: 0px" v-for="left in line.cursorList"></div>
+							</div>
+						</template>
+					</div>
+					<div class="my-bg-view">
+						<div :class="[_activeLine(line.num) ? 'my-active' : '']" :key="line.num" :style="{height: _lineHeight, top: line.top}" class="my-line-bg" v-for="line in renderObjs">
+							<div :style="{ left: bracketMatch.start.left + 'px', width: bracketMatch.start.width + 'px' }" class="my-bracket-match" v-if="bracketMatch && line.num == bracketMatch.start.line"></div>
+							<div :style="{ left: bracketMatch.end.left + 'px', width: bracketMatch.end.width + 'px' }" class="my-bracket-match" v-if="bracketMatch && line.num == bracketMatch.end.line"></div>
+							<div
+								:class="{ 'my-active': range.active, 'my-search-bg': range.isFsearch }"
+								:style="{ left: range.left + 'px', width: range.width + 'px' }"
+								class="my-line-bg my-select-bg"
+								v-for="range in line.selection"
+							></div>
+						</div>
+					</div>
 					<!-- 输入框 -->
 					<textarea
 						:style="{ top: _textAreaPos.top, left: _textAreaPos.left, height: _lineHeight  }"
@@ -291,7 +274,7 @@ export default {
 						return 'my-diff-removed';
 					}
 				}
-				return line;
+				return '';
 			};
 		},
 		_diffType() {
@@ -445,6 +428,7 @@ export default {
 		this.setScrollerArea();
 		this.setContentHeight();
 		this.$content = $(this.$refs.content);
+		this.$lineView = $(this.$refs.lineView);
 		if (this.type === 'diff') {
 			this.showDiff();
 		}
@@ -690,15 +674,17 @@ export default {
 				return;
 			}
 			let renderCache = {};
-			let renderLineIdMap = {};
 			this.renderObjs = [];
+			this.myContext.renderedLineMap.clear();
+			this.myContext.renderedIdMap.clear();
 			for (let i = 0, startLine = this.startLine; i < this.maxVisibleLines && startLine <= this.myContext.htmls.length; i++) {
 				let lineObj = this.myContext.htmls[startLine - 1];
 				let lineId = lineObj.lineId;
 				let obj = _getObj(lineObj, startLine);
 				let fold = this.folder.getFoldByLine(startLine);
 				this.renderObjs.push(obj);
-				renderLineIdMap[obj.lineId] = true;
+				this.myContext.renderedLineMap.set(obj.num, obj);
+				this.myContext.renderedIdMap.set(lineObj.lineId, obj);
 				if (fold) {
 					startLine = fold.end.line;
 				} else {
@@ -706,7 +692,7 @@ export default {
 				}
 			}
 			for (let lineId in this.renderCache) {
-				if (!renderLineIdMap[lineId]) {
+				if (!this.myContext.renderedIdMap.has(lineId - 0)) {
 					this.renderCache[lineId].$line.hide();
 					this.renderPool.push(this.renderCache[lineId]);
 				}
@@ -744,9 +730,7 @@ export default {
 					lineId: item.lineId,
 					top: top,
 					tabNum: tabNum,
-					selectStarts: [],
-					selectEnds: [],
-					selected: false,
+					selection: [],
 					isFsearch: false,
 					fold: fold,
 					cursorList: [],
@@ -793,17 +777,12 @@ export default {
 			let lineAttr = {};
 			let codeAttr = {};
 
-			lineAttr['class'] = ['my-line', this._diffBg(renderObj.num), this._activeLine(renderObj.num) ? 'my-active' : ''].join(' ');
+			lineAttr['class'] = ['my-line', this._diffBg(renderObj.num)].join(' ');
 			lineAttr['style'] = _style({ top: renderObj.top });
 			lineAttr['data-line'] = renderObj.num;
+			lineAttr['id'] = `line-${this.id}-${renderObj.num}`;
 
-			codeAttr['class'] = [
-				'my-code',
-				renderObj.active ? 'my-active' : '',
-				renderObj.selected ? (renderObj.isFsearch ? 'my-search-bg' : 'my-select-bg') : '',
-				renderObj.selected && this.selectedFg ? 'my-select-fg' : '',
-				renderObj.fold == 'close' ? 'fold-close' : '',
-			].join(' ');
+			codeAttr['class'] = ['my-code', renderObj.fold == 'close' ? 'fold-close' : ''].join(' ');
 			codeAttr['data-line'] = renderObj.num;
 
 			if (!cacheData) {
@@ -844,7 +823,7 @@ export default {
 			$tabLine = $(`<div>${_tabLine.call(this, renderObj.tabNum)}</div>`);
 			$line.append($code);
 			$line.append($tabLine);
-			this.$content.append($line);
+			this.$lineView.append($line);
 
 			cacheData = {
 				lineAttr: lineAttr,
@@ -887,7 +866,6 @@ export default {
 			}
 		},
 		renderSelectedBg() {
-			return;
 			let renderSelectedBgId = this.renderSelectedBgId + 1 || 1;
 			this.renderSelectedBgId = renderSelectedBgId;
 			this.activeLineBg = true;
@@ -904,9 +882,7 @@ export default {
 				}
 				this.clearSelectionToken();
 				this.renderObjs.forEach((item) => {
-					item.selected = false;
-					item.selectStarts = [];
-					item.selectEnds = [];
+					item.selection = [];
 				});
 				this.fSelecter.ranges.forEach((range) => {
 					this._renderSelectedBg(range, true);
@@ -945,14 +921,18 @@ export default {
 			lastLine = lastLine < end.line - 1 ? lastLine : end.line - 1;
 			for (let line = firstLine; line <= lastLine; line++) {
 				if (this.myContext.renderedLineMap.has(line)) {
-					let lineObj = this.myContext.renderedLineMap.get(line);
-					lineObj.selected = true;
-					lineObj.isFsearch = isFsearch;
-					lineObj.active = range.active;
+					let renderObj = this.myContext.renderedLineMap.get(line);
+					let lineObj = this.myContext.lineIdMap.get(renderObj.lineId);
+					renderObj.selection.push({
+						left: 0,
+						width: lineObj.width,
+						active: range.active,
+						isFsearch: isFsearch,
+					});
 				}
 			}
 			if (this.myContext.renderedLineMap.has(start.line)) {
-				this.myContext.renderedLineMap.get(start.line).selectStarts.push({
+				this.myContext.renderedLineMap.get(start.line).selection.push({
 					left: start.left,
 					width: start.width,
 					active: range.active,
@@ -964,7 +944,7 @@ export default {
 				range.active && this._renderSelectionToken(start.line, start.column, endColumn);
 			}
 			if (end.line > start.line && this.myContext.renderedLineMap.has(end.line)) {
-				this.myContext.renderedLineMap.get(end.line).selectEnds.push({
+				this.myContext.renderedLineMap.get(end.line).selection.push({
 					left: end.left,
 					width: end.width,
 					active: range.active,
@@ -977,7 +957,6 @@ export default {
 			}
 		},
 		renderSelectionToken(line) {
-			return;
 			// 只有设置了选中前景色才处理
 			if (!globalData.colors['editor.selectionForeground']) {
 				return;
@@ -1537,7 +1516,7 @@ export default {
 					break;
 				}
 			}
-			let $token = $(`#${this.id}_line_${cursorPos.line}`)
+			let $token = $(`#line-${this.id}-${cursorPos.line}`)
 				.children('.my-code')
 				.children('span[data-column="' + token.startIndex + '"]');
 			if (!$token.length) {

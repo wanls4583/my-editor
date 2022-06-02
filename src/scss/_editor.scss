@@ -134,11 +134,28 @@
 		}
 	}
 
-	&-render {
+	&-bg-view {
 		position: absolute;
+		top: 0;
 		left: 0;
-		width: 100%;
-		transform: translate3d(0px, 0px, 0px);
+		right: 0;
+		z-index: 1;
+	}
+
+	&-lines-view {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		z-index: 2;
+	}
+
+	&-cursor-view {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		z-index: 3;
 	}
 
 	&-cursor {
