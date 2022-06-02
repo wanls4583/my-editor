@@ -171,9 +171,15 @@ export default {
 			}
 		},
 		render() {
-			cancelAnimationFrame(this.renderTimer);
+			if (this.rendering) {
+				return;
+			}
+			this.rendering = true;
 			this.renderTimer = requestAnimationFrame(() => {
 				this.renderLine();
+				this.$nextTick(() => {
+					this.rendering = false;
+				});
 			});
 		},
 		renderLine() {

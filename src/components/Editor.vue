@@ -11,7 +11,7 @@
 						:key="line.num"
 						:style="{ height: _lineHeight, 'line-height': _lineHeight, top: line.top }"
 						class="my-num"
-						v-for="line in renderHtmls"
+						v-for="line in renderObjs"
 					>
 						<span class="num">{{ _num(line.num) }}</span>
 						<!-- 折叠图标 -->
@@ -36,16 +36,15 @@
 					class="my-content"
 					ref="content"
 				>
-					<div
+					<!-- <div
 						:class="[_diffBg(line.num), _activeLine(line.num) ? 'my-active' : '']"
 						:data-line="line.num"
 						:id="id+'_line_' + line.num"
 						:key="line.num"
 						:style="{ height: _lineHeight, 'line-height': _lineHeight, top: line.top }"
 						class="my-line"
-						v-for="line in renderHtmls"
+						v-for="line in renderObjs"
 					>
-						<!-- my-select-bg为选中状态 -->
 						<div
 							:class="[
                                     line.active ? 'my-active' : '',
@@ -57,18 +56,14 @@
 							class="my-code"
 							v-html="line.html"
 						></div>
-						<!-- 当前光标所处范围-begin -->
 						<div :style="{ left: bracketMatch.start.left + 'px', width: bracketMatch.start.width + 'px' }" class="my-bracket-match" v-if="bracketMatch && line.num == bracketMatch.start.line"></div>
-						<!-- 当前光标所处范围-end -->
 						<div :style="{ left: bracketMatch.end.left + 'px', width: bracketMatch.end.width + 'px' }" class="my-bracket-match" v-if="bracketMatch && line.num == bracketMatch.end.line"></div>
-						<!-- 选中时的首行背景 -->
 						<div
 							:class="{ 'my-active': range.active, 'my-search-bg': range.isFsearch }"
 							:style="{ left: range.left + 'px', width: range.width + 'px' }"
 							class="my-line-bg my-select-bg"
 							v-for="range in line.selectStarts"
 						></div>
-						<!-- 选中时的末行背景 -->
 						<div
 							:class="{ 'my-active': range.active, 'my-search-bg': range.isFsearch }"
 							:style="{ left: range.left + 'px', width: range.width + 'px' }"
@@ -76,9 +71,8 @@
 							v-for="range in line.selectEnds"
 						></div>
 						<span :style="{ left: _tabLineLeft(tab) }" class="my-tab-line" v-for="tab in line.tabNum"></span>
-						<!-- 模拟光标 -->
 						<div :style="{ height: _lineHeight, left: left, visibility: _cursorVisible }" class="my-cursor" style="top: 0px" v-for="left in line.cursorList"></div>
-					</div>
+					</div>-->
 					<!-- 输入框 -->
 					<textarea
 						:style="{ top: _textAreaPos.top, left: _textAreaPos.left, height: _lineHeight  }"
@@ -194,7 +188,7 @@ export default {
 			language: '',
 			theme: '',
 			tabSize: 4,
-			renderHtmls: [],
+			renderObjs: [],
 			startLine: 1,
 			top: 0,
 			cursorLeft: 0,
@@ -450,6 +444,7 @@ export default {
 		this.initResizeEvent();
 		this.setScrollerArea();
 		this.setContentHeight();
+		this.$content = $(this.$refs.content);
 		if (this.type === 'diff') {
 			this.showDiff();
 		}
@@ -478,6 +473,9 @@ export default {
 			this.cursor.addCursorPos(this.nowCursorPos);
 			this.wordPattern = Util.getWordPattern(this.language);
 			this.wordPattern = new RegExp(`^(${this.wordPattern.source})`);
+			this.renderCache = {};
+			this.renderPool = [];
+			this.tabCache = {};
 		},
 		initRenderData() {
 			this.charObj = Util.getCharWidth(this.$refs.content, '<div class="my-line"><div class="my-code">[dom]</div></div>');
@@ -560,7 +558,7 @@ export default {
 				'render-line',
 				(this.initEventBus.fn6 = (data) => {
 					if (this.editorId === data.editorId) {
-						this.renderLine(data.lineId);
+						this.renderLines(data.lineId);
 					}
 				})
 			);
@@ -655,31 +653,34 @@ export default {
 		},
 		// 渲染
 		render(forceCursorView) {
-			let renderId = this.renderId + 1 || 1;
-			this.renderId = renderId;
-			this.$nextTick(() => {
-				if (renderId !== this.renderId) {
-					return;
-				}
-				this.renderLine();
+			if (this.rendering) {
+				return;
+			}
+			this.rendering = true;
+			requestAnimationFrame(() => {
+				this.renderLines();
 				this.renderSelectedBg();
 				this.renderSelectionToken();
 				this.renderError();
 				this.renderCursor(forceCursorView);
 				this.$refs.minimap && this.$refs.minimap.render();
+				this.$nextTick(() => {
+					this.rendering = false;
+				});
 			});
 		},
 		// 渲染代码
-		renderLine(lineId) {
+		renderLines(lineId) {
 			let that = this;
 			// 只更新一行
 			if (lineId) {
-				if (this.myContext.renderedIdMap.has(lineId)) {
+				if (this.renderCache[lineId]) {
 					let item = this.myContext.lineIdMap.get(lineId);
-					let obj = this.myContext.renderedIdMap.get(lineId);
+					let obj = this.renderCache[lineId];
 					// 高亮完成渲染某一行时，render可能还没完成，导致num没更新，此时跳过
 					if (this.myContext.htmls[obj.num - 1] && this.myContext.htmls[obj.num - 1].lineId === lineId) {
-						Object.assign(obj, _getObj(item, obj.num));
+						obj = _getObj(item, obj.num);
+						this.renderLine(obj);
 						this.renderCursor();
 						this.renderSelectedBg();
 						this.renderSelectionToken(obj.line);
@@ -688,23 +689,32 @@ export default {
 				}
 				return;
 			}
-			this.myContext.renderedIdMap.clear();
-			this.myContext.renderedLineMap.clear();
-			this.renderHtmls = [];
+			let renderCache = {};
+			let renderLineIdMap = {};
+			this.renderObjs = [];
 			for (let i = 0, startLine = this.startLine; i < this.maxVisibleLines && startLine <= this.myContext.htmls.length; i++) {
 				let lineObj = this.myContext.htmls[startLine - 1];
 				let lineId = lineObj.lineId;
 				let obj = _getObj(lineObj, startLine);
 				let fold = this.folder.getFoldByLine(startLine);
-				this.renderHtmls.push(obj);
-				this.myContext.renderedIdMap.set(lineId, obj);
-				this.myContext.renderedLineMap.set(startLine, obj);
+				this.renderObjs.push(obj);
+				renderLineIdMap[obj.lineId] = true;
 				if (fold) {
 					startLine = fold.end.line;
 				} else {
 					startLine++;
 				}
 			}
+			for (let lineId in this.renderCache) {
+				if (!renderLineIdMap[lineId]) {
+					this.renderCache[lineId].$line.hide();
+					this.renderPool.push(this.renderCache[lineId]);
+				}
+			}
+			this.renderObjs.forEach((obj) => {
+				renderCache[obj.lineId] = this.renderLine(obj);
+			});
+			this.renderCache = renderCache;
 
 			function _getObj(item, line) {
 				let tabNum = _getTabNum(line);
@@ -731,6 +741,7 @@ export default {
 				return {
 					html: html,
 					num: line,
+					lineId: item.lineId,
 					top: top,
 					tabNum: tabNum,
 					selectStarts: [],
@@ -774,7 +785,109 @@ export default {
 				return tabNum;
 			}
 		},
+		renderLine(renderObj) {
+			let cacheData = this.renderCache[renderObj.lineId];
+			let $line = null;
+			let $code = null;
+			let $tabLine = null;
+			let lineAttr = {};
+			let codeAttr = {};
+
+			lineAttr['class'] = ['my-line', this._diffBg(renderObj.num), this._activeLine(renderObj.num) ? 'my-active' : ''].join(' ');
+			lineAttr['style'] = _style({ top: renderObj.top });
+			lineAttr['data-line'] = renderObj.num;
+
+			codeAttr['class'] = [
+				'my-code',
+				renderObj.active ? 'my-active' : '',
+				renderObj.selected ? (renderObj.isFsearch ? 'my-search-bg' : 'my-select-bg') : '',
+				renderObj.selected && this.selectedFg ? 'my-select-fg' : '',
+				renderObj.fold == 'close' ? 'fold-close' : '',
+			].join(' ');
+			codeAttr['data-line'] = renderObj.num;
+
+			if (!cacheData) {
+				cacheData = this.renderPool.pop();
+				cacheData && cacheData.$line.show();
+			}
+
+			if (cacheData) {
+				$line = cacheData.$line;
+				$code = cacheData.$code;
+				$tabLine = cacheData.$tabLine;
+				for (let key in lineAttr) {
+					if (lineAttr[key] !== cacheData.lineAttr[key]) {
+						$line.attr(key, lineAttr[key]);
+					}
+				}
+				for (let key in codeAttr) {
+					if (codeAttr[key] !== cacheData.codeAttr[key]) {
+						$code.attr(key, codeAttr[key]);
+					}
+				}
+				if (cacheData.html !== renderObj.html) {
+					$code.html(renderObj.html);
+				}
+				if (cacheData.tabNum !== renderObj.tabNum) {
+					$tabLine.html(_tabLine.call(this, renderObj.tabNum));
+				}
+				cacheData.lineAttr = lineAttr;
+				cacheData.codeAttr = codeAttr;
+				cacheData.html = renderObj.html;
+				cacheData.num = renderObj.num;
+				cacheData.tabNum = renderObj.tabNum;
+				return cacheData;
+			}
+
+			$line = $(`<div${_attr(lineAttr)}></div>`);
+			$code = $(`<div${_attr(codeAttr)}>${renderObj.html}</div>`);
+			$tabLine = $(`<div>${_tabLine.call(this, renderObj.tabNum)}</div>`);
+			$line.append($code);
+			$line.append($tabLine);
+			this.$content.append($line);
+
+			cacheData = {
+				lineAttr: lineAttr,
+				codeAttr: codeAttr,
+				html: renderObj.html,
+				num: renderObj.num,
+				tabNum: renderObj.tabNum,
+				$line: $line,
+				$code: $code,
+				$tabLine: $tabLine,
+			};
+
+			return cacheData;
+
+			function _style(obj) {
+				let style = '';
+				for (let key in obj) {
+					style += `${key}: ${obj[key]}; `;
+				}
+				return style;
+			}
+
+			function _attr(obj) {
+				let style = '';
+				for (let key in obj) {
+					style += ` ${key}="${obj[key]}"`;
+				}
+				return style + ' ';
+			}
+
+			function _tabLine(tabNum) {
+				if (!this.tabCache[tabNum]) {
+					let html = '';
+					for (let tab = 1; tab <= tabNum; tab++) {
+						html += `<span style="${_style({ left: this._tabLineLeft(tab) })}" class="my-tab-line"></span>`;
+					}
+					this.tabCache[tabNum] = html;
+				}
+				return this.tabCache[tabNum];
+			}
+		},
 		renderSelectedBg() {
+			return;
 			let renderSelectedBgId = this.renderSelectedBgId + 1 || 1;
 			this.renderSelectedBgId = renderSelectedBgId;
 			this.activeLineBg = true;
@@ -782,7 +895,7 @@ export default {
 				if (this.renderSelectedBgId != renderSelectedBgId) {
 					return;
 				}
-				if (!this.renderHtmls.length) {
+				if (!this.renderObjs.length) {
 					//删除内容后，窗口还没滚动到可视区域
 					requestAnimationFrame(() => {
 						this.renderSelectedBg();
@@ -790,7 +903,7 @@ export default {
 					return;
 				}
 				this.clearSelectionToken();
-				this.renderHtmls.forEach((item) => {
+				this.renderObjs.forEach((item) => {
 					item.selected = false;
 					item.selectStarts = [];
 					item.selectEnds = [];
@@ -813,8 +926,8 @@ export default {
 		},
 		// 渲染选中背景
 		_renderSelectedBg(range, isFsearch) {
-			let firstLine = this.renderHtmls[0].num;
-			let lastLine = this.renderHtmls.peek().num;
+			let firstLine = this.renderObjs[0].num;
+			let lastLine = this.renderObjs.peek().num;
 			let start = range.start;
 			let end = range.end;
 			let text = this.myContext.htmls[start.line - 1].text;
@@ -864,6 +977,7 @@ export default {
 			}
 		},
 		renderSelectionToken(line) {
+			return;
 			// 只有设置了选中前景色才处理
 			if (!globalData.colors['editor.selectionForeground']) {
 				return;
@@ -997,10 +1111,10 @@ export default {
 			let renderCursorId = this.renderCursorId + 1 || 1;
 			this.renderCursorId = renderCursorId;
 			this.$nextTick(() => {
-				if (this.renderCursorId !== renderCursorId || !this.renderHtmls.length) {
+				if (this.renderCursorId !== renderCursorId || !this.renderObjs.length) {
 					return;
 				}
-				this.renderHtmls.forEach((item) => {
+				this.renderObjs.forEach((item) => {
 					_setLine(item);
 				});
 				this.cursorVisible = true;

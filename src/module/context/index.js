@@ -20,7 +20,7 @@ const regs = {
 
 class Context {
 	constructor(editor) {
-		this.lineId = Number.MIN_SAFE_INTEGER;
+		this.lineId = 1;
 		this.serial = 1;
 		this.initProperties(editor);
 		this.reset();
