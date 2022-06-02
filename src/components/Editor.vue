@@ -383,6 +383,10 @@ export default {
 		theme: function () {
 			this.myContext.htmls.forEach((lineObj) => {
 				lineObj.html = '';
+				lineObj.tokens &&
+					lineObj.tokens.forEach((token) => {
+						token.scopeId = '';
+					});
 			});
 			this.render();
 		},
@@ -595,8 +599,6 @@ export default {
 					this.$parent.diffMarginTop = -top;
 					this.$parent.setDiffTop();
 				}
-				this.$refs.scrollBar.scrollTop = scrollTop;
-				this.scrollTop = scrollTop;
 				this.setStartLine(scrollTop);
 				this.cursor.setCursorPos({ line: line, column: column });
 			});
@@ -641,16 +643,14 @@ export default {
 				return;
 			}
 			this.rendering = true;
-			requestAnimationFrame(() => {
+			this.$nextTick(() => {
 				this.renderLines();
 				this.renderSelectedBg();
 				this.renderSelectionToken();
 				this.renderError();
 				this.renderCursor(forceCursorView);
 				this.$refs.minimap && this.$refs.minimap.render();
-				this.$nextTick(() => {
-					this.rendering = false;
-				});
+				this.rendering = false;
 			});
 		},
 		// 渲染代码
@@ -866,38 +866,24 @@ export default {
 			}
 		},
 		renderSelectedBg() {
-			let renderSelectedBgId = this.renderSelectedBgId + 1 || 1;
-			this.renderSelectedBgId = renderSelectedBgId;
 			this.activeLineBg = true;
-			this.$nextTick(() => {
-				if (this.renderSelectedBgId != renderSelectedBgId) {
-					return;
-				}
-				if (!this.renderObjs.length) {
-					//删除内容后，窗口还没滚动到可视区域
-					requestAnimationFrame(() => {
-						this.renderSelectedBg();
-					});
-					return;
-				}
-				this.clearSelectionToken();
-				this.renderObjs.forEach((item) => {
-					item.selection = [];
-				});
-				this.fSelecter.ranges.forEach((range) => {
-					this._renderSelectedBg(range, true);
-				});
-				this.selecter.ranges.forEach((range) => {
-					let _range = this.fSelecter.getRangeByCursorPos(range.start);
-					if (this.searchVisible) {
-						// 优先渲染搜索框的选中范围
-						if (!_range && range.active) {
-							this._renderSelectedBg(range);
-						}
-					} else {
+			this.clearSelectionToken();
+			this.renderObjs.forEach((item) => {
+				item.selection = [];
+			});
+			this.fSelecter.ranges.forEach((range) => {
+				this._renderSelectedBg(range, true);
+			});
+			this.selecter.ranges.forEach((range) => {
+				let _range = this.fSelecter.getRangeByCursorPos(range.start);
+				if (this.searchVisible) {
+					// 优先渲染搜索框的选中范围
+					if (!_range && range.active) {
 						this._renderSelectedBg(range);
 					}
-				});
+				} else {
+					this._renderSelectedBg(range);
+				}
 			});
 		},
 		// 渲染选中背景
@@ -925,7 +911,7 @@ export default {
 					let lineObj = this.myContext.lineIdMap.get(renderObj.lineId);
 					renderObj.selection.push({
 						left: 0,
-						width: lineObj.width,
+						width: lineObj.width || 10,
 						active: range.active,
 						isFsearch: isFsearch,
 					});
@@ -1329,21 +1315,14 @@ export default {
 					if (height > this.scrollTop + this.scrollerArea.height) {
 						requestAnimationFrame(() => {
 							height = height > this.contentHeight ? this.contentHeight : height;
-							this.scrollTop = height - this.scrollerArea.height;
-							this.setStartLine(this.scrollTop);
-							this.$refs.scrollBar.scrollTop = this.scrollTop;
-							this.$refs.scroller.scrollTop = this.scrollTop;
-							this.$refs.numScroller.scrollTop = this.scrollTop;
+							this.setStartLine(height - this.scrollerArea.height);
 						});
 					} else if (nowCursorPos.line <= this.startLine) {
 						requestAnimationFrame(() => {
 							if (nowCursorPos.line <= this.startLine) {
 								let scrollTop = (this.folder.getRelativeLine(nowCursorPos.line) - 1) * this.charObj.charHight;
 								//此时this.startLine可能已经通过onScrll而改变
-								this.startLine = nowCursorPos.line;
-								this.$refs.scrollBar.scrollTop = scrollTop;
-								this.$refs.scroller.scrollTop = scrollTop;
-								this.$refs.numScroller.scrollTop = scrollTop;
+								this.setStartLine(scrollTop);
 							}
 						});
 					}
@@ -1379,10 +1358,24 @@ export default {
 		},
 		setStartLine(scrollTop) {
 			let startLine = 1;
+			scrollTop = scrollTop < 0 ? 0 : scrollTop;
+			if (scrollTop > this.contentHeight - this.scrollerArea.height) {
+				scrollTop = this.contentHeight - this.scrollerArea.height;
+			}
+			if (Math.abs(scrollTop - this.scrollTop) < 1) {
+				return;
+			}
+			if (this.diffLine) {
+				this.setDiffTop();
+			}
 			startLine = Math.floor(scrollTop / this.charObj.charHight);
 			startLine++;
 			this.startLine = this.folder.getRealLine(startLine);
 			this.startLineTop = (this.folder.getRelativeLine(this.startLine) - 1) * this.charObj.charHight;
+			this.scrollTop = scrollTop;
+			this.$refs.scrollBar.scrollTop = scrollTop;
+			this.$refs.scroller.scrollTop = scrollTop;
+			this.$refs.numScroller.scrollTop = scrollTop;
 		},
 		setErrors(errors) {
 			this.errorMap = {};
@@ -1795,18 +1788,19 @@ export default {
 		},
 		// 滚动滚轮
 		onWheel(e) {
-			this.$refs.scrollBar.scrollTop = this.scrollTop + e.deltaY;
+			if (this.scrolling) {
+				return;
+			}
+			this.scrolling = true;
+			requestAnimationFrame(() => {
+				this.setStartLine(this.scrollTop + e.deltaY);
+				this.scrolling = false;
+			});
 			this.$refs.scroller.scrollLeft = this.scrollLeft + e.deltaX;
 		},
 		// 右侧滚动条滚动事件
 		onBarScroll(e) {
 			this.setStartLine(e.target.scrollTop);
-			this.scrollTop = e.target.scrollTop;
-			if (this.diffLine) {
-				this.setDiffTop();
-			}
-			this.$refs.scroller.scrollTop = this.scrollTop;
-			this.$refs.numScroller.scrollTop = this.scrollTop;
 		},
 		// 中文输入开始
 		onCompositionstart() {

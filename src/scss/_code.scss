@@ -123,13 +123,11 @@
 		background-color: var(--my-editor-selectionHighlightBackground);
 
 		&.my-active {
-			border-radius: 4px;
 			background-color: var(--my-editor-selectionBackground);
 			color: var(--my-editor-selectionForeground);
 
 			&::after {
 				border-color: transparent;
-				border-radius: 4px;
 			}
 		}
 
@@ -148,11 +146,9 @@
 		background-color: var(--my-editor-findMatchHighlightBackground);
 
 		&.my-active {
-			border-radius: 4px;
 			background-color: var(--my-editor-findMatchBackground);
 
 			&::after {
-				border-radius: 4px;
 				border-color: var(--my-editor-findMatchBorder);
 			}
 		}

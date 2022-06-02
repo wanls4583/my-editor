@@ -68,12 +68,6 @@
 			position: relative;
 			min-height: 100%;
 			overflow: hidden;
-		}
-
-		&-render {
-			position: absolute;
-			left: 0;
-			width: 100%;
 			transform: translate3d(0px, 0px, 0px);
 		}
 
@@ -125,6 +119,7 @@
 		padding-right: 2px;
 		overflow: hidden;
 		cursor: text;
+		transform: translate3d(0px, 0px, 0px);
 
 		&-wrap {
 			flex-grow: 1;

@@ -103,7 +103,7 @@ export default {
 			EventBus.$off('render-line', this.initEventBus.fn1);
 		},
 		setStartLine() {
-			let maxScrollTop1 = this.contentHeight - this.canvasHeight + 1; //容器高度可能存在小数
+			let maxScrollTop1 = this.contentHeight - this.canvasHeight;
 			let maxScrollTop2 = this.contentHeight - this.height;
 			let scrollTop = 0;
 			maxScrollTop1 = maxScrollTop1 < 0 ? 0 : maxScrollTop1;
@@ -200,19 +200,27 @@ export default {
 		},
 		onDocumentMmove(e) {
 			if (this.startBlockMouseObj) {
-				let maxScrollTop1 = this.contentHeight - this.height + 1; //容器高度可能存在小数
+				let maxScrollTop1 = this.contentHeight - this.height;
 				let maxScrollTop2 = this.height - this.blockHeight;
 				let delta = e.clientY - this.startBlockMouseObj.clientY;
 				let top = this.bTop;
 				top += delta;
 				top = top > maxScrollTop2 ? maxScrollTop2 : top;
-				this.$parent.$refs.scrollBar.scrollTop = top * (maxScrollTop1 / maxScrollTop2);
 				this.startBlockMouseObj = e;
 				this.bTop += delta;
+				if (this.moving) {
+					return;
+				}
+				this.moving = true;
+				requestAnimationFrame(() => {
+					this.$parent.setStartLine(top * (maxScrollTop1 / maxScrollTop2));
+					this.moving = false;
+				});
 			}
 		},
 		onDocumentMouseUp(e) {
 			this.startBlockMouseObj = null;
+			this.moving = false;
 		},
 	},
 };
