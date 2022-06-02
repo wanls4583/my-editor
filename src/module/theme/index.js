@@ -233,19 +233,21 @@ export default class {
 	}
 	insertCss(css) {
 		if (globalData.themeStyle) {
-			globalData.themeStyle.remove();
+			globalData.themeStyle.innerText = '';
+		} else {
+			globalData.themeStyle = document.createElement('style');
+			globalData.themeStyle.type = 'text/css';
 		}
-		globalData.themeStyle = document.createElement('style');
-		globalData.themeStyle.type = 'text/css';
 		globalData.themeStyle.appendChild(document.createTextNode(css));
 		document.getElementsByTagName('head')[0].appendChild(globalData.themeStyle);
 	}
 	insertFont(css) {
 		if (globalData.iconStyle) {
-			globalData.iconStyle.remove();
+			globalData.iconStyle.innerText = '';
+		} else {
+			globalData.iconStyle = document.createElement('style');
+			globalData.iconStyle.type = 'text/css';
 		}
-		globalData.iconStyle = document.createElement('style');
-		globalData.iconStyle.type = 'text/css';
 		globalData.iconStyle.appendChild(document.createTextNode(css));
 		document.getElementsByTagName('head')[0].appendChild(globalData.iconStyle);
 	}

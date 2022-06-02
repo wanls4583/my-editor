@@ -6,13 +6,7 @@
 			<div class="my-num" style="position: relative; visibility: hidden;">{{ diffObj.maxLine || maxLine }}</div>
 			<div class="my-num-scroller" ref="numScroller">
 				<div :style="{ height: _contentHeight }" class="my-num-content">
-					<div
-						:class="{ 'my-active': nowCursorPos.line === line.num }"
-						:key="line.num"
-						:style="{ height: _lineHeight, 'line-height': _lineHeight, top: line.top }"
-						class="my-num"
-						v-for="line in renderObjs"
-					>
+					<div :class="{ 'my-active': nowCursorPos.line === line.num }" :key="line.num" :style="{ top: line.top }" class="my-num" v-for="line in renderObjs">
 						<span class="num">{{ _num(line.num) }}</span>
 						<!-- 折叠图标 -->
 						<span :class="['iconfont', line.fold == 'open' ? 'my-fold-open icon-down1' : 'my-fold-close icon-right']" @click="onToggleFold(line.num)" class="my-fold my-center-center" v-if="line.fold"></span>
@@ -819,7 +813,7 @@ export default {
 			}
 
 			$line = $(`<div${_attr(lineAttr)}></div>`);
-			$code = $(`<div${_attr(codeAttr)}>${renderObj.html}</div>`);
+			$code = $(`<div${_attr(codeAttr)}>${renderObj.html || '&nbsp;'}</div>`);
 			$tabLine = $(`<div>${_tabLine.call(this, renderObj.tabNum)}</div>`);
 			$line.append($code);
 			$line.append($tabLine);
