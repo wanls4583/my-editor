@@ -769,15 +769,18 @@ export default {
 			let $code = null;
 			let $tabLine = null;
 			let lineAttr = {};
+			let lineStyle = {};
 			let codeAttr = {};
+			let codeStyle = {};
 
 			lineAttr['class'] = ['my-line', this._diffBg(renderObj.num)].join(' ');
-			lineAttr['style'] = _style({ top: renderObj.top });
 			lineAttr['data-line'] = renderObj.num;
 			lineAttr['id'] = `line-${this.id}-${renderObj.num}`;
+			lineStyle['top'] = renderObj.top;
 
 			codeAttr['class'] = ['my-code', renderObj.fold == 'close' ? 'fold-close' : ''].join(' ');
 			codeAttr['data-line'] = renderObj.num;
+			codeStyle['height'] = this._lineHeight;
 
 			if (!cacheData) {
 				cacheData = this.renderPool.pop();
@@ -793,9 +796,19 @@ export default {
 						$line.attr(key, lineAttr[key]);
 					}
 				}
+				for (let key in lineStyle) {
+					if (lineStyle[key] !== cacheData.lineStyle[key]) {
+						$line[0].style[key] = lineStyle[key];
+					}
+				}
 				for (let key in codeAttr) {
 					if (codeAttr[key] !== cacheData.codeAttr[key]) {
 						$code.attr(key, codeAttr[key]);
+					}
+				}
+				for (let key in codeStyle) {
+					if (codeStyle[key] !== cacheData.codeStyle[key]) {
+						$code[0].style[key] = codeStyle[key];
 					}
 				}
 				if (cacheData.html !== renderObj.html) {
@@ -805,15 +818,17 @@ export default {
 					$tabLine.html(_tabLine.call(this, renderObj.tabNum));
 				}
 				cacheData.lineAttr = lineAttr;
+				cacheData.lineStyle = lineStyle;
 				cacheData.codeAttr = codeAttr;
+				cacheData.codeStyle = codeStyle;
 				cacheData.html = renderObj.html;
 				cacheData.num = renderObj.num;
 				cacheData.tabNum = renderObj.tabNum;
 				return cacheData;
 			}
 
-			$line = $(`<div${_attr(lineAttr)}></div>`);
-			$code = $(`<div${_attr(codeAttr)}>${renderObj.html || '&nbsp;'}</div>`);
+			$line = $(`<div ${_attr(lineAttr)} style="${_style(lineStyle)}"></div>`);
+			$code = $(`<div ${_attr(codeAttr)} style="${_style(codeStyle)}">${renderObj.html || '&nbsp;'}</div>`);
 			$tabLine = $(`<div>${_tabLine.call(this, renderObj.tabNum)}</div>`);
 			$line.append($code);
 			$line.append($tabLine);
@@ -821,7 +836,9 @@ export default {
 
 			cacheData = {
 				lineAttr: lineAttr,
+				lineStyle: lineStyle,
 				codeAttr: codeAttr,
+				codeStyle: codeStyle,
 				html: renderObj.html,
 				num: renderObj.num,
 				tabNum: renderObj.tabNum,
@@ -843,9 +860,9 @@ export default {
 			function _attr(obj) {
 				let style = '';
 				for (let key in obj) {
-					style += ` ${key}="${obj[key]}"`;
+					style += `${key}="${obj[key]}" `;
 				}
-				return style + ' ';
+				return style;
 			}
 
 			function _tabLine(tabNum) {
