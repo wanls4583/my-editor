@@ -27,7 +27,8 @@
 		color: var(--my-editor-foreground);
 
 		&:hover {
-			.my-editor-scrollbar {
+			.my-editor-scrollbar-v,
+			.my-editor-scrollbar-h {
 				&::-webkit-scrollbar-thumb {
 					background-color: var(--my-scrollbarSlider-background);
 
@@ -39,6 +40,10 @@
 						background-color: var(--my-scrollbarSlider-activeBackground);
 					}
 				}
+			}
+
+			.my-editor-scrollbar-h {
+				display: block;
 			}
 		}
 	}
@@ -69,7 +74,6 @@
 			position: relative;
 			min-height: 100%;
 			overflow: hidden;
-			transform: translate3d(0px, 0px, 0px);
 		}
 
 		.num {
@@ -78,6 +82,13 @@
 			min-width: 10px;
 			text-align: center;
 			color: var(--my-editorLineNumber-foreground);
+
+			&-overlay {
+				position: absolute;
+				width: 100%;
+				height: 1000000px;
+				transform: translate3d(0px, 0px, 0px);
+			}
 		}
 
 		&.my-active {
@@ -91,17 +102,35 @@
 		position: relative;
 		width: 100%;
 		height: 100%;
-		overflow-y: hidden !important;
+		overflow: hidden;
 	}
 
-	&-editor-scrollbar {
+	&-editor-scrollbar-v {
 		flex-shrink: 0;
 		width: 14px;
 		height: 100%;
 		overflow: overlay;
+	}
 
+	&-editor-scrollbar-h {
+		display: none;
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		height: 14px;
+		overflow: overlay;
+
+		div {
+			height: 100%;
+		}
+	}
+
+	&-editor-scrollbar-v,
+	&-editor-scrollbar-h {
 		&::-webkit-scrollbar {
 			width: 14px;
+			height: 14px;
 			background-color: transparent;
 		}
 
@@ -120,7 +149,13 @@
 		padding-right: 2px;
 		overflow: hidden;
 		cursor: text;
-		transform: translate3d(0px, 0px, 0px);
+
+		&-overlay {
+			position: absolute;
+			width: 1000000px;
+			height: 1000000px;
+			transform: translate3d(0px, 0px, 0px);
+		}
 
 		&-wrap {
 			flex-grow: 1;
