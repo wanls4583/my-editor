@@ -7,8 +7,6 @@ import Util from '@/common/util';
 import Btree from '@/common/btree';
 
 const regs = {
-    word: /[a-zA-Z0-9_]/,
-    dWord: Util.fullAngleReg,
     space: /\s/,
 };
 export default class {

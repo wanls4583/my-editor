@@ -9,13 +9,7 @@ import Enum from '@/data/enum';
 import expand from 'emmet';
 
 const regs = {
-	word: /[a-zA-Z0-9_]/,
-	emmetWord: /^[a-zA-Z][a-zA-Z0-9\-]*/,
-	emmetAttr: /^[\.\#]([^\.\#\>\<\+\*\(\)]*)/,
-	emmetNum: /^\*(\d+)/,
-	dWord: Util.fullAngleReg,
 	endTag: /(?=\<\/)/,
-	space: /\s/,
 };
 
 class Context {

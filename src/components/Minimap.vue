@@ -13,6 +13,7 @@
 import EventBus from '@/event';
 import globalData from '@/data/globalData';
 import $ from 'jquery';
+import Util from '@/common/util';
 
 export default {
 	name: 'Minimap',
@@ -144,6 +145,7 @@ export default {
 					for (let i = 0; i < tokens.length; i++) {
 						let token = tokens[i];
 						let text = lineObj.text.slice(token.startIndex, token.endIndex);
+						text = text.replace(/[a-zA-Z]/g, '▉ ');
 						ctx.fillStyle = globalData.colors['editor.foreground'];
 						if (token.scopeId) {
 							let scope = globalData.scopeIdMap[token.scopeId];
@@ -160,7 +162,7 @@ export default {
 					}
 				} else {
 					ctx.fillStyle = globalData.colors['editor.foreground'];
-					ctx.fillText(lineObj.text, 20, charHight / 2);
+					ctx.fillText(lineObj.text.replace(/[a-zA-Z]/g, '▉ '), 20, charHight / 2);
 				}
 				this.ctx.drawImage(canvas, 20, top);
 				this.renderedIdMap[lineObj.lineId] = {
