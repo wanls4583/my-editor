@@ -458,6 +458,7 @@ export default {
 			this.renderCache = {};
 			this.renderPool = [];
 			this.tabCache = {};
+			this.deltaYStack = [];
 		},
 		initRenderData() {
 			this.charObj = Util.getCharWidth(this.$refs.content, '<div class="my-line"><div class="my-code">[dom]</div></div>');
@@ -1802,15 +1803,23 @@ export default {
 		},
 		// 滚动滚轮
 		onWheel(e) {
-			if (this.scrolling) {
-				return;
-			}
-			this.scrolling = true;
-			requestAnimationFrame(() => {
-				this.setStartLine(this.scrollTop + e.deltaY);
-				this.scrolling = false;
-			});
+			this.deltaYStack.push(e.deltaY);
 			this.$refs.hScrollBar.scrollLeft = this.scrollLeft + e.deltaX;
+			_scroll.call(this);
+
+			function _scroll() {
+				if (this.scrolling) {
+					return;
+				}
+				this.scrolling = true;
+				requestAnimationFrame(() => {
+					this.setStartLine(this.scrollTop + this.deltaYStack.shift());
+					this.scrolling = false;
+					if (this.deltaYStack.length) {
+						_scroll.call(this);
+					}
+				});
+			}
 		},
 		// 右侧滚动条滚动事件
 		onVBarScroll(e) {
