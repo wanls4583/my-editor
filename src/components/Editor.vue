@@ -418,6 +418,14 @@ export default {
 		this.initData();
 		this.initEventBus();
 		this.initEvent();
+		// test();
+		function test() {
+			console.time('test');
+			requestAnimationFrame(() => {
+				console.timeEnd('test');
+				test();
+			});
+		}
 	},
 	mounted() {
 		this.selectedFg = !!globalData.colors['editor.selectionForeground'];
@@ -1816,9 +1824,7 @@ export default {
 				requestAnimationFrame(() => {
 					this.setStartLine(this.scrollTop + this.deltaYStack.shift());
 					this.scrolling = false;
-					if (this.deltaYStack.length) {
-						_scroll.call(this);
-					}
+					this.deltaYStack.length && _scroll.call(this);
 				});
 			}
 		},
