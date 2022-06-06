@@ -18,13 +18,13 @@
 				</div>
 			</div>
 		</div>
-		<div :style="{ 'box-shadow': _leftShadow }" class="my-content-wrap">
+		<div class="my-content-wrap">
 			<!-- 可滚动区域 -->
 			<div class="my-scroller" ref="scroller">
 				<!-- 内如区域 -->
 				<div :style="{left: -scrollLeft + 'px'}" class="my-content-overlay" ref="contentLay">
 					<div
-						:style="{ minWidth: _contentMinWidth + 'px', height: _contentHeight }"
+						:style="{ width: _contentMinWidth + 'px', height: _contentHeight }"
 						@mousedown="onContentMdown"
 						@mouseleave="onContentMLeave"
 						@mousemove="onContentMmove"
@@ -73,6 +73,8 @@
 				<div @scroll="onHBarScroll" class="my-editor-scrollbar-h" ref="hScrollBar">
 					<div :style="{width: _contentMinWidth + 'px'}"></div>
 				</div>
+				<div class="my-scroller-shadow-left" v-if="_leftShadow"></div>
+				<div class="my-scroller-shadow-right" v-if="_rightShadow"></div>
 			</div>
 			<!-- 搜索框 -->
 			<search-dialog
@@ -88,7 +90,7 @@
 				v-show="searchVisible"
 			></search-dialog>
 		</div>
-		<div :style="{'box-shadow': _rightShadow}" class="my-minimap-wrap" v-if="type !== 'diff'">
+		<div class="my-minimap-wrap" v-if="type !== 'diff'">
 			<minimap :content-height="contentHeight" :now-line="startLine" :scroll-top="scrollTop" ref="minimap"></minimap>
 		</div>
 		<div @scroll="onVBarScroll" class="my-editor-scrollbar-v" ref="vScrollBar">
@@ -306,14 +308,10 @@ export default {
 			};
 		},
 		_leftShadow() {
-			let shadow = [];
-			if (this.scrollLeft) {
-				shadow.push('17px 0 16px -16px rgba(0, 0, 0, 0.8) inset');
-			}
-			return shadow.length ? shadow.join(',') : 'none';
+			return this.scrollLeft > 0;
 		},
 		_rightShadow() {
-			return this.scrollLeft + this.scrollerArea.width < this._contentMinWidth - 2 ? '-6px 0px 5px -5px rgba(0, 0, 0, 0.8)' : 'none';
+			return this.scrollLeft + this.scrollerArea.width < this._contentMinWidth;
 		},
 		_lineHeight() {
 			return this.charObj.charHight + 'px';

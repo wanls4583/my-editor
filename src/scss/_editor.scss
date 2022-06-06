@@ -105,6 +105,24 @@
 		width: 100%;
 		height: 100%;
 		overflow: hidden;
+
+		&-shadow-left {
+			position: absolute;
+			left: 0;
+			width: 10px;
+			height: 100%;
+			box-shadow: 10px 0 10px -10px rgba(0, 0, 0, 0.8) inset;
+			pointer-events: none;
+		}
+
+		&-shadow-right {
+			position: absolute;
+			right: 0;
+			width: 10px;
+			height: 100%;
+			box-shadow: -10px 0 10px -10px rgba(0, 0, 0, 0.8) inset;
+			pointer-events: none;
+		}
 	}
 
 	&-editor-scrollbar-v {
