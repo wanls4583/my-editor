@@ -138,7 +138,7 @@ export default {
 				let ctx = canvas.getContext('2d');
 				canvas.width = this.$refs.canvas.width;
 				canvas.height = charHight;
-				ctx.font = `${charHight - 4}px Consolas`;
+				ctx.font = `${14}px Consolas`;
 				ctx.textBaseline = 'middle';
 				if (tokens) {
 					let left = 20;
