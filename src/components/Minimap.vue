@@ -57,6 +57,7 @@ export default {
 	mounted() {
 		this.ctx = this.$refs.canvas.getContext('2d');
 		this.initEvent();
+		this.setSize();
 	},
 	destroyed() {
 		this.unbindEvent();
@@ -91,10 +92,10 @@ export default {
 		initResizeEvent() {
 			const resizeObserver = new ResizeObserver((entries) => {
 				if (this.$refs.wrap) {
-					this.height = this.$refs.wrap.clientHeight;
-					this.blockHeight = this.height * this.scale;
-					this.canvasHeight = this.height / this.scale;
-					this.maxVisibleLines = Math.ceil(this.canvasHeight / this.$parent.charObj.charHight) + 1;
+					requestAnimationFrame(() => {
+						this.setSize();
+						this.render();
+					});
 				}
 			});
 			resizeObserver.observe(this.$refs.wrap);
@@ -103,6 +104,12 @@ export default {
 			$(document).unbind('mousemove', this.initEvent.fn1);
 			$(document).unbind('mouseup', this.initEvent.fn2);
 			EventBus.$off('render-line', this.initEventBus.fn1);
+		},
+		setSize() {
+			this.height = this.$refs.wrap.clientHeight;
+			this.blockHeight = this.height * this.scale;
+			this.canvasHeight = this.height / this.scale;
+			this.maxVisibleLines = Math.ceil(this.canvasHeight / this.$parent.charObj.charHight) + 1;
 		},
 		setStartLine() {
 			let maxScrollTop1 = this.contentHeight - this.canvasHeight;
