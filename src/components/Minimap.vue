@@ -40,6 +40,9 @@ export default {
 		scrollTop() {
 			this.setStartLine();
 		},
+		contentHeight() {
+			this.setStartLine();
+		},
 	},
 	computed: {
 		_top() {
@@ -92,8 +95,6 @@ export default {
 					this.blockHeight = this.height * this.scale;
 					this.canvasHeight = this.height / this.scale;
 					this.maxVisibleLines = Math.ceil(this.canvasHeight / this.$parent.charObj.charHight) + 1;
-					this.ctx.restore();
-					this.ctx.save();
 				}
 			});
 			resizeObserver.observe(this.$refs.wrap);

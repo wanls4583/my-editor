@@ -425,8 +425,6 @@ export default {
 		this.selectedFg = !!globalData.colors['editor.selectionForeground'];
 		this.showEditor();
 		this.initResizeEvent();
-		this.setScrollerArea();
-		this.setContentHeight();
 		if (this.type === 'diff') {
 			this.showDiff();
 		}
@@ -480,7 +478,6 @@ export default {
 				if (this.active) {
 					this.$nextTick(() => {
 						if (this.$refs.scroller) {
-							this.setScrollerArea();
 							this.showEditor();
 						}
 					});
@@ -564,8 +561,14 @@ export default {
 			this.language = this._language || '';
 			this.theme = this._theme || '';
 			this.initRenderData();
-			this.render();
+			this.setScrollerArea();
+			this.setContentHeight();
 			this.focus();
+			this.$nextTick(() => {
+				this.$refs.scroller.scrollTop = 0;
+				this.$refs.scroller.scrollLeft = 0;
+				this.setStartLine(this.$refs.vScrollBar.scrollTop, true);
+			});
 			if (this.type !== 'diff') {
 				// 获取文件git修改记录
 				EventBus.$emit('git-diff', this.path);
@@ -1341,13 +1344,13 @@ export default {
 				this.diffTop = -this.scrollTop + 30;
 			}
 		},
-		setStartLine(scrollTop) {
+		setStartLine(scrollTop, force) {
 			let startLine = 1;
 			scrollTop = scrollTop < 0 ? 0 : scrollTop;
 			if (scrollTop > this.contentHeight - this.scrollerArea.height) {
 				scrollTop = this.contentHeight - this.scrollerArea.height;
 			}
-			if (Math.abs(scrollTop - this.scrollTop) < 1) {
+			if (!force && Math.abs(scrollTop - this.scrollTop) < 1) {
 				return;
 			}
 			if (this.diffLine) {
