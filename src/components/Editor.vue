@@ -418,14 +418,6 @@ export default {
 		this.initData();
 		this.initEventBus();
 		this.initEvent();
-		// test();
-		function test() {
-			console.time('test');
-			requestAnimationFrame(() => {
-				console.timeEnd('test');
-				test();
-			});
-		}
 	},
 	mounted() {
 		this.selectedFg = !!globalData.colors['editor.selectionForeground'];
@@ -463,6 +455,8 @@ export default {
 			this.renderPool = [];
 			this.tabCache = {};
 			this.deltaYStack = [];
+			this.preScrollTime = 0;
+			this.channel = new MessageChannel();
 		},
 		initRenderData() {
 			this.charObj = Util.getCharWidth(this.$refs.content, '<div class="my-line"><div class="my-code">[dom]</div></div>');
@@ -478,6 +472,20 @@ export default {
 			};
 			$(document).on('mousemove', this.initEvent.fn1);
 			$(document).on('mouseup', this.initEvent.fn2);
+			this.channel.port2.onmessage = (e) => {
+				switch (e.data.event) {
+					case 'scroll':
+						let time = Date.now();
+						if (time - this.preScrollTime >= 16) {
+							this.setStartLine(this.scrollTop + this.deltaYStack.shift());
+							this.preScrollTime = time;
+						}
+						if (this.deltaYStack.length) {
+							this.channel.port1.postMessage({ event: 'scroll' });
+						}
+						break;
+				}
+			};
 		},
 		initResizeEvent() {
 			const resizeObserver = new ResizeObserver((entries) => {
@@ -570,11 +578,7 @@ export default {
 			this.setScrollerArea();
 			this.setContentHeight();
 			this.focus();
-			this.$nextTick(() => {
-				this.$refs.scroller.scrollTop = 0;
-				this.$refs.scroller.scrollLeft = 0;
-				this.setStartLine(this.$refs.vScrollBar.scrollTop, true);
-			});
+			this.setStartLine(this.$refs.vScrollBar.scrollTop, true);
 			if (this.type !== 'diff') {
 				// 获取文件git修改记录
 				EventBus.$emit('git-diff', this.path);
@@ -1369,6 +1373,8 @@ export default {
 			this.scrollTop = scrollTop;
 			this.$refs.vScrollBar.scrollTop = scrollTop;
 			this.$refs.numScroller.scrollTop = scrollTop;
+			this.$refs.scroller.scrollTop = 0;
+			this.$refs.scroller.scrollLeft = 0;
 			this.render();
 			this.tokenizer.tokenizeVisibleLins();
 		},
@@ -1812,20 +1818,10 @@ export default {
 		},
 		// 滚动滚轮
 		onWheel(e) {
-			this.deltaYStack.push(e.deltaY);
 			this.$refs.hScrollBar.scrollLeft = this.scrollLeft + e.deltaX;
-			_scroll.call(this);
-
-			function _scroll() {
-				if (this.scrolling) {
-					return;
-				}
-				this.scrolling = true;
-				requestAnimationFrame(() => {
-					this.setStartLine(this.scrollTop + this.deltaYStack.shift());
-					this.scrolling = false;
-					this.deltaYStack.length && _scroll.call(this);
-				});
+			if (this.deltaYStack.length === 0) {
+				this.deltaYStack.push(e.deltaY);
+				this.channel.port1.postMessage({ event: 'scroll' });
 			}
 		},
 		// 右侧滚动条滚动事件
