@@ -154,6 +154,7 @@ export default {
 						let token = tokens[i];
 						let text = lineObj.text.slice(token.startIndex, token.endIndex);
 						text = text.replace(/[a-zA-Z]/g, '▉ ');
+						text = text.replace(/\t/g, '    ');
 						ctx.fillStyle = globalData.colors['editor.foreground'];
 						if (token.scopeId) {
 							let scope = globalData.scopeIdMap[token.scopeId];
