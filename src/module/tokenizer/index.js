@@ -251,21 +251,52 @@ export default class {
 		}
 	}
 	createHtml(tokens, lineText) {
-		return tokens
-			.map(item => {
-				let selector = '';
-				let value = lineText.substring(item.startIndex, item.endIndex);
-				if (item.scopes[0] === 'plain') {
-					selector = 'my-plain';
-				} else if (item.scopes[0] === 'selected') {
-					selector = 'my-select-fg';
-				} else {
-					selector = this.getScopeId(item);
-					selector = (selector && `my-scope-${selector}`) || '';
+		let html = [];
+		let preToken = null;
+		for (let i = 0; i < tokens.length; i++) {
+			let item = tokens[i];
+			let selector = '';
+			let scopeId = '';
+			if (item.scopes[0] === 'plain') {
+				selector = 'my-plain';
+			} else if (item.scopes[0] === 'selected') {
+				selector = 'my-select-fg';
+			} else {
+				scopeId = this.getScopeId(item);
+				selector = (scopeId && `my-scope-${scopeId}`) || '';
+				if (preToken && scopeId && _compair(preToken.scopeId, scopeId) && item.endIndex - preToken.startIndex < 100) {
+					preToken.endIndex = item.endIndex;
+					continue;
 				}
-				return `<span class="${selector}" data-column="${item.startIndex}">${Util.htmlTrans(value)}</span>`;
+			}
+			preToken = {
+				scopeId: scopeId,
+				selector: selector,
+				startIndex: item.startIndex,
+				endIndex: item.endIndex,
+			};
+			html.push(preToken);
+		}
+		return html
+			.map(item => {
+				let value = lineText.substring(item.startIndex, item.endIndex);
+				return `<span class="${item.selector}" data-column="${item.startIndex}">${Util.htmlTrans(value)}</span>`;
 			})
 			.join('');
+
+		function _compair(scope1, scope2) {
+			scope1 = globalData.scopeIdMap[scope1];
+			scope2 = globalData.scopeIdMap[scope2];
+			if (scope1 && scope2 && Object.keys(scope1.settings).length === Object.keys(scope2.settings).length) {
+				for (let key in scope1.settings) {
+					if (scope1.settings[key] !== scope2.settings[key]) {
+						return false;
+					}
+				}
+				return true;
+			}
+			return false;
+		}
 	}
 	getScopeId(token) {
 		let result = null;

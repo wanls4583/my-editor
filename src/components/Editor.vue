@@ -5,11 +5,10 @@
 			<!-- 占位行号，避免行号宽度滚动时变化 -->
 			<div class="my-num" style="position: relative; visibility: hidden;">{{ diffObj.maxLine || maxLine }}</div>
 			<div class="my-num-scroller" ref="numScroller">
-				<div :style="{top: -scrollTop + 'px'}" class="my-num-overlay">
+				<div class="my-num-overlay" ref="numLay">
 					<div :style="{ height: _contentHeight }" class="my-num-content">
 						<div :class="{ 'my-active': nowCursorPos.line === line.num }" :key="line.num" :style="{ top: line.top }" class="my-num" v-for="line in renderObjs">
 							<span class="num">{{ _num(line.num) }}</span>
-							<!-- 折叠图标 -->
 							<span :class="['iconfont', line.fold == 'open' ? 'my-fold-open icon-down1' : 'my-fold-close icon-right']" @click="onToggleFold(line.num)" class="my-fold my-center-center" v-if="line.fold"></span>
 							<template v-if="type !== 'diff'">
 								<span :class="['my-diff-'+_diffType(line.num)]" @click="onShowDiff(line.num)" class="my-diff-num" v-if="_diffType(line.num)"></span>
@@ -23,7 +22,7 @@
 			<!-- 可滚动区域 -->
 			<div class="my-scroller" ref="scroller">
 				<!-- 内如区域 -->
-				<div :style="{left: -scrollLeft + 'px', top: -scrollTop + 'px'}" class="my-content-overlay">
+				<div :style="{left: -scrollLeft + 'px'}" class="my-content-overlay" ref="contentLay">
 					<div
 						:style="{ minWidth: _contentMinWidth + 'px', height: _contentHeight }"
 						@mousedown="onContentMdown"
@@ -399,10 +398,6 @@ export default {
 		maxLine: function (newVal) {
 			this.setContentHeight();
 		},
-		startLine: function (newVal) {
-			this.render();
-			this.tokenizer.tokenizeVisibleLins();
-		},
 		nowCursorPos: {
 			handler: function (newVal) {
 				EventBus.$emit('cursor-change', {
@@ -432,8 +427,6 @@ export default {
 		this.initResizeEvent();
 		this.setScrollerArea();
 		this.setContentHeight();
-		this.$content = $(this.$refs.content);
-		this.$lineView = $(this.$refs.lineView);
 		if (this.type === 'diff') {
 			this.showDiff();
 		}
@@ -645,6 +638,7 @@ export default {
 			}
 			this.rendering = true;
 			this.$nextTick(() => {
+				this.setTop();
 				this.renderLines();
 				this.renderSelectedBg();
 				this.renderSelectionToken();
@@ -664,7 +658,7 @@ export default {
 					let obj = this.renderCache[lineId];
 					// 高亮完成渲染某一行时，render可能还没完成，导致num没更新，此时跳过
 					if (this.myContext.htmls[obj.num - 1] && this.myContext.htmls[obj.num - 1].lineId === lineId) {
-						obj = _getObj(item, obj.num);
+						obj = _getObj.call(this, item, obj.num);
 						this.renderLine(obj);
 						this.renderCursor();
 						this.renderSelectedBg();
@@ -681,7 +675,7 @@ export default {
 			for (let i = 0, startLine = this.startLine; i < this.maxVisibleLines && startLine <= this.myContext.htmls.length; i++) {
 				let lineObj = this.myContext.htmls[startLine - 1];
 				let lineId = lineObj.lineId;
-				let obj = _getObj(lineObj, startLine);
+				let obj = _getObj.call(this, lineObj, startLine);
 				let fold = this.folder.getFoldByLine(startLine);
 				this.renderObjs.push(obj);
 				this.myContext.renderedLineMap.set(obj.num, obj);
@@ -704,27 +698,27 @@ export default {
 			this.renderCache = renderCache;
 
 			function _getObj(item, line) {
-				let tabNum = _getTabNum(line);
+				let tabNum = this.getTabNum(line);
 				let fold = '';
-				let top = (that.folder.getRelativeLine(line) - 1) * that.charObj.charHight + 'px';
-				if (that.folder.getFoldByLine(line)) {
+				let top = (this.folder.getRelativeLine(line) - 1) * this.charObj.charHight + 'px';
+				if (this.folder.getFoldByLine(line)) {
 					//该行已经折叠
 					fold = 'close';
-				} else if (that.folder.getRangeFold(line, true)) {
+				} else if (this.folder.getRangeFold(line, true)) {
 					//可折叠
 					fold = 'open';
 				}
 				let html = item.html;
 				if (!html) {
 					if (item.tokens && item.tokens.length) {
-						item.tokens = that.tokenizer.splitLongToken(item.tokens);
-						item.html = that.tokenizer.createHtml(item.tokens, item.text);
+						item.tokens = this.tokenizer.splitLongToken(item.tokens);
+						item.html = this.tokenizer.createHtml(item.tokens, item.text);
 						html = item.html;
 					} else {
 						html = Util.htmlTrans(item.text);
 					}
 				}
-				html = html.replace(/\t/g, that.space);
+				html = html.replace(/\t/g, this.space);
 				return {
 					html: html,
 					num: line,
@@ -736,38 +730,6 @@ export default {
 					fold: fold,
 					cursorList: [],
 				};
-			}
-
-			function _getTabNum(line) {
-				let text = that.myContext.htmls[line - 1].text;
-				let wReg = /[^\s]/;
-				let tabNum = 0;
-				if (that.myContext.renderedLineMap.has(line)) {
-					return that.myContext.renderedLineMap.get(line).tabNum;
-				}
-				if (wReg.exec(text)) {
-					//该行有内容
-					let spaceNum = /^\s+/.exec(text);
-					if (spaceNum) {
-						tabNum = /\t+/.exec(spaceNum[0]);
-						tabNum = (tabNum && tabNum[0].length) || 0;
-						tabNum = tabNum + Math.ceil((spaceNum[0].length - tabNum) / that.tabSize);
-					}
-				} else {
-					//空行
-					let _line = line - 1;
-					while (_line >= 1) {
-						if (wReg.exec(that.myContext.htmls[_line - 1].text)) {
-							tabNum = _getTabNum(_line);
-							if (that.folder.getRangeFold(_line, true)) {
-								tabNum++;
-							}
-							break;
-						}
-						_line--;
-					}
-				}
-				return tabNum;
 			}
 		},
 		renderLine(renderObj) {
@@ -839,7 +801,7 @@ export default {
 			$tabLine = $(`<div>${_tabLine.call(this, renderObj.tabNum)}</div>`);
 			$line.append($code);
 			$line.append($tabLine);
-			this.$lineView.append($line);
+			$(this.$refs.lineView).append($line);
 
 			cacheData = {
 				lineAttr: lineAttr,
@@ -1120,9 +1082,9 @@ export default {
 				// 强制滚动使光标处于可见区域
 				if (forceCursorView && cursorPos === that.nowCursorPos) {
 					if (left > that.scrollerArea.width + that.scrollLeft - that.charObj.fullAngleCharWidth) {
-						that.$refs.scroller.scrollLeft = left + that.charObj.fullAngleCharWidth - that.scrollerArea.width;
+						that.$refs.hScrollBar.scrollLeft = left + that.charObj.fullAngleCharWidth - that.scrollerArea.width;
 					} else if (left < that.scrollLeft) {
-						that.$refs.scroller.scrollLeft = left - 1;
+						that.$refs.hScrollBar.scrollLeft = left - 1;
 					}
 				}
 				if (cursorPos === that.nowCursorPos) {
@@ -1367,6 +1329,10 @@ export default {
 			}
 			this.contentHeight = contentHeight;
 		},
+		setTop() {
+			this.$refs.numLay.style.top = -this.scrollTop + 'px';
+			this.$refs.contentLay.style.top = -this.scrollTop + 'px';
+		},
 		setDiffTop() {
 			let top = (this.folder.getRelativeLine(this.diffLine) - 1) * this.charObj.charHight - this.scrollTop;
 			this.diffTop = top + this.diffMarginTop;
@@ -1393,6 +1359,8 @@ export default {
 			this.scrollTop = scrollTop;
 			this.$refs.vScrollBar.scrollTop = scrollTop;
 			this.$refs.numScroller.scrollTop = scrollTop;
+			this.render();
+			this.tokenizer.tokenizeVisibleLins();
 		},
 		setErrors(errors) {
 			this.errorMap = {};
@@ -1449,6 +1417,39 @@ export default {
 					this.autoTipList = null;
 				}, 60);
 			}
+		},
+		getTabNum(line) {
+			let lineObj = this.myContext.htmls[line - 1];
+			let text = lineObj.text;
+			let wReg = /[^\s]/;
+			let tabNum = 0;
+			if (lineObj.tabNum > -1) {
+				return lineObj.tabNum;
+			}
+			if (wReg.exec(text)) {
+				//该行有内容
+				let spaceNum = /^\s+/.exec(text);
+				if (spaceNum) {
+					tabNum = /\t+/.exec(spaceNum[0]);
+					tabNum = (tabNum && tabNum[0].length) || 0;
+					tabNum = tabNum + Math.ceil((spaceNum[0].length - tabNum) / this.tabSize);
+				}
+			} else {
+				//空行
+				let _line = line - 1;
+				while (_line >= 1) {
+					if (wReg.exec(this.myContext.htmls[_line - 1].text)) {
+						tabNum = this.getTabNum(_line);
+						if (this.folder.getRangeFold(_line, true)) {
+							tabNum++;
+						}
+						break;
+					}
+					_line--;
+				}
+			}
+			lineObj.tabNum = tabNum;
+			return tabNum;
 		},
 		// 获取文本在浏览器中的宽度
 		getStrWidth(str, start, end) {
@@ -1527,7 +1528,7 @@ export default {
 				}
 			}
 			let $token = $(`#line-${this.id}-${cursorPos.line}`)
-				.children('.my-code')
+				.children('div.my-code')
 				.children('span[data-column="' + token.startIndex + '"]');
 			if (!$token.length) {
 				return 0;
@@ -1809,7 +1810,7 @@ export default {
 				this.setStartLine(this.scrollTop + e.deltaY);
 				this.scrolling = false;
 			});
-			this.$refs.vScrollBar.scrollLeft = this.scrollLeft + e.deltaX;
+			this.$refs.hScrollBar.scrollLeft = this.scrollLeft + e.deltaX;
 		},
 		// 右侧滚动条滚动事件
 		onVBarScroll(e) {

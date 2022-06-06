@@ -60,6 +60,7 @@ class Context {
 			text: '',
 			html: '',
 			width: 0,
+			tabNum: -1,
 			tokens: [],
 			folds: [],
 			states: [],
@@ -169,6 +170,7 @@ class Context {
 				text: item,
 				html: '',
 				width: 0,
+				tabNum: -1,
 				tokens: null,
 				folds: null,
 				states: null,
@@ -439,6 +441,7 @@ class Context {
 			startObj.text = text;
 		}
 		startObj.width = this.getStrWidth(startObj.text);
+		startObj.tabNum = -1;
 		startObj.html = '';
 		startObj.tokens = null;
 		startObj.folds = null;
