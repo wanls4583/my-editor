@@ -113,6 +113,8 @@
 	}
 
 	&-select-fg {
+		position: absolute;
+		height: 100%;
 		color: var(--my-editor-selectionForeground) !important;
 		span {
 			color: var(--my-editor-selectionForeground) !important;
@@ -120,6 +122,8 @@
 	}
 
 	&-select-bg {
+		position: absolute;
+		height: 100%;
 		background-color: var(--my-editor-selectionHighlightBackground);
 
 		&.my-active {

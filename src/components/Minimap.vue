@@ -130,7 +130,7 @@ export default {
 			let tokens = lineObj.tokens;
 			let html = '';
 			if (clear) {
-				this.ctx.clearRect(0, top, this.canvasWidth / this.scale, charHight);
+				this.ctx.clearRect(0, top, this.canvasWidth, charHight);
 			}
 			if (!lineObj.html) {
 				if (lineObj.tokens && lineObj.tokens.length) {
@@ -171,7 +171,7 @@ export default {
 					}
 				} else {
 					ctx.fillStyle = globalData.colors['editor.foreground'];
-					ctx.fillText(lineObj.text.replace(/[a-zA-Z]/g, '▉ '), 20, charHight / 2);
+					ctx.fillText(lineObj.text.replace(/[a-zA-Z]/g, '▉ ').replace(/\t/g, '    '), 20, charHight / 2);
 				}
 				this.ctx.drawImage(canvas, 20, top);
 				this.renderedIdMap[lineObj.lineId] = {
@@ -186,15 +186,13 @@ export default {
 				return;
 			}
 			this.rendering = true;
-			this.renderTimer = requestAnimationFrame(() => {
+			requestAnimationFrame(() => {
 				this.renderLine();
-				this.$nextTick(() => {
-					this.rendering = false;
-				});
+				this.rendering = 0;
 			});
 		},
 		renderLine() {
-			this.ctx.clearRect(0, 0, this.canvasWidth / this.scale, this.canvasHeight / this.scale);
+			this.ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
 			for (let line = this.startLine, i = 0; line <= this.$parent.myContext.htmls.length && i < this.maxVisibleLines; i++) {
 				let fold = this.$parent.folder.getFoldByLine(line);
 				this.drawLine(line);

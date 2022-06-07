@@ -280,7 +280,7 @@ export default class {
 		return html
 			.map(item => {
 				let value = lineText.substring(item.startIndex, item.endIndex);
-				return `<span class="${item.selector}" data-column="${item.startIndex}">${Util.htmlTrans(value)}</span>`;
+				return `<span class="${item.selector}" data-column="${item.startIndex}" data-end="${item.endIndex}">${Util.htmlTrans(value)}</span>`;
 			})
 			.join('');
 

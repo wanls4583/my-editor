@@ -6,7 +6,7 @@
 			<div class="my-num" style="position: relative; visibility: hidden;">{{ diffObj.maxLine || maxLine }}</div>
 			<div class="my-num-scroller" ref="numScroller">
 				<div :style="{ height: _contentHeight }" class="my-num-content" ref="numContent">
-					<div :class="{ 'my-active': nowCursorPos.line === line.num }" :key="line.num" :style="{ top: line.top }" class="my-num" v-for="line in renderObjs">
+					<div :class="{ 'my-active': nowCursorPos.line === line.num }" :style="{ top: line.top }" class="my-num" v-for="line in renderObjs">
 						<span class="num">{{ _num(line.num) }}</span>
 						<span :class="['iconfont', line.fold == 'open' ? 'my-fold-open icon-down1' : 'my-fold-close icon-right']" @click="onToggleFold(line.num)" class="my-fold my-center-center" v-if="line.fold"></span>
 						<template v-if="type !== 'diff'">
@@ -38,13 +38,13 @@
 						</template>
 					</div>
 					<div class="my-bg-view">
-						<div :class="[_activeLine(line.num) ? 'my-active' : '']" :key="line.num" :style="{height: _lineHeight, top: line.top}" class="my-line-bg" v-for="line in renderObjs">
+						<div :class="[_activeLine(line.num) ? 'my-active' : '']" :style="{height: _lineHeight, top: line.top}" class="my-line-bg" v-for="line in renderObjs">
 							<div :style="{ left: bracketMatch.start.left + 'px', width: bracketMatch.start.width + 'px' }" class="my-bracket-match" v-if="bracketMatch && line.num == bracketMatch.start.line"></div>
 							<div :style="{ left: bracketMatch.end.left + 'px', width: bracketMatch.end.width + 'px' }" class="my-bracket-match" v-if="bracketMatch && line.num == bracketMatch.end.line"></div>
 							<div
 								:class="{ 'my-active': range.active, 'my-search-bg': range.isFsearch }"
 								:style="{ left: range.left + 'px', width: range.width + 'px' }"
-								class="my-line-bg my-select-bg"
+								class="my-select-bg"
 								v-for="range in line.selection"
 							></div>
 						</div>
@@ -412,8 +412,9 @@ export default {
 	},
 	created() {
 		this.initData();
-		this.initEventBus();
 		this.initEvent();
+		this.initEventBus();
+		this.initChannelEvent();
 	},
 	mounted() {
 		this.selectedFg = !!globalData.colors['editor.selectionForeground'];
@@ -450,8 +451,6 @@ export default {
 			this.renderCache = {};
 			this.renderPool = [];
 			this.tabCache = {};
-			this.deltaYStack = [];
-			this.preScrollTime = 0;
 			this.channel = new MessageChannel();
 		},
 		initRenderData() {
@@ -468,16 +467,32 @@ export default {
 			};
 			$(document).on('mousemove', this.initEvent.fn1);
 			$(document).on('mouseup', this.initEvent.fn2);
+		},
+		initChannelEvent() {
 			this.channel.port2.onmessage = (e) => {
+				let time = Date.now();
 				switch (e.data.event) {
 					case 'scroll':
-						let time = Date.now();
-						if (time - this.preScrollTime >= 16) {
-							this.setStartLine(this.scrollTop + this.deltaYStack.shift());
-							this.preScrollTime = time;
+						if (this.scrollDeltaY) {
+							this.preScrollTime = this.preScrollTime || 0;
+							if (time - this.preScrollTime >= 16) {
+								this.setStartLine(this.scrollTop + this.scrollDeltaY);
+								this.preScrollTime = time;
+								this.scrollDeltaY = 0;
+							} else {
+								this.channel.port1.postMessage({ event: 'scroll' });
+							}
 						}
-						if (this.deltaYStack.length) {
-							this.channel.port1.postMessage({ event: 'scroll' });
+						break;
+					case 'select':
+						if (this.selectCallBack) {
+							this.preFrameTime = this.preFrameTime || 0;
+							if (time - this.preFrameTime >= 16) {
+								this.selectCallBack();
+								this.preFrameTime = time;
+							} else {
+								this.channel.port1.postMessage({ event: 'select' });
+							}
 						}
 						break;
 				}
@@ -1497,6 +1512,7 @@ export default {
 			let $target = $(e.target);
 			let line = ($target.attr('data-line') || $target.parent().attr('data-line')) - 0;
 			let column = $target.attr('data-column');
+			let endColumn = $target.attr('data-end');
 			if (!line) {
 				if (e.target === this.$refs.content) {
 					line = this.myContext.htmls.length;
@@ -1511,13 +1527,8 @@ export default {
 				column = lineObj.text.length;
 			} else {
 				column = column - 0;
-				for (let i = 0; i < tokens.length; i++) {
-					let token = tokens[i];
-					if (tokens[i].startIndex == column) {
-						column += this.getColumnByWidth(lineObj.text.slice(token.startIndex, token.endIndex), e.offsetX);
-						break;
-					}
-				}
+				endColumn = endColumn - 0;
+				column += this.getColumnByWidth(lineObj.text.slice(column, endColumn), e.offsetX);
 			}
 			return {
 				line: line,
@@ -1527,26 +1538,22 @@ export default {
 		// 获取光标真实位置
 		getExactLeft(cursorPos) {
 			let lineObj = this.myContext.htmls[cursorPos.line - 1];
-			if (!lineObj.tokens || !lineObj.tokens.length) {
-				return 0;
-			}
-			let tokens = lineObj.fgTokens || lineObj.tokens;
-			let token = tokens[0];
-			for (let i = 1; i < tokens.length; i++) {
-				if (tokens[i].startIndex < cursorPos.column) {
-					token = tokens[i];
+			let spans = $(`#line-${this.id}-${cursorPos.line}`).children('div.my-code').children('span');
+			let startIndex = 0;
+			let span = null;
+			for (let i = 0; i < spans.length; i++) {
+				let column = spans[i].getAttribute('data-column');
+				if (column <= cursorPos.column) {
+					startIndex = column;
+					span = spans[i];
 				} else {
 					break;
 				}
 			}
-			let $token = $(`#line-${this.id}-${cursorPos.line}`)
-				.children('div.my-code')
-				.children('span[data-column="' + token.startIndex + '"]');
-			if (!$token.length) {
+			if (!span) {
 				return 0;
 			}
-			let text = lineObj.text.slice(token.startIndex, cursorPos.column);
-			return $token[0].offsetLeft + this.getStrWidth(text);
+			return span.offsetLeft + this.getStrWidth(lineObj.text.slice(startIndex, cursorPos.column));
 		},
 		getToken(line, column) {
 			let lineObj = this.myContext.htmls[line - 1];
@@ -1720,7 +1727,7 @@ export default {
 				let line = Math.ceil((this.scrollTop + e.clientY - offset.top) / this.charObj.charHight);
 				line = line < 1 ? 1 : line;
 				line = line > this.maxLine ? this.maxLine : line;
-				cancelAnimationFrame(this.selectMoveTimer);
+				this.selectCallBack = null;
 				if (e.clientY > offset.top + this.scrollerArea.height) {
 					//鼠标超出底部区域
 					_move('down', e.clientY - offset.top - this.scrollerArea.height);
@@ -1793,16 +1800,17 @@ export default {
 						line: line,
 						column: column,
 					});
-					that.selectMoveTimer = requestAnimationFrame(() => {
+					that.selectCallBack = () => {
 						_run(autoDirect, speed);
-					});
+					};
+					that.channel.port1.postMessage({ event: 'select' });
 				}
 			}
 		},
 		// 鼠标抬起事件
 		onDocumentMouseUp(e) {
 			// 停止滚动选中
-			cancelAnimationFrame(this.selectMoveTimer);
+			this.selectCallBack = null;
 			this.mouseStartObj = null;
 			this.diffBottomSashMouseObj = null;
 			this.mouseUpTime = Date.now();
@@ -1815,8 +1823,8 @@ export default {
 		// 滚动滚轮
 		onWheel(e) {
 			this.$refs.hScrollBar.scrollLeft = this.scrollLeft + e.deltaX;
-			if (this.deltaYStack.length === 0) {
-				this.deltaYStack.push(e.deltaY);
+			if (!this.scrollDeltaY) {
+				this.scrollDeltaY = e.deltaY;
 				this.channel.port1.postMessage({ event: 'scroll' });
 			}
 		},
