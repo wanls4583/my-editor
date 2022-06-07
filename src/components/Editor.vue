@@ -5,15 +5,13 @@
 			<!-- 占位行号，避免行号宽度滚动时变化 -->
 			<div class="my-num" style="position: relative; visibility: hidden;">{{ diffObj.maxLine || maxLine }}</div>
 			<div class="my-num-scroller" ref="numScroller">
-				<div class="my-num-overlay" ref="numLay">
-					<div :style="{ height: _contentHeight }" class="my-num-content">
-						<div :class="{ 'my-active': nowCursorPos.line === line.num }" :key="line.num" :style="{ top: line.top }" class="my-num" v-for="line in renderObjs">
-							<span class="num">{{ _num(line.num) }}</span>
-							<span :class="['iconfont', line.fold == 'open' ? 'my-fold-open icon-down1' : 'my-fold-close icon-right']" @click="onToggleFold(line.num)" class="my-fold my-center-center" v-if="line.fold"></span>
-							<template v-if="type !== 'diff'">
-								<span :class="['my-diff-'+_diffType(line.num)]" @click="onShowDiff(line.num)" class="my-diff-num" v-if="_diffType(line.num)"></span>
-							</template>
-						</div>
+				<div :style="{ height: _contentHeight }" class="my-num-content" ref="numContent">
+					<div :class="{ 'my-active': nowCursorPos.line === line.num }" :key="line.num" :style="{ top: line.top }" class="my-num" v-for="line in renderObjs">
+						<span class="num">{{ _num(line.num) }}</span>
+						<span :class="['iconfont', line.fold == 'open' ? 'my-fold-open icon-down1' : 'my-fold-close icon-right']" @click="onToggleFold(line.num)" class="my-fold my-center-center" v-if="line.fold"></span>
+						<template v-if="type !== 'diff'">
+							<span :class="['my-diff-'+_diffType(line.num)]" @click="onShowDiff(line.num)" class="my-diff-num" v-if="_diffType(line.num)"></span>
+						</template>
 					</div>
 				</div>
 			</div>
@@ -22,53 +20,51 @@
 			<!-- 可滚动区域 -->
 			<div class="my-scroller" ref="scroller">
 				<!-- 内如区域 -->
-				<div :style="{left: -scrollLeft + 'px'}" class="my-content-overlay" ref="contentLay">
-					<div
-						:style="{ width: _contentMinWidth + 'px', height: _contentHeight }"
-						@mousedown="onContentMdown"
-						@mouseleave="onContentMLeave"
-						@mousemove="onContentMmove"
-						@selectend.prevent="onSelectend"
-						class="my-content"
-						ref="content"
-					>
-						<div class="my-lines-view" ref="lineView"></div>
-						<div class="my-cursor-view" ref="cursorView">
-							<template v-for="line in renderObjs">
-								<div :key="line.num" v-if="line.cursorList.length">
-									<div :style="{ height: _lineHeight, left: left, top: line.top, visibility: _cursorVisible }" class="my-cursor" style="top: 0px" v-for="left in line.cursorList"></div>
-								</div>
-							</template>
-						</div>
-						<div class="my-bg-view">
-							<div :class="[_activeLine(line.num) ? 'my-active' : '']" :key="line.num" :style="{height: _lineHeight, top: line.top}" class="my-line-bg" v-for="line in renderObjs">
-								<div :style="{ left: bracketMatch.start.left + 'px', width: bracketMatch.start.width + 'px' }" class="my-bracket-match" v-if="bracketMatch && line.num == bracketMatch.start.line"></div>
-								<div :style="{ left: bracketMatch.end.left + 'px', width: bracketMatch.end.width + 'px' }" class="my-bracket-match" v-if="bracketMatch && line.num == bracketMatch.end.line"></div>
-								<div
-									:class="{ 'my-active': range.active, 'my-search-bg': range.isFsearch }"
-									:style="{ left: range.left + 'px', width: range.width + 'px' }"
-									class="my-line-bg my-select-bg"
-									v-for="range in line.selection"
-								></div>
+				<div
+					:style="{ width: _contentMinWidth + 'px', height: _contentHeight, left: -scrollLeft + 'px' }"
+					@mousedown="onContentMdown"
+					@mouseleave="onContentMLeave"
+					@mousemove="onContentMmove"
+					@selectend.prevent="onSelectend"
+					class="my-content"
+					ref="content"
+				>
+					<div class="my-lines-view" ref="lineView"></div>
+					<div class="my-cursor-view" ref="cursorView">
+						<template v-for="line in renderObjs">
+							<div :key="line.num" v-if="line.cursorList.length">
+								<div :style="{ height: _lineHeight, left: left, top: line.top, visibility: _cursorVisible }" class="my-cursor" style="top: 0px" v-for="left in line.cursorList"></div>
 							</div>
-						</div>
-						<!-- 输入框 -->
-						<textarea
-							:style="{ top: _textAreaPos.top, left: _textAreaPos.left, height: _lineHeight  }"
-							@blur="onBlur"
-							@compositionend="onCompositionend"
-							@compositionstart="onCompositionstart"
-							@copy.prevent="onCopy"
-							@cut.prevent="onCut"
-							@focus="onFocus"
-							@input="onInput"
-							@keydown="onKeydown"
-							@paste.prevent="onPaste"
-							class="my-textarea"
-							ref="textarea"
-						></textarea>
-						<auto-tip :styles="autoTipStyle" :tipList="autoTipList" @change="onClickAuto" ref="autoTip" v-show="autoTipList && autoTipList.length"></auto-tip>
+						</template>
 					</div>
+					<div class="my-bg-view">
+						<div :class="[_activeLine(line.num) ? 'my-active' : '']" :key="line.num" :style="{height: _lineHeight, top: line.top}" class="my-line-bg" v-for="line in renderObjs">
+							<div :style="{ left: bracketMatch.start.left + 'px', width: bracketMatch.start.width + 'px' }" class="my-bracket-match" v-if="bracketMatch && line.num == bracketMatch.start.line"></div>
+							<div :style="{ left: bracketMatch.end.left + 'px', width: bracketMatch.end.width + 'px' }" class="my-bracket-match" v-if="bracketMatch && line.num == bracketMatch.end.line"></div>
+							<div
+								:class="{ 'my-active': range.active, 'my-search-bg': range.isFsearch }"
+								:style="{ left: range.left + 'px', width: range.width + 'px' }"
+								class="my-line-bg my-select-bg"
+								v-for="range in line.selection"
+							></div>
+						</div>
+					</div>
+					<!-- 输入框 -->
+					<textarea
+						:style="{ top: _textAreaPos.top, left: _textAreaPos.left, height: _lineHeight  }"
+						@blur="onBlur"
+						@compositionend="onCompositionend"
+						@compositionstart="onCompositionstart"
+						@copy.prevent="onCopy"
+						@cut.prevent="onCut"
+						@focus="onFocus"
+						@input="onInput"
+						@keydown="onKeydown"
+						@paste.prevent="onPaste"
+						class="my-textarea"
+						ref="textarea"
+					></textarea>
+					<auto-tip :styles="autoTipStyle" :tipList="autoTipList" @change="onClickAuto" ref="autoTip" v-show="autoTipList && autoTipList.length"></auto-tip>
 				</div>
 				<div @scroll="onHBarScroll" class="my-editor-scrollbar-h" ref="hScrollBar">
 					<div :style="{width: _contentMinWidth + 'px'}"></div>
@@ -1344,8 +1340,8 @@ export default {
 			this.contentHeight = contentHeight;
 		},
 		setTop() {
-			this.$refs.numLay.style.top = -this.scrollTop + 'px';
-			this.$refs.contentLay.style.top = -this.scrollTop + 'px';
+			this.$refs.numContent.style.top = -this.scrollTop + 'px';
+			this.$refs.content.style.top = -this.scrollTop + 'px';
 		},
 		setDiffTop() {
 			let top = (this.folder.getRelativeLine(this.diffLine) - 1) * this.charObj.charHight - this.scrollTop;
@@ -1372,7 +1368,7 @@ export default {
 			this.startLineTop = (this.folder.getRelativeLine(this.startLine) - 1) * this.charObj.charHight;
 			this.scrollTop = scrollTop;
 			this.$refs.vScrollBar.scrollTop = scrollTop;
-			this.$refs.numScroller.scrollTop = scrollTop;
+			this.$refs.numScroller.scrollTop = 0;
 			this.$refs.scroller.scrollTop = 0;
 			this.$refs.scroller.scrollLeft = 0;
 			this.render();
