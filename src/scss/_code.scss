@@ -52,9 +52,15 @@
 		background-color: var(--my-editorBracketMatch-background);
 	}
 
-	&-tab-line {
+	&-indent-line {
+		position: absolute;
+		width: 100%;
+	}
+
+	&-indent {
 		position: absolute;
 		width: 0px;
+		height: 100%;
 		border-left: 1px solid var(--my-editorIndentGuide-background);
 		pointer-events: none;
 	}

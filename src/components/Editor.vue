@@ -51,7 +51,7 @@
 						<div :style="_bracketEndStyle" class="my-bracket-match" v-if="_bracketEndVisible"></div>
 					</div>
 					<div class="my-indent-view">
-						<div :style="{height: _lineHeight, top: line.top}" v-for="line in renderObjs" v-html="_tabLines(line.tabNum)"></div>
+						<div :style="{height: _lineHeight, top: line.top}" class="my-indent-line" v-for="line in renderObjs" v-html="_tabLines(line.tabNum)"></div>
 					</div>
 					<!-- 输入框 -->
 					<textarea
@@ -357,7 +357,7 @@ export default {
 				let html = '';
 				for (let tab = 1; tab <= tabNum; tab++) {
 					let left = (tab - 1) * this.tabSize * this.charObj.charWidth + 'px';
-					html += `<span style="left:${left}" class="my-tab-line"></span>`;
+					html += `<span style="left:${left}" class="my-indent"></span>`;
 				}
 				return html;
 			};
