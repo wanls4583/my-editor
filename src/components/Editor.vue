@@ -743,8 +743,8 @@ export default {
 		},
 		// 渲染单行代码
 		renderLine(lineId) {
-			if (this.renderedIdMap[lineId]) {
-				let renderObj = this.renderedIdMap[lineId];
+			let renderObj = this.renderedIdMap[lineId];
+			if (renderObj) {
 				let lineObj = this.myContext.htmls[renderObj.num - 1];
 				// 高亮完成渲染某一行时，render可能还没完成，导致num没更新，此时跳过
 				if (lineObj && lineObj.lineId === lineId) {

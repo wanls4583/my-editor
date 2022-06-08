@@ -52,17 +52,32 @@ export default {
 	},
 	created() {
 		this.canvasWidth = this.width / this.scale;
+		this.worker = new Worker('work/minimap.js');
 		this.renderedIdMap = {};
 	},
 	mounted() {
-		this.ctx = this.$refs.canvas.getContext('2d');
-		this.initEvent();
+		let offscreen = this.$refs.canvas.transferControlToOffscreen();
+		this.worker.postMessage({ event: 'init', data: { canvas: offscreen } }, [offscreen]);
 		this.setSize();
+		this.initEvent();
 	},
 	destroyed() {
+		this.worker.terminate();
 		this.unbindEvent();
 	},
 	methods: {
+		initWorkerData() {
+			this.worker.postMessage({
+				event: 'init-data',
+				data: {
+					charHight: this.$parent.charObj.charHight,
+					canvasWidth: this.canvasWidth,
+					canvasHeight: this.canvasHeight,
+					colors: globalData.colors,
+					scopeIdMap: globalData.scopeIdMap,
+				},
+			});
+		},
 		initEvent() {
 			this.initEvent.fn1 = (e) => {
 				this.$parent.active && this.onDocumentMmove(e);
@@ -81,9 +96,8 @@ export default {
 				(this.initEventBus.fn1 = (data) => {
 					if (this.$parent.editorId === data.editorId) {
 						let line = this.renderedIdMap[data.lineId];
-						line = (line && line.line) || 0;
-						if (line && this.$parent.myContext.htmls[line - 1] && this.$parent.myContext.htmls[line - 1].lineId === data.lineId) {
-							this.drawLine(line, true);
+						if (line) {
+							this.worker.postMessage({ event: 'render-line', data: this.getRenderObj(line.num) });
 						}
 					}
 				})
@@ -110,6 +124,7 @@ export default {
 			this.blockHeight = this.height * this.scale;
 			this.canvasHeight = this.height / this.scale;
 			this.maxVisibleLines = Math.ceil(this.canvasHeight / this.$parent.charObj.charHight) + 1;
+			this.initWorkerData();
 		},
 		setStartLine() {
 			let maxScrollTop1 = this.contentHeight - this.canvasHeight;
@@ -122,65 +137,6 @@ export default {
 			this.startLine++;
 			this.top = scrollTop % this.$parent.charObj.charHight;
 		},
-		drawLine(line, clear) {
-			let charHight = this.$parent.charObj.charHight;
-			let top = (line - this.startLine) * charHight - this.top;
-			let lineObj = this.$parent.myContext.htmls[line - 1];
-			let cache = this.renderedIdMap[lineObj.lineId];
-			let tokens = lineObj.tokens;
-			let html = '';
-			if (clear) {
-				this.ctx.clearRect(0, top, this.canvasWidth, charHight);
-			}
-			if (!lineObj.html) {
-				if (lineObj.tokens && lineObj.tokens.length) {
-					lineObj.tokens = this.$parent.tokenizer.splitLongToken(lineObj.tokens);
-					lineObj.html = this.$parent.tokenizer.createHtml(lineObj.tokens, lineObj.text);
-				}
-			}
-			html = lineObj.html || lineObj.text;
-			if (cache && cache.html === html) {
-				this.ctx.drawImage(cache.canvas, 20, top);
-			} else {
-				let canvas = document.createElement('canvas');
-				let ctx = canvas.getContext('2d');
-				canvas.width = this.$refs.canvas.width;
-				canvas.height = charHight;
-				ctx.font = `${14}px Consolas`;
-				ctx.textBaseline = 'middle';
-				if (tokens) {
-					let left = 20;
-					for (let i = 0; i < tokens.length; i++) {
-						let token = tokens[i];
-						let text = lineObj.text.slice(token.startIndex, token.endIndex);
-						text = text.replace(/[a-zA-Z]/g, '▉ ');
-						text = text.replace(/\t/g, '    ');
-						ctx.fillStyle = globalData.colors['editor.foreground'];
-						if (token.scopeId) {
-							let scope = globalData.scopeIdMap[token.scopeId];
-							if (scope.settings && scope.settings.foreground) {
-								ctx.fillStyle = scope.settings.foreground;
-							}
-						}
-						ctx.fillText(text, left, charHight / 2);
-						left += ctx.measureText(text).width;
-						// 退出无效渲染
-						if (left > this.canvasWidth) {
-							break;
-						}
-					}
-				} else {
-					ctx.fillStyle = globalData.colors['editor.foreground'];
-					ctx.fillText(lineObj.text.replace(/[a-zA-Z]/g, '▉ ').replace(/\t/g, '    '), 20, charHight / 2);
-				}
-				this.ctx.drawImage(canvas, 20, top);
-				this.renderedIdMap[lineObj.lineId] = {
-					line: line,
-					html: html,
-					canvas: canvas,
-				};
-			}
-		},
 		render() {
 			if (this.rendering) {
 				return;
@@ -192,16 +148,42 @@ export default {
 			});
 		},
 		renderLine() {
-			this.ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
+			let lines = [];
 			for (let line = this.startLine, i = 0; line <= this.$parent.myContext.htmls.length && i < this.maxVisibleLines; i++) {
 				let fold = this.$parent.folder.getFoldByLine(line);
-				this.drawLine(line);
+				let lineObj = this.$parent.myContext.htmls[line - 1];
+				lines.push(this.getRenderObj(line));
+				this.renderedIdMap[lineObj.lineId] = { num: line };
 				if (fold) {
 					line = fold.end.line;
 				} else {
 					line++;
 				}
 			}
+			this.worker.postMessage({ event: 'render', data: lines });
+		},
+		getRenderObj(line) {
+			let top = (line - this.startLine) * this.$parent.charObj.charHight - this.top;
+			let lineObj = this.$parent.myContext.htmls[line - 1];
+			if (!lineObj.html) {
+				if (lineObj.tokens && lineObj.tokens.length) {
+					lineObj.tokens = this.$parent.tokenizer.splitLongToken(lineObj.tokens);
+					lineObj.html = this.$parent.tokenizer.createHtml(lineObj.tokens, lineObj.text);
+				}
+			}
+			return {
+				top,
+				lineObj: {
+					lineId: lineObj.lineId,
+					text: lineObj.text,
+					html: lineObj.html,
+					tokens:
+						lineObj.tokens &&
+						lineObj.tokens.map((item) => {
+							return { startIndex: item.startIndex, endIndex: item.endIndex, scopeId: item.scopeId };
+						}),
+				},
+			};
 		},
 		onBlockMDown(e) {
 			this.startBlockMouseObj = e;
