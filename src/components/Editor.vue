@@ -602,24 +602,21 @@ export default {
 			EventBus.$off('render-line', this.initEventBus.fn6);
 		},
 		showEditor() {
-			cancelAnimationFrame(this.showEditorTimer);
-			this.showEditorTimer = requestAnimationFrame(() => {
-				// 元素暂时不可见
-				if (!this.$refs.scroller.clientHeight) {
-					return;
-				}
-				this.language = this._language || '';
-				this.theme = this._theme || '';
-				this.initRenderData();
-				this.setScrollerArea();
-				this.setContentHeight();
-				this.focus();
-				this.setStartLine(this.$refs.vScrollBar.scrollTop, true);
-				if (this.type !== 'diff') {
-					// 获取文件git修改记录
-					EventBus.$emit('git-diff', this.path);
-				}
-			});
+			// 元素暂时不可见
+			if (!this.$refs.scroller.clientHeight) {
+				return;
+			}
+			this.language = this._language || '';
+			this.theme = this._theme || '';
+			this.initRenderData();
+			this.setScrollerArea();
+			this.setContentHeight();
+			this.focus();
+			this.setStartLine(this.$refs.vScrollBar.scrollTop, true);
+			if (this.type !== 'diff') {
+				// 获取文件git修改记录
+				EventBus.$emit('git-diff', this.path);
+			}
 		},
 		showDiff() {
 			let line = 1;
@@ -1270,9 +1267,11 @@ export default {
 		},
 		setStartLine(scrollTop, force) {
 			let startLine = 1;
+			let maxScrollTop = this.contentHeight - this.scrollerArea.height;
 			scrollTop = scrollTop < 0 ? 0 : scrollTop;
-			if (scrollTop > this.contentHeight - this.scrollerArea.height) {
-				scrollTop = this.contentHeight - this.scrollerArea.height;
+			maxScrollTop = maxScrollTop < 0 ? 0 : maxScrollTop;
+			if (scrollTop > maxScrollTop) {
+				scrollTop = maxScrollTop;
 			}
 			if (!force && Math.abs(scrollTop - this.scrollTop) < 1) {
 				return;
