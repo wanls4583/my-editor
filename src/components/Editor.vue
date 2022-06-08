@@ -35,9 +35,9 @@
 						</div>
 					</div>
 					<div class="my-cursor-view" ref="cursorView">
-						<div v-for="line in renderObjs" v-if="line.cursorList.length">
-							<span :style="{ height: _lineHeight, left: left, top: line.top, visibility: _cursorVisible }" class="my-cursor" style="top: 0px" v-for="left in line.cursorList"></span>
-						</div>
+						<template v-for="line in renderObjs">
+							<span :style="{ height: _lineHeight, left: left, top: line.top, visibility: _cursorVisible }" class="my-cursor" v-for="left in line.cursorList"></span>
+						</template>
 					</div>
 					<div class="my-bg-view">
 						<div :class="[_activeLine(line.num) ? 'my-active' : '']" :style="{height: _lineHeight, top: line.top}" class="my-line-bg" v-for="line in renderObjs">
@@ -172,7 +172,6 @@ export default {
 			language: '',
 			theme: '',
 			tabSize: 4,
-			renderObjs: [],
 			startLine: 1,
 			cursorLeft: 0,
 			scrollLeft: 0,
@@ -184,6 +183,7 @@ export default {
 			errorMap: {},
 			errors: [],
 			autoTipList: [],
+			renderObjs: [],
 			diffTree: null,
 			tipContent: null,
 			menuVisible: false,
@@ -580,7 +580,7 @@ export default {
 			EventBus.$off('close-menu', this.initEventBus.fn3);
 			EventBus.$off('theme-changed', this.initEventBus.fn4);
 			EventBus.$off('git-diffed', this.initEventBus.fn5);
-			EventBus.$off('render-line', this.initEventBus.fn5);
+			EventBus.$off('render-line', this.initEventBus.fn6);
 		},
 		showEditor() {
 			// 元素暂时不可见
@@ -662,11 +662,12 @@ export default {
 		},
 		// 渲染
 		render(forceCursorView) {
-			if (this.rendering) {
-				return;
-			}
-			this.rendering = true;
+			let renderId = this.renderId + 1 || 1;
+			this.renderId = renderId;
 			this.$nextTick(() => {
+				if (renderId !== this.renderId) {
+					return;
+				}
 				this.setTop();
 				this.renderLines();
 				this.renderSelectedBg();
@@ -674,11 +675,11 @@ export default {
 				this.renderError();
 				this.renderCursor(forceCursorView);
 				this.$refs.minimap && this.$refs.minimap.render();
-				this.rendering = false;
 			});
 		},
 		// 渲染代码
 		renderLines() {
+			let toRnederNums = [];
 			this.endLine = 0;
 			this.myContext.renderedLineMap.clear();
 			this.myContext.renderedIdMap.clear();
@@ -686,6 +687,7 @@ export default {
 				let lineObj = this.myContext.htmls[startLine - 1];
 				let obj = this.getRenderObj(lineObj, startLine);
 				let fold = this.folder.getFoldByLine(startLine);
+				toRnederNums.push(startLine);
 				this.endLine = startLine;
 				this.myContext.renderedLineMap.set(startLine, obj);
 				this.myContext.renderedIdMap.set(lineObj.lineId, obj);
@@ -695,28 +697,29 @@ export default {
 					startLine++;
 				}
 			}
-			_setRenderObjs.call(this, this.renderObjs);
+			_setRenderObjs.call(this);
 
-			function _setRenderObjs(preRenderObjs) {
+			function _setRenderObjs() {
 				let renderNumMap = {};
 				let renderNums = [];
+				let preRenderObjs = this.renderObjs;
 				this.renderObjs = [];
 				preRenderObjs.forEach((item, index) => {
-					if (this.myContext.renderedLineMap.has(item.num) && index <= this.endLine - this.startLine) {
+					if (this.myContext.renderedLineMap.has(item.num) && index < toRnederNums.length) {
 						this.renderObjs[index] = this.myContext.renderedLineMap.get(item.num);
 						renderNumMap[item.num] = true;
 					}
 				});
-				for (let line = this.startLine; line <= this.endLine; line++) {
-					if (!renderNumMap[line]) {
-						renderNums.push(line);
+				toRnederNums.forEach((num) => {
+					if (!renderNumMap[num]) {
+						renderNums.push(num);
 					}
-				}
-				for (let i = 0, line = this.startLine; line <= this.endLine; i++, line++) {
-					if (!this.renderObjs[i]) {
-						this.renderObjs[i] = this.myContext.renderedLineMap.get(renderNums.pop());
+				});
+				toRnederNums.forEach((num, index) => {
+					if (!this.renderObjs[index]) {
+						this.renderObjs[index] = this.myContext.renderedLineMap.get(renderNums.pop());
 					}
-				}
+				});
 			}
 		},
 		// 渲染单行代码
@@ -1250,8 +1253,8 @@ export default {
 			this.$refs.numScroller.scrollTop = 0;
 			this.$refs.scroller.scrollTop = 0;
 			this.$refs.scroller.scrollLeft = 0;
-			this.render();
 			this.tokenizer.tokenizeVisibleLins();
+			this.render();
 		},
 		setErrors(errors) {
 			this.errorMap = {};
