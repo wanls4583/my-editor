@@ -183,7 +183,7 @@
 		z-index: 1;
 	}
 
-	&-lines-view {
+	&-indent-view {
 		position: absolute;
 		top: 0;
 		left: 0;
@@ -191,12 +191,20 @@
 		z-index: 2;
 	}
 
-	&-cursor-view {
+	&-lines-view {
 		position: absolute;
 		top: 0;
 		left: 0;
 		right: 0;
 		z-index: 3;
+	}
+
+	&-cursor-view {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		z-index: 4;
 	}
 
 	&-cursor {

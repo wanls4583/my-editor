@@ -10,7 +10,7 @@
 			left: 0;
 			right: 0;
 
-			&.my-active::after {
+			&::after {
 				content: '';
 				position: absolute;
 				top: 0;
@@ -44,23 +44,17 @@
 
 	&-line-bg {
 		position: absolute;
-		top: 0;
-		height: 100%;
 	}
 
 	&-bracket-match {
 		position: absolute;
-		top: 0;
-		height: 100%;
 		border: 1px solid var(--my-editorBracketMatch-border);
 		background-color: var(--my-editorBracketMatch-background);
 	}
 
 	&-tab-line {
 		position: absolute;
-		top: 0;
 		width: 0px;
-		height: 100%;
 		border-left: 1px solid var(--my-editorIndentGuide-background);
 		pointer-events: none;
 	}

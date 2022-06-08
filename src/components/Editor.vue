@@ -35,22 +35,23 @@
 						</div>
 					</div>
 					<div class="my-cursor-view" ref="cursorView">
-						<template v-for="line in renderObjs">
-							<span :style="{ height: _lineHeight, left: left, top: line.top, visibility: _cursorVisible }" class="my-cursor" v-for="left in line.cursorList"></span>
+						<template v-for="posList in renderCursorObjs">
+							<span :style="{ height: _lineHeight, left: pos.left, top: pos.top, visibility: _cursorVisible }" class="my-cursor" v-for="pos in posList"></span>
 						</template>
 					</div>
 					<div class="my-bg-view">
-						<div :class="[_activeLine(line.num) ? 'my-active' : '']" :style="{height: _lineHeight, top: line.top}" class="my-line-bg" v-for="line in renderObjs">
-							<div
-								:class="{ 'my-active': range.active, 'my-search-bg': range.isFsearch }"
-								:style="{ left: range.left + 'px', width: range.width + 'px' }"
-								class="my-select-bg"
-								v-for="range in line.selection"
-							></div>
-							<div v-html="_tabLines(line.tabNum)"></div>
-							<div :style="{ left: bracketMatch.start.left + 'px', width: bracketMatch.start.width + 'px' }" class="my-bracket-match" v-if="bracketMatch && line.num == bracketMatch.start.line"></div>
-							<div :style="{ left: bracketMatch.end.left + 'px', width: bracketMatch.end.width + 'px' }" class="my-bracket-match" v-if="bracketMatch && line.num == bracketMatch.end.line"></div>
-						</div>
+						<div
+							:class="{ 'my-active': range.active, 'my-search-bg': range.isFsearch }"
+							:style="{ top: range.top, left: range.left, width: range.width, height: _lineHeight }"
+							class="my-select-bg"
+							v-for="range in renderSelectionObjs"
+						></div>
+						<div :style="{height: _lineHeight, top: _activeLineTop}" class="my-line-bg" v-if="activeLineBg"></div>
+						<div :style="_bracketStartStyle" class="my-bracket-match" v-if="_bracketStartVisible"></div>
+						<div :style="_bracketEndStyle" class="my-bracket-match" v-if="_bracketEndVisible"></div>
+					</div>
+					<div class="my-indent-view">
+						<div :style="{height: _lineHeight, top: line.top}" v-for="line in renderObjs" v-html="_tabLines(line.tabNum)"></div>
 					</div>
 					<!-- 输入框 -->
 					<textarea
@@ -184,6 +185,10 @@ export default {
 			errors: [],
 			autoTipList: [],
 			renderObjs: [],
+			renderCursorObjs: [],
+			renderSelectionObjs: [],
+			renderedLineMap: {},
+			renderedIdMap: {},
 			diffTree: null,
 			tipContent: null,
 			menuVisible: false,
@@ -314,6 +319,9 @@ export default {
 		_lineHeight() {
 			return this.charObj.charHight + 'px';
 		},
+		_activeLineTop() {
+			return (this.folder.getRelativeLine(this.nowCursorPos.line) - 1) * this.charObj.charHight + 'px';
+		},
 		_cursorVisible() {
 			return this.cursorVisible && this.cursorFocus ? 'visible' : 'hidden';
 		},
@@ -354,10 +362,21 @@ export default {
 				return html;
 			};
 		},
-		_activeLine() {
-			return (num) => {
-				return this.nowCursorPos.line == num && this.activeLineBg;
-			};
+		_bracketStartVisible() {
+			return this.bracketMatch && this.renderedLineMap[this.bracketMatch.start.line];
+		},
+		_bracketEndVisible() {
+			return this.bracketMatch && this.renderedLineMap[this.bracketMatch.end.line];
+		},
+		_bracketStartStyle() {
+			let style = { left: this.bracketMatch.start.left, width: this.bracketMatch.start.width, height: this._lineHeight };
+			style.top = this.renderedLineMap[this.bracketMatch.start.line].top;
+			return style;
+		},
+		_bracketEndStyle() {
+			let style = { left: this.bracketMatch.end.left, width: this.bracketMatch.end.width, height: this._lineHeight };
+			style.top = this.renderedLineMap[this.bracketMatch.end.line].top;
+			return style;
 		},
 		space() {
 			return Util.space(this.tabSize);
@@ -583,21 +602,24 @@ export default {
 			EventBus.$off('render-line', this.initEventBus.fn6);
 		},
 		showEditor() {
-			// 元素暂时不可见
-			if (!this.$refs.scroller.clientHeight) {
-				return;
-			}
-			this.language = this._language || '';
-			this.theme = this._theme || '';
-			this.initRenderData();
-			this.setScrollerArea();
-			this.setContentHeight();
-			this.focus();
-			this.setStartLine(this.$refs.vScrollBar.scrollTop, true);
-			if (this.type !== 'diff') {
-				// 获取文件git修改记录
-				EventBus.$emit('git-diff', this.path);
-			}
+			cancelAnimationFrame(this.showEditorTimer);
+			this.showEditorTimer = requestAnimationFrame(() => {
+				// 元素暂时不可见
+				if (!this.$refs.scroller.clientHeight) {
+					return;
+				}
+				this.language = this._language || '';
+				this.theme = this._theme || '';
+				this.initRenderData();
+				this.setScrollerArea();
+				this.setContentHeight();
+				this.focus();
+				this.setStartLine(this.$refs.vScrollBar.scrollTop, true);
+				if (this.type !== 'diff') {
+					// 获取文件git修改记录
+					EventBus.$emit('git-diff', this.path);
+				}
+			});
 		},
 		showDiff() {
 			let line = 1;
@@ -681,16 +703,16 @@ export default {
 		renderLines() {
 			let toRnederNums = [];
 			this.endLine = 0;
-			this.myContext.renderedLineMap.clear();
-			this.myContext.renderedIdMap.clear();
+			this.renderedLineMap = [];
+			this.renderedIdMap = [];
 			for (let i = 0, startLine = this.startLine; i < this.maxVisibleLines && startLine <= this.myContext.htmls.length; i++) {
 				let lineObj = this.myContext.htmls[startLine - 1];
 				let obj = this.getRenderObj(lineObj, startLine);
 				let fold = this.folder.getFoldByLine(startLine);
 				toRnederNums.push(startLine);
 				this.endLine = startLine;
-				this.myContext.renderedLineMap.set(startLine, obj);
-				this.myContext.renderedIdMap.set(lineObj.lineId, obj);
+				this.renderedLineMap[startLine] = obj;
+				this.renderedIdMap[lineObj.lineId] = obj;
 				if (fold) {
 					startLine = fold.end.line;
 				} else {
@@ -705,8 +727,8 @@ export default {
 				let preRenderObjs = this.renderObjs;
 				this.renderObjs = [];
 				preRenderObjs.forEach((item, index) => {
-					if (this.myContext.renderedLineMap.has(item.num) && index < toRnederNums.length) {
-						this.renderObjs[index] = this.myContext.renderedLineMap.get(item.num);
+					if (this.renderedLineMap[item.num] && index < toRnederNums.length) {
+						this.renderObjs[index] = this.renderedLineMap[item.num];
 						renderNumMap[item.num] = true;
 					}
 				});
@@ -717,15 +739,15 @@ export default {
 				});
 				toRnederNums.forEach((num, index) => {
 					if (!this.renderObjs[index]) {
-						this.renderObjs[index] = this.myContext.renderedLineMap.get(renderNums.pop());
+						this.renderObjs[index] = this.renderedLineMap[renderNums.pop()];
 					}
 				});
 			}
 		},
 		// 渲染单行代码
 		renderLine(lineId) {
-			if (this.myContext.renderedIdMap.has(lineId)) {
-				let renderObj = this.myContext.renderedIdMap.get(lineId);
+			if (this.renderedIdMap[lineId]) {
+				let renderObj = this.renderedIdMap[lineId];
 				let lineObj = this.myContext.htmls[renderObj.num - 1];
 				// 高亮完成渲染某一行时，render可能还没完成，导致num没更新，此时跳过
 				if (lineObj && lineObj.lineId === lineId) {
@@ -738,24 +760,29 @@ export default {
 			}
 		},
 		renderSelectedBg() {
-			this.activeLineBg = true;
-			this.clearSelectionToken();
-			this.renderObjs.forEach((item) => {
-				item.selection = [];
-			});
-			this.fSelecter.ranges.forEach((range) => {
-				this._renderSelectedBg(range, true);
-			});
-			this.selecter.ranges.forEach((range) => {
-				let _range = this.fSelecter.getRangeByCursorPos(range.start);
-				if (this.searchVisible) {
-					// 优先渲染搜索框的选中范围
-					if (!_range && range.active) {
+			let renderSelectedBgId = this.renderSelectedBgId + 1 || 1;
+			this.renderSelectedBgId = renderSelectedBgId;
+			this.$nextTick(() => {
+				if (renderSelectedBgId !== this.renderSelectedBgId) {
+					return;
+				}
+				this.activeLineBg = true;
+				this.clearSelectionToken();
+				this.renderSelectionObjs = [];
+				this.fSelecter.ranges.forEach((range) => {
+					this._renderSelectedBg(range, true);
+				});
+				this.selecter.ranges.forEach((range) => {
+					let _range = this.fSelecter.getRangeByCursorPos(range.start);
+					if (this.searchVisible) {
+						// 优先渲染搜索框的选中范围
+						if (!_range && range.active) {
+							this._renderSelectedBg(range);
+						}
+					} else {
 						this._renderSelectedBg(range);
 					}
-				} else {
-					this._renderSelectedBg(range);
-				}
+				});
 			});
 		},
 		// 渲染选中背景
@@ -766,32 +793,38 @@ export default {
 			let end = range.end;
 			let text = this.myContext.htmls[start.line - 1].text;
 			let endColumn = text.length;
-			start.left = this.getStrWidth(text, 0, start.column);
+			start.left = this.getStrWidth(text, 0, start.column) + 'px';
 			if (start.line == end.line) {
 				start.width = this.getStrWidth(text, start.column, end.column) || 10;
+				start.width += 'px';
 			} else {
 				start.width = this.getStrWidth(text, start.column) || 10;
-				end.left = 0;
+				start.width += 'px';
+				end.left = '0px';
 				text = this.myContext.htmls[end.line - 1].text;
 				end.width = this.getStrWidth(text, 0, end.column) || 10;
+				end.width += 'px';
 			}
 			firstLine = firstLine > start.line + 1 ? firstLine : start.line + 1;
 			lastLine = lastLine < end.line - 1 ? lastLine : end.line - 1;
 			for (let line = firstLine; line <= lastLine; line++) {
-				if (this.myContext.renderedLineMap.has(line)) {
-					let renderObj = this.myContext.renderedLineMap.get(line);
+				if (this.renderedLineMap[line]) {
+					let renderObj = this.renderedLineMap[line];
 					let lineObj = this.myContext.htmls[line - 1];
-					renderObj.selection.push({
+					this.renderSelectionObjs.push({
 						left: 0,
-						width: lineObj.width || 10,
+						top: renderObj.top,
+						width: (lineObj.width || 10) + 'px',
 						active: range.active,
 						isFsearch: isFsearch,
 					});
 				}
 			}
-			if (this.myContext.renderedLineMap.has(start.line)) {
-				this.myContext.renderedLineMap.get(start.line).selection.push({
+			if (this.renderedLineMap[start.line]) {
+				let renderObj = this.renderedLineMap[start.line];
+				this.renderSelectionObjs.push({
 					left: start.left,
+					top: renderObj.top,
 					width: start.width,
 					active: range.active,
 					isFsearch: isFsearch,
@@ -801,9 +834,11 @@ export default {
 				}
 				range.active && this._renderSelectionToken(start.line, start.column, endColumn);
 			}
-			if (end.line > start.line && this.myContext.renderedLineMap.has(end.line)) {
-				this.myContext.renderedLineMap.get(end.line).selection.push({
+			if (end.line > start.line && this.renderedLineMap[end.line]) {
+				let renderObj = this.renderedLineMap[end.line];
+				this.renderSelectionObjs.push({
 					left: end.left,
+					top: renderObj.top,
 					width: end.width,
 					active: range.active,
 					isFsearch: isFsearch,
@@ -902,7 +937,7 @@ export default {
 				}
 			}
 			lineObj.html = this.tokenizer.createHtml(_tokens, lineObj.text);
-			this.myContext.renderedIdMap.get(lineObj.lineId).html = lineObj.html;
+			this.renderedIdMap[lineObj.lineId].html = lineObj.html;
 			this.$nextTick(() => {
 				lineObj.fgTokens = _tokens;
 			});
@@ -915,13 +950,13 @@ export default {
 
 				lineObj = this.myContext.htmls[this.bracketMatch.start.line - 1];
 				pos = this.bracketMatch.start;
-				this.bracketMatch.start.width = this.getStrWidth(lineObj.text, pos.startIndex, pos.endIndex);
-				this.bracketMatch.start.left = this.getStrWidth(lineObj.text, 0, pos.startIndex);
+				this.bracketMatch.start.width = this.getStrWidth(lineObj.text, pos.startIndex, pos.endIndex) + 'px';
+				this.bracketMatch.start.left = this.getStrWidth(lineObj.text, 0, pos.startIndex) + 'px';
 
 				lineObj = this.myContext.htmls[this.bracketMatch.end.line - 1];
 				pos = this.bracketMatch.end;
-				this.bracketMatch.end.width = this.getStrWidth(lineObj.text, pos.startIndex, pos.endIndex);
-				this.bracketMatch.end.left = this.getStrWidth(lineObj.text, 0, pos.startIndex);
+				this.bracketMatch.end.width = this.getStrWidth(lineObj.text, pos.startIndex, pos.endIndex) + 'px';
+				this.bracketMatch.end.left = this.getStrWidth(lineObj.text, 0, pos.startIndex) + 'px';
 			}
 		},
 		// 清除选中前景色
@@ -937,8 +972,8 @@ export default {
 				return;
 			}
 			lineObj.fgTokens = null;
-			if (this.myContext.renderedLineMap.has(line)) {
-				this.myContext.renderedIdMap.get(lineObj.lineId).html = this.tokenizer.createHtml(lineObj.tokens, lineObj.text);
+			if (this.renderedLineMap[line]) {
+				this.renderedIdMap[lineObj.lineId].html = this.tokenizer.createHtml(lineObj.tokens, lineObj.text);
 			}
 			lineObj.html = '';
 		},
@@ -951,6 +986,7 @@ export default {
 				if (this.renderCursorId !== renderCursorId || !this.renderObjs.length) {
 					return;
 				}
+				this.renderCursorObjs = [];
 				this.renderObjs.forEach((item) => {
 					_setLine(item);
 				});
@@ -960,9 +996,9 @@ export default {
 			function _setLine(item) {
 				let cursorList = [];
 				that.cursor.getCursorsByLine(item.num).forEach((cursorPos) => {
-					cursorList.push(_setCursorRealPos(cursorPos));
+					cursorList.push({ top: item.top, left: _setCursorRealPos(cursorPos) });
 				});
-				item.cursorList = cursorList;
+				that.renderCursorObjs.push(cursorList);
 			}
 
 			function _setCursorRealPos(cursorPos) {

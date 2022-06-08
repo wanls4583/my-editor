@@ -53,8 +53,6 @@ class Context {
 		this.htmls = [];
 		this.fgLines = [];
 		this.lineIdMap = new Map(); //htmls的唯一标识对象
-		this.renderedIdMap = new Map(); //renderHtmls的唯一标识对象
-		this.renderedLineMap = new Map(); //renderHtmls的唯一标识对象
 		this.htmls.push({
 			lineId: this.lineId++,
 			text: '',
