@@ -213,6 +213,9 @@ export default {
 				let maxScrollTop2 = this.height - this.blockHeight;
 				let delta = e.clientY - this.startBlockMouseObj.clientY;
 				let top = this.bTop;
+				if (maxScrollTop2 > this.contentHeight * this.scale - this.blockHeight) {
+					maxScrollTop2 = this.contentHeight * this.scale - this.blockHeight;
+				}
 				top += delta;
 				top = top > maxScrollTop2 ? maxScrollTop2 : top;
 				this.startBlockMouseObj = e;
