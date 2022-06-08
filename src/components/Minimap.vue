@@ -116,7 +116,7 @@ export default {
 			let maxScrollTop2 = this.contentHeight - this.height;
 			let scrollTop = 0;
 			maxScrollTop1 = maxScrollTop1 < 0 ? 0 : maxScrollTop1;
-			scrollTop = this.scrollTop * (maxScrollTop1 / maxScrollTop2);
+			scrollTop = maxScrollTop2 ? this.scrollTop * (maxScrollTop1 / maxScrollTop2) : 0;
 			scrollTop = scrollTop > maxScrollTop1 ? maxScrollTop1 : scrollTop;
 			this.startLine = Math.floor(scrollTop / this.$parent.charObj.charHight);
 			this.startLine++;
