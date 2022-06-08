@@ -29,24 +29,27 @@
 					class="my-content"
 					ref="content"
 				>
-					<div class="my-lines-view" ref="lineView"></div>
+					<div class="my-lines-view" ref="lineView">
+						<div :class="[_diffBg(line.num)]" :data-line="line.num" :id="'line-'+id+'-'+line.num" :style="{top: line.top}" class="my-line" v-for="line in renderObjs">
+							<div :class="[line.fold == 'close' ? 'fold-close' : '']" :data-line="line.num" class="my-code" v-html="line.html"></div>
+						</div>
+					</div>
 					<div class="my-cursor-view" ref="cursorView">
-						<template v-for="line in renderObjs">
-							<div :key="line.num" v-if="line.cursorList.length">
-								<div :style="{ height: _lineHeight, left: left, top: line.top, visibility: _cursorVisible }" class="my-cursor" style="top: 0px" v-for="left in line.cursorList"></div>
-							</div>
-						</template>
+						<div v-for="line in renderObjs" v-if="line.cursorList.length">
+							<span :style="{ height: _lineHeight, left: left, top: line.top, visibility: _cursorVisible }" class="my-cursor" style="top: 0px" v-for="left in line.cursorList"></span>
+						</div>
 					</div>
 					<div class="my-bg-view">
 						<div :class="[_activeLine(line.num) ? 'my-active' : '']" :style="{height: _lineHeight, top: line.top}" class="my-line-bg" v-for="line in renderObjs">
-							<div :style="{ left: bracketMatch.start.left + 'px', width: bracketMatch.start.width + 'px' }" class="my-bracket-match" v-if="bracketMatch && line.num == bracketMatch.start.line"></div>
-							<div :style="{ left: bracketMatch.end.left + 'px', width: bracketMatch.end.width + 'px' }" class="my-bracket-match" v-if="bracketMatch && line.num == bracketMatch.end.line"></div>
 							<div
 								:class="{ 'my-active': range.active, 'my-search-bg': range.isFsearch }"
 								:style="{ left: range.left + 'px', width: range.width + 'px' }"
 								class="my-select-bg"
 								v-for="range in line.selection"
 							></div>
+							<div v-html="_tabLines(line.tabNum)"></div>
+							<div :style="{ left: bracketMatch.start.left + 'px', width: bracketMatch.start.width + 'px' }" class="my-bracket-match" v-if="bracketMatch && line.num == bracketMatch.start.line"></div>
+							<div :style="{ left: bracketMatch.end.left + 'px', width: bracketMatch.end.width + 'px' }" class="my-bracket-match" v-if="bracketMatch && line.num == bracketMatch.end.line"></div>
 						</div>
 					</div>
 					<!-- 输入框 -->
@@ -171,7 +174,6 @@ export default {
 			tabSize: 4,
 			renderObjs: [],
 			startLine: 1,
-			top: 0,
 			cursorLeft: 0,
 			scrollLeft: 0,
 			scrollTop: 0,
@@ -342,9 +344,14 @@ export default {
 				left: left + 'px',
 			};
 		},
-		_tabLineLeft() {
-			return (tab) => {
-				return (tab - 1) * this.tabSize * this.charObj.charWidth + 'px';
+		_tabLines() {
+			return (tabNum) => {
+				let html = '';
+				for (let tab = 1; tab <= tabNum; tab++) {
+					let left = (tab - 1) * this.tabSize * this.charObj.charWidth + 'px';
+					html += `<span style="left:${left}" class="my-tab-line"></span>`;
+				}
+				return html;
 			};
 		},
 		_activeLine() {
@@ -448,9 +455,6 @@ export default {
 			this.cursor.addCursorPos(this.nowCursorPos);
 			this.wordPattern = Util.getWordPattern(this.language);
 			this.wordPattern = new RegExp(`^(${this.wordPattern.source})`);
-			this.renderCache = {};
-			this.renderPool = [];
-			this.tabCache = {};
 			this.channel = new MessageChannel();
 		},
 		initRenderData() {
@@ -563,7 +567,7 @@ export default {
 				'render-line',
 				(this.initEventBus.fn6 = (data) => {
 					if (this.editorId === data.editorId) {
-						this.renderLines(data.lineId);
+						this.renderLine(data.lineId);
 					}
 				})
 			);
@@ -674,36 +678,16 @@ export default {
 			});
 		},
 		// 渲染代码
-		renderLines(lineId) {
-			let that = this;
-			// 只更新一行
-			if (lineId) {
-				if (this.renderCache[lineId]) {
-					let item = this.myContext.lineIdMap.get(lineId);
-					let obj = this.renderCache[lineId];
-					// 高亮完成渲染某一行时，render可能还没完成，导致num没更新，此时跳过
-					if (this.myContext.htmls[obj.num - 1] && this.myContext.htmls[obj.num - 1].lineId === lineId) {
-						obj = _getObj.call(this, item, obj.num);
-						this.renderLine(obj);
-						this.renderCursor();
-						this.renderSelectedBg();
-						this.renderSelectionToken(obj.line);
-						this.renderError(obj.line);
-					}
-				}
-				return;
-			}
-			let renderCache = {};
-			this.renderObjs = [];
+		renderLines() {
+			this.endLine = 0;
 			this.myContext.renderedLineMap.clear();
 			this.myContext.renderedIdMap.clear();
 			for (let i = 0, startLine = this.startLine; i < this.maxVisibleLines && startLine <= this.myContext.htmls.length; i++) {
 				let lineObj = this.myContext.htmls[startLine - 1];
-				let lineId = lineObj.lineId;
-				let obj = _getObj.call(this, lineObj, startLine);
+				let obj = this.getRenderObj(lineObj, startLine);
 				let fold = this.folder.getFoldByLine(startLine);
-				this.renderObjs.push(obj);
-				this.myContext.renderedLineMap.set(obj.num, obj);
+				this.endLine = startLine;
+				this.myContext.renderedLineMap.set(startLine, obj);
 				this.myContext.renderedIdMap.set(lineObj.lineId, obj);
 				if (fold) {
 					startLine = fold.end.line;
@@ -711,163 +695,43 @@ export default {
 					startLine++;
 				}
 			}
-			for (let lineId in this.renderCache) {
-				if (!this.myContext.renderedIdMap.has(lineId - 0)) {
-					this.renderCache[lineId].$line.hide();
-					this.renderPool.push(this.renderCache[lineId]);
-				}
-			}
-			this.renderObjs.forEach((obj) => {
-				renderCache[obj.lineId] = this.renderLine(obj);
-			});
-			this.renderCache = renderCache;
+			_setRenderObjs.call(this, this.renderObjs);
 
-			function _getObj(item, line) {
-				let tabNum = this.getTabNum(line);
-				let fold = '';
-				let top = (this.folder.getRelativeLine(line) - 1) * this.charObj.charHight + 'px';
-				if (this.folder.getFoldByLine(line)) {
-					//该行已经折叠
-					fold = 'close';
-				} else if (this.folder.getRangeFold(line, true)) {
-					//可折叠
-					fold = 'open';
-				}
-				let html = item.html;
-				if (!html) {
-					if (item.tokens && item.tokens.length) {
-						item.tokens = this.tokenizer.splitLongToken(item.tokens);
-						item.html = this.tokenizer.createHtml(item.tokens, item.text);
-						html = item.html;
-					} else {
-						html = Util.htmlTrans(item.text);
+			function _setRenderObjs(preRenderObjs) {
+				let renderNumMap = {};
+				let renderNums = [];
+				this.renderObjs = [];
+				preRenderObjs.forEach((item, index) => {
+					if (this.myContext.renderedLineMap.has(item.num) && index <= this.endLine - this.startLine) {
+						this.renderObjs[index] = this.myContext.renderedLineMap.get(item.num);
+						renderNumMap[item.num] = true;
+					}
+				});
+				for (let line = this.startLine; line <= this.endLine; line++) {
+					if (!renderNumMap[line]) {
+						renderNums.push(line);
 					}
 				}
-				html = html.replace(/\t/g, this.space);
-				return {
-					html: html,
-					num: line,
-					lineId: item.lineId,
-					top: top,
-					tabNum: tabNum,
-					selection: [],
-					isFsearch: false,
-					fold: fold,
-					cursorList: [],
-				};
+				for (let i = 0, line = this.startLine; line <= this.endLine; i++, line++) {
+					if (!this.renderObjs[i]) {
+						this.renderObjs[i] = this.myContext.renderedLineMap.get(renderNums.pop());
+					}
+				}
 			}
 		},
-		renderLine(renderObj) {
-			let cacheData = this.renderCache[renderObj.lineId];
-			let $line = null;
-			let $code = null;
-			let $tabLine = null;
-			let lineAttr = {};
-			let lineStyle = {};
-			let codeAttr = {};
-			let codeStyle = {};
-
-			lineAttr['class'] = ['my-line', this._diffBg(renderObj.num)].join(' ');
-			lineAttr['data-line'] = renderObj.num;
-			lineAttr['id'] = `line-${this.id}-${renderObj.num}`;
-			lineStyle['top'] = renderObj.top;
-
-			codeAttr['class'] = ['my-code', renderObj.fold == 'close' ? 'fold-close' : ''].join(' ');
-			codeAttr['data-line'] = renderObj.num;
-			codeStyle['height'] = this._lineHeight;
-
-			if (!cacheData) {
-				cacheData = this.renderPool.pop();
-				cacheData && cacheData.$line.show();
-			}
-
-			if (cacheData) {
-				$line = cacheData.$line;
-				$code = cacheData.$code;
-				$tabLine = cacheData.$tabLine;
-				for (let key in lineAttr) {
-					if (lineAttr[key] !== cacheData.lineAttr[key]) {
-						$line.attr(key, lineAttr[key]);
-					}
+		// 渲染单行代码
+		renderLine(lineId) {
+			if (this.myContext.renderedIdMap.has(lineId)) {
+				let renderObj = this.myContext.renderedIdMap.get(lineId);
+				let lineObj = this.myContext.htmls[renderObj.num - 1];
+				// 高亮完成渲染某一行时，render可能还没完成，导致num没更新，此时跳过
+				if (lineObj && lineObj.lineId === lineId) {
+					Object.assign(renderObj, this.getRenderObj(lineObj, renderObj.num));
+					this.renderSelectedBg();
+					this.renderSelectionToken(renderObj.num);
+					this.renderError(renderObj.num);
+					this.renderCursor();
 				}
-				for (let key in lineStyle) {
-					if (lineStyle[key] !== cacheData.lineStyle[key]) {
-						$line[0].style[key] = lineStyle[key];
-					}
-				}
-				for (let key in codeAttr) {
-					if (codeAttr[key] !== cacheData.codeAttr[key]) {
-						$code.attr(key, codeAttr[key]);
-					}
-				}
-				for (let key in codeStyle) {
-					if (codeStyle[key] !== cacheData.codeStyle[key]) {
-						$code[0].style[key] = codeStyle[key];
-					}
-				}
-				if (cacheData.html !== renderObj.html) {
-					$code.html(renderObj.html);
-				}
-				if (cacheData.tabNum !== renderObj.tabNum) {
-					$tabLine.html(_tabLine.call(this, renderObj.tabNum));
-				}
-				cacheData.lineAttr = lineAttr;
-				cacheData.lineStyle = lineStyle;
-				cacheData.codeAttr = codeAttr;
-				cacheData.codeStyle = codeStyle;
-				cacheData.html = renderObj.html;
-				cacheData.num = renderObj.num;
-				cacheData.tabNum = renderObj.tabNum;
-				return cacheData;
-			}
-
-			$line = $(`<div ${_attr(lineAttr)} style="${_style(lineStyle)}"></div>`);
-			$code = $(`<div ${_attr(codeAttr)} style="${_style(codeStyle)}">${renderObj.html || '&nbsp;'}</div>`);
-			$tabLine = $(`<div>${_tabLine.call(this, renderObj.tabNum)}</div>`);
-			$line.append($code);
-			$line.append($tabLine);
-			$(this.$refs.lineView).append($line);
-
-			cacheData = {
-				lineAttr: lineAttr,
-				lineStyle: lineStyle,
-				codeAttr: codeAttr,
-				codeStyle: codeStyle,
-				html: renderObj.html,
-				num: renderObj.num,
-				tabNum: renderObj.tabNum,
-				$line: $line,
-				$code: $code,
-				$tabLine: $tabLine,
-			};
-
-			return cacheData;
-
-			function _style(obj) {
-				let style = '';
-				for (let key in obj) {
-					style += `${key}: ${obj[key]}; `;
-				}
-				return style;
-			}
-
-			function _attr(obj) {
-				let style = '';
-				for (let key in obj) {
-					style += `${key}="${obj[key]}" `;
-				}
-				return style;
-			}
-
-			function _tabLine(tabNum) {
-				if (!this.tabCache[tabNum]) {
-					let html = '';
-					for (let tab = 1; tab <= tabNum; tab++) {
-						html += `<span style="${_style({ left: this._tabLineLeft(tab) })}" class="my-tab-line"></span>`;
-					}
-					this.tabCache[tabNum] = html;
-				}
-				return this.tabCache[tabNum];
 			}
 		},
 		renderSelectedBg() {
@@ -893,8 +757,8 @@ export default {
 		},
 		// 渲染选中背景
 		_renderSelectedBg(range, isFsearch) {
-			let firstLine = this.renderObjs[0].num;
-			let lastLine = this.renderObjs.peek().num;
+			let firstLine = this.startLine;
+			let lastLine = this.endLine;
 			let start = range.start;
 			let end = range.end;
 			let text = this.myContext.htmls[start.line - 1].text;
@@ -913,7 +777,7 @@ export default {
 			for (let line = firstLine; line <= lastLine; line++) {
 				if (this.myContext.renderedLineMap.has(line)) {
 					let renderObj = this.myContext.renderedLineMap.get(line);
-					let lineObj = this.myContext.lineIdMap.get(renderObj.lineId);
+					let lineObj = this.myContext.htmls[line - 1];
 					renderObj.selection.push({
 						left: 0,
 						width: lineObj.width || 10,
@@ -1444,6 +1308,39 @@ export default {
 					this.autoTipList = null;
 				}, 60);
 			}
+		},
+		getRenderObj(lineObj, line) {
+			let tabNum = this.getTabNum(line);
+			let fold = '';
+			let top = (this.folder.getRelativeLine(line) - 1) * this.charObj.charHight + 'px';
+			if (this.folder.getFoldByLine(line)) {
+				//该行已经折叠
+				fold = 'close';
+			} else if (this.folder.getRangeFold(line, true)) {
+				//可折叠
+				fold = 'open';
+			}
+			let html = lineObj.html;
+			if (!html) {
+				if (lineObj.tokens && lineObj.tokens.length) {
+					lineObj.tokens = this.tokenizer.splitLongToken(lineObj.tokens);
+					lineObj.html = this.tokenizer.createHtml(lineObj.tokens, lineObj.text);
+					html = lineObj.html;
+				} else {
+					html = Util.htmlTrans(lineObj.text);
+				}
+			}
+			html = html.replace(/\t/g, this.space);
+			return {
+				html: html,
+				num: line,
+				top: top,
+				tabNum: tabNum,
+				fold: fold,
+				isFsearch: false,
+				selection: [],
+				cursorList: [],
+			};
 		},
 		getTabNum(line) {
 			let lineObj = this.myContext.htmls[line - 1];
