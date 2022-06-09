@@ -68,7 +68,7 @@ export default {
 			this.worker.postMessage({
 				event: 'init-data',
 				data: {
-					charHight: this.$parent.charObj.charHight,
+					charHight: this.$parent.charObj.charHight * this.scale,
 					width: this.width,
 					height: this.height,
 					scale: this.scale,
@@ -162,7 +162,7 @@ export default {
 			this.worker.postMessage({ event: 'render', data: lines });
 		},
 		getRenderObj(line) {
-			let top = (line - this.startLine) * this.$parent.charObj.charHight - this.top;
+			let top = (line - this.startLine) * this.$parent.charObj.charHight * this.scale;
 			let lineObj = this.$parent.myContext.htmls[line - 1];
 			let cache = this.renderedIdMap[lineObj.lineId];
 			if (!lineObj.html) {

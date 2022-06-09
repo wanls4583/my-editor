@@ -13,9 +13,8 @@ function drawLine({ top, lineObj, lineId }) {
 	let cache = cacheMap[lineObj.lineId];
 	let tokens = lineObj.tokens;
 	let html = '';
-	let charHight = dataObj.charHight * dataObj.scale;
+	let charHight = dataObj.charHight;
 	let marginLeft = 20 * dataObj.scale;
-	top = top * dataObj.scale;
 	ctx.clearRect(0, top, dataObj.width, charHight);
 	html = lineObj.html || lineObj.text;
 	if (cache && cache.html === html) {

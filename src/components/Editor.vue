@@ -5,7 +5,7 @@
 			<!-- 占位行号，避免行号宽度滚动时变化 -->
 			<div class="my-num" style="position: relative; visibility: hidden;">{{ diffObj.maxLine || maxLine }}</div>
 			<div class="my-num-scroller" ref="numScroller">
-				<div :style="{ height: _contentHeight }" class="my-num-content" ref="numContent">
+				<div :style="{ height: _contentHeight, top: _top }" class="my-num-content" ref="numContent">
 					<div :class="{ 'my-active': nowCursorPos.line === line.num }" :style="{ top: line.top }" class="my-num" v-for="line in renderObjs">
 						<span class="num">{{ _num(line.num) }}</span>
 						<span :class="['iconfont', line.fold == 'open' ? 'my-fold-open icon-down1' : 'my-fold-close icon-right']" @click="onToggleFold(line.num)" class="my-fold my-center-center" v-if="line.fold"></span>
@@ -21,7 +21,7 @@
 			<div class="my-scroller" ref="scroller">
 				<!-- 内如区域 -->
 				<div
-					:style="{ width: _contentMinWidth + 'px', height: _contentHeight, left: -scrollLeft + 'px' }"
+					:style="{ width: _contentMinWidth + 'px', height: _contentHeight, left: _left, top: _top }"
 					@mousedown="onContentMdown"
 					@mouseleave="onContentMLeave"
 					@mousemove="onContentMmove"
@@ -262,6 +262,12 @@ export default {
 		};
 	},
 	computed: {
+		_top() {
+			return -this.scrollTop + 'px';
+		},
+		_left() {
+			return -this.scrollLeft + 'px';
+		},
 		_num() {
 			return (line) => {
 				if (this.type === 'diff') {
@@ -687,7 +693,6 @@ export default {
 				if (renderId !== this.renderId) {
 					return;
 				}
-				this.setTop();
 				this.renderLines();
 				this.renderSelectedBg();
 				this.renderSelectionToken();
@@ -1253,10 +1258,6 @@ export default {
 				contentHeight += this.scrollerArea.height - this.charObj.charHight;
 			}
 			this.contentHeight = contentHeight;
-		},
-		setTop() {
-			this.$refs.numContent.style.top = -this.scrollTop + 'px';
-			this.$refs.content.style.top = -this.scrollTop + 'px';
 		},
 		setDiffTop() {
 			let top = (this.folder.getRelativeLine(this.diffLine) - 1) * this.charObj.charHight - this.scrollTop;
