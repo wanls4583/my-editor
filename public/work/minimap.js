@@ -22,15 +22,14 @@ function drawLine({ top, lineObj, lineId }) {
 	} else {
 		let offscreen = new OffscreenCanvas(dataObj.width, charHight);
 		let offCtx = offscreen.getContext('2d');
-		offCtx.font = `${16 * dataObj.scale}px Consolas`;
+		offCtx.font = `bold ${16 * dataObj.scale}px Consolas`;
 		offCtx.textBaseline = 'middle';
 		if (tokens) {
 			let left = marginLeft;
 			for (let i = 0; i < tokens.length; i++) {
 				let token = tokens[i];
 				let text = lineObj.text.slice(token.startIndex, token.endIndex);
-				text = text.replace(/[a-zA-Z]/g, '▉ ');
-				text = text.replace(/\t/g, '    ');
+				text = getDrawText(text);
 				offCtx.fillStyle = dataObj.colors['editor.foreground'];
 				if (token.scopeId) {
 					let scope = dataObj.scopeIdMap[token.scopeId];
@@ -47,7 +46,7 @@ function drawLine({ top, lineObj, lineId }) {
 			}
 		} else {
 			offCtx.fillStyle = dataObj.colors['editor.foreground'];
-			offCtx.fillText(lineObj.text.replace(/[a-zA-Z]/g, '▉ ').replace(/\t/g, '    '), marginLeft, charHight / 2);
+			offCtx.fillText(getDrawText(lineObj.text), marginLeft, charHight / 2);
 		}
 		offscreen = offscreen.transferToImageBitmap();
 		ctx.drawImage(offscreen, marginLeft, top);
@@ -63,6 +62,12 @@ function drawLines(lines) {
 	lines.forEach(line => {
 		this.drawLine(line);
 	});
+}
+
+function getDrawText(text) {
+	text = text.replace(/[a-zA-Z]/g, '▉ ');
+	text = text.replace(/\t/g, '    ');
+	return text;
 }
 
 onmessage = function (e) {

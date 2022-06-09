@@ -104,7 +104,7 @@ export default {
 		},
 		initResizeEvent() {
 			const resizeObserver = new ResizeObserver((entries) => {
-				if (this.$refs.wrap) {
+				if (this.$refs.wrap && this.$refs.wrap.clientHeight) {
 					requestAnimationFrame(() => {
 						this.setSize();
 						this.render();
