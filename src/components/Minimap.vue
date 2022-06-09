@@ -152,8 +152,8 @@ export default {
 			for (let line = this.startLine, i = 0; line <= this.$parent.myContext.htmls.length && i < this.maxVisibleLines; i++) {
 				let fold = this.$parent.folder.getFoldByLine(line);
 				let lineObj = this.$parent.myContext.htmls[line - 1];
-				lines.push(this.getRenderObj(line));
-				this.renderedIdMap[lineObj.lineId] = { num: line };
+				let renderObj = this.getRenderObj(line);
+				lines.push(renderObj);
 				if (fold) {
 					line = fold.end.line;
 				} else {
@@ -165,12 +165,20 @@ export default {
 		getRenderObj(line) {
 			let top = (line - this.startLine) * this.$parent.charObj.charHight - this.top;
 			let lineObj = this.$parent.myContext.htmls[line - 1];
+			let cache = this.renderedIdMap[lineObj.lineId];
 			if (!lineObj.html) {
 				if (lineObj.tokens && lineObj.tokens.length) {
 					lineObj.tokens = this.$parent.tokenizer.splitLongToken(lineObj.tokens);
 					lineObj.html = this.$parent.tokenizer.createHtml(lineObj.tokens, lineObj.text);
 				}
 			}
+			if (cache && cache.html === lineObj.html) {
+				return {
+					top,
+					lineId: lineObj.lineId,
+				};
+			}
+			this.renderedIdMap[lineObj.lineId] = { num: line, html: lineObj.html };
 			return {
 				top,
 				lineObj: {

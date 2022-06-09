@@ -1,10 +1,16 @@
-let renderedIdMap = [];
+let cacheMap = {};
+let renderedIdMap = {};
 let dataObj = {};
 let ctx = null;
 let canvas = null;
 
-function drawLine({ top, lineObj }) {
-	let cache = renderedIdMap[lineObj.lineId];
+function drawLine({ top, lineObj, lineId }) {
+	if (lineId) {
+		lineObj = renderedIdMap[lineId];
+	} else {
+		renderedIdMap[lineObj.lineId] = lineObj;
+	}
+	let cache = cacheMap[lineObj.lineId];
 	let tokens = lineObj.tokens;
 	let html = '';
 	ctx.clearRect(0, top, dataObj.canvasWidth, dataObj.charHight);
@@ -43,7 +49,7 @@ function drawLine({ top, lineObj }) {
 		}
 		// offscreen = offscreen.transferToImageBitmap();
 		ctx.drawImage(offscreen, 20, top);
-		renderedIdMap[lineObj.lineId] = {
+		cacheMap[lineObj.lineId] = {
 			html: html,
 			canvas: offscreen,
 		};
