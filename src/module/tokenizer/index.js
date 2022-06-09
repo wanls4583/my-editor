@@ -179,21 +179,22 @@ export default class {
 			if (this.tokenizeVisibleLinsId !== tokenizeVisibleLinsId) {
 				return;
 			}
-			let currentLine = this.currentLine;
 			let startLine = this.startLine;
 			let endLine = this.startLine + this.maxVisibleLines;
 			endLine = this.folder.getRealLine(endLine);
 			// 先渲染可视范围内的行
 			this.asyncTokenizeLines(startLine, endLine).then(() => {
+				// 考虑到当前行可能处于内嵌语法中，渲染前2000行
 				startLine = this.startLine - 2000;
 				startLine = startLine < 1 ? 1 : startLine;
-				// 考虑到当前行可能处于内嵌语法中，渲染前2000行
-				if (startLine > currentLine) {
+				// 考虑到minimap渲染的行数，这里乘以10
+				endLine = this.folder.getRealLine(endLine + this.maxVisibleLines * 10);
+				if (startLine > this.currentLine) {
 					this.asyncTokenizeLines(startLine, endLine).then(() => {
-						this.tokenizeLines(currentLine);
+						this.tokenizeLines(this.currentLine);
 					});
 				} else {
-					this.tokenizeLines(currentLine);
+					this.tokenizeLines(this.currentLine);
 				}
 			});
 		});
@@ -206,6 +207,7 @@ export default class {
 	tokenizeLines(startLine, endLine, resolve) {
 		let processedLines = 0;
 		let processedTime = Date.now();
+		let originStartLine = startLine;
 		endLine = endLine || this.maxLine;
 		endLine = endLine > this.maxLine ? this.maxLine : endLine;
 		cancelIdleCallback(this.tokenizeLinesTimer);
@@ -234,14 +236,16 @@ export default class {
 				}
 				processedLines++;
 				// 避免卡顿
-				if (processedLines % 5 == 0 && Date.now() - processedTime >= 20) {
+				if (processedLines % 5 == 0 && Date.now() - processedTime >= 15) {
 					startLine++;
 					break;
 				}
 			}
 			startLine++;
 		}
-		this.currentLine = startLine;
+		if (originStartLine === this.currentLine) {
+			this.currentLine = startLine;
+		}
 		if (startLine <= endLine) {
 			this.tokenizeLinesTimer = requestIdleCallback(() => {
 				this.tokenizeLines(startLine, endLine, resolve);

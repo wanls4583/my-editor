@@ -519,9 +519,8 @@ export default {
 							if (time - this.preFrameTime >= 16) {
 								this.selectCallBack();
 								this.preFrameTime = time;
-							} else {
-								this.channel.port1.postMessage({ event: 'select' });
 							}
+							this.channel.port1.postMessage({ event: 'select' });
 						}
 						break;
 				}
@@ -598,6 +597,8 @@ export default {
 			);
 		},
 		unbindEvent() {
+			this.channel.port1.close();
+			this.channel.port2.close();
 			$(document).unbind('mousemove', this.initEvent.fn1);
 			$(document).unbind('mouseup', this.initEvent.fn2);
 			EventBus.$off('language-change', this.initEventBus.fn1);
@@ -944,21 +945,25 @@ export default {
 			});
 		},
 		renderBracketMatch() {
-			this.bracketMatch = this.folder.getBracketMatch(this.nowCursorPos);
-			if (this.bracketMatch) {
-				let lineObj = null;
-				let pos = null;
+			this.bracketMatch = null;
+			cancelAnimationFrame(this.bracketMatchTimer);
+			this.bracketMatchTimer = requestAnimationFrame(() => {
+				this.bracketMatch = this.folder.getBracketMatch(this.nowCursorPos);
+				if (this.bracketMatch) {
+					let lineObj = null;
+					let pos = null;
 
-				lineObj = this.myContext.htmls[this.bracketMatch.start.line - 1];
-				pos = this.bracketMatch.start;
-				this.bracketMatch.start.width = this.getStrWidth(lineObj.text, pos.startIndex, pos.endIndex) + 'px';
-				this.bracketMatch.start.left = this.getStrWidth(lineObj.text, 0, pos.startIndex) + 'px';
+					lineObj = this.myContext.htmls[this.bracketMatch.start.line - 1];
+					pos = this.bracketMatch.start;
+					this.bracketMatch.start.width = this.getStrWidth(lineObj.text, pos.startIndex, pos.endIndex) + 'px';
+					this.bracketMatch.start.left = this.getStrWidth(lineObj.text, 0, pos.startIndex) + 'px';
 
-				lineObj = this.myContext.htmls[this.bracketMatch.end.line - 1];
-				pos = this.bracketMatch.end;
-				this.bracketMatch.end.width = this.getStrWidth(lineObj.text, pos.startIndex, pos.endIndex) + 'px';
-				this.bracketMatch.end.left = this.getStrWidth(lineObj.text, 0, pos.startIndex) + 'px';
-			}
+					lineObj = this.myContext.htmls[this.bracketMatch.end.line - 1];
+					pos = this.bracketMatch.end;
+					this.bracketMatch.end.width = this.getStrWidth(lineObj.text, pos.startIndex, pos.endIndex) + 'px';
+					this.bracketMatch.end.left = this.getStrWidth(lineObj.text, 0, pos.startIndex) + 'px';
+				}
+			});
 		},
 		// 清除选中前景色
 		clearSelectionToken() {
@@ -1686,6 +1691,7 @@ export default {
 				let originColumn = that.nowCursorPos.column;
 				let count = 0; // 累计滚动距离
 				_run(autoDirect, speed);
+				that.channel.port1.postMessage({ event: 'select' });
 
 				function _run(autoDirect, speed) {
 					let line = originLine;
@@ -1731,7 +1737,6 @@ export default {
 					that.selectCallBack = () => {
 						_run(autoDirect, speed);
 					};
-					that.channel.port1.postMessage({ event: 'select' });
 				}
 			}
 		},
