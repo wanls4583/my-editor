@@ -131,7 +131,6 @@ export default {
 			this.canvasHeight = this.height / this.scale;
 			this.maxVisibleLines = Math.ceil(this.canvasHeight / this.$parent.charObj.charHight) + 1;
 			this.initWorkerData('size');
-			console.log(this.width);
 		},
 		setStartLine() {
 			let maxScrollTop1 = this.contentHeight - this.canvasHeight;

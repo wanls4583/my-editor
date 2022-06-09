@@ -18,7 +18,7 @@
 		</div>
 		<div class="my-content-wrap">
 			<!-- 可滚动区域 -->
-			<div class="my-scroller" ref="scroller">
+			<div @scroll="onScroll" class="my-scroller" ref="scroller">
 				<!-- 内如区域 -->
 				<div
 					:style="{ width: _contentMinWidth + 'px', height: _contentHeight, left: _left, top: _top }"
@@ -1280,18 +1280,13 @@ export default {
 			if (!force && Math.abs(scrollTop - this.scrollTop) < 1) {
 				return;
 			}
-			if (this.diffLine) {
-				this.setDiffTop();
-			}
 			startLine = Math.floor(scrollTop / this.charObj.charHight);
 			startLine++;
 			this.startLine = this.folder.getRealLine(startLine);
 			this.startLineTop = (this.folder.getRelativeLine(this.startLine) - 1) * this.charObj.charHight;
 			this.scrollTop = scrollTop;
 			this.$refs.vScrollBar.scrollTop = scrollTop;
-			this.$refs.numScroller.scrollTop = 0;
-			this.$refs.scroller.scrollTop = 0;
-			this.$refs.scroller.scrollLeft = 0;
+			this.diffLine && this.setDiffTop();
 			this.tokenizer.tokenizeVisibleLins();
 			this.render();
 		},
@@ -1766,6 +1761,11 @@ export default {
 				this.scrollDeltaY = e.deltaY;
 				this.channel.port1.postMessage({ event: 'scroll' });
 			}
+		},
+		onScroll() {
+			this.$refs.numScroller.scrollTop = 0;
+			this.$refs.scroller.scrollTop = 0;
+			this.$refs.scroller.scrollLeft = 0;
 		},
 		// 右侧滚动条滚动事件
 		onVBarScroll(e) {
