@@ -147,7 +147,7 @@ export default class {
 	onInsertContentAfter(nowLine, newLine) {
 		if (nowLine <= this.currentLine) {
 			this.currentLine = nowLine;
-			clearTimeout(this.tokenizeLinesTimer);
+			cancelIdleCallback(this.tokenizeLinesTimer);
 			this.$nextTick(() => {
 				if (this.currentLine !== nowLine) {
 					return;
@@ -161,7 +161,7 @@ export default class {
 	onDeleteContentAfter(nowLine, newLine) {
 		if (newLine <= this.currentLine) {
 			this.currentLine = newLine;
-			clearTimeout(this.tokenizeLinesTimer);
+			cancelIdleCallback(this.tokenizeLinesTimer);
 			this.$nextTick(() => {
 				if (this.currentLine !== newLine) {
 					return;
@@ -187,7 +187,7 @@ export default class {
 			this.asyncTokenizeLines(startLine, endLine).then(() => {
 				startLine = this.startLine - 2000;
 				startLine = startLine < 1 ? 1 : startLine;
-				// 考虑到当前行可能处于内嵌语法种，渲染前2000行
+				// 考虑到当前行可能处于内嵌语法中，渲染前2000行
 				if (startLine > currentLine) {
 					this.asyncTokenizeLines(startLine, endLine).then(() => {
 						this.tokenizeLines(currentLine);
@@ -210,7 +210,7 @@ export default class {
 		endLine = endLine > this.maxLine ? this.maxLine : endLine;
 		cancelIdleCallback(this.tokenizeLinesTimer);
 		if (this.scopeName && !this.grammar) {
-			this.tokenizeLinesTimer = setTimeout(() => {
+			this.tokenizeLinesTimer = requestIdleCallback(() => {
 				this.tokenizeLines(startLine, endLine, resolve);
 			});
 			return;

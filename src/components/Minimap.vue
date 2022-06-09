@@ -94,10 +94,7 @@ export default {
 				'render-line',
 				(this.initEventBus.fn1 = (data) => {
 					if (this.$parent.editorId === data.editorId) {
-						let line = this.renderedIdMap[data.lineId];
-						if (line) {
-							this.worker.postMessage({ event: 'render-line', data: this.getRenderObj(line.num) });
-						}
+						this.renderLine(data.lineId);
 					}
 				})
 			);
@@ -142,11 +139,11 @@ export default {
 			}
 			this.rendering = true;
 			requestAnimationFrame(() => {
-				this.renderLine();
+				this.renderLines();
 				this.rendering = 0;
 			});
 		},
-		renderLine() {
+		renderLines() {
 			let lines = [];
 			for (let line = this.startLine, i = 0; line <= this.$parent.myContext.htmls.length && i < this.maxVisibleLines; i++) {
 				let fold = this.$parent.folder.getFoldByLine(line);
@@ -160,6 +157,15 @@ export default {
 				}
 			}
 			this.worker.postMessage({ event: 'render', data: lines });
+		},
+		renderLine(lineId) {
+			let cache = this.renderedIdMap[lineId];
+			if (cache) {
+				let lineObj = this.$parent.myContext.htmls[cache.num - 1];
+				if (lineObj && lineObj.lineId === lineId) {
+					this.worker.postMessage({ event: 'render-line', data: this.getRenderObj(cache.num) });
+				}
+			}
 		},
 		getRenderObj(line) {
 			let top = (line - this.startLine) * this.$parent.charObj.charHight * this.scale;

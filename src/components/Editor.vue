@@ -751,7 +751,6 @@ export default {
 			let renderObj = this.renderedIdMap[lineId];
 			if (renderObj) {
 				let lineObj = this.myContext.htmls[renderObj.num - 1];
-				// 高亮完成渲染某一行时，render可能还没完成，导致num没更新，此时跳过
 				if (lineObj && lineObj.lineId === lineId) {
 					Object.assign(renderObj, this.getRenderObj(lineObj, renderObj.num));
 					this.renderSelectedBg();
@@ -1223,18 +1222,11 @@ export default {
 					}
 					let height = this.folder.getRelativeLine(nowCursorPos.line + 1) * this.charObj.charHight;
 					if (height > this.scrollTop + this.scrollerArea.height) {
-						requestAnimationFrame(() => {
-							height = height > this.contentHeight ? this.contentHeight : height;
-							this.setStartLine(height - this.scrollerArea.height);
-						});
+						height = height > this.contentHeight ? this.contentHeight : height;
+						this.setStartLine(height - this.scrollerArea.height);
 					} else if (nowCursorPos.line <= this.startLine) {
-						requestAnimationFrame(() => {
-							if (nowCursorPos.line <= this.startLine) {
-								let scrollTop = (this.folder.getRelativeLine(nowCursorPos.line) - 1) * this.charObj.charHight;
-								//此时this.startLine可能已经通过onScrll而改变
-								this.setStartLine(scrollTop);
-							}
-						});
+						let scrollTop = (this.folder.getRelativeLine(nowCursorPos.line) - 1) * this.charObj.charHight;
+						this.setStartLine(scrollTop);
 					}
 					requestAnimationFrame(() => {
 						this.renderCursor(true);
