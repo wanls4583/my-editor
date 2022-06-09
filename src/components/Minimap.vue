@@ -28,7 +28,7 @@ export default {
 			startLine: 1,
 			maxVisibleLines: 1,
 			canvasHeight: 0,
-			width: 120,
+			width: 0,
 			height: 0,
 			blockHeight: 0,
 			scale: 0.1,
@@ -57,6 +57,7 @@ export default {
 		let offscreen = this.$refs.canvas.transferControlToOffscreen();
 		this.worker.postMessage({ event: 'init', data: { canvas: offscreen } }, [offscreen]);
 		this.setSize();
+		this.initWorkerData('theme');
 		this.initEvent();
 	},
 	destroyed() {
@@ -64,17 +65,25 @@ export default {
 		this.unbindEvent();
 	},
 	methods: {
-		initWorkerData() {
-			this.worker.postMessage({
-				event: 'init-data',
-				data: {
+		initWorkerData(type) {
+			let data = {};
+			if (type === 'size' || !type) {
+				Object.assign(data, {
 					charHight: this.$parent.charObj.charHight * this.scale,
 					width: this.width,
 					height: this.height,
 					scale: this.scale,
+				});
+			}
+			if (type === 'theme' || !type) {
+				Object.assign(data, {
 					colors: globalData.colors,
 					scopeIdMap: globalData.scopeIdMap,
-				},
+				});
+			}
+			this.worker.postMessage({
+				event: 'init-data',
+				data: data,
 			});
 		},
 		initEvent() {
@@ -116,11 +125,13 @@ export default {
 			EventBus.$off('render-line', this.initEventBus.fn1);
 		},
 		setSize() {
+			this.width = this.$refs.wrap.clientWidth;
 			this.height = this.$refs.wrap.clientHeight;
 			this.blockHeight = this.height * this.scale;
 			this.canvasHeight = this.height / this.scale;
 			this.maxVisibleLines = Math.ceil(this.canvasHeight / this.$parent.charObj.charHight) + 1;
-			this.initWorkerData();
+			this.initWorkerData('size');
+			console.log(this.width);
 		},
 		setStartLine() {
 			let maxScrollTop1 = this.contentHeight - this.canvasHeight;

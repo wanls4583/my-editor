@@ -353,6 +353,11 @@ export default {
 					top = this.scrollTop + this.scrollerArea.height - 2 * this.charObj.charHight;
 				}
 			}
+			if (left > this.scrollerArea.width + this.scrollLeft - this.charObj.fullAngleCharWidth) {
+				left = this.scrollerArea.width + this.scrollLeft - this.charObj.fullAngleCharWidth;
+			} else if (left < this.scrollLeft) {
+				left += this.charObj.fullAngleCharWidth;
+			}
 			return {
 				top: top + 'px',
 				left: left + 'px',
@@ -415,6 +420,7 @@ export default {
 					});
 			});
 			this.render();
+			this.$refs.minimap.initWorkerData('theme');
 		},
 		tabSize: function (newVal) {
 			this.render();

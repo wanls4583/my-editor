@@ -64,8 +64,22 @@ function drawLines(lines) {
 	});
 }
 
+function setData(data) {
+	let originDataObj = Object.assign({}, data);
+	Object.assign(dataObj, data);
+	canvas.width = dataObj.width || canvas.width;
+	canvas.height = dataObj.height || canvas.height;
+	for (let key in dataObj) {
+		if (originDataObj[key] !== dataObj[key]) {
+			// 清空缓存
+			cacheMap = {};
+			break;
+		}
+	}
+}
+
 function getDrawText(text) {
-	text = text.replace(/[a-zA-Z]/g, '▉ ');
+	// text = text.replace(/[a-zA-Z]/g, '▉ ');
 	text = text.replace(/\t/g, '    ');
 	return text;
 }
@@ -78,10 +92,7 @@ onmessage = function (e) {
 			ctx = canvas.getContext('2d');
 			break;
 		case 'init-data':
-			Object.assign(dataObj, data.data);
-			if (dataObj.height) {
-				canvas.height = dataObj.height;
-			}
+			setData(data.data);
 			break;
 		case 'render-line':
 			drawLine(data.data);
