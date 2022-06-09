@@ -13,17 +13,20 @@ function drawLine({ top, lineObj, lineId }) {
 	let cache = cacheMap[lineObj.lineId];
 	let tokens = lineObj.tokens;
 	let html = '';
-	ctx.clearRect(0, top, dataObj.canvasWidth, dataObj.charHight);
+	let charHight = dataObj.charHight * dataObj.scale;
+	let marginLeft = 20 * dataObj.scale;
+	top = top * dataObj.scale;
+	ctx.clearRect(0, top, dataObj.width, charHight);
 	html = lineObj.html || lineObj.text;
 	if (cache && cache.html === html) {
-		ctx.drawImage(cache.canvas, 20, top);
+		ctx.drawImage(cache.canvas, marginLeft, top);
 	} else {
-		let offscreen = new OffscreenCanvas(dataObj.canvasWidth, dataObj.charHight);
+		let offscreen = new OffscreenCanvas(dataObj.width, charHight);
 		let offCtx = offscreen.getContext('2d');
-		offCtx.font = `${14}px Consolas`;
+		offCtx.font = `${16 * dataObj.scale}px Consolas`;
 		offCtx.textBaseline = 'middle';
 		if (tokens) {
-			let left = 20;
+			let left = marginLeft;
 			for (let i = 0; i < tokens.length; i++) {
 				let token = tokens[i];
 				let text = lineObj.text.slice(token.startIndex, token.endIndex);
@@ -36,19 +39,19 @@ function drawLine({ top, lineObj, lineId }) {
 						offCtx.fillStyle = scope.settings.foreground;
 					}
 				}
-				offCtx.fillText(text, left, dataObj.charHight / 2);
+				offCtx.fillText(text, left, charHight / 2);
 				left += offCtx.measureText(text).width;
 				// 退出无效渲染
-				if (left > dataObj.canvasWidth) {
+				if (left > dataObj.width) {
 					break;
 				}
 			}
 		} else {
 			offCtx.fillStyle = dataObj.colors['editor.foreground'];
-			offCtx.fillText(lineObj.text.replace(/[a-zA-Z]/g, '▉ ').replace(/\t/g, '    '), 20, dataObj.charHight / 2);
+			offCtx.fillText(lineObj.text.replace(/[a-zA-Z]/g, '▉ ').replace(/\t/g, '    '), marginLeft, charHight / 2);
 		}
-		// offscreen = offscreen.transferToImageBitmap();
-		ctx.drawImage(offscreen, 20, top);
+		offscreen = offscreen.transferToImageBitmap();
+		ctx.drawImage(offscreen, marginLeft, top);
 		cacheMap[lineObj.lineId] = {
 			html: html,
 			canvas: offscreen,
@@ -57,7 +60,7 @@ function drawLine({ top, lineObj, lineId }) {
 }
 
 function drawLines(lines) {
-	ctx.clearRect(0, 0, dataObj.canvasWidth, dataObj.canvasHeight);
+	ctx.clearRect(0, 0, dataObj.width, dataObj.height);
 	lines.forEach(line => {
 		this.drawLine(line);
 	});
@@ -72,8 +75,8 @@ onmessage = function (e) {
 			break;
 		case 'init-data':
 			Object.assign(dataObj, data.data);
-			if (dataObj.canvasHeight) {
-				canvas.height = dataObj.canvasHeight;
+			if (dataObj.height) {
+				canvas.height = dataObj.height;
 			}
 			break;
 		case 'render-line':

@@ -5,7 +5,7 @@
 -->
 <template>
 	<div class="my-minimap" ref="wrap">
-		<canvas :height="canvasHeight" :width="canvasWidth" ref="canvas"></canvas>
+		<canvas :height="height" :width="width" ref="canvas"></canvas>
 		<div :style="{top: _top + 'px', height: blockHeight + 'px'}" @mousedown="onBlockMDown" class="my-minimap-block"></div>
 	</div>
 </template>
@@ -27,7 +27,6 @@ export default {
 		return {
 			startLine: 1,
 			maxVisibleLines: 1,
-			canvasWidth: 0,
 			canvasHeight: 0,
 			width: 120,
 			height: 0,
@@ -51,7 +50,6 @@ export default {
 		},
 	},
 	created() {
-		this.canvasWidth = this.width / this.scale;
 		this.worker = new Worker('work/minimap.js');
 		this.renderedIdMap = {};
 	},
@@ -71,8 +69,9 @@ export default {
 				event: 'init-data',
 				data: {
 					charHight: this.$parent.charObj.charHight,
-					canvasWidth: this.canvasWidth,
-					canvasHeight: this.canvasHeight,
+					width: this.width,
+					height: this.height,
+					scale: this.scale,
 					colors: globalData.colors,
 					scopeIdMap: globalData.scopeIdMap,
 				},
