@@ -225,19 +225,32 @@ export default {
 				top = top > maxScrollTop2 ? maxScrollTop2 : top;
 				this.startBlockMouseObj = e;
 				this.bTop += delta;
-				if (this.moving) {
-					return;
-				}
 				this.moving = true;
-				requestAnimationFrame(() => {
-					this.$parent.setStartLine(top * (maxScrollTop1 / maxScrollTop2));
-					this.moving = false;
-				});
+				this.moevScrollTop = top * (maxScrollTop1 / maxScrollTop2);
+				if (this.moevScrollTop && !this.moveTask) {
+					this.moveTask = globalData.scheduler.addTask(
+						() => {
+							if (this.moevScrollTop) {
+								this.$parent.setStartLine(this.moevScrollTop);
+								this.moevScrollTop = 0;
+							} else {
+								globalData.scheduler.removeTask(this.moveTask);
+								this.moveTask = null;
+							}
+						},
+						{
+							delay: 16,
+							loop: true,
+							level: globalData.enum.TASK.UI,
+						}
+					);
+				}
 			}
 		},
 		onDocumentMouseUp(e) {
+			globalData.scheduler.removeTask(this.moveTask);
 			this.startBlockMouseObj = null;
-			this.moving = false;
+			this.moveTask = null;
 		},
 	},
 };

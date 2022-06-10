@@ -147,7 +147,7 @@ export default class {
 	onInsertContentAfter(nowLine, newLine) {
 		if (nowLine <= this.currentLine) {
 			this.currentLine = nowLine;
-			cancelIdleCallback(this.tokenizeLinesTimer);
+			globalData.scheduler.removeTask(this.tokenizeLinesTask);
 			this.$nextTick(() => {
 				if (this.currentLine !== nowLine) {
 					return;
@@ -161,7 +161,7 @@ export default class {
 	onDeleteContentAfter(nowLine, newLine) {
 		if (newLine <= this.currentLine) {
 			this.currentLine = newLine;
-			cancelIdleCallback(this.tokenizeLinesTimer);
+			globalData.scheduler.removeTask(this.tokenizeLinesTask);
 			this.$nextTick(() => {
 				if (this.currentLine !== newLine) {
 					return;
@@ -205,13 +205,15 @@ export default class {
 		});
 	}
 	tokenizeLines(startLine, endLine, resolve) {
+		let limit = 5;
 		let processedLines = 0;
-		let processedTime = Date.now();
 		let originStartLine = startLine;
 		endLine = endLine || this.maxLine;
 		endLine = endLine > this.maxLine ? this.maxLine : endLine;
 		cancelIdleCallback(this.tokenizeLinesTimer);
+		globalData.scheduler.removeTask(this.tokenizeLinesTask);
 		if (this.scopeName && !this.grammar) {
+			// 这里不用scheduler，否则将有可能导致parseRawGrammar失败
 			this.tokenizeLinesTimer = requestIdleCallback(() => {
 				this.tokenizeLines(startLine, endLine, resolve);
 			});
@@ -236,7 +238,7 @@ export default class {
 				}
 				processedLines++;
 				// 避免卡顿
-				if (processedLines % 5 == 0 && Date.now() - processedTime >= 15) {
+				if (processedLines >= limit) {
 					startLine++;
 					break;
 				}
@@ -247,7 +249,7 @@ export default class {
 			this.currentLine = startLine;
 		}
 		if (startLine <= endLine) {
-			this.tokenizeLinesTimer = requestIdleCallback(() => {
+			this.tokenizeLinesTask = globalData.scheduler.addTask(() => {
 				this.tokenizeLines(startLine, endLine, resolve);
 			});
 		} else if (resolve) {

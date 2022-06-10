@@ -46,7 +46,7 @@ export default class {
 				if (task.loop) {
 					task.__time__ = timestamp;
 				} else {
-					this.queue.splice(i, 1);
+					this.removeTask(task.__id__);
 				}
 				task.__task__();
 				break;
