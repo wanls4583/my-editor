@@ -7,8 +7,7 @@ import globalData from '@/data/globalData';
 import $ from 'jquery';
 import stripJsonComments from 'strip-json-comments';
 
-const require = window.require || window.parent.require || function () {};
-const fs = require('fs');
+const fs = window.require('fs');
 
 class Util {
 	static readClipboard() {

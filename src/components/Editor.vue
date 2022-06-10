@@ -132,6 +132,7 @@ import Util from '@/common/util';
 import EventBus from '@/event';
 import $ from 'jquery';
 import globalData from '@/data/globalData';
+import Enum from '@/data/enum';
 
 const contexts = Context.contexts;
 
@@ -452,7 +453,6 @@ export default {
 		this.initData();
 		this.initEvent();
 		this.initEventBus();
-		this.initChannelEvent();
 	},
 	mounted() {
 		this.selectedFg = !!globalData.colors['editor.selectionForeground'];
@@ -486,7 +486,6 @@ export default {
 			this.cursor.addCursorPos(this.nowCursorPos);
 			this.wordPattern = Util.getWordPattern(this.language);
 			this.wordPattern = new RegExp(`^(${this.wordPattern.source})`);
-			this.channel = new MessageChannel();
 		},
 		initRenderData() {
 			this.charObj = Util.getCharWidth(this.$refs.content, '<div class="my-line"><div class="my-code">[dom]</div></div>');
@@ -502,35 +501,6 @@ export default {
 			};
 			$(document).on('mousemove', this.initEvent.fn1);
 			$(document).on('mouseup', this.initEvent.fn2);
-		},
-		initChannelEvent() {
-			this.channel.port2.onmessage = (e) => {
-				let time = Date.now();
-				switch (e.data.event) {
-					case 'scroll':
-						if (this.scrollDeltaY) {
-							this.preScrollTime = this.preScrollTime || 0;
-							if (time - this.preScrollTime >= 16) {
-								this.setStartLine(this.scrollTop + this.scrollDeltaY);
-								this.preScrollTime = time;
-								this.scrollDeltaY = 0;
-							} else {
-								this.channel.port1.postMessage({ event: 'scroll' });
-							}
-						}
-						break;
-					case 'select':
-						if (this.selectCallBack) {
-							this.preFrameTime = this.preFrameTime || 0;
-							if (time - this.preFrameTime >= 16) {
-								this.selectCallBack();
-								this.preFrameTime = time;
-							}
-							this.channel.port1.postMessage({ event: 'select' });
-						}
-						break;
-				}
-			};
 		},
 		initResizeEvent() {
 			const resizeObserver = new ResizeObserver((entries) => {
@@ -603,8 +573,6 @@ export default {
 			);
 		},
 		unbindEvent() {
-			this.channel.port1.close();
-			this.channel.port2.close();
 			$(document).unbind('mousemove', this.initEvent.fn1);
 			$(document).unbind('mouseup', this.initEvent.fn2);
 			EventBus.$off('language-change', this.initEventBus.fn1);
@@ -1215,6 +1183,71 @@ export default {
 			let index = this.$refs.autoTip.getActiveIndex();
 			this.onClickAuto(this.autoTipList[index]);
 		},
+		moveSelection(autoDirect, speed, line) {
+			let that = this;
+			let originLine = line || this.folder.getRelativeLine(this.nowCursorPos.line);
+			let originColumn = this.nowCursorPos.column;
+			let count = 0; // 累计滚动距离
+			_addTask();
+
+			function _addTask() {
+				that.moveTask = globalData.scheduler.addTask(
+					() => {
+						_run(autoDirect, speed);
+					},
+					{
+						delay: 16,
+						level: Enum.TASK.UI,
+						done: () => {
+							_addTask();
+						},
+					}
+				);
+			}
+
+			function _run(autoDirect, speed) {
+				let line = originLine;
+				let column = originColumn;
+				switch (autoDirect) {
+					case 'up':
+						count += speed;
+						line = Math.floor(count / that.charObj.charHight);
+						line = originLine - line;
+						column = 0;
+						break;
+					case 'down':
+						count += speed;
+						line = Math.floor(count / that.charObj.charHight);
+						line = originLine + line;
+						break;
+					case 'left':
+						count += speed;
+						column = Math.floor(count / that.charObj.charWidth);
+						column = originColumn - column;
+						break;
+					case 'right':
+						count += speed;
+						column = Math.floor(count / that.charObj.charWidth);
+						column = originColumn + column;
+						break;
+				}
+				line = that.folder.getRealLine(line);
+				line = line < 1 ? 1 : line > that.maxLine ? that.maxLine : line;
+				if (autoDirect === 'down') {
+					column = that.myContext.htmls[line - 1].text.length;
+				} else {
+					column = column < 0 ? 0 : column > that.myContext.htmls[line - 1].text.length ? that.myContext.htmls[line - 1].text.length : column;
+				}
+				that.mouseStartObj.cursorPos = that.cursor.setCursorPos({
+					line: line,
+					column: column,
+				});
+				that.mouseStartObj.preRange = that.selecter.setRange(that.mouseStartObj.start, {
+					line: line,
+					column: column,
+				});
+			}
+		},
 		setData(prop, value) {
 			if (typeof this[prop] === 'function') {
 				return;
@@ -1661,19 +1694,19 @@ export default {
 				let line = Math.ceil((this.scrollTop + e.clientY - offset.top) / this.charObj.charHight);
 				line = line < 1 ? 1 : line;
 				line = line > this.maxLine ? this.maxLine : line;
-				this.selectCallBack = null;
+				globalData.scheduler.removeTask(this.moveTask);
 				if (e.clientY > offset.top + this.scrollerArea.height) {
 					//鼠标超出底部区域
-					_move('down', e.clientY - offset.top - this.scrollerArea.height);
+					this.moveSelection('down', e.clientY - offset.top - this.scrollerArea.height);
 				} else if (e.clientY < offset.top) {
 					//鼠标超出顶部区域
-					_move('up', offset.top - e.clientY);
+					this.moveSelection('up', offset.top - e.clientY);
 				} else if (e.clientX < offset.left) {
 					//鼠标超出左边区域
-					_move('left', offset.left - e.clientX, line);
+					this.moveSelection('left', offset.left - e.clientX, line);
 				} else if (e.clientX > offset.left + this.scrollerArea.width) {
 					//鼠标超出右边区域
-					_move('right', e.clientX - offset.left - this.scrollerArea.width, line);
+					this.moveSelection('right', e.clientX - offset.left - this.scrollerArea.width, line);
 				}
 			}
 			if (this.diffBottomSashMouseObj) {
@@ -1687,64 +1720,11 @@ export default {
 				this.diffHeight = height;
 				this.diffBottomSashMouseObj = e;
 			}
-			function _move(autoDirect, speed, line) {
-				let originLine = line || that.folder.getRelativeLine(that.nowCursorPos.line);
-				let originColumn = that.nowCursorPos.column;
-				let count = 0; // 累计滚动距离
-				_run(autoDirect, speed);
-				that.channel.port1.postMessage({ event: 'select' });
-
-				function _run(autoDirect, speed) {
-					let line = originLine;
-					let column = originColumn;
-					switch (autoDirect) {
-						case 'up':
-							count += speed;
-							line = Math.floor(count / that.charObj.charHight);
-							line = originLine - line;
-							column = 0;
-							break;
-						case 'down':
-							count += speed;
-							line = Math.floor(count / that.charObj.charHight);
-							line = originLine + line;
-							break;
-						case 'left':
-							count += speed;
-							column = Math.floor(count / that.charObj.charWidth);
-							column = originColumn - column;
-							break;
-						case 'right':
-							count += speed;
-							column = Math.floor(count / that.charObj.charWidth);
-							column = originColumn + column;
-							break;
-					}
-					line = that.folder.getRealLine(line);
-					line = line < 1 ? 1 : line > that.maxLine ? that.maxLine : line;
-					if (autoDirect === 'down') {
-						column = that.myContext.htmls[line - 1].text.length;
-					} else {
-						column = column < 0 ? 0 : column > that.myContext.htmls[line - 1].text.length ? that.myContext.htmls[line - 1].text.length : column;
-					}
-					that.mouseStartObj.cursorPos = that.cursor.setCursorPos({
-						line: line,
-						column: column,
-					});
-					that.mouseStartObj.preRange = that.selecter.setRange(that.mouseStartObj.start, {
-						line: line,
-						column: column,
-					});
-					that.selectCallBack = () => {
-						_run(autoDirect, speed);
-					};
-				}
-			}
 		},
 		// 鼠标抬起事件
 		onDocumentMouseUp(e) {
 			// 停止滚动选中
-			this.selectCallBack = null;
+			globalData.scheduler.removeTask(this.moveTask);
 			this.mouseStartObj = null;
 			this.diffBottomSashMouseObj = null;
 			this.mouseUpTime = Date.now();
@@ -1757,9 +1737,20 @@ export default {
 		// 滚动滚轮
 		onWheel(e) {
 			this.$refs.hScrollBar.scrollLeft = this.scrollLeft + e.deltaX;
-			if (!this.scrollDeltaY) {
+			if (!this.scrollDeltaY && e.deltaY) {
 				this.scrollDeltaY = e.deltaY;
-				this.channel.port1.postMessage({ event: 'scroll' });
+				globalData.scheduler.addTask(
+					() => {
+						this.setStartLine(this.scrollTop + e.deltaY);
+					},
+					{
+						delay: 16,
+						level: Enum.TASK.UI,
+						done: () => {
+							this.scrollDeltaY = 0;
+						},
+					}
+				);
 			}
 		},
 		onScroll() {
