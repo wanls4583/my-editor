@@ -9,7 +9,7 @@ export default class {
 			}
 		};
 	}
-	addTask(task, { level = 1, delay = 0, done = () => {} } = {}) {
+	addTask(task, { level = 1, delay = 0 } = {}) {
 		let taskId = this.taskId++;
 		task = {
 			__id__: taskId,
@@ -17,7 +17,6 @@ export default class {
 			__time__: Date.now(),
 			level: level,
 			delay: delay,
-			done: done,
 		};
 		for (let i = this.queue.length - 1; i >= 0; i--) {
 			// 离栈顶越近，优先级越高
@@ -45,7 +44,6 @@ export default class {
 			if (timestamp - task.__time__ >= task.delay) {
 				this.queue.splice(i, 1);
 				task.__task__();
-				task.done();
 				break;
 			}
 		}

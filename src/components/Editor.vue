@@ -1194,13 +1194,11 @@ export default {
 				that.moveTask = globalData.scheduler.addTask(
 					() => {
 						_run(autoDirect, speed);
+						_addTask();
 					},
 					{
 						delay: 16,
 						level: Enum.TASK.UI,
-						done: () => {
-							_addTask();
-						},
 					}
 				);
 			}
@@ -1742,13 +1740,11 @@ export default {
 				globalData.scheduler.addTask(
 					() => {
 						this.setStartLine(this.scrollTop + e.deltaY);
+						this.scrollDeltaY = 0;
 					},
 					{
-						delay: 16,
+						delay: 5,
 						level: Enum.TASK.UI,
-						done: () => {
-							this.scrollDeltaY = 0;
-						},
 					}
 				);
 			}
