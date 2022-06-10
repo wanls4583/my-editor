@@ -208,6 +208,7 @@ export default class {
 		let limit = 5;
 		let processedLines = 0;
 		let originStartLine = startLine;
+		let startTime = Date.now();
 		endLine = endLine || this.maxLine;
 		endLine = endLine > this.maxLine ? this.maxLine : endLine;
 		cancelIdleCallback(this.tokenizeLinesTimer);
@@ -238,7 +239,7 @@ export default class {
 				}
 				processedLines++;
 				// 避免卡顿
-				if (processedLines >= limit) {
+				if (processedLines >= limit || Date.now() - startTime >= 5) {
 					startLine++;
 					break;
 				}

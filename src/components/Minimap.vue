@@ -6,7 +6,7 @@
 <template>
 	<div class="my-minimap" ref="wrap">
 		<canvas :height="height" :width="width" ref="canvas"></canvas>
-		<div :style="{top: _top + 'px', height: blockHeight + 'px'}" @mousedown="onBlockMDown" class="my-minimap-block"></div>
+		<div :style="{top: blockTop + 'px', height: blockHeight + 'px'}" @mousedown="onBlockMDown" class="my-minimap-block"></div>
 	</div>
 </template>
 <script>
@@ -33,6 +33,7 @@ export default {
 			blockHeight: 0,
 			scale: 0.1,
 			top: 0,
+			blockTop: 0,
 		};
 	},
 	watch: {
@@ -42,11 +43,8 @@ export default {
 		contentHeight() {
 			this.setStartLine();
 		},
-	},
-	computed: {
-		_top() {
-			let top = (this.nowLine - this.startLine) * this.$parent.charObj.charHight - this.top;
-			return top * this.scale;
+		nowLine() {
+			this.setTop();
 		},
 	},
 	created() {
@@ -142,16 +140,14 @@ export default {
 			this.startLine = Math.floor(scrollTop / this.$parent.charObj.charHight);
 			this.startLine++;
 			this.top = scrollTop % this.$parent.charObj.charHight;
+			this.setTop();
+		},
+		setTop() {
+			let top = (this.nowLine - this.startLine) * this.$parent.charObj.charHight - this.top;
+			this.blockTop = top * this.scale;
 		},
 		render() {
-			if (this.rendering) {
-				return;
-			}
-			this.rendering = true;
-			requestAnimationFrame(() => {
-				this.renderLines();
-				this.rendering = 0;
-			});
+			this.renderLines();
 		},
 		renderLines() {
 			let lines = [];
@@ -210,7 +206,7 @@ export default {
 		},
 		onBlockMDown(e) {
 			this.startBlockMouseObj = e;
-			this.bTop = this._top;
+			this.bTop = this.blockTop;
 		},
 		onDocumentMmove(e) {
 			if (this.startBlockMouseObj) {
@@ -222,17 +218,17 @@ export default {
 					maxScrollTop2 = this.contentHeight * this.scale - this.blockHeight;
 				}
 				top += delta;
+				top = top < 0 ? 0 : top;
 				top = top > maxScrollTop2 ? maxScrollTop2 : top;
-				this.startBlockMouseObj = e;
 				this.bTop += delta;
-				this.moving = true;
+				this.startBlockMouseObj = e;
 				this.moevScrollTop = top * (maxScrollTop1 / maxScrollTop2);
 				if (this.moevScrollTop && !this.moveTask) {
 					this.moveTask = globalData.scheduler.addTask(
 						() => {
-							if (this.moevScrollTop) {
+							if (this.moevScrollTop >= 0) {
 								this.$parent.setStartLine(this.moevScrollTop);
-								this.moevScrollTop = 0;
+								this.moevScrollTop = -1;
 							} else {
 								globalData.scheduler.removeTask(this.moveTask);
 								this.moveTask = null;

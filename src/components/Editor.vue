@@ -465,6 +465,7 @@ export default {
 	destroyed() {
 		this.unbindEvent();
 		this.myContext.destory();
+		contexts[this.id] = null;
 	},
 	methods: {
 		// 初始化数据
