@@ -729,10 +729,8 @@ export default {
 				let lineObj = this.myContext.htmls[renderObj.num - 1];
 				if (lineObj && lineObj.lineId === lineId) {
 					Object.assign(renderObj, this.getRenderObj(lineObj, renderObj.num));
-					this.renderSelectedBg();
 					this.renderSelectionToken(renderObj.num);
 					this.renderError(renderObj.num);
-					this.renderCursor();
 				}
 			}
 		},
@@ -770,18 +768,19 @@ export default {
 			let end = range.end;
 			let text = this.myContext.htmls[start.line - 1].text;
 			let endColumn = text.length;
-			start.left = this.getStrWidth(text, 0, start.column) + 'px';
+			start.left = this.getExactLeft(start);
 			if (start.line == end.line) {
-				start.width = this.getStrWidth(text, start.column, end.column) || 10;
+				start.width = this.getExactLeft(end) - start.left || 10;
 				start.width += 'px';
 			} else {
-				start.width = this.getStrWidth(text, start.column) || 10;
+				start.width = this.getExactLeft({ line: start.line, column: text.length }) - start.left || 10;
 				start.width += 'px';
 				end.left = '0px';
 				text = this.myContext.htmls[end.line - 1].text;
-				end.width = this.getStrWidth(text, 0, end.column) || 10;
+				end.width = this.getExactLeft(end) || 10;
 				end.width += 'px';
 			}
+			start.left += 'px';
 			firstLine = firstLine > start.line + 1 ? firstLine : start.line + 1;
 			lastLine = lastLine < end.line - 1 ? lastLine : end.line - 1;
 			for (let line = firstLine; line <= lastLine; line++) {

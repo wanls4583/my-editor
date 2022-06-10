@@ -21,9 +21,9 @@ export default class {
 		};
 		// 循环的任务，立刻执行一次
 		loop && task.__task__();
-		// 按优先级加入队列，离栈顶越近，优先级越高
+		// 按优先级加入队列，离队首越近，优先级最高
 		for (let i = this.queue.length - 1; i >= 0; i--) {
-			if (this.queue[i].level <= task.level) {
+			if (this.queue[i].level >= task.level) {
 				this.queue.splice(i + 1, 0, task);
 				task = null;
 				break;
@@ -40,7 +40,7 @@ export default class {
 	}
 	run() {
 		const timestamp = Date.now();
-		for (let i = this.queue.length - 1; i >= 0; i--) {
+		for (let i = 0; i < this.queue.length; i++) {
 			let task = this.queue[i];
 			if (timestamp - task.__time__ >= task.delay) {
 				if (task.loop) {

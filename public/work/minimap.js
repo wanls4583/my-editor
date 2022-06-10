@@ -1,4 +1,6 @@
 let cacheMap = {};
+let cacheIds = [];
+let maxCache = 5000;
 let renderedIdMap = {};
 let dataObj = {};
 let ctx = null;
@@ -54,6 +56,10 @@ function drawLine({ top, lineObj, lineId }) {
 			html: html,
 			canvas: offscreen,
 		};
+		cacheIds.push(lineObj.lineId);
+		if (cacheIds.length > maxCache) {
+			delete cacheMap[cacheIds.shift()];
+		}
 	}
 }
 

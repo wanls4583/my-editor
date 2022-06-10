@@ -7,6 +7,7 @@ import EventBus from '@/event';
 import Util from '@/common/util';
 import Enum from '@/data/enum';
 import expand from 'emmet';
+import globalData from '@/data/globalData';
 
 const regs = {
 	endTag: /(?=\<\/)/,
@@ -518,12 +519,13 @@ class Context {
 		let that = this;
 		let index = 0;
 		let maxWidthObj = this.maxWidthObj;
-		cancelIdleCallback(this.setLineWidthTimer);
+		globalData.scheduler.removeTask(this.setLineWidthTask);
 		_setLineWidth();
 
 		function _setLineWidth() {
 			let startTime = Date.now();
 			let count = 0;
+			let limit = 5;
 			while (index < texts.length) {
 				let lineObj = texts[index];
 				if (that.lineIdMap.has(lineObj.lineId)) {
@@ -539,13 +541,13 @@ class Context {
 				}
 				index++;
 				count++;
-				if (count % 5 === 0 && Date.now() - startTime > 20) {
+				if (count >= limit && Date.now() - startTime >= 5) {
 					break;
 				}
 			}
 			that.setEditorData('maxWidthObj', maxWidthObj);
 			if (index < texts.length) {
-				that.setLineWidthTimer = requestIdleCallback(() => {
+				that.setLineWidthTask = globalData.scheduler.addTask(() => {
 					_setLineWidth();
 				});
 			}
