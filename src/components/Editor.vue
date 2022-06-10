@@ -1188,20 +1188,16 @@ export default {
 			let originLine = line || this.folder.getRelativeLine(this.nowCursorPos.line);
 			let originColumn = this.nowCursorPos.column;
 			let count = 0; // 累计滚动距离
-			_addTask();
-
-			function _addTask() {
-				that.moveTask = globalData.scheduler.addTask(
-					() => {
-						_run(autoDirect, speed);
-						_addTask();
-					},
-					{
-						delay: 16,
-						level: Enum.TASK.UI,
-					}
-				);
-			}
+			this.moveTask = globalData.scheduler.addTask(
+				() => {
+					_run(autoDirect, speed);
+				},
+				{
+					delay: 16,
+					loop: true,
+					level: Enum.TASK.UI,
+				}
+			);
 
 			function _run(autoDirect, speed) {
 				let line = originLine;
@@ -1735,15 +1731,21 @@ export default {
 		// 滚动滚轮
 		onWheel(e) {
 			this.$refs.hScrollBar.scrollLeft = this.scrollLeft + e.deltaX;
-			if (!this.scrollDeltaY && e.deltaY) {
-				this.scrollDeltaY = e.deltaY;
-				globalData.scheduler.addTask(
+			this.scrollDeltaY = e.deltaY;
+			if (this.scrollDeltaY && !this.scrollTask) {
+				this.scrollTask = globalData.scheduler.addTask(
 					() => {
-						this.setStartLine(this.scrollTop + e.deltaY);
-						this.scrollDeltaY = 0;
+						if (this.scrollDeltaY) {
+							this.setStartLine(this.scrollTop + this.scrollDeltaY);
+							this.scrollDeltaY = 0;
+						} else {
+							globalData.scheduler.removeTask(this.scrollTask);
+							this.scrollTask = null;
+						}
 					},
 					{
-						delay: 5,
+						delay: 16,
+						loop: true,
 						level: Enum.TASK.UI,
 					}
 				);
