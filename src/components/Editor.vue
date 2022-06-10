@@ -1691,7 +1691,9 @@ export default {
 				let originLine = line || that.folder.getRelativeLine(that.nowCursorPos.line);
 				let originColumn = that.nowCursorPos.column;
 				let count = 0; // 累计滚动距离
-				_run(autoDirect, speed);
+				that.selectCallBack = () => {
+					_run(autoDirect, speed);
+				};
 				that.channel.port1.postMessage({ event: 'select' });
 
 				function _run(autoDirect, speed) {
@@ -1735,9 +1737,6 @@ export default {
 						line: line,
 						column: column,
 					});
-					that.selectCallBack = () => {
-						_run(autoDirect, speed);
-					};
 				}
 			}
 		},
