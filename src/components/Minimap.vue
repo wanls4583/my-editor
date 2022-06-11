@@ -181,7 +181,9 @@ export default {
 			if (cache) {
 				let lineObj = this.$parent.myContext.htmls[cache.num - 1];
 				if (lineObj && lineObj.lineId === lineId) {
-					this.worker.postMessage({ event: 'render-line', data: this.getRenderObj(cache.num) });
+					let renderObj = this.getRenderObj(cache.num);
+					this.worker.postMessage({ event: 'render-line', data: renderObj });
+					this.renderedIdMap[lineObj.lineId] = { num: cache.nun, html: lineObj.html };
 				}
 			}
 		},

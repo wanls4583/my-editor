@@ -28,11 +28,11 @@ function drawLine({ top, lineObj }) {
 				let token = tokens[i];
 				let text = lineObj.text.slice(token.startIndex, token.endIndex);
 				text = getDrawText(text);
-				offCtx.fillStyle = dataObj.colors['editor.foreground'];
+				setFillStyle(offCtx, dataObj.colors['editor.foreground']);
 				if (token.scopeId) {
 					let scope = dataObj.scopeIdMap[token.scopeId];
 					if (scope.settings && scope.settings.foreground) {
-						offCtx.fillStyle = scope.settings.foreground;
+						setFillStyle(offCtx, scope.settings.foreground);
 					}
 				}
 				offCtx.fillText(text, left, charHight / 2);
@@ -43,7 +43,7 @@ function drawLine({ top, lineObj }) {
 				}
 			}
 		} else {
-			offCtx.fillStyle = dataObj.colors['editor.foreground'];
+			setFillStyle(offCtx, dataObj.colors['editor.foreground']);
 			offCtx.fillText(getDrawText(lineObj.text), marginLeft, charHight / 2);
 		}
 		offscreen = offscreen.transferToImageBitmap();
@@ -79,6 +79,12 @@ function render() {
 	}, 15);
 }
 
+function setFillStyle(ctx, fillStyle) {
+	if (ctx.fillStyle !== fillStyle) {
+		ctx.fillStyle = fillStyle;
+	}
+}
+
 function getLineObj({ lineId, lineObj }) {
 	if (lineId) {
 		lineObj = renderedIdMap[lineId].lineObj;
@@ -88,11 +94,15 @@ function getLineObj({ lineId, lineObj }) {
 	return lineObj;
 }
 
-function cacheLineObj() {
-	renderedIdMap = {};
-	lines.forEach(item => {
+function cacheLineObj(item) {
+	if (item) {
 		renderedIdMap[item.lineObj.lineId] = item;
-	});
+	} else {
+		renderedIdMap = {};
+		lines.forEach(item => {
+			renderedIdMap[item.lineObj.lineId] = item;
+		});
+	}
 }
 
 function cacheCanvas() {
@@ -139,6 +149,7 @@ self.onmessage = function (e) {
 			let lineObj = getLineObj(line);
 			line.lineObj = lineObj;
 			singleLines[lineObj.lineId] = line;
+			cacheLineObj(line);
 			break;
 		case 'render':
 			lines = data.data;
