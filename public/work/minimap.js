@@ -1,17 +1,13 @@
 let cacheMap = {};
 let cacheIds = [];
-let maxCache = 5000;
 let renderedIdMap = {};
 let dataObj = {};
 let ctx = null;
 let canvas = null;
+let lines = null;
+let singleLines = {};
 
-function drawLine({ top, lineObj, lineId }) {
-	if (lineId) {
-		lineObj = renderedIdMap[lineId];
-	} else {
-		renderedIdMap[lineObj.lineId] = lineObj;
-	}
+function drawLine({ top, lineObj }) {
 	let cache = cacheMap[lineObj.lineId];
 	let tokens = lineObj.tokens;
 	let html = '';
@@ -56,10 +52,6 @@ function drawLine({ top, lineObj, lineId }) {
 			html: html,
 			canvas: offscreen,
 		};
-		cacheIds.push(lineObj.lineId);
-		if (cacheIds.length > maxCache) {
-			delete cacheMap[cacheIds.shift()];
-		}
 	}
 }
 
@@ -68,6 +60,47 @@ function drawLines(lines) {
 	lines.forEach(line => {
 		this.drawLine(line);
 	});
+	cacheCanvas();
+}
+
+// 定时更新
+function render() {
+	if (lines) {
+		drawLines(lines);
+		lines = null;
+	} else {
+		for (let key in singleLines) {
+			drawLine(singleLines[key]);
+		}
+		singleLines = {};
+	}
+	setTimeout(() => {
+		render();
+	}, 15);
+}
+
+function getLineObj({ lineId, lineObj }) {
+	if (lineId) {
+		lineObj = renderedIdMap[lineId].lineObj;
+	} else {
+		renderedIdMap[lineObj.lineId] = lineObj;
+	}
+	return lineObj;
+}
+
+function cacheLineObj() {
+	renderedIdMap = {};
+	lines.forEach(item => {
+		renderedIdMap[item.lineObj.lineId] = item;
+	});
+}
+
+function cacheCanvas() {
+	let obj = {};
+	lines.forEach(item => {
+		obj[item.lineObj.lineId] = cacheMap[item.lineObj.lineId];
+	});
+	cacheMap = obj;
 }
 
 function setData(data) {
@@ -85,12 +118,13 @@ function setData(data) {
 }
 
 function getDrawText(text) {
-	// text = text.replace(/[a-zA-Z]/g, '▉ ');
 	text = text.replace(/\t/g, '    ');
 	return text;
 }
 
-onmessage = function (e) {
+render();
+
+self.onmessage = function (e) {
 	let data = e.data;
 	switch (data.event) {
 		case 'init':
@@ -101,10 +135,18 @@ onmessage = function (e) {
 			setData(data.data);
 			break;
 		case 'render-line':
-			drawLine(data.data);
+			let line = data.data;
+			let lineObj = getLineObj(line);
+			line.lineObj = lineObj;
+			singleLines[lineObj.lineId] = line;
 			break;
 		case 'render':
-			drawLines(data.data);
+			lines = data.data;
+			lines.map(item => {
+				item.lineObj = getLineObj(item);
+			});
+			cacheLineObj();
+			singleLines = {};
 			break;
 	}
 };
