@@ -92,7 +92,7 @@ export default class {
 		return Promise.resolve();
 	}
 	initProperties(editor, context) {
-		Util.defineProperties(this, editor, ['editorId', 'startLine', 'diffObj', 'maxVisibleLines', 'maxLine', 'folder', '$nextTick']);
+		Util.defineProperties(this, editor, ['editorId', 'startLine', 'diffObj', 'maxVisibleLines', 'maxLine', 'space', 'folder', '$nextTick']);
 		Util.defineProperties(this, context, ['htmls']);
 	}
 	initLanguageConifg(foldMap, data) {
@@ -289,7 +289,8 @@ export default class {
 				let value = lineText.substring(item.startIndex, item.endIndex);
 				return `<span class="${item.selector}" data-column="${item.startIndex}" data-end="${item.endIndex}">${Util.htmlTrans(value)}</span>`;
 			})
-			.join('');
+			.join('')
+			.replace(/\t/g, this.space);
 
 		function _compair(scope1, scope2) {
 			scope1 = globalData.scopeIdMap[scope1];

@@ -31,7 +31,7 @@
 				>
 					<div class="my-lines-view" ref="lineView">
 						<div :class="[_diffBg(line.num)]" :data-line="line.num" :id="'line-'+id+'-'+line.num" :style="{top: line.top}" class="my-line" v-for="line in renderObjs">
-							<div :class="[line.fold == 'close' ? 'fold-close' : '']" :data-line="line.num" class="my-code" v-html="line.html"></div>
+							<div :class="[line.fold == 'close' ? 'fold-close' : '', selectedFg && line.selected ? 'my-select-fg' : '']" :data-line="line.num" class="my-code" v-html="line.html"></div>
 						</div>
 					</div>
 					<div class="my-cursor-view" ref="cursorView">
@@ -421,6 +421,7 @@ export default {
 					});
 			});
 			this.render();
+			this.selectedFg = !!globalData.colors['editor.selectionForeground'];
 			this.$refs.minimap.initWorkerData('theme');
 		},
 		tabSize: function (newVal) {
@@ -455,7 +456,6 @@ export default {
 		this.initEventBus();
 	},
 	mounted() {
-		this.selectedFg = !!globalData.colors['editor.selectionForeground'];
 		this.showEditor();
 		this.initResizeEvent();
 		if (this.type === 'diff') {
@@ -487,6 +487,7 @@ export default {
 			this.cursor.addCursorPos(this.nowCursorPos);
 			this.wordPattern = Util.getWordPattern(this.language);
 			this.wordPattern = new RegExp(`^(${this.wordPattern.source})`);
+			this.selectedFg = !!globalData.colors['editor.selectionForeground'];
 		},
 		initRenderData() {
 			this.charObj = Util.getCharWidth(this.$refs.content, '<div class="my-line"><div class="my-code">[dom]</div></div>');
@@ -544,7 +545,6 @@ export default {
 			EventBus.$on(
 				'theme-changed',
 				(this.initEventBus.fn4 = (theme) => {
-					this.selectedFg = !!globalData.colors['editor.selectionForeground'];
 					if (this.active) {
 						this.theme = theme;
 					}
@@ -671,7 +671,6 @@ export default {
 				}
 				this.renderLines();
 				this.renderSelectedBg();
-				this.renderSelectionToken();
 				this.renderError();
 				this.renderCursor(forceCursorView);
 				this.$refs.minimap && this.$refs.minimap.render();
@@ -707,6 +706,7 @@ export default {
 				preRenderObjs.forEach((item, index) => {
 					if (this.renderedLineMap[item.num] && index < toRnederNums.length) {
 						this.renderObjs[index] = this.renderedLineMap[item.num];
+						this.renderedLineMap[item.num].index = index;
 						renderNumMap[item.num] = true;
 					}
 				});
@@ -717,7 +717,9 @@ export default {
 				});
 				toRnederNums.forEach((num, index) => {
 					if (!this.renderObjs[index]) {
-						this.renderObjs[index] = this.renderedLineMap[renderNums.pop()];
+						let renderObj = this.renderedLineMap[renderNums.pop()];
+						this.renderObjs[index] = renderObj;
+						renderObj.index = index;
 					}
 				});
 			}
@@ -794,6 +796,8 @@ export default {
 						active: range.active,
 						isFsearch: isFsearch,
 					});
+					// range.active为false时，样式可能只显示边框，不改变字体颜色和背景
+					renderObj.selected = range.active;
 				}
 			}
 			if (this.renderedLineMap[start.line]) {
@@ -808,6 +812,7 @@ export default {
 				if (end.line == start.line) {
 					endColumn = end.column;
 				}
+				// range.active为false时，样式可能只显示边框，不改变字体颜色和背景
 				range.active && this._renderSelectionToken(start.line, start.column, endColumn);
 			}
 			if (end.line > start.line && this.renderedLineMap[end.line]) {
@@ -819,6 +824,7 @@ export default {
 					active: range.active,
 					isFsearch: isFsearch,
 				});
+				// range.active为false时，样式可能只显示边框，不改变字体颜色和背景
 				range.active && this._renderSelectionToken(end.line, 0, end.column);
 			}
 			if (start.line === this.nowCursorPos.line || end.line === this.nowCursorPos.line) {
@@ -827,7 +833,7 @@ export default {
 		},
 		renderSelectionToken(line) {
 			// 只有设置了选中前景色才处理
-			if (!globalData.colors['editor.selectionForeground']) {
+			if (!this.selectedFg) {
 				return;
 			}
 			let results = this.selecter.getRangeByLine(line);
@@ -848,7 +854,7 @@ export default {
 		},
 		_renderSelectionToken(line, startColumn, endColumn) {
 			// 只有设置了选中前景色才处理
-			if (!globalData.colors['editor.selectionForeground']) {
+			if (!this.selectedFg) {
 				return;
 			}
 			let lineObj = this.myContext.htmls[line - 1];
@@ -941,6 +947,9 @@ export default {
 		},
 		// 清除选中前景色
 		clearSelectionToken() {
+			this.renderObjs.forEach((item) => {
+				item.selected = false;
+			});
 			this.myContext.fgLines.forEach((line) => {
 				this._clearSelectionToken(line);
 			});
@@ -948,12 +957,13 @@ export default {
 		},
 		_clearSelectionToken(line) {
 			let lineObj = this.myContext.htmls[line - 1];
+			let renderObj = this.renderedLineMap[line];
 			if (!lineObj || !lineObj.fgTokens) {
 				return;
 			}
 			lineObj.fgTokens = null;
-			if (this.renderedLineMap[line]) {
-				this.renderedIdMap[lineObj.lineId].html = this.tokenizer.createHtml(lineObj.tokens, lineObj.text);
+			if (renderObj) {
+				renderObj.html = this.tokenizer.createHtml(lineObj.tokens, lineObj.text);
 			}
 			lineObj.html = '';
 		},
@@ -1391,10 +1401,9 @@ export default {
 					lineObj.html = this.tokenizer.createHtml(lineObj.tokens, lineObj.text);
 					html = lineObj.html;
 				} else {
-					html = Util.htmlTrans(lineObj.text);
+					html = Util.htmlTrans(lineObj.text).replace(/\t/g, this.space);
 				}
 			}
-			html = html.replace(/\t/g, this.space);
 			return {
 				html: html,
 				num: line,
@@ -1402,6 +1411,7 @@ export default {
 				tabNum: tabNum,
 				fold: fold,
 				isFsearch: false,
+				selected: false,
 				selection: [],
 				cursorList: [],
 			};

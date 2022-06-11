@@ -110,8 +110,6 @@
 	}
 
 	&-select-fg {
-		position: absolute;
-		height: 100%;
 		color: var(--my-editor-selectionForeground) !important;
 		span {
 			color: var(--my-editor-selectionForeground) !important;
@@ -144,6 +142,8 @@
 	}
 
 	&-search-bg {
+		position: absolute;
+		height: 100%;
 		background-color: var(--my-editor-findMatchHighlightBackground);
 
 		&.my-active {

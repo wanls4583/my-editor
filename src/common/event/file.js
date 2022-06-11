@@ -109,10 +109,20 @@ export default class {
 				//从资源管理器中选择文件
 				this.choseFile().then(results => {
 					if (results) {
-						let editorList = this.editorList.slice(0, index).concat(results).concat(this.editorList.slice(index));
-						tab = results[0];
-						this.editorList.empty();
-						this.editorList.push(...editorList);
+						let editorMap = this.getEditorMap();
+						let firstId = results[0].id;
+						// 过滤已经打开过的文件
+						results = results.filter(item => {
+							return !editorMap[item.id];
+						});
+						if (results.length) {
+							let editorList = this.editorList.slice(0, index).concat(results).concat(this.editorList.slice(index));
+							tab = results[0];
+							this.editorList.empty();
+							this.editorList.push(...editorList);
+						} else {
+							tab = editorMap[firstId];
+						}
 						_done.call(this);
 					}
 				});
@@ -249,5 +259,12 @@ export default class {
 	}
 	pasteFileFromClip(fileObj, cutPath) {
 		ipcRenderer.send('file-paste', fileObj.path, cutPath);
+	}
+	getEditorMap() {
+		let editorMap = {};
+		this.editorList.forEach(item => {
+			editorMap[item.id] = item;
+		});
+		return editorMap;
 	}
 }
