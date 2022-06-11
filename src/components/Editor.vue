@@ -93,7 +93,7 @@
 		<div class="my-minimap-wrap" v-if="type !== 'diff'">
 			<minimap :content-height="contentHeight" :now-line="startLine" :scroll-top="scrollTop" ref="minimap"></minimap>
 		</div>
-		<div @scroll="onVBarScroll" class="my-editor-scrollbar-v" ref="vScrollBar">
+		<div @mousedown="vBarScrollClicked=true" @mouseup="vBarScrollClicked=false" @scroll="onVBarScroll" class="my-editor-scrollbar-v" ref="vScrollBar">
 			<div :style="{height: _contentHeight}"></div>
 		</div>
 		<!-- 右键菜单 -->
@@ -203,6 +203,7 @@ export default {
 			diffTop: 0,
 			diffMarginTop: 0,
 			toShowdiffObj: null,
+			vBarScrollClicked: false,
 			charObj: {
 				charWidth: 7.15,
 				fullAngleCharWidth: 15,
@@ -1737,14 +1738,14 @@ export default {
 		onWheel(e) {
 			this.$refs.hScrollBar.scrollLeft = this.scrollLeft + e.deltaX;
 			this.scrollDeltaY = e.deltaY;
-			if (this.scrollDeltaY && !this.scrollTask) {
-				this.scrollTask = globalData.scheduler.addUiTask(() => {
+			if (this.scrollDeltaY && !this.wheelTask) {
+				this.wheelTask = globalData.scheduler.addUiTask(() => {
 					if (this.scrollDeltaY) {
 						this.setStartLine(this.scrollTop + this.scrollDeltaY);
 						this.scrollDeltaY = 0;
 					} else {
-						globalData.scheduler.removeUiTask(this.scrollTask);
-						this.scrollTask = null;
+						globalData.scheduler.removeUiTask(this.wheelTask);
+						this.wheelTask = null;
 					}
 				});
 			}
@@ -1756,7 +1757,18 @@ export default {
 		},
 		// 右侧滚动条滚动事件
 		onVBarScroll(e) {
-			this.setStartLine(e.target.scrollTop);
+			this.toScrollTop = e.target.scrollTop;
+			if (this.vBarScrollClicked && this.toScrollTop && !this.scrollTask) {
+				this.scrollTask = globalData.scheduler.addUiTask(() => {
+					if (this.toScrollTop) {
+						this.setStartLine(this.toScrollTop);
+						this.toScrollTop = 0;
+					} else {
+						globalData.scheduler.removeUiTask(this.scrollTask);
+						this.scrollTask = null;
+					}
+				});
+			}
 		},
 		onHBarScroll(e) {
 			this.scrollLeft = e.target.scrollLeft;
