@@ -175,6 +175,7 @@ export default {
 			theme: '',
 			tabSize: 4,
 			startLine: 1,
+			endLine: 1,
 			cursorLeft: 0,
 			scrollLeft: 0,
 			scrollTop: 0,
@@ -376,20 +377,26 @@ export default {
 			};
 		},
 		_bracketStartVisible() {
-			return this.bracketMatch && this.renderedLineMap[this.bracketMatch.start.line];
+			return this.bracketMatch && this.bracketMatch.start.line >= this.startLine && this.bracketMatch.start.line <= this.endLine;
 		},
 		_bracketEndVisible() {
-			return this.bracketMatch && this.renderedLineMap[this.bracketMatch.end.line];
+			return this.bracketMatch && this.bracketMatch.end.line >= this.startLine && this.bracketMatch.end.line <= this.endLine;
 		},
 		_bracketStartStyle() {
-			let style = { left: this.bracketMatch.start.left, width: this.bracketMatch.start.width, height: this._lineHeight };
-			style.top = this.renderedLineMap[this.bracketMatch.start.line].top;
-			return style;
+			return {
+				left: this.bracketMatch.start.left,
+				top: this.bracketMatch.start.top,
+				width: this.bracketMatch.start.width,
+				height: this._lineHeight,
+			};
 		},
 		_bracketEndStyle() {
-			let style = { left: this.bracketMatch.end.left, width: this.bracketMatch.end.width, height: this._lineHeight };
-			style.top = this.renderedLineMap[this.bracketMatch.end.line].top;
-			return style;
+			return {
+				left: this.bracketMatch.end.left,
+				top: this.bracketMatch.end.top,
+				width: this.bracketMatch.end.width,
+				height: this._lineHeight,
+			};
 		},
 		space() {
 			return Util.space(this.tabSize);
@@ -791,10 +798,11 @@ export default {
 				if (this.renderedLineMap[line]) {
 					let renderObj = this.renderedLineMap[line];
 					let lineObj = this.myContext.htmls[line - 1];
+					let width = this.getExactLeft({ line: line, column: lineObj.text.length }) || 10;
 					this.renderSelectionObjs.push({
 						left: 0,
 						top: renderObj.top,
-						width: (lineObj.width || 10) + 'px',
+						width: width + 'px',
 						active: range.active,
 						isFsearch: isFsearch,
 					});
@@ -937,13 +945,15 @@ export default {
 
 					lineObj = this.myContext.htmls[this.bracketMatch.start.line - 1];
 					pos = this.bracketMatch.start;
-					this.bracketMatch.start.width = this.getStrWidth(lineObj.text, pos.startIndex, pos.endIndex) + 'px';
-					this.bracketMatch.start.left = this.getStrWidth(lineObj.text, 0, pos.startIndex) + 'px';
+					pos.width = this.getStrWidth(lineObj.text, pos.startIndex, pos.endIndex) + 'px';
+					pos.left = this.getStrWidth(lineObj.text, 0, pos.startIndex) + 'px';
+					pos.top = (this.folder.getRelativeLine(pos.line) - 1) * this.charObj.charHight + 'px';
 
 					lineObj = this.myContext.htmls[this.bracketMatch.end.line - 1];
 					pos = this.bracketMatch.end;
-					this.bracketMatch.end.width = this.getStrWidth(lineObj.text, pos.startIndex, pos.endIndex) + 'px';
-					this.bracketMatch.end.left = this.getStrWidth(lineObj.text, 0, pos.startIndex) + 'px';
+					pos.width = this.getStrWidth(lineObj.text, pos.startIndex, pos.endIndex) + 'px';
+					pos.left = this.getStrWidth(lineObj.text, 0, pos.startIndex) + 'px';
+					pos.top = (this.folder.getRelativeLine(pos.line) - 1) * this.charObj.charHight + 'px';
 				}
 			});
 		},
@@ -1392,12 +1402,12 @@ export default {
 			}
 			let html = lineObj.html;
 			if (!html) {
-				if (lineObj.tokens && lineObj.tokens.length) {
-					lineObj.tokens = this.tokenizer.splitLongToken(lineObj.tokens);
-					lineObj.html = this.tokenizer.createHtml(lineObj.tokens, lineObj.text);
-					html = lineObj.html;
-				} else {
-					html = Util.htmlTrans(lineObj.text).replace(/\t/g, this.space);
+				let tokens = lineObj.tokens || [{ startIndex: 0, endIndex: lineObj.text.length, scopes: ['plain'] }];
+				tokens = this.tokenizer.splitLongToken(tokens);
+				html = this.tokenizer.createHtml(tokens, lineObj.text);
+				if (lineObj.tokens) {
+					lineObj.tokens = tokens;
+					lineObj.html = html;
 				}
 			}
 			return {

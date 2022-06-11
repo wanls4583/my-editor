@@ -78,7 +78,7 @@ function render() {
 	} catch (e) {
 		console.log(e);
 	}
-	setTimeout(() => {
+	requestAnimationFrame(() => {
 		render();
 	}, 15);
 }
