@@ -731,6 +731,7 @@ export default {
 				let lineObj = this.myContext.htmls[renderObj.num - 1];
 				if (lineObj && lineObj.lineId === lineId) {
 					Object.assign(renderObj, this.getRenderObj(lineObj, renderObj.num));
+					this.$set(this.renderObjs, renderObj.index, renderObj);
 					this.renderSelectionToken(renderObj.num);
 					this.renderError(renderObj.num);
 				}
