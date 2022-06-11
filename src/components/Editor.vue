@@ -1199,16 +1199,10 @@ export default {
 			let originLine = line || this.folder.getRelativeLine(this.nowCursorPos.line);
 			let originColumn = this.nowCursorPos.column;
 			let count = 0; // 累计滚动距离
-			this.moveTask = globalData.scheduler.addTask(
-				() => {
-					_run(autoDirect, speed);
-				},
-				{
-					delay: 16,
-					loop: true,
-					level: Enum.TASK.UI,
-				}
-			);
+			globalData.scheduler.removeUiTask(this.moveTask);
+			this.moveTask = globalData.scheduler.addUiTask(() => {
+				_run(autoDirect, speed);
+			});
 
 			function _run(autoDirect, speed) {
 				let line = originLine;
@@ -1699,7 +1693,6 @@ export default {
 				let line = Math.ceil((this.scrollTop + e.clientY - offset.top) / this.charObj.charHight);
 				line = line < 1 ? 1 : line;
 				line = line > this.maxLine ? this.maxLine : line;
-				globalData.scheduler.removeTask(this.moveTask);
 				if (e.clientY > offset.top + this.scrollerArea.height) {
 					//鼠标超出底部区域
 					this.moveSelection('down', e.clientY - offset.top - this.scrollerArea.height);
@@ -1729,7 +1722,8 @@ export default {
 		// 鼠标抬起事件
 		onDocumentMouseUp(e) {
 			// 停止滚动选中
-			globalData.scheduler.removeTask(this.moveTask);
+			globalData.scheduler.removeUiTask(this.moveTask);
+			this.moveTask = null;
 			this.mouseStartObj = null;
 			this.diffBottomSashMouseObj = null;
 			this.mouseUpTime = Date.now();
@@ -1744,22 +1738,15 @@ export default {
 			this.$refs.hScrollBar.scrollLeft = this.scrollLeft + e.deltaX;
 			this.scrollDeltaY = e.deltaY;
 			if (this.scrollDeltaY && !this.scrollTask) {
-				this.scrollTask = globalData.scheduler.addTask(
-					() => {
-						if (this.scrollDeltaY) {
-							this.setStartLine(this.scrollTop + this.scrollDeltaY);
-							this.scrollDeltaY = 0;
-						} else {
-							globalData.scheduler.removeTask(this.scrollTask);
-							this.scrollTask = null;
-						}
-					},
-					{
-						delay: 16,
-						loop: true,
-						level: Enum.TASK.UI,
+				this.scrollTask = globalData.scheduler.addUiTask(() => {
+					if (this.scrollDeltaY) {
+						this.setStartLine(this.scrollTop + this.scrollDeltaY);
+						this.scrollDeltaY = 0;
+					} else {
+						globalData.scheduler.removeUiTask(this.scrollTask);
+						this.scrollTask = null;
 					}
-				);
+				});
 			}
 		},
 		onScroll() {

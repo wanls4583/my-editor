@@ -244,6 +244,9 @@ export default class {
 					break;
 				}
 			}
+			if (startLine - originStartLine > 1000) {
+				break;
+			}
 			startLine++;
 		}
 		if (originStartLine === this.currentLine) {

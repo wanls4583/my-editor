@@ -1,13 +1,44 @@
 export default class {
 	constructor() {
 		this.taskId = 1;
+		this.uiTaskId = 1;
 		this.queue = [];
+		this.uiQueue = [];
+		this.frameTime = 15;
 		this.channel = new MessageChannel();
 		this.channel.port2.onmessage = e => {
 			if (e.data === 'run') {
 				this.run();
 			}
 		};
+		this.uiRun();
+	}
+	addUiTask(task) {
+		let taskId = this.uiTaskId++;
+		task = {
+			__id__: taskId,
+			__task__: task,
+		};
+		this.uiQueue.push(task);
+		return taskId;
+	}
+	removeUiTask(taskId) {
+		this.uiQueue = this.uiQueue.filter(task => {
+			return task.__id__ !== taskId;
+		});
+	}
+	uiRun() {
+		this.uiQueue.forEach(task => {
+			task.__task__();
+		});
+		this.uiTimestamp = Date.now();
+		setTimeout(() => {
+			this.uiRun();
+		}, this.frameTime);
+		if (this.pending) {
+			this.pending = false;
+			this.channel.port1.postMessage('run');
+		}
 	}
 	addTask(task, { level = 1, delay = 0, loop = false } = {}) {
 		let taskId = this.taskId++;
@@ -39,19 +70,37 @@ export default class {
 		});
 	}
 	run() {
-		const timestamp = Date.now();
-		for (let i = 0; i < this.queue.length; i++) {
+		let timestamp = Date.now();
+		let minGap = Infinity;
+		let done = false;
+		if (timestamp - this.uiTimestamp >= this.frameTime) {
+			this.pending = true;
+			return;
+		}
+		for (var i = 0; i < this.queue.length; i++) {
 			let task = this.queue[i];
-			if (timestamp - task.__time__ >= task.delay) {
+			let timeGap = timestamp - task.__time__;
+			if (!done && timeGap >= task.delay) {
 				if (task.loop) {
 					task.__time__ = timestamp;
+					minGap = Math.min(minGap, task.delay);
 				} else {
-					this.removeTask(task.__id__);
+					this.queue.splice(i, 1);
+					i--;
 				}
 				task.__task__();
-				break;
+			} else {
+				minGap = Math.min(minGap, timeGap);
 			}
 		}
-		this.queue.length && this.channel.port1.postMessage('run');
+		if (this.queue.length) {
+			if (minGap > 4) {
+				setTimeout(() => {
+					this.run();
+				}, 0);
+			} else {
+				this.channel.port1.postMessage('run');
+			}
+		}
 	}
 }
