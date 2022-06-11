@@ -230,27 +230,20 @@ export default {
 				this.startBlockMouseObj = e;
 				this.moevScrollTop = top * (maxScrollTop1 / maxScrollTop2);
 				if (this.moevScrollTop && !this.moveTask) {
-					this.moveTask = globalData.scheduler.addTask(
-						() => {
-							if (this.moevScrollTop >= 0) {
-								this.$parent.setStartLine(this.moevScrollTop);
-								this.moevScrollTop = -1;
-							} else {
-								globalData.scheduler.removeTask(this.moveTask);
-								this.moveTask = null;
-							}
-						},
-						{
-							delay: 16,
-							loop: true,
-							level: globalData.enum.TASK.UI,
+					this.moveTask = globalData.scheduler.addUiTask(() => {
+						if (this.moevScrollTop >= 0) {
+							this.$parent.setStartLine(this.moevScrollTop);
+							this.moevScrollTop = -1;
+						} else {
+							globalData.scheduler.removeUiTask(this.moveTask);
+							this.moveTask = null;
 						}
-					);
+					});
 				}
 			}
 		},
 		onDocumentMouseUp(e) {
-			globalData.scheduler.removeTask(this.moveTask);
+			globalData.scheduler.removeUiTask(this.moveTask);
 			this.startBlockMouseObj = null;
 			this.moveTask = null;
 		},
