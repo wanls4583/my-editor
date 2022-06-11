@@ -1760,7 +1760,7 @@ export default {
 			this.toScrollTop = e.target.scrollTop;
 			if (this.vBarScrollClicked && this.toScrollTop && !this.scrollTask) {
 				this.scrollTask = globalData.scheduler.addUiTask(() => {
-					if (this.toScrollTop) {
+					if (this.toScrollTop && this.vBarScrollClicked) {
 						this.setStartLine(this.toScrollTop);
 						this.toScrollTop = 0;
 					} else {

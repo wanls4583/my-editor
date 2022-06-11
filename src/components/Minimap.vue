@@ -231,7 +231,7 @@ export default {
 				this.moevScrollTop = top * (maxScrollTop1 / maxScrollTop2);
 				if (this.moevScrollTop && !this.moveTask) {
 					this.moveTask = globalData.scheduler.addUiTask(() => {
-						if (this.moevScrollTop >= 0) {
+						if (this.moevScrollTop >= 0 && this.moevScrollTop !== this.scrollTop) {
 							this.$parent.setStartLine(this.moevScrollTop);
 							this.moevScrollTop = -1;
 						} else {
