@@ -65,14 +65,18 @@ function drawLines(lines) {
 
 // 定时更新
 function render() {
-	if (lines) {
-		drawLines(lines);
-		lines = null;
-	} else {
-		for (let key in singleLines) {
-			drawLine(singleLines[key]);
+	try {
+		if (lines) {
+			drawLines(lines);
+			lines = null;
+		} else {
+			for (let key in singleLines) {
+				drawLine(singleLines[key]);
+			}
+			singleLines = {};
 		}
-		singleLines = {};
+	} catch (e) {
+		console.log(e);
 	}
 	setTimeout(() => {
 		render();

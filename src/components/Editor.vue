@@ -1734,6 +1734,11 @@ export default {
 		onDiffBottomSashBegin(e) {
 			this.diffBottomSashMouseObj = e;
 		},
+		onScroll() {
+			this.$refs.numScroller.scrollTop = 0;
+			this.$refs.scroller.scrollTop = 0;
+			this.$refs.scroller.scrollLeft = 0;
+		},
 		// 滚动滚轮
 		onWheel(e) {
 			this.$refs.hScrollBar.scrollLeft = this.scrollLeft + e.deltaX;
@@ -1741,7 +1746,11 @@ export default {
 			if (this.scrollDeltaY && !this.wheelTask) {
 				this.wheelTask = globalData.scheduler.addUiTask(() => {
 					if (this.scrollDeltaY) {
-						this.setStartLine(this.scrollTop + this.scrollDeltaY);
+						try {
+							this.setStartLine(this.scrollTop + this.scrollDeltaY);
+						} catch (e) {
+							console.log(e);
+						}
 						this.scrollDeltaY = 0;
 					} else {
 						globalData.scheduler.removeUiTask(this.wheelTask);
@@ -1750,18 +1759,17 @@ export default {
 				});
 			}
 		},
-		onScroll() {
-			this.$refs.numScroller.scrollTop = 0;
-			this.$refs.scroller.scrollTop = 0;
-			this.$refs.scroller.scrollLeft = 0;
-		},
 		// 右侧滚动条滚动事件
 		onVBarScroll(e) {
 			this.toScrollTop = e.target.scrollTop;
 			if (this.vBarScrollClicked && this.toScrollTop && !this.scrollTask) {
 				this.scrollTask = globalData.scheduler.addUiTask(() => {
 					if (this.toScrollTop && this.vBarScrollClicked) {
-						this.setStartLine(this.toScrollTop);
+						try {
+							this.setStartLine(this.toScrollTop);
+						} catch (e) {
+							console.log(e);
+						}
 						this.toScrollTop = 0;
 					} else {
 						globalData.scheduler.removeUiTask(this.scrollTask);
