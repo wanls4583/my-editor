@@ -186,14 +186,14 @@ export default class {
 			let endLine = this.startLine + this.maxVisibleLines;
 			endLine = this.folder.getRealLine(endLine);
 			// 先渲染可视范围内的行
-			this.asyncTokenizeLines(startLine, endLine).then(() => {
+			this.tokenizeLines(startLine, endLine, () => {
 				// 考虑到当前行可能处于内嵌语法中，渲染前2000行
 				startLine = this.startLine - 2000;
 				startLine = startLine < 1 ? 1 : startLine;
 				// 考虑到minimap渲染的行数，这里乘以10
 				endLine = this.folder.getRealLine(endLine + this.maxVisibleLines * 10);
 				if (startLine > this.currentLine) {
-					this.asyncTokenizeLines(startLine, endLine).then(() => {
+					this.tokenizeLines(startLine, endLine, () => {
 						this.tokenizeLines(this.currentLine);
 					});
 				} else {
@@ -202,12 +202,7 @@ export default class {
 			});
 		});
 	}
-	asyncTokenizeLines(startLine, endLine) {
-		return new Promise(resolve => {
-			this.tokenizeLines(startLine, endLine, resolve);
-		});
-	}
-	tokenizeLines(startLine, endLine, resolve) {
+	tokenizeLines(startLine, endLine, callback) {
 		let limit = 5;
 		let processedLines = 0;
 		let originStartLine = startLine;
@@ -219,7 +214,7 @@ export default class {
 		if (this.scopeName && !this.grammar) {
 			// 这里不用scheduler，否则将有可能导致parseRawGrammar失败
 			this.tokenizeLinesTimer = requestIdleCallback(() => {
-				this.tokenizeLines(startLine, endLine, resolve);
+				this.tokenizeLines(startLine, endLine, callback);
 			});
 			return;
 		}
@@ -257,10 +252,10 @@ export default class {
 		}
 		if (startLine <= endLine) {
 			this.tokenizeLinesTask = globalData.scheduler.addTask(() => {
-				this.tokenizeLines(startLine, endLine, resolve);
+				this.tokenizeLines(startLine, endLine, callback);
 			});
-		} else if (resolve) {
-			resolve();
+		} else if (callback) {
+			callback();
 		}
 	}
 	tokenizeLine(line) {
