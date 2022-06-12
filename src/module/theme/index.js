@@ -184,9 +184,17 @@ export default class {
 					return;
 				}
 				let selector = [];
+				let style = '';
+				let settingsStr = '';
 				let scope = token.scope instanceof Array ? token.scope.join(',') : token.scope;
 				scope = scope.replace(/\s+/g, ' ');
 				scope = scope.split(/\s*\,\s*/);
+				for (let prop in token.settings) {
+					style += `${settingMap[prop]}:${token.settings[prop]};\n`;
+					if (token.settings[prop]) {
+						settingsStr += `${prop}:${token.settings[prop]};`;
+					}
+				}
 				scope.forEach((scope, index) => {
 					selector.push(`.my-scope-${scopeId}`);
 					scopeTokenList.push({
@@ -195,15 +203,11 @@ export default class {
 						scopes: scope.split(' '),
 						level: _getLevel(scope),
 						settings: token.settings,
+						settingsStr: settingsStr,
 					});
 					scopeId++;
 				});
-				selector = selector.join(',');
-				css += `${selector}{\n`;
-				for (let prop in token.settings) {
-					css += `${settingMap[prop]}:${token.settings[prop]};\n`;
-				}
-				css += '}\n';
+				css += `${selector.join(',')}{\n${style}\n}`;
 			});
 		}
 		scopeTokenList.sort((a, b) => {

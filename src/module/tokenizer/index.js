@@ -66,6 +66,7 @@ export default class {
 		this.grammar = null;
 		this.foldType = 1;
 		this.sourceFoldMap = {};
+		this.scopeMap = {};
 		this.hasTextGrammar = false;
 		this.currentLine = 1;
 		language = Util.getLanguageById(globalData.languageList, language);
@@ -75,6 +76,7 @@ export default class {
 				let grammarData = globalData.grammars[this.scopeName];
 				this.grammar = grammarData.grammar;
 				this.sourceFoldMap = grammarData.sourceFoldMap;
+				this.scopeMap = grammarData.scopeIdMap;
 				this.hasTextGrammar = grammarData.hasTextGrammar;
 			} else {
 				return this.registry.loadGrammar(this.scopeName).then(grammar => {
@@ -82,6 +84,7 @@ export default class {
 					globalData.grammars[this.scopeName] = {
 						grammar: grammar,
 						sourceFoldMap: this.sourceFoldMap,
+						scopeIdMap: this.scopeMap,
 						hasTextGrammar: this.hasTextGrammar,
 					};
 					this.tokenizeVisibleLins();
@@ -310,10 +313,10 @@ export default class {
 			} else {
 				scopeId = this.getScopeId(item);
 				selector = (scopeId && `my-scope-${scopeId}`) || '';
-				if (preToken && scopeId && _compair(preToken.scopeId, scopeId) && item.endIndex - preToken.startIndex < 100) {
-					preToken.endIndex = item.endIndex;
-					continue;
-				}
+			}
+			if (preToken && _compair(preToken.scopeId, scopeId) && item.endIndex - preToken.startIndex < 100) {
+				preToken.endIndex = item.endIndex;
+				continue;
 			}
 			preToken = {
 				scopeId: scopeId,
@@ -334,15 +337,9 @@ export default class {
 		function _compair(scope1, scope2) {
 			scope1 = globalData.scopeIdMap[scope1];
 			scope2 = globalData.scopeIdMap[scope2];
-			if (scope1 && scope2 && Object.keys(scope1.settings).length === Object.keys(scope2.settings).length) {
-				for (let key in scope1.settings) {
-					if (scope1.settings[key] !== scope2.settings[key]) {
-						return false;
-					}
-				}
-				return true;
-			}
-			return false;
+			scope1 = (scope1 && scope1.settingsStr) || '';
+			scope2 = (scope2 && scope2.settingsStr) || '';
+			return scope1 === scope2;
 		}
 	}
 	getScopeId(token) {
@@ -354,6 +351,14 @@ export default class {
 		token.scope = scopes.join(' ');
 		outerLoop: for (let i = scopes.length - 1; i >= 0; i--) {
 			let scope = scopes[i];
+			if (scope in this.scopeMap) {
+				if (this.scopeMap[scope]) {
+					result = this.scopeMap[scope];
+					break;
+				} else {
+					continue;
+				}
+			}
 			for (let i = 0; i < globalData.scopeTokenList.length; i++) {
 				let item = globalData.scopeTokenList[i];
 				let _scope = item.scopes.peek();
@@ -361,9 +366,11 @@ export default class {
 					if (item.regexp.test(token.scope)) {
 						result = item.scopeId;
 						token.scopeId = item.scopeId;
+						this.scopeMap[scope] = item.scopeId;
 						break outerLoop;
 					}
 				}
+				this.scopeMap[scope] = null;
 			}
 		}
 		return result;
