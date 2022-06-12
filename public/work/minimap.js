@@ -13,7 +13,7 @@ function drawLine({ top, lineObj }) {
 	let charHight = dataObj.charHight;
 	let marginLeft = 20 * dataObj.scale;
 	ctx.clearRect(0, top, dataObj.width, charHight);
-	if (compairCache(cache, lineObj)) {
+	if (compairCache(cache, lineObj.text, lineObj.preRuleId)) {
 		ctx.drawImage(cache.canvas, marginLeft, top);
 	} else {
 		let offscreen = new OffscreenCanvas(dataObj.width, charHight);
@@ -62,8 +62,8 @@ function drawLines(lines) {
 	cacheCanvas();
 }
 
-function compairCache(cache, lineObj) {
-	if (cache && cache.text === lineObj.text && cache.preRuleId === lineObj.preRuleId) {
+function compairCache(cache, text, preRuleId) {
+	if (cache && cache.text === text && cache.preRuleId === preRuleId) {
 		return true;
 	}
 }

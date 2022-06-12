@@ -365,14 +365,14 @@ export default class {
 				if (scope.indexOf(_scope) > -1) {
 					if (item.regexp.test(token.scope)) {
 						result = item.scopeId;
-						token.scopeId = item.scopeId;
-						this.scopeMap[scope] = item.scopeId;
+						this.scopeMap[scope] = result;
 						break outerLoop;
 					}
 				}
 				this.scopeMap[scope] = null;
 			}
 		}
+		token.scopeId = result;
 		return result;
 	}
 	addFold(line, tokens, folds) {

@@ -196,6 +196,11 @@ export default {
 			let lineObj = this.$parent.myContext.htmls[line - 1];
 			let preLineObj = this.$parent.myContext.htmls[line - 2];
 			let preRuleId = (preLineObj && preLineObj.states && preLineObj.states.ruleId) || null;
+			if (!lineObj.html && lineObj.tokens) {
+				lineObj.tokens.forEach((token) => {
+					this.$parent.tokenizer.getScopeId(token);
+				});
+			}
 			return {
 				top,
 				lineObj: {
