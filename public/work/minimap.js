@@ -10,12 +10,10 @@ let singleLines = {};
 function drawLine({ top, lineObj }) {
 	let cache = cacheMap[lineObj.lineId];
 	let tokens = lineObj.tokens;
-	let html = '';
 	let charHight = dataObj.charHight;
 	let marginLeft = 20 * dataObj.scale;
 	ctx.clearRect(0, top, dataObj.width, charHight);
-	html = lineObj.html || lineObj.text;
-	if (cache && cache.html === html) {
+	if (compairCache(cache, lineObj)) {
 		ctx.drawImage(cache.canvas, marginLeft, top);
 	} else {
 		let offscreen = new OffscreenCanvas(dataObj.width, charHight);
@@ -49,7 +47,8 @@ function drawLine({ top, lineObj }) {
 		offscreen = offscreen.transferToImageBitmap();
 		ctx.drawImage(offscreen, marginLeft, top);
 		cacheMap[lineObj.lineId] = {
-			html: html,
+			text: lineObj.text,
+			preRuleId: lineObj.preRuleId,
 			canvas: offscreen,
 		};
 	}
@@ -61,6 +60,12 @@ function drawLines(lines) {
 		this.drawLine(line);
 	});
 	cacheCanvas();
+}
+
+function compairCache(cache, lineObj) {
+	if (cache && cache.text === lineObj.text && cache.preRuleId === lineObj.preRuleId) {
+		return true;
+	}
 }
 
 // 定时更新
@@ -78,7 +83,7 @@ function render() {
 	} catch (e) {
 		console.log(e);
 	}
-	requestAnimationFrame(() => {
+	setTimeout(() => {
 		render();
 	}, 15);
 }

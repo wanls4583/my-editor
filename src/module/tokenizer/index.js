@@ -260,6 +260,42 @@ export default class {
 			resolve();
 		}
 	}
+	tokenizeLine(line) {
+		let lineText = this.htmls[line - 1].text;
+		let folds = [];
+		if (lineText.length > 10000 || !this.scopeName || line <= this.diffObj.deletedLength) {
+			return {
+				tokens: [
+					{
+						scopes: ['plain'],
+						startIndex: 0,
+						endIndex: lineText.length,
+					},
+				],
+				folds: [],
+				states: vsctm.INITIAL,
+			};
+		}
+		let states = null;
+		if (this.diffObj.states) {
+			if (line === this.diffObj.deletedLength + 1) {
+				states = this.diffObj.states;
+			} else {
+				states = this.htmls[line - 2].states || vsctm.INITIAL;
+			}
+		} else {
+			states = (this.htmls[line - 2] && this.htmls[line - 2].states) || vsctm.INITIAL;
+		}
+		let lineTokens = this.grammar.tokenizeLine(lineText, states);
+		let stateFold = this.addFold(line, lineTokens.tokens, folds);
+		lineTokens.tokens.peek().endIndex = lineText.length; //某些情况下，会大于lineText.length
+		return {
+			tokens: lineTokens.tokens,
+			states: lineTokens.ruleStack,
+			folds: folds,
+			stateFold: stateFold,
+		};
+	}
 	createHtml(tokens, lineText) {
 		let html = [];
 		let preToken = null;
@@ -331,42 +367,6 @@ export default class {
 			}
 		}
 		return result;
-	}
-	tokenizeLine(line) {
-		let lineText = this.htmls[line - 1].text;
-		let folds = [];
-		if (lineText.length > 10000 || !this.scopeName || line <= this.diffObj.deletedLength) {
-			return {
-				tokens: [
-					{
-						scopes: ['plain'],
-						startIndex: 0,
-						endIndex: lineText.length,
-					},
-				],
-				folds: [],
-				states: vsctm.INITIAL,
-			};
-		}
-		let states = null;
-		if (this.diffObj.states) {
-			if (line === this.diffObj.deletedLength + 1) {
-				states = this.diffObj.states;
-			} else {
-				states = this.htmls[line - 2].states || vsctm.INITIAL;
-			}
-		} else {
-			states = (this.htmls[line - 2] && this.htmls[line - 2].states) || vsctm.INITIAL;
-		}
-		let lineTokens = this.grammar.tokenizeLine(lineText, states);
-		let stateFold = this.addFold(line, lineTokens.tokens, folds);
-		lineTokens.tokens.peek().endIndex = lineText.length; //某些情况下，会大于lineText.length
-		return {
-			tokens: lineTokens.tokens,
-			states: lineTokens.ruleStack,
-			folds: folds,
-			stateFold: stateFold,
-		};
 	}
 	addFold(line, tokens, folds) {
 		let scopeName = '';

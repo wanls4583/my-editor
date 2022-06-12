@@ -155,9 +155,11 @@ export default {
 			for (let line = this.startLine, i = 0; line <= this.$parent.myContext.htmls.length && i < this.maxVisibleLines; i++) {
 				let fold = this.$parent.folder.getFoldByLine(line);
 				let lineObj = this.$parent.myContext.htmls[line - 1];
+				let preLineObj = this.$parent.myContext.htmls[line - 2];
+				let preRuleId = (preLineObj && preLineObj.states && preLineObj.states.ruleId) || null;
 				let cache = this.renderedIdMap[lineObj.lineId];
 				let renderObj = null;
-				if (cache && cache.html === lineObj.html) {
+				if (this.compairCache(cache, lineObj.text, preRuleId)) {
 					renderObj = {
 						top: (line - this.startLine) * this.$parent.charObj.charHight * this.scale,
 						lineId: lineObj.lineId,
@@ -165,7 +167,7 @@ export default {
 				} else {
 					renderObj = this.getRenderObj(line);
 				}
-				renderedIdMap[lineObj.lineId] = { num: line, html: lineObj.html };
+				renderedIdMap[lineObj.lineId] = { num: line, text: lineObj.text, preRuleId };
 				lines.push(renderObj);
 				if (fold) {
 					line = fold.end.line;
@@ -180,28 +182,26 @@ export default {
 			let cache = this.renderedIdMap[lineId];
 			if (cache) {
 				let lineObj = this.$parent.myContext.htmls[cache.num - 1];
+				let preLineObj = this.$parent.myContext.htmls[cache.num - 2];
+				let preRuleId = (preLineObj && preLineObj.states && preLineObj.states.ruleId) || null;
 				if (lineObj && lineObj.lineId === lineId) {
 					let renderObj = this.getRenderObj(cache.num);
 					this.worker.postMessage({ event: 'render-line', data: renderObj });
-					this.renderedIdMap[lineObj.lineId] = { num: cache.nun, html: lineObj.html };
+					this.renderedIdMap[lineObj.lineId] = { num: cache.num, text: lineObj.text, preRuleId };
 				}
 			}
 		},
 		getRenderObj(line) {
 			let top = (line - this.startLine) * this.$parent.charObj.charHight * this.scale;
 			let lineObj = this.$parent.myContext.htmls[line - 1];
-			if (!lineObj.html) {
-				if (lineObj.tokens && lineObj.tokens.length) {
-					lineObj.tokens = this.$parent.tokenizer.splitLongToken(lineObj.tokens);
-					lineObj.html = this.$parent.tokenizer.createHtml(lineObj.tokens, lineObj.text);
-				}
-			}
+			let preLineObj = this.$parent.myContext.htmls[line - 2];
+			let preRuleId = (preLineObj && preLineObj.states && preLineObj.states.ruleId) || null;
 			return {
 				top,
 				lineObj: {
 					lineId: lineObj.lineId,
 					text: lineObj.text,
-					html: lineObj.html,
+					preRuleId: preRuleId,
 					tokens:
 						lineObj.tokens &&
 						lineObj.tokens.map((item) => {
@@ -209,6 +209,11 @@ export default {
 						}),
 				},
 			};
+		},
+		compairCache(cache, text, preRuleId) {
+			if (cache && cache.text === text && cache.preRuleId === preRuleId) {
+				return true;
+			}
 		},
 		onBlockMDown(e) {
 			this.startBlockMouseObj = e;
