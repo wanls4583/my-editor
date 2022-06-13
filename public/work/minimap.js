@@ -6,6 +6,7 @@ let ctx = null;
 let canvas = null;
 let lines = null;
 let singleLines = {};
+let emptyPixl = [0, 0, 0, 0];
 
 function drawLine({ top, lineObj }) {
 	let cache = cacheMap[lineObj.lineId];
@@ -14,58 +15,86 @@ function drawLine({ top, lineObj }) {
 	let marginLeft = 20 * dataObj.scale;
 	ctx.clearRect(0, top, dataObj.width, charHight);
 	if (compairCache(cache, lineObj.text, lineObj.preRuleId)) {
-		ctx.drawImage(cache.canvas, marginLeft, top);
+		ctx.putImageData(cache.imgData, marginLeft, top);
 	} else {
-		let offscreen = new OffscreenCanvas(dataObj.width, charHight);
-		let offCtx = offscreen.getContext('2d');
-		offCtx.font = `bold ${16 * dataObj.scale}px Consolas`;
-		offCtx.textBaseline = 'middle';
+		let imgData = null;
+		let dataWidth = dataObj.width * 4;
+		let color = getRgb(dataObj.colors['editor.foreground']);
+		let buffers = new Array(charHight).fill(0);
+		buffers = buffers.map(() => {
+			let line = new Array(dataWidth).fill(0);
+			line.index = 0;
+			return line;
+		});
 		if (tokens) {
-			let left = marginLeft;
 			for (let i = 0; i < tokens.length; i++) {
 				let token = tokens[i];
 				let text = lineObj.text.slice(token.startIndex, token.endIndex);
 				text = getDrawText(text);
-				setFillStyle(offCtx, dataObj.colors['editor.foreground']);
+				color = getRgb(dataObj.colors['editor.foreground']);
 				if (token.scopeId) {
 					let scope = dataObj.scopeIdMap[token.scopeId];
 					if (scope.settings && scope.settings.foreground) {
-						setFillStyle(offCtx, scope.settings.foreground);
+						color = getRgb(scope.settings.foreground);
 					}
 				}
-				offCtx.fillText(text, left, charHight / 2);
-				left += offCtx.measureText(text).width;
+				_pushImgData(buffers, text, color);
 				// 退出无效渲染
-				if (left > dataObj.width) {
+				if (buffers[0].index >= dataWidth - 1) {
 					break;
 				}
 			}
 		} else {
-			setFillStyle(offCtx, dataObj.colors['editor.foreground']);
-			offCtx.fillText(getDrawText(lineObj.text), marginLeft, charHight / 2);
+			_pushImgData(buffers, getDrawText(lineObj.text), color);
 		}
-		offscreen = offscreen.transferToImageBitmap();
-		ctx.drawImage(offscreen, marginLeft, top);
+		imgData = new ImageData(Uint8ClampedArray.from(buffers.flat()), dataObj.width, dataObj.charHight);
+		ctx.putImageData(imgData, marginLeft, top);
 		cacheMap[lineObj.lineId] = {
 			text: lineObj.text,
 			preRuleId: lineObj.preRuleId,
-			canvas: offscreen,
+			imgData: imgData,
 		};
+	}
+
+	function _pushImgData(buffers, text, color) {
+		let dataWidth = dataObj.width * 4;
+		for (let i = 0; i < text.length; i++) {
+			if (text[i] != ' ') {
+				let imgData = getCharImgData(text[i], color);
+				for (let h = 0; h < imgData.height; h++) {
+					for (let w = 0; w < imgData.width; w++) {
+						let pixl = imgData[h][w];
+						let buffer = buffers[h];
+						if (buffer.index <= dataWidth - 4) {
+							buffer[buffer.index] = pixl[0];
+							buffer[buffer.index + 1] = pixl[1];
+							buffer[buffer.index + 2] = pixl[2];
+							buffer[buffer.index + 3] = pixl[3];
+							buffer.index += 4;
+						}
+					}
+				}
+			} else {
+				// 空格占一个像素点
+				buffers.forEach(buffer => {
+					buffer.index += 4;
+				});
+			}
+			if (buffers[0].index >= dataWidth - 1) {
+				break;
+			}
+		}
 	}
 }
 
 function drawLines(lines) {
+	console.time();
 	ctx.clearRect(0, 0, dataObj.width, dataObj.height);
 	lines.forEach(line => {
 		this.drawLine(line);
 	});
 	cacheCanvas();
-}
-
-function compairCache(cache, text, preRuleId) {
-	if (cache && cache.text === text && cache.preRuleId === preRuleId) {
-		return true;
-	}
+	console.timeEnd();
 }
 
 // 定时更新
@@ -88,21 +117,6 @@ function render() {
 	}, 15);
 }
 
-function setFillStyle(ctx, fillStyle) {
-	if (ctx.fillStyle !== fillStyle) {
-		ctx.fillStyle = fillStyle;
-	}
-}
-
-function getLineObj({ lineId, lineObj }) {
-	if (lineId) {
-		lineObj = renderedIdMap[lineId].lineObj;
-	} else {
-		renderedIdMap[lineObj.lineId] = lineObj;
-	}
-	return lineObj;
-}
-
 function cacheLineObj(item) {
 	if (item) {
 		renderedIdMap[item.lineObj.lineId] = item;
@@ -122,6 +136,12 @@ function cacheCanvas() {
 	cacheMap = obj;
 }
 
+function compairCache(cache, text, preRuleId) {
+	if (cache && cache.text === text && cache.preRuleId === preRuleId) {
+		return true;
+	}
+}
+
 function setData(data) {
 	let originDataObj = Object.assign({}, data);
 	Object.assign(dataObj, data);
@@ -136,9 +156,87 @@ function setData(data) {
 	}
 }
 
+function setFillStyle(ctx, fillStyle) {
+	if (ctx.fillStyle !== fillStyle) {
+		ctx.fillStyle = fillStyle;
+	}
+}
+
+function getLineObj({ lineId, lineObj }) {
+	if (lineId) {
+		lineObj = renderedIdMap[lineId].lineObj;
+	} else {
+		renderedIdMap[lineObj.lineId] = lineObj;
+	}
+	return lineObj;
+}
+
 function getDrawText(text) {
 	text = text.replace(/\t/g, '    ');
 	return text;
+}
+
+function getCharImgData(char, rgb) {
+	let data = getCharImgData[char];
+	if (!getCharImgData[char]) {
+		let offscreen = new OffscreenCanvas(dataObj.charHight, dataObj.charHight);
+		let offCtx = offscreen.getContext('2d');
+		let width = 1;
+		offCtx.font = `bold ${dataObj.charHight}px Consolas`;
+		offCtx.textBaseline = 'top';
+		offCtx.fillText(char, 0, 0);
+		data = offCtx.getImageData(0, 0, offscreen.width, offscreen.height).data;
+		// 获取字符真实宽度
+		// for (let h = 0; h < dataObj.charHight; h++) {
+		// 	for (let w = 0; w < dataObj.charHight; w++) {
+		// 		let index = (h * dataObj.charHight + w) * 4;
+		// 		if (data[index + 3] !== 0) {
+		// 			width = Math.max(width, w + 1);
+		// 		}
+		// 	}
+		// }
+		// 截取字符像素
+		let arr = [];
+		for (let h = 0; h < dataObj.charHight; h++) {
+			let line = new Array(width).fill(0).map(() => {
+				return [0, 0, 0, 0];
+			});
+			for (let w = 0; w < width; w++) {
+				let index = (h * dataObj.charHight + w) * 4;
+				if (data[index + 3] !== 0) {
+					// 增加40%的不透明度
+					data[index + 3] += Math.floor(255 * 0.4);
+					data[index + 3] = data[index + 3] > 255 ? 255 : data[index + 3];
+					line[w] = [...data.slice(index, index + 4)];
+				}
+			}
+			arr.push(line);
+		}
+		data = arr;
+		data.width = width;
+		data.height = dataObj.charHight;
+		getCharImgData[char] = data;
+	}
+	for (let h = 0; h < data.height; h++) {
+		for (let w = 0; w < data.width; w++) {
+			let pixl = data[h][w];
+			pixl[0] = rgb[0];
+			pixl[1] = rgb[1];
+			pixl[2] = rgb[2];
+		}
+	}
+	return data;
+}
+
+function getRgb(color) {
+	if (!getRgb[color]) {
+		let rgb = [];
+		for (let i = 1, c = 0; i <= color.length - 2 && c < 3; i += 2, c++) {
+			rgb.push(Number('0x' + color[i] + color[i + 1]));
+		}
+		getRgb[color] = rgb;
+	}
+	return getRgb[color];
 }
 
 render();
