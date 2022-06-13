@@ -8,29 +8,35 @@ let lines = null;
 let singleLines = {};
 let emptyPixl = [0, 0, 0, 0];
 
-function drawLine({ top, lineObj }, refresh) {
+function drawLine({ top, lineObj }, targetImaData) {
 	let cache = cacheMap[lineObj.lineId];
 	let tokens = lineObj.tokens;
 	let marginLeft = 20 * dataObj.scale;
-	if (!compairCache(cache, lineObj.text, lineObj.preRuleId)) {
+	if (compairCache(cache, lineObj.text, lineObj.preRuleId)) {
+		if (targetImaData) {
+			for (let i = 0; i < cache.imgData.data.length; i++) {
+				targetImaData.data[targetImaData.index++] = cache.imgData.data[i];
+			}
+		}
+	} else {
 		cacheMap[lineObj.lineId] = {
 			text: lineObj.text,
 			preRuleId: lineObj.preRuleId,
 			imgData: _createImageData(),
 		};
 	}
-	imgData = cacheMap[lineObj.lineId].imgData;
-	if (!refresh) {
+	if (!targetImaData) {
+		let imgData = cacheMap[lineObj.lineId].imgData;
 		ctx.clearRect(0, top, dataObj.width, dataObj.charHight);
 		ctx.putImageData(imgData, marginLeft, top);
 	}
-	return imgData;
 
 	function _createImageData() {
 		let dataWidth = dataObj.width * 4;
 		let color = getRgb(dataObj.colors['editor.foreground']);
 		let buffers = new Array(dataObj.charHight).fill(0);
 		let buffer = [];
+		let imgData = new ImageData(dataObj.width, dataObj.charHight);
 		buffers = buffers.map(() => {
 			let line = new Array(dataWidth).fill(0);
 			line.index = 0;
@@ -62,7 +68,13 @@ function drawLine({ top, lineObj }, refresh) {
 		buffers.forEach(buf => {
 			buffer = buffer.concat(buf);
 		});
-		return new ImageData(Uint8ClampedArray.from(buffer), dataObj.width, dataObj.charHight);
+		for (let i = 0; i < imgData.data.length; i++) {
+			imgData.data[i] = buffer[i];
+			if (targetImaData) {
+				targetImaData.data[targetImaData.index++] = imgData.data[i];
+			}
+		}
+		return imgData;
 	}
 
 	function _pushImgData(buffers, text, color) {
@@ -97,13 +109,15 @@ function drawLine({ top, lineObj }, refresh) {
 }
 
 function drawLines(lines) {
-	console.time();
+	let marginLeft = 20 * dataObj.scale;
+	let imgData = new ImageData(dataObj.width, dataObj.height);
+	imgData.index = 0;
 	ctx.clearRect(0, 0, dataObj.width, dataObj.height);
 	lines.forEach(line => {
-		this.drawLine(line);
+		this.drawLine(line, imgData);
 	});
+	ctx.putImageData(imgData, marginLeft, 0);
 	cacheCanvas();
-	console.timeEnd();
 }
 
 // 定时更新
