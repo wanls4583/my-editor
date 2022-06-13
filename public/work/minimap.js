@@ -8,25 +8,37 @@ let lines = null;
 let singleLines = {};
 let emptyPixl = [0, 0, 0, 0];
 
-function drawLine({ top, lineObj }) {
+function drawLine({ top, lineObj }, refresh) {
 	let cache = cacheMap[lineObj.lineId];
 	let tokens = lineObj.tokens;
-	let charHight = dataObj.charHight;
 	let marginLeft = 20 * dataObj.scale;
-	ctx.clearRect(0, top, dataObj.width, charHight);
-	if (compairCache(cache, lineObj.text, lineObj.preRuleId)) {
-		ctx.putImageData(cache.imgData, marginLeft, top);
-	} else {
-		let imgData = null;
+	if (!compairCache(cache, lineObj.text, lineObj.preRuleId)) {
+		cacheMap[lineObj.lineId] = {
+			text: lineObj.text,
+			preRuleId: lineObj.preRuleId,
+			imgData: _createImageData(),
+		};
+	}
+	imgData = cacheMap[lineObj.lineId].imgData;
+	if (!refresh) {
+		ctx.clearRect(0, top, dataObj.width, dataObj.charHight);
+		ctx.putImageData(imgData, marginLeft, top);
+	}
+	return imgData;
+
+	function _createImageData() {
 		let dataWidth = dataObj.width * 4;
 		let color = getRgb(dataObj.colors['editor.foreground']);
-		let buffers = new Array(charHight).fill(0);
+		let buffers = new Array(dataObj.charHight).fill(0);
+		let buffer = [];
 		buffers = buffers.map(() => {
 			let line = new Array(dataWidth).fill(0);
 			line.index = 0;
 			return line;
 		});
 		if (tokens) {
+			// 减少token数量
+			tokens = getDrawTokens(tokens);
 			for (let i = 0; i < tokens.length; i++) {
 				let token = tokens[i];
 				let text = lineObj.text.slice(token.startIndex, token.endIndex);
@@ -34,7 +46,7 @@ function drawLine({ top, lineObj }) {
 				color = getRgb(dataObj.colors['editor.foreground']);
 				if (token.scopeId) {
 					let scope = dataObj.scopeIdMap[token.scopeId];
-					if (scope.settings && scope.settings.foreground) {
+					if (scope && scope.settings && scope.settings.foreground) {
 						color = getRgb(scope.settings.foreground);
 					}
 				}
@@ -47,13 +59,10 @@ function drawLine({ top, lineObj }) {
 		} else {
 			_pushImgData(buffers, getDrawText(lineObj.text), color);
 		}
-		imgData = new ImageData(Uint8ClampedArray.from(buffers.flat()), dataObj.width, dataObj.charHight);
-		ctx.putImageData(imgData, marginLeft, top);
-		cacheMap[lineObj.lineId] = {
-			text: lineObj.text,
-			preRuleId: lineObj.preRuleId,
-			imgData: imgData,
-		};
+		buffers.forEach(buf => {
+			buffer = buffer.concat(buf);
+		});
+		return new ImageData(Uint8ClampedArray.from(buffer), dataObj.width, dataObj.charHight);
 	}
 
 	function _pushImgData(buffers, text, color) {
@@ -149,8 +158,10 @@ function setData(data) {
 	canvas.height = dataObj.height || canvas.height;
 	for (let key in dataObj) {
 		if (originDataObj[key] !== dataObj[key]) {
-			// 清空缓存
+			// 清空数据
 			cacheMap = {};
+			lines = null;
+			singleLines = {};
 			break;
 		}
 	}
@@ -174,6 +185,34 @@ function getLineObj({ lineId, lineObj }) {
 function getDrawText(text) {
 	text = text.replace(/\t/g, '    ');
 	return text;
+}
+
+function getDrawTokens(tokens) {
+	let htmlTokens = [];
+	let preToken = null;
+	for (let i = 0; i < tokens.length; i++) {
+		let item = tokens[i];
+		let scopeId = item.scopeId;
+		if (preToken && _compair(preToken.scopeId, scopeId)) {
+			preToken.endIndex = item.endIndex;
+			continue;
+		}
+		preToken = {
+			scopeId: scopeId,
+			startIndex: item.startIndex,
+			endIndex: item.endIndex,
+		};
+		htmlTokens.push(preToken);
+	}
+	return htmlTokens;
+
+	function _compair(scope1, scope2) {
+		scope1 = dataObj.scopeIdMap[scope1];
+		scope2 = dataObj.scopeIdMap[scope2];
+		scope1 = (scope1 && scope1.settingsStr) || '';
+		scope2 = (scope2 && scope2.settingsStr) || '';
+		return scope1 === scope2;
+	}
 }
 
 function getCharImgData(char, rgb) {

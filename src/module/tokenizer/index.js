@@ -561,4 +561,14 @@ export default class {
 		});
 		return result;
 	}
+	clearScopeMap() {
+		this.scopeMap = {};
+		for (let scopeName in globalData.grammars) {
+			if (scopeName === this.scopeName) {
+				globalData.grammars[scopeName] = this.scopeMap;
+			} else {
+				globalData.grammars[scopeName] = {};
+			}
+		}
+	}
 }

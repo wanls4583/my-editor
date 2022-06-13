@@ -428,9 +428,10 @@ export default {
 						token.scopeId = '';
 					});
 			});
-			this.render();
 			this.selectedFg = !!globalData.colors['editor.selectionForeground'];
 			this.$refs.minimap.initWorkerData('theme');
+			this.tokenizer.clearScopeMap();
+			this.render();
 		},
 		tabSize: function (newVal) {
 			this.render();
