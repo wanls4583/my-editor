@@ -123,14 +123,16 @@ function drawLines(lines) {
 // 定时更新
 function render() {
 	try {
-		if (lines) {
-			drawLines(lines);
-			lines = null;
-		} else {
-			for (let key in singleLines) {
-				drawLine(singleLines[key]);
+		if (dataObj.width && dataObj.height) {
+			if (lines) {
+				drawLines(lines);
+				lines = null;
+			} else {
+				for (let key in singleLines) {
+					drawLine(singleLines[key]);
+				}
+				singleLines = {};
 			}
-			singleLines = {};
 		}
 	} catch (e) {
 		console.log(e);

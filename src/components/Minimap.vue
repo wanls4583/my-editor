@@ -145,6 +145,7 @@ export default {
 		setTop() {
 			let top = (this.nowLine - this.startLine) * this.$parent.charObj.charHight - this.top;
 			this.blockTop = top * this.scale;
+			console.log(this.blockTop);
 		},
 		render() {
 			this.renderLines();
