@@ -169,7 +169,7 @@ export default class {
 				tab.loaded = true;
 				Util.readFile(tab.path)
 					.then(data => {
-						contexts[tab.id].insertContent(data);
+						contexts[tab.id].reload(data);
 						tab.saved = true;
 						//点击搜索结果
 						if (fileObj.range) {

@@ -17,6 +17,7 @@ class Context {
 	constructor(editor) {
 		this.lineId = 1;
 		this.serial = 1;
+		this.fileContent = '';
 		this.initProperties(editor);
 		this.reset();
 	}
@@ -1011,6 +1012,7 @@ class Context {
 		};
 		this.searcher.clearSearch();
 		this.replace(text, [range]);
+		this.fileContent = text;
 	}
 	replace(texts, ranges) {
 		let historyArr = null;
