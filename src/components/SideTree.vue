@@ -262,7 +262,7 @@ export default {
 									EventBus.$emit('git-diff', filePath);
 								}
 							}
-							if (filename != '.git' && !filename.startsWith('.git' + path.sep)) {
+							if (filename != '.git' && !filename.startsWith('.git' + path.sep + 'index.lock')) {
 								EventBus.$emit('git-status', item);
 							}
 						}

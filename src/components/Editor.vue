@@ -574,8 +574,24 @@ export default {
 				})
 			);
 			EventBus.$on(
+				'git-statused',
+				(this.initEventBus.fn6 = () => {
+					if (this.path) {
+						let fileObj = Util.getFileItemByPath(globalData.fileTree, this.path);
+						// 通过git提交了更改
+						if (!fileObj.status) {
+							const fs = window.require('fs');
+							const stat = fs.statSync(filePath);
+							const fileKey = stat.dev + '-' + stat.ino + '-' + stat.mtimeMs;
+							globalData.fileDiff[fileKey] = null;
+							this.diffTree = null;
+						}
+					}
+				})
+			);
+			EventBus.$on(
 				'render-line',
-				(this.initEventBus.fn6 = (data) => {
+				(this.initEventBus.fn7 = (data) => {
 					if (this.editorId === data.editorId) {
 						this.renderLine(data.lineId);
 					}
@@ -590,7 +606,8 @@ export default {
 			EventBus.$off('close-menu', this.initEventBus.fn3);
 			EventBus.$off('theme-changed', this.initEventBus.fn4);
 			EventBus.$off('git-diffed', this.initEventBus.fn5);
-			EventBus.$off('render-line', this.initEventBus.fn6);
+			EventBus.$off('git-statused', this.initEventBus.fn6);
+			EventBus.$off('render-line', this.initEventBus.fn7);
 		},
 		showEditor() {
 			// 元素暂时不可见
