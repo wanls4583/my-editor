@@ -11,7 +11,7 @@ let emptyPixl = [0, 0, 0, 0];
 function drawLine({ top, lineObj }, targetImaData) {
 	let cache = cacheMap[lineObj.lineId];
 	let tokens = lineObj.tokens;
-	let marginLeft = 20 * dataObj.scale;
+	let marginLeft = 100 * dataObj.scale;
 	if (compairCache(cache, lineObj.text, lineObj.preRuleId)) {
 		if (targetImaData) {
 			for (let i = 0; i < cache.imgData.data.length; i++) {
@@ -109,7 +109,7 @@ function drawLine({ top, lineObj }, targetImaData) {
 }
 
 function drawLines(lines) {
-	let marginLeft = 20 * dataObj.scale;
+	let marginLeft = 100 * dataObj.scale;
 	let imgData = new ImageData(dataObj.width, dataObj.height);
 	imgData.index = 0;
 	ctx.clearRect(0, 0, dataObj.width, dataObj.height);
