@@ -123,7 +123,7 @@ function drawLines(lines) {
 // 定时更新
 function render() {
 	try {
-		if (dataObj.width && dataObj.height) {
+		if (dataObj.width && dataObj.height && dataObj.charHight) {
 			if (lines) {
 				drawLines(lines);
 				lines = null;

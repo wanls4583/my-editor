@@ -1,6 +1,7 @@
 import Btree from '@/common/btree';
 import EventBus from '@/event';
 import globalData from '@/data/globalData';
+import Util from '../util';
 
 const fs = window.require('fs');
 const path = window.require('path');
@@ -104,7 +105,7 @@ export default class {
 			return;
 		}
 		const stat = fs.statSync(filePath);
-		const fileKey = stat.dev + '-' + stat.ino + '-' + stat.mtimeMs;
+		const fileKey = Util.getIdFromStat(stat, true);
 		if (stat.isDirectory()) {
 			return;
 		}

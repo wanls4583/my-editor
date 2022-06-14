@@ -23,6 +23,17 @@ export default class {
 				option.success && option.success();
 			});
 		});
+		EventBus.$on('file-changed', filePath => {
+			let stat = fs.statSync(filePath);
+			let tab = Util.getTabByPath(this.editorList, filePath);
+			// 文件改变后与当前打开内容不一致
+			if (tab && tab.saved && tab.mtimeMs !== stat.mtimeMs) {
+				Util.readFile(filePath).then(text => {
+					contexts[tab.id].reload(text);
+					tab.saved = true;
+				});
+			}
+		});
 		EventBus.$on('folder-open', () => {
 			this.openFolder();
 		});
@@ -71,9 +82,8 @@ export default class {
 				let results = [];
 				if (!result.canceled && result.filePaths) {
 					result.filePaths.forEach(item => {
-						let stat = fs.statSync(item);
 						let obj = {
-							id: 'file-' + stat.dev + '-' + stat.ino,
+							id: Util.getIdFromStat(fs.statSync(item)),
 							name: item.match(/[^\\\/]+$/)[0],
 							path: item,
 							parentPath: '',
@@ -155,6 +165,7 @@ export default class {
 
 		function _done() {
 			if (tab && tab.path && !tab.loaded) {
+				tab.mtimeMs = fs.statSync(tab.path).mtimeMs;
 				tab.loaded = true;
 				Util.readFile(tab.path)
 					.then(data => {
@@ -190,7 +201,6 @@ export default class {
 						let statusColor = '';
 						let status = '';
 						let fileObj = Util.getFileItemByPath(globalData.fileTree, item);
-						let stat = fs.statSync(item);
 						let icon = Util.getIconByPath({
 							iconData: globalData.nowIconData,
 							filePath: item,
@@ -204,7 +214,7 @@ export default class {
 							status = obj.status.status;
 						}
 						let obj = {
-							id: 'file-' + stat.dev + '-' + stat.ino,
+							id: Util.getIdFromStat(fs.statSync(item)),
 							name: item.match(/[^\\\/]+$/)[0],
 							path: item,
 							icon: icon,
@@ -229,9 +239,10 @@ export default class {
 		}
 		if (!tab.saved) {
 			if (tab.path) {
-				Util.writeFile(tab.path, contexts[id].getAllText());
-				tab.saved = true;
-				return Promise.resolve();
+				return Util.writeFile(tab.path, contexts[id].getAllText()).then(() => {
+					tab.saved = true;
+					tab.mtimeMs = fs.statSync(tab.path).mtimeMs;
+				});
 			} else {
 				let win = remote.getCurrentWindow();
 				let options = {
@@ -240,10 +251,12 @@ export default class {
 				};
 				return remote.dialog.showSaveDialog(win, options).then(result => {
 					if (!result.canceled && result.filePath) {
-						tab.path = result.filePath;
-						tab.name = tab.path.match(/[^\\\/]+$/)[0];
-						Util.writeFile(tab.path, contexts[id].getAllText());
-						tab.saved = true;
+						return Util.writeFile(tab.path, contexts[id].getAllText()).then(() => {
+							tab.path = result.filePath;
+							tab.mtimeMs = fs.statSync(tab.path).mtimeMs;
+							tab.name = tab.path.match(/[^\\\/]+$/)[0];
+							tab.saved = true;
+						});
 					} else {
 						return Promise.reject();
 					}

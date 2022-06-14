@@ -208,7 +208,7 @@ export default {
 			charObj: {
 				charWidth: 7.15,
 				fullAngleCharWidth: 15,
-				charHight: 19,
+				charHight: 20,
 			},
 			nowCursorPos: {
 				line: 1,
@@ -565,8 +565,7 @@ export default {
 				(this.initEventBus.fn5 = (filePath) => {
 					if (filePath === this.path) {
 						const fs = window.require('fs');
-						const stat = fs.statSync(filePath);
-						const fileKey = stat.dev + '-' + stat.ino + '-' + stat.mtimeMs;
+						const fileKey = Util.getIdFromStat(fs.statSync(filePath), true);
 						if (globalData.fileDiff[fileKey]) {
 							this.diffTree = globalData.fileDiff[fileKey];
 						}
@@ -581,8 +580,7 @@ export default {
 						// 通过git提交了更改
 						if (!fileObj.status) {
 							const fs = window.require('fs');
-							const stat = fs.statSync(filePath);
-							const fileKey = stat.dev + '-' + stat.ino + '-' + stat.mtimeMs;
+							const fileKey = Util.getIdFromStat(fs.statSync(filePath), true);
 							globalData.fileDiff[fileKey] = null;
 							this.diffTree = null;
 						}

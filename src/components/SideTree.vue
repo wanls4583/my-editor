@@ -170,7 +170,7 @@ export default {
 				let fullPath = path.join(item.path, name);
 				let stat = fs.statSync(fullPath);
 				let obj = {
-					id: 'file-' + stat.dev + '-' + stat.ino,
+					id: Util.getIdFromStat(stat),
 					name: name,
 					path: fullPath,
 					parentPath: item.path,
@@ -258,6 +258,7 @@ export default {
 							} else if (event === 'change') {
 								let filePath = path.join(item.path, filename);
 								let editorTab = Util.getTabByPath(globalData.editorList, filePath);
+								EventBus.$emit('file-changed', filePath);
 								if (editorTab) {
 									EventBus.$emit('git-diff', filePath);
 								}

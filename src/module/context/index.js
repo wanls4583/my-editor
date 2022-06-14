@@ -1003,6 +1003,15 @@ class Context {
 		}
 		this.fSearcher.refreshSearch();
 	}
+	// 文件变动，重写加载文件内容
+	reload(text) {
+		let range = {
+			start: { line: 1, column: 0 },
+			end: { line: this.htmls.length, column: this.htmls.peek().text.length },
+		};
+		this.searcher.clearSearch();
+		this.replace(text, [range]);
+	}
 	replace(texts, ranges) {
 		let historyArr = null;
 		let serial = this.serial++;

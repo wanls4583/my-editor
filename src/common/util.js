@@ -301,6 +301,9 @@ class Util {
 			return iconData.file;
 		}
 	}
+	static getIdFromStat(stat, mtimeMs) {
+		return `file-${stat.dev}-${stat.ino}${mtimeMs ? '-' + stat.mtimeMs : ''}`;
+	}
 	static getTabById(editorList, id) {
 		for (let i = 0; i < editorList.length; i++) {
 			if (editorList[i].id === id) {
@@ -408,6 +411,9 @@ class Util {
 		return new Promise((resolve, reject) => {
 			fs.writeFile(path, data, { encoding: 'utf8' }, error => (error ? reject(error) : resolve()));
 		});
+	}
+	static writeFileSync(path, data) {
+		fs.writeFileSync(path, data, { encoding: 'utf8' });
 	}
 	static loadJsonFile(fullPath) {
 		return Util.readFile(fullPath).then(data => {
