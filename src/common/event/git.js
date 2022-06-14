@@ -116,9 +116,10 @@ export default class {
 		let line = 1;
 		let result = '';
 		let deletedCount = 0;
-		let child = spawn('git', ['diff', path.basename(filePath)], { cwd: path.dirname(filePath) });
+		let child = spawn('cmd', [`/C chcp 65001>nul && git diff ${path.basename(filePath)}`], { cwd: path.dirname(filePath) });
 		child.stdout.on('data', data => {
-			result += iconv.decode(data, 'cp936');
+			result += data;
+			// result += iconv.decode(data, 'cp936');
 		});
 		child.on('close', () => {
 			let fileDiffObj = new Btree((a, b) => {
