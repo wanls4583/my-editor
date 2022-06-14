@@ -18,6 +18,3 @@ Vue.prototype.$http = axios.create({
 new Vue({
 	render: h => h(App),
 }).$mount('#app');
-
-
-//test
