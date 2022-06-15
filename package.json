@@ -15,6 +15,7 @@
     "chroma-js": "^2.4.2",
     "clipboard-files": "^1.0.4",
     "core-js": "^3.8.3",
+    "diff": "^5.1.0",
     "emmet": "^2.3.6",
     "event-stream": "^4.0.1",
     "fs-extra": "^10.1.0",

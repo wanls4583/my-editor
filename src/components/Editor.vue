@@ -135,6 +135,11 @@ import globalData from '@/data/globalData';
 import Enum from '@/data/enum';
 
 const contexts = Context.contexts;
+const gitTypeMap = {
+	A: 'add',
+	M: 'modify',
+	D: 'delete',
+};
 
 export default {
 	name: 'Editor',
@@ -293,30 +298,10 @@ export default {
 		},
 		_diffType() {
 			return (line) => {
-				let type = '';
-				let preDiff = null;
-				if (this.type === 'diff') {
-					return;
+				if (this.type !== 'diff') {
+					let preDiff = this.getPrevDiff(this.diffTree, line);
+					return preDiff && gitTypeMap[preDiff.type];
 				}
-				if (!(preDiff = Util.getPrevDiff(this.diffTree, line))) {
-					return;
-				}
-				if (preDiff.deleted.length) {
-					if (preDiff.added.length) {
-						if (line < preDiff.line + preDiff.added.length) {
-							if (preDiff.deleted.length) {
-								type = 'modify';
-							} else {
-								type = 'add';
-							}
-						}
-					} else if (preDiff.line === line) {
-						type = 'delete';
-					}
-				} else if (line < preDiff.line + preDiff.added.length) {
-					type = 'add';
-				}
-				return type;
 			};
 		},
 		_leftShadow() {
@@ -562,13 +547,9 @@ export default {
 			);
 			EventBus.$on(
 				'git-diffed',
-				(this.initEventBus.fn5 = (filePath) => {
-					if (filePath === this.path) {
-						const fs = window.require('fs');
-						const fileKey = Util.getIdFromStat(fs.statSync(filePath), true);
-						if (globalData.fileDiff[fileKey]) {
-							this.diffTree = globalData.fileDiff[fileKey];
-						}
+				(this.initEventBus.fn5 = (data) => {
+					if (data && data.path === this.path) {
+						this.diffTree = data.result;
 					}
 				})
 			);
@@ -579,9 +560,6 @@ export default {
 						let fileObj = Util.getFileItemByPath(globalData.fileTree, this.path);
 						// 通过git提交了更改
 						if (!fileObj.status) {
-							const fs = window.require('fs');
-							const fileKey = Util.getIdFromStat(fs.statSync(filePath), true);
-							globalData.fileDiff[fileKey] = null;
 							this.diffTree = null;
 						}
 					}
@@ -1562,6 +1540,25 @@ export default {
 			}
 			return null;
 		},
+		getPrevDiff(diffTree, line) {
+			if (!diffTree) {
+				return null;
+			}
+			for (let i = 0; i < diffTree.length; i++) {
+				let item = diffTree[i];
+				if (item.line <= line) {
+					if (item.type === 'D') {
+						if (item.line === line) {
+							return item;
+						}
+					} else if (item.line + item.added.length > line) {
+						return item;
+					}
+				} else {
+					return null;
+				}
+			}
+		},
 		// 右键菜单事件
 		onContextmenu(e) {
 			this.menuVisible = true;
@@ -1901,7 +1898,7 @@ export default {
 			this.searchVisible = false;
 		},
 		onShowDiff(line) {
-			let preDiff = Util.getPrevDiff(this.diffTree, line);
+			let preDiff = this.getPrevDiff(this.diffTree, line);
 			this.diffLine = line;
 			this.diffVisible = false;
 			this.diffMarginTop = 0;

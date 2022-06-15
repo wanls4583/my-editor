@@ -3,7 +3,7 @@ const Html = require('./html');
 const JavaScript = require('./javascript');
 
 process.on('uncaughtException', (e) => {
-    process.send('uncaughtException:', e);
+    console.log(e);
 });
 
 process.on('message', (data) => {

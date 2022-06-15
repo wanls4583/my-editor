@@ -6,9 +6,8 @@
 import Util from '@/common/util';
 import globalData from '@/data/globalData';
 
-const require = window.require || window.parent.require || function () {};
-const path = require('path');
-const child_process = require('child_process');
+const path = window.require('path');
+const child_process = window.require('child_process');
 
 let worker = null;
 

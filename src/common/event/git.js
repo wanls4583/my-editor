@@ -2,15 +2,19 @@ import Btree from '@/common/btree';
 import EventBus from '@/event';
 import globalData from '@/data/globalData';
 import Util from '../util';
+import Context from '@/module/context/index';
 
 const fs = window.require('fs');
 const path = window.require('path');
-const spawn = window.require('child_process').spawn;
+const child_process = window.require('child_process');
+const spawn = child_process.spawn;
 const SimpleGit = window.require('simple-git');
+const contexts = Context.contexts;
 
 export default class {
 	constructor() {
 		this.cwd = '';
+		this.editorList = globalData.editorList;
 		this.simpleGit = new SimpleGit();
 		this.gitStatusTimer = {};
 		this.gitDiffTimer = {};
@@ -26,9 +30,65 @@ export default class {
 		EventBus.$on('git-diff', filePath => {
 			clearTimeout(this.gitDiffTimer[filePath]);
 			this.gitDiffTimer[filePath] = setTimeout(() => {
-				this.gitDiff(filePath);
+				let tab = Util.getTabByPath(this.editorList, filePath);
+				if (tab) {
+					this.diffProcess.send({ path: filePath, content: contexts[tab.id].getAllText() });
+				}
 			}, 500);
 		});
+		this.initDiffProcess();
+	}
+	initDiffProcess() {
+		this.diffProcess = child_process.fork(path.join(globalData.dirname, 'main/process/git/diff.js'));
+		this.diffProcess.on('message', data => {
+			EventBus.$emit('git-diffed', { path: data.path, result: _parseDiff(data.result) });
+		});
+		this.diffProcess.on('close', () => {
+			this.initDiffProcess();
+		});
+
+		function _parseDiff(data) {
+			let result = [];
+			while (data.length) {
+				let item = data.shift();
+				item.value = item.value.split('\n');
+				if (item.removed) {
+					if (data.length && data[0].added && data[0].line === item.line) {
+						let next = data.shift();
+						next.value = next.value.split('\n');
+						result.push({
+							type: 'M',
+							line: item.line,
+							deleted: item.value,
+							added: next.value.slice(0, item.value.length),
+						});
+						if (next.length > item.length) {
+							result.push({
+								type: 'A',
+								line: item.line + item.value.length,
+								added: next.value.slice(item.value.length),
+								deleted: [],
+							});
+						}
+					} else {
+						result.push({
+							type: 'D',
+							line: item.line,
+							added: [],
+							deleted: item.value,
+						});
+					}
+				} else {
+					result.push({
+						type: 'A',
+						line: item.line,
+						added: item.value,
+						deleted: [],
+					});
+				}
+			}
+			return result;
+		}
 	}
 	gitStatus(fileObj) {
 		if (!fs.existsSync(path.join(fileObj.path, '.git'))) {
