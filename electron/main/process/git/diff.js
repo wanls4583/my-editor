@@ -30,7 +30,8 @@ function diff(stagedContent, data) {
 	let result = [];
 	let count = 1;
 	let diffs = Diff.diffLines(stagedContent, data.content) || [];
-	diffs.forEach((item, index) => {
+	for (let index = 0; index < diffs.length; index++) {
+		let item = diffs[index];
 		//去掉最后的换行符
 		let value = index === diffs.length ? item.value : item.value.slice(0, -1);
 		if (item.added || item.removed) {
@@ -42,11 +43,16 @@ function diff(stagedContent, data) {
 			});
 			if (item.added) {
 				count += item.count;
+			} else {
+				let next = diffs[index + 1];
+				if (next && !next.added && next.value === '\n') {
+					index++;
+				}
 			}
 		} else {
 			count += item.count;
 		}
-	});
+	}
 	process.send({ path: data.path, result: result });
 }
 
