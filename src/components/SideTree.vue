@@ -259,7 +259,7 @@ export default {
 								let filePath = path.join(item.path, filename);
 								let editorTab = Util.getTabByPath(globalData.editorList, filePath);
 								EventBus.$emit('file-changed', filePath);
-								if (editorTab) {
+								if (editorTab && editorTab.active) {
 									EventBus.$emit('git-diff', filePath);
 								}
 							}

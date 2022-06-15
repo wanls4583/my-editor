@@ -1077,7 +1077,7 @@ export default {
 				}
 				let width = this.getStrWidth(lineObj.text, column, endColumn) || this.charObj.charWidth;
 				let html = `<span class="my-token-error" style="width:${width}px;left:${left}px" data-key="${key}"></span>`;
-				$content.find(`div.my-code[data-line="${line}"]`).append(html);
+				$content.find(`div.my-line[data-line="${line}"]`).append(html);
 			}
 
 			function _renderLineError(line, key) {
@@ -1086,7 +1086,7 @@ export default {
 				}
 				let $content = $(this.$refs.content);
 				let html = `<span class="my-token-error" style="width:100%;left:0px" data-key="${key}"></span>`;
-				$content.find(`div.my-code[data-line="${line}"]`).append(html);
+				$content.find(`div.my-line[data-line="${line}"]`).append(html);
 			}
 		},
 		// 折叠行
@@ -1640,7 +1640,7 @@ export default {
 			this.focus();
 		},
 		onErrorMousemove(e, line) {
-			let $errors = $(`div.my-code[data-line=${line}]`).children('span.my-token-error');
+			let $errors = $(`div.my-line[data-line=${line}]`).children('span.my-token-error');
 			let left = e.clientX - $(this.$refs.content).offset().left;
 			for (let i = 0; i < $errors.length; i++) {
 				let $error = $errors.eq(i);

@@ -211,6 +211,7 @@ class Context {
 		this.setAutoTip(null);
 		this.render(true);
 		EventBus.$emit('editor-content-change', { id: this.editorId, path: this.path });
+		EventBus.$emit('git-diff', this.path);
 		let historyObj = {
 			type: Util.command.DELETE,
 			cursorPos: Object.assign({}, newPos),
@@ -455,6 +456,7 @@ class Context {
 		this.setAutoTip(null);
 		this.render(true);
 		EventBus.$emit('editor-content-change', { id: this.editorId, path: this.path });
+		EventBus.$emit('git-diff', this.path);
 		// 更新最大文本宽度
 		if (startObj.width >= this.maxWidthObj.width) {
 			this.setEditorData('maxWidthObj', {
