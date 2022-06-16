@@ -565,11 +565,7 @@ export default {
 				'git-statused',
 				(this.initEventBus.fn6 = () => {
 					if (this.path) {
-						let fileObj = Util.getFileItemByPath(globalData.fileTree, this.path);
-						// 通过git提交了更改
-						if (!fileObj.status) {
-							this.diffTree = null;
-						}
+						EventBus.$emit('git-diff', this.path);
 					}
 				})
 			);
