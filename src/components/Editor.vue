@@ -683,6 +683,7 @@ export default {
 				this.renderSelectedBg();
 				this.renderError();
 				this.renderCursor(forceCursorView);
+				this.renderBracketMatch();
 				this.$refs.minimap && this.$refs.minimap.render();
 			});
 		},
