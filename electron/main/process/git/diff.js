@@ -11,7 +11,7 @@ process.on('uncaughtException', e => {
 });
 
 process.on('message', data => {
-	let fileIndex = getCacheIndex(data.path);
+	let fileIndex = getNowHash(data.path) + '-' + getCacheHash(data.path);
 	let stagedContent = fileCacheMap[fileIndex];
 	if (!fileIndex) {
 		return;
@@ -33,7 +33,7 @@ function diff(stagedContent, data) {
 	for (let index = 0; index < diffs.length; index++) {
 		let item = diffs[index];
 		//去掉最后的换行符
-		let value = index === diffs.length ? item.value : item.value.slice(0, -1);
+		let value = index === diffs.length - 1 ? item.value : item.value.slice(0, -1);
 		if (item.added || item.removed) {
 			result.push({
 				line: count,
@@ -69,7 +69,11 @@ function cacheFile(fileIndex, stagedContent) {
 	fileCacheMap.size += stagedContent.length;
 }
 
-function getCacheIndex(filePath) {
+function getNowHash(filePath) {
+	return spawnSync(`git log -1 --format="%H"`, { cwd: path.dirname(filePath) }).output;
+}
+
+function getCacheHash(filePath) {
 	let fileIndex = '';
 	try {
 		fileIndex = spawnSync(`git diff-index HEAD --cached ${filePath}`, { cwd: path.dirname(filePath) }).output;

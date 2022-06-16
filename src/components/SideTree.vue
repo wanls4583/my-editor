@@ -257,11 +257,7 @@ export default {
 								}
 							} else if (event === 'change') {
 								let filePath = path.join(item.path, filename);
-								let editorTab = Util.getTabByPath(globalData.editorList, filePath);
-								EventBus.$emit('file-changed', filePath);
-								if (editorTab && editorTab.active) {
-									EventBus.$emit('git-diff', filePath);
-								}
+								EventBus.$emit('git-diff', filePath);
 							}
 							if (filename != '.git' && !filename.startsWith('.git' + path.sep + 'index.lock')) {
 								EventBus.$emit('git-status', item);

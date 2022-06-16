@@ -14,7 +14,6 @@ const contexts = Context.contexts;
 export default class {
 	constructor() {
 		this.cwd = '';
-		this.editorList = globalData.editorList;
 		this.simpleGit = new SimpleGit();
 		this.gitStatusTimer = {};
 		this.gitDiffTimer = {};
@@ -30,8 +29,9 @@ export default class {
 		EventBus.$on('git-diff', filePath => {
 			clearTimeout(this.gitDiffTimer[filePath]);
 			this.gitDiffTimer[filePath] = setTimeout(() => {
-				let tab = Util.getTabByPath(this.editorList, filePath);
-				if (tab) {
+				let tab = filePath && Util.getTabByPath(globalData.editorList, filePath);
+				let fileObj = filePath && Util.getFileItemByPath(globalData.fileTree, filePath);
+				if (tab && tab.active && fileObj && fs.existsSync(path.join(fileObj.rootPath, '.git'))) {
 					this.diffProcess.send({ path: filePath, content: contexts[tab.id].getAllText() });
 				}
 			}, 500);
