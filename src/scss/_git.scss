@@ -22,7 +22,6 @@
 	&-status-deleted {
 		color: var(--my-gitDecoration-deletedResourceForeground);
 	}
-
 	&-diff-num {
 		position: absolute;
 		top: 0;
@@ -32,8 +31,21 @@
 		cursor: pointer;
 	}
 
-	&-num:hover .my-diff-num {
-		transform: scaleX(2.5);
+	&-num:hover {
+		.my-diff-add,
+		.my-diff-modify {
+			transform: scaleX(2.5);
+		}
+
+		.my-diff-delete-top,
+		.my-diff-delete-bottom {
+			transform: scaleX(2.5);
+			background-color: var(--my-gitDecoration-deletedResourceForeground);
+
+			&::after {
+				display: none;
+			}
+		}
 	}
 
 	&-diff-add {
@@ -44,8 +56,26 @@
 		background-color: var(--my-gitDecoration-modifiedResourceForeground);
 	}
 
-	&-diff-delete {
-		background-color: var(--my-gitDecoration-deletedResourceForeground);
+	&-diff-delete-top {
+		&::after {
+			content: '➤';
+			position: absolute;
+			top: -2px;
+			font-size: 10px;
+			line-height: 10px;
+			color: var(--my-gitDecoration-deletedResourceForeground);
+		}
+	}
+
+	&-diff-delete-bottom {
+		&::after {
+			content: '➤';
+			position: absolute;
+			bottom: -2px;
+			font-size: 10px;
+			line-height: 10px;
+			color: var(--my-gitDecoration-deletedResourceForeground);
+		}
 	}
 
 	&-diff-editor {

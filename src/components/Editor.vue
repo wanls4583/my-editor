@@ -300,7 +300,15 @@ export default {
 			return (line) => {
 				if (this.type !== 'diff') {
 					let preDiff = this.getPrevDiff(this.diffTree, line);
-					return preDiff && gitTypeMap[preDiff.type];
+					let type = (preDiff && gitTypeMap[preDiff.type]) || '';
+					if (type === 'delete') {
+						if (preDiff.line === line + 1) {
+							type += '-bottom';
+						} else {
+							type += '-top';
+						}
+					}
+					return type;
 				}
 			};
 		},
@@ -1085,7 +1093,7 @@ export default {
 			}
 
 			function _renderLineError(line, key) {
-				if (line < this.startLine || line >= this.startLine + this.maxVisibleLines || line > this.maxLin) {
+				if (line < this.startLine || line >= this.startLine + this.maxVisibleLines || line > this.maxLine) {
 					return;
 				}
 				let $content = $(this.$refs.content);
@@ -1549,6 +1557,10 @@ export default {
 						return item;
 					}
 				} else {
+					// 尾部的删除块
+					if (item.line === line + 1 && line === this.maxLine) {
+						return item;
+					}
 					return null;
 				}
 			}

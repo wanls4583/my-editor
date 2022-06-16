@@ -30,24 +30,35 @@ function diff(stagedContent, data) {
 	let result = [];
 	let count = 1;
 	let diffs = Diff.diffLines(stagedContent, data.content) || [];
+	for(let index = 2; index < diffs.length; index++) {
+		let first = diffs[index - 2];
+		let second = diffs[index - 1];
+		let third = diffs[index];
+		// 使added和removed相邻，避免以下情况
+		// { count: 1, added: undefined, removed: true, value: '</body>\n' },
+		// { count: 1, value: '\n' },
+		// { count: 1, added: true, removed: undefined, value: '\n' },
+		// { count: 1, value: '</html>' }
+		if(third.added && third.value === second.value && !second.removed && first.removed) {
+			third.added = undefined;
+			second.added = true;
+		}
+	}
 	for (let index = 0; index < diffs.length; index++) {
 		let item = diffs[index];
-		//去掉最后的换行符
-		let value = index === diffs.length - 1 ? item.value : item.value.slice(0, -1);
 		if (item.added || item.removed) {
-			result.push({
+			let obj = {
 				line: count,
 				added: item.added,
 				removed: item.removed,
-				value: value,
-			});
+				value: item.value,
+			};
+			if (index === diffs.length - 1) {
+				obj.end = true;
+			}
+			result.push(obj);
 			if (item.added) {
 				count += item.count;
-			} else {
-				let next = diffs[index + 1];
-				if (next && !next.added && next.value === '\n') {
-					index++;
-				}
 			}
 		} else {
 			count += item.count;

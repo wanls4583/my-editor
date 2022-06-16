@@ -7,7 +7,6 @@ import Context from '@/module/context/index';
 const fs = window.require('fs');
 const path = window.require('path');
 const child_process = window.require('child_process');
-const spawn = child_process.spawn;
 const SimpleGit = window.require('simple-git');
 const contexts = Context.contexts;
 
@@ -56,21 +55,44 @@ export default class {
 					if (data.length && data[0].added && data[0].line === item.line) {
 						let next = data.shift();
 						next.value = next.value.split('\n');
-						result.push({
-							type: 'M',
-							line: item.line,
-							deleted: item.value,
-							added: next.value.slice(0, item.value.length),
-						});
-						if (next.length > item.length) {
+						if (item.value.peek() === '' && next.value.peek() === '') {
+							item.value.pop();
+							next.value.pop();
+						}
+						if (next.value.length == 1 && next.value.peek() === '') {
+							next.value = [];
+						}
+						while (next.value.length && item.value[0] === next.value[0]) {
+							item.value.shift();
+							next.value.shift();
+							next.line++;
+							item.line++;
+						}
+						if (next.value.length) {
 							result.push({
-								type: 'A',
-								line: item.line + item.value.length,
-								added: next.value.slice(item.value.length),
-								deleted: [],
+								type: 'M',
+								line: item.line,
+								deleted: item.value,
+								added: next.value.slice(0, item.value.length),
+							});
+							if (next.length > item.length) {
+								result.push({
+									type: 'A',
+									line: next.line,
+									added: next.value.slice(item.value.length),
+									deleted: [],
+								});
+							}
+						} else {
+							result.push({
+								type: 'D',
+								line: item.line,
+								added: [],
+								deleted: item.value,
 							});
 						}
 					} else {
+						!item.end && item.value.pop();
 						result.push({
 							type: 'D',
 							line: item.line,
@@ -79,6 +101,7 @@ export default class {
 						});
 					}
 				} else {
+					!item.end && item.value.pop();
 					result.push({
 						type: 'A',
 						line: item.line,
@@ -156,106 +179,6 @@ export default class {
 			while (filePath.length > 1 && path.basename(filePath)) {
 				obj[filePath] = true;
 				filePath = path.dirname(filePath);
-			}
-		}
-	}
-	gitDiff(filePath) {
-		if (!fs.existsSync(filePath)) {
-			return;
-		}
-		const stat = fs.statSync(filePath);
-		const fileKey = Util.getIdFromStat(stat, true);
-		if (stat.isDirectory()) {
-			return;
-		}
-		if (globalData.fileDiff[fileKey]) {
-			EventBus.$emit('git-diffed', filePath);
-			return;
-		}
-		const iconv = window.require('iconv-lite');
-		let line = 1;
-		let result = '';
-		let deletedCount = 0;
-		let child = spawn('cmd', [`/C chcp 65001>nul && git diff ${path.basename(filePath)}`], { cwd: path.dirname(filePath) });
-		child.stdout.on('data', data => {
-			result += data;
-			// result += iconv.decode(data, 'cp936');
-		});
-		child.on('close', () => {
-			let fileDiffObj = new Btree((a, b) => {
-				return a.line - b.line;
-			});
-			result = result.split(/\r\n|\n/);
-			_diff.call(this, fileDiffObj);
-			globalData.fileDiff[fileKey] = fileDiffObj;
-			EventBus.$emit('git-diffed', filePath);
-		});
-
-		function _diff(fileDiffObj) {
-			while (line <= result.length) {
-				let text = result[line - 1];
-				// 文件比较开始
-				if (text.startsWith('diff --git')) {
-					line += 4;
-					_diffBlock.call(this, fileDiffObj);
-					break;
-				}
-				line++;
-			}
-		}
-
-		function _diffBlock(fileDiffObj) {
-			while (line <= result.length) {
-				let text = result[line - 1];
-				// 区域比较开始
-				if (text.startsWith('@@')) {
-					let res = /\-(\d+)\,(\d+) \+(\d+)\,(\d+)/.exec(text);
-					let startLine = res[3] - 0;
-					line++;
-					_diffLines.call(this, startLine, fileDiffObj);
-				} else {
-					break;
-				}
-			}
-		}
-
-		function _diffLines(startLine, fileDiffObj) {
-			while (line <= result.length) {
-				let range = { deleted: [], added: [], deletedCount: deletedCount };
-				let text = result[line - 1];
-				if (text[0] === '-') {
-					range.line = startLine;
-					range.deleted.push(text.slice(1));
-					line++;
-					deletedCount++;
-					while (line <= result.length && result[line - 1][0] === '-') {
-						range.deleted.push(result[line - 1].slice(1));
-						line++;
-						deletedCount++;
-					}
-					while (line <= result.length && result[line - 1][0] === '+') {
-						range.added.push(result[line - 1].slice(1));
-						line++;
-						startLine++;
-					}
-					fileDiffObj.insert(range);
-				} else if (text[0] === '+') {
-					range.line = startLine;
-					range.added.push(text.slice(1));
-					line++;
-					startLine++;
-					while (line <= result.length && result[line - 1][0] === '+') {
-						range.added.push(result[line - 1].slice(1));
-						line++;
-						startLine++;
-					}
-					fileDiffObj.insert(range);
-				} else if (text[0] === ' ') {
-					line++;
-					startLine++;
-				} else {
-					break;
-				}
 			}
 		}
 	}
