@@ -1067,13 +1067,17 @@ export default {
 				if (line < this.startLine || line >= this.startLine + this.maxVisibleLines || line > this.maxLine) {
 					return;
 				}
-				let $content = $(this.$refs.content);
-				let lineObj = this.myContext.htmls[line - 1];
-				let token = this.getToken(line, column);
 				let left = 0;
-				if (token) {
-					let $token = $content.find(`div.my-code[data-line="${line}"]`).find(`span[data-column="${token.startIndex}"]`);
-					left = $token[0].offsetLeft + this.getStrWidth(lineObj.text, token.startIndex, column);
+				let lineObj = this.myContext.htmls[line - 1];
+				let $content = $(this.$refs.content);
+				let spans = $content.find(`div.my-code[data-line="${line}"]`).children('span');
+				for (let i = 0; i < spans.length; i++) {
+					let startIndex = spans[i].getAttribute('data-column');
+					let endIndex = spans[i].getAttribute('data-end');
+					if (startIndex <= column && endIndex >= endIndex) {
+						left = spans[i].offsetLeft + this.getStrWidth(lineObj.text, startIndex, column);
+						break;
+					}
 				}
 				let width = this.getStrWidth(lineObj.text, column, endColumn) || this.charObj.charWidth;
 				let html = `<span class="my-token-error" style="width:${width}px;left:${left}px" data-key="${key}"></span>`;
@@ -1294,8 +1298,12 @@ export default {
 			let contentHeight = 0;
 			maxLine = this.folder.getRelativeLine(maxLine);
 			contentHeight = maxLine * this.charObj.charHight;
-			if (this.type !== 'diff' && this.scrollerArea.height) {
-				contentHeight += this.scrollerArea.height - this.charObj.charHight;
+			if (this.scrollerArea.height) {
+				if (this.type === 'diff') {
+					contentHeight += 14;
+				} else {
+					contentHeight += this.scrollerArea.height - this.charObj.charHight;
+				}
 			}
 			this.contentHeight = contentHeight;
 		},
@@ -1525,20 +1533,6 @@ export default {
 				return 0;
 			}
 			return span.offsetLeft + this.getStrWidth(lineObj.text.slice(startIndex, cursorPos.column));
-		},
-		getToken(line, column) {
-			let lineObj = this.myContext.htmls[line - 1];
-			if (lineObj && lineObj.tokens) {
-				if (column > lineObj.tokens.peek().startIndex) {
-					return lineObj.tokens.peek();
-				}
-				for (let i = 0; i < lineObj.tokens.length; i++) {
-					if (lineObj.tokens[i].startIndex <= column && lineObj.tokens[i].endIndex > column) {
-						return lineObj.tokens[i];
-					}
-				}
-			}
-			return null;
 		},
 		getPrevDiff(diffTree, line) {
 			if (!diffTree) {
@@ -1902,7 +1896,7 @@ export default {
 			this.diffLine = line;
 			this.diffVisible = false;
 			this.diffMarginTop = 0;
-			this.diffHeight = (preDiff.added.length + preDiff.deleted.length) * this.charObj.charHight + 2;
+			this.diffHeight = (preDiff.added.length + preDiff.deleted.length) * this.charObj.charHight + 16;
 			this.diffHeight = this.diffHeight > 200 ? 200 : this.diffHeight;
 			this.setDiffTop();
 			this.$nextTick(() => {
