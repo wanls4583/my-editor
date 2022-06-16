@@ -1568,6 +1568,7 @@ export default {
 		// 右键菜单事件
 		onContextmenu(e) {
 			if (this.type === 'diff') {
+				this.focus();
 				return;
 			}
 			this.menuVisible = true;
