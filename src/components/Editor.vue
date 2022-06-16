@@ -1567,6 +1567,9 @@ export default {
 		},
 		// 右键菜单事件
 		onContextmenu(e) {
+			if (this.type === 'diff') {
+				return;
+			}
 			this.menuVisible = true;
 			this.$nextTick(() => {
 				this.menuStyle = Util.getMemnuPos(e, this.$refs.menu.$el, this.$refs.editor);

@@ -40,77 +40,90 @@ export default class {
 	initDiffProcess() {
 		this.diffProcess = child_process.fork(path.join(globalData.dirname, 'main/process/git/diff.js'));
 		this.diffProcess.on('message', data => {
-			EventBus.$emit('git-diffed', { path: data.path, result: _parseDiff(data.result) });
+			EventBus.$emit('git-diffed', { path: data.path, result: this.parseDiff(data.result) });
 		});
 		this.diffProcess.on('close', () => {
 			this.initDiffProcess();
 		});
-
-		function _parseDiff(data) {
-			let result = [];
-			while (data.length) {
-				let item = data.shift();
-				item.value = item.value.split('\n');
-				if (item.removed) {
-					if (data.length && data[0].added && data[0].line === item.line) {
-						let next = data.shift();
-						next.value = next.value.split('\n');
-						if (item.value.peek() === '' && next.value.peek() === '') {
-							item.value.pop();
-							next.value.pop();
-						}
-						if (next.value.length == 1 && next.value.peek() === '') {
-							next.value = [];
-						}
-						while (next.value.length && item.value[0] === next.value[0]) {
-							item.value.shift();
-							next.value.shift();
-							next.line++;
-							item.line++;
-						}
-						if (next.value.length) {
-							result.push({
+	}
+	parseDiff(data) {
+		let result = [];
+		while (data.length) {
+			let item = data.shift();
+			item.value = item.value.split('\n');
+			if (item.removed) {
+				if (data.length && data[0].added && data[0].line === item.line) {
+					let next = data.shift();
+					next.value = next.value.split('\n');
+					if (next.value.length) {
+						result.push(
+							_createRange({
 								type: 'M',
 								line: item.line,
 								deleted: item.value,
 								added: next.value.slice(0, item.value.length),
-							});
-							if (next.length > item.length) {
-								result.push({
+							})
+						);
+						if (next.value.length > item.value.length) {
+							result.push(
+								_createRange({
 									type: 'A',
-									line: next.line,
+									line: next.line + item.value.length,
 									added: next.value.slice(item.value.length),
-									deleted: [],
-								});
-							}
-						} else {
-							result.push({
-								type: 'D',
-								line: item.line,
-								added: [],
-								deleted: item.value,
-							});
+								})
+							);
 						}
 					} else {
-						!item.end && item.value.pop();
-						result.push({
-							type: 'D',
-							line: item.line,
-							added: [],
-							deleted: item.value,
-						});
+						result.push(
+							_createRange({
+								type: 'D',
+								line: item.line,
+								deleted: item.value,
+							})
+						);
 					}
 				} else {
 					!item.end && item.value.pop();
-					result.push({
+					result.push(
+						_createRange({
+							type: 'D',
+							line: item.line,
+							deleted: item.value,
+						})
+					);
+				}
+			} else {
+				!item.end && item.value.pop();
+				result.push(
+					_createRange({
 						type: 'A',
 						line: item.line,
 						added: item.value,
-						deleted: [],
-					});
-				}
+					})
+				);
 			}
-			return result;
+		}
+		return result;
+
+		function _createRange({ type, line, added, deleted }) {
+			added = (added || []).slice();
+			deleted = (deleted || []).slice();
+			while (added.peek() === '' && deleted.peek() === '') {
+				added.pop();
+				deleted.pop();
+			}
+			while (added[0] === deleted[0]) {
+				added.shift();
+				deleted.shift();
+				line++;
+			}
+			if (added.length === 1 && added[0] === '') {
+				added = [];
+			}
+			if (!added.length) {
+				type = 'D';
+			}
+			return { type, line, added, deleted };
 		}
 	}
 	gitStatus(fileObj) {
