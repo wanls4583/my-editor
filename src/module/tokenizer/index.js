@@ -297,6 +297,10 @@ export default class {
 	createHtml(tokens, lineText) {
 		let html = [];
 		let preToken = null;
+		if (!tokens) {
+			tokens = [{ startIndex: 0, endIndex: lineText.length, scopes: ['plain'] }];
+			tokens = this.splitLongToken(tokens);
+		}
 		for (let i = 0; i < tokens.length; i++) {
 			let item = tokens[i];
 			let selector = '';

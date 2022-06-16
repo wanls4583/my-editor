@@ -870,6 +870,10 @@ export default {
 			let tokens = lineObj.tokens;
 			let scopes = ['selected'];
 			let _tokens = [];
+			if (!tokens) {
+				tokens = [{ startIndex: 0, endIndex: lineText.length, scopes: ['plain'] }];
+				tokens = this.tokenizer.splitLongToken(tokens);
+			}
 			this.myContext.fgLines.push(line);
 			for (let i = 0; i < tokens.length; i++) {
 				let token = tokens[i];
@@ -1409,8 +1413,7 @@ export default {
 			}
 			let html = lineObj.html;
 			if (!html) {
-				let tokens = lineObj.tokens || [{ startIndex: 0, endIndex: lineObj.text.length, scopes: ['plain'] }];
-				tokens = this.tokenizer.splitLongToken(tokens);
+				let tokens = lineObj.tokens && this.tokenizer.splitLongToken(lineObj.tokens);
 				html = this.tokenizer.createHtml(tokens, lineObj.text);
 				if (lineObj.tokens) {
 					lineObj.tokens = tokens;
