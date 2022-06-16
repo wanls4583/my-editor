@@ -521,11 +521,13 @@ export default {
 		initEventBus() {
 			EventBus.$on(
 				'language-change',
-				(this.initEventBus.fn1 = (language) => {
-					if (this.active) {
-						this.language = language;
+				(this.initEventBus.fn1 = (data) => {
+					if (this.id === data.id) {
+						if (this.active) {
+							this.language = data.language;
+						}
+						this._language = data.language;
 					}
-					this._language = language;
 				})
 			);
 			EventBus.$on(

@@ -89,8 +89,8 @@ export default {
 				this.line = data.line;
 				this.column = data.column;
 			});
-			EventBus.$on('language-change', (language) => {
-				this.language = language;
+			EventBus.$on('language-change', (data) => {
+				this.language = data.language;
 			});
 			EventBus.$on('close-menu', (language) => {
 				this.tabsizeVisible = false;

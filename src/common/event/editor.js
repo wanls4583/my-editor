@@ -94,7 +94,7 @@ export default class {
 				let language = globalData.languageList[i];
 				if (language.extensions && language.extensions.indexOf(suffix[0]) > -1) {
 					Vue.prototype.$nextTick(() => {
-						EventBus.$emit('language-change', language.value);
+						EventBus.$emit('language-change', { id: tab.id, language: language.value });
 					});
 					break;
 				}

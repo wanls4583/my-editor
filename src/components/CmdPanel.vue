@@ -20,6 +20,7 @@ import Util from '@/common/util';
 import Theme from '@/module/theme';
 import Menu from './Menu';
 import EventBus from '@/event';
+import globalData from '@/data/globalData';
 
 export default {
 	name: 'CmdPanel',
@@ -50,7 +51,7 @@ export default {
 			EventBus.$on('cmd-menu-open', (data) => {
 				this.visible = true;
 				this.searchText = '';
-				this.originCmdList = data.cmdList
+				this.originCmdList = data.cmdList;
 				this.value = data.value;
 				if (this.originCmdList[0] && !(this.originCmdList[0] instanceof Array)) {
 					this.originCmdList = [this.originCmdList];
@@ -91,7 +92,7 @@ export default {
 					this.theme.loadIconTheme(item);
 					break;
 				case 'selectLanguage':
-					EventBus.$emit('language-change', item.value);
+					EventBus.$emit('language-change', { id: globalData.nowEditorId, language: item.value });
 					break;
 			}
 			this.visible = false;

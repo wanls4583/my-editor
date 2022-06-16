@@ -58,22 +58,24 @@
 
 	&-diff-delete-top {
 		&::after {
-			content: '➤';
+			content: '➦';
 			position: absolute;
-			top: -2px;
-			font-size: 10px;
-			line-height: 10px;
+			top: 0;
+			left: -2px;
+			font-size: 14px;
+			line-height: 14px;
 			color: var(--my-gitDecoration-deletedResourceForeground);
 		}
 	}
 
 	&-diff-delete-bottom {
 		&::after {
-			content: '➤';
+			content: '➦';
 			position: absolute;
-			bottom: -2px;
-			font-size: 10px;
-			line-height: 10px;
+			bottom: 0;
+			left: -2px;
+			font-size: 14px;
+			line-height: 14px;
 			color: var(--my-gitDecoration-deletedResourceForeground);
 		}
 	}
