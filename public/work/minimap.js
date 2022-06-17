@@ -128,38 +128,18 @@ function drawLeftDiff() {
 	leftDiffCtx.clearRect(0, 0, dataObj.leftWidth, dataObj.height);
 	if (diffRanges.length) {
 		diffRanges.forEach(item => {
-			let rgb = _getDiffColor(item.type);
+			let rgb = getDiffColor(item.type);
 			for (let i = 0; i < item.length; i++) {
-				_putLinePixl(item.line + i, rgb, item.type);
+				if (item.type === 'D') {
+					putRectPixl({ imgData, left: 2, top: (item.line + i - 1) * dataObj.charHight, width: 4, height: dataObj.charHight, rgb });
+				} else {
+					putRectPixl({ imgData, left: 3, top: (item.line + i - 1) * dataObj.charHight, width: 2, height: dataObj.charHight, rgb });
+				}
 			}
 		});
 		leftDiffCtx.putImageData(imgData, 0, 0);
 	}
 	diffRanges = null;
-
-	function _putLinePixl(line, rgb, type) {
-		if (type === 'D') {
-			putRectPixl({ imgData, left: 2, top: (line - 1) * dataObj.charHight, width: 4, height: dataObj.charHight, rgb });
-		} else {
-			putRectPixl({ imgData, left: 3, top: (line - 1) * dataObj.charHight, width: 2, height: dataObj.charHight, rgb });
-		}
-	}
-
-	function _getDiffColor(type) {
-		let color = dataObj.colors['editor.foreground'];
-		switch (type) {
-			case 'A':
-				color = dataObj.colors['gitDecoration.addedResourceForeground'];
-				break;
-			case 'M':
-				color = dataObj.colors['gitDecoration.modifiedResourceForeground'];
-				break;
-			case 'D':
-				color = dataObj.colors['gitDecoration.deletedResourceForeground'];
-				break;
-		}
-		return getRgb(color);
-	}
 }
 
 function drawRightDiff() {
@@ -392,6 +372,22 @@ function getRgb(color) {
 		getRgb[color] = rgb;
 	}
 	return getRgb[color];
+}
+
+function getDiffColor(type) {
+	let color = dataObj.colors['editor.foreground'];
+	switch (type) {
+		case 'A':
+			color = dataObj.colors['gitDecoration.addedResourceForeground'];
+			break;
+		case 'M':
+			color = dataObj.colors['gitDecoration.modifiedResourceForeground'];
+			break;
+		case 'D':
+			color = dataObj.colors['gitDecoration.deletedResourceForeground'];
+			break;
+	}
+	return getRgb(color);
 }
 
 render();

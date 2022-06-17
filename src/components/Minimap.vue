@@ -213,35 +213,32 @@ export default {
 			}
 		},
 		renderDiff() {
-			cancelAnimationFrame(this.renderDiffTimer);
-			this.renderDiffTimer = requestAnimationFrame(() => {
-				let diffRanges = [];
-				let endLine = 0;
-				if (this.$parent.diffRanges) {
-					for (let line = this.startLine, i = 0; line <= this.$parent.myContext.htmls.length && i < this.maxVisibleLines; i++) {
-						let fold = this.$parent.folder.getFoldByLine(line);
-						endLine = line;
-						if (fold) {
-							line = fold.end.line;
-						} else {
-							line++;
-						}
-					}
-					for (let i = 0; i < this.$parent.diffRanges.length; i++) {
-						let item = this.$parent.diffRanges[i];
-						if (item.line >= this.startLine && item.line <= endLine) {
-							if (!this.$parent.folder.getLineInFold(item.line)) {
-								diffRanges.push(this.getDiffObj(item));
-							}
-						} else if (item.line > endLine) {
-							break;
-						}
+			let diffRanges = [];
+			let endLine = 0;
+			if (this.$parent.diffRanges) {
+				for (let line = this.startLine, i = 0; line <= this.$parent.myContext.htmls.length && i < this.maxVisibleLines; i++) {
+					let fold = this.$parent.folder.getFoldByLine(line);
+					endLine = line;
+					if (fold) {
+						line = fold.end.line;
+					} else {
+						line++;
 					}
 				}
-				this.worker.postMessage({ event: 'render-diff', data: diffRanges });
-			});
+				for (let i = 0; i < this.$parent.diffRanges.length; i++) {
+					let item = this.$parent.diffRanges[i];
+					if (item.line >= this.startLine && item.line <= endLine) {
+						if (!this.$parent.folder.getLineInFold(item.line)) {
+							diffRanges.push(this.getDiffObj(item));
+						}
+					} else if (item.line > endLine) {
+						break;
+					}
+				}
+			}
+			this.worker.postMessage({ event: 'render-diff', data: diffRanges });
 		},
-		renderAllDiff() {
+		renderAllDiff(renderDiff) {
 			let diffRanges = [];
 			if (this.$parent.diffRanges) {
 				for (let i = 0; i < this.$parent.diffRanges.length; i++) {
@@ -252,7 +249,7 @@ export default {
 				}
 			}
 			this.worker.postMessage({ event: 'render-diff-all', data: diffRanges });
-			this.renderDiff();
+			renderDiff && this.renderDiff();
 		},
 		getRenderObj(line) {
 			let top = (line - this.startLine) * this.$parent.charObj.charHight * this.scale;

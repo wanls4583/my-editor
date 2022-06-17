@@ -560,7 +560,7 @@ export default {
 				(this.initEventBus.fn5 = (data) => {
 					if (data && data.path === this.path) {
 						this.diffRanges = data.result;
-						this.$refs.minimap && this.$refs.minimap.renderAllDiff();
+						this.$refs.minimap && this.$refs.minimap.renderAllDiff(true);
 					}
 				})
 			);
