@@ -29,6 +29,8 @@
 		&:hover {
 			.my-editor-scrollbar-v,
 			.my-editor-scrollbar-h {
+				display: block;
+
 				&::-webkit-scrollbar-thumb {
 					background-color: var(--my-scrollbarSlider-background);
 
@@ -40,10 +42,6 @@
 						background-color: var(--my-scrollbarSlider-activeBackground);
 					}
 				}
-			}
-
-			.my-editor-scrollbar-h {
-				display: block;
 			}
 		}
 	}
@@ -120,9 +118,12 @@
 	}
 
 	&-editor-scrollbar-v {
-		flex-shrink: 0;
+		display: none;
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		right: 0;
 		width: 14px;
-		height: 100%;
 		overflow: overlay;
 	}
 

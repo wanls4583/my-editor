@@ -2,17 +2,19 @@ let cacheMap = {};
 let cacheIds = [];
 let renderedIdMap = {};
 let dataObj = {};
-let ctx = null;
 let canvas = null;
+let leftDiffCanvas = null;
+let rightDiffCanvas = null;
+let ctx = null;
+let leftDiffCtx = null;
+let rightDiffCtx = null;
 let lines = null;
 let singleLines = {};
-let emptyPixl = [0, 0, 0, 0];
+let diffRanges = [];
 
 function drawLine({ top, lineObj }, targetImaData) {
 	let cache = cacheMap[lineObj.lineId];
 	let tokens = lineObj.tokens;
-	let marginLeft = 100 * dataObj.scale;
-	let codeWidth = dataObj.width - marginLeft;
 	if (compairCache(cache, lineObj.text, lineObj.preRuleId)) {
 		if (targetImaData) {
 			for (let i = 0; i < cache.imgData.data.length; i++) {
@@ -23,21 +25,21 @@ function drawLine({ top, lineObj }, targetImaData) {
 		cacheMap[lineObj.lineId] = {
 			text: lineObj.text,
 			preRuleId: lineObj.preRuleId,
-			imgData: _createImageData(codeWidth),
+			imgData: _createImageData(),
 		};
 	}
 	if (!targetImaData) {
 		let imgData = cacheMap[lineObj.lineId].imgData;
-		ctx.clearRect(marginLeft, top, codeWidth, dataObj.charHight);
-		ctx.putImageData(imgData, marginLeft, top);
+		ctx.clearRect(0, top, dataObj.width, dataObj.charHight);
+		ctx.putImageData(imgData, 0, top);
 	}
 
-	function _createImageData(codeWidth) {
-		let dataWidth = codeWidth * 4;
+	function _createImageData() {
+		let dataWidth = dataObj.width * 4;
 		let color = getRgb(dataObj.colors['editor.foreground']);
 		let buffers = new Array(dataObj.charHight).fill(0);
 		let buffer = [];
-		let imgData = new ImageData(codeWidth, dataObj.charHight);
+		let imgData = new ImageData(dataObj.width, dataObj.charHight);
 		buffers = buffers.map(() => {
 			let line = new Array(dataWidth).fill(0);
 			line.index = 0;
@@ -57,14 +59,14 @@ function drawLine({ top, lineObj }, targetImaData) {
 						color = getRgb(scope.settings.foreground);
 					}
 				}
-				_pushImgData({ codeWidth, buffers, text, color });
+				_pushImgData({ buffers, text, color });
 				// 退出无效渲染
 				if (buffers[0].index >= dataWidth) {
 					break;
 				}
 			}
 		} else {
-			_pushImgData({ codeWidth, buffers, text: getDrawText(lineObj.text), color });
+			_pushImgData({ buffers, text: getDrawText(lineObj.text), color });
 		}
 		buffers.forEach(buf => {
 			buffer = buffer.concat(buf);
@@ -78,8 +80,8 @@ function drawLine({ top, lineObj }, targetImaData) {
 		return imgData;
 	}
 
-	function _pushImgData({ codeWidth, buffers, text, color }) {
-		let dataWidth = codeWidth * 4;
+	function _pushImgData({ buffers, text, color }) {
+		let dataWidth = dataObj.width * 4;
 		for (let i = 0; i < text.length; i++) {
 			if (text[i] != ' ') {
 				let imgData = getCharImgData(text[i], color);
@@ -110,17 +112,19 @@ function drawLine({ top, lineObj }, targetImaData) {
 }
 
 function drawLines(lines) {
-	let marginLeft = 100 * dataObj.scale;
-	let width = dataObj.width - marginLeft;
-	let imgData = new ImageData(width, dataObj.height);
+	let imgData = new ImageData(dataObj.width, dataObj.height);
 	imgData.index = 0;
-	ctx.clearRect(marginLeft, 0, width, dataObj.height);
+	ctx.clearRect(0, 0, dataObj.width, dataObj.height);
 	lines.forEach(line => {
 		this.drawLine(line, imgData);
 	});
-	ctx.putImageData(imgData, marginLeft, 0);
+	ctx.putImageData(imgData, 0, 0);
 	cacheCanvas();
 }
+
+function drawLeftDiff() {}
+
+function drawRightDiff() {}
 
 // 定时更新
 function render() {
@@ -166,6 +170,21 @@ function cacheCanvas() {
 function compairCache(cache, text, preRuleId) {
 	if (cache && cache.text === text && cache.preRuleId === preRuleId) {
 		return true;
+	}
+}
+
+function initData(data) {
+	if (data.canvas) {
+		canvas = data.canvas;
+		ctx = canvas.getContext('2d');
+	}
+	if (data.leftDiffCanvas) {
+		leftDiffCanvas = data.leftDiffCanvas;
+		leftDiffCtx = leftDiffCanvas.getContext('2d');
+	}
+	if (data.rightDiffCanvas) {
+		rightDiffCanvas = data.rightDiffCanvas;
+		rightDiffCtx = rightDiffCanvas.getContext('2d');
 	}
 }
 
@@ -302,8 +321,7 @@ self.onmessage = function (e) {
 	let data = e.data;
 	switch (data.event) {
 		case 'init':
-			canvas = data.data.canvas;
-			ctx = canvas.getContext('2d');
+			this.initData(data.data);
 			break;
 		case 'init-data':
 			setData(data.data);
@@ -314,6 +332,9 @@ self.onmessage = function (e) {
 			line.lineObj = lineObj;
 			singleLines[lineObj.lineId] = line;
 			cacheLineObj(line);
+			break;
+		case 'render-diff':
+			diffRanges = data.data;
 			break;
 		case 'render':
 			lines = data.data;

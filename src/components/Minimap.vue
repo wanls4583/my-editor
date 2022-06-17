@@ -5,7 +5,9 @@
 -->
 <template>
 	<div class="my-minimap" ref="wrap">
-		<canvas :height="height" :width="width" ref="canvas"></canvas>
+		<canvas :height="height" :width="leftWidth" class="my-minimap-canvas-left" ref="leftDiffcanvas"></canvas>
+		<canvas :height="height" :width="width" class="my-minimap-canvas-center" ref="canvas"></canvas>
+		<canvas :height="height" :width="rightWidth" class="my-minimap-canvas-right" ref="rightDiffcanvas"></canvas>
 		<div :style="{top: blockTop + 'px', height: blockHeight + 'px'}" @mousedown="onBlockMDown" class="my-minimap-block"></div>
 	</div>
 </template>
@@ -29,6 +31,8 @@ export default {
 			maxVisibleLines: 1,
 			canvasHeight: 0,
 			width: 0,
+			leftWidth: 8,
+			rightWidth: 14,
 			height: 0,
 			blockHeight: 0,
 			scale: 0.1,
@@ -70,6 +74,8 @@ export default {
 					charHight: this.$parent.charObj.charHight * this.scale,
 					width: this.width,
 					height: this.height,
+					leftWidth: this.leftWidth,
+					rightWidth: this.rightWidth,
 					scale: this.scale,
 				});
 			}
@@ -124,7 +130,7 @@ export default {
 			EventBus.$off('render-line', this.initEventBus.fn1);
 		},
 		setSize() {
-			this.width = this.$refs.wrap.clientWidth;
+			this.width = this.$refs.wrap.clientWidth - 22;
 			this.height = this.$refs.wrap.clientHeight;
 			this.blockHeight = this.height * this.scale;
 			this.canvasHeight = this.height / this.scale;
@@ -191,6 +197,19 @@ export default {
 					this.renderedIdMap[lineObj.lineId] = { num: cache.num, text: lineObj.text, preRuleId };
 				}
 			}
+		},
+		renderDiff() {
+			cancelAnimationFrame(this.renderDiffTimer);
+			this.renderDiffTimer = requestAnimationFrame(() => {
+				let diffTree = this.$parent.diffTree || [];
+				diffTree = diffTree.map((item) => {
+					return {
+						line: item.line,
+						type: item.type,
+					};
+				});
+				this.worker.postMessage({ event: 'render-diff', data: diffTree });
+			});
 		},
 		getRenderObj(line) {
 			let top = (line - this.startLine) * this.$parent.charObj.charHight * this.scale;
