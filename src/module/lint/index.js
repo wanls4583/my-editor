@@ -26,8 +26,8 @@ function inttWorker() {
 	function _bindMsg() {
 		worker.on('message', data => {
 			if (typeof parseIdMap[data.parseId] === 'function') {
-				delete parseIdMap[data.parseId];
 				parseIdMap[data.parseId](data.results);
+				delete parseIdMap[data.parseId];
 			}
 		});
 		worker.on('close', () => {

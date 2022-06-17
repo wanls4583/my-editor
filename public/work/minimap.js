@@ -12,6 +12,7 @@ function drawLine({ top, lineObj }, targetImaData) {
 	let cache = cacheMap[lineObj.lineId];
 	let tokens = lineObj.tokens;
 	let marginLeft = 100 * dataObj.scale;
+	let codeWidth = dataObj.width - marginLeft;
 	if (compairCache(cache, lineObj.text, lineObj.preRuleId)) {
 		if (targetImaData) {
 			for (let i = 0; i < cache.imgData.data.length; i++) {
@@ -22,21 +23,21 @@ function drawLine({ top, lineObj }, targetImaData) {
 		cacheMap[lineObj.lineId] = {
 			text: lineObj.text,
 			preRuleId: lineObj.preRuleId,
-			imgData: _createImageData(),
+			imgData: _createImageData(codeWidth),
 		};
 	}
 	if (!targetImaData) {
 		let imgData = cacheMap[lineObj.lineId].imgData;
-		ctx.clearRect(0, top, dataObj.width, dataObj.charHight);
+		ctx.clearRect(marginLeft, top, codeWidth, dataObj.charHight);
 		ctx.putImageData(imgData, marginLeft, top);
 	}
 
-	function _createImageData() {
-		let dataWidth = dataObj.width * 4;
+	function _createImageData(codeWidth) {
+		let dataWidth = codeWidth * 4;
 		let color = getRgb(dataObj.colors['editor.foreground']);
 		let buffers = new Array(dataObj.charHight).fill(0);
 		let buffer = [];
-		let imgData = new ImageData(dataObj.width, dataObj.charHight);
+		let imgData = new ImageData(codeWidth, dataObj.charHight);
 		buffers = buffers.map(() => {
 			let line = new Array(dataWidth).fill(0);
 			line.index = 0;
@@ -56,14 +57,14 @@ function drawLine({ top, lineObj }, targetImaData) {
 						color = getRgb(scope.settings.foreground);
 					}
 				}
-				_pushImgData(buffers, text, color);
+				_pushImgData({ codeWidth, buffers, text, color });
 				// 退出无效渲染
-				if (buffers[0].index >= dataWidth - 1) {
+				if (buffers[0].index >= dataWidth) {
 					break;
 				}
 			}
 		} else {
-			_pushImgData(buffers, getDrawText(lineObj.text), color);
+			_pushImgData({ codeWidth, buffers, text: getDrawText(lineObj.text), color });
 		}
 		buffers.forEach(buf => {
 			buffer = buffer.concat(buf);
@@ -77,8 +78,8 @@ function drawLine({ top, lineObj }, targetImaData) {
 		return imgData;
 	}
 
-	function _pushImgData(buffers, text, color) {
-		let dataWidth = dataObj.width * 4;
+	function _pushImgData({ codeWidth, buffers, text, color }) {
+		let dataWidth = codeWidth * 4;
 		for (let i = 0; i < text.length; i++) {
 			if (text[i] != ' ') {
 				let imgData = getCharImgData(text[i], color);
@@ -101,7 +102,7 @@ function drawLine({ top, lineObj }, targetImaData) {
 					buffer.index += 4;
 				});
 			}
-			if (buffers[0].index >= dataWidth - 1) {
+			if (buffers[0].index >= dataWidth) {
 				break;
 			}
 		}
@@ -110,9 +111,10 @@ function drawLine({ top, lineObj }, targetImaData) {
 
 function drawLines(lines) {
 	let marginLeft = 100 * dataObj.scale;
-	let imgData = new ImageData(dataObj.width, dataObj.height);
+	let width = dataObj.width - marginLeft;
+	let imgData = new ImageData(width, dataObj.height);
 	imgData.index = 0;
-	ctx.clearRect(0, 0, dataObj.width, dataObj.height);
+	ctx.clearRect(marginLeft, 0, width, dataObj.height);
 	lines.forEach(line => {
 		this.drawLine(line, imgData);
 	});
