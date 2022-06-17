@@ -117,9 +117,9 @@ export default class {
 				deleted.shift();
 				line++;
 			}
-			if (added.length === 1 && added[0] === '') {
-				added = [];
-			}
+			// if (added.length === 1 && added[0] === '') {
+			// 	added = [];
+			// }
 			if (!added.length) {
 				type = 'D';
 			}
