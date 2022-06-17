@@ -5,9 +5,9 @@
 -->
 <template>
 	<div class="my-minimap" ref="wrap">
-		<canvas :height="height" :width="leftWidth" class="my-minimap-canvas-left" ref="leftDiffcanvas"></canvas>
+		<canvas :height="height" :width="leftWidth" class="my-minimap-canvas-left" ref="leftDiffCanvas"></canvas>
 		<canvas :height="height" :width="width" class="my-minimap-canvas-center" ref="canvas"></canvas>
-		<canvas :height="height" :width="rightWidth" class="my-minimap-canvas-right" ref="rightDiffcanvas"></canvas>
+		<canvas :height="height" :width="rightWidth" class="my-minimap-canvas-right" ref="rightDiffCanvas"></canvas>
 		<div :style="{top: blockTop + 'px', height: blockHeight + 'px'}" @mousedown="onBlockMDown" class="my-minimap-block"></div>
 	</div>
 </template>
@@ -57,7 +57,19 @@ export default {
 	},
 	mounted() {
 		let offscreen = this.$refs.canvas.transferControlToOffscreen();
-		this.worker.postMessage({ event: 'init', data: { canvas: offscreen } }, [offscreen]);
+		let leftOffscreen = this.$refs.leftDiffCanvas.transferControlToOffscreen();
+		let rightOffscreen = this.$refs.rightDiffCanvas.transferControlToOffscreen();
+		this.worker.postMessage(
+			{
+				event: 'init',
+				data: {
+					canvas: offscreen,
+					leftDiffCanvas: leftOffscreen,
+					rightDiffCanvas: rightOffscreen,
+				},
+			},
+			[offscreen, leftOffscreen, rightOffscreen]
+		);
 		this.setSize();
 		this.initWorkerData('theme');
 		this.initEvent();
@@ -155,6 +167,7 @@ export default {
 		},
 		render() {
 			this.renderLines();
+			this.renderDiff();
 		},
 		renderLines() {
 			let lines = [];
@@ -199,17 +212,20 @@ export default {
 			}
 		},
 		renderDiff() {
-			cancelAnimationFrame(this.renderDiffTimer);
-			this.renderDiffTimer = requestAnimationFrame(() => {
-				let diffTree = this.$parent.diffTree || [];
-				diffTree = diffTree.map((item) => {
-					return {
-						line: item.line,
-						type: item.type,
-					};
-				});
-				this.worker.postMessage({ event: 'render-diff', data: diffTree });
-			});
+			let diffTree = [];
+			if (this.$parent.diffTree) {
+				for (let i = 0; i < this.$parent.diffTree.length; i++) {
+					let item = this.$parent.diffTree[i];
+					if (item.line >= this.startLine && item.line <= this.startLine + this.maxVisibleLines) {
+						diffTree.push({
+							line: item.line - this.startLine + 1,
+							type: item.type,
+							length: item.type === 'D' ? 1 : item.added.length,
+						});
+					}
+				}
+			}
+			this.worker.postMessage({ event: 'render-diff', data: diffTree });
 		},
 		getRenderObj(line) {
 			let top = (line - this.startLine) * this.$parent.charObj.charHight * this.scale;

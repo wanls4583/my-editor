@@ -122,14 +122,76 @@ function drawLines(lines) {
 	cacheCanvas();
 }
 
-function drawLeftDiff() {}
+function drawLeftDiff() {
+	let imgData = new ImageData(dataObj.leftWidth, dataObj.height);
+	leftDiffCtx.clearRect(0, 0, dataObj.leftWidth, dataObj.height);
+	if (diffRanges.length) {
+		diffRanges.forEach(item => {
+			let rgb = _getDiffColor(item.type);
+			for (let i = 0; i < item.length; i++) {
+				_putLinePixl(item.line + i, rgb, item.type);
+			}
+		});
+		leftDiffCtx.putImageData(imgData, 0, 0);
+	}
+	diffRanges = null;
 
-function drawRightDiff() {}
+	function _putLinePixl(line, rgb, type) {
+		if (type === 'D') {
+			let index = (dataObj.leftWidth * dataObj.charHight * (line - 1) + 2) * 4;
+			_putPixl(index, rgb);
+			_putPixl(index + 4, rgb);
+			_putPixl(index + 8, rgb);
+			_putPixl(index + 12, rgb);
+			index += dataObj.leftWidth * 4;
+			_putPixl(index, rgb);
+			_putPixl(index + 4, rgb);
+			_putPixl(index + 8, rgb);
+			_putPixl(index + 12, rgb);
+		} else {
+			let index = (dataObj.leftWidth * dataObj.charHight * (line - 1) + 3) * 4;
+			_putPixl(index, rgb);
+			_putPixl(index + 4, rgb);
+			index += dataObj.leftWidth * 4;
+			_putPixl(index, rgb);
+			_putPixl(index + 4, rgb);
+		}
+	}
+
+	function _putPixl(index, rgb) {
+		if(index < imgData.data.length) {
+			imgData.data[index] = rgb[0];
+			imgData.data[index + 1] = rgb[1];
+			imgData.data[index + 2] = rgb[2];
+			imgData.data[index + 3] = 255;
+		}
+	}
+
+	function _getDiffColor(type) {
+		let color = dataObj.colors['editor.foreground'];
+		switch (type) {
+			case 'A':
+				color = dataObj.colors['gitDecoration.addedResourceForeground'];
+				break;
+			case 'M':
+				color = dataObj.colors['gitDecoration.modifiedResourceForeground'];
+				break;
+			case 'D':
+				color = dataObj.colors['gitDecoration.deletedResourceForeground'];
+				break;
+		}
+		return getRgb(color);
+	}
+}
+
+function drawRightDiff() {
+	rightDiffCtx.clearRect(0, 0, dataObj.rightWidth, dataObj.height);
+}
 
 // 定时更新
 function render() {
 	try {
-		if (dataObj.width && dataObj.height && dataObj.charHight) {
+		if (dataObj.width && dataObj.height && dataObj.charHight && ctx) {
 			if (lines) {
 				drawLines(lines);
 				lines = null;
@@ -138,6 +200,10 @@ function render() {
 					drawLine(singleLines[key]);
 				}
 				singleLines = {};
+			}
+			if (diffRanges) {
+				drawLeftDiff();
+				drawRightDiff();
 			}
 		}
 	} catch (e) {
@@ -193,6 +259,8 @@ function setData(data) {
 	Object.assign(dataObj, data);
 	canvas.width = dataObj.width || canvas.width;
 	canvas.height = dataObj.height || canvas.height;
+	leftDiffCanvas.height = dataObj.height || leftDiffCanvas.height;
+	rightDiffCanvas.height = dataObj.height || rightDiffCanvas.height;
 	for (let key in dataObj) {
 		if (originDataObj[key] !== dataObj[key]) {
 			// 清空数据
