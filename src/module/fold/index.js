@@ -113,6 +113,10 @@ export default class {
         });
         return it && it.next();
     }
+    /**
+     * 检测行是否在折叠区域内【折叠后隐藏的行】
+     * @param {Number} line 行号
+     */
     getLineInFold(line) {
         let it = this.folds.search(
             line,

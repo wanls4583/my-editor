@@ -158,6 +158,7 @@ export default {
 			scrollTop = scrollTop > maxScrollTop1 ? maxScrollTop1 : scrollTop;
 			this.startLine = Math.floor(scrollTop / this.$parent.charObj.charHight);
 			this.startLine++;
+			this.startLine = this.$parent.folder.getRealLine(this.startLine);
 			this.top = scrollTop % this.$parent.charObj.charHight;
 			this.setTop();
 		},
@@ -213,15 +214,29 @@ export default {
 		},
 		renderDiff() {
 			let diffTree = [];
+			let endLine = 0;
 			if (this.$parent.diffTree) {
+				for (let line = this.startLine, i = 0; line <= this.$parent.myContext.htmls.length && i < this.maxVisibleLines; i++) {
+					let fold = this.$parent.folder.getFoldByLine(line);
+					endLine = line;
+					if (fold) {
+						line = fold.end.line;
+					} else {
+						line++;
+					}
+				}
 				for (let i = 0; i < this.$parent.diffTree.length; i++) {
 					let item = this.$parent.diffTree[i];
-					if (item.line >= this.startLine && item.line <= this.startLine + this.maxVisibleLines) {
-						diffTree.push({
-							line: item.line - this.startLine + 1,
-							type: item.type,
-							length: item.type === 'D' ? 1 : item.added.length,
-						});
+					if (item.line >= this.startLine && item.line <= endLine) {
+						if (!this.$parent.folder.getLineInFold(item.line)) {
+							diffTree.push({
+								line: this.$parent.folder.getRelativeLine(item.line) - this.startLine + 1,
+								type: item.type,
+								length: item.type === 'D' ? 1 : item.added.length,
+							});
+						}
+					} else if (item.line > endLine) {
+						break;
 					}
 				}
 			}
