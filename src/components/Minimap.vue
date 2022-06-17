@@ -98,7 +98,7 @@ export default {
 				});
 			}
 			this.worker.postMessage({
-				event: 'init-data',
+				event: 'set-data',
 				data: data,
 			});
 		},
@@ -276,8 +276,9 @@ export default {
 			};
 		},
 		getDiffObj(item) {
-			let line = this.$parent.folder.getRelativeLine(item.line) - this.startLine + 1;
-			let top = Math.round(((line * this.$parent.charObj.charHight) / this.contentHeight) * this.height);
+			let relLine = this.$parent.folder.getRelativeLine(item.line);
+			let line = relLine - this.startLine + 1;
+			let top = Math.round((((relLine - 1) * this.$parent.charObj.charHight) / this.contentHeight) * this.height);
 			let length = item.type === 'D' ? 1 : item.added.length;
 			if (length > 1) {
 				let count = 0;

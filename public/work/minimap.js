@@ -143,7 +143,18 @@ function drawLeftDiff() {
 }
 
 function drawRightDiff() {
+	let imgData = new ImageData(dataObj.rightWidth, dataObj.height);
 	rightDiffCtx.clearRect(0, 0, dataObj.rightWidth, dataObj.height);
+	if (allDiffRanges) {
+		allDiffRanges.forEach(item => {
+			let rgb = getDiffColor(item.type);
+			for (let i = 0; i < item.length; i++) {
+				putRectPixl({ imgData, left: 0, top: item.top + i * dataObj.charHight, width: 5, height: dataObj.charHight, rgb });
+			}
+		});
+		rightDiffCtx.putImageData(imgData, 0, 0);
+	}
+	allDiffRanges = null;
 }
 
 function putRectPixl({ imgData, left, top, width, height, rgb }) {
@@ -398,7 +409,7 @@ self.onmessage = function (e) {
 		case 'init':
 			this.initData(data.data);
 			break;
-		case 'init-data':
+		case 'set-data':
 			setData(data.data);
 			break;
 		case 'render-line':
