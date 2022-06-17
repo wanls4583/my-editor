@@ -258,6 +258,9 @@ function setData(data) {
 		canvas.width = data.width;
 		_emptyCode();
 	}
+	if (data.colors || data.scopeIdMap) {
+		_emptyCode();
+	}
 	if (data.leftWidth !== undefined && data.leftWidth !== dataObj.leftWidth) {
 		leftDiffCanvas.width = data.leftWidth;
 	}
