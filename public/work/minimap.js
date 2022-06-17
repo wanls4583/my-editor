@@ -255,20 +255,29 @@ function initData(data) {
 }
 
 function setData(data) {
-	let originDataObj = Object.assign({}, data);
+	if (data.height !== undefined && data.height !== dataObj.height) {
+		canvas.height = data.height;
+		leftDiffCanvas.height = data.height;
+		rightDiffCanvas.height = data.height;
+		_emptyCode();
+	}
+	if (data.width !== undefined && data.width !== dataObj.width) {
+		canvas.width = data.width;
+		_emptyCode();
+	}
+	if (data.leftWidth !== undefined && data.leftWidth !== dataObj.leftWidth) {
+		leftDiffCanvas.width = data.leftWidth;
+	}
+	if (data.rightWidth !== undefined && data.rightWidth !== dataObj.rightWidth) {
+		rightDiffCanvas.width = data.rightWidth;
+	}
 	Object.assign(dataObj, data);
-	canvas.width = dataObj.width || canvas.width;
-	canvas.height = dataObj.height || canvas.height;
-	leftDiffCanvas.height = dataObj.height || leftDiffCanvas.height;
-	rightDiffCanvas.height = dataObj.height || rightDiffCanvas.height;
-	for (let key in dataObj) {
-		if (originDataObj[key] !== dataObj[key]) {
-			// 清空数据
-			cacheMap = {};
-			lines = null;
-			singleLines = {};
-			break;
-		}
+
+	function _emptyCode() {
+		// 清空数据
+		cacheMap = {};
+		lines = null;
+		singleLines = {};
 	}
 }
 
