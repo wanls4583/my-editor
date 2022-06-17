@@ -7,7 +7,7 @@ const cacheIndexs = [];
 const fileCacheMap = { size: 0 };
 
 process.on('uncaughtException', e => {
-	console.log(e);
+	console.log('uncaughtException', e);
 });
 
 process.on('message', data => {
@@ -30,7 +30,7 @@ function diff(stagedContent, data) {
 	let result = [];
 	let count = 1;
 	let diffs = Diff.diffLines(stagedContent, data.content) || [];
-	for(let index = 2; index < diffs.length; index++) {
+	for (let index = 2; index < diffs.length; index++) {
 		let first = diffs[index - 2];
 		let second = diffs[index - 1];
 		let third = diffs[index];
@@ -39,7 +39,7 @@ function diff(stagedContent, data) {
 		// { count: 1, value: '\n' },
 		// { count: 1, added: true, removed: undefined, value: '\n' },
 		// { count: 1, value: '</html>' }
-		if(third.added && third.value === second.value && !second.removed && first.removed) {
+		if (third.added && third.value === second.value && !second.removed && first.removed) {
 			third.added = undefined;
 			second.added = true;
 		}
@@ -81,14 +81,14 @@ function cacheFile(fileIndex, stagedContent) {
 }
 
 function getNowHash(filePath) {
-	return spawnSync(`git log -1 --format="%H"`, { cwd: path.dirname(filePath) }).output;
+	return spawnSync('git', ['log', '-1', '--format=%H'], { cwd: path.dirname(filePath) }).stdout.toString();
 }
 
 function getCacheHash(filePath) {
 	let fileIndex = '';
 	try {
-		fileIndex = spawnSync(`git diff-index HEAD --cached ${filePath}`, { cwd: path.dirname(filePath) }).output;
-		fileIndex = (fileIndex && fileIndex.join('')) || filePath;
+		fileIndex = spawnSync('git', ['diff-index', 'HEAD', '--cached', filePath], { cwd: path.dirname(filePath) });
+		fileIndex = fileIndex.stdout.toString() || filePath;
 	} catch (e) {
 		console.log(e);
 	}
@@ -99,7 +99,7 @@ function getStagedContent(filePath) {
 	if (process.platform === 'win32') {
 		child = spawn('cmd', [`/C chcp 65001>nul && git show :./${path.basename(filePath)}`], { cwd: path.dirname(filePath) });
 	} else {
-		child = spawn('git show', [`:./${path.basename(filePath)}`], { cwd: path.dirname(filePath) });
+		child = spawn('git', ['show', `:./${path.basename(filePath)}`], { cwd: path.dirname(filePath) });
 	}
 	return new Promise(resolve => {
 		let result = '';
