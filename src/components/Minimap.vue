@@ -213,34 +213,46 @@ export default {
 			}
 		},
 		renderDiff() {
-			let diffTree = [];
-			let endLine = 0;
-			if (this.$parent.diffTree) {
-				for (let line = this.startLine, i = 0; line <= this.$parent.myContext.htmls.length && i < this.maxVisibleLines; i++) {
-					let fold = this.$parent.folder.getFoldByLine(line);
-					endLine = line;
-					if (fold) {
-						line = fold.end.line;
-					} else {
-						line++;
+			cancelAnimationFrame(this.renderDiffTimer);
+			this.renderDiffTimer = requestAnimationFrame(() => {
+				let diffRanges = [];
+				let endLine = 0;
+				if (this.$parent.diffRanges) {
+					for (let line = this.startLine, i = 0; line <= this.$parent.myContext.htmls.length && i < this.maxVisibleLines; i++) {
+						let fold = this.$parent.folder.getFoldByLine(line);
+						endLine = line;
+						if (fold) {
+							line = fold.end.line;
+						} else {
+							line++;
+						}
+					}
+					for (let i = 0; i < this.$parent.diffRanges.length; i++) {
+						let item = this.$parent.diffRanges[i];
+						if (item.line >= this.startLine && item.line <= endLine) {
+							if (!this.$parent.folder.getLineInFold(item.line)) {
+								diffRanges.push(this.getDiffObj(item));
+							}
+						} else if (item.line > endLine) {
+							break;
+						}
 					}
 				}
-				for (let i = 0; i < this.$parent.diffTree.length; i++) {
-					let item = this.$parent.diffTree[i];
-					if (item.line >= this.startLine && item.line <= endLine) {
-						if (!this.$parent.folder.getLineInFold(item.line)) {
-							diffTree.push({
-								line: this.$parent.folder.getRelativeLine(item.line) - this.startLine + 1,
-								type: item.type,
-								length: item.type === 'D' ? 1 : item.added.length,
-							});
-						}
-					} else if (item.line > endLine) {
-						break;
+				this.worker.postMessage({ event: 'render-diff', data: diffRanges });
+			});
+		},
+		renderAllDiff() {
+			let diffRanges = [];
+			if (this.$parent.diffRanges) {
+				for (let i = 0; i < this.$parent.diffRanges.length; i++) {
+					let item = this.$parent.diffRanges[i];
+					if (!this.$parent.folder.getLineInFold(item.line)) {
+						diffRanges.push(this.getDiffObj(item));
 					}
 				}
 			}
-			this.worker.postMessage({ event: 'render-diff', data: diffTree });
+			this.worker.postMessage({ event: 'render-diff-all', data: diffRanges });
+			this.renderDiff();
 		},
 		getRenderObj(line) {
 			let top = (line - this.startLine) * this.$parent.charObj.charHight * this.scale;
@@ -264,6 +276,32 @@ export default {
 							return { startIndex: item.startIndex, endIndex: item.endIndex, scopeId: item.scopeId };
 						}),
 				},
+			};
+		},
+		getDiffObj(item) {
+			let line = this.$parent.folder.getRelativeLine(item.line) - this.startLine + 1;
+			let top = Math.round(((line * this.$parent.charObj.charHight) / this.contentHeight) * this.height);
+			let length = item.type === 'D' ? 1 : item.added.length;
+			if (length > 1) {
+				let count = 0;
+				let endLine = item.line + length - 1;
+				let i = item.line;
+				while (i <= endLine) {
+					let fold = this.$parent.folder.getFoldByLine(i);
+					count++;
+					if (fold) {
+						i = fold.end.line;
+					} else {
+						i++;
+					}
+				}
+				length = count;
+			}
+			return {
+				top: top,
+				line: line,
+				type: item.type,
+				length: length,
 			};
 		},
 		compairCache(cache, text, preRuleId) {

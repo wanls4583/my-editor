@@ -196,7 +196,7 @@ export default {
 			renderSelectionObjs: [],
 			renderedLineMap: {},
 			renderedIdMap: {},
-			diffTree: null,
+			diffRanges: null,
 			tipContent: null,
 			menuVisible: false,
 			searchVisible: false,
@@ -299,7 +299,7 @@ export default {
 		_diffType() {
 			return (line) => {
 				if (this.type !== 'diff') {
-					let preDiff = this.getPrevDiff(this.diffTree, line);
+					let preDiff = this.getPrevDiff(this.diffRanges, line);
 					let type = (preDiff && gitTypeMap[preDiff.type]) || '';
 					if (type === 'delete') {
 						if (preDiff.line === line + 1) {
@@ -559,8 +559,8 @@ export default {
 				'git-diffed',
 				(this.initEventBus.fn5 = (data) => {
 					if (data && data.path === this.path) {
-						this.diffTree = data.result;
-						this.$refs.minimap && this.$refs.minimap.renderDiff();
+						this.diffRanges = data.result;
+						this.$refs.minimap && this.$refs.minimap.renderAllDiff();
 					}
 				})
 			);
@@ -1119,6 +1119,7 @@ export default {
 				});
 				this.setContentHeight();
 				this.render();
+				this.$refs.minimap && this.$refs.minimap.renderAllDiff();
 			}
 		},
 		// 展开折叠行
@@ -1127,6 +1128,7 @@ export default {
 			if (this.folder.unFold(line)) {
 				this.setContentHeight();
 				this.render();
+				this.$refs.minimap && this.$refs.minimap.renderAllDiff();
 			}
 		},
 		// ctrl+f打开搜索
@@ -1545,12 +1547,12 @@ export default {
 			}
 			return span.offsetLeft + this.getStrWidth(lineObj.text.slice(startIndex, cursorPos.column));
 		},
-		getPrevDiff(diffTree, line) {
-			if (!diffTree) {
+		getPrevDiff(diffRanges, line) {
+			if (!diffRanges) {
 				return null;
 			}
-			for (let i = 0; i < diffTree.length; i++) {
-				let item = diffTree[i];
+			for (let i = 0; i < diffRanges.length; i++) {
+				let item = diffRanges[i];
 				if (item.line <= line) {
 					if (item.type === 'D') {
 						if (item.line === line) {
@@ -1911,7 +1913,7 @@ export default {
 			this.searchVisible = false;
 		},
 		onShowDiff(line) {
-			let preDiff = this.getPrevDiff(this.diffTree, line);
+			let preDiff = this.getPrevDiff(this.diffRanges, line);
 			this.diffLine = line;
 			this.diffVisible = false;
 			this.diffMarginTop = 0;

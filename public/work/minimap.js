@@ -10,7 +10,8 @@ let leftDiffCtx = null;
 let rightDiffCtx = null;
 let lines = null;
 let singleLines = {};
-let diffRanges = [];
+let diffRanges = null;
+let allDiffRanges = null;
 
 function drawLine({ top, lineObj }, targetImaData) {
 	let cache = cacheMap[lineObj.lineId];
@@ -138,32 +139,9 @@ function drawLeftDiff() {
 
 	function _putLinePixl(line, rgb, type) {
 		if (type === 'D') {
-			let index = (dataObj.leftWidth * dataObj.charHight * (line - 1) + 2) * 4;
-			_putPixl(index, rgb);
-			_putPixl(index + 4, rgb);
-			_putPixl(index + 8, rgb);
-			_putPixl(index + 12, rgb);
-			index += dataObj.leftWidth * 4;
-			_putPixl(index, rgb);
-			_putPixl(index + 4, rgb);
-			_putPixl(index + 8, rgb);
-			_putPixl(index + 12, rgb);
+			putRectPixl({ imgData, left: 2, top: (line - 1) * dataObj.charHight, width: 4, height: dataObj.charHight, rgb });
 		} else {
-			let index = (dataObj.leftWidth * dataObj.charHight * (line - 1) + 3) * 4;
-			_putPixl(index, rgb);
-			_putPixl(index + 4, rgb);
-			index += dataObj.leftWidth * 4;
-			_putPixl(index, rgb);
-			_putPixl(index + 4, rgb);
-		}
-	}
-
-	function _putPixl(index, rgb) {
-		if(index < imgData.data.length) {
-			imgData.data[index] = rgb[0];
-			imgData.data[index + 1] = rgb[1];
-			imgData.data[index + 2] = rgb[2];
-			imgData.data[index + 3] = 255;
+			putRectPixl({ imgData, left: 3, top: (line - 1) * dataObj.charHight, width: 2, height: dataObj.charHight, rgb });
 		}
 	}
 
@@ -188,6 +166,28 @@ function drawRightDiff() {
 	rightDiffCtx.clearRect(0, 0, dataObj.rightWidth, dataObj.height);
 }
 
+function putRectPixl({ imgData, left, top, width, height, rgb }) {
+	let index = (imgData.width * top + left) * 4;
+	let originIndex = index;
+	for (let h = 0; h < height; h++) {
+		for (let w = 0; w < width; w++) {
+			_putPixl(index, rgb);
+			index += 4;
+		}
+		originIndex += imgData.width * 4;
+		index = originIndex;
+	}
+
+	function _putPixl(index, rgb) {
+		if (index < imgData.data.length) {
+			imgData.data[index] = rgb[0];
+			imgData.data[index + 1] = rgb[1];
+			imgData.data[index + 2] = rgb[2];
+			imgData.data[index + 3] = 255;
+		}
+	}
+}
+
 // 定时更新
 function render() {
 	try {
@@ -203,6 +203,8 @@ function render() {
 			}
 			if (diffRanges) {
 				drawLeftDiff();
+			}
+			if (allDiffRanges) {
 				drawRightDiff();
 			}
 		}
@@ -410,9 +412,6 @@ self.onmessage = function (e) {
 			singleLines[lineObj.lineId] = line;
 			cacheLineObj(line);
 			break;
-		case 'render-diff':
-			diffRanges = data.data;
-			break;
 		case 'render':
 			lines = data.data;
 			lines.map(item => {
@@ -420,6 +419,12 @@ self.onmessage = function (e) {
 			});
 			cacheLineObj();
 			singleLines = {};
+			break;
+		case 'render-diff':
+			diffRanges = data.data;
+			break;
+		case 'render-diff-all':
+			allDiffRanges = data.data;
 			break;
 	}
 };
