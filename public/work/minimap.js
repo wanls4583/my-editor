@@ -120,6 +120,11 @@ function drawLines(lines) {
 		canvasImgData.data[i] = 0;
 	}
 	ctx.putImageData(canvasImgData, 0, 0);
+	if (cursorsImg) {
+		// 在现有的画布内容后面绘制新的图形
+		ctx.globalCompositeOperation = 'destination-over';
+		ctx.drawImage(cursorsImg, 0, 0);
+	}
 	cacheCanvas();
 }
 
@@ -131,6 +136,11 @@ function drawSingleLiens(singleLines) {
 		drawLine(singleLines[key]);
 	}
 	ctx.putImageData(canvasImgData, 0, 0);
+	if (cursorsImg) {
+		// 在现有的画布内容后面绘制新的图形
+		ctx.globalCompositeOperation = 'destination-over';
+		ctx.drawImage(cursorsImg, 0, 0);
+	}
 }
 
 function drawLeftDiff() {
@@ -148,7 +158,6 @@ function drawLeftDiff() {
 			}
 		});
 		leftDiffCtx.putImageData(leftDiffCanvasImgData, 0, 0);
-		cursorsImg && rightDiffCtx.drawImage(cursorsImg, 0, 0);
 	}
 	diffRanges = null;
 }
@@ -164,7 +173,9 @@ function drawRightDiff() {
 			}
 		});
 		rightDiffCtx.putImageData(rightDiffCanvasImgData, 0, 0);
-		allCursorImg && rightDiffCtx.drawImage(allCursorImg, 0, 0);
+		if (allCursorImg) {
+			rightDiffCtx.drawImage(allCursorImg, 0, 0);
+		}
 	}
 	allDiffRanges = null;
 }
@@ -178,6 +189,8 @@ function drawCursor() {
 	createImageBitmap(cursorsImgData).then(img => {
 		ctx.clearRect(0, 0, dataObj.width, dataObj.height);
 		ctx.putImageData(canvasImgData, 0, 0);
+		// 在现有的画布内容后面绘制新的图形
+		ctx.globalCompositeOperation = 'destination-over';
 		ctx.drawImage(img, 0, 0);
 		cursorsImg = img;
 	});

@@ -117,7 +117,7 @@ export default class {
             //触发滚动
             this.setNowCursorPos(this.nowCursorPos);
         } else {
-            this.renderCursor(false, true);
+            this.renderCursor();
         }
         return cursorPos;
     }
@@ -129,7 +129,7 @@ export default class {
             if (cursorPos === this.nowCursorPos) {
                 this.setNowCursorPos(null);
             }
-            this.renderCursor(false, true);
+            this.renderCursor();
         }
     }
     removeCursorInRange(range) {
@@ -150,7 +150,7 @@ export default class {
                 item.del = true;
                 this.multiCursorPos.delete(item);
             });
-            this.renderCursor(false, true);
+            this.renderCursor();
         }
     }
     clearCursorPos() {

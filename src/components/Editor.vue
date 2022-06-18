@@ -991,7 +991,7 @@ export default {
 			lineObj.html = '';
 		},
 		// 渲染光标
-		renderCursor(scrollToCursor, cursorChanged) {
+		renderCursor(scrollToCursor) {
 			let that = this;
 			if (this.renderCursorTimer) {
 				return;
@@ -1005,7 +1005,7 @@ export default {
 				this.cursorVisible = true;
 				if (this.$refs.minimap) {
 					this.$refs.minimap.renderCursor();
-					cursorChanged && this.$refs.minimap.renderAllCursor();
+					this.$refs.minimap.renderAllCursor();
 				}
 			});
 

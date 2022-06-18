@@ -261,7 +261,10 @@ export default {
 				}
 				preCursorPos = cursorPos;
 			}
-			this.worker.postMessage({ event: 'render-cursor', data: results });
+			if (this.cursorResult + '' !== results + '') {
+				this.cursorResult = results;
+				this.worker.postMessage({ event: 'render-cursor', data: results });
+			}
 		},
 		renderAllCursor() {
 			let list = this.$parent.cursor.multiCursorPos.toArray();
@@ -277,7 +280,10 @@ export default {
 				}
 				preCursorPos = cursorPos;
 			}
-			this.worker.postMessage({ event: 'render-cursor-all', data: results });
+			if (this.allCursorResult + '' !== results + '') {
+				this.allCursorResult = results;
+				this.worker.postMessage({ event: 'render-cursor-all', data: results });
+			}
 		},
 		getEndLine() {
 			let endLine = 0;
