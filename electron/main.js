@@ -3,7 +3,7 @@
  * @Date: 2022-03-09 09:58:18
  * @Description:
  */
-const { BrowserWindow, app, protocol } = require('electron');
+const { BrowserWindow, Menu, app, protocol } = require('electron');
 const main = require('@electron/remote/main');
 const path = require('path');
 const Terminal = require('./main/terminal').Terminal;
@@ -40,6 +40,7 @@ function createWindow(name, url, type, parent) {
 
 app.whenReady()
 	.then(() => {
+		// Menu.setApplicationMenu(null); //屏蔽默认快捷键
 		initProtocol();
 		main.initialize();
 		if (process.argv[2] === 'development') {
