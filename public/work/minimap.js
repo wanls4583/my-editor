@@ -9,18 +9,20 @@ let ctx = null;
 let leftDiffCtx = null;
 let rightDiffCtx = null;
 let lines = null;
-let singleLines = {};
+let singleLines = null;
 let diffRanges = null;
 let allDiffRanges = null;
+let cursors = null;
+let canvasImgData = null;
+let leftDiffCanvasImgData = null;
+let rightDiffCanvasImgData = null;
 
-function drawLine({ top, lineObj }, targetImaData) {
+function drawLine({ top, lineObj }) {
 	let cache = cacheMap[lineObj.lineId];
 	let tokens = lineObj.tokens;
 	if (compairCache(cache, lineObj.text, lineObj.preRuleId)) {
-		if (targetImaData) {
-			for (let i = 0; i < cache.imgData.data.length; i++) {
-				targetImaData.data[targetImaData.index++] = cache.imgData.data[i];
-			}
+		for (let i = 0; i < cache.imgData.data.length; i++) {
+			canvasImgData.data[canvasImgData.index++] = cache.imgData.data[i];
 		}
 	} else {
 		cacheMap[lineObj.lineId] = {
@@ -28,11 +30,6 @@ function drawLine({ top, lineObj }, targetImaData) {
 			preRuleId: lineObj.preRuleId,
 			imgData: _createImageData(),
 		};
-	}
-	if (!targetImaData) {
-		let imgData = cacheMap[lineObj.lineId].imgData;
-		ctx.clearRect(0, top, dataObj.width, dataObj.charHight);
-		ctx.putImageData(imgData, 0, top);
 	}
 
 	function _createImageData() {
@@ -74,9 +71,7 @@ function drawLine({ top, lineObj }, targetImaData) {
 		});
 		for (let i = 0; i < imgData.data.length; i++) {
 			imgData.data[i] = buffer[i];
-			if (targetImaData) {
-				targetImaData.data[targetImaData.index++] = imgData.data[i];
-			}
+			canvasImgData.data[canvasImgData.index++] = imgData.data[i];
 		}
 		return imgData;
 	}
@@ -113,49 +108,63 @@ function drawLine({ top, lineObj }, targetImaData) {
 }
 
 function drawLines(lines) {
-	let imgData = new ImageData(dataObj.width, dataObj.height);
-	imgData.index = 0;
+	canvasImgData.index = 0;
 	ctx.clearRect(0, 0, dataObj.width, dataObj.height);
 	lines.forEach(line => {
-		this.drawLine(line, imgData);
+		this.drawLine(line);
 	});
-	ctx.putImageData(imgData, 0, 0);
+	for (let i = canvasImgData.index; i < canvasImgData.data.length; i++) {
+		canvasImgData.data[i] = 0;
+	}
+	ctx.putImageData(canvasImgData, 0, 0);
 	cacheCanvas();
 }
 
+function drawSingleLiens(singleLines) {
+	ctx.clearRect(0, 0, dataObj.width, dataObj.height);
+	for (let key in singleLines) {
+		let obj = singleLines[key];
+		canvasImgData.index = Math.round(dataObj.width * obj.top) * 4;
+		drawLine(singleLines[key]);
+	}
+	ctx.putImageData(canvasImgData, 0, 0);
+}
+
 function drawLeftDiff() {
-	let imgData = new ImageData(dataObj.leftWidth, dataObj.height);
+	leftDiffCanvasImgData.data.fill(0);
 	leftDiffCtx.clearRect(0, 0, dataObj.leftWidth, dataObj.height);
 	if (diffRanges.length) {
 		diffRanges.forEach(item => {
 			let rgb = getDiffColor(item.type);
 			for (let i = 0; i < item.length; i++) {
 				if (item.type === 'D') {
-					putRectPixl({ imgData, left: 2, top: (item.line + i - 1) * dataObj.charHight, width: 4, height: dataObj.charHight, rgb });
+					putRectPixl({ imgData: leftDiffCanvasImgData, left: 2, top: (item.line + i - 1) * dataObj.charHight, width: 4, height: dataObj.charHight, rgb });
 				} else {
-					putRectPixl({ imgData, left: 3, top: (item.line + i - 1) * dataObj.charHight, width: 2, height: dataObj.charHight, rgb });
+					putRectPixl({ imgData: leftDiffCanvasImgData, left: 3, top: (item.line + i - 1) * dataObj.charHight, width: 2, height: dataObj.charHight, rgb });
 				}
 			}
 		});
-		leftDiffCtx.putImageData(imgData, 0, 0);
+		leftDiffCtx.putImageData(leftDiffCanvasImgData, 0, 0);
 	}
 	diffRanges = null;
 }
 
 function drawRightDiff() {
-	let imgData = new ImageData(dataObj.rightWidth, dataObj.height);
+	rightDiffCanvasImgData.data.fill(0);
 	rightDiffCtx.clearRect(0, 0, dataObj.rightWidth, dataObj.height);
 	if (allDiffRanges) {
 		allDiffRanges.forEach(item => {
 			let rgb = getDiffColor(item.type);
 			for (let i = 0; i < item.length; i++) {
-				putRectPixl({ imgData, left: 0, top: item.top + i * dataObj.charHight, width: 5, height: dataObj.charHight, rgb });
+				putRectPixl({ imgData: rightDiffCanvasImgData, left: 0, top: item.top + i * dataObj.charHight, width: 5, height: dataObj.charHight, rgb });
 			}
 		});
-		rightDiffCtx.putImageData(imgData, 0, 0);
+		rightDiffCtx.putImageData(rightDiffCanvasImgData, 0, 0);
 	}
 	allDiffRanges = null;
 }
+
+function drawCursor() {}
 
 function putRectPixl({ imgData, left, top, width, height, rgb }) {
 	let index = (imgData.width * top + left) * 4;
@@ -186,11 +195,9 @@ function render() {
 			if (lines) {
 				drawLines(lines);
 				lines = null;
-			} else {
-				for (let key in singleLines) {
-					drawLine(singleLines[key]);
-				}
-				singleLines = {};
+			} else if (singleLines) {
+				drawSingleLiens(singleLines);
+				singleLines = null;
 			}
 			if (diffRanges) {
 				drawLeftDiff();
@@ -202,7 +209,8 @@ function render() {
 	} catch (e) {
 		console.log(e);
 	}
-	setTimeout(() => {
+	clearTimeout(render.timer);
+	render.timer = setTimeout(() => {
 		render();
 	}, 15);
 }
@@ -248,18 +256,19 @@ function initData(data) {
 }
 
 function setData(data) {
+	let sizeChange = false;
 	if (data.height !== undefined && data.height !== dataObj.height) {
 		canvas.height = data.height;
 		leftDiffCanvas.height = data.height;
 		rightDiffCanvas.height = data.height;
-		_emptyCode();
+		sizeChange = true;
 	}
 	if (data.width !== undefined && data.width !== dataObj.width) {
 		canvas.width = data.width;
-		_emptyCode();
+		sizeChange = true;
 	}
 	if (data.colors || data.scopeIdMap) {
-		_emptyCode();
+		sizeChange = true;
 	}
 	if (data.leftWidth !== undefined && data.leftWidth !== dataObj.leftWidth) {
 		leftDiffCanvas.width = data.leftWidth;
@@ -268,12 +277,22 @@ function setData(data) {
 		rightDiffCanvas.width = data.rightWidth;
 	}
 	Object.assign(dataObj, data);
+	sizeChange && _emptyCode();
 
 	function _emptyCode() {
 		// 清空数据
 		cacheMap = {};
 		lines = null;
-		singleLines = {};
+		singleLines = null;
+		if (dataObj.width && dataObj.height) {
+			canvasImgData = new ImageData(dataObj.width, dataObj.height);
+		}
+		if (dataObj.leftWidth && dataObj.height) {
+			leftDiffCanvasImgData = new ImageData(dataObj.leftWidth, dataObj.height);
+		}
+		if (dataObj.rightWidth && dataObj.height) {
+			rightDiffCanvasImgData = new ImageData(dataObj.rightWidth, dataObj.height);
+		}
 	}
 }
 
@@ -404,37 +423,42 @@ function getDiffColor(type) {
 	return getRgb(color);
 }
 
-render();
-
 self.onmessage = function (e) {
 	let data = e.data;
-	switch (data.event) {
+	let event = data.event;
+	data = data.data;
+	switch (event) {
 		case 'init':
-			this.initData(data.data);
+			this.initData(data);
+			render();
 			break;
 		case 'set-data':
-			setData(data.data);
+			setData(data);
 			break;
 		case 'render-line':
-			let line = data.data;
+			let line = data;
 			let lineObj = getLineObj(line);
 			line.lineObj = lineObj;
+			singleLines = singleLines || {};
 			singleLines[lineObj.lineId] = line;
 			cacheLineObj(line);
 			break;
 		case 'render':
-			lines = data.data;
+			lines = data;
 			lines.map(item => {
 				item.lineObj = getLineObj(item);
 			});
 			cacheLineObj();
-			singleLines = {};
+			singleLines = null;
 			break;
 		case 'render-diff':
-			diffRanges = data.data;
+			diffRanges = data;
 			break;
 		case 'render-diff-all':
-			allDiffRanges = data.data;
+			allDiffRanges = data;
+			break;
+		case 'render-cursor':
+			cursors = data;
 			break;
 	}
 };

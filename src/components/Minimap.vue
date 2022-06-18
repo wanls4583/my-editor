@@ -163,7 +163,7 @@ export default {
 			this.setTop();
 		},
 		setTop() {
-			let top = (this.nowLine - this.startLine) * this.$parent.charObj.charHight - this.top;
+			let top = (this.nowLine - this.$parent.folder.getRelativeLine(this.startLine)) * this.$parent.charObj.charHight - this.top;
 			this.blockTop = top * this.scale;
 		},
 		render() {
@@ -216,15 +216,7 @@ export default {
 			let diffRanges = [];
 			let endLine = 0;
 			if (this.$parent.diffRanges) {
-				for (let line = this.startLine, i = 0; line <= this.$parent.myContext.htmls.length && i < this.maxVisibleLines; i++) {
-					let fold = this.$parent.folder.getFoldByLine(line);
-					endLine = line;
-					if (fold) {
-						line = fold.end.line;
-					} else {
-						line++;
-					}
-				}
+				endLine = this.getEndLine();
 				for (let i = 0; i < this.$parent.diffRanges.length; i++) {
 					let item = this.$parent.diffRanges[i];
 					if (item.line >= this.startLine && item.line <= endLine) {
@@ -250,6 +242,54 @@ export default {
 			}
 			this.worker.postMessage({ event: 'render-diff-all', data: diffRanges });
 			renderDiff && this.renderDiff();
+		},
+		renderCursor() {
+			let list = this.$parent.cursor.multiCursorPos.toArray();
+			let results = [];
+			let preCursorPos = {};
+			let endLine = this.getEndLine();
+			for (let i = 0; i < list.length; i++) {
+				let cursorPos = list[i];
+				if (cursorPos.line >= this.startLine && cursorPos.line <= endLine) {
+					if (cursorPos.line !== preCursorPos.line && !this.$parent.folder.getLineInFold(cursorPos.line)) {
+						let line = this.$parent.folder.getRelativeLine(cursorPos.line);
+						results.push(line - this.startLine + 1);
+					}
+				} else if (cursorPos.line > endLine) {
+					break;
+				}
+				preCursorPos = cursorPos;
+			}
+			this.worker.postMessage({ event: 'render-cursor', data: results });
+		},
+		renderAllCursor() {
+			let list = this.$parent.cursor.multiCursorPos.toArray();
+			let results = [];
+			let preCursorPos = {};
+			let endLine = this.getEndLine();
+			for (let i = 0; i < list.length; i++) {
+				let cursorPos = list[i];
+				if (cursorPos.line !== preCursorPos.line && !this.$parent.folder.getLineInFold(cursorPos.line)) {
+					let line = this.$parent.folder.getRelativeLine(cursorPos.line);
+					let top = Math.round((((line - 1) * this.$parent.charObj.charHight) / this.contentHeight) * this.height);
+					results.push(top);
+				}
+				preCursorPos = cursorPos;
+			}
+			this.worker.postMessage({ event: 'render-cursor-all', data: results });
+		},
+		getEndLine() {
+			let endLine = 0;
+			for (let line = this.startLine, i = 0; line <= this.$parent.myContext.htmls.length && i < this.maxVisibleLines; i++) {
+				let fold = this.$parent.folder.getFoldByLine(line);
+				endLine = line;
+				if (fold) {
+					line = fold.end.line;
+				} else {
+					line++;
+				}
+			}
+			return endLine;
 		},
 		getRenderObj(line) {
 			let top = (line - this.startLine) * this.$parent.charObj.charHight * this.scale;

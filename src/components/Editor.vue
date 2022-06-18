@@ -676,7 +676,7 @@ export default {
 			});
 		},
 		// 渲染
-		render(forceCursorView) {
+		render(scrollToCursor) {
 			let renderId = this.renderId + 1 || 1;
 			this.renderId = renderId;
 			this.$nextTick(() => {
@@ -686,7 +686,7 @@ export default {
 				this.renderLines();
 				this.renderSelectedBg();
 				this.renderError();
-				this.renderCursor(forceCursorView);
+				this.renderCursor(scrollToCursor);
 				this.renderBracketMatch();
 				this.$refs.minimap && this.$refs.minimap.render();
 			});
@@ -991,7 +991,7 @@ export default {
 			lineObj.html = '';
 		},
 		// 渲染光标
-		renderCursor(forceCursorView) {
+		renderCursor(scrollToCursor, cursorChanged) {
 			let that = this;
 			if (this.renderCursorTimer) {
 				return;
@@ -1003,6 +1003,10 @@ export default {
 					_setLine(item);
 				});
 				this.cursorVisible = true;
+				if (this.$refs.minimap) {
+					this.$refs.minimap.renderCursor();
+					cursorChanged && this.$refs.minimap.renderAllCursor();
+				}
 			});
 
 			function _setLine(item) {
@@ -1020,7 +1024,7 @@ export default {
 				}
 				left = that.getExactLeft(cursorPos);
 				// 强制滚动使光标处于可见区域
-				if (forceCursorView && cursorPos === that.nowCursorPos) {
+				if (scrollToCursor && cursorPos === that.nowCursorPos) {
 					if (left > that.scrollerArea.width + that.scrollLeft - that.charObj.fullAngleCharWidth) {
 						that.$refs.hScrollBar.scrollLeft = left + that.charObj.fullAngleCharWidth - that.scrollerArea.width;
 					} else if (left < that.scrollLeft) {
