@@ -801,11 +801,10 @@ export default {
 			start.left += 'px';
 			firstLine = firstLine > start.line + 1 ? firstLine : start.line + 1;
 			lastLine = lastLine < end.line - 1 ? lastLine : end.line - 1;
-			for (let line = firstLine; line <= lastLine; line++) {
-				if (this.renderedLineMap[line]) {
-					let renderObj = this.renderedLineMap[line];
-					let lineObj = this.myContext.htmls[line - 1];
-					let width = document.getElementById(this._lineId(line)).querySelector('div.my-code').clientWidth || 10;
+			this.renderObjs.forEach((renderObj) => {
+				if (renderObj.num >= firstLine && renderObj.num <= lastLine) {
+					let lineObj = this.myContext.htmls[renderObj.num - 1];
+					let width = document.getElementById(this._lineId(renderObj.num)).querySelector('div.my-code').clientWidth || 10;
 					this.renderSelectionObjs.push({
 						left: 0,
 						top: renderObj.top,
@@ -816,7 +815,7 @@ export default {
 					// range.active为false时，样式可能只显示边框，不改变字体颜色和背景
 					renderObj.selected = range.active;
 				}
-			}
+			});
 			if (this.renderedLineMap[start.line]) {
 				let renderObj = this.renderedLineMap[start.line];
 				this.renderSelectionObjs.push({
