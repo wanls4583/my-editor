@@ -1021,7 +1021,7 @@ class Context {
 		let serial = this.serial++;
 		historyArr = this._deleteMultiContent(ranges);
 		historyArr.serial = serial;
-		this.history.pushHistory(historyArr);
+		historyArr.length && this.history.pushHistory(historyArr);
 		historyArr = this._insertMultiContent(texts, this.cursor.multiCursorPos.toArray());
 		historyArr.serial = serial;
 		this.history.pushHistory(historyArr);
@@ -1175,7 +1175,8 @@ class Context {
 			text = str[0] === '\n' ? (text += str) : (text += '\n' + str);
 		});
 		if (cut) {
-			this.history.pushHistory(this._deleteMultiContent(ranges));
+			let historyArr = this._deleteMultiContent(ranges);
+			historyArr.length && this.history.pushHistory(historyArr);
 			this.searcher.clearSearch();
 			this.fSearcher.refreshSearch();
 		}
