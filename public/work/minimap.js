@@ -13,6 +13,9 @@ let singleLines = null;
 let diffRanges = null;
 let allDiffRanges = null;
 let cursors = null;
+let allCursors = null;
+let cursorsImg = null;
+let allCursorImg = null;
 let canvasImgData = null;
 let leftDiffCanvasImgData = null;
 let rightDiffCanvasImgData = null;
@@ -145,6 +148,7 @@ function drawLeftDiff() {
 			}
 		});
 		leftDiffCtx.putImageData(leftDiffCanvasImgData, 0, 0);
+		cursorsImg && rightDiffCtx.drawImage(cursorsImg, 0, 0);
 	}
 	diffRanges = null;
 }
@@ -160,15 +164,46 @@ function drawRightDiff() {
 			}
 		});
 		rightDiffCtx.putImageData(rightDiffCanvasImgData, 0, 0);
+		allCursorImg && rightDiffCtx.drawImage(allCursorImg, 0, 0);
 	}
 	allDiffRanges = null;
 }
 
-function drawCursor() {}
+function drawCursor() {
+	let rgb = getCursorColor();
+	let cursorsImgData = new ImageData(dataObj.width, dataObj.height);
+	for (let i = 0; i < cursors.length; i++) {
+		putRectPixl({ imgData: cursorsImgData, left: 0, top: cursors[i], width: dataObj.width, height: dataObj.charHight, rgb });
+	}
+	createImageBitmap(cursorsImgData).then(img => {
+		ctx.clearRect(0, 0, dataObj.width, dataObj.height);
+		ctx.putImageData(canvasImgData, 0, 0);
+		ctx.drawImage(img, 0, 0);
+		cursorsImg = img;
+	});
+	cursors = null;
+}
 
-function putRectPixl({ imgData, left, top, width, height, rgb }) {
+function drawAllCursor() {
+	let rgb = getCursorColor(true);
+	let allCursorsImgData = new ImageData(dataObj.width, dataObj.height);
+	for (let i = 0; i < allCursors.length; i++) {
+		putRectPixl({ imgData: allCursorsImgData, left: 0, top: allCursors[i], width: dataObj.width, height: dataObj.charHight, rgb });
+	}
+	createImageBitmap(allCursorsImgData).then(img => {
+		rightDiffCtx.clearRect(0, 0, dataObj.rightWidth, dataObj.height);
+		rightDiffCtx.putImageData(rightDiffCanvasImgData, 0, 0);
+		rightDiffCtx.drawImage(img, 0, 0);
+		allCursorImg = img;
+	});
+	allCursors = null;
+}
+
+function putRectPixl({ imgData, left, top, width, height, rgb, opacity }) {
 	let index = (imgData.width * top + left) * 4;
 	let originIndex = index;
+	opacity = opacity || 1;
+	opacity = Math.floor(opacity * 255);
 	for (let h = 0; h < height; h++) {
 		for (let w = 0; w < width; w++) {
 			_putPixl(index, rgb);
@@ -183,7 +218,7 @@ function putRectPixl({ imgData, left, top, width, height, rgb }) {
 			imgData.data[index] = rgb[0];
 			imgData.data[index + 1] = rgb[1];
 			imgData.data[index + 2] = rgb[2];
-			imgData.data[index + 3] = 255;
+			imgData.data[index + 3] = opacity;
 		}
 	}
 }
@@ -198,6 +233,12 @@ function render() {
 			} else if (singleLines) {
 				drawSingleLiens(singleLines);
 				singleLines = null;
+			}
+			if (cursors) {
+				drawCursor();
+			}
+			if (allCursors) {
+				drawAllCursor();
 			}
 			if (diffRanges) {
 				drawLeftDiff();
@@ -423,6 +464,19 @@ function getDiffColor(type) {
 	return getRgb(color);
 }
 
+function getCursorColor(useTextColor) {
+	let rgb = dataObj.colors['editor.lineHighlightBackground'];
+	if (useTextColor) {
+		rgb = dataObj.colors['editor.foreground'];
+	}
+	if (rgb !== 'transparent') {
+		rgb = getRgb(rgb);
+	} else {
+		rgb = getRgb(dataObj.colors['editor.lineHighlightBorder']);
+	}
+	return rgb;
+}
+
 self.onmessage = function (e) {
 	let data = e.data;
 	let event = data.event;
@@ -459,6 +513,9 @@ self.onmessage = function (e) {
 			break;
 		case 'render-cursor':
 			cursors = data;
+			break;
+		case 'render-cursor-all':
+			allCursors = data;
 			break;
 	}
 };

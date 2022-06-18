@@ -1303,7 +1303,7 @@ export default {
 						this.setStartLine(scrollTop);
 					}
 					requestAnimationFrame(() => {
-						this.renderCursor(true);
+						this.renderCursor(true, true);
 					});
 				});
 			}

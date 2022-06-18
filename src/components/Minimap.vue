@@ -253,7 +253,8 @@ export default {
 				if (cursorPos.line >= this.startLine && cursorPos.line <= endLine) {
 					if (cursorPos.line !== preCursorPos.line && !this.$parent.folder.getLineInFold(cursorPos.line)) {
 						let line = this.$parent.folder.getRelativeLine(cursorPos.line);
-						results.push(line - this.startLine + 1);
+						let top = (line - this.startLine) * this.$parent.charObj.charHight * this.scale;
+						results.push(top);
 					}
 				} else if (cursorPos.line > endLine) {
 					break;
