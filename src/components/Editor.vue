@@ -30,7 +30,7 @@
 					ref="content"
 				>
 					<div class="my-lines-view" ref="lineView">
-						<div :class="[_diffBg(line.num)]" :data-line="line.num" :id="'line-'+id+'-'+line.num" :style="{top: line.top}" class="my-line" v-for="line in renderObjs">
+						<div :class="[_diffBg(line.num)]" :data-line="line.num" :id="_lineId(line.num)" :style="{top: line.top}" class="my-line" v-for="line in renderObjs">
 							<div :class="[line.fold == 'close' ? 'fold-close' : '', selectedFg && line.selected ? 'my-select-fg' : '']" :data-line="line.num" class="my-code" v-html="line.html"></div>
 						</div>
 					</div>
@@ -270,6 +270,11 @@ export default {
 		};
 	},
 	computed: {
+		_lineId() {
+			return (line) => {
+				return 'line-' + this.id + '-' + line;
+			};
+		},
 		_top() {
 			return -this.scrollTop + 'px';
 		},
@@ -800,7 +805,7 @@ export default {
 				if (this.renderedLineMap[line]) {
 					let renderObj = this.renderedLineMap[line];
 					let lineObj = this.myContext.htmls[line - 1];
-					let width = this.getExactLeft({ line: line, column: lineObj.text.length }) || 10;
+					let width = document.getElementById(this._lineId(line)).querySelector('div.my-code').clientWidth || 10;
 					this.renderSelectionObjs.push({
 						left: 0,
 						top: renderObj.top,
@@ -988,12 +993,11 @@ export default {
 		// 渲染光标
 		renderCursor(forceCursorView) {
 			let that = this;
-			let renderCursorId = this.renderCursorId + 1 || 1;
-			this.renderCursorId = renderCursorId;
-			this.$nextTick(() => {
-				if (this.renderCursorId !== renderCursorId || !this.renderObjs.length) {
-					return;
-				}
+			if (this.renderCursorTimer) {
+				return;
+			}
+			this.renderCursorTimer = requestAnimationFrame(() => {
+				this.renderCursorTimer = null;
 				this.renderCursorObjs = [];
 				this.renderObjs.forEach((item) => {
 					_setLine(item);
@@ -1530,9 +1534,10 @@ export default {
 		// 获取光标真实位置
 		getExactLeft(cursorPos) {
 			let lineObj = this.myContext.htmls[cursorPos.line - 1];
-			let spans = $(`#line-${this.id}-${cursorPos.line}`).children('div.my-code').children('span');
+			let spans = document.getElementById(this._lineId(cursorPos.line));
 			let startIndex = 0;
 			let span = null;
+			spans = (spans && spans.querySelector('div.my-code').children) || [];
 			for (let i = 0; i < spans.length; i++) {
 				let column = spans[i].getAttribute('data-column');
 				if (column <= cursorPos.column) {
@@ -1655,14 +1660,14 @@ export default {
 			this.focus();
 		},
 		onErrorMousemove(e, line) {
-			let $errors = $(`div.my-line[data-line=${line}]`).children('span.my-token-error');
+			let errors = document.getElementById(`${this._lineId(line)}`).querySelectorAll('span.my-token-error') || [];
 			let left = e.clientX - $(this.$refs.content).offset().left;
-			for (let i = 0; i < $errors.length; i++) {
-				let $error = $errors.eq(i);
-				let width = $error.width();
-				let _left = $error[0].offsetLeft;
+			for (let i = 0; i < errors.length; i++) {
+				let error = errors[i];
+				let width = error.clientWidth;
+				let _left = error.offsetLeft;
 				if (left >= _left && left <= _left + width) {
-					_showTip.call(this, e, $error.attr('data-key'));
+					_showTip.call(this, e, error.getAttribute('data-key'));
 					break;
 				}
 			}
