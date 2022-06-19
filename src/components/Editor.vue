@@ -418,8 +418,8 @@ export default {
 			this.myContext.setLineWidth(this.myContext.htmls);
 		},
 		maxLine: function (newVal) {
+			this.setContentHeight();
 			this.$nextTick(() => {
-				this.setContentHeight();
 				this.setScrollerArea();
 			});
 		},
@@ -1736,6 +1736,8 @@ export default {
 				} else if (e.clientX > offset.left + this.scrollerArea.width) {
 					//鼠标超出右边区域
 					this.moveSelection('right', e.clientX - offset.left - this.scrollerArea.width, line);
+				} else {
+					globalData.scheduler.removeUiTask(this.moveTask);
 				}
 			}
 			if (this.diffBottomSashMouseObj) {

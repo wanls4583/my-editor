@@ -12,11 +12,13 @@ let lines = null;
 let singleLines = null;
 let diffRanges = null;
 let allDiffRanges = null;
+let slectedRanges = null;
 let cursors = null;
 let allCursors = null;
 let cursorsImg = null;
 let allCursorImg = null;
 let canvasImgData = null;
+let selectedImg = null;
 let leftDiffCanvasImgData = null;
 let rightDiffCanvasImgData = null;
 
@@ -120,11 +122,10 @@ function drawLines(lines) {
 		canvasImgData.data[i] = 0;
 	}
 	ctx.putImageData(canvasImgData, 0, 0);
-	if (cursorsImg) {
-		// 在现有的画布内容后面绘制新的图形
-		ctx.globalCompositeOperation = 'destination-over';
-		ctx.drawImage(cursorsImg, 0, 0);
-	}
+	// 在现有的画布内容后面绘制新的图形
+	ctx.globalCompositeOperation = 'destination-over';
+	selectedImg && ctx.drawImage(selectedImg, 0, 0);
+	cursorsImg && ctx.drawImage(cursorsImg, 0, 0);
 	cacheCanvas();
 }
 
@@ -136,11 +137,9 @@ function drawSingleLiens(singleLines) {
 		drawLine(singleLines[key]);
 	}
 	ctx.putImageData(canvasImgData, 0, 0);
-	if (cursorsImg) {
-		// 在现有的画布内容后面绘制新的图形
-		ctx.globalCompositeOperation = 'destination-over';
-		ctx.drawImage(cursorsImg, 0, 0);
-	}
+	ctx.globalCompositeOperation = 'destination-over';
+	selectedImg && ctx.drawImage(selectedImg, 0, 0);
+	cursorsImg && ctx.drawImage(cursorsImg, 0, 0);
 }
 
 function drawLeftDiff() {
@@ -184,17 +183,35 @@ function drawCursor() {
 	let rgb = getCursorColor();
 	let cursorsImgData = new ImageData(dataObj.width, dataObj.height);
 	for (let i = 0; i < cursors.length; i++) {
-		putRectPixl({ imgData: cursorsImgData, left: 0, top: cursors[i], width: dataObj.width, height: dataObj.charHight, rgb });
+		putRectPixl({ imgData: cursorsImgData, left: 0, top: cursors[i], width: dataObj.width, height: dataObj.charHight, rgb, opacity: 1 });
 	}
 	createImageBitmap(cursorsImgData).then(img => {
 		ctx.clearRect(0, 0, dataObj.width, dataObj.height);
 		ctx.putImageData(canvasImgData, 0, 0);
-		// 在现有的画布内容后面绘制新的图形
 		ctx.globalCompositeOperation = 'destination-over';
 		ctx.drawImage(img, 0, 0);
+		selectedImg && ctx.drawImage(selectedImg, 0, 0);
 		cursorsImg = img;
 	});
 	cursors = null;
+}
+
+function drawSelectedBg() {
+	let rgb = getRgb(dataObj.colors['editor.selectionBackground']);
+	let slectedImgData = new ImageData(dataObj.width, dataObj.height);
+	for (let i = 0; i < slectedRanges.length; i++) {
+		let range = slectedRanges[i];
+		putRectPixl({ imgData: slectedImgData, left: range.left, top: range.top, width: range.width || 2, height: dataObj.charHight, rgb, opacity: 1 });
+	}
+	createImageBitmap(slectedImgData).then(img => {
+		ctx.clearRect(0, 0, dataObj.width, dataObj.height);
+		ctx.putImageData(canvasImgData, 0, 0);
+		ctx.globalCompositeOperation = 'destination-over';
+		cursorsImg && ctx.drawImage(cursorsImg, 0, 0);
+		ctx.drawImage(img, 0, 0);
+		selectedImg = img;
+	});
+	slectedRanges = null;
 }
 
 function drawAllCursor() {
@@ -252,6 +269,9 @@ function render() {
 			}
 			if (allCursors) {
 				drawAllCursor();
+			}
+			if (slectedRanges) {
+				drawSelectedBg();
 			}
 			if (diffRanges) {
 				drawLeftDiff();
@@ -529,6 +549,9 @@ self.onmessage = function (e) {
 			break;
 		case 'render-cursor-all':
 			allCursors = data;
+			break;
+		case 'render-selected-bg':
+			slectedRanges = data;
 			break;
 	}
 };

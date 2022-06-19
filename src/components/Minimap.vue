@@ -216,50 +216,29 @@ export default {
 		},
 		renderSelectedBg() {
 			let results = [];
-			let preRange = null;
-			let preToEnd = false;
 			for (let line = this.startLine, i = 0; line <= this.$parent.myContext.htmls.length && i < this.maxVisibleLines; i++) {
 				let fold = this.$parent.folder.getFoldByLine(line);
 				let ranges = this.$parent.selecter.getRangeByLine(line);
-				let lineObj = this.$parent.myContext.htmls[line - 1];
-				if (ranges.length > 0) {
-					for (let i = 0; i < ranges.length; i++) {
-						let range = ranges[i];
+				let text = this.$parent.myContext.htmls[line - 1].text;
+				let top = i * this.$parent.charObj.charHight * this.scale;
+				if (ranges.length) {
+					ranges.forEach((range) => {
 						if (range.start.line === line) {
-							let endColumn = range.start.line === range.end.line ? range.end.column : lineObj.text.length;
-							if (range.start.column === 0 && preToEnd) {
-								preRange.end.line++;
-								preRange.end.column = endColumn;
+							let left = _getLength(text.slice(0, range.start.column));
+							let width = 0;
+							if (range.start.line === range.end.line) {
+								width = _getLength(text.slice(range.start.column, range.end.column));
 							} else {
-								preRange = { start: { line: line, column: range.start.column }, end: { line: line, column: endColumn } };
-								results.push(preRange);
+								width = _getLength(text.slice(range.start.column, text.length));
 							}
+							results.push({ top, left, width });
 						} else {
-							if (preToEnd) {
-								preRange.end.line++;
-								preRange.end.column = range.end.column;
-							} else {
-								preRange = { start: { line: line, column: 0 }, end: { line: line, column: range.end.column } };
-								results.push(preRange);
-							}
+							results.push({ top, left: 0, width: _getLength(text.slice(0, range.end.column)) });
 						}
-						preToEnd = preRange.end.column === lineObj.text.length;
-					}
+					});
 				} else {
 					let range = this.$parent.selecter.getRangeWithCursorPos({ line: line, column: 0 });
-					if (range) {
-						if (preToEnd) {
-							preRange.end.line++;
-							preRange.end.column = lineObj.text.length;
-						} else {
-							preRange = { start: { line: line, column: 0 }, end: { line: line, column: lineObj.text.length } };
-							results.push(preRange);
-						}
-						preToEnd = true;
-					} else {
-						preRange = null;
-						preToEnd = false;
-					}
+					range && results.push({ top, left: 0, width: _getLength(text) });
 				}
 				if (fold) {
 					line = fold.end.line;
@@ -267,12 +246,14 @@ export default {
 					line++;
 				}
 			}
-			results.forEach((item) => {
-				item.start.line -= this.startLine - 1;
-				item.end.line -= this.startLine - 1;
-			});
-			console.log(results);
+			this.worker.postMessage({ event: 'render-selected-bg', data: results });
+
+			function _getLength(text) {
+				text = text.replace(/\t/g, '    ');
+				return text.length;
+			}
 		},
+		renderAllSelectedBg() {},
 		renderDiff() {
 			let diffRanges = [];
 			let endLine = 0;
