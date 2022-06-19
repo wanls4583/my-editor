@@ -124,8 +124,8 @@ function drawLines(lines) {
 	ctx.putImageData(canvasImgData, 0, 0);
 	// 在现有的画布内容后面绘制新的图形
 	ctx.globalCompositeOperation = 'destination-over';
-	selectedImg && ctx.drawImage(selectedImg, 0, 0);
 	cursorsImg && ctx.drawImage(cursorsImg, 0, 0);
+	selectedImg && ctx.drawImage(selectedImg, 0, 0);
 	cacheCanvas();
 }
 
@@ -138,8 +138,8 @@ function drawSingleLiens(singleLines) {
 	}
 	ctx.putImageData(canvasImgData, 0, 0);
 	ctx.globalCompositeOperation = 'destination-over';
-	selectedImg && ctx.drawImage(selectedImg, 0, 0);
 	cursorsImg && ctx.drawImage(cursorsImg, 0, 0);
+	selectedImg && ctx.drawImage(selectedImg, 0, 0);
 }
 
 function drawLeftDiff() {
@@ -189,8 +189,8 @@ function drawCursor() {
 		ctx.clearRect(0, 0, dataObj.width, dataObj.height);
 		ctx.putImageData(canvasImgData, 0, 0);
 		ctx.globalCompositeOperation = 'destination-over';
-		ctx.drawImage(img, 0, 0);
 		selectedImg && ctx.drawImage(selectedImg, 0, 0);
+		ctx.drawImage(img, 0, 0);
 		cursorsImg = img;
 	});
 	cursors = null;
@@ -207,8 +207,8 @@ function drawSelectedBg() {
 		ctx.clearRect(0, 0, dataObj.width, dataObj.height);
 		ctx.putImageData(canvasImgData, 0, 0);
 		ctx.globalCompositeOperation = 'destination-over';
-		cursorsImg && ctx.drawImage(cursorsImg, 0, 0);
 		ctx.drawImage(img, 0, 0);
+		cursorsImg && ctx.drawImage(cursorsImg, 0, 0);
 		selectedImg = img;
 	});
 	slectedRanges = null;
