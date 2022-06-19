@@ -33,18 +33,6 @@
 
 			.my-editor-scrollbar-h {
 				display: block;
-
-				&::-webkit-scrollbar-thumb {
-					background-color: var(--my-scrollbarSlider-background);
-
-					&:hover {
-						background-color: var(--my-scrollbarSlider-hoverBackground);
-					}
-
-					&:active {
-						background-color: var(--my-scrollbarSlider-activeBackground);
-					}
-				}
 			}
 		}
 	}
@@ -131,33 +119,11 @@
 
 	&-editor-scrollbar-h {
 		display: none;
-		position: absolute;
+		position: absolute !important;
 		bottom: 0;
 		left: 0;
 		right: 0;
 		height: 14px;
-		overflow: overlay;
-
-		div {
-			height: 100%;
-		}
-	}
-
-	&-editor-scrollbar-v,
-	&-editor-scrollbar-h {
-		&::-webkit-scrollbar {
-			width: 14px;
-			height: 14px;
-			background-color: transparent;
-		}
-
-		&::-webkit-scrollbar-thumb {
-			background-color: transparent;
-		}
-
-		&::-webkit-scrollbar-corner {
-			background-color: transparent;
-		}
 	}
 
 	&-content {

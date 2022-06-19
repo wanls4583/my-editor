@@ -70,9 +70,7 @@
 					></textarea>
 					<auto-tip :styles="autoTipStyle" :tipList="autoTipList" @change="onClickAuto" ref="autoTip" v-show="autoTipList && autoTipList.length"></auto-tip>
 				</div>
-				<div @scroll="onHBarScroll" class="my-editor-scrollbar-h" ref="hScrollBar">
-					<div :style="{width: _contentMinWidth + 'px'}"></div>
-				</div>
+				<h-scroll-bar :scroll-left="scrollLeft" :width="_contentMinWidth" @scroll="onHBarScroll" class="my-editor-scrollbar-h"></h-scroll-bar>
 				<div class="my-scroller-shadow-left" v-if="_leftShadow"></div>
 				<div class="my-scroller-shadow-right" v-if="_rightShadow"></div>
 			</div>
@@ -127,6 +125,7 @@ import AutoTip from './AutoTip';
 import Tip from './Tip';
 import Minimap from './Minimap.vue';
 import VScrollBar from './VScrollBar.vue';
+import HScrollBar from './HScrollBar.vue';
 import Util from '@/common/util';
 import EventBus from '@/event';
 import $ from 'jquery';
@@ -149,6 +148,7 @@ export default {
 		Tip,
 		Minimap,
 		VScrollBar,
+		HScrollBar,
 	},
 	props: {
 		id: String,
@@ -418,7 +418,10 @@ export default {
 			this.myContext.setLineWidth(this.myContext.htmls);
 		},
 		maxLine: function (newVal) {
-			this.setContentHeight();
+			this.$nextTick(() => {
+				this.setContentHeight();
+				this.setScrollerArea();
+			});
 		},
 		nowCursorPos: {
 			handler: function (newVal) {
@@ -1005,9 +1008,9 @@ export default {
 				// 强制滚动使光标处于可见区域
 				if (scrollToCursor && cursorPos === that.nowCursorPos) {
 					if (left > that.scrollerArea.width + that.scrollLeft - that.charObj.fullAngleCharWidth) {
-						that.$refs.hScrollBar.scrollLeft = left + that.charObj.fullAngleCharWidth - that.scrollerArea.width;
+						that.scrollLeft = left + that.charObj.fullAngleCharWidth - that.scrollerArea.width;
 					} else if (left < that.scrollLeft) {
-						that.$refs.hScrollBar.scrollLeft = left - 1;
+						that.scrollLeft = left - 1;
 					}
 				}
 				if (cursorPos === that.nowCursorPos) {
@@ -1772,9 +1775,9 @@ export default {
 		},
 		// 滚动滚轮
 		onWheel(e) {
-			this.$refs.hScrollBar.scrollLeft = this.scrollLeft + e.deltaX;
 			this.scrollDeltaY = e.deltaY;
-			if (this.scrollDeltaY && !this.wheelTask) {
+			this.scrollDeltaX = e.deltaX;
+			if ((this.scrollDeltaY || this.scrollDeltaX) && !this.wheelTask) {
 				this.wheelTask = globalData.scheduler.addUiTask(() => {
 					if (this.scrollDeltaY) {
 						try {
@@ -1783,6 +1786,14 @@ export default {
 							console.log(e);
 						}
 						this.scrollDeltaY = 0;
+					} else if (this.scrollDeltaX) {
+						let scrollLeft = this.scrollLeft + this.scrollDeltaX;
+						if (scrollLeft > this._contentMinWidth - this.scrollerArea.width) {
+							scrollLeft = this._contentMinWidth - this.scrollerArea.width;
+						}
+						scrollLeft = scrollLeft < 0 ? 0 : scrollLeft;
+						this.scrollLeft = scrollLeft;
+						this.scrollDeltaX = 0;
 					} else {
 						globalData.scheduler.removeUiTask(this.wheelTask);
 						this.wheelTask = null;
@@ -1795,7 +1806,7 @@ export default {
 			this.setStartLine(e);
 		},
 		onHBarScroll(e) {
-			this.scrollLeft = e.target.scrollLeft;
+			this.scrollLeft = e;
 		},
 		// 中文输入开始
 		onCompositionstart() {
