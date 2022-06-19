@@ -39,14 +39,14 @@ export default class {
         let it = this.ranges.search(
             { line: line, column: 0 },
             (value, item) => {
-                return value - item.start.line;
+                return Util.comparePos(value, item.end);
             },
             true
         );
         if (it) {
             let value = it.next();
             while (value) {
-                if (value.start === line || value.end.line === line) {
+                if (value.start.line === line || value.end.line === line) {
                     results.push(value);
                 } else if (value.start.line > line) {
                     break;

@@ -759,6 +759,7 @@ export default {
 						this._renderSelectedBg(range);
 					}
 				});
+				this.$refs.minimap && this.$refs.minimap.renderSelectedBg();
 			});
 		},
 		// 渲染选中背景
@@ -769,19 +770,6 @@ export default {
 			let end = range.end;
 			let text = this.myContext.htmls[start.line - 1].text;
 			let endColumn = text.length;
-			start.left = this.getExactLeft(start);
-			if (start.line == end.line) {
-				start.width = this.getExactLeft(end) - start.left || 10;
-				start.width += 'px';
-			} else {
-				start.width = this.getExactLeft({ line: start.line, column: text.length }) - start.left || 10;
-				start.width += 'px';
-				end.left = '0px';
-				text = this.myContext.htmls[end.line - 1].text;
-				end.width = this.getExactLeft(end) || 10;
-				end.width += 'px';
-			}
-			start.left += 'px';
 			firstLine = firstLine > start.line + 1 ? firstLine : start.line + 1;
 			lastLine = lastLine < end.line - 1 ? lastLine : end.line - 1;
 			this.renderObjs.forEach((renderObj) => {
@@ -801,6 +789,15 @@ export default {
 			});
 			if (this.renderedLineMap[start.line]) {
 				let renderObj = this.renderedLineMap[start.line];
+				start.left = this.getExactLeft(start);
+				if (start.line == end.line) {
+					start.width = this.getExactLeft(end) - start.left || 10;
+					start.width += 'px';
+				} else {
+					start.width = this.getExactLeft({ line: start.line, column: text.length }) - start.left || 10;
+					start.width += 'px';
+				}
+				start.left += 'px';
 				this.renderSelectionObjs.push({
 					left: start.left,
 					top: renderObj.top,
@@ -816,6 +813,10 @@ export default {
 			}
 			if (end.line > start.line && this.renderedLineMap[end.line]) {
 				let renderObj = this.renderedLineMap[end.line];
+				end.left = '0px';
+				text = this.myContext.htmls[end.line - 1].text;
+				end.width = this.getExactLeft(end) || 10;
+				end.width += 'px';
 				this.renderSelectionObjs.push({
 					left: end.left,
 					top: renderObj.top,

@@ -214,6 +214,65 @@ export default {
 				}
 			}
 		},
+		renderSelectedBg() {
+			let results = [];
+			let preRange = null;
+			let preToEnd = false;
+			for (let line = this.startLine, i = 0; line <= this.$parent.myContext.htmls.length && i < this.maxVisibleLines; i++) {
+				let fold = this.$parent.folder.getFoldByLine(line);
+				let ranges = this.$parent.selecter.getRangeByLine(line);
+				let lineObj = this.$parent.myContext.htmls[line - 1];
+				if (ranges.length > 0) {
+					for (let i = 0; i < ranges.length; i++) {
+						let range = ranges[i];
+						if (range.start.line === line) {
+							let endColumn = range.start.line === range.end.line ? range.end.column : lineObj.text.length;
+							if (range.start.column === 0 && preToEnd) {
+								preRange.end.line++;
+								preRange.end.column = endColumn;
+							} else {
+								preRange = { start: { line: line, column: range.start.column }, end: { line: line, column: endColumn } };
+								results.push(preRange);
+							}
+						} else {
+							if (preToEnd) {
+								preRange.end.line++;
+								preRange.end.column = range.end.column;
+							} else {
+								preRange = { start: { line: line, column: 0 }, end: { line: line, column: range.end.column } };
+								results.push(preRange);
+							}
+						}
+						preToEnd = preRange.end.column === lineObj.text.length;
+					}
+				} else {
+					let range = this.$parent.selecter.getRangeWithCursorPos({ line: line, column: 0 });
+					if (range) {
+						if (preToEnd) {
+							preRange.end.line++;
+							preRange.end.column = lineObj.text.length;
+						} else {
+							preRange = { start: { line: line, column: 0 }, end: { line: line, column: lineObj.text.length } };
+							results.push(preRange);
+						}
+						preToEnd = true;
+					} else {
+						preRange = null;
+						preToEnd = false;
+					}
+				}
+				if (fold) {
+					line = fold.end.line;
+				} else {
+					line++;
+				}
+			}
+			results.forEach((item) => {
+				item.start.line -= this.startLine - 1;
+				item.end.line -= this.startLine - 1;
+			});
+			console.log(results);
+		},
 		renderDiff() {
 			let diffRanges = [];
 			let endLine = 0;
