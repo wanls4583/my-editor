@@ -502,14 +502,14 @@ export default {
 		},
 		// 初始化文档事件
 		initEvent() {
-			this.initEvent.fn1 = (e) => {
+			this.initEventFn1 = (e) => {
 				this.active && this.onDocumentMmove(e);
 			};
-			this.initEvent.fn2 = (e) => {
+			this.initEventFn2 = (e) => {
 				this.active && this.onDocumentMouseUp(e);
 			};
-			$(document).on('mousemove', this.initEvent.fn1);
-			$(document).on('mouseup', this.initEvent.fn2);
+			$(document).on('mousemove', this.initEventFn1);
+			$(document).on('mouseup', this.initEventFn2);
 		},
 		initResizeEvent() {
 			const resizeObserver = new ResizeObserver((entries) => {
@@ -526,7 +526,7 @@ export default {
 		initEventBus() {
 			EventBus.$on(
 				'language-change',
-				(this.initEventBus.fn1 = (data) => {
+				(this.initEventBusFn1 = (data) => {
 					if (this.id === data.id) {
 						if (this.active) {
 							this.language = data.language;
@@ -537,7 +537,7 @@ export default {
 			);
 			EventBus.$on(
 				'tab-size-change',
-				(this.initEventBus.fn2 = (tabSize) => {
+				(this.initEventBusFn2 = (tabSize) => {
 					if (this.active) {
 						this.tabSize = tabSize;
 					}
@@ -545,7 +545,7 @@ export default {
 			);
 			EventBus.$on(
 				'close-menu',
-				(this.initEventBus.fn3 = () => {
+				(this.initEventBusFn3 = () => {
 					this.menuVisible = false;
 					this.autoTipList = null;
 					this.autocomplete.stop();
@@ -553,7 +553,7 @@ export default {
 			);
 			EventBus.$on(
 				'theme-changed',
-				(this.initEventBus.fn4 = (theme) => {
+				(this.initEventBusFn4 = (theme) => {
 					if (this.active) {
 						this.theme = theme;
 					}
@@ -562,7 +562,7 @@ export default {
 			);
 			EventBus.$on(
 				'git-diffed',
-				(this.initEventBus.fn5 = (data) => {
+				(this.initEventBusFn5 = (data) => {
 					if (data && data.path === this.path) {
 						this.diffRanges = data.result;
 						this.$refs.minimap && this.$refs.minimap.renderAllDiff(true);
@@ -571,7 +571,7 @@ export default {
 			);
 			EventBus.$on(
 				'git-statused',
-				(this.initEventBus.fn6 = () => {
+				(this.initEventBusFn6 = () => {
 					if (this.path) {
 						EventBus.$emit('git-diff', this.path);
 					}
@@ -579,7 +579,7 @@ export default {
 			);
 			EventBus.$on(
 				'render-line',
-				(this.initEventBus.fn7 = (data) => {
+				(this.initEventBusFn7 = (data) => {
 					if (this.editorId === data.editorId) {
 						this.renderLine(data.lineId);
 					}
@@ -587,15 +587,15 @@ export default {
 			);
 		},
 		unbindEvent() {
-			$(document).unbind('mousemove', this.initEvent.fn1);
-			$(document).unbind('mouseup', this.initEvent.fn2);
-			EventBus.$off('language-change', this.initEventBus.fn1);
-			EventBus.$off('tab-size-change', this.initEventBus.fn2);
-			EventBus.$off('close-menu', this.initEventBus.fn3);
-			EventBus.$off('theme-changed', this.initEventBus.fn4);
-			EventBus.$off('git-diffed', this.initEventBus.fn5);
-			EventBus.$off('git-statused', this.initEventBus.fn6);
-			EventBus.$off('render-line', this.initEventBus.fn7);
+			$(document).unbind('mousemove', this.initEventFn1);
+			$(document).unbind('mouseup', this.initEventFn2);
+			EventBus.$off('language-change', this.initEventBusFn1);
+			EventBus.$off('tab-size-change', this.initEventBusFn2);
+			EventBus.$off('close-menu', this.initEventBusFn3);
+			EventBus.$off('theme-changed', this.initEventBusFn4);
+			EventBus.$off('git-diffed', this.initEventBusFn5);
+			EventBus.$off('git-statused', this.initEventBusFn6);
+			EventBus.$off('render-line', this.initEventBusFn7);
 		},
 		showEditor() {
 			// 元素暂时不可见
@@ -679,6 +679,7 @@ export default {
 		render(scrollToCursor) {
 			let renderId = this.renderId + 1 || 1;
 			this.renderId = renderId;
+			this.renderBracketMatch();
 			this.$nextTick(() => {
 				if (renderId !== this.renderId) {
 					return;
@@ -687,7 +688,6 @@ export default {
 				this.renderSelectedBg();
 				this.renderError();
 				this.renderCursor(scrollToCursor);
-				this.renderBracketMatch();
 				this.$refs.minimap && this.$refs.minimap.render();
 			});
 		},
@@ -945,26 +945,26 @@ export default {
 			});
 		},
 		renderBracketMatch() {
-			this.bracketMatch = null;
 			cancelAnimationFrame(this.bracketMatchTimer);
 			this.bracketMatchTimer = requestAnimationFrame(() => {
-				this.bracketMatch = this.folder.getBracketMatch(this.nowCursorPos);
-				if (this.bracketMatch) {
+				this.bracketMatch = null;
+				this.folder.getBracketMatch(this.nowCursorPos, (bracketMatch) => {
 					let lineObj = null;
 					let pos = null;
-
-					lineObj = this.myContext.htmls[this.bracketMatch.start.line - 1];
-					pos = this.bracketMatch.start;
-					pos.width = this.getStrWidth(lineObj.text, pos.startIndex, pos.endIndex) + 'px';
-					pos.left = this.getStrWidth(lineObj.text, 0, pos.startIndex) + 'px';
-					pos.top = (this.folder.getRelativeLine(pos.line) - 1) * this.charObj.charHight + 'px';
-
-					lineObj = this.myContext.htmls[this.bracketMatch.end.line - 1];
-					pos = this.bracketMatch.end;
-					pos.width = this.getStrWidth(lineObj.text, pos.startIndex, pos.endIndex) + 'px';
-					pos.left = this.getStrWidth(lineObj.text, 0, pos.startIndex) + 'px';
-					pos.top = (this.folder.getRelativeLine(pos.line) - 1) * this.charObj.charHight + 'px';
-				}
+					this.bracketMatch = bracketMatch;
+					if (this.bracketMatch) {
+						lineObj = this.myContext.htmls[this.bracketMatch.start.line - 1];
+						pos = this.bracketMatch.start;
+						pos.width = this.getStrWidth(lineObj.text, pos.startIndex, pos.endIndex) + 'px';
+						pos.left = this.getStrWidth(lineObj.text, 0, pos.startIndex) + 'px';
+						pos.top = (this.folder.getRelativeLine(pos.line) - 1) * this.charObj.charHight + 'px';
+						lineObj = this.myContext.htmls[this.bracketMatch.end.line - 1];
+						pos = this.bracketMatch.end;
+						pos.width = this.getStrWidth(lineObj.text, pos.startIndex, pos.endIndex) + 'px';
+						pos.left = this.getStrWidth(lineObj.text, 0, pos.startIndex) + 'px';
+						pos.top = (this.folder.getRelativeLine(pos.line) - 1) * this.charObj.charHight + 'px';
+					}
+				});
 			});
 		},
 		// 清除选中前景色
