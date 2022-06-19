@@ -1,5 +1,5 @@
 <template>
-	<div :class="{'my-display-block': vSliderClicked}" class="my-scroll-bar-v" ref="bar">
+	<div :class="{'my-display-block': vSliderClicked, 'my-scroll-able': _vScrollAble}" @mousedown="onVBarDown" class="my-scroll-bar-v" ref="bar" v-show="_vScrollAble">
 		<div :style="{height: _vSliderHeight + 'px', top: _vSliderTop + 'px'}" @mousedown="onVsliderDown" class="my-scroll-slider"></div>
 	</div>
 </template>
@@ -31,6 +31,9 @@ export default {
 			let maxScrollTop1 = this.barHeight - this._vSliderHeight;
 			let maxScrollTop2 = this.height - this.barHeight;
 			return (this.scrollTop * maxScrollTop1) / maxScrollTop2;
+		},
+		_vScrollAble() {
+			return this.height > this.barHeight;
 		},
 	},
 	created() {},
@@ -65,6 +68,24 @@ export default {
 			document.removeEventListener('mousemove', this.initEventFn1);
 			document.removeEventListener('mouseup', this.initEventFn2);
 		},
+		getScrollTop(sliderTop) {
+			let maxScrollTop1 = this.barHeight - this._vSliderHeight;
+			let maxScrollTop2 = this.height - this.barHeight;
+			return sliderTop * (maxScrollTop2 / maxScrollTop1);
+		},
+		onVBarDown(e) {
+			if (!this.vSliderClicked) {
+				let scrollTop = e.offsetY - this._vSliderHeight / 2;
+				if (scrollTop > this.barHeight - this._vSliderHeight) {
+					scrollTop = this.barHeight - this._vSliderHeight;
+				}
+				scrollTop = scrollTop < 0 ? 0 : scrollTop;
+				this.$emit('scroll', this.getScrollTop(scrollTop));
+				this.$nextTick(() => {
+					this.onVsliderDown(e);
+				});
+			}
+		},
 		onVsliderDown(e) {
 			this.vSliderMouseObj = e;
 			this.startVSliderTop = this._vSliderTop;
@@ -73,7 +94,6 @@ export default {
 		onDocumentMouseMove(e) {
 			if (this.vSliderMouseObj) {
 				let maxScrollTop1 = this.barHeight - this._vSliderHeight;
-				let maxScrollTop2 = this.height - this.barHeight;
 				let delta = e.clientY - this.vSliderMouseObj.clientY;
 				let top = this.startVSliderTop;
 				top += delta;
@@ -81,7 +101,7 @@ export default {
 				top = top > maxScrollTop1 ? maxScrollTop1 : top;
 				this.startVSliderTop += delta;
 				this.vSliderMouseObj = e;
-				this.moveScrollTop = top * (maxScrollTop2 / maxScrollTop1);
+				this.moveScrollTop = this.getScrollTop(top);
 				if (this.moveScrollTop && !this.moveVsliderTask) {
 					this.moveVsliderTask = globalData.scheduler.addUiTask(() => {
 						if (this.moveScrollTop >= 0 && this.moveScrollTop !== this.scrollTop) {

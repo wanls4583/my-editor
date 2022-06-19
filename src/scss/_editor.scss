@@ -27,11 +27,11 @@
 		color: var(--my-editor-foreground);
 
 		&:hover {
-			.my-editor-scrollbar-v {
+			.my-editor-scrollbar-v.my-scroll-able {
 				display: block;
 			}
 
-			.my-editor-scrollbar-h {
+			.my-editor-scrollbar-h.my-scroll-able {
 				display: block;
 			}
 		}

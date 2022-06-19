@@ -146,6 +146,12 @@ textarea {
 	&-scroll-bar-h {
 		position: relative;
 		overflow: hidden;
+
+		&:active {
+			.my-scroll-slider {
+				background-color: var(--my-scrollbarSlider-activeBackground);
+			}
+		}
 	}
 
 	&-scroll-bar-v {
@@ -166,10 +172,6 @@ textarea {
 
 		&:hover {
 			background-color: var(--my-scrollbarSlider-hoverBackground);
-		}
-
-		&:active {
-			background-color: var(--my-scrollbarSlider-activeBackground);
 		}
 	}
 

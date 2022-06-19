@@ -1,6 +1,6 @@
 <template>
-	<div :class="{'my-display-block': vSliderClicked}" class="my-scroll-bar-h" ref="bar">
-		<div :style="{width: _vSliderWidth + 'px', left: _vSliderLeft + 'px'}" @mousedown="onVsliderDown" class="my-scroll-slider"></div>
+	<div :class="{'my-display-block': vSliderClicked, 'my-scroll-able': _hScrollAble}" @mousedown="onHBarDown" class="my-scroll-bar-h" ref="bar" v-show="_hScrollAble">
+		<div :style="{width: _vSliderWidth + 'px', left: _vSliderLeft + 'px'}" @mousedown="onHsliderDown" class="my-scroll-slider"></div>
 	</div>
 </template>
 <script>
@@ -31,6 +31,9 @@ export default {
 			let maxScrollLeft1 = this.barWidth - this._vSliderWidth;
 			let maxScrollLeft2 = this.width - this.barWidth;
 			return (this.scrollLeft * maxScrollLeft1) / maxScrollLeft2;
+		},
+		_hScrollAble() {
+			return this.width > this.barWidth;
 		},
 	},
 	created() {},
@@ -65,7 +68,25 @@ export default {
 			document.removeEventListener('mousemove', this.initEventFn1);
 			document.removeEventListener('mouseup', this.initEventFn2);
 		},
-		onVsliderDown(e) {
+		getScrollLeft(sliderLeft) {
+			let maxScrollLeft1 = this.barWidth - this._vSliderWidth;
+			let maxScrollLeft2 = this.width - this.barWidth;
+			return sliderLeft * (maxScrollLeft2 / maxScrollLeft1);
+		},
+		onHBarDown(e) {
+			if (!this.vSliderClicked) {
+				let scrollLeft = e.offsetX - this._vSliderWidth / 2;
+				if (scrollLeft > this.barWidth - this._vSliderWidth) {
+					scrollLeft = this.barWidth - this._vSliderWidth;
+				}
+				scrollLeft = scrollLeft < 0 ? 0 : scrollLeft;
+				this.$emit('scroll', this.getScrollLeft(scrollLeft));
+				this.$nextTick(() => {
+					this.onHsliderDown(e);
+				});
+			}
+		},
+		onHsliderDown(e) {
 			this.vSliderMouseObj = e;
 			this.startVSliderLeft = this._vSliderLeft;
 			this.vSliderClicked = true;
@@ -73,7 +94,6 @@ export default {
 		onDocumentMouseMove(e) {
 			if (this.vSliderMouseObj) {
 				let maxScrollLeft1 = this.barWidth - this._vSliderWidth;
-				let maxScrollLeft2 = this.width - this.barWidth;
 				let delta = e.clientX - this.vSliderMouseObj.clientX;
 				let left = this.startVSliderLeft;
 				left += delta;
@@ -81,7 +101,7 @@ export default {
 				left = left > maxScrollLeft1 ? maxScrollLeft1 : left;
 				this.startVSliderLeft += delta;
 				this.vSliderMouseObj = e;
-				this.moveScrollLeft = left * (maxScrollLeft2 / maxScrollLeft1);
+				this.moveScrollLeft = this.getScrollLeft(left);
 				if (this.moveScrollLeft && !this.moveHsliderTask) {
 					this.moveHsliderTask = globalData.scheduler.addUiTask(() => {
 						if (this.moveScrollLeft >= 0 && this.moveScrollLeft !== this.scrollLeft) {
