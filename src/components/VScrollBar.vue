@@ -56,10 +56,10 @@ export default {
 		},
 		initEvent() {
 			this.initEventFn1 = (e) => {
-				this.$parent.active && this.onDocumentMouseMove(e);
+				this.onDocumentMouseMove(e);
 			};
 			this.initEventFn2 = (e) => {
-				this.$parent.active && this.onDocumentMouseUp(e);
+				this.onDocumentMouseUp(e);
 			};
 			document.addEventListener('mousemove', this.initEventFn1);
 			document.addEventListener('mouseup', this.initEventFn2);

@@ -4,36 +4,36 @@
  * @Description: 
 -->
 <template>
-	<div @scroll="onScroll" class="side-tree-warp my-scroll-overlay my-scroll-small" ref="wrap">
-		<div style="width:100%;overflow:hidden">
-			<div :style="{ height: _scrollHeight }" class="side-tree">
-				<div :style="{ top: _top }" class="side-tree-content">
-					<div :id="item.id" @click.stop="onClickItem(item)" class="tree-item" v-for="item in renderList">
-						<div
-							:class="[item.active ? 'my-active' : '', cutPath === item.path ? 'tree-item-cut' : '']"
-							:style="{ 'padding-left': _paddingLeft(item) }"
-							:title="item.path"
-							@contextmenu.stop.prevent="onContextmenu($event, item)"
-							class="tree-item-title my-center-start"
-						>
-							<template v-if="item.type === 'dir'">
-								<span class="left-icon iconfont icon-down1" v-if="item.open"></span>
-								<span class="left-icon iconfont icon-right" v-else></span>
-							</template>
-							<div :class="[item.icon, item.statusColor]" class="tree-item-content my-center-start">
-								<div class="my-center-between" style="width:100%;overflow:hidden">
-									<span class="tree-item-text">{{item.name}}</span>
-									<span style="margin:0 5px 0 10px;flex-shrink:0" v-if="item.type === 'file'">{{item.status}}</span>
-								</div>
+	<div @wheel.stop="onWheel" class="side-tree-warp" ref="wrap">
+		<div class="side-tree">
+			<div :style="{ top: -deltaTop + 'px' }" class="side-tree-content">
+				<div :id="item.id" @click.stop="onClickItem(item)" class="tree-item" v-for="item in renderList">
+					<div
+						:class="[item.active ? 'my-active' : '', cutPath === item.path ? 'tree-item-cut' : '']"
+						:style="{ 'padding-left': _paddingLeft(item) }"
+						:title="item.path"
+						@contextmenu.stop.prevent="onContextmenu($event, item)"
+						class="tree-item-title my-center-start"
+					>
+						<template v-if="item.type === 'dir'">
+							<span class="left-icon iconfont icon-down1" v-if="item.open"></span>
+							<span class="left-icon iconfont icon-right" v-else></span>
+						</template>
+						<div :class="[item.icon, item.statusColor]" class="tree-item-content my-center-start">
+							<div class="my-center-between" style="width:100%;overflow:hidden">
+								<span class="tree-item-text">{{item.name}}</span>
+								<span style="margin:0 5px 0 10px;flex-shrink:0" v-if="item.type === 'file'">{{item.status}}</span>
 							</div>
 						</div>
 					</div>
 				</div>
 			</div>
 		</div>
+		<v-scroll-bar :height="treeHeight" :scroll-top="scrollTop" @scroll="onScroll" class="my-scroll-small"></v-scroll-bar>
 	</div>
 </template>
 <script>
+import VScrollBar from './VScrollBar.vue';
 import EventBus from '@/event';
 import Util from '@/common/util';
 import globalData from '@/data/globalData';
@@ -50,6 +50,9 @@ export default {
 			type: Array,
 		},
 	},
+	components: {
+		VScrollBar,
+	},
 	data() {
 		return {
 			itemHeight: 30,
@@ -60,15 +63,13 @@ export default {
 			startLine: 1,
 			maxVisibleLines: 100,
 			cutPath: '',
+			scrollTop: 0,
+			treeHeight: 0,
+			domHeight: 0,
+			deltaTop: 0,
 		};
 	},
 	computed: {
-		_top() {
-			return (this.startLine - 1) * this.itemHeight + 'px';
-		},
-		_scrollHeight() {
-			return this.openedList.length * this.itemHeight + 'px';
-		},
 		_paddingLeft() {
 			return function (item) {
 				return item.deep * this.itemPadding - 10 + 'px';
@@ -84,6 +85,9 @@ export default {
 			this.watchFolder();
 			this.render();
 		},
+		openedList() {
+			this.setTreeHeight();
+		},
 	},
 	created() {
 		this.openedList = this.getRenderList(this.list, 0);
@@ -93,7 +97,8 @@ export default {
 		window.tree = this;
 	},
 	mounted() {
-		this.maxVisibleLines = Math.ceil(this.$refs.wrap.clientHeight / this.itemHeight) + 1;
+		this.domHeight = this.$refs.wrap.clientHeight;
+		this.maxVisibleLines = Math.ceil(this.domHeight / this.itemHeight) + 1;
 		this.render();
 	},
 	destroyed() {
@@ -102,6 +107,14 @@ export default {
 		}
 	},
 	methods: {
+		initResizeEvent() {
+			const resizeObserver = new ResizeObserver((entries) => {
+				if (this.$refs.wrap && this.$refs.wrap.clientHeight) {
+					this.domHeight = this.$refs.wrap.clientHeight;
+				}
+			});
+			resizeObserver.observe(this.$refs.wrap);
+		},
 		initEventBus() {
 			EventBus.$on('icon-changed', () => {
 				this.openedList.forEach((item) => {
@@ -144,6 +157,9 @@ export default {
 			this.list.forEach((item) => {
 				EventBus.$emit('git-status', item);
 			});
+		},
+		setTreeHeight() {
+			this.treeHeight = this.openedList.length * this.itemHeight;
 		},
 		render() {
 			this.renderList = this.openedList.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines);
@@ -236,6 +252,7 @@ export default {
 				endIn++;
 			}
 			this.openedList.splice(index, endIn - index);
+			this.setTreeHeight();
 		},
 		openFolder(item) {
 			let index = this.openedList.indexOf(item);
@@ -300,13 +317,12 @@ export default {
 					let item = this.openedList[i];
 					if (item.path === path) {
 						let wrap = this.$refs.wrap;
-						let scrollTop = wrap.scrollTop;
 						let clientHeight = wrap.clientHeight;
 						let height = (i + 1) * this.itemHeight;
-						if (scrollTop + clientHeight < height) {
-							wrap.scrollTop = height - clientHeight;
-						} else if (scrollTop + this.itemHeight > height) {
-							wrap.scrollTop = height - this.itemHeight;
+						if (this.scrollTop + clientHeight < height) {
+							this.scrollTop = height - clientHeight;
+						} else if (this.scrollTop + this.itemHeight > height) {
+							this.scrollTop = height - this.itemHeight;
 						}
 						if (!item.active) {
 							this.onClickItem(item);
@@ -377,9 +393,34 @@ export default {
 				}
 			}
 		},
+		onWheel(e) {
+			this.scrollDeltaY = e.deltaY;
+			if (this.scrollDeltaY && !this.wheelTask) {
+				this.wheelTask = globalData.scheduler.addUiTask(() => {
+					if (this.scrollDeltaY) {
+						try {
+							let scrollTop = this.scrollTop + this.scrollDeltaY;
+							if (scrollTop > this.treeHeight - this.domHeight) {
+								scrollTop = this.treeHeight - this.domHeight;
+							}
+							scrollTop = scrollTop < 0 ? 0 : scrollTop;
+							this.onScroll(scrollTop);
+						} catch (e) {
+							console.log(e);
+						}
+						this.scrollDeltaY = 0;
+					} else {
+						globalData.scheduler.removeUiTask(this.wheelTask);
+						this.wheelTask = null;
+					}
+				});
+			}
+		},
 		onScroll(e) {
-			let scrollTop = e.target.scrollTop;
+			let scrollTop = e;
 			this.startLine = Math.floor(scrollTop / this.itemHeight) + 1;
+			this.scrollTop = scrollTop;
+			this.deltaTop = scrollTop % this.itemHeight;
 			this.render();
 		},
 		onContextmenu(e, item) {

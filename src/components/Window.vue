@@ -19,7 +19,7 @@
 				<side-bar ref="sideBar" v-show="activity === 'files'"></side-bar>
 				<file-content-search v-show="activity === 'search'"></file-content-search>
 			</div>
-			<div @mousedown="onLeftSashBegin" class="my-sash-v" style="position:absolute;right:0"></div>
+			<div @mousedown="onLeftSashBegin" class="my-sash-v" style="position:absolute;right:-4px"></div>
 		</div>
 		<div class="my-right-wrap" ref="rightWrap">
 			<!-- tab栏 -->
