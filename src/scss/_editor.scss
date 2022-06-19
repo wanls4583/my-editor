@@ -27,7 +27,10 @@
 		color: var(--my-editor-foreground);
 
 		&:hover {
-			.my-editor-scrollbar-v,
+			.my-editor-scrollbar-v {
+				display: block;
+			}
+
 			.my-editor-scrollbar-h {
 				display: block;
 
@@ -119,12 +122,11 @@
 
 	&-editor-scrollbar-v {
 		display: none;
-		position: absolute;
+		position: absolute !important;
 		top: 0;
 		bottom: 0;
 		right: 0;
 		width: 14px;
-		overflow: overlay;
 	}
 
 	&-editor-scrollbar-h {

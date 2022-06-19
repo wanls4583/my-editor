@@ -93,8 +93,8 @@
 		<div class="my-minimap-wrap" v-if="type !== 'diff'">
 			<minimap :content-height="contentHeight" :now-line="startLine" :scroll-top="scrollTop" ref="minimap"></minimap>
 		</div>
-		<div @mousedown="vBarScrollClicked=true" @mouseup="vBarScrollClicked=false" @scroll="onVBarScroll" class="my-editor-scrollbar-v" ref="vScrollBar">
-			<div :style="{height: _contentHeight}"></div>
+		<div :class="{'my-display-block': vSliderClicked}" class="my-editor-scrollbar-v my-scroll-bar-v" ref="vScrollBar">
+			<div :style="{top: _vSliderTop + 'px', height: _vSliderHeight + 'px'}" @mousedown="onVsliderDown" class="my-scroll-slider" v-if="_vSliderVsible"></div>
 		</div>
 		<!-- 右键菜单 -->
 		<Menu :checkable="false" :menuList="menuList" :styles="menuStyle" @change="onClickMenu" ref="menu" v-show="menuVisible"></Menu>
@@ -189,7 +189,6 @@ export default {
 			maxLine: 1,
 			maxContentHeight: 0,
 			contentHeight: 0,
-			scrollerArea: {},
 			errorMap: {},
 			errors: [],
 			autoTipList: [],
@@ -211,38 +210,15 @@ export default {
 			diffTop: 0,
 			diffMarginTop: 0,
 			toShowdiffObj: null,
-			vBarScrollClicked: false,
-			charObj: {
-				charWidth: 7.15,
-				fullAngleCharWidth: 15,
-				charHight: 20,
-			},
-			nowCursorPos: {
-				line: 1,
-				column: 0,
-			},
-			bracketMatch: {
-				start: {},
-				end: {},
-			},
-			maxWidthObj: {
-				lineId: null,
-				text: '',
-				width: 0,
-			},
-			tipStyle: {
-				top: '0px',
-				left: '0px',
-			},
-			autoTipStyle: {
-				top: '50%',
-				left: '50%',
-			},
-			menuStyle: {
-				top: '0px',
-				left: '0px',
-				'min-width': '200px',
-			},
+			vSliderClicked: false,
+			scrollerArea: { width: 0, height: 0 },
+			nowCursorPos: { line: 1, column: 0 },
+			bracketMatch: { start: {}, end: {} },
+			tipStyle: { top: '0px', left: '0px' },
+			autoTipStyle: { top: '50%', left: '50%' },
+			maxWidthObj: { lineId: null, text: '', width: 0 },
+			menuStyle: { top: '0px', left: '0px', 'min-width': '200px' },
+			charObj: { charWidth: 7.15, fullAngleCharWidth: 15, charHight: 20 },
 			menuList: [
 				[
 					{
@@ -348,6 +324,18 @@ export default {
 		},
 		_maxContentHeight() {
 			return this.maxContentHeight * 2 + 'px';
+		},
+		_vSliderVsible() {
+			return this.vSliderClicked || this.contentHeight > this.scrollerArea.height;
+		},
+		_vSliderHeight() {
+			let height = (this.scrollerArea.height / this.contentHeight) * this.scrollerArea.height;
+			return height > 20 ? height : 20;
+		},
+		_vSliderTop() {
+			let maxScrollTop1 = this.scrollerArea.height - this._vSliderHeight;
+			let maxScrollTop2 = this.contentHeight - this.scrollerArea.height;
+			return (this.scrollTop * maxScrollTop1) / maxScrollTop2;
 		},
 		_textAreaPos() {
 			let left = this.cursorLeft;
@@ -1771,6 +1759,29 @@ export default {
 				this.diffHeight = height;
 				this.diffBottomSashMouseObj = e;
 			}
+			if (this.vSliderMouseObj) {
+				let maxScrollTop1 = this.scrollerArea.height - this._vSliderHeight;
+				let maxScrollTop2 = this.contentHeight - this.scrollerArea.height;
+				let delta = e.clientY - this.vSliderMouseObj.clientY;
+				let top = this.startVSliderTop;
+				top += delta;
+				top = top < 0 ? 0 : top;
+				top = top > maxScrollTop1 ? maxScrollTop1 : top;
+				this.startVSliderTop += delta;
+				this.vSliderMouseObj = e;
+				this.moveScrollTop = top * (maxScrollTop2 / maxScrollTop1);
+				if (this.moveScrollTop && !this.moveVsliderTask) {
+					this.moveVsliderTask = globalData.scheduler.addUiTask(() => {
+						if (this.moveScrollTop >= 0 && this.moveScrollTop !== this.scrollTop) {
+							this.setStartLine(this.moveScrollTop);
+							this.moveScrollTop = -1;
+						} else {
+							globalData.scheduler.removeUiTask(this.moveVsliderTask);
+							this.moveVsliderTask = null;
+						}
+					});
+				}
+			}
 		},
 		// 鼠标抬起事件
 		onDocumentMouseUp(e) {
@@ -1781,6 +1792,11 @@ export default {
 			this.diffBottomSashMouseObj = null;
 			this.mouseUpTime = Date.now();
 			this.$refs.searchDialog && this.$refs.searchDialog.directBlur();
+
+			globalData.scheduler.removeUiTask(this.moveVsliderTask);
+			this.vSliderClicked = false;
+			this.vSliderMouseObj = null;
+			this.moveVsliderTask = null;
 		},
 		// 调整diff弹框高度开始
 		onDiffBottomSashBegin(e) {
@@ -1810,6 +1826,11 @@ export default {
 					}
 				});
 			}
+		},
+		onVsliderDown(e) {
+			this.vSliderMouseObj = e;
+			this.startVSliderTop = this._vSliderTop;
+			this.vSliderClicked = true;
 		},
 		// 右侧滚动条滚动事件
 		onVBarScroll(e) {

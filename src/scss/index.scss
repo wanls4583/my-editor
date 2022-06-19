@@ -66,6 +66,10 @@ textarea {
 		height: 100%;
 	}
 
+	&-display-block {
+		display: block !important;
+	}
+
 	&-scroll-auto {
 		overflow: auto;
 
@@ -135,6 +139,37 @@ textarea {
 		&::-webkit-scrollbar {
 			width: 10px;
 			height: 10px;
+		}
+	}
+
+	&-scroll-bar-v,
+	&-scroll-bar-h {
+		position: relative;
+		overflow: hidden;
+	}
+
+	&-scroll-bar-v {
+		.my-scroll-slider {
+			width: 100%;
+		}
+	}
+
+	&-scroll-bar-h {
+		.my-scroll-slider {
+			height: 100%;
+		}
+	}
+
+	&-scroll-slider {
+		position: absolute;
+		background-color: var(--my-scrollbarSlider-background);
+
+		&:hover {
+			background-color: var(--my-scrollbarSlider-hoverBackground);
+		}
+
+		&:active {
+			background-color: var(--my-scrollbarSlider-activeBackground);
 		}
 	}
 
