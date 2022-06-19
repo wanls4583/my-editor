@@ -5,7 +5,7 @@
 			<!-- 占位行号，避免行号宽度滚动时变化 -->
 			<div class="my-num" style="position: relative; visibility: hidden;">{{ diffObj.maxLine || maxLine }}</div>
 			<div class="my-num-scroller" ref="numScroller">
-				<div :style="{ height: _contentHeight, top: _top }" class="my-num-content" ref="numContent">
+				<div :style="{ height: _maxContentHeight, top: _top }" class="my-num-content" ref="numContent">
 					<div :class="{ 'my-active': nowCursorPos.line === line.num }" :style="{ top: line.top }" class="my-num" v-for="line in renderObjs">
 						<span class="num">{{ _num(line.num) }}</span>
 						<span :class="['iconfont', line.fold == 'open' ? 'my-fold-open icon-down1' : 'my-fold-close icon-right']" @click="onToggleFold(line.num)" class="my-fold my-center-center" v-if="line.fold"></span>
@@ -21,7 +21,7 @@
 			<div @scroll="onScroll" class="my-scroller" ref="scroller">
 				<!-- 内如区域 -->
 				<div
-					:style="{ width: _contentMinWidth + 'px', left: _left, top: _top }"
+					:style="{ width: _contentMinWidth + 'px', height: _maxContentHeight, left: _left, top: _top }"
 					@mousedown="onContentMdown"
 					@mouseleave="onContentMLeave"
 					@mousemove="onContentMmove"
@@ -187,6 +187,7 @@ export default {
 			deltaTop: 0,
 			maxVisibleLines: 1,
 			maxLine: 1,
+			maxContentHeight: 0,
 			contentHeight: 0,
 			scrollerArea: {},
 			errorMap: {},
@@ -277,7 +278,7 @@ export default {
 			};
 		},
 		_top() {
-			return -this.deltaTop + 'px';
+			return -(this.scrollTop - this.deltaTop) + 'px';
 		},
 		_left() {
 			return -this.scrollLeft + 'px';
@@ -328,7 +329,7 @@ export default {
 			return this.charObj.charHight + 'px';
 		},
 		_activeLineTop() {
-			return (this.folder.getRelativeLine(this.nowCursorPos.line) - this.startLine) * this.charObj.charHight + 'px';
+			return (this.folder.getRelativeLine(this.nowCursorPos.line) - 1) * this.charObj.charHight - this.deltaTop + 'px';
 		},
 		_cursorVisible() {
 			return this.cursorVisible && this.cursorFocus ? 'visible' : 'hidden';
@@ -345,12 +346,15 @@ export default {
 		_contentHeight() {
 			return this.contentHeight + 'px';
 		},
+		_maxContentHeight() {
+			return this.maxContentHeight * 2 + 'px';
+		},
 		_textAreaPos() {
 			let left = this.cursorLeft;
 			let top = 0;
 			if (this.nowCursorPos) {
 				let line = this.nowCursorPos.line < this.startLine ? this.startLine : this.nowCursorPos.line;
-				top = (this.folder.getRelativeLine(line) - this.startLine + 1) * this.charObj.charHight;
+				top = this.folder.getRelativeLine(line) * this.charObj.charHight - this.deltaTop;
 				if (top > this.deltaTop + this.scrollerArea.height - 2 * this.charObj.charHight) {
 					top = this.deltaTop + this.scrollerArea.height - 2 * this.charObj.charHight;
 				}
@@ -958,12 +962,12 @@ export default {
 						pos = this.bracketMatch.start;
 						pos.width = this.getStrWidth(lineObj.text, pos.startIndex, pos.endIndex) + 'px';
 						pos.left = this.getStrWidth(lineObj.text, 0, pos.startIndex) + 'px';
-						pos.top = (this.folder.getRelativeLine(pos.line) - this.startLine) * this.charObj.charHight + 'px';
+						pos.top = (this.folder.getRelativeLine(pos.line) - 1) * this.charObj.charHight - this.deltaTop + 'px';
 						lineObj = this.myContext.htmls[this.bracketMatch.end.line - 1];
 						pos = this.bracketMatch.end;
 						pos.width = this.getStrWidth(lineObj.text, pos.startIndex, pos.endIndex) + 'px';
 						pos.left = this.getStrWidth(lineObj.text, 0, pos.startIndex) + 'px';
-						pos.top = (this.folder.getRelativeLine(pos.line) - this.startLine) * this.charObj.charHight + 'px';
+						pos.top = (this.folder.getRelativeLine(pos.line) - 1) * this.charObj.charHight - this.deltaTop + 'px';
 					}
 				});
 			});
@@ -1313,6 +1317,7 @@ export default {
 				height: this.$refs.scroller.clientHeight,
 				width: this.$refs.scroller.clientWidth,
 			};
+			this.maxContentHeight = this.scrollerArea.height * 10;
 		},
 		// 设置滚动区域真实高度
 		setContentHeight() {
@@ -1349,7 +1354,7 @@ export default {
 			}
 			startLine = Math.floor(scrollTop / this.charObj.charHight);
 			startLine++;
-			this.deltaTop = scrollTop % this.charObj.charHight;
+			this.deltaTop = Math.floor(scrollTop / this.maxContentHeight) * this.maxContentHeight;
 			this.startLine = this.folder.getRealLine(startLine);
 			this.scrollTop = scrollTop;
 			this.$refs.vScrollBar.scrollTop = scrollTop;
@@ -1395,7 +1400,7 @@ export default {
 				this.$nextTick(() => {
 					let width = this.$refs.autoTip.$el.clientWidth;
 					let height = this.$refs.autoTip.$el.clientHeight;
-					this.autoTipStyle.top = (this.folder.getRelativeLine(this.nowCursorPos.line) - this.startLine + 1) * this.charObj.charHight;
+					this.autoTipStyle.top = this.folder.getRelativeLine(this.nowCursorPos.line) * this.charObj.charHight - this.deltaTop;
 					this.autoTipStyle.left = this.getExactLeft(this.nowCursorPos);
 					if (this.autoTipStyle.top + height > this.deltaTop + this.$refs.scroller.clientHeight) {
 						this.autoTipStyle.top -= height + this.charObj.charHight;
@@ -1416,7 +1421,7 @@ export default {
 		getRenderObj(lineObj, line) {
 			let tabNum = this.getTabNum(line);
 			let fold = '';
-			let top = (this.folder.getRelativeLine(line) - this.startLine) * this.charObj.charHight + 'px';
+			let top = (this.folder.getRelativeLine(line) - 1) * this.charObj.charHight - this.deltaTop + 'px';
 			if (this.folder.getFoldByLine(line)) {
 				//该行已经折叠
 				fold = 'close';
