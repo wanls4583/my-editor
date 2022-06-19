@@ -21,7 +21,7 @@
 			<div @scroll="onScroll" class="my-scroller" ref="scroller">
 				<!-- 内如区域 -->
 				<div
-					:style="{ width: _contentMinWidth + 'px', height: _contentHeight, left: _left, top: _top }"
+					:style="{ width: _contentMinWidth + 'px', left: _left, top: _top }"
 					@mousedown="onContentMdown"
 					@mouseleave="onContentMLeave"
 					@mousemove="onContentMmove"
@@ -184,6 +184,7 @@ export default {
 			cursorLeft: 0,
 			scrollLeft: 0,
 			scrollTop: 0,
+			deltaTop: 0,
 			maxVisibleLines: 1,
 			maxLine: 1,
 			contentHeight: 0,
@@ -276,7 +277,7 @@ export default {
 			};
 		},
 		_top() {
-			return -this.scrollTop + 'px';
+			return -this.deltaTop + 'px';
 		},
 		_left() {
 			return -this.scrollLeft + 'px';
@@ -327,7 +328,7 @@ export default {
 			return this.charObj.charHight + 'px';
 		},
 		_activeLineTop() {
-			return (this.folder.getRelativeLine(this.nowCursorPos.line) - 1) * this.charObj.charHight + 'px';
+			return (this.folder.getRelativeLine(this.nowCursorPos.line) - this.startLine) * this.charObj.charHight + 'px';
 		},
 		_cursorVisible() {
 			return this.cursorVisible && this.cursorFocus ? 'visible' : 'hidden';
@@ -349,9 +350,9 @@ export default {
 			let top = 0;
 			if (this.nowCursorPos) {
 				let line = this.nowCursorPos.line < this.startLine ? this.startLine : this.nowCursorPos.line;
-				top = this.folder.getRelativeLine(line) * this.charObj.charHight;
-				if (top > this.scrollTop + this.scrollerArea.height - 2 * this.charObj.charHight) {
-					top = this.scrollTop + this.scrollerArea.height - 2 * this.charObj.charHight;
+				top = (this.folder.getRelativeLine(line) - this.startLine + 1) * this.charObj.charHight;
+				if (top > this.deltaTop + this.scrollerArea.height - 2 * this.charObj.charHight) {
+					top = this.deltaTop + this.scrollerArea.height - 2 * this.charObj.charHight;
 				}
 			}
 			if (left > this.scrollerArea.width + this.scrollLeft - this.charObj.fullAngleCharWidth) {
@@ -957,12 +958,12 @@ export default {
 						pos = this.bracketMatch.start;
 						pos.width = this.getStrWidth(lineObj.text, pos.startIndex, pos.endIndex) + 'px';
 						pos.left = this.getStrWidth(lineObj.text, 0, pos.startIndex) + 'px';
-						pos.top = (this.folder.getRelativeLine(pos.line) - 1) * this.charObj.charHight + 'px';
+						pos.top = (this.folder.getRelativeLine(pos.line) - this.startLine) * this.charObj.charHight + 'px';
 						lineObj = this.myContext.htmls[this.bracketMatch.end.line - 1];
 						pos = this.bracketMatch.end;
 						pos.width = this.getStrWidth(lineObj.text, pos.startIndex, pos.endIndex) + 'px';
 						pos.left = this.getStrWidth(lineObj.text, 0, pos.startIndex) + 'px';
-						pos.top = (this.folder.getRelativeLine(pos.line) - 1) * this.charObj.charHight + 'px';
+						pos.top = (this.folder.getRelativeLine(pos.line) - this.startLine) * this.charObj.charHight + 'px';
 					}
 				});
 			});
@@ -1348,8 +1349,8 @@ export default {
 			}
 			startLine = Math.floor(scrollTop / this.charObj.charHight);
 			startLine++;
+			this.deltaTop = scrollTop % this.charObj.charHight;
 			this.startLine = this.folder.getRealLine(startLine);
-			this.startLineTop = (this.folder.getRelativeLine(this.startLine) - 1) * this.charObj.charHight;
 			this.scrollTop = scrollTop;
 			this.$refs.vScrollBar.scrollTop = scrollTop;
 			this.diffLine && this.setDiffTop();
@@ -1394,9 +1395,9 @@ export default {
 				this.$nextTick(() => {
 					let width = this.$refs.autoTip.$el.clientWidth;
 					let height = this.$refs.autoTip.$el.clientHeight;
-					this.autoTipStyle.top = this.folder.getRelativeLine(this.nowCursorPos.line) * this.charObj.charHight;
+					this.autoTipStyle.top = (this.folder.getRelativeLine(this.nowCursorPos.line) - this.startLine + 1) * this.charObj.charHight;
 					this.autoTipStyle.left = this.getExactLeft(this.nowCursorPos);
-					if (this.autoTipStyle.top + height > this.startLineTop + this.$refs.scroller.clientHeight) {
+					if (this.autoTipStyle.top + height > this.deltaTop + this.$refs.scroller.clientHeight) {
 						this.autoTipStyle.top -= height + this.charObj.charHight;
 					}
 					if (this.autoTipStyle.left + width > this.scrollLeft + this.scrollerArea.width) {
@@ -1415,7 +1416,7 @@ export default {
 		getRenderObj(lineObj, line) {
 			let tabNum = this.getTabNum(line);
 			let fold = '';
-			let top = (this.folder.getRelativeLine(line) - 1) * this.charObj.charHight + 'px';
+			let top = (this.folder.getRelativeLine(line) - this.startLine) * this.charObj.charHight + 'px';
 			if (this.folder.getFoldByLine(line)) {
 				//该行已经折叠
 				fold = 'close';
