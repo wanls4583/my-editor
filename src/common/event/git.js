@@ -127,9 +127,9 @@ export default class {
 		}
 	}
 	gitStatus(fileObj) {
-		if (!fs.existsSync(path.join(fileObj.path, '.git'))) {
-			return;
-		}
+		// if (!fs.existsSync(path.join(fileObj.path, '.git'))) {
+		// 	return;
+		// }
 		if (this.cwd != fileObj.path) {
 			this.simpleGit.cwd(fileObj.path);
 		}
@@ -189,6 +189,7 @@ export default class {
 
 		function _addPathMap(filePath, obj) {
 			filePath = path.join(filePath);
+			filePath = path.relative(fileObj.path, filePath);
 			while (filePath.length > 1 && path.basename(filePath)) {
 				obj[filePath] = true;
 				filePath = path.dirname(filePath);
