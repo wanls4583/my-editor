@@ -736,12 +736,8 @@ export default {
 			}
 		},
 		renderSelectedBg() {
-			let renderSelectedBgId = this.renderSelectedBgId + 1 || 1;
-			this.renderSelectedBgId = renderSelectedBgId;
-			this.$nextTick(() => {
-				if (renderSelectedBgId !== this.renderSelectedBgId) {
-					return;
-				}
+			cancelAnimationFrame(this.renderSelectedBgTimer);
+			this.renderSelectedBgTimer =  requestAnimationFrame(() => {
 				this.activeLineBg = true;
 				this.clearSelectionToken();
 				this.renderSelectionObjs = [];
@@ -772,7 +768,8 @@ export default {
 			let endColumn = text.length;
 			firstLine = firstLine > start.line + 1 ? firstLine : start.line + 1;
 			lastLine = lastLine < end.line - 1 ? lastLine : end.line - 1;
-			this.renderObjs.forEach((renderObj) => {
+			for (let i = 0; i < this.renderObjs.length; i++) {
+				let renderObj = this.renderObjs[i];
 				if (renderObj.num >= firstLine && renderObj.num <= lastLine) {
 					let lineObj = this.myContext.htmls[renderObj.num - 1];
 					let width = document.getElementById(this._lineId(renderObj.num)).querySelector('div.my-code').clientWidth || 10;
@@ -786,7 +783,7 @@ export default {
 					// range.active为false时，样式可能只显示边框，不改变字体颜色和背景
 					renderObj.selected = range.active;
 				}
-			});
+			}
 			if (this.renderedLineMap[start.line]) {
 				let renderObj = this.renderedLineMap[start.line];
 				start.left = this.getExactLeft(start);

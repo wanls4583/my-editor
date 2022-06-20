@@ -185,21 +185,24 @@ export default class {
 			let startLine = this.startLine;
 			let endLine = this.startLine + this.maxVisibleLines;
 			endLine = this.folder.getRealLine(endLine);
-			// 先渲染可视范围内的行
-			this.tokenizeLines(startLine, endLine, () => {
-				// 考虑到当前行可能处于内嵌语法中，渲染前2000行
-				startLine = this.startLine - 2000;
-				startLine = startLine < 1 ? 1 : startLine;
-				// 考虑到minimap渲染的行数，这里乘以10
-				endLine = this.folder.getRealLine(endLine + this.maxVisibleLines * 10);
-				if (startLine > this.currentLine) {
-					this.tokenizeLines(startLine, endLine, () => {
+			startLine = startLine < this.currentLine ? this.currentLine : startLine;
+			if (endLine >= startLine) {
+				// 先渲染可视范围内的行
+				this.tokenizeLines(startLine, endLine, () => {
+					// 考虑到当前行可能处于内嵌语法中，渲染前2000行
+					startLine = this.startLine - 2000;
+					startLine = startLine < 1 ? 1 : startLine;
+					// 考虑到minimap渲染的行数，这里乘以10
+					endLine = this.folder.getRealLine(endLine + this.maxVisibleLines * 10);
+					if (startLine > this.currentLine) {
+						this.tokenizeLines(startLine, endLine, () => {
+							this.tokenizeLines(this.currentLine);
+						});
+					} else {
 						this.tokenizeLines(this.currentLine);
-					});
-				} else {
-					this.tokenizeLines(this.currentLine);
-				}
-			});
+					}
+				});
+			}
 		});
 	}
 	tokenizeLines(startLine, endLine, callback) {
