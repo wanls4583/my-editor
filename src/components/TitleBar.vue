@@ -89,9 +89,14 @@ export default {
 				],
 				[
 					{
-						name: 'Save File',
+						name: 'Save',
 						op: 'saveFile',
 						shortcut: 'Ctrl+S',
+					},
+					{
+						name: 'Save As',
+						op: 'saveFileAs',
+						shortcut: 'Ctrl+Shift+S',
 					},
 				],
 			],
@@ -329,6 +334,9 @@ export default {
 					break;
 				case 'saveFile':
 					EventBus.$emit('file-save', { id: globalData.nowEditorId });
+					break;
+				case 'saveFileAs':
+					EventBus.$emit('file-save-as', { id: globalData.nowEditorId });
 					break;
 				case 'openFile':
 					EventBus.$emit('file-open', null, true);

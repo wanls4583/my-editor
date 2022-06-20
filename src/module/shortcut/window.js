@@ -18,20 +18,28 @@ export default class {
 	}
 	onKeydown(e) {
 		if (e.ctrlKey) {
-			switch (e.code) {
-				case 'Equal':
-					e.preventDefault();
-					globalData.zoomLevel += 0.5;
-					remote.getCurrentWindow().webContents.setZoomLevel(globalData.zoomLevel);
-					break;
-				case 'Minus':
-					e.preventDefault();
-					globalData.zoomLevel -= 0.5;
-					remote.getCurrentWindow().webContents.setZoomLevel(globalData.zoomLevel);
-					break;
-				case 'KeyS':
-					e.preventDefault();
-					EventBus.$emit('file-save', { id: globalData.nowEditorId });
+			if (e.shiftKey) {
+				switch (e.code) {
+					case 'KeyS':
+						e.preventDefault();
+						EventBus.$emit('file-save-as', { id: globalData.nowEditorId });
+				}
+			} else {
+				switch (e.code) {
+					case 'Equal':
+						e.preventDefault();
+						globalData.zoomLevel += 0.5;
+						remote.getCurrentWindow().webContents.setZoomLevel(globalData.zoomLevel);
+						break;
+					case 'Minus':
+						e.preventDefault();
+						globalData.zoomLevel -= 0.5;
+						remote.getCurrentWindow().webContents.setZoomLevel(globalData.zoomLevel);
+						break;
+					case 'KeyS':
+						e.preventDefault();
+						EventBus.$emit('file-save', { id: globalData.nowEditorId });
+				}
 			}
 		}
 	}

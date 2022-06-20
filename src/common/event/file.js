@@ -23,6 +23,11 @@ export default class {
 				option.success && option.success();
 			});
 		});
+		EventBus.$on('file-save-as', option => {
+			this.saveFile(option.id, true).then(() => {
+				option.success && option.success();
+			});
+		});
 		EventBus.$on('file-changed', filePath => {
 			let stat = fs.statSync(filePath);
 			let tab = Util.getTabByPath(this.editorList, filePath);
@@ -238,13 +243,13 @@ export default class {
 				console.log(err);
 			});
 	}
-	saveFile(id) {
+	saveFile(id, saveAs) {
 		let tab = Util.getTabById(this.editorList, id);
 		if (this.mode === 'web') {
 			return Promise.resolve();
 		}
-		if (!tab.saved) {
-			if (tab.path) {
+		if (!tab.saved || saveAs) {
+			if (tab.path && !saveAs) {
 				return Util.writeFile(tab.path, contexts[id].getAllText()).then(() => {
 					tab.saved = true;
 					tab.mtimeMs = fs.statSync(tab.path).mtimeMs;
@@ -257,11 +262,13 @@ export default class {
 				};
 				return remote.dialog.showSaveDialog(win, options).then(result => {
 					if (!result.canceled && result.filePath) {
-						return Util.writeFile(tab.path, contexts[id].getAllText()).then(() => {
-							tab.path = result.filePath;
-							tab.mtimeMs = fs.statSync(tab.path).mtimeMs;
-							tab.name = tab.path.match(/[^\\\/]+$/)[0];
-							tab.saved = true;
+						return Util.writeFile(result.filePath, contexts[id].getAllText()).then(() => {
+							if (!tab.path) {
+								tab.path = result.filePath;
+								tab.mtimeMs = fs.statSync(tab.path).mtimeMs;
+								tab.name = tab.path.match(/[^\\\/]+$/)[0];
+								tab.saved = true;
+							}
 						});
 					} else {
 						return Promise.reject();
@@ -269,6 +276,7 @@ export default class {
 				});
 			}
 		}
+		return Promise.resolve();
 	}
 	copyFileToClip(fileObj) {
 		ipcRenderer.send('file-copy', [fileObj.path]);
