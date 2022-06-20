@@ -42,6 +42,12 @@ export default class {
 		EventBus.$on('folder-open', () => {
 			this.openFolder();
 		});
+		EventBus.$on('folder-add', () => {
+			this.openFolder(true);
+		});
+		EventBus.$on('folder-remove', dirPath => {
+			this.removeFolder(dirPath);
+		});
 		EventBus.$on('reveal-in-file-explorer', path => {
 			if (path) {
 				remote.shell.showItemInFolder(path);
@@ -72,14 +78,34 @@ export default class {
 			ipcRenderer.send('file-delete', fileObj.path);
 		});
 	}
-	openFolder() {
+	openFolder(addToWorkspace) {
 		this.choseFolder().then(results => {
 			if (results) {
-				globalData.fileTree.empty();
-				globalData.fileTree.push(...results);
-				EventBus.$emit('folder-opened');
+				if (addToWorkspace) {
+					let rootPathMap = {};
+					globalData.fileTree.forEach(item => {
+						rootPathMap[item.path] = true;
+					});
+					results = results.filter(item => {
+						return !rootPathMap[item.path];
+					});
+					results.length && globalData.fileTree.push(...results);
+				} else {
+					globalData.fileTree.empty();
+					globalData.fileTree.push(...results);
+					EventBus.$emit('folder-opened');
+				}
 			}
 		});
+	}
+	removeFolder(dirPath) {
+		for (let i = 0; i < globalData.fileTree.length; i++) {
+			if (globalData.fileTree[i].path === dirPath) {
+				globalData.fileTree.splice(i, 1);
+				EventBus.$emit('folder-removed');
+				break;
+			}
+		}
 	}
 	choseFolder() {
 		let win = remote.getCurrentWindow();

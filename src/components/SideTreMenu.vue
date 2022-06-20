@@ -26,6 +26,14 @@ export default {
 			rootMenu: [
 				[
 					{
+						name: 'New File',
+						op: 'newFile',
+					},
+					{
+						name: 'New Folder',
+						op: 'newFolder',
+					},
+					{
 						name: 'Reveal in File Explorer',
 						op: 'revealInFileExplorer',
 					},
@@ -36,6 +44,16 @@ export default {
 					{
 						name: 'Open in Terminal',
 						op: 'openInTerminal',
+					},
+				],
+				[
+					{
+						name: 'Add Folder to Workspace',
+						op: 'addFolder',
+					},
+					{
+						name: 'Remove Folder to Workspace',
+						op: 'removeFolder',
 					},
 				],
 				[
@@ -232,6 +250,12 @@ export default {
 						dirPath = this.treeItem.path;
 					}
 					EventBus.$emit('terminal-new', dirPath);
+					break;
+				case 'addFolder':
+					EventBus.$emit('folder-add');
+					break;
+				case 'removeFolder':
+					EventBus.$emit('folder-remove', treeItem.path);
 					break;
 				case 'cut':
 					EventBus.$emit('file-cut', treeItem);

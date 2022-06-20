@@ -89,6 +89,12 @@ export default {
 				],
 				[
 					{
+						name: 'Add Folder to Workspace',
+						op: 'addFolder',
+					},
+				],
+				[
+					{
 						name: 'Save',
 						op: 'saveFile',
 						shortcut: 'Ctrl+S',
@@ -331,6 +337,9 @@ export default {
 			switch (item.op) {
 				case 'newFile':
 					EventBus.$emit('file-open');
+					break;
+				case 'addFolder':
+					EventBus.$emit('folder-add');
 					break;
 				case 'saveFile':
 					EventBus.$emit('file-save', { id: globalData.nowEditorId });
