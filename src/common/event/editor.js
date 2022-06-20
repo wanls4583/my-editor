@@ -53,12 +53,17 @@ export default class {
 	changeTab(id) {
 		let tab = Util.getTabById(this.editorList, id);
 		if (tab && !tab.active) {
-			this.editorList.forEach(item => {
-				item.active = false;
-			});
-			tab.active = true;
-			globalData.nowEditorId = id;
-			this.changeStatus();
+			if (tab.path && !tab.loaded) {
+				//tab对应的文件内容还未加载
+				EventBus.$emit('file-open', tab);
+			} else {
+				this.editorList.forEach(item => {
+					item.active = false;
+				});
+				tab.active = true;
+				globalData.nowEditorId = id;
+				this.changeStatus();
+			}
 		} else {
 			this.focusNowEditor();
 		}
