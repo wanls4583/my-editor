@@ -11,9 +11,10 @@ process.on('uncaughtException', e => {
 });
 
 process.on('message', data => {
-	let fileIndex = getNowHash(data.path) + '-' + getCacheHash(data.path);
+	let nowCommit = getNowHash(data.path);
+	let fileIndex = nowCommit + '-' + getCacheHash(data.path);
 	let stagedContent = fileCacheMap[fileIndex];
-	if (!fileIndex) {
+	if (!nowCommit) {
 		return;
 	}
 	if (!stagedContent) {
