@@ -246,7 +246,8 @@ export default class {
 		function _getBracket(cursorPos, stack, line, callback) {
 			let startFold = null;
 			let count = 0;
-			while (line >= 1 && count < 10) {
+			let startTime = Date.now();
+			while (line >= 1) {
 				let folds = this.htmls[line - 1].folds;
 				if (!folds) {
 					return callback(null);
@@ -279,12 +280,18 @@ export default class {
 				}
 				line--;
 				count++;
+				if (count >= 100 || Date.now() - startTime > 2) {
+					break;
+				}
 			}
-			// 最多向上检查一万行
-			if (line >= 1 && cursorPos.line - line < 1000) {
-				this.getBracketMatchTask = globalData.scheduler.addTask(() => {
-					_getBracket.call(this, cursorPos, stack, line, callback);
-				});
+			// 最多向上检查5000行
+			if (line >= 1 && cursorPos.line - line < 5000) {
+				this.getBracketMatchTask = globalData.scheduler.addTask(
+					() => {
+						_getBracket.call(this, cursorPos, stack, line, callback);
+					},
+					{ delay: 2 }
+				);
 			}
 		}
 	}
