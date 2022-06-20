@@ -408,7 +408,7 @@ export default {
 					});
 			});
 			this.selectedFg = !!globalData.colors['editor.selectionForeground'];
-			this.$refs.minimap.initWorkerData('theme');
+			this.$refs.minimap && this.$refs.minimap.initWorkerData('theme');
 			this.tokenizer.clearScopeMap();
 			this.render();
 		},
@@ -737,7 +737,7 @@ export default {
 		},
 		renderSelectedBg() {
 			cancelAnimationFrame(this.renderSelectedBgTimer);
-			this.renderSelectedBgTimer =  requestAnimationFrame(() => {
+			this.renderSelectedBgTimer = requestAnimationFrame(() => {
 				this.activeLineBg = true;
 				this.clearSelectionToken();
 				this.renderSelectionObjs = [];
