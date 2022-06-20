@@ -87,6 +87,13 @@ export default {
 						shortcut: 'Ctrl+N',
 					},
 				],
+				[
+					{
+						name: 'Save File',
+						op: 'saveFile',
+						shortcut: 'Ctrl+S',
+					},
+				],
 			],
 			editMenuList: [
 				[
@@ -259,7 +266,7 @@ export default {
 	inject: ['getNowEditor', 'getNowContext'],
 	created() {
 		if (this.mode === 'app') {
-			this.fileMenuList.push([
+			this.fileMenuList.splice(1, 0, [
 				{
 					name: 'Open File',
 					op: 'openFile',
@@ -319,6 +326,9 @@ export default {
 			switch (item.op) {
 				case 'newFile':
 					EventBus.$emit('file-open');
+					break;
+				case 'saveFile':
+					EventBus.$emit('file-save', { id: globalData.nowEditorId });
 					break;
 				case 'openFile':
 					EventBus.$emit('file-open', null, true);

@@ -4,6 +4,7 @@
  * @Description:
  */
 import Util from '@/common/util';
+import EventBus from '@/event';
 import globalData from '@/data/globalData';
 
 const remote = window.require('@electron/remote');
@@ -28,6 +29,9 @@ export default class {
 					globalData.zoomLevel -= 0.5;
 					remote.getCurrentWindow().webContents.setZoomLevel(globalData.zoomLevel);
 					break;
+				case 'KeyS':
+					e.preventDefault();
+					EventBus.$emit('file-save', { id: globalData.nowEditorId });
 			}
 		}
 	}
