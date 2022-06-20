@@ -53,23 +53,23 @@
 					<div class="my-indent-view">
 						<div :style="{height: _lineHeight, top: line.top}" class="my-indent-line" v-for="line in renderObjs" v-html="_tabLines(line.tabNum)"></div>
 					</div>
-					<!-- 输入框 -->
-					<textarea
-						:style="{ top: _textAreaPos.top, left: _textAreaPos.left, height: _lineHeight  }"
-						@blur="onBlur"
-						@compositionend="onCompositionend"
-						@compositionstart="onCompositionstart"
-						@copy.prevent="onCopy"
-						@cut.prevent="onCut"
-						@focus="onFocus"
-						@input="onInput"
-						@keydown="onKeydown"
-						@paste.prevent="onPaste"
-						class="my-textarea"
-						ref="textarea"
-					></textarea>
 					<auto-tip :styles="autoTipStyle" :tipList="autoTipList" @change="onClickAuto" ref="autoTip" v-show="autoTipList && autoTipList.length"></auto-tip>
 				</div>
+				<!-- 输入框 -->
+				<textarea
+					:style="{ top: _textAreaPos.top, left: _textAreaPos.left, height: _lineHeight  }"
+					@blur="onBlur"
+					@compositionend="onCompositionend"
+					@compositionstart="onCompositionstart"
+					@copy.prevent="onCopy"
+					@cut.prevent="onCut"
+					@focus="onFocus"
+					@input="onInput"
+					@keydown="onKeydown"
+					@paste.prevent="onPaste"
+					class="my-textarea"
+					ref="textarea"
+				></textarea>
 				<h-scroll-bar :scroll-left="scrollLeft" :width="_contentMinWidth" @scroll="onHBarScroll" class="my-editor-scrollbar-h"></h-scroll-bar>
 				<div class="my-scroller-shadow-left" v-if="_leftShadow"></div>
 				<div class="my-scroller-shadow-right" v-if="_rightShadow"></div>
@@ -330,15 +330,15 @@ export default {
 			let top = 0;
 			if (this.nowCursorPos) {
 				let line = this.nowCursorPos.line < this.startLine ? this.startLine : this.nowCursorPos.line;
-				top = this.folder.getRelativeLine(line) * this.charObj.charHight - this.deltaTop;
-				if (top > this.deltaTop + this.scrollerArea.height - 2 * this.charObj.charHight) {
-					top = this.deltaTop + this.scrollerArea.height - 2 * this.charObj.charHight;
+				top = (this.folder.getRelativeLine(line) - this.startLine + 1) * this.charObj.charHight;
+				if (top > this.scrollerArea.height - 2 * this.charObj.charHight) {
+					top = this.scrollerArea.height - 2 * this.charObj.charHight;
 				}
 			}
-			if (left > this.scrollerArea.width + this.scrollLeft - this.charObj.fullAngleCharWidth) {
-				left = this.scrollerArea.width + this.scrollLeft - this.charObj.fullAngleCharWidth;
-			} else if (left < this.scrollLeft) {
-				left += this.charObj.fullAngleCharWidth;
+			if (left > this.scrollerArea.width - this.charObj.fullAngleCharWidth) {
+				left = this.scrollerArea.width - this.charObj.fullAngleCharWidth;
+			} else if (left < this.charObj.fullAngleCharWidth) {
+				left = this.charObj.fullAngleCharWidth;
 			}
 			return {
 				top: top + 'px',
@@ -653,8 +653,8 @@ export default {
 		},
 		// 聚焦
 		focus() {
-			this.$refs.textarea.focus();
-			requestAnimationFrame(() => {
+			cancelAnimationFrame(this.focusTimer);
+			this.focusTimer = requestAnimationFrame(() => {
 				this.$refs.textarea.focus();
 			});
 		},
@@ -1015,7 +1015,7 @@ export default {
 					}
 				}
 				if (cursorPos === that.nowCursorPos) {
-					that.cursorLeft = left;
+					that.cursorLeft = left - that.scrollLeft;
 				}
 				return left + 'px';
 			}
