@@ -57,6 +57,12 @@ export default class {
 		EventBus.$on('file-rename', (filePath, newFileNmme) => {
 			ipcRenderer.send('file-rename', filePath, newFileNmme);
 		});
+		EventBus.$on('file-create', filePath => {
+			ipcRenderer.send('file-create', filePath);
+		});
+		EventBus.$on('folder-create', filePath => {
+			ipcRenderer.send('folder-create', filePath);
+		});
 		EventBus.$on('file-delete', fileObj => {
 			ipcRenderer.send('file-delete', fileObj.path);
 		});

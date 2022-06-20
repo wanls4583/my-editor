@@ -140,6 +140,12 @@ export default {
 					preActiveItem = null;
 				}
 			});
+			EventBus.$on('file-create-tree', (dirPath) => {
+				this.addItem(dirPath, 'file');
+			});
+			EventBus.$on('folder-create-tree', (dirPath) => {
+				this.addItem(dirPath, 'dir');
+			});
 			EventBus.$on('file-copy', (item) => {
 				this.cutPath = '';
 			});
@@ -167,8 +173,8 @@ export default {
 				if (globalData.nowIconData) {
 					item.icon = Util.getIconByPath({
 						iconData: globalData.nowIconData,
-						filePath: item.path,
 						themeType: globalData.nowTheme.type,
+						filePath: item.path,
 						fileType: item.type,
 						opened: item.open,
 						isRoot: !item.parentPath,
@@ -243,6 +249,38 @@ export default {
 					this.openFolder(item);
 				}
 				this.render();
+			}
+		},
+		addItem(dirPath, type) {
+			this.newId = 'new' + Util.getUUID();
+			for (let i = 0; i < this.renderList.length; i++) {
+				let item = this.renderList[i];
+				if (item.path === dirPath) {
+					let obj = {
+						id: this.newId,
+						name: '',
+						type: type,
+						parentPath: item.path,
+						deep: item.deep + 1,
+					};
+					if (!item.open) {
+						this.onClickItem(item);
+					}
+					obj.icon = Util.getIconByPath({
+						iconData: globalData.nowIconData,
+						themeType: globalData.nowTheme.type,
+						filePath: '',
+						fileType: type,
+						opened: false,
+						isRoot: false,
+					});
+					obj.icon = obj.icon ? `my-file-icon my-file-icon-${obj.icon}` : '';
+					this.renderList.splice(i + 1, 0, obj);
+					this.$nextTick(() => {
+						EventBus.$emit('file-rename-input', obj);
+					});
+					break;
+				}
 			}
 		},
 		closeFolder(item) {
@@ -331,9 +369,8 @@ export default {
 					} else if (path.startsWith(item.path)) {
 						if (!item.open) {
 							index = i + 1;
-							this.onClickItem(item).then(() => {
-								_findItem.call(this, path);
-							});
+							this.onClickItem(item);
+							_findItem.call(this, path);
 							break;
 						}
 					}
@@ -380,7 +417,6 @@ export default {
 				item.open = !item.open;
 				_changOpen.call(this, item);
 			}
-			return Promise.resolve();
 
 			function _changOpen(item) {
 				if (item.children.length) {

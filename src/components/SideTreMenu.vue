@@ -62,6 +62,14 @@ export default {
 			dirMenu: [
 				[
 					{
+						name: 'New File',
+						op: 'newFile',
+					},
+					{
+						name: 'New Folder',
+						op: 'newFolder',
+					},
+					{
 						name: 'Reveal in File Explorer',
 						op: 'revealInFileExplorer',
 					},
@@ -198,8 +206,14 @@ export default {
 			let dirPath = '';
 			let treeItem = Object.assign({}, this.treeItem);
 			switch (item.op) {
+				case 'newFile':
+					EventBus.$emit('file-create-tree', treeItem.path);
+					break;
+				case 'newFolder':
+					EventBus.$emit('folder-create-tree', treeItem.path);
+					break;
 				case 'revealInFileExplorer':
-					EventBus.$emit('reveal-in-file-explorer', this.treeItem.path);
+					EventBus.$emit('reveal-in-file-explorer', treeItem.path);
 					break;
 				case 'findInFolder':
 					dirPath = treeItem.name;

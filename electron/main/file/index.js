@@ -20,6 +20,12 @@ class FileOp {
 		ipcMain.on('file-rename', (e, filePath, newName) => {
 			this.rename(filePath, newName);
 		});
+		ipcMain.on('file-create', (e, filePath) => {
+			this.createFile(filePath);
+		});
+		ipcMain.on('folder-create', (e, filePath) => {
+			this.createFolder(filePath);
+		});
 		ipcMain.on('file-delete', (e, filePath) => {
 			this.delete(filePath);
 		});
@@ -81,6 +87,28 @@ class FileOp {
 			if (err) throw err;
 			this.contents.send('file-renamed', filePath, newName);
 		});
+	}
+	createFile(filePath) {
+		const fse = require('fs-extra');
+		fse.ensureFile(filePath)
+			.then(() => {
+				this.contents.send('file-created', filePath);
+			})
+			.catch(() => {
+				this.contents.send('file-create-fail', filePath);
+				console.error(err);
+			});
+	}
+	createFolder(filePath) {
+		const fse = require('fs-extra');
+		fse.ensureDir(filePath)
+			.then(() => {
+				this.contents.send('folder-created', filePath);
+			})
+			.catch(() => {
+				this.contents.send('folder-create-fail', filePath);
+				console.error(err);
+			});
 	}
 	delete(filePath) {
 		const fse = require('fs-extra');
