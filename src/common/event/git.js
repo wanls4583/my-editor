@@ -90,7 +90,7 @@ export default class {
 				}
 			} else if (item[0] === 1) {
 				//add
-				if (preDiffObj && preDiffObj.type === 'A' && preDiffObj.line === line - 1) {
+				if (preDiffObj && preDiffObj.type === 'A' && preDiffObj.line + preDiffObj.added.length === line) {
 					preDiffObj.added.push(item[1]);
 				} else {
 					preDiffObj = {

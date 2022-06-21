@@ -6,11 +6,16 @@
 			<div class="my-num" style="position: relative; visibility: hidden;">{{ diffObj.maxLine || maxLine }}</div>
 			<div class="my-num-scroller" ref="numScroller">
 				<div :style="{ height: _maxContentHeight, top: _top }" class="my-num-content" ref="numContent">
-					<div :class="{ 'my-active': nowCursorPos.line === line.num }" :style="{ top: line.top }" class="my-num" v-for="line in renderObjs">
-						<span class="num">{{ _num(line.num) }}</span>
-						<span :class="['iconfont', line.fold == 'open' ? 'my-fold-open icon-down1' : 'my-fold-close icon-right']" @click="onToggleFold(line.num)" class="my-fold my-center-center" v-if="line.fold"></span>
+					<div :class="{ 'my-active': nowCursorPos.line === numItem.num }" :style="{ top: numItem.top }" class="my-num" v-for="numItem in renderNums">
+						<span class="num">{{ numItem._num }}</span>
+						<span
+							:class="['iconfont', numItem.fold == 'open' ? 'my-fold-open icon-down1' : 'my-fold-close icon-right']"
+							@click="onToggleFold(numItem.num)"
+							class="my-fold my-center-center"
+							v-if="numItem.fold"
+						></span>
 						<template v-if="type !== 'diff'">
-							<span :class="['my-diff-'+_diffType(line.num)]" @click="onShowDiff(line.num)" class="my-diff-num" v-if="_diffType(line.num)"></span>
+							<span :class="[numItem.diffType]" @click="onShowDiff(numItem.num)" class="my-diff-num" v-if="numItem.diffType"></span>
 						</template>
 					</div>
 				</div>
@@ -193,6 +198,7 @@ export default {
 			errors: [],
 			autoTipList: [],
 			renderObjs: [],
+			renderNums: [],
 			renderCursorObjs: [],
 			renderSelectionObjs: [],
 			renderedLineMap: {},
@@ -259,14 +265,6 @@ export default {
 		_left() {
 			return -this.scrollLeft + 'px';
 		},
-		_num() {
-			return (line) => {
-				if (this.type === 'diff') {
-					return line - this.diffObj.deletedLength > 0 ? line - this.diffObj.deletedLength + this.diffObj.beforeLine : '';
-				}
-				return line;
-			};
-		},
 		_diffBg() {
 			return (line) => {
 				if (this.type === 'diff') {
@@ -277,22 +275,6 @@ export default {
 					}
 				}
 				return '';
-			};
-		},
-		_diffType() {
-			return (line) => {
-				if (this.type !== 'diff') {
-					let preDiff = this.getPrevDiff(this.diffRanges, line);
-					let type = (preDiff && gitTypeMap[preDiff.type]) || '';
-					if (type === 'delete') {
-						if (preDiff.line === line + 1) {
-							type += '-bottom';
-						} else {
-							type += '-top';
-						}
-					}
-					return type;
-				}
 			};
 		},
 		_leftShadow() {
@@ -423,6 +405,16 @@ export default {
 				this.setScrollerArea();
 			});
 		},
+		active: function (newVal) {
+			if (newVal) {
+				this.showEditor();
+			} else {
+				this.autocomplete.stop();
+			}
+		},
+		diffRanges: function (newVal) {
+			this.setNumExtraData();
+		},
 		nowCursorPos: {
 			handler: function (newVal) {
 				EventBus.$emit('cursor-change', {
@@ -432,13 +424,6 @@ export default {
 				this.renderBracketMatch();
 			},
 			deep: true,
-		},
-		active: function (newVal) {
-			if (newVal) {
-				this.showEditor();
-			} else {
-				this.autocomplete.stop();
-			}
 		},
 	},
 	created() {
@@ -720,6 +705,14 @@ export default {
 						renderObj.index = index;
 					}
 				});
+				this.renderNums = this.renderObjs.map((item) => {
+					return {
+						num: item.num,
+						top: item.top,
+						fold: item.fold,
+					};
+				});
+				this.setNumExtraData();
 			}
 		},
 		// 渲染单行代码
@@ -1263,6 +1256,28 @@ export default {
 				return;
 			}
 			this[prop] = value;
+		},
+		setNumExtraData() {
+			console.time();
+			this.renderNums = this.renderNums.map((item) => {
+				if (this.type === 'diff') {
+					item._num = item.num - this.diffObj.deletedLength > 0 ? item.num - this.diffObj.deletedLength + this.diffObj.beforeLine : '';
+				} else {
+					let preDiff = this.getPrevDiff(this.diffRanges, item.num);
+					let type = (preDiff && gitTypeMap[preDiff.type]) || '';
+					if (type === 'delete') {
+						if (preDiff.line === item.num + 1) {
+							type += '-bottom';
+						} else {
+							type += '-top';
+						}
+					}
+					item.diffType = (type && 'my-diff-' + type) || '';
+					item._num = item.num;
+				}
+				return item;
+			});
+			console.timeEnd();
 		},
 		setNowCursorPos(nowCursorPos) {
 			this.nowCursorPos = nowCursorPos || { line: 1, column: 0 };
