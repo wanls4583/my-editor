@@ -16,6 +16,7 @@ export default class {
 		this.simpleGit = new SimpleGit();
 		this.gitStatusTimer = {};
 		this.gitDiffTimer = {};
+		this.diffProcessMap = {};
 		this.init();
 	}
 	init() {
@@ -30,20 +31,21 @@ export default class {
 			this.gitDiffTimer[filePath] = setTimeout(() => {
 				let tab = filePath && Util.getTabByPath(globalData.editorList, filePath);
 				if (tab && tab.active && filePath) {
-					this.diffProcess.send({ path: filePath, content: contexts[tab.id].getAllText() });
+					this.diffProcessMap[filePath] && this.diffProcessMap[filePath].kill();
+					this.diffProcessMap[filePath] = this.createDiffProcess(filePath);
+					this.diffProcessMap[filePath].send({ path: filePath, content: contexts[tab.id].getAllText() });
 				}
 			}, 500);
 		});
-		this.initDiffProcess();
 	}
-	initDiffProcess() {
-		this.diffProcess = child_process.fork(path.join(globalData.dirname, 'main/process/git/diff.js'));
-		this.diffProcess.on('message', data => {
+	createDiffProcess(filePath) {
+		let diffProcess = child_process.fork(path.join(globalData.dirname, 'main/process/git/diff.js'), { cwd: path.dirname(filePath), timeout: 10000 });
+		diffProcess.on('message', data => {
+			this.diffProcessMap[filePath] = null;
+			diffProcess.kill();
 			EventBus.$emit('git-diffed', { path: data.path, result: this.parseDiff(data.result) });
 		});
-		this.diffProcess.on('close', () => {
-			this.initDiffProcess();
-		});
+		return diffProcess;
 	}
 	parseDiff(data) {
 		let result = [];
