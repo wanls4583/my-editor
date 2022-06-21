@@ -1258,7 +1258,6 @@ export default {
 			this[prop] = value;
 		},
 		setNumExtraData() {
-			console.time();
 			this.renderNums = this.renderNums.map((item) => {
 				if (this.type === 'diff') {
 					item._num = item.num - this.diffObj.deletedLength > 0 ? item.num - this.diffObj.deletedLength + this.diffObj.beforeLine : '';
@@ -1277,7 +1276,6 @@ export default {
 				}
 				return item;
 			});
-			console.timeEnd();
 		},
 		setNowCursorPos(nowCursorPos) {
 			this.nowCursorPos = nowCursorPos || { line: 1, column: 0 };

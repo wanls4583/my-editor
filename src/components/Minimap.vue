@@ -263,7 +263,11 @@ export default {
 					let item = this.$parent.diffRanges[i];
 					item = Object.assign({}, item);
 					item.length = item.type === 'D' ? 1 : item.added.length;
-					if (item.line >= this.startLine && item.line <= endLine) {
+					if (item.line < this.startLine) {
+						item.length -= this.startLine - item.line;
+						item.line = this.startLine;
+					}
+					if (item.length > 0) {
 						let fold = this.$parent.folder.getLineInFold(item.line);
 						if (fold) {
 							if (item.type !== 'D' && item.line + item.length - 1 >= fold.end.line) {
@@ -295,6 +299,8 @@ export default {
 		},
 		renderAllDiff(renderDiff) {
 			let diffRanges = [];
+			let sliderHeight = (this.height / this.contentHeight) * this.height;
+			sliderHeight = sliderHeight > 20 ? sliderHeight : 20;
 			if (this.$parent.diffRanges) {
 				for (let i = 0; i < this.$parent.diffRanges.length; i++) {
 					let item = this.$parent.diffRanges[i];
@@ -317,7 +323,7 @@ export default {
 
 			function _getDiffObj(item) {
 				let resultObj = {};
-				let scale = this.height / this.contentHeight;
+				let scale = (this.height - sliderHeight) / (this.contentHeight - this.height);
 				item = this.getDiffObj(item);
 				resultObj.type = item.type;
 				resultObj.top = (item.line - 1) * this.$parent.charObj.charHight * scale;
