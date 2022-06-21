@@ -129,7 +129,7 @@ export default class {
 		if (it) {
 			let fold = it.prev();
 			if (fold && fold.start.line < line && fold.end.line > line) {
-				return true;
+				return this.getLineInFold(fold.start.line) || fold;
 			}
 		}
 		return false;

@@ -148,12 +148,10 @@ function drawLeftDiff() {
 	if (diffRanges.length) {
 		diffRanges.forEach(item => {
 			let rgb = getDiffColor(item.type);
-			for (let i = 0; i < item.length; i++) {
-				if (item.type === 'D') {
-					putRectPixl({ imgData: leftDiffCanvasImgData, left: 2, top: (item.line + i - 1) * dataObj.charHight, width: 4, height: dataObj.charHight, rgb });
-				} else {
-					putRectPixl({ imgData: leftDiffCanvasImgData, left: 3, top: (item.line + i - 1) * dataObj.charHight, width: 2, height: dataObj.charHight, rgb });
-				}
+			if (item.type === 'D') {
+				putRectPixl({ imgData: leftDiffCanvasImgData, left: 2, top: item.top, width: 4, height: item.height, rgb });
+			} else {
+				putRectPixl({ imgData: leftDiffCanvasImgData, left: 3, top: item.top, width: 2, height: item.height, rgb });
 			}
 		});
 		leftDiffCtx.putImageData(leftDiffCanvasImgData, 0, 0);
@@ -167,9 +165,7 @@ function drawRightDiff() {
 	if (allDiffRanges) {
 		allDiffRanges.forEach(item => {
 			let rgb = getDiffColor(item.type);
-			for (let i = 0; i < item.length; i++) {
-				putRectPixl({ imgData: rightDiffCanvasImgData, left: 0, top: item.top + i * dataObj.charHight, width: 5, height: dataObj.charHight, rgb });
-			}
+			putRectPixl({ imgData: rightDiffCanvasImgData, left: 0, top: item.top, width: 5, height: item.height, rgb });
 		});
 		rightDiffCtx.putImageData(rightDiffCanvasImgData, 0, 0);
 		if (allCursorImg) {

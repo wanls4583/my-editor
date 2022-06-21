@@ -142,9 +142,9 @@ export default {
 				EventBus.$emit('close-menu');
 			});
 			// 大尺寸屏幕上，放大显示比例
-			if (size.width > 1400) {
-				globalData.zoomLevel = 0.5;
-			}
+			// if (size.width > 1400) {
+			// 	globalData.zoomLevel = 0.5;
+			// }
 			remote.getCurrentWindow().webContents.setZoomLevel(globalData.zoomLevel);
 		}
 	},

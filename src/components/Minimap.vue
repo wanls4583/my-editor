@@ -261,9 +261,18 @@ export default {
 				endLine = this.getEndLine();
 				for (let i = 0; i < this.$parent.diffRanges.length; i++) {
 					let item = this.$parent.diffRanges[i];
+					item = Object.assign({}, item);
+					item.length = item.type === 'D' ? 1 : item.added.length;
 					if (item.line >= this.startLine && item.line <= endLine) {
-						if (!this.$parent.folder.getLineInFold(item.line)) {
-							diffRanges.push(this.getDiffObj(item));
+						let fold = this.$parent.folder.getLineInFold(item.line);
+						if (fold) {
+							if (item.type !== 'D' && item.line + item.length - 1 >= fold.end.line) {
+								item.length -= fold.end.line - item.line;
+								item.line = fold.end.line;
+								diffRanges.push(_getDiffObj.call(this, item));
+							}
+						} else {
+							diffRanges.push(_getDiffObj.call(this, item));
 						}
 					} else if (item.line > endLine) {
 						break;
@@ -271,19 +280,52 @@ export default {
 				}
 			}
 			this.worker.postMessage({ event: 'render-diff', data: diffRanges });
+
+			function _getDiffObj(item) {
+				let resultObj = {};
+				item = this.getDiffObj(item);
+				item.length = item.line + item.length - 1 > endLine ? endLine - item.line + 1 : item.length;
+				resultObj.type = item.type;
+				resultObj.top = (item.line - this.startLine) * this.$parent.charObj.charHight * this.scale;
+				resultObj.height = this.$parent.charObj.charHight * item.length * this.scale;
+				resultObj.top = Math.ceil(resultObj.top);
+				resultObj.height = Math.ceil(resultObj.height);
+				return resultObj;
+			}
 		},
 		renderAllDiff(renderDiff) {
 			let diffRanges = [];
 			if (this.$parent.diffRanges) {
 				for (let i = 0; i < this.$parent.diffRanges.length; i++) {
 					let item = this.$parent.diffRanges[i];
-					if (!this.$parent.folder.getLineInFold(item.line)) {
-						diffRanges.push(this.getDiffObj(item));
+					let fold = this.$parent.folder.getLineInFold(item.line);
+					item = Object.assign({}, item);
+					item.length = item.type === 'D' ? 1 : item.added.length;
+					if (fold) {
+						if (item.type !== 'D' && item.line + item.length - 1 >= fold.end.line) {
+							item.length -= fold.end.line - item.line;
+							item.line = fold.end.line;
+							diffRanges.push(_getDiffObj.call(this, item));
+						}
+					} else {
+						diffRanges.push(_getDiffObj.call(this, item));
 					}
 				}
 			}
 			this.worker.postMessage({ event: 'render-diff-all', data: diffRanges });
 			renderDiff && this.renderDiff();
+
+			function _getDiffObj(item) {
+				let resultObj = {};
+				let scale = this.height / this.contentHeight;
+				item = this.getDiffObj(item);
+				resultObj.type = item.type;
+				resultObj.top = (item.line - 1) * this.$parent.charObj.charHight * scale;
+				resultObj.height = this.$parent.charObj.charHight * item.length * scale;
+				resultObj.top = Math.ceil(resultObj.top);
+				resultObj.height = Math.ceil(resultObj.height);
+				return resultObj;
+			}
 		},
 		renderCursor() {
 			let list = this.$parent.cursor.multiCursorPos.toArray();
@@ -366,27 +408,24 @@ export default {
 		},
 		getDiffObj(item) {
 			let relLine = this.$parent.folder.getRelativeLine(item.line);
-			let line = relLine - this.startLine + 1;
-			let top = Math.round((((relLine - 1) * this.$parent.charObj.charHight) / this.contentHeight) * this.height);
-			let length = item.type === 'D' ? 1 : item.added.length;
+			let length = item.length;
 			if (length > 1) {
 				let count = 0;
 				let endLine = item.line + length - 1;
-				let i = item.line;
-				while (i <= endLine) {
-					let fold = this.$parent.folder.getFoldByLine(i);
+				let line = item.line;
+				while (line <= endLine) {
+					let fold = this.$parent.folder.getFoldByLine(line);
 					count++;
 					if (fold) {
-						i = fold.end.line;
+						line = fold.end.line;
 					} else {
-						i++;
+						line++;
 					}
 				}
 				length = count;
 			}
 			return {
-				top: top,
-				line: line,
+				line: relLine,
 				type: item.type,
 				length: length,
 			};
