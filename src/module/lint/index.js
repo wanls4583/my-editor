@@ -8,36 +8,7 @@ import globalData from '@/data/globalData';
 
 const path = window.require('path');
 const child_process = window.require('child_process');
-
-let worker = null;
-let parseIdMap = {};
-
-function inttWorker() {
-	if (worker === null) {
-		clearTimeout(inttWorker.initWorkTimer);
-		inttWorker.initWorkTimer = setTimeout(() => {
-			worker = child_process.fork(path.join(globalData.dirname, 'main/process/lint/index.js'));
-			_bindMsg();
-		}, 300);
-	} else {
-		_bindMsg();
-	}
-
-	function _bindMsg() {
-		worker.on('message', data => {
-			if (typeof parseIdMap[data.parseId] === 'function') {
-				parseIdMap[data.parseId](data.results);
-				delete parseIdMap[data.parseId];
-			}
-		});
-		worker.on('close', () => {
-			worker = null;
-			inttWorker();
-		});
-	}
-}
-
-inttWorker();
+const lintSupport = { css: true, scss: true, less: true, html: true, javascript: true };
 
 export default class {
 	constructor(editor, context) {
@@ -57,29 +28,50 @@ export default class {
 		this.parse();
 	}
 	onInsertContentAfter(nowLine, newLine) {
-		this.parseId && delete parseIdMap[this.parseId];
 		this.parse();
 	}
 	onDeleteContentAfter(nowLine, newLine) {
-		this.parseId && delete parseIdMap[this.parseId];
 		this.parse();
 	}
 	parse() {
-		if (!this.language) {
+		if (!lintSupport[this.language]) {
 			return;
 		}
 		clearTimeout(this.parseTimer);
+		clearTimeout(this.closeWorkTimer);
 		this.parseTimer = setTimeout(() => {
+			if (this.worker && this.parseId) {
+				this.worker.kill();
+				this.worker = null;
+			}
+			if (this.parseId || !this.worker) {
+				this.createProcess();
+			}
+			_send.call(this);
+		}, 500);
+
+		function _send() {
 			const text = this.getAllText();
 			this.parseId = Util.getUUID();
-			parseIdMap[this.parseId] = results => {
-				this.setErrors(results);
-			};
-			worker.send({
+			this.worker.send({
 				text: text,
 				parseId: this.parseId,
 				language: this.language,
 			});
-		}, 300);
+		}
+	}
+	createProcess() {
+		this.worker = child_process.fork(path.join(globalData.dirname, 'main/process/lint/index.js'));
+		this.worker.on('message', data => {
+			if (data.parseId === this.parseId) {
+				this.setErrors(data.results);
+				this.parseId = '';
+				// 30秒后，如果没有编辑内容，则关闭子进程
+				this.closeWorkTimer = setTimeout(() => {
+					this.worker && this.worker.kill();
+					this.worker = null;
+				}, 30000);
+			}
+		});
 	}
 }
