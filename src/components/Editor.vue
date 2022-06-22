@@ -554,6 +554,14 @@ export default {
 					}
 				})
 			);
+			EventBus.$on(
+				'file-saved',
+				(this.initEventBusFn8 = (path) => {
+					if (this.path === path) {
+						this.history.save();
+					}
+				})
+			);
 		},
 		unbindEvent() {
 			$(document).unbind('mousemove', this.initEventFn1);
@@ -565,6 +573,7 @@ export default {
 			EventBus.$off('git-diffed', this.initEventBusFn5);
 			EventBus.$off('git-statused', this.initEventBusFn6);
 			EventBus.$off('render-line', this.initEventBusFn7);
+			EventBus.$off('file-saved', this.initEventBusFn8);
 		},
 		showEditor() {
 			// 元素暂时不可见

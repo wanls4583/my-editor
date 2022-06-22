@@ -207,6 +207,7 @@ export default class {
 				Util.readFile(tab.path)
 					.then(data => {
 						contexts[tab.id].reload(data);
+						EventBus.$emit('file-saved', tab.path);
 						tab.saved = true;
 						//点击搜索结果
 						if (fileObj.range) {
@@ -279,6 +280,7 @@ export default class {
 				return Util.writeFile(tab.path, contexts[id].getAllText()).then(() => {
 					tab.saved = true;
 					tab.mtimeMs = fs.statSync(tab.path).mtimeMs;
+					EventBus.$emit('file-saved', tab.path);
 				});
 			} else {
 				let win = remote.getCurrentWindow();

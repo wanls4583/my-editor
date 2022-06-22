@@ -20,6 +20,9 @@ export default class {
 		EventBus.$on('editor-change', id => {
 			this.changeTab(id);
 		});
+		EventBus.$on('editor-saved', id => {
+			this.saveTab(id);
+		});
 		EventBus.$on('editor-close-to-left', id => {
 			this.closeToLeft(id);
 		});
@@ -67,6 +70,10 @@ export default class {
 		} else {
 			this.focusNowEditor();
 		}
+	}
+	saveTab(id) {
+		let tab = Util.getTabById(this.editorList, id);
+		tab.saved = true;
 	}
 	changeStatus() {
 		let changStatusId = this.changeStatus.id || 1;
