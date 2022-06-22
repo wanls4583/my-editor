@@ -253,7 +253,6 @@ export default {
 				return text.length;
 			}
 		},
-		renderAllSelectedBg() {},
 		renderDiff() {
 			let diffRanges = [];
 			let endLine = 0;
@@ -419,16 +418,26 @@ export default {
 				let count = 0;
 				let endLine = item.line + length - 1;
 				let line = item.line;
-				while (line <= endLine) {
-					let fold = this.$parent.folder.getFoldByLine(line);
-					count++;
-					if (fold) {
-						line = fold.end.line;
+				let delLength = 0;
+				let folds = this.$parent.folder.folds.toArray();
+				// 减去折叠中的行
+				for (let i = 0; i < folds.length; i++) {
+					let fold = folds[i];
+					if (fold.end.line <= item.line) {
+						continue;
+					} else if (fold.start.line >= endLine) {
+						break;
 					} else {
-						line++;
+						delLength += fold.end.line - fold.start.line;
+						if (fold.start.line < item.line) {
+							delLength -= item.line - fold.start.line;
+						}
+						if (fold.end.line > endLine) {
+							delLength -= fold.end.line - endLine;
+						}
 					}
 				}
-				length = count;
+				length -= delLength;
 			}
 			return {
 				line: relLine,
