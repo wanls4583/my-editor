@@ -4,11 +4,11 @@
  * @Description: 
 -->
 <template>
-	<div class="my-minimap" ref="wrap">
+	<div @mousedown="onMinimapDown" class="my-minimap" ref="wrap">
 		<canvas :height="height" :width="leftWidth" class="my-minimap-canvas-left" ref="leftDiffCanvas"></canvas>
 		<canvas :height="height" :width="width" class="my-minimap-canvas-center" ref="canvas"></canvas>
 		<canvas :height="height" :width="rightWidth" class="my-minimap-canvas-right" ref="rightDiffCanvas"></canvas>
-		<div :style="{top: blockTop + 'px', height: blockHeight + 'px', opacity: blockClicked ? '0.8' : ''}" @mousedown="onBlockMDown" class="my-minimap-block"></div>
+		<div :style="{top: blockTop + 'px', height: blockHeight + 'px', opacity: blockClicked ? '0.8' : ''}" @mousedown="onBlockMDown" class="my-minimap-block" ref="block"></div>
 	</div>
 </template>
 <script>
@@ -450,6 +450,17 @@ export default {
 			if (cache && cache.text === text && cache.preRuleId === preRuleId) {
 				return true;
 			}
+		},
+		onMinimapDown(e) {
+			if (e.target === this.$refs.block) {
+				return;
+			}
+			let maxScrollTop = this.contentHeight - this.height;
+			let scrollTop = Math.floor(e.offsetY / (this.$parent.charObj.charHight * this.scale));
+			scrollTop = (this.startLine + scrollTop - 1) * this.$parent.charObj.charHight - this.height / 2;
+			scrollTop = scrollTop > maxScrollTop ? maxScrollTop : scrollTop;
+			scrollTop = scrollTop < 0 ? 0 : scrollTop;
+			this.$parent.setStartLine(scrollTop);
 		},
 		onBlockMDown(e) {
 			this.startBlockMouseObj = e;

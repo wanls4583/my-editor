@@ -40,6 +40,12 @@
 			}
 		}
 
+		&:active {
+			.my-minimap-block {
+				background-color: var(--my-scrollbarSlider-activeBackground);
+			}
+		}
+
 		&-block {
 			opacity: 0;
 			transition: opacity 0.4s;
