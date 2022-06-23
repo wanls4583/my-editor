@@ -7,7 +7,7 @@
 	<div @contextmenu.prevent.stop="onContextmenu" @selectstart.prevent class="my-side-bar" ref="sideBar">
 		<div :style="{opacity: opacity}" class="my-height-100" style="overflow: hidden">
 			<div class="side-bar-title my-shadow">EXPLORER</div>
-			<side-tree :list="list" ref="tree"></side-tree>
+			<side-tree ref="tree"></side-tree>
 		</div>
 		<div class="my-rename-overlay" v-if="renameVisible">
 			<input :style="inputStyle" @blur="onBlur" @keydown.enter="onConfirm" @keydown.esc="onCancel" class="my-rename-input" ref="input" spellcheck="false" type="text" v-model="newFileNmme" />
@@ -32,18 +32,10 @@ export default {
 	},
 	data() {
 		return {
-			list: globalData.fileTree,
 			newFileNmme: '',
 			renameVisible: false,
 			inputStyle: {},
 			opacity: 1,
-		};
-	},
-	provide() {
-		return {
-			getRootList: () => {
-				return this.list;
-			},
 		};
 	},
 	mounted() {

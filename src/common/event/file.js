@@ -96,6 +96,7 @@ export default class {
 						return !rootPathMap[item.path];
 					});
 					results.length && globalData.fileTree.push(...results);
+					EventBus.$emit('folder-added');
 				} else {
 					globalData.fileTree.empty();
 					globalData.fileTree.push(...results);

@@ -137,6 +137,7 @@ export default {
 		this.persistence = new Persistence();
 		this.initEvent();
 		this.initEventBus();
+		this.persistence.loadFileTree();
 		if (this.mode === 'app') {
 			const currentWindow = remote.getCurrentWindow();
 			const size = remote.screen.getPrimaryDisplay().size;

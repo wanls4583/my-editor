@@ -19,8 +19,9 @@ const nowIconTheme = {
 	value: 'material-icon-theme',
 	path: path.join(dirname, 'main/extensions/theme-material-icon/dist/material-icons.json'),
 };
+const fileTreePath = path.join(remote.app.getPath('userData'), 'userData/file-tree.my');
+const configPath = path.join(remote.app.getPath('userData'), 'userData/config.my');
 let zoomLevel = 0;
-let configPath = path.join(remote.app.getPath('userData'), 'config.my');
 if (fs.existsSync(configPath)) {
 	try {
 		// 加载全局配置
@@ -38,6 +39,7 @@ export default {
 	enum: Enum,
 	dirname: dirname,
 	configPath: configPath,
+	fileTreePath: fileTreePath,
 	zoomLevel: zoomLevel,
 	scopeIdMap: {},
 	scopeReg: null,
@@ -51,6 +53,7 @@ export default {
 	grammars: {},
 	sourceWordMap: {},
 	fileTree: [],
+	openedFileList: [],
 	fileStatus: {},
 	fileDiff: {},
 	terminalList: [],

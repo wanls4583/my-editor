@@ -410,7 +410,7 @@ class Util {
 			data = data.toString();
 			data = stripJsonComments(data);
 			data = data.replaceAll(/\,(?=\s*(?:(?:\r\n|\n|\r))*\s*[\]\}])/g, '');
-			data = JSON.parse(data);
+			data = data && JSON.parse(data) || {};
 			return data;
 		});
 	}
@@ -419,7 +419,7 @@ class Util {
 		data = data.toString();
 		data = stripJsonComments(data);
 		data = data.replaceAll(/\,(?=\s*(?:(?:\r\n|\n|\r))*\s*[\]\}])/g, '');
-		data = JSON.parse(data);
+		data = data && JSON.parse(data) || {};
 		return data;
 	}
 	/**

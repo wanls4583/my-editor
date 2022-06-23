@@ -45,11 +45,6 @@ let preActiveItem = null;
 
 export default {
 	name: 'SideTree',
-	props: {
-		list: {
-			type: Array,
-		},
-	},
 	components: {
 		VScrollBar,
 	},
@@ -59,7 +54,7 @@ export default {
 			itemPadding: 20,
 			openedList: [],
 			renderList: [],
-			watchIdMap: {},
+			fileWatchs: [],
 			startLine: 1,
 			maxVisibleLines: 100,
 			cutPath: '',
@@ -78,24 +73,16 @@ export default {
 		},
 	},
 	watch: {
-		list() {
-			this.openedList = [];
-			this.renderList = [];
-			this.openedList = this.getRenderList(this.list, 0);
-			this.initFileStatus();
-			this.watchFolder();
-			this.render();
-		},
 		openedList() {
+			globalData.openedFileList = this.openedList;
 			this.setTreeHeight();
 		},
 	},
 	created() {
-		this.openedList = this.getRenderList(this.list, 0);
 		this.initEventBus();
 		this.initFileStatus();
 		this.watchFolder();
-		window.tree = this;
+		this.setOpendList();
 	},
 	mounted() {
 		this.domHeight = this.$refs.wrap.clientHeight;
@@ -103,9 +90,7 @@ export default {
 		this.render();
 	},
 	destroyed() {
-		for (let key in this.watchIdMap) {
-			this.watchIdMap[key].close();
-		}
+		this.removeFileWatcher();
 	},
 	methods: {
 		initResizeEvent() {
@@ -142,10 +127,10 @@ export default {
 				}
 			});
 			EventBus.$on('file-create-tree', (dirPath) => {
-				this.addItem(dirPath, 'file');
+				this.newFileOrDir(dirPath, 'file');
 			});
 			EventBus.$on('folder-create-tree', (dirPath) => {
-				this.addItem(dirPath, 'dir');
+				this.newFileOrDir(dirPath, 'dir');
 			});
 			EventBus.$on('file-copy', (item) => {
 				this.cutPath = '';
@@ -160,20 +145,48 @@ export default {
 				this.render();
 			});
 			EventBus.$on('folder-opened', () => {
-				this.$nextTick(() => {
-					this.refreshWorkSpace();
-				});
+				this.refreshWorkSpace();
+			});
+			EventBus.$on('folder-added', () => {
+				this.refreshWorkSpace();
+			});
+			EventBus.$on('folder-removed', () => {
+				this.refreshWorkSpace();
 			});
 			EventBus.$on('workspace-opened', () => {
 				this.$nextTick(() => {
 					this.refreshWorkSpace();
 				});
 			});
+			EventBus.$on('file-tree-loaded', (list) => {
+				this.initOpendDirList(list);
+			});
 		},
 		initFileStatus() {
-			this.list.forEach((item) => {
+			globalData.fileTree.forEach((item) => {
 				EventBus.$emit('git-status', item);
 			});
+		},
+		initOpendDirList(list) {
+			globalData.fileTree.empty();
+			while (list.length) {
+				let fileObj = list.shift();
+				let item = fileObj.parentPath && Util.getFileItemByPath(globalData.fileTree, fileObj.path);
+				if (item) {
+					item.children = this.readdir(item);
+					item.open = true;
+					item.loaded = true;
+				} else {
+					item = this.createRootItem(fileObj.path);
+					if (fileObj.open) {
+						item.children = this.readdir(item);
+						item.open = true;
+						item.loaded = true;
+					}
+					globalData.fileTree.push(item);
+				}
+			}
+			this.refreshWorkSpace();
 		},
 		setTreeHeight() {
 			this.treeHeight = this.openedList.length * this.itemHeight;
@@ -197,10 +210,10 @@ export default {
 				item.status = item.status.status;
 			});
 		},
-		createItems(item, files) {
+		createItems(parentItem, files) {
 			let results = [];
 			files.forEach((name, index) => {
-				let fullPath = path.join(item.path, name);
+				let fullPath = path.join(parentItem.path, name);
 				if (!fs.existsSync(fullPath)) {
 					return;
 				}
@@ -209,10 +222,10 @@ export default {
 					id: Util.getIdFromStat(stat),
 					name: name,
 					path: fullPath,
-					parentPath: item.path,
-					relativePath: path.join(item.relativePath, name),
-					rootPath: item.rootPath,
-					deep: item.deep + 1,
+					parentPath: parentItem.path,
+					relativePath: path.join(parentItem.relativePath, name),
+					rootPath: parentItem.rootPath,
+					deep: parentItem.deep + 1,
 					active: false,
 					children: [],
 				};
@@ -226,8 +239,33 @@ export default {
 			});
 			return this.sortFileList(results);
 		},
+		createRootItem(filePath) {
+			let stat = fs.statSync(filePath);
+			let obj = {
+				id: Util.getIdFromStat(stat),
+				name: path.basename(filePath),
+				path: filePath,
+				parentPath: '',
+				relativePath: '',
+				rootPath: filePath,
+				deep: 0,
+				active: false,
+				children: [],
+				type: 'dir',
+				open: false,
+			};
+			return obj;
+		},
 		readdir(item) {
-			let files = fs.readdirSync(item.path, { encoding: 'utf8' });
+			let files = null;
+			let filePath = '';
+			if (typeof item === 'string') {
+				filePath = item;
+				item = null;
+			} else {
+				filePath = item.path;
+			}
+			files = fs.readdirSync(filePath, { encoding: 'utf8' });
 			return this.createItems(item, files);
 		},
 		refreshDir(item) {
@@ -265,15 +303,19 @@ export default {
 			}
 		},
 		refreshWorkSpace() {
-			this.sortFileList(this.list);
-			this.list.forEach((item) => {
+			this.sortFileList(globalData.fileTree);
+			globalData.fileTree.forEach((item) => {
 				if (item.open) {
 					this.closeFolder(item);
 					this.openFolder(item);
 				}
 			});
+			this.initFileStatus();
+			this.watchFolder();
+			this.setOpendList();
+			this.render();
 		},
-		addItem(dirPath, type) {
+		newFileOrDir(dirPath, type) {
 			this.newId = 'new' + Util.getUUID();
 			for (let i = 0; i < this.renderList.length; i++) {
 				let item = this.renderList[i];
@@ -322,26 +364,31 @@ export default {
 				.concat(this.openedList.slice(index + 1));
 		},
 		watchFolder() {
-			this.list.forEach((item) => {
-				if (!this.watchIdMap[item.id]) {
-					this.watchIdMap[item.id] = fs.watch(item.path, { recursive: true }, (event, filename) => {
-						if (filename) {
-							if (event === 'rename') {
-								let dirPath = path.dirname(path.join(item.path, filename));
-								let treeItem = Util.getFileItemByPath(this.list, dirPath);
-								if (treeItem && (treeItem.children.length || treeItem.open)) {
-									this.refreshDir(treeItem);
-								}
-							} else if (event === 'change') {
-								let filePath = path.join(item.path, filename);
-								EventBus.$emit('git-diff', filePath);
+			this.removeFileWatcher();
+			globalData.fileTree.forEach((item) => {
+				let watcher = fs.watch(item.path, { recursive: true }, (event, filename) => {
+					if (filename) {
+						if (event === 'rename') {
+							let dirPath = path.dirname(path.join(item.path, filename));
+							let treeItem = Util.getFileItemByPath(globalData.fileTree, dirPath);
+							if (treeItem && (treeItem.children.length || treeItem.open)) {
+								this.refreshDir(treeItem);
 							}
-							if (filename != '.git' && !filename.startsWith('.git' + path.sep + 'index.lock')) {
-								EventBus.$emit('git-status', item);
-							}
+						} else if (event === 'change') {
+							let filePath = path.join(item.path, filename);
+							EventBus.$emit('git-diff', filePath);
 						}
-					});
-				}
+						if (filename != '.git' && !filename.startsWith('.git' + path.sep + 'index.lock')) {
+							EventBus.$emit('git-status', item);
+						}
+					}
+				});
+				this.fileWatchs.push(watcher);
+			});
+		},
+		removeFileWatcher() {
+			this.fileWatchs.forEach((item) => {
+				item.close();
 			});
 		},
 		updateParentPath(item, parentPath) {
@@ -398,6 +445,9 @@ export default {
 					}
 				}
 			}
+		},
+		setOpendList() {
+			this.openedList = this.getRenderList(globalData.fileTree, 0);
 		},
 		getRenderList(list, deep) {
 			let results = [];
