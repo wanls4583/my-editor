@@ -77,6 +77,12 @@ export default class {
 		EventBus.$on('file-delete', fileObj => {
 			ipcRenderer.send('file-delete', fileObj.path);
 		});
+		EventBus.$on('workspace-save-as', () => {
+			this.saveWorkspace(true);
+		});
+		EventBus.$on('workspace-open', () => {
+			this.openWorkspace();
+		});
 	}
 	openFolder(addToWorkspace) {
 		this.choseFolder().then(results => {
@@ -119,20 +125,7 @@ export default class {
 				let results = [];
 				if (!result.canceled && result.filePaths) {
 					result.filePaths.forEach(item => {
-						let obj = {
-							id: Util.getIdFromStat(fs.statSync(item)),
-							name: item.match(/[^\\\/]+$/)[0],
-							path: item,
-							parentPath: '',
-							relativePath: '',
-							rootPath: item,
-							parent: null,
-							type: 'dir',
-							active: false,
-							open: false,
-							children: [],
-						};
-						results.push(Object.assign({}, obj));
+						results.push(this.createRootItem(item));
 					});
 					return results;
 				}
@@ -306,6 +299,61 @@ export default class {
 		}
 		return Promise.resolve();
 	}
+	openWorkspace() {
+		let win = remote.getCurrentWindow();
+		let options = {
+			title: '选择文件',
+			properties: ['openFile'],
+		};
+		return remote.dialog
+			.showOpenDialog(win, options)
+			.then(result => {
+				if (!result.canceled && result.filePaths) {
+					Util.loadJsonFile(result.filePaths[0]).then(data => {
+						let folders = data.folders;
+						let exsitMap = {};
+						globalData.fileTree.forEach(item => {
+							exsitMap[item.path] = true;
+						});
+						folders = folders.filter(item => {
+							return !exsitMap[item.path];
+						});
+						folders = folders.map(item => {
+							return this.createRootItem(item.path);
+						});
+						globalData.fileTree.push(...folders);
+						EventBus.$emit('workspace-opened');
+					});
+				}
+			})
+			.catch(err => {
+				console.log(err);
+			});
+	}
+	saveWorkspace(saveAs) {
+		let list = globalData.fileTree.map(item => {
+			return { path: item.path };
+		});
+		let data = JSON.stringify({
+			folders: list,
+		});
+		if (saveAs) {
+			let win = remote.getCurrentWindow();
+			let options = {
+				title: '请选择要保存的文件名',
+				buttonLabel: '保存',
+			};
+			return remote.dialog.showSaveDialog(win, options).then(result => {
+				if (!result.canceled && result.filePath) {
+					return Util.writeFile(result.filePath, data);
+				} else {
+					return Promise.reject();
+				}
+			});
+		} else if (globalData.workSpacePath) {
+			return Util.writeFile(globalData.workSpacePath, data);
+		}
+	}
 	copyFileToClip(fileObj) {
 		ipcRenderer.send('file-copy', [fileObj.path]);
 	}
@@ -314,6 +362,21 @@ export default class {
 	}
 	pasteFileFromClip(fileObj, cutPath) {
 		ipcRenderer.send('file-paste', fileObj.path, cutPath);
+	}
+	createRootItem(filePath) {
+		return {
+			id: Util.getIdFromStat(fs.statSync(filePath)),
+			name: filePath.match(/[^\\\/]+$/)[0],
+			path: filePath,
+			parentPath: '',
+			relativePath: '',
+			rootPath: filePath,
+			parent: null,
+			type: 'dir',
+			active: false,
+			open: false,
+			children: [],
+		};
 	}
 	getEditorMap() {
 		let editorMap = {};

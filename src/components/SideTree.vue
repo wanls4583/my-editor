@@ -158,6 +158,16 @@ export default {
 			EventBus.$on('git-statused', (item) => {
 				this.render();
 			});
+			EventBus.$on('folder-opened', () => {
+				this.$nextTick(() => {
+					this.refreshWorkSpace();
+				});
+			});
+			EventBus.$on('workspace-opened', () => {
+				this.$nextTick(() => {
+					this.refreshWorkSpace();
+				});
+			});
 		},
 		initFileStatus() {
 			this.list.forEach((item) => {
@@ -190,6 +200,9 @@ export default {
 			let results = [];
 			files.forEach((name, index) => {
 				let fullPath = path.join(item.path, name);
+				if (!fs.existsSync(fullPath)) {
+					return;
+				}
 				let stat = fs.statSync(fullPath);
 				let obj = {
 					id: Util.getIdFromStat(stat),
@@ -250,6 +263,15 @@ export default {
 				}
 				this.render();
 			}
+		},
+		refreshWorkSpace() {
+			this.sortFileList(this.list);
+			this.list.forEach((item) => {
+				if (item.open) {
+					this.closeFolder(item);
+					this.openFolder(item);
+				}
+			});
 		},
 		addItem(dirPath, type) {
 			this.newId = 'new' + Util.getUUID();

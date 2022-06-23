@@ -92,6 +92,10 @@ export default {
 						name: 'Add Folder to Workspace',
 						op: 'addFolder',
 					},
+					{
+						name: 'Save Workspace As',
+						op: 'saveWorkspaceAs',
+					},
 				],
 				[
 					{
@@ -288,6 +292,10 @@ export default {
 					op: 'openFolder',
 					shortcut: 'Ctrl+K Ctrl+O',
 				},
+				{
+					name: 'Open Workspace',
+					op: 'openWorkspace',
+				},
 			]);
 		}
 		this.shortcut = new ShortCut(this);
@@ -341,6 +349,9 @@ export default {
 				case 'addFolder':
 					EventBus.$emit('folder-add');
 					break;
+				case 'saveWorkspaceAs':
+					EventBus.$emit('workspace-save-as');
+					break;
 				case 'saveFile':
 					EventBus.$emit('file-save', { id: globalData.nowEditorId });
 					break;
@@ -352,6 +363,9 @@ export default {
 					break;
 				case 'openFolder':
 					EventBus.$emit('folder-open');
+					break;
+				case 'openWorkspace':
+					EventBus.$emit('workspace-open');
 					break;
 			}
 			this.fileMenuVisible = false;

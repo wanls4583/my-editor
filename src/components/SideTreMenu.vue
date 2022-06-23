@@ -52,7 +52,7 @@ export default {
 						op: 'addFolder',
 					},
 					{
-						name: 'Remove Folder to Workspace',
+						name: 'Remove Folder from Workspace',
 						op: 'removeFolder',
 					},
 				],
