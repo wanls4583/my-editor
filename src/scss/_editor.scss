@@ -25,16 +25,6 @@
 		user-select: none;
 		-webkit-tap-highlight-color: rgab(0, 0, 0, 0);
 		color: var(--my-editor-foreground);
-
-		&:hover {
-			.my-editor-scrollbar-v.my-scroll-able {
-				display: block;
-			}
-
-			.my-editor-scrollbar-h.my-scroll-able {
-				display: block;
-			}
-		}
 	}
 
 	&-num {
@@ -106,14 +96,6 @@
 			box-shadow: -10px 0 10px -10px rgba(0, 0, 0, 0.8) inset;
 			pointer-events: none;
 		}
-	}
-
-	&-editor-scrollbar-v {
-		display: none;
-	}
-
-	&-editor-scrollbar-h {
-		display: none;
 	}
 
 	&-content {

@@ -1,5 +1,14 @@
 <template>
-	<div @contextmenu.prevent.stop="onContextmenu" @selectstart.prevent @wheel.stop="onWheel" class="my-editor-wrap" ref="editor">
+	<div
+		@contextmenu.prevent.stop="onContextmenu"
+		@mouseenter="showScrollBar"
+		@mouseleave="hideScrollBar"
+		@mousemove="showScrollBar"
+		@selectstart.prevent
+		@wheel.stop="onWheel"
+		class="my-editor-wrap"
+		ref="editor"
+	>
 		<!-- 行号 -->
 		<div class="my-num-wrap">
 			<!-- 占位行号，避免行号宽度滚动时变化 -->
@@ -75,7 +84,7 @@
 					class="my-textarea"
 					ref="textarea"
 				></textarea>
-				<h-scroll-bar :scroll-left="scrollLeft" :width="_contentMinWidth" @scroll="onHBarScroll" class="my-editor-scrollbar-h"></h-scroll-bar>
+				<h-scroll-bar :class="{'my-scroll-visible': scrollVisible}" :scroll-left="scrollLeft" :width="_contentMinWidth" @scroll="onHBarScroll" class="my-editor-scrollbar-h"></h-scroll-bar>
 				<div class="my-scroller-shadow-left" v-if="_leftShadow"></div>
 				<div class="my-scroller-shadow-right" v-if="_rightShadow"></div>
 			</div>
@@ -96,7 +105,7 @@
 		<div class="my-minimap-wrap" v-if="type !== 'diff'">
 			<minimap :content-height="contentHeight" :now-line="startLine" :scroll-top="scrollTop" ref="minimap"></minimap>
 		</div>
-		<v-scroll-bar :height="contentHeight" :scroll-top="scrollTop" @scroll="onVBarScroll" class="my-editor-scrollbar-v"></v-scroll-bar>
+		<v-scroll-bar :class="{'my-scroll-visible': scrollVisible}" :height="contentHeight" :scroll-top="scrollTop" @scroll="onVBarScroll" class="my-editor-scrollbar-v"></v-scroll-bar>
 		<!-- 右键菜单 -->
 		<Menu :checkable="false" :menuList="menuList" :styles="menuStyle" @change="onClickMenu" ref="menu" v-show="menuVisible"></Menu>
 		<tip :content="tipContent" :styles="tipStyle" ref="tip" v-show="tipContent"></tip>
@@ -216,7 +225,7 @@ export default {
 			diffTop: 0,
 			diffMarginTop: 0,
 			toShowdiffObj: null,
-			vSliderClicked: false,
+			scrollVisible: false,
 			scrollerArea: { width: 0, height: 0 },
 			nowCursorPos: { line: 1, column: 0 },
 			bracketMatch: { start: {}, end: {} },
@@ -644,6 +653,12 @@ export default {
 			clearTimeout(this.curserTimer);
 			this.hasShowCursor = false;
 			this.cursorFocus = false;
+		},
+		showScrollBar() {
+			this.scrollVisible = true;
+		},
+		hideScrollBar() {
+			this.scrollVisible = false;
 		},
 		// 聚焦
 		focus() {
@@ -1780,11 +1795,6 @@ export default {
 			this.diffBottomSashMouseObj = null;
 			this.mouseUpTime = Date.now();
 			this.$refs.searchDialog && this.$refs.searchDialog.directBlur();
-
-			globalData.scheduler.removeUiTask(this.moveVsliderTask);
-			this.vSliderClicked = false;
-			this.vSliderMouseObj = null;
-			this.moveVsliderTask = null;
 		},
 		// 调整diff弹框高度开始
 		onDiffBottomSashBegin(e) {

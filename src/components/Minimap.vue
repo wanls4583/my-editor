@@ -8,7 +8,7 @@
 		<canvas :height="height" :width="leftWidth" class="my-minimap-canvas-left" ref="leftDiffCanvas"></canvas>
 		<canvas :height="height" :width="width" class="my-minimap-canvas-center" ref="canvas"></canvas>
 		<canvas :height="height" :width="rightWidth" class="my-minimap-canvas-right" ref="rightDiffCanvas"></canvas>
-		<div :style="{top: blockTop + 'px', height: blockHeight + 'px'}" @mousedown="onBlockMDown" class="my-minimap-block"></div>
+		<div :style="{top: blockTop + 'px', height: blockHeight + 'px', opacity: blockClicked ? '0.8' : ''}" @mousedown="onBlockMDown" class="my-minimap-block"></div>
 	</div>
 </template>
 <script>
@@ -38,6 +38,7 @@ export default {
 			scale: 0.1,
 			top: 0,
 			blockTop: 0,
+			blockClicked: false,
 		};
 	},
 	watch: {
@@ -165,7 +166,7 @@ export default {
 			this.setTop();
 		},
 		setTop() {
-			let top = (this.nowLine - this.$parent.folder.getRelativeLine(this.startLine)) * this.$parent.charObj.charHight - this.top;
+			let top = (this.$parent.folder.getRelativeLine(this.nowLine) - this.$parent.folder.getRelativeLine(this.startLine)) * this.$parent.charObj.charHight - this.top;
 			this.blockTop = top * this.scale;
 		},
 		render() {
@@ -453,6 +454,7 @@ export default {
 		onBlockMDown(e) {
 			this.startBlockMouseObj = e;
 			this.bTop = this.blockTop;
+			this.blockClicked = true;
 		},
 		onDocumentMmove(e) {
 			if (this.startBlockMouseObj) {
@@ -486,6 +488,7 @@ export default {
 			globalData.scheduler.removeUiTask(this.moveTask);
 			this.startBlockMouseObj = null;
 			this.moveTask = null;
+			this.blockClicked = false;
 		},
 	},
 };

@@ -37,15 +37,20 @@
 		&:hover {
 			.my-minimap-block {
 				opacity: 0.8;
-				background-color: var(--my-scrollbarSlider-background);
+			}
+		}
 
-				&:hover {
-					background-color: var(--my-scrollbarSlider-hoverBackground);
-				}
+		&-block {
+			opacity: 0;
+			transition: opacity 0.4s;
+			background-color: var(--my-scrollbarSlider-background);
 
-				&:active {
-					background-color: var(--my-scrollbarSlider-activeBackground);
-				}
+			&:hover {
+				background-color: var(--my-scrollbarSlider-hoverBackground);
+			}
+
+			&:active {
+				background-color: var(--my-scrollbarSlider-activeBackground);
 			}
 		}
 	}

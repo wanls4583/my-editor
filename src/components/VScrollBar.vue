@@ -1,5 +1,5 @@
 <template>
-	<div :class="{'my-display-block': vSliderClicked, 'my-scroll-able': _vScrollAble}" @mousedown="onVBarDown" class="my-scroll-bar-v" ref="bar" v-show="_vScrollAble">
+	<div :class="{'my-scroll-clicked': vSliderClicked}" @mousedown="onVBarDown" class="my-scroll-bar-v" ref="bar" v-show="_vScrollAble">
 		<div :style="{height: _vSliderHeight + 'px', top: _vSliderTop + 'px'}" @mousedown="onVsliderDown" class="my-scroll-slider"></div>
 	</div>
 </template>

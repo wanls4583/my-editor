@@ -23,16 +23,6 @@
 				bottom: 0;
 				left: 0;
 				right: 0;
-
-				.my-scroll-bar-v {
-					display: none;
-				}
-
-				&:hover {
-					.my-scroll-bar-v.my-scroll-able {
-						display: block;
-					}
-				}
 			}
 
 			&-content {

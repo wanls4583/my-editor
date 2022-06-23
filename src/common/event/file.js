@@ -101,6 +101,7 @@ export default class {
 					globalData.fileTree.push(...results);
 					EventBus.$emit('folder-opened');
 				}
+				this.saveWorkspace();
 			}
 		});
 	}
@@ -109,6 +110,7 @@ export default class {
 			if (globalData.fileTree[i].path === dirPath) {
 				globalData.fileTree.splice(i, 1);
 				EventBus.$emit('folder-removed');
+				this.saveWorkspace();
 				break;
 			}
 		}
@@ -309,7 +311,8 @@ export default class {
 			.showOpenDialog(win, options)
 			.then(result => {
 				if (!result.canceled && result.filePaths) {
-					Util.loadJsonFile(result.filePaths[0]).then(data => {
+					let workSpacePath = result.filePaths[0];
+					Util.loadJsonFile(workSpacePath).then(data => {
 						let folders = data.folders;
 						let exsitMap = {};
 						globalData.fileTree.forEach(item => {
@@ -323,6 +326,7 @@ export default class {
 						});
 						globalData.fileTree.push(...folders);
 						EventBus.$emit('workspace-opened');
+						globalData.workSpacePath = workSpacePath;
 					});
 				}
 			})

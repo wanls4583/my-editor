@@ -4,7 +4,7 @@
  * @Description: 
 -->
 <template>
-	<div @wheel.stop="onWheel" class="side-tree-warp" ref="wrap">
+	<div @mouseenter="showScrollBar" @mouseleave="hideScrollBar" @mousemove="showScrollBar" @wheel.stop="onWheel" class="side-tree-warp" ref="wrap">
 		<div class="side-tree">
 			<div :style="{ top: -deltaTop + 'px' }" class="side-tree-content">
 				<div :id="item.id" @click.stop="onClickItem(item)" class="tree-item" v-for="item in renderList">
@@ -29,7 +29,7 @@
 				</div>
 			</div>
 		</div>
-		<v-scroll-bar :height="treeHeight" :scroll-top="scrollTop" @scroll="onScroll" class="my-scroll-small"></v-scroll-bar>
+		<v-scroll-bar :class="{'my-scroll-visible': scrollVisible}" :height="treeHeight" :scroll-top="scrollTop" @scroll="onScroll" class="my-scroll-small"></v-scroll-bar>
 	</div>
 </template>
 <script>
@@ -67,6 +67,7 @@ export default {
 			treeHeight: 0,
 			domHeight: 0,
 			deltaTop: 0,
+			scrollVisible: false,
 		};
 	},
 	computed: {
@@ -413,6 +414,12 @@ export default {
 					}
 				});
 			}
+		},
+		showScrollBar() {
+			this.scrollVisible = true;
+		},
+		hideScrollBar() {
+			this.scrollVisible = false;
 		},
 		onClickItem(item) {
 			if (!item.active) {

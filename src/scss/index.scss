@@ -162,11 +162,18 @@ textarea {
 	&-scroll-bar-h {
 		position: absolute;
 		overflow: hidden;
+		opacity: 0;
+		transition: opacity 0.8s;
 
 		&:active {
 			.my-scroll-slider {
 				background-color: var(--my-scrollbarSlider-activeBackground);
 			}
+		}
+
+		&.my-scroll-visible,
+		&.my-scroll-clicked {
+			opacity: 1;
 		}
 	}
 
@@ -314,10 +321,13 @@ textarea {
 			right: 0;
 			width: 4px;
 			height: 100%;
+			opacity: 0;
+			transition: opacity 0.8s;
+			background-color: var(--my-sash-hoverBorder);
 		}
 
 		&:hover::after {
-			background-color: var(--my-sash-hoverBorder);
+			opacity: 1;
 		}
 	}
 
@@ -335,10 +345,13 @@ textarea {
 			bottom: 0;
 			width: 100%;
 			height: 4px;
+			opacity: 0;
+			transition: opacity 0.8s;
+			background-color: var(--my-sash-hoverBorder);
 		}
 
 		&:hover::after {
-			background-color: var(--my-sash-hoverBorder);
+			opacity: 1;
 		}
 	}
 }
