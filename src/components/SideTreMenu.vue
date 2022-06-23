@@ -234,11 +234,8 @@ export default {
 					EventBus.$emit('reveal-in-file-explorer', treeItem.path);
 					break;
 				case 'findInFolder':
-					dirPath = treeItem.name;
-					while (treeItem.parent) {
-						dirPath = path.join(treeItem.parent.name, dirPath);
-						treeItem = treeItem.parent;
-					}
+					dirPath = path.relative(treeItem.rootPath, treeItem.path);
+					dirPath = path.join(path.basename(treeItem.rootPath), dirPath);
 					dirPath = '.' + path.sep + dirPath;
 					EventBus.$emit('find-in-folder', { path: dirPath });
 					break;

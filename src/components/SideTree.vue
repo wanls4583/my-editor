@@ -212,7 +212,6 @@ export default {
 					parentPath: item.path,
 					relativePath: path.join(item.relativePath, name),
 					rootPath: item.rootPath,
-					parent: item,
 					deep: item.deep + 1,
 					active: false,
 					children: [],
