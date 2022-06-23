@@ -1,7 +1,9 @@
 import Scheduler from '../common/scheduler';
 import Enum from './enum';
+import Util from '../common/util';
 
 const remote = window.require('@electron/remote');
+const fs = window.require('fs');
 const path = window.require('path');
 const dirname = remote.app.getAppPath();
 
@@ -17,12 +19,26 @@ const nowIconTheme = {
 	value: 'material-icon-theme',
 	path: path.join(dirname, 'main/extensions/theme-material-icon/dist/material-icons.json'),
 };
+let zoomLevel = 0;
+let configPath = path.join(remote.app.getPath('userData'), 'config.my');
+if (fs.existsSync(configPath)) {
+	try {
+		// 加载全局配置
+		let data = Util.loadJsonFileSync(configPath);
+		Object.assign(nowTheme, data.nowTheme);
+		Object.assign(nowIconTheme, data.nowIconTheme);
+		zoomLevel = data.zoomLevel || 0;
+	} catch (e) {
+		console.log(e);
+	}
+}
 
-const globalData = {
+export default {
 	scheduler: new Scheduler(),
 	enum: Enum,
 	dirname: dirname,
-	zoomLevel: 0,
+	configPath: configPath,
+	zoomLevel: zoomLevel,
 	scopeIdMap: {},
 	scopeReg: null,
 	colors: {},
@@ -48,5 +64,3 @@ const globalData = {
 	nowTheme: nowTheme,
 	nowIconTheme: nowIconTheme,
 };
-
-export default globalData;

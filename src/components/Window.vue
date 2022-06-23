@@ -67,6 +67,7 @@ import EventBus from '@/event';
 import Util from '@/common/util';
 import CommonEvent from '@/common/event';
 import WinShorcut from '@/module/shortcut/window';
+import Persistence from '@/module/persistence';
 import $ from 'jquery';
 import globalData from '@/data/globalData';
 
@@ -133,6 +134,7 @@ export default {
 		globalData.$mainWin = this;
 		this.commonEvent = new CommonEvent(this);
 		this.winShorcut = new WinShorcut(this);
+		this.persistence = new Persistence();
 		this.initEvent();
 		this.initEventBus();
 		if (this.mode === 'app') {
@@ -140,6 +142,9 @@ export default {
 			const size = remote.screen.getPrimaryDisplay().size;
 			currentWindow.on('blur', () => {
 				EventBus.$emit('close-menu');
+			});
+			currentWindow.on('close', (e) => {
+				this.persistence.storeData();
 			});
 			// 大尺寸屏幕上，放大显示比例
 			// if (size.width > 1400) {

@@ -3,11 +3,11 @@
  * @Date: 2020-10-31 13:48:50
  * @Description: 工具类
  */
-import globalData from '@/data/globalData';
-import $ from 'jquery';
 import stripJsonComments from 'strip-json-comments';
+import $ from 'jquery';
 
 const fs = window.require('fs');
+const fse = window.require('fs-extra');
 
 class Util {
 	static readClipboard() {
@@ -396,10 +396,13 @@ class Util {
 	}
 	static writeFile(path, data) {
 		return new Promise((resolve, reject) => {
-			fs.writeFile(path, data, { encoding: 'utf8' }, error => (error ? reject(error) : resolve()));
+			fse.ensureFile(path).then(() => {
+				fs.writeFile(path, data, { encoding: 'utf8' }, error => (error ? reject(error) : resolve()));
+			});
 		});
 	}
 	static writeFileSync(path, data) {
+		fse.ensureFileSync(path);
 		fs.writeFileSync(path, data, { encoding: 'utf8' });
 	}
 	static loadJsonFile(fullPath) {
@@ -410,6 +413,14 @@ class Util {
 			data = JSON.parse(data);
 			return data;
 		});
+	}
+	static loadJsonFileSync(fullPath) {
+		let data = fs.readFileSync(fullPath, { encoding: 'utf8' });
+		data = data.toString();
+		data = stripJsonComments(data);
+		data = data.replaceAll(/\,(?=\s*(?:(?:\r\n|\n|\r))*\s*[\]\}])/g, '');
+		data = JSON.parse(data);
+		return data;
 	}
 	/**
 	 * 模糊匹配【word是否存在于target中】
