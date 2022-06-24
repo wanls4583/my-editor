@@ -189,6 +189,8 @@ export default class {
 		if (stat.isFile()) {
 			if (results.length) {
 				globalData.fileStatus[filePath] = results[0].status;
+			} else {
+				delete globalData.fileStatus[filePath];
 			}
 		} else {
 			globalData.fileStatus[filePath] = statusMap;

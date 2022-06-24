@@ -89,7 +89,6 @@ export default {
 						item.status = status;
 						item.statusColor = statusColor;
 						this.$set(this.editorList, index, item);
-						console.log(item)
 					}
 				});
 			});
