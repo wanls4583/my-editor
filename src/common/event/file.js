@@ -242,11 +242,6 @@ export default class {
 							thmeType: globalData.nowTheme.type,
 						});
 						icon = icon ? `my-file-icon my-file-icon-${icon}` : '';
-						if (fileObj) {
-							status = Util.getFileStatus(globalData.fileStatus, path.basename(item), path.dirname(item));
-							statusColor = status.statusColor;
-							status = obj.status.status;
-						}
 						let obj = {
 							id: Util.getIdFromStat(fs.statSync(item)),
 							name: item.match(/[^\\\/]+$/)[0],
