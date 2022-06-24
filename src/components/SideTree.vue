@@ -418,20 +418,24 @@ export default {
 			return results;
 		},
 		focusItem(path) {
-			let index = 0;
-			_findItem.call(this, path);
+			// root列表可能存在父子关系，优先从子列表中查找
+			let list = globalData.fileTree.slice().sort((a, b) => {
+				return b.path.length - a.path.length;
+			});
 
-			function _findItem(path) {
-				for (let i = index; i < this.openedList.length; i++) {
-					let item = this.openedList[i];
+			_findItem.call(this, path, list);
+
+			function _findItem(path, list) {
+				for (let i = 0; i < list.length; i++) {
+					let item = list[i];
 					if (item.path === path) {
 						let wrap = this.$refs.wrap;
 						let clientHeight = wrap.clientHeight;
-						let height = (i + 1) * this.itemHeight;
+						let height = (this.openedList.indexOf(item) + 1) * this.itemHeight;
 						if (this.scrollTop + clientHeight < height) {
-							this.scrollTop = height - clientHeight;
+							this.setStartLine(height - clientHeight);
 						} else if (this.scrollTop + this.itemHeight > height) {
-							this.scrollTop = height - this.itemHeight;
+							this.setStartLine(height - this.itemHeight);
 						}
 						if (!item.active) {
 							this.onClickItem(item);
@@ -439,11 +443,10 @@ export default {
 						break;
 					} else if (path.startsWith(item.path)) {
 						if (!item.open) {
-							index = i + 1;
 							this.onClickItem(item);
-							_findItem.call(this, path);
-							break;
 						}
+						_findItem.call(this, path, item.children);
+						break;
 					}
 				}
 			}
@@ -471,6 +474,12 @@ export default {
 		},
 		hideScrollBar() {
 			this.scrollVisible = false;
+		},
+		setStartLine(scrollTop) {
+			this.startLine = Math.floor(scrollTop / this.itemHeight) + 1;
+			this.scrollTop = scrollTop;
+			this.deltaTop = scrollTop % this.itemHeight;
+			this.render();
 		},
 		onClickItem(item) {
 			if (!item.active) {
@@ -533,11 +542,7 @@ export default {
 			}
 		},
 		onScroll(e) {
-			let scrollTop = e;
-			this.startLine = Math.floor(scrollTop / this.itemHeight) + 1;
-			this.scrollTop = scrollTop;
-			this.deltaTop = scrollTop % this.itemHeight;
-			this.render();
+			this.setStartLine(e);
 		},
 		onContextmenu(e, item) {
 			this.$parent.$refs.sideTreeMenu.show(e, item);
