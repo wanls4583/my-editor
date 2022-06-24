@@ -171,7 +171,7 @@ export default {
 			globalData.fileTree.empty();
 			while (list.length) {
 				let fileObj = list.shift();
-				let item = fileObj.parentPath && Util.getFileItemByPath(globalData.fileTree, fileObj.path);
+				let item = fileObj.parentPath && Util.getFileItemByPath(globalData.fileTree, fileObj.path, fileObj.rootPath);
 				if (item) {
 					item.children = this.readdir(item);
 					item.open = true;
@@ -370,10 +370,12 @@ export default {
 					if (filename) {
 						if (event === 'rename') {
 							let dirPath = path.dirname(path.join(item.path, filename));
-							let treeItem = Util.getFileItemByPath(globalData.fileTree, dirPath);
-							if (treeItem && (treeItem.children.length || treeItem.open)) {
-								this.refreshDir(treeItem);
-							}
+							let treeItems = Util.getFileItemByPath(globalData.fileTree, dirPath);
+							treeItems.forEach((treeItem) => {
+								if (treeItem.children.length || treeItem.open) {
+									this.refreshDir(treeItem);
+								}
+							});
 						} else if (event === 'change') {
 							let filePath = path.join(item.path, filename);
 							EventBus.$emit('git-diff', filePath);

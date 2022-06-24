@@ -6,6 +6,7 @@ import Util from '@/common/util';
 const { ipcRenderer } = window.require('electron');
 const remote = window.require('@electron/remote');
 const fs = window.require('fs');
+const path = window.require('path');
 const contexts = Context.contexts;
 
 export default class {
@@ -234,7 +235,6 @@ export default class {
 					result.filePaths.forEach(item => {
 						let statusColor = '';
 						let status = '';
-						let fileObj = Util.getFileItemByPath(globalData.fileTree, item);
 						let icon = Util.getIconByPath({
 							iconData: globalData.nowIconData,
 							filePath: item,
@@ -243,7 +243,7 @@ export default class {
 						});
 						icon = icon ? `my-file-icon my-file-icon-${icon}` : '';
 						if (fileObj) {
-							status = Util.getFileStatus(globalData.fileStatus, fileObj.relativePath, fileObj.rootPath);
+							status = Util.getFileStatus(globalData.fileStatus, path.basename(item), path.dirname(item));
 							statusColor = status.statusColor;
 							status = obj.status.status;
 						}

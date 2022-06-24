@@ -318,16 +318,35 @@ class Util {
 			}
 		}
 	}
-	static getFileItemByPath(fileTree, filePath) {
-		return _findItem(fileTree);
+	static getFileItemByPath(fileTree, filePath, rootPath) {
+		let results = [];
+		for (let i = 0; i < fileTree.length; i++) {
+			let item = fileTree[i];
+			if (rootPath) {
+				if (item.path === rootPath) {
+					return _findItem(item);
+				}
+			} else {
+				if (item.path === filePath) {
+					results.push(item);
+				} else if (filePath.startsWith(item.path)) {
+					let result = _findItem(item);
+					result && results.push(result);
+				}
+			}
+		}
+		if (!rootPath) {
+			return results;
+		}
 
-		function _findItem(list) {
+		function _findItem(parentItem) {
+			let list = parentItem.children;
 			for (let i = 0; i < list.length; i++) {
 				let item = list[i];
 				if (filePath === item.path) {
 					return item;
 				} else if (filePath.startsWith(item.path)) {
-					return _findItem(item.children);
+					return _findItem(item);
 				}
 			}
 		}
@@ -410,7 +429,7 @@ class Util {
 			data = data.toString();
 			data = stripJsonComments(data);
 			data = data.replaceAll(/\,(?=\s*(?:(?:\r\n|\n|\r))*\s*[\]\}])/g, '');
-			data = data && JSON.parse(data) || {};
+			data = (data && JSON.parse(data)) || {};
 			return data;
 		});
 	}
@@ -419,7 +438,7 @@ class Util {
 		data = data.toString();
 		data = stripJsonComments(data);
 		data = data.replaceAll(/\,(?=\s*(?:(?:\r\n|\n|\r))*\s*[\]\}])/g, '');
-		data = data && JSON.parse(data) || {};
+		data = (data && JSON.parse(data)) || {};
 		return data;
 	}
 	/**

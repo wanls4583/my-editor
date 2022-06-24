@@ -37,6 +37,8 @@ import Util from '@/common/util';
 import $ from 'jquery';
 import globalData from '@/data/globalData';
 
+const path = window.require('path');
+
 export default {
 	name: 'EditorBar',
 	components: {
@@ -74,12 +76,9 @@ export default {
 			});
 			EventBus.$on('git-statused', () => {
 				this.editorList.forEach((item) => {
-					let fileObj = Util.getFileItemByPath(globalData.fileTree, item.path);
-					if (fileObj) {
-						item.status = Util.getFileStatus(globalData.fileStatus, fileObj.relativePath, fileObj.rootPath);
-						item.statusColor = item.status.statusColor;
-						item.status = item.status.status;
-					}
+					item.status = Util.getFileStatus(globalData.fileStatus, path.basename(item.path), path.dirname(item.path));
+					item.statusColor = item.status.statusColor;
+					item.status = item.status.status;
 				});
 			});
 		},

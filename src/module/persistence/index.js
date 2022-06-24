@@ -26,6 +26,7 @@ export default class {
 				results.push({
 					path: item.path,
 					parentPath: item.parentPath,
+					rootPath: item.rootPath,
 					open: item.open,
 				});
 			}
