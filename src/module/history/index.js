@@ -219,4 +219,9 @@ export default class {
 	save() {
 		this.savedIndex = this.history.index;
 	}
+	clear() {
+		this.history.empty();
+		this.history.index = 0;
+		this.savedIndex = 0;
+	}
 }

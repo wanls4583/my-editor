@@ -198,6 +198,7 @@ export default class {
 					.then(data => {
 						contexts[tab.id].reload(data);
 						EventBus.$emit('file-saved', tab.path);
+						EventBus.$emit('file-opened', tab.path);
 						tab.saved = true;
 						//点击搜索结果
 						if (fileObj && fileObj.range) {
