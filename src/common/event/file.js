@@ -99,6 +99,9 @@ export default class {
 					results.length && globalData.fileTree.push(...results);
 					EventBus.$emit('folder-added');
 				} else {
+					globalData.fileTree.forEach(item => {
+						EventBus.$emit('git-status-stop', item.path);
+					});
 					globalData.fileTree.empty();
 					globalData.fileTree.push(...results);
 					EventBus.$emit('folder-opened');
@@ -112,6 +115,7 @@ export default class {
 			if (globalData.fileTree[i].path === dirPath) {
 				globalData.fileTree.splice(i, 1);
 				EventBus.$emit('folder-removed');
+				EventBus.$emit('git-status-stop', dirPath);
 				this.saveWorkspace();
 				break;
 			}
@@ -161,6 +165,9 @@ export default class {
 							tab = results[0];
 							this.editorList.empty();
 							this.editorList.push(...editorList);
+							results.forEach(item => {
+								this.watchFileStatus(item.path);
+							});
 						} else {
 							tab = editorMap[firstId];
 						}
@@ -170,6 +177,7 @@ export default class {
 			} else {
 				if (fileObj) {
 					tab = Object.assign({}, fileObj);
+					this.watchFileStatus(fileObj.path);
 				} else {
 					tab = this.createEmptyTabItem();
 				}
@@ -374,23 +382,11 @@ export default class {
 				active: false,
 				saved: true,
 			};
-			setTimeout(() => {
-				_watchFileStatus(filePath);
-			}, 0);
 		}
 		return fileObj;
-
-		function _watchFileStatus() {
-			let fileObj = Util.getFileItemByPath(globalData.fileTree, filePath);
-			let tab = Util.getTabByPath(globalData.editorList, filePath);
-			if (tab && !fileObj.length) {
-				clearTimeout(_watchFileStatus.timer);
-				EventBus.$emit('git-status', filePath);
-				_watchFileStatus.timer = setTimeout(() => {
-					_watchFileStatus();
-				}, 1000);
-			}
-		}
+	}
+	watchFileStatus(filePath) {
+		EventBus.$emit('git-status-loop', filePath);
 	}
 	createEmptyTabItem() {
 		let titleCount = this.titleCount++;

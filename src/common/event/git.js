@@ -22,19 +22,24 @@ export default class {
 		this.init();
 	}
 	init() {
-		EventBus.$on('git-status', filePath => {
+		EventBus.$on('git-status-loop', filePath => {
 			clearTimeout(this.gitStatusTimer[filePath]);
+			let results = this.gitStatus(filePath);
+			let cache = this.gitStautsMap[filePath];
+			if (cache !== results && Util.diffObj(cache, results)) {
+				EventBus.$emit('git-statused', {
+					path: filePath,
+					results: results,
+				});
+				this.gitStautsMap[filePath] = results;
+			}
 			this.gitStatusTimer[filePath] = setTimeout(() => {
-				let results = this.gitStatus(filePath);
-				let cache = this.gitStautsMap[filePath];
-				// if (cache !== results && Util.diffObj(cache, results)) {
-					EventBus.$emit('git-statused', {
-						path: filePath,
-						results: results,
-					});
-					this.gitStautsMap[filePath] = results;
-				// }
-			}, 500);
+				EventBus.$emit('git-status-loop', filePath);
+			}, 1000);
+		});
+		EventBus.$on('git-status-stop', filePath => {
+			clearTimeout(this.gitStatusTimer[filePath]);
+			delete this.gitStautsMap[filePath];
 		});
 		EventBus.$on('git-diff', filePath => {
 			clearTimeout(this.gitDiffTimer[filePath]);

@@ -357,13 +357,9 @@ export default {
 				.concat(this.openedList.slice(index + 1));
 		},
 		watchFileStatus() {
-			clearTimeout(this.initFileStatusTimer);
 			globalData.fileTree.forEach((item) => {
-				EventBus.$emit('git-status', item.path);
+				EventBus.$emit('git-status-loop', item.path);
 			});
-			this.initFileStatusTimer = setTimeout(() => {
-				this.watchFileStatus();
-			}, 1000);
 		},
 		watchFolder() {
 			this.removeFileWatcher();
