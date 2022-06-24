@@ -24,15 +24,16 @@ export default class {
 	init() {
 		EventBus.$on('git-status-loop', filePath => {
 			clearTimeout(this.gitStatusTimer[filePath]);
-			let results = this.gitStatus(filePath);
-			let cache = this.gitStautsMap[filePath];
-			if (cache !== results && Util.diffObj(cache, results)) {
-				EventBus.$emit('git-statused', {
-					path: filePath,
-					results: results,
-				});
-				this.gitStautsMap[filePath] = results;
-			}
+			this.gitStatus(filePath).then(results => {
+				let cache = this.gitStautsMap[filePath];
+				if (cache !== results && Util.diffObj(cache, results)) {
+					EventBus.$emit('git-statused', {
+						path: filePath,
+						results: results,
+					});
+					this.gitStautsMap[filePath] = results;
+				}
+			});
 			this.gitStatusTimer[filePath] = setTimeout(() => {
 				EventBus.$emit('git-status-loop', filePath);
 			}, 1000);
@@ -163,16 +164,27 @@ export default class {
 		return results;
 	}
 	gitStatus(filePath) {
+		let stat = fs.statSync(filePath);
+		let child = null;
+		if (stat.isFile()) {
+			child = spawn('git', ['status', '-s', path.basename(filePath)], { cwd: path.dirname(filePath) });
+		} else {
+			child = spawn('git', ['status', '-s'], { cwd: filePath });
+		}
+		return new Promise(resolve => {
+			let result = '';
+			child.stdout.on('data', data => {
+				result += data;
+			});
+			child.on('close', () => {
+				resolve(this.parseStatus(result, filePath, stat));
+			});
+		});
+	}
+	parseStatus(lines, filePath, stat) {
 		let results = [];
 		let statusMap = {};
 		let statusLevel = { A: 1, M: 2, D: 3 };
-		let stat = fs.statSync(filePath);
-		let lines = '';
-		if (stat.isFile()) {
-			lines = spawnSync('git', ['status', '-s', path.basename(filePath)], { cwd: path.dirname(filePath) }).stdout.toString();
-		} else {
-			lines = spawnSync('git', ['status', '-s'], { cwd: filePath }).stdout.toString();
-		}
 		lines = lines.split('\n');
 		lines.forEach(line => {
 			let status = /^([\s\S]{2})\s*([^\s]+)\s*$/.exec(line);
