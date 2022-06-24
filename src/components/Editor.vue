@@ -111,12 +111,12 @@
 		<tip :content="tipContent" :styles="tipStyle" ref="tip" v-show="tipContent"></tip>
 		<div :style="{top: diffTop + 'px', height: diffHeight+'px'}" class="my-diff-editor" ref="diff" v-if="diffVisible">
 			<div class="my-diff-bar">
-				<span style="margin-right: 20px">{{name}}</span>
+				<span style="margin-right: 20px">{{tabData.name}}</span>
 				<div @click="onCloseDiff" class="bar-item my-hover-danger">
 					<span class="iconfont icon-close" style="font-size: 18px"></span>
 				</div>
 			</div>
-			<editor :active="true" :diff-obj="toShowdiffObj" :id="'diff-'+id" style="flex:1" type="diff"></editor>
+			<editor :active="true" :diff-obj="toShowdiffObj" :tab-data="diffTabData" style="flex:1" type="diff"></editor>
 			<div @mousedown="onDiffBottomSashBegin" class="my-sash-h"></div>
 		</div>
 	</div>
@@ -165,10 +165,8 @@ export default {
 		HScrollBar,
 	},
 	props: {
-		id: String,
-		path: String,
-		name: String,
 		type: String,
+		tabData: Object,
 		active: {
 			type: Boolean,
 			default: false,
@@ -213,6 +211,7 @@ export default {
 			renderedLineMap: {},
 			renderedIdMap: {},
 			diffRanges: null,
+			diffTabData: null,
 			tipContent: null,
 			menuVisible: false,
 			searchVisible: false,
@@ -265,7 +264,7 @@ export default {
 	computed: {
 		_lineId() {
 			return (line) => {
-				return 'line-' + this.id + '-' + line;
+				return 'line-' + this.tabData.id + '-' + line;
 			};
 		},
 		_top() {
@@ -372,7 +371,7 @@ export default {
 			return Util.space(this.tabSize);
 		},
 		myContext() {
-			return contexts[this.id];
+			return contexts[this.tabData.id];
 		},
 		editAble() {
 			return this.type !== 'diff';
@@ -450,12 +449,12 @@ export default {
 	destroyed() {
 		this.unbindEvent();
 		this.myContext.destory();
-		contexts[this.id] = null;
+		contexts[this.tabData.id] = null;
 	},
 	methods: {
 		// 初始化数据
 		initData() {
-			this.editorId = this.id;
+			this.editorId = this.tabData.id;
 			contexts[this.editorId] = new Context(this);
 			this.maxWidthObj.lineId = this.myContext.htmls[0].lineId;
 			this.tokenizer = new Tokenizer(this, this.myContext);
@@ -505,7 +504,7 @@ export default {
 			EventBus.$on(
 				'language-change',
 				(this.initEventBusFn1 = (data) => {
-					if (this.id === data.id) {
+					if (this.tabData.id === data.id) {
 						if (this.active) {
 							this.language = data.language;
 						}
@@ -541,7 +540,7 @@ export default {
 			EventBus.$on(
 				'git-diffed',
 				(this.initEventBusFn5 = (data) => {
-					if (data && data.path === this.path) {
+					if (data && data.path === this.tabData.path) {
 						this.diffRanges = data.result;
 						this.$refs.minimap && this.$refs.minimap.renderAllDiff(true);
 					}
@@ -549,9 +548,18 @@ export default {
 			);
 			EventBus.$on(
 				'git-statused',
-				(this.initEventBusFn6 = () => {
-					if (this.path) {
-						EventBus.$emit('git-diff', this.path);
+				(this.initEventBusFn6 = (data) => {
+					if (this.tabData.path === data.path || this.tabData.rootPath === data.path) {
+						let status = null;
+						if (this.tabData.path === data.path) {
+							status = Util.getFileStatus(globalData.fileStatus, this.tabData.path);
+						} else {
+							status = Util.getFileStatus(globalData.fileStatus, this.tabData.relativePath, this.tabData.rootPath);
+						}
+						if (this.preStatus !== status.status) {
+							EventBus.$emit('git-diff', this.tabData.path);
+							this.preStatus = status.status;
+						}
 					}
 				})
 			);
@@ -566,7 +574,7 @@ export default {
 			EventBus.$on(
 				'file-saved',
 				(this.initEventBusFn8 = (path) => {
-					if (this.path === path) {
+					if (this.tabData.path === path) {
 						this.history.save();
 					}
 				})
@@ -597,7 +605,8 @@ export default {
 			this.focus();
 			if (this.type !== 'diff') {
 				// 获取文件git修改记录
-				EventBus.$emit('git-diff', this.path);
+				EventBus.$emit('git-diff', this.tabData.path);
+				this.preStatus = this.tabData.status;
 			}
 		},
 		showDiff() {
@@ -1612,7 +1621,7 @@ export default {
 		onClickMenu(menu) {
 			switch (menu.op) {
 				case 'revealInFileExplorer':
-					EventBus.$emit('reveal-in-file-explorer', this.path);
+					EventBus.$emit('reveal-in-file-explorer', this.tabData.path);
 					break;
 				case 'cut':
 				case 'copy':
@@ -1943,6 +1952,8 @@ export default {
 			this.setDiffTop();
 			this.$nextTick(() => {
 				this.diffVisible = true;
+				this.diffTabData = Object.assign({}, this.tabData);
+				this.diffTabData.id = 'diff-' + this.tabData.id;
 				this.toShowdiffObj = {
 					maxLine: this.maxLine,
 					language: this.language,

@@ -352,32 +352,25 @@ class Util {
 		}
 	}
 	static getFileStatus(allFileStatusData, relativePath, rootPath) {
-		let fileStatus = allFileStatusData[rootPath] || {};
-		let untracked = fileStatus.untracked || {};
-		let added = fileStatus.added || {};
-		let conflicted = fileStatus.conflicted || {};
-		let modified = fileStatus.modified || {};
-		let renamed = fileStatus.renamed || {};
-		let deleted = fileStatus.deleted || {};
+		let fileStatus = allFileStatusData[relativePath] || allFileStatusData[rootPath] || {};
 		let status = '';
 		let statusColor = '';
-		if (untracked[relativePath]) {
-			status = 'U';
+		let statusMap = {};
+		if (typeof fileStatus === 'string') {
+			status = fileStatus;
+		} else {
+			status = fileStatus[relativePath] || '';
+		}
+		for (let i = 0; i < status.length; i++) {
+			statusMap[status[i]] = true;
+		}
+		if (statusMap['U']) {
 			statusColor = 'my-status-untracked';
-		} else if (added[relativePath]) {
-			status = 'A';
+		} else if (statusMap['A']) {
 			statusColor = 'my-status-added';
-		} else if (conflicted[relativePath]) {
-			status = 'C';
-			statusColor = 'my-status-conflicted';
-		} else if (modified[relativePath]) {
-			status = 'M';
+		} else if (statusMap['M']) {
 			statusColor = 'my-status-modified';
-		} else if (renamed[relativePath]) {
-			status = 'R';
-			statusColor = 'my-status-renamed';
-		} else if (deleted[relativePath]) {
-			status = 'D';
+		} else if (statusMap['D']) {
 			statusColor = 'my-status-deleted';
 		}
 		return {

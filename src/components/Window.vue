@@ -27,7 +27,7 @@
 			<!-- 编辑区 -->
 			<div class="my-editor-groups">
 				<template v-for="item in editorList">
-					<editor :active="item.active" :id="item.id" :key="item.id" :name="item.name" :path="item.path" :ref="'editor' + item.id" v-show="item.active"></editor>
+					<editor :active="item.active" :key="item.id" :ref="'editor' + item.id" :tab-data="item" v-show="item.active"></editor>
 				</template>
 			</div>
 			<template v-if="terminalVisible && terminalList.length">

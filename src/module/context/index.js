@@ -24,7 +24,7 @@ class Context {
 	initProperties(editor) {
 		Util.defineProperties(this, editor, [
 			'editorId',
-			'path',
+			'tabData',
 			'language',
 			'tabSize',
 			'nowCursorPos',
@@ -210,8 +210,8 @@ class Context {
 		this.setErrors([]);
 		this.setAutoTip(null);
 		this.render(true);
-		EventBus.$emit('editor-content-change', { id: this.editorId, path: this.path });
-		EventBus.$emit('git-diff', this.path);
+		EventBus.$emit('editor-content-change', { id: this.editorId, path: this.tabData.path });
+		EventBus.$emit('git-diff', this.tabData.path);
 		let historyObj = {
 			type: Util.command.DELETE,
 			cursorPos: Object.assign({}, newPos),
@@ -455,8 +455,8 @@ class Context {
 		this.setErrors([]);
 		this.setAutoTip(null);
 		this.render(true);
-		EventBus.$emit('editor-content-change', { id: this.editorId, path: this.path });
-		EventBus.$emit('git-diff', this.path);
+		EventBus.$emit('editor-content-change', { id: this.editorId, path: this.tabData.path });
+		EventBus.$emit('git-diff', this.tabData.path);
 		// 更新最大文本宽度
 		if (startObj.width >= this.maxWidthObj.width) {
 			this.setEditorData('maxWidthObj', {

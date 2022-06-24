@@ -76,7 +76,11 @@ export default {
 			});
 			EventBus.$on('git-statused', () => {
 				this.editorList.forEach((item) => {
-					item.status = Util.getFileStatus(globalData.fileStatus, path.basename(item.path), path.dirname(item.path));
+					if (item.rootPath) {
+						item.status = Util.getFileStatus(globalData.fileStatus, item.relativePath, item.rootPath);
+					} else {
+						item.status = Util.getFileStatus(globalData.fileStatus, item.path);
+					}
 					item.statusColor = item.status.statusColor;
 					item.status = item.status.status;
 				});

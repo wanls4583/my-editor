@@ -63,6 +63,7 @@ export default {
 			domHeight: 0,
 			deltaTop: 0,
 			scrollVisible: false,
+			fileStatusMap: {},
 		};
 	},
 	computed: {
@@ -88,9 +89,6 @@ export default {
 		this.domHeight = this.$refs.wrap.clientHeight;
 		this.maxVisibleLines = Math.ceil(this.domHeight / this.itemHeight) + 1;
 		this.render();
-	},
-	destroyed() {
-		this.removeFileWatcher();
 	},
 	methods: {
 		initResizeEvent() {
@@ -141,7 +139,7 @@ export default {
 			EventBus.$on('file-paste', (item) => {
 				this.cutPath = '';
 			});
-			EventBus.$on('git-statused', (item) => {
+			EventBus.$on('git-statused', (data) => {
 				this.render();
 			});
 			EventBus.$on('folder-opened', () => {
@@ -163,9 +161,13 @@ export default {
 			});
 		},
 		initFileStatus() {
+			clearTimeout(this.initFileStatusTimer);
 			globalData.fileTree.forEach((item) => {
-				EventBus.$emit('git-status', item);
+				EventBus.$emit('git-status', item.path);
 			});
+			this.initFileStatusTimer = setTimeout(() => {
+				this.initFileStatus();
+			}, 1000);
 		},
 		initOpendDirList(list) {
 			globalData.fileTree.empty();
@@ -379,9 +381,6 @@ export default {
 						} else if (event === 'change') {
 							let filePath = path.join(item.path, filename);
 							EventBus.$emit('git-diff', filePath);
-						}
-						if (filename != '.git' && !filename.startsWith('.git' + path.sep + 'index.lock')) {
-							EventBus.$emit('git-status', item);
 						}
 					}
 				});
