@@ -14,6 +14,7 @@ export default class {
 	constructor() {
 		this.cwd = '';
 		this.gitStatusTimer = {};
+		this.gitStautsMap = {};
 		this.gitDiffTimer = {};
 		this.maxCacheSize = 100 * 10000 * 20;
 		this.cacheIndexs = [];
@@ -25,10 +26,14 @@ export default class {
 			clearTimeout(this.gitStatusTimer[filePath]);
 			this.gitStatusTimer[filePath] = setTimeout(() => {
 				let results = this.gitStatus(filePath);
-				EventBus.$emit('git-statused', {
-					path: filePath,
-					results: results,
-				});
+				let cache = this.gitStautsMap[filePath];
+				// if (cache !== results && Util.diffObj(cache, results)) {
+					EventBus.$emit('git-statused', {
+						path: filePath,
+						results: results,
+					});
+					this.gitStautsMap[filePath] = results;
+				// }
 			}, 500);
 		});
 		EventBus.$on('git-diff', filePath => {
@@ -176,11 +181,13 @@ export default class {
 				});
 			}
 		});
-		globalData.fileStatus[filePath] = statusMap;
-		results.forEach(item => {
-			if (item.path === filePath) {
-				globalData.fileStatus[filePath] = item.status;
-			} else {
+		if (stat.isFile()) {
+			if (results.length) {
+				globalData.fileStatus[filePath] = results[0].status;
+			}
+		} else {
+			globalData.fileStatus[filePath] = statusMap;
+			results.forEach(item => {
 				let parentPath = path.dirname(item.path);
 				statusMap[item.path] = item.status;
 				while (parentPath !== '.') {
@@ -196,8 +203,8 @@ export default class {
 				if (statusLevel[item.status] > statusLevel[''] || !statusLevel['']) {
 					statusMap[''] = item.status;
 				}
-			}
-		});
+			});
+		}
 		return results;
 	}
 	cacheFile(fileIndex, stagedContent) {

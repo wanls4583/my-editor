@@ -81,7 +81,7 @@ export default {
 	},
 	created() {
 		this.initEventBus();
-		this.initFileStatus();
+		this.watchFileStatus();
 		this.watchFolder();
 		this.setOpendList();
 	},
@@ -159,15 +159,6 @@ export default {
 			EventBus.$on('file-tree-loaded', (list) => {
 				this.initOpendDirList(list);
 			});
-		},
-		initFileStatus() {
-			clearTimeout(this.initFileStatusTimer);
-			globalData.fileTree.forEach((item) => {
-				EventBus.$emit('git-status', item.path);
-			});
-			this.initFileStatusTimer = setTimeout(() => {
-				this.initFileStatus();
-			}, 1000);
 		},
 		initOpendDirList(list) {
 			globalData.fileTree.empty();
@@ -312,7 +303,7 @@ export default {
 					this.openFolder(item);
 				}
 			});
-			this.initFileStatus();
+			this.watchFileStatus();
 			this.watchFolder();
 			this.setOpendList();
 			this.render();
@@ -364,6 +355,15 @@ export default {
 				.slice(0, index + 1)
 				.concat(this.getRenderList(item.children, item.deep))
 				.concat(this.openedList.slice(index + 1));
+		},
+		watchFileStatus() {
+			clearTimeout(this.initFileStatusTimer);
+			globalData.fileTree.forEach((item) => {
+				EventBus.$emit('git-status', item.path);
+			});
+			this.initFileStatusTimer = setTimeout(() => {
+				this.watchFileStatus();
+			}, 1000);
 		},
 		watchFolder() {
 			this.removeFileWatcher();

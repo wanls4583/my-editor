@@ -551,10 +551,10 @@ export default {
 				(this.initEventBusFn6 = (data) => {
 					if (this.tabData.path === data.path || this.tabData.rootPath === data.path) {
 						let status = null;
-						if (this.tabData.path === data.path) {
-							status = Util.getFileStatus(globalData.fileStatus, this.tabData.path);
-						} else {
+						if (this.tabData.rootPath) {
 							status = Util.getFileStatus(globalData.fileStatus, this.tabData.relativePath, this.tabData.rootPath);
+						} else {
+							status = Util.getFileStatus(globalData.fileStatus, this.tabData.path);
 						}
 						if (this.preStatus !== status.status) {
 							EventBus.$emit('git-diff', this.tabData.path);

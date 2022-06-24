@@ -75,14 +75,21 @@ export default {
 				});
 			});
 			EventBus.$on('git-statused', () => {
-				this.editorList.forEach((item) => {
+				this.editorList.forEach((item, index) => {
+					let status = null;
+					let statusColor = '';
 					if (item.rootPath) {
-						item.status = Util.getFileStatus(globalData.fileStatus, item.relativePath, item.rootPath);
+						status = Util.getFileStatus(globalData.fileStatus, item.relativePath, item.rootPath);
 					} else {
-						item.status = Util.getFileStatus(globalData.fileStatus, item.path);
+						status = Util.getFileStatus(globalData.fileStatus, item.path);
 					}
-					item.statusColor = item.status.statusColor;
-					item.status = item.status.status;
+					statusColor = status.statusColor;
+					status = status.status;
+					if (item.status !== status) {
+						item.status = status;
+						item.statusColor = statusColor;
+						this.$set(this.editorList, index, item);
+					}
 				});
 			});
 		},

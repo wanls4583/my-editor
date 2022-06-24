@@ -374,8 +374,23 @@ export default class {
 				active: false,
 				saved: true,
 			};
+			setTimeout(() => {
+				_watchFileStatus(filePath);
+			}, 0);
 		}
 		return fileObj;
+
+		function _watchFileStatus() {
+			let fileObj = Util.getFileItemByPath(globalData.fileTree, filePath);
+			let tab = Util.getTabByPath(globalData.editorList, filePath);
+			if (tab && !fileObj.length) {
+				clearTimeout(_watchFileStatus.timer);
+				EventBus.$emit('git-status', filePath);
+				_watchFileStatus.timer = setTimeout(() => {
+					_watchFileStatus();
+				}, 1000);
+			}
+		}
 	}
 	createEmptyTabItem() {
 		let titleCount = this.titleCount++;
