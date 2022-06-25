@@ -225,16 +225,18 @@ export default class {
 		this.fileCacheMap.size += stagedContent.length;
 	}
 	watchFileStatus(filePath) {
-		if (fs.existsSync(filePath)) {
-			let stat = fs.statSync(filePath);
-			let cwd = filePath;
-			if (stat.isFile()) {
-				cwd = path.dirname(filePath);
+		this.gitStatusTimer[filePath] = setTimeout(() => {
+			if (fs.existsSync(filePath)) {
+				let stat = fs.statSync(filePath);
+				let cwd = filePath;
+				if (stat.isFile()) {
+					cwd = path.dirname(filePath);
+				}
+				if (this.getNowHash(filePath, cwd)) {
+					_watchFileStatus.call(this, filePath);
+				}
 			}
-			if (this.getNowHash(filePath, cwd)) {
-				_watchFileStatus.call(this, filePath);
-			}
-		}
+		}, 500);
 
 		function _watchFileStatus(filePath) {
 			clearTimeout(this.gitStatusTimer[filePath]);

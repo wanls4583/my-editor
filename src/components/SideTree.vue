@@ -199,7 +199,7 @@ export default {
 					});
 					item.icon = item.icon ? `my-file-icon my-file-icon-${item.icon}` : '';
 				}
-				item.status = Util.getFileStatus(globalData.fileStatus, item.relativePath, item.rootPath);
+				item.status = Util.getFileStatus(globalData.fileStatus, item.gitRelativePath || '', item.gitRootPath);
 				item.statusColor = item.status.statusColor;
 				item.status = item.status.status;
 			});
@@ -217,8 +217,10 @@ export default {
 					name: name,
 					path: fullPath,
 					parentPath: parentItem.path,
-					relativePath: path.join(parentItem.relativePath, name),
 					rootPath: parentItem.rootPath,
+					gitRootPath: parentItem.gitRootPath,
+					relativePath: path.join(parentItem.relativePath, name),
+					gitRelativePath: (parentItem.gitRootPath && path.join(parentItem.gitRelativePath, name)) || '',
 					deep: parentItem.deep + 1,
 					active: false,
 					children: [],
@@ -293,6 +295,9 @@ export default {
 					this.closeFolder(item);
 					this.openFolder(item);
 				}
+				if (!item.gitRootPath) {
+					this.watchFileStatus(item.children);
+				}
 				this.render();
 			}
 		},
@@ -360,11 +365,11 @@ export default {
 		watchFileStatus(list) {
 			list = list || globalData.fileTree;
 			list.forEach((item) => {
-				if (item.type === 'dir' && fs.existsSync(item.path)) {
-					if (this.getNowHash(item.path)) {
+				if (item.type === 'dir' && !item.gitRootPath && fs.existsSync(item.path)) {
+					if ((item.deep === 0 && this.getNowHash(item.path)) || fs.existsSync(path.join(item.path, '.git'))) {
+						this.updateGitRootPath(item, item.path);
 						EventBus.$emit('git-status-loop', item.path);
-					} else if (item.deep < 2) {
-						//最多向下查找3层
+					} else {
 						this.watchFileStatus(item.children);
 					}
 				}
@@ -400,6 +405,13 @@ export default {
 			parentPath = item.path;
 			item.children.forEach((item) => {
 				this.updateParentPath(item, parentPath);
+			});
+		},
+		updateGitRootPath(item, gitRootPath) {
+			item.gitRootPath = gitRootPath;
+			item.gitRelativePath = path.relative(gitRootPath, item.path);
+			item.children.forEach((item) => {
+				this.updateGitRootPath(item, gitRootPath);
 			});
 		},
 		sortFileList(results) {
@@ -482,8 +494,8 @@ export default {
 			this.deltaTop = scrollTop % this.itemHeight;
 			this.render();
 		},
-		getNowHash(filePath, cwd) {
-			return spawnSync('git', ['log', '-1', '--format=%H'], { cwd: cwd || path.dirname(filePath) }).stdout.toString();
+		getNowHash(cwd) {
+			return spawnSync('git', ['log', '-1', '--format=%H'], { cwd: cwd }).stdout.toString();
 		},
 		onClickItem(item) {
 			if (!item.active) {
@@ -499,6 +511,9 @@ export default {
 						let list = this.readdir(item);
 						item.children = list;
 						item.loaded = true;
+						if (!item.gitRootPath) {
+							this.watchFileStatus(item.children);
+						}
 						_changOpen.call(this, item);
 					} else {
 						_changOpen.call(this, item);
