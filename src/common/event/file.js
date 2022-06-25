@@ -403,6 +403,7 @@ export default class {
 							if (contexts[tab.id].getAllText() !== text.replace(/\r\n/g, '\n')) {
 								contexts[tab.id].reload(text);
 								EventBus.$emit('file-saved', tab.path);
+								EventBus.$emit('git-diff', tab.path);
 								tab.saved = true;
 							}
 						});

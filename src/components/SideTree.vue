@@ -374,9 +374,6 @@ export default {
 									this.refreshDir(treeItem);
 								}
 							});
-						} else if (event === 'change') {
-							let filePath = path.join(item.path, filename);
-							EventBus.$emit('git-diff', filePath);
 						}
 					}
 				});
