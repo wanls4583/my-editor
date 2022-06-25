@@ -40,6 +40,7 @@ import globalData from '@/data/globalData';
 
 const fs = window.require('fs');
 const path = window.require('path');
+const spawnSync = window.require('child_process').spawnSync;
 
 let preActiveItem = null;
 
@@ -356,9 +357,17 @@ export default {
 				.concat(this.getRenderList(item.children, item.deep))
 				.concat(this.openedList.slice(index + 1));
 		},
-		watchFileStatus() {
-			globalData.fileTree.forEach((item) => {
-				EventBus.$emit('git-status-loop', item.path);
+		watchFileStatus(list) {
+			list = list || globalData.fileTree;
+			list.forEach((item) => {
+				if (item.type === 'dir' && fs.existsSync(item.path)) {
+					if (this.getNowHash(item.path)) {
+						EventBus.$emit('git-status-loop', item.path);
+					} else if (item.deep < 2) {
+						//最多向下查找3层
+						this.watchFileStatus(item.children);
+					}
+				}
 			});
 		},
 		watchFolder() {
@@ -472,6 +481,9 @@ export default {
 			this.scrollTop = scrollTop;
 			this.deltaTop = scrollTop % this.itemHeight;
 			this.render();
+		},
+		getNowHash(filePath, cwd) {
+			return spawnSync('git', ['log', '-1', '--format=%H'], { cwd: cwd || path.dirname(filePath) }).stdout.toString();
 		},
 		onClickItem(item) {
 			if (!item.active) {
