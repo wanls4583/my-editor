@@ -346,6 +346,8 @@ export default class {
 			type: 'dir',
 			active: false,
 			open: false,
+			deep: 0,
+			parent: null,
 			children: [],
 		};
 	}

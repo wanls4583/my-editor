@@ -232,15 +232,19 @@ export default class {
 				if (stat.isFile()) {
 					cwd = path.dirname(filePath);
 				}
-				if (this.getNowHash(filePath, cwd)) {
+				if (this.checkGitRep(cwd)) {
 					_watchFileStatus.call(this, filePath);
 				}
 			}
-		}, 500);
+		}, 100);
 
 		function _watchFileStatus(filePath) {
-			clearTimeout(this.gitStatusTimer[filePath]);
+			let stat = null;
 			if (!fs.existsSync(filePath)) {
+				return;
+			}
+			stat = fs.statSync(filePath);
+			if (stat.isDirectory() && Util.getFileItemByPath(globalData.fileTree, filePath).length === 0) {
 				return;
 			}
 			this.gitStatus(filePath).then(results => {
@@ -253,14 +257,18 @@ export default class {
 					this.gitStautsMap[filePath] = results;
 				}
 			});
+			clearTimeout(this.gitStatusTimer[filePath]);
 			this.gitStatusTimer[filePath] = setTimeout(() => {
 				_watchFileStatus.call(this, filePath);
-			}, 1000);
+			}, 2000);
 		}
 	}
 	stopWatchFileStatus(filePath) {
 		clearTimeout(this.gitStatusTimer[filePath]);
 		delete this.gitStautsMap[filePath];
+	}
+	checkGitRep(cwd) {
+		return spawnSync('git', ['rev-parse', '--is-inside-work-tree'], { cwd: cwd }).stdout.toString().startsWith('true');
 	}
 	getNowHash(filePath, cwd) {
 		return spawnSync('git', ['log', '-1', '--format=%H'], { cwd: cwd || path.dirname(filePath) }).stdout.toString();

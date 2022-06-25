@@ -186,22 +186,25 @@ export default {
 			this.treeHeight = this.openedList.length * this.itemHeight;
 		},
 		render() {
-			this.renderList = this.openedList.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines);
-			this.renderList.forEach((item) => {
-				if (globalData.nowIconData) {
-					item.icon = Util.getIconByPath({
-						iconData: globalData.nowIconData,
-						themeType: globalData.nowTheme.type,
-						filePath: item.path,
-						fileType: item.type,
-						opened: item.open,
-						isRoot: !item.parentPath,
-					});
-					item.icon = item.icon ? `my-file-icon my-file-icon-${item.icon}` : '';
-				}
-				item.status = Util.getFileStatus(globalData.fileStatus, item.gitRelativePath || '', item.gitRootPath);
-				item.statusColor = item.status.statusColor;
-				item.status = item.status.status;
+			cancelAnimationFrame(this.renderTimer);
+			this.renderTimer = requestAnimationFrame(() => {
+				this.renderList = this.openedList.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines);
+				this.renderList.forEach((item) => {
+					if (globalData.nowIconData) {
+						item.icon = Util.getIconByPath({
+							iconData: globalData.nowIconData,
+							themeType: globalData.nowTheme.type,
+							filePath: item.path,
+							fileType: item.type,
+							opened: item.open,
+							isRoot: !item.parentPath,
+						});
+						item.icon = item.icon ? `my-file-icon my-file-icon-${item.icon}` : '';
+					}
+					item.status = Util.getFileStatus(globalData.fileStatus, item.gitRelativePath || '', item.gitRootPath);
+					item.statusColor = item.status.statusColor;
+					item.status = item.status.status;
+				});
 			});
 		},
 		createItems(parentItem, files) {
