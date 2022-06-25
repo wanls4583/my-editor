@@ -366,7 +366,7 @@ export default {
 			list = list || globalData.fileTree;
 			list.forEach((item) => {
 				if (item.type === 'dir' && !item.gitRootPath && fs.existsSync(item.path)) {
-					if (item.deep === 0 || fs.existsSync(path.join(item.path, '.git'))) {
+					if ((item.deep === 0 && this.getNowHash(item.path)) || fs.existsSync(path.join(item.path, '.git'))) {
 						this.updateGitRootPath(item, item.path);
 						EventBus.$emit('git-status-loop', item.path);
 					} else {
