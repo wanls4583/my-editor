@@ -8,6 +8,7 @@ import $ from 'jquery';
 
 const fs = window.require('fs');
 const fse = window.require('fs-extra');
+const path = window.require('path');
 
 class Util {
 	static readClipboard() {
@@ -205,14 +206,6 @@ class Util {
 			return targetObj;
 		}
 	}
-	static getUUID(len) {
-		len = len || 16;
-		var str = '';
-		for (var i = 0; i < len; i++) {
-			str += ((Math.random() * 16) | 0).toString(16);
-		}
-		return str;
-	}
 	/**
 	 * 比较坐标的前后
 	 * @param {Object} start
@@ -250,6 +243,177 @@ class Util {
 			};
 		});
 		Object.defineProperties(target, result);
+	}
+	static readFile(path) {
+		return new Promise((resolve, reject) => {
+			fs.readFile(path, { encoding: 'utf8' }, (error, data) => (error ? reject(error) : resolve(data)));
+		});
+	}
+	static writeFile(path, data) {
+		return new Promise((resolve, reject) => {
+			fse.ensureFile(path).then(() => {
+				fs.writeFile(path, data, { encoding: 'utf8' }, error => (error ? reject(error) : resolve()));
+			});
+		});
+	}
+	static writeFileSync(path, data) {
+		fse.ensureFileSync(path);
+		fs.writeFileSync(path, data, { encoding: 'utf8' });
+	}
+	static loadJsonFile(fullPath) {
+		return Util.readFile(fullPath).then(data => {
+			data = data.toString();
+			data = stripJsonComments(data);
+			data = data.replaceAll(/\,(?=\s*(?:(?:\r\n|\n|\r))*\s*[\]\}])/g, '');
+			data = (data && JSON.parse(data)) || {};
+			return data;
+		});
+	}
+	static loadJsonFileSync(fullPath) {
+		let data = fs.readFileSync(fullPath, { encoding: 'utf8' });
+		data = data.toString();
+		data = stripJsonComments(data);
+		data = data.replaceAll(/\,(?=\s*(?:(?:\r\n|\n|\r))*\s*[\]\}])/g, '');
+		data = (data && JSON.parse(data)) || {};
+		return data;
+	}
+	static checkGitRep(filePath) {
+		while (filePath.length > 3) {
+			if (fs.existsSync(path.join(filePath, '.git'))) {
+				return true;
+			}
+			filePath = path.dirname(filePath);
+		}
+	}
+	/**
+	 * 模糊匹配【word是否存在于target中】
+	 * @param {String} word 被搜索的单词
+	 * @param {String} target 模板单词
+	 */
+	static fuzzyMatch(word, target, fullMatch) {
+		let wordMap = {};
+		let towMap = {};
+		let wordLength = 0;
+		let score = 0;
+		let preFinedChar = '';
+		let preFinedOriginChar = '';
+		let preFinded = false;
+		let targetMap = {};
+		let count = 0;
+		let indexs = [];
+		let result = null;
+		let _target = target.toLowerCase();
+		if (word === target) {
+			return fullMatch ? { score: 100, indexs: [] } : null;
+		}
+		_setMap();
+		for (let i = 0; i < target.length; i++) {
+			let originChar = target[i];
+			let char = _target[i];
+			if (
+				wordMap[char] &&
+				//保证前后字符顺序最多只出现一个位置颠倒且颠倒的两个字符必须相邻
+				(!preFinedChar || towMap[preFinedChar + char] || (towMap[char + preFinedChar] && preFinded))
+			) {
+				if (!targetMap[char] || targetMap[char] < wordMap[char]) {
+					targetMap[char] = targetMap[char] ? targetMap[char] + 1 : 1;
+					indexs.push(i);
+					if (char === '_' || char === '$') {
+						//检测到连接符+10分
+						score += 10;
+					} else if (preFinded) {
+						//检测到连续匹配
+						score += 5;
+						if (towMap[preFinedChar + char]) {
+							//连续匹配且顺序正确
+							score += 1;
+							if (_humpCheck(preFinedOriginChar, originChar) && preFinded) {
+								//检测到驼峰命名+10分
+								score += 5;
+							}
+						}
+					}
+					if (_complete(char)) {
+						return result;
+					}
+					if (!towMap[char + preFinedChar] || towMap[preFinedChar + char]) {
+						preFinedChar = char;
+						preFinedOriginChar = originChar;
+					}
+					preFinded = true;
+				} else {
+					//检测到字符不匹配-1分
+					score--;
+					preFinded = char === preFinedChar;
+				}
+			} else {
+				if (!count && score > -9) {
+					//检测到前三个首字符不匹配-3分
+					score -= 3;
+				} else {
+					//检测到字符不匹配-1分
+					score--;
+				}
+				preFinded = char === preFinedChar;
+			}
+		}
+
+		// 预处理搜素单词
+		function _setMap() {
+			if (Util.fuzzyMatch.cache && Util.fuzzyMatch.cache.word === word) {
+				wordMap = Util.fuzzyMatch.cache.wordMap;
+				towMap = Util.fuzzyMatch.cache.towMap;
+				wordLength = Util.fuzzyMatch.cache.wordLength;
+				return;
+			}
+			let preChar = '';
+			for (let i = 0; i < word.length; i++) {
+				let char = word[i].toLowerCase();
+				wordMap[char] = wordMap[char] ? wordMap[char] + 1 : 1;
+				if (i > 0) {
+					towMap[preChar + char] = true;
+				}
+				preChar = char;
+			}
+			wordLength = Object.keys(wordMap).length;
+			Util.fuzzyMatch.cache = {
+				word: word,
+				wordMap: wordMap,
+				towMap: towMap,
+				wordLength: wordLength,
+			};
+		}
+
+		// 检查驼峰命名
+		function _humpCheck(preChar, char) {
+			let preCode = preChar.charCodeAt(0);
+			let charCode = char.charCodeAt(0);
+			if ((preCode < 97 && charCode >= 97) || (charCode < 97 && preCode >= 97)) {
+				return true;
+			}
+			return false;
+		}
+
+		// 检查是否匹配完成
+		function _complete(char) {
+			if (targetMap[char] === wordMap[char]) {
+				if (++count === wordLength) {
+					result = {
+						score: score,
+						indexs: indexs,
+					};
+					return true;
+				}
+			}
+		}
+	}
+	static getUUID(len) {
+		len = len || 16;
+		var str = '';
+		for (var i = 0; i < len; i++) {
+			str += ((Math.random() * 16) | 0).toString(16);
+		}
+		return str;
 	}
 	static getLanguageById(languageList, language) {
 		for (let i = 0; i < languageList.length; i++) {
@@ -389,6 +553,16 @@ class Util {
 			statusColor: statusColor,
 		};
 	}
+	static getFileStatusLevel(status) {
+		let statusLeveMap = { U: 1, A: 2, M: 3, D: 4 };
+		let level = 0;
+		for (let i = 0; i < status.length; i++) {
+			if (statusLeveMap[status[i]] > level) {
+				level = statusLeveMap[status[i]];
+			}
+		}
+		return level;
+	}
 	static getFileStatusColor(status) {
 		let statusMap = {};
 		let statusColor = '';
@@ -428,161 +602,6 @@ class Util {
 			menuPos.left = e.clientX - parentOffset.left + 'px';
 		}
 		return menuPos;
-	}
-	static readFile(path) {
-		return new Promise((resolve, reject) => {
-			fs.readFile(path, { encoding: 'utf8' }, (error, data) => (error ? reject(error) : resolve(data)));
-		});
-	}
-	static writeFile(path, data) {
-		return new Promise((resolve, reject) => {
-			fse.ensureFile(path).then(() => {
-				fs.writeFile(path, data, { encoding: 'utf8' }, error => (error ? reject(error) : resolve()));
-			});
-		});
-	}
-	static writeFileSync(path, data) {
-		fse.ensureFileSync(path);
-		fs.writeFileSync(path, data, { encoding: 'utf8' });
-	}
-	static loadJsonFile(fullPath) {
-		return Util.readFile(fullPath).then(data => {
-			data = data.toString();
-			data = stripJsonComments(data);
-			data = data.replaceAll(/\,(?=\s*(?:(?:\r\n|\n|\r))*\s*[\]\}])/g, '');
-			data = (data && JSON.parse(data)) || {};
-			return data;
-		});
-	}
-	static loadJsonFileSync(fullPath) {
-		let data = fs.readFileSync(fullPath, { encoding: 'utf8' });
-		data = data.toString();
-		data = stripJsonComments(data);
-		data = data.replaceAll(/\,(?=\s*(?:(?:\r\n|\n|\r))*\s*[\]\}])/g, '');
-		data = (data && JSON.parse(data)) || {};
-		return data;
-	}
-	/**
-	 * 模糊匹配【word是否存在于target中】
-	 * @param {String} word 被搜索的单词
-	 * @param {String} target 模板单词
-	 */
-	static fuzzyMatch(word, target, fullMatch) {
-		let wordMap = {};
-		let towMap = {};
-		let wordLength = 0;
-		let score = 0;
-		let preFinedChar = '';
-		let preFinedOriginChar = '';
-		let preFinded = false;
-		let targetMap = {};
-		let count = 0;
-		let indexs = [];
-		let result = null;
-		let _target = target.toLowerCase();
-		if (word === target) {
-			return fullMatch ? { score: 100, indexs: [] } : null;
-		}
-		_setMap();
-		for (let i = 0; i < target.length; i++) {
-			let originChar = target[i];
-			let char = _target[i];
-			if (
-				wordMap[char] &&
-				//保证前后字符顺序最多只出现一个位置颠倒且颠倒的两个字符必须相邻
-				(!preFinedChar || towMap[preFinedChar + char] || (towMap[char + preFinedChar] && preFinded))
-			) {
-				if (!targetMap[char] || targetMap[char] < wordMap[char]) {
-					targetMap[char] = targetMap[char] ? targetMap[char] + 1 : 1;
-					indexs.push(i);
-					if (char === '_' || char === '$') {
-						//检测到连接符+10分
-						score += 10;
-					} else if (preFinded) {
-						//检测到连续匹配
-						score += 5;
-						if (towMap[preFinedChar + char]) {
-							//连续匹配且顺序正确
-							score += 1;
-							if (_humpCheck(preFinedOriginChar, originChar) && preFinded) {
-								//检测到驼峰命名+10分
-								score += 5;
-							}
-						}
-					}
-					if (_complete(char)) {
-						return result;
-					}
-					if (!towMap[char + preFinedChar] || towMap[preFinedChar + char]) {
-						preFinedChar = char;
-						preFinedOriginChar = originChar;
-					}
-					preFinded = true;
-				} else {
-					//检测到字符不匹配-1分
-					score--;
-					preFinded = char === preFinedChar;
-				}
-			} else {
-				if (!count && score > -9) {
-					//检测到前三个首字符不匹配-3分
-					score -= 3;
-				} else {
-					//检测到字符不匹配-1分
-					score--;
-				}
-				preFinded = char === preFinedChar;
-			}
-		}
-
-		// 预处理搜素单词
-		function _setMap() {
-			if (Util.fuzzyMatch.cache && Util.fuzzyMatch.cache.word === word) {
-				wordMap = Util.fuzzyMatch.cache.wordMap;
-				towMap = Util.fuzzyMatch.cache.towMap;
-				wordLength = Util.fuzzyMatch.cache.wordLength;
-				return;
-			}
-			let preChar = '';
-			for (let i = 0; i < word.length; i++) {
-				let char = word[i].toLowerCase();
-				wordMap[char] = wordMap[char] ? wordMap[char] + 1 : 1;
-				if (i > 0) {
-					towMap[preChar + char] = true;
-				}
-				preChar = char;
-			}
-			wordLength = Object.keys(wordMap).length;
-			Util.fuzzyMatch.cache = {
-				word: word,
-				wordMap: wordMap,
-				towMap: towMap,
-				wordLength: wordLength,
-			};
-		}
-
-		// 检查驼峰命名
-		function _humpCheck(preChar, char) {
-			let preCode = preChar.charCodeAt(0);
-			let charCode = char.charCodeAt(0);
-			if ((preCode < 97 && charCode >= 97) || (charCode < 97 && preCode >= 97)) {
-				return true;
-			}
-			return false;
-		}
-
-		// 检查是否匹配完成
-		function _complete(char) {
-			if (targetMap[char] === wordMap[char]) {
-				if (++count === wordLength) {
-					result = {
-						score: score,
-						indexs: indexs,
-					};
-					return true;
-				}
-			}
-		}
 	}
 }
 Array.prototype.peek = function (index) {
