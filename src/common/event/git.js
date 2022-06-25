@@ -232,9 +232,9 @@ export default class {
 				if (stat.isFile()) {
 					cwd = path.dirname(filePath);
 				}
-				if (this.checkGitRep(cwd)) {
+				this.checkGitRep(cwd).then(() => {
 					_watchFileStatus.call(this, filePath);
-				}
+				});
 			}
 		}, 100);
 
@@ -268,7 +268,16 @@ export default class {
 		delete this.gitStautsMap[filePath];
 	}
 	checkGitRep(cwd) {
-		return spawnSync('git', ['rev-parse', '--is-inside-work-tree'], { cwd: cwd }).stdout.toString().startsWith('true');
+		let child = spawn('git', ['rev-parse', '--is-inside-work-tree'], { cwd: cwd });
+		return new Promise(resolve => {
+			let result = '';
+			child.stdout.on('data', data => {
+				result += data;
+			});
+			child.on('close', () => {
+				resolve(result.startsWith('true'));
+			});
+		});
 	}
 	getNowHash(filePath, cwd) {
 		return spawnSync('git', ['log', '-1', '--format=%H'], { cwd: cwd || path.dirname(filePath) }).stdout.toString();

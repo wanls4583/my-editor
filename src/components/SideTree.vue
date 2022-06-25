@@ -305,7 +305,6 @@ export default {
 			}
 		},
 		refreshWorkSpace() {
-			this.sortFileList(globalData.fileTree);
 			globalData.fileTree.forEach((item) => {
 				if (item.open) {
 					this.closeFolder(item);
