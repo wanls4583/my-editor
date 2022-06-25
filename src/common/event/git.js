@@ -23,24 +23,10 @@ export default class {
 	}
 	init() {
 		EventBus.$on('git-status-loop', filePath => {
-			clearTimeout(this.gitStatusTimer[filePath]);
-			this.gitStatus(filePath).then(results => {
-				let cache = this.gitStautsMap[filePath];
-				if (cache !== results && Util.diffObj(cache, results)) {
-					EventBus.$emit('git-statused', {
-						path: filePath,
-						results: results,
-					});
-					this.gitStautsMap[filePath] = results;
-				}
-			});
-			this.gitStatusTimer[filePath] = setTimeout(() => {
-				EventBus.$emit('git-status-loop', filePath);
-			}, 1000);
+			this.watchFileStatus(filePath);
 		});
 		EventBus.$on('git-status-stop', filePath => {
-			clearTimeout(this.gitStatusTimer[filePath]);
-			delete this.gitStautsMap[filePath];
+			this.stopWatchFileStatus(filePath);
 		});
 		EventBus.$on('git-diff', filePath => {
 			clearTimeout(this.gitDiffTimer[filePath]);
@@ -238,8 +224,41 @@ export default class {
 		this.fileCacheMap[fileIndex] = stagedContent;
 		this.fileCacheMap.size += stagedContent.length;
 	}
-	getNowHash(filePath) {
-		return spawnSync('git', ['log', '-1', '--format=%H'], { cwd: path.dirname(filePath) }).stdout.toString();
+	watchFileStatus(filePath) {
+		if (fs.existsSync(filePath)) {
+			let stat = fs.statSync(filePath);
+			let cwd = filePath;
+			if (stat.isFile()) {
+				cwd = path.dirname(filePath);
+			}
+			if (this.getNowHash(filePath, cwd)) {
+				_watchFileStatus.call(this, filePath);
+			}
+		}
+
+		function _watchFileStatus(filePath) {
+			clearTimeout(this.gitStatusTimer[filePath]);
+			this.gitStatus(filePath).then(results => {
+				let cache = this.gitStautsMap[filePath];
+				if (cache !== results && Util.diffObj(cache, results)) {
+					EventBus.$emit('git-statused', {
+						path: filePath,
+						results: results,
+					});
+					this.gitStautsMap[filePath] = results;
+				}
+			});
+			this.gitStatusTimer[filePath] = setTimeout(() => {
+				_watchFileStatus.call(this, filePath);
+			}, 1000);
+		}
+	}
+	stopWatchFileStatus(filePath) {
+		clearTimeout(this.gitStatusTimer[filePath]);
+		delete this.gitStautsMap[filePath];
+	}
+	getNowHash(filePath, cwd) {
+		return spawnSync('git', ['log', '-1', '--format=%H'], { cwd: cwd || path.dirname(filePath) }).stdout.toString();
 	}
 	getCacheHash(filePath) {
 		let fileIndex = '';

@@ -116,13 +116,15 @@ export default class {
 	closeTab(id) {
 		let tab = Util.getTabById(this.editorList, id || globalData.nowEditorId);
 		let index = this.editorList.indexOf(tab);
-		EventBus.$emit('git-status-stop', tab.path);
 		return new Promise((resolve, reject) => {
 			if (!tab.saved) {
 				_saveDialog.call(this, resolve);
 			} else {
 				_closeTab.call(this, resolve);
 			}
+		}).then(() => {
+			EventBus.$emit('git-status-stop', tab.path);
+			EventBus.$emit('file-watch-stop', tab.path);
 		});
 
 		function _closeTab(resolve) {
