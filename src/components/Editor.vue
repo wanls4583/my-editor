@@ -549,13 +549,9 @@ export default {
 			EventBus.$on(
 				'git-statused',
 				(this.initEventBusFn6 = (data) => {
-					if (this.tabData.path === data.path || this.tabData.rootPath === data.path) {
+					if (this.tabData.path === data.path) {
 						let status = null;
-						if (this.tabData.rootPath) {
-							status = Util.getFileStatus(globalData.fileStatus, this.tabData.relativePath, this.tabData.rootPath);
-						} else {
-							status = Util.getFileStatus(globalData.fileStatus, this.tabData.path);
-						}
+						status = Util.getFileStatus(globalData.fileStatus, this.tabData.path);
 						if (this.preStatus !== status.status) {
 							EventBus.$emit('git-diff', this.tabData.path);
 							this.preStatus = status.status;

@@ -74,23 +74,23 @@ export default {
 					$tab.length && $tab[0].scrollIntoView();
 				});
 			});
-			EventBus.$on('git-statused', () => {
-				this.editorList.forEach((item, index) => {
+			EventBus.$on('git-statused', (data) => {
+				for (let i = 0; i < this.editorList.length; i++) {
+					let item = this.editorList[i];
 					let status = null;
 					let statusColor = '';
-					if (item.rootPath) {
-						status = Util.getFileStatus(globalData.fileStatus, item.relativePath, item.rootPath);
-					} else {
+					if (item.path === data.path) {
 						status = Util.getFileStatus(globalData.fileStatus, item.path);
+						statusColor = status.statusColor;
+						status = status.status;
+						if (item.status !== status) {
+							item.status = status;
+							item.statusColor = statusColor;
+							this.$set(this.editorList, i, item);
+						}
+						break;
 					}
-					statusColor = status.statusColor;
-					status = status.status;
-					if (item.status !== status) {
-						item.status = status;
-						item.statusColor = statusColor;
-						this.$set(this.editorList, index, item);
-					}
-				});
+				}
 			});
 		},
 		onClickItem(id) {
