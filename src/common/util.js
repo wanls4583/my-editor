@@ -52,6 +52,25 @@ class Util {
 			return Number(arg1) - Number(arg2);
 		});
 	}
+	static debounce(cb, delay) {
+		var timer = null;
+		return function () {
+			clearTimeout(timer);
+			timer = setTimeout(function () {
+				cb();
+			}, delay);
+		};
+	}
+	static throttle(cb, delay) {
+		var timer = null;
+		return function () {
+			if (!timer) {
+				timer = setTimeout(function () {
+					cb();
+				}, delay);
+			}
+		};
+	}
 	//获取字符宽度
 	static getCharWidth(wrap, template) {
 		var str1 = '------------------------------------------------------------------------------------';

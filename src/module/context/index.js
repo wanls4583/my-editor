@@ -103,8 +103,8 @@ class Context {
 			this.history.pushHistory(historyArr);
 		} else {
 			// 撤销或重做操作后，更新历史记录
-			this.history.updateHistory(historyArr);
 			historyArr.serial = command.serial;
+			historyArr.length && this.history.updateHistory(historyArr);
 		}
 		this.setNowCursorPos(this.cursor.multiCursorPos.get(0));
 		this.fSearcher.refreshSearch();
@@ -130,6 +130,9 @@ class Context {
 				line: cursorPos.line,
 				column: cursorPos.column,
 			};
+			if (!text) {
+				return;
+			}
 			pos.line += lineDelta;
 			if (prePos && pos.line === prePos.line) {
 				pos.column += columnDelta;
@@ -1024,7 +1027,7 @@ class Context {
 		historyArr.length && this.history.pushHistory(historyArr);
 		historyArr = this._insertMultiContent(texts, this.cursor.multiCursorPos.toArray());
 		historyArr.serial = serial;
-		this.history.pushHistory(historyArr);
+		historyArr.length && this.history.pushHistory(historyArr);
 		return this.fSearcher.refreshSearch();
 	}
 	// 点击自动提示替换输入的内容

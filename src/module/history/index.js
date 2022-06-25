@@ -128,6 +128,9 @@ export default class {
 		let that = this;
 		let lastCommand = this.history[this.history.index - 1];
 		command = this.sortComand(command);
+		if (command instanceof Array && !command.length) {
+			return;
+		}
 		if (lastCommand instanceof Array && command instanceof Array && lastCommand.length === command.length && Date.now() - this.pushHistoryTime < 2000) {
 			if (_checkSameOp(lastCommand) && _checkSameOp(command) && _combCheck(lastCommand[0], command[0])) {
 				for (let i = 0; i < lastCommand.length; i++) {

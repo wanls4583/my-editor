@@ -14,6 +14,7 @@ export default class {
 		this.titleCount = 1;
 		this.editorList = globalData.editorList;
 		this.fileWatcherMap = {};
+		this.fileWatcherTimer = {};
 		this.init();
 	}
 	init() {
@@ -385,31 +386,36 @@ export default class {
 		if (this.fileWatcherMap[filePath]) {
 			return;
 		}
-		this.fileWatcherMap[filePath] = fs.watch(filePath, { recursive: true }, (event, filename, test) => {
-			let tab = Util.getTabByPath(this.editorList, filePath);
-			if (event === 'rename') {
-				EventBus.$emit('file-renamed', {
-					path: filePath,
-				});
-			} else if (event === 'change') {
-				let stat = fs.statSync(filePath);
-				// 文件改变后与当前打开内容不一致
-				if (tab && tab.saved && tab.mtimeMs !== stat.mtimeMs) {
-					Util.readFile(filePath).then(text => {
-						if (contexts[tab.id].getAllText() !== text.replace(/\r\n/g, '\n')) {
-							contexts[tab.id].reload(text);
-							EventBus.$emit('file-saved', tab.path);
-							tab.saved = true;
-						}
+		this.fileWatcherMap[filePath] = fs.watch(filePath, { recursive: true }, event => {
+			clearTimeout(this.fileWatcherTimer[filePath]);
+			this.fileWatcherTimer[filePath] = setTimeout(() => {
+				let tab = Util.getTabByPath(this.editorList, filePath);
+				if (event === 'rename') {
+					EventBus.$emit('file-renamed', {
+						path: filePath,
 					});
+				} else if (event === 'change') {
+					let stat = fs.statSync(filePath);
+					// 文件改变后与当前打开内容不一致
+					if (tab && tab.saved && tab.mtimeMs !== stat.mtimeMs) {
+						Util.readFile(filePath).then(text => {
+							if (contexts[tab.id].getAllText() !== text.replace(/\r\n/g, '\n')) {
+								contexts[tab.id].reload(text);
+								EventBus.$emit('file-saved', tab.path);
+								tab.saved = true;
+							}
+						});
+					}
 				}
-			}
+			}, 15);
 		});
 	}
 	stopWatchFile(filePath) {
 		if (this.fileWatcherMap[filePath]) {
 			this.fileWatcherMap[filePath].close();
+			clearTimeout(this.fileWatcherTimer[filePath]);
 			delete this.fileWatcherMap[filePath];
+			delete this.fileWatcherTimer[filePath];
 		}
 	}
 	watchFileStatus(filePath) {
