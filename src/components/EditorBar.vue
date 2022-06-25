@@ -17,7 +17,7 @@
 				<div :class="[item.icon]" class="bar-content">
 					<span :class="[item.statusColor]">
 						<span class="bar-text">{{ item.name }}</span>
-						<span style="margin-left:10px">{{item.status}}</span>
+						<span class="bar-status">{{item.status}}</span>
 					</span>
 					<div class="bar-icon">
 						<span @click.stop="onClose(item.id)" class="bar-close-icon iconfont icon-close" title="close" v-show="item.saved"></span>
@@ -88,6 +88,17 @@ export default {
 							item.statusColor = statusColor;
 							this.$set(this.editorList, i, item);
 						}
+						break;
+					}
+				}
+			});
+			EventBus.$on('file-renamed', (data) => {
+				for (let i = 0; i < this.editorList.length; i++) {
+					let item = this.editorList[i];
+					if (item.path === data.path) {
+						item.status = 'D';
+						item.statusColor = Util.getFileStatusColor('D');
+						this.$set(this.editorList, i, item);
 						break;
 					}
 				}

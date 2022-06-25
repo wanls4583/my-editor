@@ -377,12 +377,21 @@ class Util {
 		let fileStatus = allFileStatusData[relativePath] || allFileStatusData[rootPath] || {};
 		let status = '';
 		let statusColor = '';
-		let statusMap = {};
 		if (typeof fileStatus === 'string') {
 			status = fileStatus;
 		} else {
 			status = fileStatus[relativePath] || '';
 		}
+		statusColor = Util.getFileStatusColor(status);
+
+		return {
+			status: status,
+			statusColor: statusColor,
+		};
+	}
+	static getFileStatusColor(status) {
+		let statusMap = {};
+		let statusColor = '';
 		for (let i = 0; i < status.length; i++) {
 			statusMap[status[i]] = true;
 		}
@@ -395,10 +404,7 @@ class Util {
 		} else if (statusMap['D']) {
 			statusColor = 'my-status-deleted';
 		}
-		return {
-			status: status,
-			statusColor: statusColor,
-		};
+		return statusColor;
 	}
 	static getMemnuPos(e, menuEl, areaEl) {
 		let menuWidth = 0;

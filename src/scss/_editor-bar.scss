@@ -1,117 +1,130 @@
 .my {
-    &-editor-bar {
-        position: relative;
-        flex-shrink: 0;
-        width: 100%;
-        height: 40px;
-        background-color: var(--my-editorGroupHeader-tabsBackground);
-        background-clip: content-box;
-        user-select: none;
+	&-editor-bar {
+		position: relative;
+		flex-shrink: 0;
+		width: 100%;
+		height: 40px;
+		background-color: var(--my-editorGroupHeader-tabsBackground);
+		background-clip: content-box;
+		user-select: none;
 
-        &::after {
-            content: "";
-            position: absolute;
-            bottom: 0;
-            z-index: 1;
-            height: 1px;
-            width: 100%;
-            background-color: var(--my-editorGroupHeader-tabsBorder);
-        }
+		&::after {
+			content: '';
+			position: absolute;
+			bottom: 0;
+			z-index: 1;
+			height: 1px;
+			width: 100%;
+			background-color: var(--my-editorGroupHeader-tabsBorder);
+		}
 
-        .bar-scroller {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-        }
+		.bar-scroller {
+			width: 100%;
+			height: 100%;
+			display: flex;
+			align-items: center;
+		}
 
-        .bar-item {
-            position: relative;
-            flex-shrink: 0;
-            height: 100%;
-            padding: 5px;
-            border: 1px solid transparent;
-            border-right: 1px solid var(--my-tab-border);
-            background-color: var(--my-tab-inactiveBackground);
-            color: var(--my-tab-inactiveForeground);
-            cursor: pointer;
+		.bar-item {
+			position: relative;
+			flex-shrink: 0;
+			height: 100%;
+			padding: 5px;
+			border: 1px solid transparent;
+			border-right: 1px solid var(--my-tab-border);
+			background-color: var(--my-tab-inactiveBackground);
+			color: var(--my-tab-inactiveForeground);
+			cursor: pointer;
 
-            &:hover {
-                border-bottom: 1px solid var(--my-tab-hoverBorder);
-                background-color: var(--my-tab-hoverBackground);
-                color: var(--my-tab-hoverForeground);
-                .bar-close-icon {
-                    display: block;
-                }
-            }
+			&:hover {
+				border-bottom: 1px solid var(--my-tab-hoverBorder);
+				background-color: var(--my-tab-hoverBackground);
+				color: var(--my-tab-hoverForeground);
+				.bar-close-icon {
+					display: block;
+				}
+			}
 
-            &.my-active {
-                z-index: 2;
-                border-top: 1px solid var(--my-tab-activeBorderTop);
-                border-bottom: 1px solid var(--my-tab-activeBorder);
-                background-color: var(--my-tab-activeBackground);
-                color: var(--my-tab-activeForeground);
+			&.my-active {
+				z-index: 2;
+				border-top: 1px solid var(--my-tab-activeBorderTop);
+				border-bottom: 1px solid var(--my-tab-activeBorder);
+				background-color: var(--my-tab-activeBackground);
+				color: var(--my-tab-activeForeground);
 
-                .bar-content {
-                    border: 1px solid var(--my-contrastActiveBorder) !important;
-                }
+				.bar-content {
+					border: 1px solid var(--my-contrastActiveBorder) !important;
+				}
 
-                .bar-close-icon {
-                    display: block;
-                }
-            }
+				.bar-close-icon {
+					display: block;
+				}
+			}
 
-            .bar-content {
-                position: relative;
-                display: flex;
-                align-items: center;
-                height: 100%;
-                padding-left: 15px;
-                padding-right: 40px;
-                border: 1px solid transparent;
-                &:hover {
-                    border: 1px dotted var(--my-contrastActiveBorder);
-                }
-            }
+			.bar-content {
+				position: relative;
+				display: flex;
+				align-items: center;
+				height: 100%;
+				padding-left: 15px;
+				padding-right: 40px;
+				border: 1px solid transparent;
 
-            .bar-icon {
-                position: absolute;
-                top: 0;
-                right: 0;
-                height: 100%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                width: 40px;
-                font-size: 12px;
+				&:hover {
+					border: 1px dotted var(--my-contrastActiveBorder);
+				}
 
-                &:hover {
-                    .bar-close-icon {
-                        display: block !important;
-                    }
+				.my-status-deleted {
+					text-decoration: line-through;
 
-                    .bar-dot {
-                        display: none !important;
-                    }
-                }
-            }
+					.bar-status {
+						display: none;
+					}
+				}
+			}
 
-            .bar-close-icon {
-                display: none;
-                padding: 4px;
-                border-radius: 4px;
+			.bar-status {
+				margin-left: 10px;
+			}
 
-                &:hover {
-                    background-color: var(--my-toolbar-hoverBackground);
-                }
-            }
+			.bar-icon {
+				position: absolute;
+				top: 0;
+				right: 0;
+				height: 100%;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				width: 40px;
+				font-size: 12px;
 
-            .bar-dot {
-                width: 8px;
-                height: 8px;
-                border-radius: 50%;
-                background-color: yellowgreen;
-            }
-        }
-    }
+				&:hover {
+					.bar-close-icon {
+						display: block !important;
+					}
+
+					.bar-dot {
+						display: none !important;
+					}
+				}
+			}
+
+			.bar-close-icon {
+				display: none;
+				padding: 4px;
+				border-radius: 4px;
+
+				&:hover {
+					background-color: var(--my-toolbar-hoverBackground);
+				}
+			}
+
+			.bar-dot {
+				width: 8px;
+				height: 8px;
+				border-radius: 50%;
+				background-color: yellowgreen;
+			}
+		}
+	}
 }

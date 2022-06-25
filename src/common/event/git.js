@@ -238,6 +238,9 @@ export default class {
 
 		function _watchFileStatus(filePath) {
 			clearTimeout(this.gitStatusTimer[filePath]);
+			if (!fs.existsSync(filePath)) {
+				return;
+			}
 			this.gitStatus(filePath).then(results => {
 				let cache = this.gitStautsMap[filePath];
 				if (cache !== results && Util.diffObj(cache, results)) {
