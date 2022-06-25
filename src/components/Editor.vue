@@ -542,7 +542,7 @@ export default {
 				(this.initEventBusFn5 = (data) => {
 					if (data && data.path === this.tabData.path) {
 						this.diffRanges = data.result;
-						this.$refs.minimap && this.$refs.minimap.renderAllDiff(true);
+						this.active && this.$refs.minimap && this.$refs.minimap.renderAllDiff(true);
 					}
 				})
 			);
@@ -553,7 +553,7 @@ export default {
 						let status = null;
 						status = Util.getFileStatus(globalData.fileStatus, this.tabData.path);
 						if (this.preStatus !== status.status) {
-							EventBus.$emit('git-diff', this.tabData.path);
+							this.active && EventBus.$emit('git-diff', this.tabData.path);
 							this.preStatus = status.status;
 						}
 					}
