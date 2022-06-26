@@ -192,7 +192,6 @@ export default class {
 			if (tab && (tab.path || tab.tempPath) && !tab.loaded) {
 				let filePath = tab.tempPath || tab.path;
 				if (fs.existsSync(filePath)) {
-					tab.mtimeMs = fs.statSync(filePath).mtimeMs;
 					tab.loaded = true;
 					Util.readFile(filePath).then(data => {
 						contexts[tab.id].reload(data);
@@ -205,6 +204,7 @@ export default class {
 						if (fileObj && fileObj.range) {
 							globalData.$mainWin.getEditor(tab.id).cursor.setCursorPos(Object.assign({}, fileObj.range.start));
 						}
+						tab.mtimeMs = fs.statSync(filePath).mtimeMs;
 					});
 				}
 			} else if (fileObj && fileObj.range) {
@@ -340,7 +340,7 @@ export default class {
 	}
 	createRootDirItem(filePath) {
 		return {
-			id: Util.getIdFromStat(fs.statSync(filePath)),
+			id: Util.getIdFromPath(filePath),
 			name: filePath.match(/[^\\\/]+$/)[0],
 			path: filePath,
 			parentPath: '',
@@ -365,7 +365,6 @@ export default class {
 			fileObj.active = false;
 			fileObj.saved = true;
 		} else {
-			let stat = fs.statSync(filePath);
 			let icon = Util.getIconByPath({
 				iconData: globalData.nowIconData,
 				filePath: filePath,
@@ -374,7 +373,7 @@ export default class {
 			});
 			icon = icon ? `my-file-icon my-file-icon-${icon}` : '';
 			fileObj = {
-				id: Util.getIdFromStat(stat),
+				id: Util.getIdFromPath(filePath),
 				name: filePath.match(/[^\\\/]+$/)[0],
 				path: filePath,
 				parentPath: path.dirname(filePath),

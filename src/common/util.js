@@ -487,8 +487,15 @@ class Util {
 			return iconData.file;
 		}
 	}
-	static getIdFromStat(stat, mtimeMs) {
-		return `file-${stat.dev}-${stat.ino}${mtimeMs ? '-' + stat.mtimeMs : ''}`;
+	static getIdFromPath(filePath, mtimeMs) {
+		let id = '';
+		try {
+			stat = fs.statSync(filePath);
+			id = `file-${stat.dev}-${stat.ino}${mtimeMs ? '-' + stat.mtimeMs : ''}`;
+		} catch (e) {
+			id = Util.getUUID();
+		}
+		return id;
 	}
 	static getTabById(editorList, id) {
 		for (let i = 0; i < editorList.length; i++) {

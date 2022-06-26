@@ -216,7 +216,7 @@ export default {
 				}
 				let stat = fs.statSync(fullPath);
 				let obj = {
-					id: Util.getIdFromStat(stat),
+					id: Util.getIdFromPath(fullPath),
 					name: name,
 					path: fullPath,
 					parentPath: parentItem.path,
@@ -239,9 +239,8 @@ export default {
 			return this.sortFileList(results);
 		},
 		createRootItem(filePath) {
-			let stat = fs.statSync(filePath);
 			let obj = {
-				id: Util.getIdFromStat(stat),
+				id: Util.getIdFromPath(filePath),
 				name: path.basename(filePath),
 				path: filePath,
 				parentPath: '',

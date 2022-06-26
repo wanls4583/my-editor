@@ -197,7 +197,11 @@ function drawSelectedBg() {
 	let slectedImgData = new ImageData(dataObj.width, dataObj.height);
 	for (let i = 0; i < slectedRanges.length; i++) {
 		let range = slectedRanges[i];
-		putRectPixl({ imgData: slectedImgData, left: range.left, top: range.top, width: range.width || 2, height: dataObj.charHight, rgb, opacity: 1 });
+		let width = range.width || 2;
+		if (range.left < dataObj.width) {
+			width = range.left + width > dataObj.width ? dataObj.width - range.left : width;
+			putRectPixl({ imgData: slectedImgData, left: range.left, top: range.top, width: width, height: dataObj.charHight, rgb, opacity: 1 });
+		}
 	}
 	createImageBitmap(slectedImgData).then(img => {
 		ctx.clearRect(0, 0, dataObj.width, dataObj.height);

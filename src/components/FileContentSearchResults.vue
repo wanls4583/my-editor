@@ -83,8 +83,17 @@ export default {
 	},
 	mounted() {
 		this.render();
+		this.initResizeEvent();
 	},
 	methods: {
+		initResizeEvent() {
+			const resizeObserver = new ResizeObserver((entries) => {
+				if (this.$refs.wrap && this.$refs.wrap.clientHeight) {
+					this.render();
+				}
+			});
+			resizeObserver.observe(this.$refs.wrap);
+		},
 		initEventBus() {
 			EventBus.$on('icon-changed', () => {
 				this.openedList.forEach((item) => {
@@ -112,23 +121,26 @@ export default {
 			});
 		},
 		render() {
-			this.maxVisibleLines = Math.ceil(this.$refs.wrap.clientHeight / this.itemHeight) + 1;
-			this.renderList = this.openedList.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines);
-			this.renderList.forEach((item) => {
-				if (globalData.nowIconData && item.deep == 1) {
-					item.icon = Util.getIconByPath({
-						iconData: globalData.nowIconData,
-						filePath: item.path,
-						fileType: 'file',
-						themeType: globalData.nowTheme.type,
-					});
-					item.icon = item.icon ? `my-file-icon my-file-icon-${item.icon}` : '';
-				}
-				if (!item.html) {
-					let obj = this.getHtml(item);
-					item.html = obj.html;
-					item.text = obj.text;
-				}
+			cancelAnimationFrame(this.renderTimer);
+			this.renderTimer = requestAnimationFrame(() => {
+				this.maxVisibleLines = Math.ceil(this.$refs.wrap.clientHeight / this.itemHeight) + 1;
+				this.renderList = this.openedList.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines);
+				this.renderList.forEach((item) => {
+					if (globalData.nowIconData && item.deep == 1) {
+						item.icon = Util.getIconByPath({
+							iconData: globalData.nowIconData,
+							filePath: item.path,
+							fileType: 'file',
+							themeType: globalData.nowTheme.type,
+						});
+						item.icon = item.icon ? `my-file-icon my-file-icon-${item.icon}` : '';
+					}
+					if (!item.html) {
+						let obj = this.getHtml(item);
+						item.html = obj.html;
+						item.text = obj.text;
+					}
+				});
 			});
 		},
 		sortFileList(results) {
@@ -165,14 +177,14 @@ export default {
 				text = html;
 				html = Util.htmlTrans(html);
 				if (item.texts.length > 1) {
-					let plain = _text.slice(start.column);
+					let plain = _text.slice(start.column, start.column + 100);
 					text += plain;
 					html += `<span class="search-results-bg">${Util.htmlTrans(plain)}</span>`;
 				} else {
 					let plain = _text.slice(start.column, end.column);
 					text += plain;
 					html += `<span class="search-results-bg">${Util.htmlTrans(plain)}</span>`;
-					plain = _text.slice(end.column);
+					plain = _text.slice(end.column, end.column + 100);
 					text += plain;
 					html += Util.htmlTrans(plain);
 				}

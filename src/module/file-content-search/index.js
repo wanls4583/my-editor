@@ -2,9 +2,8 @@ import Vue from 'vue';
 import Util from '@/common/util';
 import globalData from '@/data/globalData';
 
-const require = window.require || window.parent.require || function () {};
-const path = require('path');
-const fs = require('fs');
+const path = window.require('path');
+const fs = window.require('fs');
 
 export default class {
 	constructor() {
@@ -73,8 +72,11 @@ export default class {
 		this.searchId = Util.getUUID();
 	}
 	searchDir(option) {
-		if (option.searchId !== this.searchId || !option.dirs.length) {
-			option.dirs.length === 0 && this.searchFiles(option);
+		if (option.searchId !== this.searchId) {
+			return;
+		}
+		if (option.dirs.length === 0) {
+			this.searchFiles(option);
 			return;
 		}
 		let dirPath = option.dirs.shift();
@@ -97,27 +99,35 @@ export default class {
 							name: item,
 							path: fullPath,
 						});
+						this.searchFiles(option);
 					} else {
 						option.dirs.push(fullPath);
 					}
 				} catch (e) {}
 			});
-			this.searchDir(option);
+			setTimeout(() => {
+				this.searchDir(option);
+			}, 15);
 		});
 	}
 	searchFiles(option) {
-		if (option.searchId !== this.searchId || !option.files.length) {
-			option.files.length === 0 && this.eventBus.$emit('end');
+		if (option.searchId !== this.searchId || option.files.searching) {
+			return;
+		}
+		if (option.files.length === 0) {
+			this.eventBus.$emit('end');
 			return;
 		}
 		let fileObj = option.files[0];
 		let basename = path.basename(fileObj.path);
 		let excludePath = option.searchObj.excludePath;
+		let id = Util.getIdFromPath(fileObj.path);
 		if (globalData.skipSearchFiles.test(basename) || (excludePath && excludePath.test(fileObj.path))) {
 			option.files.shift();
 			this.searchFiles(option);
 			return;
 		}
+		option.files.searching = true;
 		this.readFile(
 			fileObj,
 			lines => {
@@ -132,6 +142,7 @@ export default class {
 				}
 				if (results && results.length) {
 					results.forEach(item => {
+						item.id = id;
 						item.path = fileObj.path;
 						item.name = fileObj.name;
 					});
@@ -140,6 +151,7 @@ export default class {
 			},
 			() => {
 				option.files.shift();
+				option.files.searching = false;
 				if (option.searchId !== this.searchId) {
 					return;
 				}
@@ -202,7 +214,7 @@ export default class {
 		}
 	}
 	readFile(fileObj, cb, endCb) {
-		const es = require('event-stream');
+		const es = window.require('event-stream');
 		let lines = [];
 		fs.createReadStream(fileObj.path, { flags: 'r' })
 			.on('end', endCb)
