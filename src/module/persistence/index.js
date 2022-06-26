@@ -85,8 +85,9 @@ export default class {
 		clearTimeout(this.storeTabDataTimer[id]);
 		this.storeTabDataTimer[id] = setTimeout(() => {
 			if (tab && !tab.saved && !tab.tempSaved) {
-				Util.writeFileSync(path.join(globalData.cachePath, id), contexts[id].getAllText());
-				tab.tempSaved = true;
+				Util.writeFile(path.join(globalData.cachePath, id), contexts[id].getAllText()).then(() => {
+					tab.tempSaved = true;
+				});
 			}
 		}, 5000);
 	}

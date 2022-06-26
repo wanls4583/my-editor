@@ -69,6 +69,9 @@ export default class {
 		}
 		return this.eventBus;
 	}
+	stopSearch() {
+		this.searchId = Util.getUUID();
+	}
 	searchDir(option) {
 		if (option.searchId !== this.searchId || !option.dirs.length) {
 			option.dirs.length === 0 && this.searchFiles(option);
@@ -82,19 +85,22 @@ export default class {
 		}
 		fs.readdir(dirPath, { encoding: 'utf8' }, (err, files) => {
 			if (err) {
-				throw err;
+				console.log(err);
+				return;
 			}
 			files.forEach((item, index) => {
 				let fullPath = path.join(dirPath, item);
-				let state = fs.statSync(fullPath);
-				if (state.isFile()) {
-					option.files.push({
-						name: item,
-						path: fullPath,
-					});
-				} else {
-					option.dirs.push(fullPath);
-				}
+				try {
+					let state = fs.statSync(fullPath);
+					if (state.isFile()) {
+						option.files.push({
+							name: item,
+							path: fullPath,
+						});
+					} else {
+						option.dirs.push(fullPath);
+					}
+				} catch (e) {}
 			});
 			this.searchDir(option);
 		});

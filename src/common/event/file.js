@@ -194,22 +194,18 @@ export default class {
 				if (fs.existsSync(filePath)) {
 					tab.mtimeMs = fs.statSync(filePath).mtimeMs;
 					tab.loaded = true;
-					Util.readFile(filePath)
-						.then(data => {
-							contexts[tab.id].reload(data);
-							EventBus.$emit('file-opened', filePath);
-							if (!tab.tempPath) {
-								EventBus.$emit('file-saved', tab.path);
-								tab.saved = true;
-							}
-							//点击搜索结果
-							if (fileObj && fileObj.range) {
-								globalData.$mainWin.getEditor(tab.id).cursor.setCursorPos(Object.assign({}, fileObj.range.start));
-							}
-						})
-						.catch(() => {
-							tab.loaded = false;
-						});
+					Util.readFile(filePath).then(data => {
+						contexts[tab.id].reload(data);
+						EventBus.$emit('file-opened', filePath);
+						if (!tab.tempPath) {
+							EventBus.$emit('file-saved', tab.path);
+							tab.saved = true;
+						}
+						//点击搜索结果
+						if (fileObj && fileObj.range) {
+							globalData.$mainWin.getEditor(tab.id).cursor.setCursorPos(Object.assign({}, fileObj.range.start));
+						}
+					});
 				}
 			} else if (fileObj && fileObj.range) {
 				globalData.$mainWin.getEditor(tab.id).cursor.setCursorPos(Object.assign({}, fileObj.range.start));

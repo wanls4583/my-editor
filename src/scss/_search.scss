@@ -1,275 +1,283 @@
 .my {
-    // 编辑区域搜索
-    &-search {
-        position: absolute;
-        top: 0;
-        right: 20px;
-        z-index: 98;
-        width: 500px;
-        display: flex;
-        justify-content: space-between;
-        padding: 5px 10px 5px 25px;
-        box-shadow: 0 0 8px 2px var(--my-widget-shadow);
-        border: 1px solid var(--my-editorWidget-border);
-        background-color: var(--my-editorWidget-background);
-        color: var(--my-editorWidget-foreground);
-    }
+	// 编辑区域搜索
+	&-search {
+		position: absolute;
+		top: 0;
+		right: 20px;
+		z-index: 98;
+		width: 500px;
+		display: flex;
+		justify-content: space-between;
+		padding: 5px 10px 5px 25px;
+		box-shadow: 0 0 8px 2px var(--my-widget-shadow);
+		border: 1px solid var(--my-editorWidget-border);
+		background-color: var(--my-editorWidget-background);
+		color: var(--my-editorWidget-foreground);
+	}
 
-    &-search,
-    &-search-condition {
-        box-shadow: 0 2px 8px 2px var(--my-widget-shadow);
-        user-select: none;
+	&-search,
+	&-search-condition {
+		box-shadow: 0 2px 8px 2px var(--my-widget-shadow);
+		user-select: none;
 
-        .iconfont {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 22px;
-            height: 22px;
-            font-size: 18px;
-            cursor: pointer;
-        }
+		.iconfont {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			width: 22px;
+			height: 22px;
+			font-size: 18px;
+			cursor: pointer;
+		}
 
-        .active-click {
-            border-radius: 4px;
-            border: 1px solid transparent;
-            outline: none;
-        }
+		.active-click {
+			border-radius: 4px;
+			border: 1px solid transparent;
+			outline: none;
+		}
 
-        .active-click:hover {
-            background-color: var(--my-toolbar-hoverBackground);
-        }
+		.active-click:hover {
+			background-color: var(--my-toolbar-hoverBackground);
+		}
 
-        .active-click:focus {
-            border-color: var(--my-focusBorder);
-        }
+		.active-click:focus {
+			border-color: var(--my-focusBorder);
+		}
 
-        .disabled-color {
-            opacity: 0.5;
+		.disabled-color {
+			opacity: 0.5;
 
-            &:hover {
-                background-color: transparent;
-            }
+			&:hover {
+				background-color: transparent;
+			}
 
-            &:active {
-                border-color: transparent;
-            }
-        }
+			&:active {
+				border-color: transparent;
+			}
+		}
 
-        .enable-color {
-            color: var(--my-editorWidget-foreground);
-        }
+		.enable-color {
+			color: var(--my-editorWidget-foreground);
+		}
 
-        .no-result.my-active {
-            color: red;
-        }
-    }
+		.no-result.my-active {
+			color: red;
+		}
+	}
 
-    &-search-suffix {
-        width: 22px;
-        height: 22px;
-        line-height: 22px;
-        text-align: center;
-        margin-right: 4px;
-        border-radius: 4px;
-        border: 1px solid transparent;
-        cursor: pointer;
+	&-search-suffix {
+		width: 22px;
+		height: 22px;
+		line-height: 22px;
+		text-align: center;
+		margin-right: 4px;
+		border-radius: 4px;
+		border: 1px solid transparent;
+		cursor: pointer;
 
-        &:hover {
-            background-color: var(--my-inputOption-hoverBackground);
-        }
+		&:hover {
+			background-color: var(--my-inputOption-hoverBackground);
+		}
 
-        &.my-active {
-            border-color: var(--my-inputOption-activeBorder);
-            background-color: var(--my-inputOption-activeBackground);
-            color: var(--my-inputOption-activeForeground);
-        }
-    }
+		&.my-active {
+			border-color: var(--my-inputOption-activeBorder);
+			background-color: var(--my-inputOption-activeBackground);
+			color: var(--my-inputOption-activeForeground);
+		}
+	}
 
-    &-search-left {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 25px;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-    }
+	&-search-left {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 25px;
+		height: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+	}
 
-    &-search-right {
-        height: 32px;
-        align-self: flex-start;
-    }
+	&-search-right {
+		height: 32px;
+		align-self: flex-start;
+	}
 
-    &-search-right,
-    &-search-top,
-    &-search-bottom {
-        display: flex;
-        align-items: center;
-    }
+	&-search-right,
+	&-search-top,
+	&-search-bottom {
+		display: flex;
+		align-items: center;
+	}
 
-    &-search-input {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        width: 280px;
-        margin-right: 5px;
-        background-color: var(--my-input-background);
-        color: var(--my-input-foreground);
-        border: 1px solid transparent;
-        border-color: var(--my-input-border);
+	&-search-input {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		width: 280px;
+		margin-right: 5px;
+		background-color: var(--my-input-background);
+		color: var(--my-input-foreground);
+		border: 1px solid transparent;
+		border-color: var(--my-input-border);
 
-        &.my-active {
-            border-color: var(--my-focusBorder);
-        }
+		&.my-active {
+			border-color: var(--my-focusBorder);
+		}
 
-        textarea {
-            flex-grow: 1;
-            line-height: 20px;
-            max-height: 150px;
-            padding: 5px;
-            border-style: none;
-            outline: none;
-            background-color: transparent;
-            color: var(--my-input-foreground);
-            resize: none;
-            white-space: pre;
-            overflow-wrap: normal;
+		textarea {
+			flex-grow: 1;
+			line-height: 20px;
+			max-height: 150px;
+			padding: 5px;
+			border-style: none;
+			outline: none;
+			background-color: transparent;
+			color: var(--my-input-foreground);
+			resize: none;
+			white-space: pre;
+			overflow-wrap: normal;
 
-            &::-webkit-scrollbar {
-                display: none;
-            }
-        }
-    }
+			&::-webkit-scrollbar {
+				display: none;
+			}
+		}
+	}
 
-    // 左侧文件搜索
-    &-side-search {
-        position: relative;
-        height: 100%;
+	// 左侧文件搜索
+	&-side-search {
+		position: relative;
+		height: 100%;
 
-        .side-search-title {
-            padding-left: 20px;
-            height: 40px;
-            line-height: 40px;
-            color: var(--my-sideBarTitle-foreground);
-        }
+		.side-search-title {
+			padding-left: 20px;
+			height: 40px;
+			line-height: 40px;
+			color: var(--my-sideBarTitle-foreground);
+		}
 
-        .my-search-wrap {
-            display: flex;
-            flex-direction: column;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-        }
-    }
+		.my-search-wrap {
+			display: flex;
+			flex-direction: column;
+			width: 100%;
+			height: 100%;
+			overflow: hidden;
+		}
+	}
 
-    &-search-condition {
-        .my-search-left {
-            width: 20px;
-        }
+	&-search-condition {
+		.my-search-left {
+			width: 20px;
+		}
 
-        .my-search-input {
-            width: 100%;
-            margin-right: 0;
-        }
-    }
+		.my-search-input {
+			width: 100%;
+			margin-right: 0;
+		}
 
-    &-search-replacing {
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        // backdrop-filter: blur(2px);
-    }
+		.stop-search {
+			cursor: pointer;
 
-    &-search-results {
-        flex-grow: 1;
-        width: 100%;
-        overflow: hidden;
+			&:hover {
+				color: var(--my-focusBorder);
+			}
+		}
+	}
 
-        .results-tree {
-            position: relative;
+	&-search-replacing {
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		// backdrop-filter: blur(2px);
+	}
 
-            &-warp {
-                width: 100%;
-                height: 100%;
-            }
+	&-search-results {
+		flex-grow: 1;
+		width: 100%;
+		overflow: hidden;
 
-            &-content {
-                position: absolute;
-                left: 0;
-                width: 100%;
-            }
-        }
+		.results-tree {
+			position: relative;
 
-        .tree-item {
-            position: relative;
-            white-space: nowrap;
+			&-warp {
+				width: 100%;
+				height: 100%;
+			}
 
-            &-title {
-                height: 30px;
-                padding-right: 10px;
-                border: 1px solid transparent;
-                cursor: pointer;
+			&-content {
+				position: absolute;
+				left: 0;
+				width: 100%;
+			}
+		}
 
-                &:hover {
-                    border-style: dotted;
-                    border-color: var(--my-contrastActiveBorder);
-                    background-color: var(--my-list-hoverBackground);
-                    color: var(--my-list-hoverForeground);
-                }
+		.tree-item {
+			position: relative;
+			white-space: nowrap;
 
-                &.my-active {
-                    border-color: var(--my-contrastActiveBorder);
-                    background-color: var(--my-list-activeSelectionBackground);
-                    color: var(--my-list-activeSelectionForeground);
-                }
-            }
+			&-title {
+				height: 30px;
+				padding-right: 10px;
+				border: 1px solid transparent;
+				cursor: pointer;
 
-            &-content {
-                width: 100%;
-            }
+				&:hover {
+					border-style: dotted;
+					border-color: var(--my-contrastActiveBorder);
+					background-color: var(--my-list-hoverBackground);
+					color: var(--my-list-hoverForeground);
+				}
 
-            &-text {
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
-        }
+				&.my-active {
+					border-color: var(--my-contrastActiveBorder);
+					background-color: var(--my-list-activeSelectionBackground);
+					color: var(--my-list-activeSelectionForeground);
+				}
+			}
 
-        .my-search-lines {
-            flex-shrink: 0;
-        }
+			&-content {
+				width: 100%;
+			}
 
-        .my-search-count {
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 22px;
-            min-width: 22px;
-            padding: 0 4px;
-            margin-left: 3px;
-            border-radius: 100px;
-            background-color: var(--my-badge-background);
-            color: var(--my-badge-foreground);
-        }
+			&-text {
+				overflow: hidden;
+				text-overflow: ellipsis;
+			}
+		}
 
-        .search-results-bg {
-            background-color: var(--my-editor-findMatchBackground);
-        }
+		.my-search-lines {
+			flex-shrink: 0;
+		}
 
-        .my-file-icon::before {
-            margin-left: 0;
-            margin-right: 0;
-        }
+		.my-search-count {
+			flex-shrink: 0;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			height: 22px;
+			min-width: 22px;
+			padding: 0 4px;
+			margin-left: 3px;
+			border-radius: 100px;
+			background-color: var(--my-badge-background);
+			color: var(--my-badge-foreground);
+		}
 
-        .iconfont {
-            position: relative;
-            top: 3px;
-            font-size: 14px;
-        }
-    }
+		.search-results-bg {
+			background-color: var(--my-editor-findMatchBackground);
+		}
+
+		.my-file-icon::before {
+			margin-left: 0;
+			margin-right: 0;
+		}
+
+		.iconfont {
+			position: relative;
+			top: 3px;
+			font-size: 14px;
+		}
+	}
 }
