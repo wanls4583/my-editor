@@ -440,10 +440,12 @@ export default {
 		this.initEventBus();
 	},
 	mounted() {
-		this.showEditor();
 		this.initResizeEvent();
-		if (this.type === 'diff') {
-			this.showDiff();
+		if (this.active) {
+			this.showEditor();
+			if (this.type === 'diff') {
+				this.showDiff();
+			}
 		}
 	},
 	destroyed() {
@@ -1334,7 +1336,7 @@ export default {
 						this.setStartLine(scrollTop);
 					}
 					requestAnimationFrame(() => {
-						this.renderCursor(true, true);
+						this.active && this.renderCursor(true, true);
 					});
 				});
 			}
