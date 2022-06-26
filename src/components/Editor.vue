@@ -580,7 +580,7 @@ export default {
 			EventBus.$on(
 				'file-opened',
 				(this.initEventBusFn9 = (path) => {
-					if (this.tabData.path === path) {
+					if (this.tabData.path === path || this.tabData.tempPath === path) {
 						this.history.clear();
 					}
 				})

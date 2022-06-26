@@ -197,9 +197,9 @@ export default class {
 					Util.readFile(filePath)
 						.then(data => {
 							contexts[tab.id].reload(data);
+							EventBus.$emit('file-opened', filePath);
 							if (!tab.tempPath) {
 								EventBus.$emit('file-saved', tab.path);
-								EventBus.$emit('file-opened', tab.path);
 								tab.saved = true;
 							}
 							//点击搜索结果
