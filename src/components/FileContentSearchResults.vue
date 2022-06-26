@@ -41,15 +41,11 @@ let preActiveItem = null;
 
 export default {
 	name: 'FileContentSearchResults',
-	props: {
-		list: {
-			type: Array,
-		},
-	},
 	data() {
 		return {
 			itemHeight: 30,
 			itemPadding: 16,
+			list: [],
 			openedList: [],
 			renderList: [],
 			startLine: 1,
@@ -70,7 +66,6 @@ export default {
 		},
 	},
 	created() {
-		this.openedList = this.getRenderList(this.list, 0);
 		this.initEventBus();
 	},
 	mounted() {
@@ -135,8 +130,9 @@ export default {
 				});
 			});
 		},
-		refreshList() {
-			this.openedList = this.getRenderList(this.list, 0);
+		addResults(results) {
+			this.list.push(results);
+			this.openedList.push(...this.getRenderList(results, 0));
 			this.render();
 		},
 		getRenderList(list, deep) {

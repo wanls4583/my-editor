@@ -168,6 +168,7 @@ export default {
 			let searcher = child_process.fork(path.join(globalData.dirname, 'main/process/search/index.js'));
 			let file = { path: '' };
 			let refreshTimer = null;
+			let results = [];
 			searcher.on('message', (data) => {
 				if (data === 'end') {
 					if (!file.path) {
@@ -176,28 +177,27 @@ export default {
 					}
 					this.searching = false;
 				} else if (data.searchId === this.searchId) {
-					let results = data.results;
-					let result = results[0];
-					let multi = /\n/.test(this.searchingText);
-					results.forEach((item) => {
-						item.open = false;
-						item.active = false;
-						item.multi = multi;
-					});
+					let result = data.results[0];
 					if (!file.path) {
 						this.results = [];
 						this.count = 0;
 					}
-					if (result.path !== file.path) {
-						file = { path: result.path, name: result.name, children: [], open: true };
-						this.results.push(file);
-					}
-					file.children.push(...results);
-					this.count += results.length;
+					data.results.forEach((item) => {
+						item.open = false;
+						item.active = false;
+						if (result.path !== file.path) {
+							file = { path: result.path, name: result.name, children: [], open: true };
+							results.push(file);
+							this.results.push(file);
+						}
+						file.children.push(item);
+						this.count++;
+					});
 				}
 				if (!refreshTimer) {
 					refreshTimer = setTimeout(() => {
-						this.$refs.results.refreshList();
+						this.$refs.results.addResults(results);
+						results = [];
 						refreshTimer = null;
 					}, 15);
 				}

@@ -121,7 +121,6 @@ class Search {
 		let basename = path.basename(fileObj.path);
 		let excludePath = option.searchObj.excludePath;
 		let sendQueue = [];
-		let sendTimer = null;
 		fileObj.id = this.getIdFromPath(fileObj.path);
 		if (skipSearchFiles.test(basename) || (excludePath && excludePath.test(fileObj.path))) {
 			option.files.shift();
@@ -140,16 +139,11 @@ class Search {
 				} else {
 					sendQueue.push(..._multiLineMatch.call(this, lines));
 				}
-				if (!sendTimer) {
-					sendTimer = setTimeout(() => {
-						sendQueue.length && process.send({ searchId: this.searchId, results: sendQueue });
-						sendTimer = null;
-					}, 15);
-				}
 			},
 			() => {
 				option.files.shift();
 				option.files.searching = false;
+				sendQueue.length && process.send({ searchId: this.searchId, results: sendQueue });
 				if (option.searchId !== this.searchId) {
 					return;
 				}
