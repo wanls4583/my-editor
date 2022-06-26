@@ -105,9 +105,9 @@ export default class {
 					}
 				} catch (e) {}
 			});
-			setTimeout(() => {
+			this.searchDirTask = globalData.scheduler.addTask(() => {
 				this.searchDir(option);
-			}, 15);
+			});
 		});
 	}
 	searchFiles(option) {
@@ -155,9 +155,9 @@ export default class {
 				if (option.searchId !== this.searchId) {
 					return;
 				}
-				setTimeout(() => {
+				this.searchFilesTask = globalData.scheduler.addTask(() => {
 					this.searchFiles(option);
-				}, 15);
+				});
 			}
 		);
 

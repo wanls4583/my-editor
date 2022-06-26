@@ -134,11 +134,11 @@ export default class {
 			this.editorList.splice(index, 1);
 			contexts[id] = null;
 			if (tab.active) {
+				let _tab = this.editorList[index] || this.editorList[index - 1];
 				globalData.nowEditorId = null;
 				tab.active = false;
-				tab = this.editorList[index] || this.editorList[index - 1];
-				if (tab) {
-					this.changeTab(tab.id);
+				if (_tab) {
+					this.changeTab(_tab.id);
 				} else {
 					EventBus.$emit('editor-changed', null);
 				}
