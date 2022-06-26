@@ -69,14 +69,6 @@ export default {
 			};
 		},
 	},
-	watch: {
-		list() {
-			this.openedList = [];
-			this.renderList = [];
-			this.openedList = this.getRenderList(this.list, 0);
-			this.render();
-		},
-	},
 	created() {
 		this.openedList = this.getRenderList(this.list, 0);
 		this.initEventBus();
@@ -143,8 +135,9 @@ export default {
 				});
 			});
 		},
-		sortFileList(results) {
-			return results;
+		refreshList() {
+			this.openedList = this.getRenderList(this.list, 0);
+			this.render();
 		},
 		getRenderList(list, deep) {
 			let results = [];
@@ -167,27 +160,8 @@ export default {
 			if (item.deep === 1) {
 				html = item.name;
 			} else {
-				let _text = item.texts[0].trimRight();
-				let start = item.range.start;
-				let end = item.range.end;
-				let res = null;
-				html = _text.slice(0, start.column).slice(-20).trimLeft();
-				res = /[^0-9a-zA-Z\s]/.exec(html);
-				html = (res && html.slice(res.index + 1)) || html;
-				text = html;
-				html = Util.htmlTrans(html);
-				if (item.texts.length > 1) {
-					let plain = _text.slice(start.column, start.column + 100);
-					text += plain;
-					html += `<span class="search-results-bg">${Util.htmlTrans(plain)}</span>`;
-				} else {
-					let plain = _text.slice(start.column, end.column);
-					text += plain;
-					html += `<span class="search-results-bg">${Util.htmlTrans(plain)}</span>`;
-					plain = _text.slice(end.column, end.column + 100);
-					text += plain;
-					html += Util.htmlTrans(plain);
-				}
+				text = item.text;
+				html = item.html;
 			}
 			return {
 				html: html,

@@ -85,7 +85,7 @@
 				</div>
 			</div>
 			<div class="my-search-results">
-				<file-content-search-results :list="results"></file-content-search-results>
+				<file-content-search-results :list="results" ref="results"></file-content-search-results>
 			</div>
 		</div>
 		<div class="my-search-replacing" v-if="replacing"></div>
@@ -96,6 +96,9 @@ import EventBus from '@/event';
 import FileContentSearchResults from './FileContentSearchResults.vue';
 import Searcher from '../module/file-content-search';
 import Util from '@/common/util';
+
+const path = window.require('path');
+const child_process = window.require('child_process');
 
 export default {
 	components: {
@@ -113,7 +116,7 @@ export default {
 			input3Focus: false,
 			input4Focus: false,
 			replacing: false,
-            searching: false,
+			searching: false,
 			input1Height: 30,
 			input2Height: 30,
 			input3Height: 30,
@@ -142,7 +145,7 @@ export default {
 		},
 	},
 	created() {
-		this.searcher = new Searcher();
+		this.wholeWordPattern = new RegExp(`^(${globalData.defaultWordPattern.source})$`);
 		this.initEvent();
 	},
 	mounted() {},
@@ -161,55 +164,76 @@ export default {
 				});
 			});
 		},
+		createSearch() {
+			let searcher = child_process.fork(path.join(globalData.dirname, 'main/process/search/index.js'));
+			let file = { path: '' };
+			let refreshTimer = null;
+			searcher.on('message', (data) => {
+				if (data === 'end') {
+					if (!file.path) {
+						this.results = [];
+						this.count = 0;
+					}
+					this.searching = false;
+				} else if (data.searchId === this.searchId) {
+					let results = data.results;
+					let result = results[0];
+					let multi = /\n/.test(this.searchingText);
+					results.forEach((item) => {
+						item.open = false;
+						item.active = false;
+						item.multi = multi;
+					});
+					if (!file.path) {
+						this.results = [];
+						this.count = 0;
+					}
+					if (result.path !== file.path) {
+						file = { path: result.path, name: result.name, children: [], open: true };
+						this.results.push(file);
+					}
+					file.children.push(...results);
+					this.count += results.length;
+				}
+				if (!refreshTimer) {
+					refreshTimer = setTimeout(() => {
+						this.$refs.results.refreshList();
+						refreshTimer = null;
+					}, 15);
+				}
+			});
+			return searcher;
+		},
 		search() {
 			clearTimeout(this.searchTimer);
+			this.stopSeach();
 			if (!this.includePath || !this.text || (this.excludePath && this.includePath.startsWith(this.excludePath))) {
 				this.results = [];
 				this.count = 0;
-				this.stopSeach();
 				return;
 			}
 			this.searchTimer = setTimeout(() => {
-				let file = { path: '' };
 				this.searching = true;
-				this.searcher
-					.search({
-						path: this.includePath,
-						excludePath: this.excludePath,
-						ignoreCase: this.ignoreCase,
-						wholeWord: this.wholeWord,
-						text: this.text,
-					})
-					.$on('find', (results) => {
-						let result = results[0];
-						results.forEach((item) => {
-							item.open = false;
-							item.active = false;
-						});
-						if (!file.path) {
-							this.results = [];
-							this.count = 0;
-						}
-						if (result.path !== file.path) {
-							file = { path: result.path, name: result.name, children: [], open: true };
-							this.results.push(file);
-						}
-						file.children.push(...results);
-						this.results = this.results.slice();
-						this.count += results.length;
-					})
-					.$on('end', () => {
-						if (!file.path) {
-							this.results = [];
-							this.count = 0;
-						}
-						this.searching = false;
-					});
+				this.searchId = Util.getUUID();
+				this.searchingText = this.text;
+				this.searcher = this.createSearch();
+				this.searcher.send({
+					path: this.parsePath(this.includePath),
+					excludePath: this.parsePath(this.excludePath),
+					ignoreCase: this.ignoreCase,
+					wholeWord: this.wholeWord,
+					text: this.text,
+					searchId: this.searchId,
+				});
 			}, 300);
 		},
 		stopSeach() {
-			this.searcher.stopSearch();
-            this.searching = false;
+			this.searching = false;
+			if (this.searcher) {
+				let searcher = this.searcher;
+				this.searcher = null;
+				searcher.kill();
+			}
 		},
 		changeCase() {
 			this.ignoreCase = !this.ignoreCase;
@@ -224,7 +248,7 @@ export default {
 				return;
 			}
 			let reg = this.text.replace(/\\|\.|\*|\+|\-|\?|\(|\)|\[|\]|\{|\}|\^|\$|\~|\!|\&|\|/g, '\\$&');
-			if (!/\n/.test(reg) && this.searcher.wholeWordPattern.test(reg) && this.wholeWord) {
+			if (!/\n/.test(reg) && this.wholeWordPattern.test(reg) && this.wholeWord) {
 				reg = '(?:\\b|(?<=[^0-9a-zA-Z]))' + reg + '(?:\\b|(?=[^0-9a-zA-Z]))';
 			}
 			reg = new RegExp(reg, this.ignoreCase ? 'igm' : 'gm');
@@ -245,6 +269,31 @@ export default {
 					});
 				});
 			}
+		},
+		parsePath(dirPath) {
+			const fileTree = globalData.fileTree;
+			dirPath = dirPath || '';
+			if (!dirPath) {
+				return dirPath;
+			}
+			let res = /^\.[\\\/]([^\\\/]+)(?:[\\\/]|$)/.exec(dirPath);
+			if (res) {
+				let project = (res && res[1]) || '';
+				for (let i = 0; i < fileTree.length; i++) {
+					if (project === fileTree[i].name) {
+						dirPath = path.join(fileTree[i].path, dirPath.slice(res[1].length + 2));
+						break;
+					}
+				}
+			}
+			try {
+				dirPath = path.normalize(dirPath);
+				dirPath = path.parse(dirPath);
+				dirPath = path.join(dirPath.dir, dirPath.base);
+			} catch (e) {
+				dirPath = '';
+			}
+			return dirPath;
 		},
 		onKeyDown1(e) {
 			if (e.keyCode === 13 || e.keyCode === 100) {
