@@ -143,7 +143,9 @@ export default class {
 				if (option.searchId !== this.searchId) {
 					return;
 				}
-				this.searchFiles(option);
+				setTimeout(() => {
+					this.searchFiles(option);
+				}, 15);
 			}
 		);
 
