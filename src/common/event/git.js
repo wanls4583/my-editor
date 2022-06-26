@@ -157,10 +157,13 @@ export default class {
 		} else {
 			child = spawn('git', ['status', '-s'], { cwd: filePath });
 		}
-		return new Promise(resolve => {
+		return new Promise((resolve, reject) => {
 			let result = '';
 			child.stdout.on('data', data => {
 				result += data;
+			});
+			child.stderr.on('data', () => {
+				reject();
 			});
 			child.on('close', () => {
 				resolve(this.parseStatus(result, filePath, stat));
@@ -226,16 +229,7 @@ export default class {
 	}
 	watchFileStatus(filePath) {
 		this.gitStatusTimer[filePath] = setTimeout(() => {
-			if (fs.existsSync(filePath)) {
-				let stat = fs.statSync(filePath);
-				let cwd = filePath;
-				if (stat.isFile()) {
-					cwd = path.dirname(filePath);
-				}
-				this.checkGitRep(cwd).then(() => {
-					_watchFileStatus.call(this, filePath);
-				});
-			}
+			_watchFileStatus.call(this, filePath);
 		}, 100);
 
 		function _watchFileStatus(filePath) {
@@ -247,6 +241,7 @@ export default class {
 			if (stat.isDirectory() && Util.getFileItemByPath(globalData.fileTree, filePath).length === 0) {
 				return;
 			}
+			clearTimeout(this.gitStatusTimer[filePath]);
 			this.gitStatus(filePath).then(results => {
 				let cache = this.gitStautsMap[filePath];
 				if (cache !== results && Util.diffObj(cache, results)) {
@@ -256,11 +251,10 @@ export default class {
 					});
 					this.gitStautsMap[filePath] = results;
 				}
+				this.gitStatusTimer[filePath] = setTimeout(() => {
+					_watchFileStatus.call(this, filePath);
+				}, 2000);
 			});
-			clearTimeout(this.gitStatusTimer[filePath]);
-			this.gitStatusTimer[filePath] = setTimeout(() => {
-				_watchFileStatus.call(this, filePath);
-			}, 2000);
 		}
 	}
 	stopWatchFileStatus(filePath) {
