@@ -145,8 +145,8 @@ export default {
 		setSize() {
 			this.width = this.$refs.wrap.clientWidth - 22;
 			this.height = this.$refs.wrap.clientHeight;
-			this.width = this.width < 1 ? 1 : this.width;
-			this.height = this.height < 1 ? 1 : this.height;
+			this.width = this.width < 0 ? 0 : this.width;
+			this.height = this.height < 0 ? 0 : this.height;
 			this.blockHeight = this.height * this.scale;
 			this.canvasHeight = this.height / this.scale;
 			this.maxVisibleLines = Math.ceil(this.canvasHeight / this.$parent.charObj.charHight) + 1;
