@@ -73,9 +73,9 @@ export default class {
 	}
 	storeTempData() {
 		globalData.editorList.forEach(item => {
-			if (!tab.saved && !tab.tempSaved) {
+			if (!item.saved && !item.tempSaved) {
 				Util.writeFileSync(path.join(globalData.cachePath, item.id), contexts[item.id].getAllText());
-				tab.tempSaved = true;
+				item.tempSaved = true;
 			}
 		});
 	}
@@ -84,6 +84,7 @@ export default class {
 		tab.tempSaved = false;
 		clearTimeout(this.storeTabDataTimer[id]);
 		this.storeTabDataTimer[id] = setTimeout(() => {
+			let tab = Util.getTabById(globalData.editorList, id);
 			if (tab && !tab.saved && !tab.tempSaved) {
 				Util.writeFile(path.join(globalData.cachePath, id), contexts[id].getAllText()).then(() => {
 					tab.tempSaved = true;
