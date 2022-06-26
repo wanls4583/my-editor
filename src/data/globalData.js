@@ -21,6 +21,8 @@ const nowIconTheme = {
 };
 const fileTreePath = path.join(remote.app.getPath('userData'), 'userData/file-tree.my');
 const configPath = path.join(remote.app.getPath('userData'), 'userData/config.my');
+const cachePath = path.join(remote.app.getPath('userData'), 'userData/cache');
+const tabPath = path.join(remote.app.getPath('userData'), 'userData/tab.my');
 let zoomLevel = 0;
 if (fs.existsSync(configPath)) {
 	try {
@@ -40,6 +42,8 @@ export default {
 	dirname: dirname,
 	configPath: configPath,
 	fileTreePath: fileTreePath,
+	cachePath: cachePath,
+	tabPath: tabPath,
 	zoomLevel: zoomLevel,
 	scopeIdMap: {},
 	scopeReg: null,

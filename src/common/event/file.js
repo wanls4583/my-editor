@@ -172,8 +172,10 @@ export default class {
 			} else {
 				if (fileObj) {
 					tab = Object.assign({}, fileObj);
-					this.watchFileStatus(fileObj.path);
-					this.watchFile(fileObj.path);
+					if (fileObj.path) {
+						this.watchFileStatus(fileObj.path);
+						this.watchFile(fileObj.path);
+					}
 				} else {
 					tab = this.createEmptyTabItem();
 				}
@@ -187,23 +189,28 @@ export default class {
 		}
 
 		function _done() {
-			if (tab && tab.path && !tab.loaded) {
-				tab.mtimeMs = fs.statSync(tab.path).mtimeMs;
-				tab.loaded = true;
-				Util.readFile(tab.path)
-					.then(data => {
-						contexts[tab.id].reload(data);
-						EventBus.$emit('file-saved', tab.path);
-						EventBus.$emit('file-opened', tab.path);
-						tab.saved = true;
-						//点击搜索结果
-						if (fileObj && fileObj.range) {
-							globalData.$mainWin.getEditor(tab.id).cursor.setCursorPos(Object.assign({}, fileObj.range.start));
-						}
-					})
-					.catch(() => {
-						tab.loaded = false;
-					});
+			if (tab && (tab.path || tab.tempPath) && !tab.loaded) {
+				let filePath = tab.tempPath || tab.path;
+				if (fs.existsSync(filePath)) {
+					tab.mtimeMs = fs.statSync(filePath).mtimeMs;
+					tab.loaded = true;
+					Util.readFile(filePath)
+						.then(data => {
+							contexts[tab.id].reload(data);
+							if (!tab.tempPath) {
+								EventBus.$emit('file-saved', tab.path);
+								EventBus.$emit('file-opened', tab.path);
+								tab.saved = true;
+							}
+							//点击搜索结果
+							if (fileObj && fileObj.range) {
+								globalData.$mainWin.getEditor(tab.id).cursor.setCursorPos(Object.assign({}, fileObj.range.start));
+							}
+						})
+						.catch(() => {
+							tab.loaded = false;
+						});
+				}
 			} else if (fileObj && fileObj.range) {
 				globalData.$mainWin.getEditor(tab.id).cursor.setCursorPos(Object.assign({}, fileObj.range.start));
 			}
@@ -384,6 +391,27 @@ export default class {
 		}
 		return fileObj;
 	}
+	createEmptyTabItem() {
+		let titleCount = this.titleCount++;
+		let icon = Util.getIconByPath({
+			iconData: globalData.nowIconData,
+			filePath: '',
+			fileType: 'file',
+			thmeType: globalData.nowTheme.type,
+		});
+		icon = icon ? `my-file-icon my-file-icon-${icon}` : '';
+		return {
+			id: 'file-' + titleCount,
+			name: 'Untitled' + titleCount,
+			path: '',
+			parentPath: '',
+			relativePath: '',
+			rootPath: '',
+			icon: icon,
+			active: false,
+			saved: true,
+		};
+	}
 	watchFile(filePath) {
 		if (this.fileWatcherMap[filePath]) {
 			return;
@@ -424,27 +452,6 @@ export default class {
 	}
 	watchFileStatus(filePath) {
 		EventBus.$emit('git-status-loop', filePath);
-	}
-	createEmptyTabItem() {
-		let titleCount = this.titleCount++;
-		let icon = Util.getIconByPath({
-			iconData: globalData.nowIconData,
-			filePath: '',
-			fileType: 'file',
-			thmeType: globalData.nowTheme.type,
-		});
-		icon = icon ? `my-file-icon my-file-icon-${icon}` : '';
-		return {
-			id: titleCount,
-			name: 'Untitled' + titleCount,
-			path: '',
-			parentPath: '',
-			relativePath: '',
-			rootPath: '',
-			icon: icon,
-			active: false,
-			saved: true,
-		};
 	}
 	getEditorMap() {
 		let editorMap = {};

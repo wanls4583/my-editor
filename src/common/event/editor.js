@@ -38,6 +38,9 @@ export default class {
 		EventBus.$on('editor-close-all', id => {
 			this.closeAll();
 		});
+		EventBus.$on('editor-loaded', list => {
+			this.loadEditor(list);
+		});
 		EventBus.$on('editor-content-change', data => {
 			let tab = Util.getTabById(this.editorList, data.id);
 			if (tab) {
@@ -228,6 +231,17 @@ export default class {
 			}
 		}
 		this.closeMultiple(editorList);
+	}
+	loadEditor(list) {
+		let activeTab = null;
+		list.forEach(tab => {
+			if (tab.active) {
+				activeTab = tab;
+			}
+			tab.active = false;
+			this.editorList.push(tab);
+		});
+		activeTab && this.changeTab(activeTab.id);
 	}
 	focusNowEditor() {
 		cancelAnimationFrame(this.closeTabTimer);

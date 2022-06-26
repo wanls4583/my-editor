@@ -138,6 +138,7 @@ export default {
 		this.initEvent();
 		this.initEventBus();
 		this.persistence.loadFileTree();
+		this.persistence.loadTabData();
 		if (this.mode === 'app') {
 			const currentWindow = remote.getCurrentWindow();
 			const size = remote.screen.getPrimaryDisplay().size;
@@ -158,7 +159,6 @@ export default {
 		window.test = this;
 		const theme = new Theme();
 		theme.loadTheme(globalData.nowTheme);
-		EventBus.$emit('file-open');
 		this.loadExtensions().then((result) => {
 			let langeuages = result.languages;
 			let themes = result.themes;
@@ -221,6 +221,10 @@ export default {
 				if (!data || data.id !== this.nowEditorId) {
 					this.diffVisible = false;
 				}
+			});
+			EventBus.$on('editor-content-change', (data) => {
+				// 保存修改过的内存到缓存
+				this.persistence.storeTempDataById(data.id);
 			});
 		},
 		onLeftSashBegin(e) {
