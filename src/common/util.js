@@ -544,14 +544,23 @@ class Util {
 			}
 		}
 	}
-	static getFileStatus(allFileStatusData, relativePath, rootPath) {
-		let fileStatus = allFileStatusData[relativePath] || allFileStatusData[rootPath] || {};
+	static getFileStatus(relativePath, rootPath) {
+		let fileStatus = globalData.fileStatus[relativePath] || globalData.fileStatus[rootPath] || {};
 		let status = '';
 		let statusColor = '';
 		if (typeof fileStatus === 'string') {
 			status = fileStatus;
 		} else {
 			status = fileStatus[relativePath] || '';
+		}
+		if (!status && globalData.dirStatus[rootPath]) {
+			let dirStatus = globalData.dirStatus[rootPath];
+			for (let i = 0; i < dirStatus.length; i++) {
+				if (relativePath.startsWith(dirStatus[i].path)) {
+					status = dirStatus[i].status;
+					break;
+				}
+			}
 		}
 		statusColor = Util.getFileStatusColor(status);
 
@@ -560,28 +569,18 @@ class Util {
 			statusColor: statusColor,
 		};
 	}
-	static getFileStatusLevel(status) {
-		let statusLeveMap = { U: 1, A: 2, M: 3, D: 4 };
-		let level = 0;
-		for (let i = 0; i < status.length; i++) {
-			if (statusLeveMap[status[i]] > level) {
-				level = statusLeveMap[status[i]];
-			}
-		}
-		return level;
-	}
 	static getFileStatusColor(status) {
 		let statusMap = {};
 		let statusColor = '';
 		for (let i = 0; i < status.length; i++) {
 			statusMap[status[i]] = true;
 		}
-		if (statusMap['U']) {
-			statusColor = 'my-status-untracked';
+		if (statusMap['M']) {
+			statusColor = 'my-status-modified';
 		} else if (statusMap['A']) {
 			statusColor = 'my-status-added';
-		} else if (statusMap['M']) {
-			statusColor = 'my-status-modified';
+		} else if (statusMap['?']) {
+			statusColor = 'my-status-untracked';
 		} else if (statusMap['D']) {
 			statusColor = 'my-status-deleted';
 		}

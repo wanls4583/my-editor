@@ -6,8 +6,9 @@ import { diffLinesRaw } from 'jest-diff';
 
 const spawnSync = window.require('child_process').spawnSync;
 const spawn = window.require('child_process').spawn;
-const fs = window.require('fs');
+const child_process = window.require('child_process');
 const path = window.require('path');
+const fs = window.require('fs');
 const contexts = Context.contexts;
 
 export default class {
@@ -20,9 +21,10 @@ export default class {
 		this.cacheIndexs = [];
 		this.fileCacheMap = { size: 0 };
 		this.init();
+		this.createStatusProcess();
 	}
 	init() {
-		EventBus.$on('git-status-loop', filePath => {
+		EventBus.$on('git-status-start', filePath => {
 			this.watchFileStatus(filePath);
 		});
 		EventBus.$on('git-status-stop', filePath => {
@@ -41,6 +43,9 @@ export default class {
 					);
 				}
 			}, 500);
+		});
+		EventBus.$on('window-close', () => {
+			this.statusProcess && this.statusProcess.kill();
 		});
 	}
 	getDiff(filePath, textArr) {
@@ -149,44 +154,48 @@ export default class {
 		}
 		return results;
 	}
-	gitStatus(filePath) {
-		let stat = fs.statSync(filePath);
-		let child = null;
-		if (stat.isFile()) {
-			child = spawn('git', ['status', '-s', path.basename(filePath)], { cwd: path.dirname(filePath) });
-		} else {
-			child = spawn('git', ['status', '-s'], { cwd: filePath });
+	cacheFile(fileIndex, stagedContent) {
+		if (this.fileCacheMap.size + stagedContent.length > this.maxCacheSize) {
+			let max = this.maxCacheSize - stagedContent.length;
+			while (this.cacheIndexs.length && this.fileCacheMap.size > max) {
+				let index = this.cacheIndexs.shift();
+				this.fileCacheMap.size -= this.fileCacheMap[index];
+				delete this.fileCacheMap[index];
+			}
 		}
-		return new Promise((resolve, reject) => {
-			let result = '';
-			child.stdout.on('data', data => {
-				result += data;
+		this.fileCacheMap[fileIndex] = stagedContent;
+		this.fileCacheMap.size += stagedContent.length;
+	}
+	createStatusProcess() {
+		this.statusProcess = child_process.fork(path.join(globalData.dirname, 'main/process/git/index.js'));
+		this.statusProcess.on('message', data => {
+			this.parseStatus(data);
+			EventBus.$emit('git-statused', {
+				path: data.path,
+				results: data.results,
 			});
-			child.stderr.on('data', () => {
-				reject();
-			});
-			child.on('close', () => {
-				resolve(this.parseStatus(result, filePath, stat));
-			});
+		});
+		this.statusProcess.on('close', () => {
+			this.createStatusProcess();
 		});
 	}
-	parseStatus(lines, filePath, stat) {
-		let results = [];
-		let statusMap = {};
-		let statusLevel = { A: 1, M: 2, D: 3 };
-		lines = lines.split('\n');
-		lines.forEach(line => {
-			let status = /^([\s\S]{2})\s*([^\s]+)\s*$/.exec(line);
-			if (status) {
-				let file = status[2];
-				file = path.join(file); //将'/'转换成对应平台的sep
-				status = status[1];
-				results.push({
-					path: file,
-					status: status,
-				});
-			}
+	watchFileStatus(filePath) {
+		this.statusProcess.send({
+			type: 'start',
+			path: filePath,
 		});
+	}
+	stopWatchFileStatus(filePath) {
+		this.statusProcess.send({ type: 'stop', path: filePath });
+		delete globalData.fileStatus[filePath];
+	}
+	parseStatus(data) {
+		let filePath = data.path;
+		let results = data.results;
+		let statusMap = {};
+		let dirStatus = [];
+		let statusLevel = { '?': 1, A: 2, M: 3, D: 4 };
+		let stat = fs.statSync(filePath);
 		if (stat.isFile()) {
 			if (results.length) {
 				globalData.fileStatus[filePath] = results[0].status;
@@ -195,6 +204,7 @@ export default class {
 			}
 		} else {
 			globalData.fileStatus[filePath] = statusMap;
+			globalData.dirStatus[filePath] = dirStatus;
 			results.forEach(item => {
 				let parentPath = path.dirname(item.path);
 				statusMap[item.path] = item.status;
@@ -208,70 +218,14 @@ export default class {
 					}
 					parentPath = path.dirname(parentPath);
 				}
-				if (statusLevel[item.status] > statusLevel[''] || !statusLevel['']) {
+				if (statusLevel[item.status] > statusLevel[statusMap['']] || !statusMap['']) {
 					statusMap[''] = item.status;
 				}
-			});
-		}
-		return results;
-	}
-	cacheFile(fileIndex, stagedContent) {
-		if (this.fileCacheMap.size + stagedContent.length > this.maxCacheSize) {
-			let max = this.maxCacheSize - stagedContent.length;
-			while (this.cacheIndexs.length && this.fileCacheMap.size > max) {
-				let index = this.cacheIndexs.shift();
-				this.fileCacheMap.size -= this.fileCacheMap[index];
-				delete this.fileCacheMap[index];
-			}
-		}
-		this.fileCacheMap[fileIndex] = stagedContent;
-		this.fileCacheMap.size += stagedContent.length;
-	}
-	watchFileStatus(filePath) {
-		this.gitStatusTimer[filePath] = setTimeout(() => {
-			_watchFileStatus.call(this, filePath);
-		}, 100);
-
-		function _watchFileStatus(filePath) {
-			let stat = null;
-			if (!fs.existsSync(filePath)) {
-				return;
-			}
-			stat = fs.statSync(filePath);
-			if (stat.isDirectory() && Util.getFileItemByPath(globalData.fileTree, filePath).length === 0) {
-				return;
-			}
-			clearTimeout(this.gitStatusTimer[filePath]);
-			this.gitStatus(filePath).then(results => {
-				let cache = this.gitStautsMap[filePath];
-				if (cache !== results && Util.diffObj(cache, results)) {
-					EventBus.$emit('git-statused', {
-						path: filePath,
-						results: results,
-					});
-					this.gitStautsMap[filePath] = results;
+				if (item.path[item.path.length - 1] === path.sep) {
+					dirStatus.push({ path: item.path.slice(0, -1), status: item.status });
 				}
-				this.gitStatusTimer[filePath] = setTimeout(() => {
-					_watchFileStatus.call(this, filePath);
-				}, 2000);
 			});
 		}
-	}
-	stopWatchFileStatus(filePath) {
-		clearTimeout(this.gitStatusTimer[filePath]);
-		delete this.gitStautsMap[filePath];
-	}
-	checkGitRep(cwd) {
-		let child = spawn('git', ['rev-parse', '--is-inside-work-tree'], { cwd: cwd });
-		return new Promise(resolve => {
-			let result = '';
-			child.stdout.on('data', data => {
-				result += data;
-			});
-			child.on('close', () => {
-				resolve(result.startsWith('true'));
-			});
-		});
 	}
 	getNowHash(filePath, cwd) {
 		return spawnSync('git', ['log', '-1', '--format=%H'], { cwd: cwd || path.dirname(filePath) }).stdout.toString();

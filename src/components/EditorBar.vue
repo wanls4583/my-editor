@@ -80,7 +80,7 @@ export default {
 					let status = null;
 					let statusColor = '';
 					if (item.path === data.path) {
-						status = Util.getFileStatus(globalData.fileStatus, item.path);
+						status = Util.getFileStatus(item.path);
 						statusColor = status.statusColor;
 						status = status.status;
 						if (item.status !== status) {

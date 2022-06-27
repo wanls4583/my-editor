@@ -59,6 +59,7 @@ export default {
 	fileTree: [],
 	openedFileList: [],
 	fileStatus: {},
+	dirStatus: {},
 	fileDiff: {},
 	terminalList: [],
 	editorList: [],

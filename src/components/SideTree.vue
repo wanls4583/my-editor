@@ -19,7 +19,7 @@
 							<span class="left-icon iconfont icon-down1" v-if="item.open"></span>
 							<span class="left-icon iconfont icon-right" v-else></span>
 						</template>
-						<div :class="[item.icon, item.statusColor]" class="tree-item-content my-center-start">
+						<div :class="[item.icon, item.statusColor]" class="tree-item-content">
 							<div class="my-center-between" style="width:100%;overflow:hidden">
 								<span class="tree-item-text">{{item.name}}</span>
 								<span style="margin:0 5px 0 10px;flex-shrink:0" v-if="item.type === 'file'">{{item.status}}</span>
@@ -201,7 +201,7 @@ export default {
 						});
 						item.icon = item.icon ? `my-file-icon my-file-icon-${item.icon}` : '';
 					}
-					item.status = Util.getFileStatus(globalData.fileStatus, item.gitRelativePath || '', item.gitRootPath);
+					item.status = Util.getFileStatus(item.gitRelativePath || '', item.gitRootPath);
 					item.statusColor = item.status.statusColor;
 					item.status = item.status.status;
 				});
@@ -369,7 +369,7 @@ export default {
 				if (item.type === 'dir' && !item.gitRootPath && fs.existsSync(item.path)) {
 					if ((item.deep === 0 && Util.checkGitRep(item.path)) || (item.deep > 0 && fs.existsSync(path.join(item.path, '.git')))) {
 						this.updateGitRootPath(item, item.path);
-						EventBus.$emit('git-status-loop', item.path);
+						EventBus.$emit('git-status-start', item.path);
 					} else {
 						this.watchFileStatus(item.children);
 					}

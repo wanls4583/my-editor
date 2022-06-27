@@ -10,6 +10,9 @@ const contexts = Context.contexts;
 export default class {
 	constructor() {
 		this.storeTabDataTimer = {};
+		EventBus.$on('window-close', () => {
+			this.storeData();
+		});
 	}
 	storeData() {
 		this.storeGlobalData();
@@ -81,15 +84,17 @@ export default class {
 	}
 	storeTempDataById(id) {
 		let tab = Util.getTabById(globalData.editorList, id);
-		tab.tempSaved = false;
-		clearTimeout(this.storeTabDataTimer[id]);
-		this.storeTabDataTimer[id] = setTimeout(() => {
-			let tab = Util.getTabById(globalData.editorList, id);
-			if (tab && !tab.saved && !tab.tempSaved) {
-				Util.writeFile(path.join(globalData.cachePath, id), contexts[id].getAllText()).then(() => {
-					tab.tempSaved = true;
-				});
-			}
-		}, 5000);
+		if (tab) {
+			tab.tempSaved = false;
+			clearTimeout(this.storeTabDataTimer[id]);
+			this.storeTabDataTimer[id] = setTimeout(() => {
+				let tab = Util.getTabById(globalData.editorList, id);
+				if (tab && !tab.saved && !tab.tempSaved) {
+					Util.writeFile(path.join(globalData.cachePath, id), contexts[id].getAllText()).then(() => {
+						tab.tempSaved = true;
+					});
+				}
+			}, 5000);
+		}
 	}
 }

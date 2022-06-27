@@ -130,6 +130,8 @@ export default {
 		};
 	},
 	created() {
+		const currentWindow = remote.getCurrentWindow();
+		const size = remote.screen.getPrimaryDisplay().size;
 		window.globalData = globalData;
 		globalData.$mainWin = this;
 		this.commonEvent = new CommonEvent(this);
@@ -139,21 +141,31 @@ export default {
 		this.initEventBus();
 		this.persistence.loadFileTree();
 		this.persistence.loadTabData();
-		if (this.mode === 'app') {
-			const currentWindow = remote.getCurrentWindow();
-			const size = remote.screen.getPrimaryDisplay().size;
-			currentWindow.on('blur', () => {
-				EventBus.$emit('close-menu');
-			});
-			currentWindow.on('close', (e) => {
-				this.persistence.storeData();
-			});
-			// 大尺寸屏幕上，放大显示比例
-			// if (size.width > 1400) {
-			// 	globalData.zoomLevel = 0.5;
-			// }
-			remote.getCurrentWindow().webContents.setZoomLevel(globalData.zoomLevel);
-		}
+		currentWindow.on('blur', () => {
+			EventBus.$emit('close-menu');
+		});
+		currentWindow.on('close', (e) => {
+			this.closeMain = true;
+		});
+		window.onbeforeunload = (e) => {
+			if (!this.preCloseDone) {
+				EventBus.$emit('window-close');
+				e.returnValue = false;
+				setTimeout(() => {
+					this.preCloseDone = true;
+					if (this.closeMain) {
+						currentWindow.close();
+					} else {
+						currentWindow.reload();
+					}
+				}, 0);
+			}
+		};
+		// 大尺寸屏幕上，放大显示比例
+		// if (size.width > 1400) {
+		// 	globalData.zoomLevel = 0.5;
+		// }
+		remote.getCurrentWindow().webContents.setZoomLevel(globalData.zoomLevel);
 	},
 	mounted() {
 		window.test = this;

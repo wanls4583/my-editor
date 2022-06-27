@@ -31,6 +31,9 @@ export default class {
 				option.success && option.success();
 			});
 		});
+		EventBus.$on('file-watch-start', filePath => {
+			this.watchFile(filePath);
+		});
 		EventBus.$on('file-watch-stop', filePath => {
 			this.stopWatchFile(filePath);
 		});
@@ -160,8 +163,8 @@ export default class {
 							this.editorList.empty();
 							this.editorList.push(...editorList);
 							results.forEach(item => {
-								this.watchFileStatus(item.path);
 								this.watchFile(item.path);
+								EventBus.$emit('git-status-start', tem.path);
 							});
 						} else {
 							tab = editorMap[firstId];
@@ -173,8 +176,8 @@ export default class {
 				if (fileObj) {
 					tab = Object.assign({}, fileObj);
 					if (fileObj.path) {
-						this.watchFileStatus(fileObj.path);
 						this.watchFile(fileObj.path);
+						EventBus.$emit('git-status-start', fileObj.path);
 					}
 				} else {
 					tab = this.createEmptyTabItem();
@@ -444,9 +447,6 @@ export default class {
 			delete this.fileWatcherMap[filePath];
 			delete this.fileWatcherTimer[filePath];
 		}
-	}
-	watchFileStatus(filePath) {
-		EventBus.$emit('git-status-loop', filePath);
 	}
 	getEditorMap() {
 		let editorMap = {};

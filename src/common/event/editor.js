@@ -240,6 +240,10 @@ export default class {
 			}
 			tab.active = false;
 			this.editorList.push(tab);
+			if (tab.path) {
+				EventBus.$emit('file-watch-start', tab.path);
+				EventBus.$emit('git-status-start', tab.path);
+			}
 		});
 		activeTab && this.changeTab(activeTab.id);
 	}

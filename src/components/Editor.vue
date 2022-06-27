@@ -553,7 +553,7 @@ export default {
 				(this.initEventBusFn6 = (data) => {
 					if (this.tabData.path === data.path) {
 						let status = null;
-						status = Util.getFileStatus(globalData.fileStatus, this.tabData.path);
+						status = Util.getFileStatus(this.tabData.path);
 						if (this.preStatus !== status.status) {
 							this.active && EventBus.$emit('git-diff', this.tabData.path);
 							this.preStatus = status.status;
@@ -585,6 +585,9 @@ export default {
 					}
 				})
 			);
+			EventBus.$on('window-close', () => {
+				this.lint.worker && this.lint.worker.kill();
+			});
 		},
 		unbindEvent() {
 			$(document).unbind('mousemove', this.initEventFn1);

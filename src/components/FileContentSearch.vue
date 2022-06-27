@@ -94,7 +94,6 @@
 <script>
 import EventBus from '@/event';
 import FileContentSearchResults from './FileContentSearchResults.vue';
-import Searcher from '../module/file-content-search';
 import Util from '@/common/util';
 
 const path = window.require('path');
