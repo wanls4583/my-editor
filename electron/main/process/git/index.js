@@ -8,11 +8,11 @@ class StatusWatcher {
 		this.gitStautsMap = {};
 		this.gitDiffTimer = {};
 		this.gitStatusQueue = [];
+		this.pathList = [];
 	}
 	checkQueue() {
 		if (this.gitStatusQueue.length > 0) {
 			let filePath = this.gitStatusQueue.shift();
-			this.gitStatusing = true;
 			this.gitStatus(filePath).then(results => {
 				let cache = this.gitStautsMap[filePath];
 				if (cache !== results && JSON.stringify(cache) !== JSON.stringify(results)) {
@@ -94,6 +94,7 @@ class StatusWatcher {
 		if (!fs.existsSync(filePath)) {
 			return;
 		}
+		this.pathList.push(filePath);
 		this.addToQueue(filePath);
 	}
 	stopWatchFileStatus(filePath) {
@@ -101,8 +102,26 @@ class StatusWatcher {
 		if (index > -1) {
 			this.gitStatusQueue.splice(index, 1);
 		}
+		index = this.pathList.indexOf(filePath);
+		if (index > -1) {
+			this.pathList.splice(index, 1);
+		}
 		clearTimeout(this.gitStatusTimer[filePath]);
 		delete this.gitStautsMap[filePath];
+		let stat = fs.statSync(filePath);
+		if (stat.isDirectory()) {
+			this.pathList.forEach(item => {
+				try {
+					let stat = fs.statSync(item);
+					if (stat.isDirectory() && item.startsWith(filePath)) {
+						clearTimeout(this.gitStatusTimer[item]);
+						delete this.gitStautsMap[item];
+					}
+				} catch (e) {
+					console.log(e)
+				}
+			});
+		}
 	}
 }
 
