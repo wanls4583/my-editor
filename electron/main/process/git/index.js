@@ -19,9 +19,7 @@ class StatusWatcher {
 					this.gitStautsMap[filePath] = results;
 					process.send({ path: filePath, results });
 				}
-				this.checkQueueTimer = setTimeout(() => {
-					this.checkQueue();
-				}, 15);
+				this.checkQueue();
 				clearTimeout(this.gitStatusTimer[filePath]);
 				this.gitStatusTimer[filePath] = setTimeout(() => {
 					this.addToQueue(filePath);
@@ -36,7 +34,7 @@ class StatusWatcher {
 		if (!this.checkQueueTimer) {
 			this.checkQueueTimer = setTimeout(() => {
 				this.checkQueue();
-			}, 15);
+			}, 100);
 		}
 	}
 	gitStatus(filePath) {
@@ -118,7 +116,7 @@ class StatusWatcher {
 						delete this.gitStautsMap[item];
 					}
 				} catch (e) {
-					console.log(e)
+					console.log(e);
 				}
 			});
 		}
