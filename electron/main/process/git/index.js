@@ -19,7 +19,9 @@ class StatusWatcher {
 					this.gitStautsMap[filePath] = results;
 					process.send({ path: filePath, results });
 				}
-				this.checkQueue();
+				this.checkQueueTimer = setTimeout(() => {
+					this.checkQueue();
+				}, 100);
 				clearTimeout(this.gitStatusTimer[filePath]);
 				this.gitStatusTimer[filePath] = setTimeout(() => {
 					this.addToQueue(filePath);
