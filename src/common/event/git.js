@@ -228,6 +228,7 @@ export default class {
 		this.fileCacheMap.size += stagedContent.length;
 	}
 	watchFileStatus(filePath) {
+		return;
 		this.gitStatusTimer[filePath] = setTimeout(() => {
 			_watchFileStatus.call(this, filePath);
 		}, 100);

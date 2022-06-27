@@ -21,7 +21,7 @@ export default class {
         this.activedRanges = new Btree(comparator);
     }
     initProperties(editor, context) {
-        Util.defineProperties(this, editor, ['cursor', 'renderSelectedBg', 'clearSelectionToken']);
+        Util.defineProperties(this, editor, ['cursor', 'renderSelectedBgAsync', 'clearSelectionToken']);
         Util.defineProperties(this, context, ['htmls']);
         this.setContextData = (prop, value) => {
             context.setData(prop, value);
@@ -124,7 +124,7 @@ export default class {
                 }
             }
         });
-        this.renderSelectedBg();
+        this.renderSelectedBgAsync();
     }
     selectAll() {
         let end = {
@@ -140,7 +140,7 @@ export default class {
             },
             end
         );
-        this.renderSelectedBg();
+        this.renderSelectedBgAsync();
     }
     selectAllOccurence() {
         this.cursor.clearCursorPos();
@@ -151,7 +151,7 @@ export default class {
                 this.activedRanges.insert(item);
             }
         });
-        this.renderSelectedBg();
+        this.renderSelectedBgAsync();
     }
     addActive(cursorPos) {
         let range = this.getRangeByCursorPos(cursorPos);
@@ -159,7 +159,7 @@ export default class {
             range.active = true;
             this.activedRanges.insert(range);
         }
-        this.renderSelectedBg();
+        this.renderSelectedBgAsync();
     }
     // 添加选中区域
     addRange(ranges) {
@@ -202,7 +202,7 @@ export default class {
                 this.filterRange(range);
             }
         });
-        this.renderSelectedBg();
+        this.renderSelectedBgAsync();
         return ranges instanceof Array ? results : results[0];
     }
     removeRange(range) {
@@ -213,7 +213,7 @@ export default class {
             }
             this.cursor.removeCursor(range.start);
             this.cursor.removeCursor(range.end);
-            this.renderSelectedBg();
+            this.renderSelectedBgAsync();
         }
     }
     /**
@@ -239,7 +239,7 @@ export default class {
         this.clearRange();
         this.ranges.insert(range);
         active && this.activedRanges.insert(range);
-        this.renderSelectedBg();
+        this.renderSelectedBgAsync();
         return range;
     }
     setActive(cursorPos) {
@@ -252,7 +252,7 @@ export default class {
             range.active = true;
             this.activedRanges.insert(range);
         }
-        this.renderSelectedBg();
+        this.renderSelectedBgAsync();
     }
     updateRange(target, range) {
         let start = range.start;
@@ -272,7 +272,7 @@ export default class {
         target.end.column = end.column;
         this.ranges.insert(target);
         this.filterRange(target);
-        this.renderSelectedBg();
+        this.renderSelectedBgAsync();
     }
     filterRange(range) {
         let it = this.ranges.search(range);
@@ -314,14 +314,14 @@ export default class {
     clearRange() {
         this.ranges.empty();
         this.activedRanges.empty();
-        this.renderSelectedBg();
+        this.renderSelectedBgAsync();
     }
     clearActive() {
         this.activedRanges.forEach((item) => {
             item.active = false;
         });
         this.activedRanges.empty();
-        this.renderSelectedBg();
+        this.renderSelectedBgAsync();
     }
     clearInactiveRange() {
         if (!this.activedRanges.size) {
@@ -332,7 +332,7 @@ export default class {
                     this.ranges.delete(item);
                 }
             });
-            this.renderSelectedBg();
+            this.renderSelectedBgAsync();
         }
     }
     clone(range, properties) {

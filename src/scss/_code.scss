@@ -22,6 +22,10 @@
 				background-color: var(--my-editor-lineHighlightBackground);
 			}
 		}
+
+		.my-select-bg {
+			position: static;
+		}
 	}
 
 	&-diff-inserted,

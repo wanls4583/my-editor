@@ -172,6 +172,7 @@ export default {
 		render() {
 			this.renderLines();
 			this.renderDiff();
+			this.renderSelectedBg();
 		},
 		renderLines() {
 			let lines = [];

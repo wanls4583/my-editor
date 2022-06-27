@@ -196,7 +196,7 @@ export default {
 				}
 				if (!refreshTimer) {
 					refreshTimer = setTimeout(() => {
-						this.$refs.results.addResults(results);
+						// this.$refs.results.addResults(results);
 						results = [];
 						refreshTimer = null;
 					}, 15);

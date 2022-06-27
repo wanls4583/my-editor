@@ -45,7 +45,7 @@
 				>
 					<div class="my-lines-view" ref="lineView">
 						<div :class="[_diffBg(line.num)]" :data-line="line.num" :id="_lineId(line.num)" :style="{top: line.top}" class="my-line" v-for="line in renderObjs">
-							<div :class="[line.fold == 'close' ? 'fold-close' : '', selectedFg && line.selected ? 'my-select-fg' : '']" :data-line="line.num" class="my-code" v-html="line.html"></div>
+							<div :class="[line.fold == 'close' ? 'fold-close' : '', line.bgClass]" :data-line="line.num" class="my-code" v-html="line.html"></div>
 						</div>
 					</div>
 					<div class="my-cursor-view" ref="cursorView">
@@ -761,34 +761,48 @@ export default {
 			if (renderObj) {
 				let lineObj = this.myContext.htmls[renderObj.num - 1];
 				if (lineObj && lineObj.lineId === lineId) {
+					let bgClass = renderObj.bgClass;
 					Object.assign(renderObj, this.getRenderObj(lineObj, renderObj.num));
+					renderObj.bgClass = bgClass;
 					this.$set(this.renderObjs, renderObj.index, renderObj);
 					this.renderSelectionToken(renderObj.num);
 					this.renderError(renderObj.num);
 				}
 			}
 		},
+		renderSelectedBgAsync() {
+			if (this.renderSelectedBgTimer) {
+				return;
+			}
+			this.renderSelectedBgTimer = setTimeout(() => {
+				this.renderSelectedBg();
+				this.$refs.minimap.renderSelectedBg();
+				this.renderSelectedBgTimer = null;
+			}, 15);
+		},
 		renderSelectedBg() {
-			cancelAnimationFrame(this.renderSelectedBgTimer);
-			this.renderSelectedBgTimer = requestAnimationFrame(() => {
-				this.activeLineBg = true;
-				this.clearSelectionToken();
-				this.renderSelectionObjs = [];
-				this.fSelecter.ranges.forEach((range) => {
-					this._renderSelectedBg(range, true);
-				});
-				this.selecter.ranges.forEach((range) => {
-					let _range = this.fSelecter.getRangeByCursorPos(range.start);
-					if (this.searchVisible) {
-						// 优先渲染搜索框的选中范围
-						if (!_range && range.active) {
-							this._renderSelectedBg(range);
-						}
-					} else {
+			clearTimeout(this.renderSelectedBgTimer);
+			this.renderSelectedBgTimer = null;
+			this.activeLineBg = true;
+			this.clearSelectionToken();
+			this.renderSelectionObjs = [];
+			this.fSelecter.ranges.forEach((range) => {
+				this._renderSelectedBg(range, true);
+			});
+			this.renderObjs.forEach((renderObj, index) => {
+				renderObj.bgClass = '';
+				this.$set(this.renderObjs, index, renderObj);
+			});
+			this.selecter.ranges.forEach((range) => {
+				let _range = this.fSelecter.getRangeByCursorPos(range.start);
+				if (this.searchVisible) {
+					// 优先渲染搜索框的选中范围
+					if (!_range && range.active) {
 						this._renderSelectedBg(range);
 					}
-				});
-				this.$refs.minimap && this.$refs.minimap.renderSelectedBg();
+				} else {
+					this._renderSelectedBg(range);
+				}
 			});
 		},
 		// 渲染选中背景
@@ -799,22 +813,26 @@ export default {
 			let end = range.end;
 			let text = this.myContext.htmls[start.line - 1].text;
 			let endColumn = text.length;
+			let cross = false;
 			firstLine = firstLine > start.line + 1 ? firstLine : start.line + 1;
 			lastLine = lastLine < end.line - 1 ? lastLine : end.line - 1;
-			for (let i = 0; i < this.renderObjs.length; i++) {
-				let renderObj = this.renderObjs[i];
-				if (renderObj.num >= firstLine && renderObj.num <= lastLine) {
-					let lineObj = this.myContext.htmls[renderObj.num - 1];
-					let width = document.getElementById(this._lineId(renderObj.num)).querySelector('div.my-code').clientWidth || 10;
-					this.renderSelectionObjs.push({
-						left: 0,
-						top: renderObj.top,
-						width: width + 'px',
-						active: range.active,
-						isFsearch: isFsearch,
-					});
-					// range.active为false时，样式可能只显示边框，不改变字体颜色和背景
-					renderObj.selected = range.active;
+			cross = firstLine <= this.startLine && lastLine >= this.startLine;
+			cross = cross || (firstLine >= this.startLine && lastLine <= this.endLine);
+			cross = cross || (firstLine <= this.endLine && lastLine >= this.endLine);
+			if (cross) {
+				for (let i = 0; i < this.renderObjs.length; i++) {
+					let renderObj = this.renderObjs[i];
+					if (renderObj.num >= firstLine && renderObj.num <= lastLine) {
+						renderObj.bgClass = 'my-select-bg';
+						if (range.active) {
+							renderObj.bgClass += ' my-active';
+						}
+						// range.active为false时，样式可能只显示边框，不改变字体颜色和背景
+						if (range.active && range.isFsearch && this.selectedFg) {
+							renderObj.bgClass += ' my-select-fg';
+						}
+						this.$set(this.renderObjs, i, renderObj);
+					}
 				}
 			}
 			if (this.renderedLineMap[start.line]) {
@@ -959,8 +977,8 @@ export default {
 			});
 		},
 		renderBracketMatch() {
-			cancelAnimationFrame(this.bracketMatchTimer);
-			this.bracketMatchTimer = requestAnimationFrame(() => {
+			clearTimeout(this.bracketMatchTimer);
+			this.bracketMatchTimer = setTimeout(() => {
 				this.bracketMatch = null;
 				this.folder.getBracketMatch(this.nowCursorPos, (bracketMatch) => {
 					let lineObj = null;
@@ -979,7 +997,7 @@ export default {
 						pos.top = (this.folder.getRelativeLine(pos.line) - 1) * this.charObj.charHight - this.deltaTop + 'px';
 					}
 				});
-			});
+			}, 15);
 		},
 		// 清除选中前景色
 		clearSelectionToken() {
@@ -1472,6 +1490,7 @@ export default {
 				top: top,
 				tabNum: tabNum,
 				fold: fold,
+				bgClass: '',
 				isFsearch: false,
 				selected: false,
 				selection: [],
