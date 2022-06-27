@@ -1000,7 +1000,7 @@ export default {
 						pos.top = (this.folder.getRelativeLine(pos.line) - 1) * this.charObj.charHight - this.deltaTop + 'px';
 					}
 				});
-			}, 15);
+			}, 100);
 		},
 		// 清除选中前景色
 		clearSelectionToken() {
