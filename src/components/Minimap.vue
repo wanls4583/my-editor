@@ -251,8 +251,9 @@ export default {
 			this.worker.postMessage({ event: 'render-selected-bg', data: results });
 
 			function _getLength(text) {
-				text = text.replace(/\t/g, '    ');
-				return text.length;
+				let tabNum = text.match(/\t/);
+				tabNum = (tabNum && tabNum.length) || 0;
+				return text.length + 3 * tabNum;
 			}
 		},
 		renderDiff() {
