@@ -105,7 +105,7 @@ export default {
 		showLanguage() {
 			let cmdList = globalData.languageList.map((item) => {
 				let icon = Util.getIconByExtensions(item.extensions || []);
-				icon = icon ? `my-file-icon my-file-icon-${icon}` : 'my-file-icon';
+				icon = icon ? `my-file-icon my-file-icon-${icon}` : '';
 				return {
 					op: 'selectLanguage',
 					name: item.name + (item.language ? `（${item.language}）` : ''),

@@ -64,10 +64,11 @@
 			display: flex;
 			align-items: center;
 
-			&.my-file-icon {
+			.my-file-icon {
+				display: flex;
+
 				&::before {
-					content: '';
-					margin-left: 0;
+					margin-left: -3px;
 				}
 			}
 		}

@@ -18,7 +18,8 @@
 						class="my-menu-item my-center-between my-hover"
 						v-for="item in group"
 					>
-						<div :class="[item.icon]" class="my-menu-title">
+						<div class="my-menu-title">
+							<span :class="[item.icon]" style="width:22px"></span>
 							<span>{{ item.name }}</span>
 						</div>
 						<div class="my-menu-shortcut" v-if="item.shortcut">
