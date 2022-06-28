@@ -261,13 +261,10 @@ export default class {
 						stack.push(fold);
 					} else if (fold.side < 0 && (line < cursorPos.line || fold.startIndex <= cursorPos.column)) {
 						let exsitEnd = false;
-						if (stack.length) {
-							for (let i = stack.length - 1; i >= 0; i--) {
-								if (stack[i].side + fold.side === 0) {
-									stack.splice(i, 1);
-									exsitEnd = true;
-									break;
-								}
+						while (stack.length) {
+							if (stack.pop().side + fold.side === 0) {
+								exsitEnd = true;
+								break;
 							}
 						}
 						if (!exsitEnd) {
@@ -280,7 +277,7 @@ export default class {
 				}
 				line--;
 				count++;
-				if (count >= 100 || Date.now() - startTime > 2) {
+				if (count >= 50 || Date.now() - startTime > 2) {
 					break;
 				}
 			}
