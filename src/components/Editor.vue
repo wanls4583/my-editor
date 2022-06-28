@@ -554,9 +554,9 @@ export default {
 					if (this.tabData.path === data.path) {
 						let status = null;
 						status = Util.getFileStatus(this.tabData.path);
-						if (this.preStatus !== status.status) {
+						if (this.preStatus !== status.originStatus) {
 							this.active && EventBus.$emit('git-diff', this.tabData.path);
-							this.preStatus = status.status;
+							this.preStatus = status.originStatus;
 						}
 					}
 				})

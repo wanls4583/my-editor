@@ -547,12 +547,15 @@ class Util {
 	static getFileStatus(relativePath, rootPath) {
 		let fileStatus = globalData.fileStatus[relativePath] || globalData.fileStatus[rootPath] || {};
 		let status = '';
+		let originStatus = '';
 		let statusColor = '';
 		if (typeof fileStatus === 'string') {
 			status = fileStatus;
 		} else {
 			status = fileStatus[relativePath] || '';
 		}
+		originStatus = status;
+		status = _getStatus(status);
 		if (!status && globalData.dirStatus[rootPath]) {
 			let dirStatus = globalData.dirStatus[rootPath];
 			for (let i = 0; i < dirStatus.length; i++) {
@@ -565,9 +568,29 @@ class Util {
 		statusColor = Util.getFileStatusColor(status);
 
 		return {
-			status: status,
-			statusColor: statusColor,
+			status,
+			originStatus,
+			statusColor,
 		};
+
+		function _getStatus(status) {
+			Util.getFileStatus.statusMap = Util.getFileStatus.statusMap || {};
+			let result = Util.getFileStatus.statusMap[status];
+			if (result) {
+				return result;
+			}
+			let level = 0;
+			let statusLeveMap = { '?': 1, A: 2, M: 3, D: 4 };
+			result = '';
+			for (let i = 0; i < status.length; i++) {
+				if (statusLeveMap[status[i]] > level) {
+					level = statusLeveMap[status[i]];
+					result = status[i];
+				}
+			}
+			Util.getFileStatus.statusMap[status] = result;
+			return result;
+		}
 	}
 	static getFileStatusColor(status) {
 		let statusMap = {};

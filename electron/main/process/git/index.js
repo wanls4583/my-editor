@@ -19,13 +19,14 @@ class StatusWatcher {
 					this.gitStautsMap[filePath] = results;
 					process.send({ path: filePath, results });
 				}
+				// 延迟执行时间，否则Microsoft-Defender将消耗大量CUP资源
 				this.checkQueueTimer = setTimeout(() => {
 					this.checkQueue();
-				}, 100);
+				}, 500);
 				clearTimeout(this.gitStatusTimer[filePath]);
 				this.gitStatusTimer[filePath] = setTimeout(() => {
 					this.addToQueue(filePath);
-				}, 2000);
+				}, 500);
 			});
 		} else {
 			this.checkQueueTimer = null;
@@ -36,7 +37,7 @@ class StatusWatcher {
 		if (!this.checkQueueTimer) {
 			this.checkQueueTimer = setTimeout(() => {
 				this.checkQueue();
-			}, 100);
+			}, 500);
 		}
 	}
 	gitStatus(filePath) {
@@ -68,27 +69,13 @@ class StatusWatcher {
 			if (status) {
 				let file = status[2];
 				file = path.join(file); //将'/'转换成对应平台的sep
-				status = _getStatus(status[1]);
 				results.push({
 					path: file,
-					status: status,
+					status: status[1],
 				});
 			}
 		});
 		return results;
-
-		function _getStatus(status) {
-			let statusLeveMap = { '?': 1, A: 2, M: 3, D: 4 };
-			let level = 0;
-			let result = '';
-			for (let i = 0; i < status.length; i++) {
-				if (statusLeveMap[status[i]] > level) {
-					level = statusLeveMap[status[i]];
-					result = status[i];
-				}
-			}
-			return result;
-		}
 	}
 	watchFileStatus(filePath) {
 		if (!fs.existsSync(filePath)) {
