@@ -5,6 +5,7 @@ const path = require('path');
 class StatusWatcher {
 	constructor() {
 		this.gitDirMap = {};
+		this.gitChache = {};
 		this.gitTimer = {};
 	}
 	gitStatus(gitDir) {
@@ -29,7 +30,11 @@ class StatusWatcher {
 				});
 			}).then(results => {
 				if (this.gitDirMap[gitDir]) {
-					process.send({ gitDir: gitDir, paths: this.gitDirMap[gitDir].paths, results });
+					let cache = this.gitChache[gitDir];
+					if (JSON.stringify(cache) !== JSON.stringify(results)) {
+						process.send({ gitDir: gitDir, paths: this.gitDirMap[gitDir].paths, results });
+						this.gitChache[gitDir] = results;
+					}
 				}
 			});
 		}, 100);
@@ -67,6 +72,8 @@ class StatusWatcher {
 					}
 				});
 				this.gitDirMap[gitDir] = { watcher: watcher, paths: [filePath] };
+				this.gitChache[gitDir] = [];
+				this.gitStatus(gitDir, this.gitDirMap[gitDir].paths);
 			}
 		}
 	}
@@ -80,6 +87,7 @@ class StatusWatcher {
 				if (gitDir.paths.length === 0) {
 					gitDir.watcher.close();
 					delete this.gitDirMap[gitDir];
+					delete this.gitChache[gitDir];
 				}
 			}
 		}
@@ -90,7 +98,7 @@ class StatusWatcher {
 			minLen = 3;
 		}
 		while (filePath.length > minLen) {
-			if (fs.existsSync(filePath, '.git')) {
+			if (fs.existsSync(path.join(filePath, '.git'))) {
 				return filePath;
 			}
 			filePath = path.dirname(filePath);
