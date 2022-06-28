@@ -19,7 +19,7 @@
 						v-for="item in group"
 					>
 						<div class="my-menu-title">
-							<span :class="[item.icon]" style="width:22px"></span>
+							<span :class="[item.icon]"></span>
 							<span>{{ item.name }}</span>
 						</div>
 						<div class="my-menu-shortcut" v-if="item.shortcut">

@@ -164,7 +164,7 @@ export default class {
 							this.editorList.push(...editorList);
 							results.forEach(item => {
 								this.watchFile(item.path);
-								EventBus.$emit('git-status-start', tem.path);
+								EventBus.$emit('git-status-start', item.path);
 							});
 						} else {
 							tab = editorMap[firstId];
