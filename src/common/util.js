@@ -444,9 +444,6 @@ class Util {
 		let suffix1 = '';
 		let suffix2 = '';
 		fileName = fileName && fileName[0];
-		if (!iconData) {
-			return '';
-		}
 		if (fileName) {
 			suffix1 = /(?<=\.)[^\.]+$/.exec(fileName);
 			suffix2 = /(?<=\.)[^\.]+\.[^\.]+$/.exec(fileName);
@@ -464,7 +461,7 @@ class Util {
 				if (isRoot && iconData.rootFolderExpanded) {
 					return iconData.rootFolderExpanded;
 				}
-				return iconData.folderExpanded;
+				return iconData.folderExpanded || '';
 			} else {
 				if (iconData.folderNames && iconData.folderNames[fileName]) {
 					return iconData.folderNames[fileName];
@@ -472,7 +469,7 @@ class Util {
 				if (isRoot && iconData.rootFolder) {
 					return iconData.rootFolder;
 				}
-				return iconData.folder;
+				return iconData.folder || '';
 			}
 		} else {
 			if (iconData.fileNames && iconData.fileNames[fileName]) {
@@ -484,8 +481,23 @@ class Util {
 			if (iconData.fileExtensions && iconData.fileExtensions[suffix1]) {
 				return iconData.fileExtensions[suffix1];
 			}
-			return iconData.file;
+			return iconData.file || '';
 		}
+	}
+	static getIconByExtensions(extensions) {
+		let iconData = globalData.nowIconData;
+		if (globalData.nowTheme.type === 'light') {
+			iconData = globalData.nowIconData.light;
+		}
+		if (iconData && iconData.fileExtensions) {
+			for (let i = 0; i < extensions.length; i++) {
+				let ext = extensions[i].slice(1);
+				if (iconData.fileExtensions[ext]) {
+					return iconData.fileExtensions[ext];
+				}
+			}
+		}
+		return (iconData && iconData.file) || '';
 	}
 	static getIdFromPath(filePath, mtimeMs) {
 		let id = '';

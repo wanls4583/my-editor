@@ -28,6 +28,7 @@
 <script>
 import Menu from './Menu';
 import EventBus from '@/event';
+import Util from '@/common/util';
 import globalData from '@/data/globalData';
 
 export default {
@@ -102,8 +103,21 @@ export default {
 			this.tabsizeVisible = !visible;
 		},
 		showLanguage() {
+			let cmdList = globalData.languageList.map((item) => {
+				let icon = Util.getIconByExtensions(item.extensions || []);
+				icon = icon ? `my-file-icon my-file-icon-${icon}` : 'my-file-icon';
+				return {
+					op: 'selectLanguage',
+					name: item.name + (item.language ? `（${item.language}）` : ''),
+					value: item.value,
+					icon,
+				};
+			});
 			EventBus.$emit('close-menu');
-			this.$emit('select-langeuage');
+			EventBus.$emit('cmd-menu-open', {
+				cmdList: cmdList,
+				value: globalData.nowEditorId && globalData.$mainWin.getNowEditor().language,
+			});
 		},
 		onTabsizeChange(item) {
 			if (this.tabSize != item.value) {

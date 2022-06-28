@@ -44,7 +44,7 @@
 		<!-- 顶部菜单栏 -->
 		<title-bar :height="topBarHeight" ref="titleBar"></title-bar>
 		<!-- 状态栏 -->
-		<status-bar :height="statusHeight" @select-langeuage="onSelectLanguage" ref="statusBar"></status-bar>
+		<status-bar :height="statusHeight" ref="statusBar"></status-bar>
 		<cmd-panel></cmd-panel>
 		<Dialog :btns="dialogBtns" :content="dialogContent" :icon="this.dialogIcon" :icon-color="this.dialogIconColor" :overlay="true" :title="dialogTilte" @close="closeDialog" v-show="dialogVisible"></Dialog>
 	</div>
@@ -248,19 +248,6 @@ export default {
 		// 点击编辑器
 		onWindMouseDown() {
 			EventBus.$emit('close-menu');
-		},
-		onSelectLanguage() {
-			let cmdList = globalData.languageList.map((item) => {
-				return {
-					op: 'selectLanguage',
-					name: item.name + (item.language ? `（${item.language}）` : ''),
-					value: item.value,
-				};
-			});
-			EventBus.$emit('cmd-menu-open', {
-				cmdList: cmdList,
-				value: globalData.nowEditorId && this.getNowEditor().language,
-			});
 		},
 		showDialog(option) {
 			this.dialogTilte = option.title || '';

@@ -9,10 +9,10 @@ export default class {
 	}
 	init() {
 		EventBus.$on('icon-changed', () => {
-			this.changeBarIcon();
+			this.changeFileIcon();
 		});
 		EventBus.$on('theme-changed', () => {
-			this.changeBarIcon();
+			this.changeFileIcon();
 		});
 		EventBus.$on('cmd-menu-theme-open', () => {
 			const cmdList = globalData.themes.map(item => {
@@ -40,7 +40,7 @@ export default class {
 			});
 		});
 	}
-	changeBarIcon() {
+	changeFileIcon() {
 		this.editorList.forEach(item => {
 			if (globalData.nowIconTheme.value) {
 				let icon = Util.getIconByPath({
