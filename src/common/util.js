@@ -544,22 +544,23 @@ class Util {
 			}
 		}
 	}
-	static getFileStatus(relativePath, rootPath) {
-		let fileStatus = globalData.fileStatus[relativePath] || globalData.fileStatus[rootPath] || {};
-		let status = '';
-		let originStatus = '';
-		let statusColor = '';
-		if (typeof fileStatus === 'string') {
-			status = fileStatus;
-		} else {
-			status = fileStatus[relativePath] || '';
+	static getFileStatus(filePath) {
+		let gitDir = '';
+		for (let key in globalData.fileStatus) {
+			if (filePath.startsWith(key)) {
+				gitDir = key;
+				break;
+			}
 		}
-		originStatus = status;
+		let fileStatus = globalData.fileStatus[gitDir] || {};
+		let status = fileStatus[filePath] || '';
+		let originStatus = status;
+		let statusColor = '';
 		status = _getStatus(status);
-		if (!status && globalData.dirStatus[rootPath]) {
-			let dirStatus = globalData.dirStatus[rootPath];
+		if (!status && globalData.dirStatus[gitDir]) {
+			let dirStatus = globalData.dirStatus[gitDir];
 			for (let i = 0; i < dirStatus.length; i++) {
-				if (relativePath.startsWith(dirStatus[i].path)) {
+				if (filePath.startsWith(dirStatus[i].path)) {
 					status = dirStatus[i].status;
 					break;
 				}

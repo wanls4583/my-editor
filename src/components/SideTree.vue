@@ -201,7 +201,7 @@ export default {
 						});
 						item.icon = item.icon ? `my-file-icon my-file-icon-${item.icon}` : '';
 					}
-					item.status = Util.getFileStatus(item.gitRelativePath || '', item.gitRootPath);
+					item.status = Util.getFileStatus(item.path);
 					item.statusColor = item.status.statusColor;
 					item.status = item.status.status;
 				});

@@ -4,73 +4,44 @@ const path = require('path');
 
 class StatusWatcher {
 	constructor() {
-		this.gitStatusTimer = {};
-		this.gitStautsMap = {};
-		this.gitDiffTimer = {};
-		this.gitStatusQueue = [];
-		this.pathList = [];
+		this.gitDirMap = {};
+		this.gitTimer = {};
 	}
-	checkQueue() {
-		if (this.gitStatusQueue.length > 0) {
-			let filePath = this.gitStatusQueue.shift();
-			this.gitStatus(filePath).then(results => {
-				let cache = this.gitStautsMap[filePath];
-				if (cache !== results && JSON.stringify(cache) !== JSON.stringify(results)) {
-					this.gitStautsMap[filePath] = results;
-					process.send({ path: filePath, results });
-				}
-				// 延迟执行时间，否则Microsoft-Defender将消耗大量CUP资源
-				this.checkQueueTimer = setTimeout(() => {
-					this.checkQueue();
-				}, 500);
-				clearTimeout(this.gitStatusTimer[filePath]);
-				this.gitStatusTimer[filePath] = setTimeout(() => {
-					this.addToQueue(filePath);
-				}, 500);
-			});
-		} else {
-			this.checkQueueTimer = null;
-		}
-	}
-	addToQueue(filePath) {
-		this.gitStatusQueue.push(filePath);
-		if (!this.checkQueueTimer) {
-			this.checkQueueTimer = setTimeout(() => {
-				this.checkQueue();
-			}, 500);
-		}
-	}
-	gitStatus(filePath) {
-		let stat = fs.statSync(filePath);
-		let child = null;
-		if (stat.isFile()) {
-			child = spawn('git', ['status', '-s', path.basename(filePath)], { cwd: path.dirname(filePath) });
-		} else {
-			child = spawn('git', ['status', '-s'], { cwd: filePath });
-		}
-		return new Promise((resolve, reject) => {
+	gitStatus(gitDir) {
+		clearTimeout(this.gitTimer[gitDir]);
+		this.gitTimer[gitDir] = setTimeout(() => {
 			let result = '';
-			child.stdout.on('data', data => {
-				result += data;
+			let child = null;
+			if (process.platform === 'win32') {
+				child = spawn('cmd', ['/C chcp 65001>nul && git status -s'], { cwd: gitDir });
+			} else {
+				child = spawn('git', ['status', '-s'], { cwd: gitDir });
+			}
+			new Promise((resolve, reject) => {
+				child.stdout.on('data', data => {
+					result += data;
+				});
+				child.stderr.on('data', () => {
+					reject();
+				});
+				child.on('close', () => {
+					resolve(this.parseStatus(gitDir, result));
+				});
+			}).then(results => {
+				if (this.gitDirMap[gitDir]) {
+					process.send({ gitDir: gitDir, paths: this.gitDirMap[gitDir].paths, results });
+				}
 			});
-			child.stderr.on('data', () => {
-				reject();
-			});
-			child.on('close', () => {
-				resolve(this.parseStatus(result));
-			});
-		});
+		}, 100);
 	}
-	parseStatus(lines) {
+	parseStatus(gitDir, lines) {
 		let results = [];
 		lines = lines.split('\n');
 		lines.forEach(line => {
 			let status = /^([\s\S]{2})\s*([^\s]+)\s*$/.exec(line);
 			if (status) {
-				let file = status[2];
-				file = path.join(file); //将'/'转换成对应平台的sep
 				results.push({
-					path: file,
+					path: path.join(gitDir, status[2]),
 					status: status[1],
 				});
 			}
@@ -81,33 +52,48 @@ class StatusWatcher {
 		if (!fs.existsSync(filePath)) {
 			return;
 		}
-		this.pathList.push(filePath);
-		this.addToQueue(filePath);
+		let gitDir = this.getGitDir(filePath);
+		if (gitDir) {
+			if (this.gitDirMap[gitDir]) {
+				if (this.gitDirMap[gitDir].paths.indexOf(filePath) === -1) {
+					this.gitDirMap[gitDir].paths.push(filePath);
+				}
+			} else {
+				let watcher = fs.watch(gitDir, { recursive: true }, (event, filename) => {
+					if (filename) {
+						if (!filename.endsWith(path.join('.git/index.lock')) && !filename.endsWith('.git')) {
+							this.gitStatus(gitDir, this.gitDirMap[gitDir].paths);
+						}
+					}
+				});
+				this.gitDirMap[gitDir] = { watcher: watcher, paths: [filePath] };
+			}
+		}
 	}
 	stopWatchFileStatus(filePath) {
-		let index = this.gitStatusQueue.indexOf(filePath);
-		if (index > -1) {
-			this.gitStatusQueue.splice(index, 1);
-		}
-		index = this.pathList.indexOf(filePath);
-		if (index > -1) {
-			this.pathList.splice(index, 1);
-		}
-		clearTimeout(this.gitStatusTimer[filePath]);
-		delete this.gitStautsMap[filePath];
-		let stat = fs.statSync(filePath);
-		if (stat.isDirectory()) {
-			this.pathList.forEach(item => {
-				try {
-					let stat = fs.statSync(item);
-					if (stat.isDirectory() && item.startsWith(filePath)) {
-						clearTimeout(this.gitStatusTimer[item]);
-						delete this.gitStautsMap[item];
-					}
-				} catch (e) {
-					console.log(e);
+		let gitDir = this.getGitDir(filePath);
+		gitDir = gitDir && this.gitDirMap[gitDir];
+		if (gitDir) {
+			let index = gitDir.paths.indexOf(filePath);
+			if (index > -1) {
+				gitDir.paths.splice(index, 1);
+				if (gitDir.paths.length === 0) {
+					gitDir.watcher.close();
+					delete this.gitDirMap[gitDir];
 				}
-			});
+			}
+		}
+	}
+	getGitDir(filePath) {
+		let minLen = 1;
+		if (filePath[1] === ':') {
+			minLen = 3;
+		}
+		while (filePath.length > minLen) {
+			if (fs.existsSync(filePath, '.git')) {
+				return filePath;
+			}
+			filePath = path.dirname(filePath);
 		}
 	}
 }

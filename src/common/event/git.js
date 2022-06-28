@@ -170,9 +170,8 @@ export default class {
 		this.statusProcess = child_process.fork(path.join(globalData.dirname, 'main/process/git/index.js'));
 		this.statusProcess.on('message', data => {
 			this.parseStatus(data);
-			EventBus.$emit('git-statused', {
-				path: data.path,
-				results: data.results,
+			data.paths.forEach(path => {
+				EventBus.$emit('git-statused', { path });
 			});
 		});
 		this.statusProcess.on('close', () => {
@@ -190,42 +189,30 @@ export default class {
 		delete globalData.fileStatus[filePath];
 	}
 	parseStatus(data) {
-		let filePath = data.path;
+		let gitDir = data.gitDir;
 		let results = data.results;
 		let statusMap = {};
 		let dirStatus = [];
 		let statusLevel = { '?': 1, A: 2, M: 3, D: 4 };
-		let stat = fs.statSync(filePath);
-		if (stat.isFile()) {
-			if (results.length) {
-				globalData.fileStatus[filePath] = results[0].status;
-			} else {
-				delete globalData.fileStatus[filePath];
-			}
-		} else {
-			globalData.fileStatus[filePath] = statusMap;
-			globalData.dirStatus[filePath] = dirStatus;
-			results.forEach(item => {
-				let parentPath = path.dirname(item.path);
-				statusMap[item.path] = item.status;
-				while (parentPath !== '.') {
-					if (statusMap[parentPath]) {
-						if (statusLevel[item.status] > statusLevel[statusMap[parentPath]]) {
-							statusMap[parentPath] = item.status;
-						}
-					} else {
+		globalData.fileStatus[gitDir] = statusMap;
+		globalData.dirStatus[gitDir] = dirStatus;
+		results.forEach(item => {
+			let parentPath = path.dirname(item.path);
+			statusMap[item.path] = item.status;
+			while (parentPath.length >= gitDir.length) {
+				if (statusMap[parentPath]) {
+					if (statusLevel[item.status] > statusLevel[statusMap[parentPath]]) {
 						statusMap[parentPath] = item.status;
 					}
-					parentPath = path.dirname(parentPath);
+				} else {
+					statusMap[parentPath] = item.status;
 				}
-				if (statusLevel[item.status] > statusLevel[statusMap['']] || !statusMap['']) {
-					statusMap[''] = item.status;
-				}
-				if (item.path[item.path.length - 1] === path.sep) {
-					dirStatus.push({ path: item.path.slice(0, -1), status: item.status });
-				}
-			});
-		}
+				parentPath = path.dirname(parentPath);
+			}
+			if (item.path[item.path.length - 1] === path.sep) {
+				dirStatus.push({ path: item.path.slice(0, -1), status: item.status });
+			}
+		});
 	}
 	getNowHash(filePath, cwd) {
 		return spawnSync('git', ['log', '-1', '--format=%H'], { cwd: cwd || path.dirname(filePath) }).stdout.toString();
