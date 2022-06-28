@@ -779,7 +779,7 @@ export default {
 			}
 			this.renderSelectedBgTimer = setTimeout(() => {
 				this.renderSelectedBg();
-				this.$refs.minimap.renderSelectedBg();
+				this.$refs.minimap && this.$refs.minimap.renderSelectedBg();
 				this.renderSelectedBgTimer = null;
 			}, 15);
 		},
