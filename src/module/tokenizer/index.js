@@ -572,9 +572,9 @@ export default class {
 		this.scopeMap = {};
 		for (let scopeName in globalData.grammars) {
 			if (scopeName === this.scopeName) {
-				globalData.grammars[scopeName] = this.scopeMap;
+				globalData.grammars[scopeName].scopeIdMap = this.scopeMap;
 			} else {
-				globalData.grammars[scopeName] = {};
+				globalData.grammars[scopeName].scopeIdMap = {};
 			}
 		}
 	}

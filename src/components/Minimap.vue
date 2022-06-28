@@ -93,6 +93,8 @@ export default {
 				});
 			}
 			if (type === 'theme' || !type) {
+				this.preCursorResult = null;
+				this.preAllCursorResult = null;
 				Object.assign(data, {
 					colors: globalData.colors,
 					scopeIdMap: globalData.scopeIdMap,
@@ -353,8 +355,8 @@ export default {
 				}
 				preCursorPos = cursorPos;
 			}
-			if (this.cursorResult + '' !== results + '') {
-				this.cursorResult = results;
+			if (this.preCursorResult + '' !== results + '') {
+				this.preCursorResult = results;
 				this.worker.postMessage({ event: 'render-cursor', data: results });
 			}
 		},
@@ -372,8 +374,8 @@ export default {
 				}
 				preCursorPos = cursorPos;
 			}
-			if (this.allCursorResult + '' !== results + '') {
-				this.allCursorResult = results;
+			if (this.preAllCursorResult + '' !== results + '') {
+				this.preAllCursorResult = results;
 				this.worker.postMessage({ event: 'render-cursor-all', data: results });
 			}
 		},

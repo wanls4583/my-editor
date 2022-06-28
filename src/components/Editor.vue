@@ -398,8 +398,8 @@ export default {
 					});
 			});
 			this.selectedFg = !!globalData.colors['editor.selectionForeground'];
-			this.$refs.minimap && this.$refs.minimap.initWorkerData('theme');
 			this.tokenizer.clearScopeMap();
+			this.$refs.minimap && this.$refs.minimap.initWorkerData('theme');
 			this.render();
 		},
 		tabSize: function (newVal) {
