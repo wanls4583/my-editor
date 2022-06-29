@@ -190,6 +190,7 @@ export default {
 			cursorFocus: true,
 			language: '',
 			theme: '',
+			indent: 'tab',
 			tabSize: 4,
 			startLine: 1,
 			endLine: 1,
@@ -508,9 +509,10 @@ export default {
 			resizeObserver.observe(this.$refs.editor);
 		},
 		initEventBus() {
+			this.initEventBusFn = {};
 			EventBus.$on(
 				'language-change',
-				(this.initEventBusFn1 = (data) => {
+				(this.initEventBusFn['language-change'] = (data) => {
 					if (this.tabData.id === data.id) {
 						if (this.active) {
 							this.language = data.language;
@@ -521,15 +523,23 @@ export default {
 			);
 			EventBus.$on(
 				'tab-size-change',
-				(this.initEventBusFn2 = (tabSize) => {
+				(this.initEventBusFn['tab-size-change'] = (tabSize) => {
 					if (this.active) {
 						this.tabSize = tabSize;
 					}
 				})
 			);
 			EventBus.$on(
+				'indent-change',
+				(this.initEventBusFn['indent-change'] = (indent) => {
+					if (this.active) {
+						this.indent = indent;
+					}
+				})
+			);
+			EventBus.$on(
 				'close-menu',
-				(this.initEventBusFn3 = () => {
+				(this.initEventBusFn['close-menu'] = () => {
 					this.menuVisible = false;
 					this.autoTipList = null;
 					this.autocomplete.stop();
@@ -537,7 +547,7 @@ export default {
 			);
 			EventBus.$on(
 				'theme-changed',
-				(this.initEventBusFn4 = (theme) => {
+				(this.initEventBusFn['theme-changed'] = (theme) => {
 					if (this.active) {
 						this.theme = theme;
 					}
@@ -546,7 +556,7 @@ export default {
 			);
 			EventBus.$on(
 				'git-diffed',
-				(this.initEventBusFn5 = (data) => {
+				(this.initEventBusFn['git-diffed'] = (data) => {
 					if (data && data.path === this.tabData.path) {
 						this.diffRanges = data.result;
 						this.active && this.$refs.minimap && this.$refs.minimap.renderAllDiff(true);
@@ -555,7 +565,7 @@ export default {
 			);
 			EventBus.$on(
 				'git-statused',
-				(this.initEventBusFn6 = (data) => {
+				(this.initEventBusFn['git-statused'] = (data) => {
 					if (this.tabData.path === data.path) {
 						let status = null;
 						status = Util.getFileStatus(this.tabData.path);
@@ -568,7 +578,7 @@ export default {
 			);
 			EventBus.$on(
 				'render-line',
-				(this.initEventBusFn7 = (data) => {
+				(this.initEventBusFn['render-line'] = (data) => {
 					if (this.editorId === data.editorId) {
 						this.renderLine(data.lineId);
 					}
@@ -576,7 +586,7 @@ export default {
 			);
 			EventBus.$on(
 				'file-saved',
-				(this.initEventBusFn8 = (path) => {
+				(this.initEventBusFn['file-saved'] = (path) => {
 					if (this.tabData.path === path) {
 						this.history.save();
 					}
@@ -584,7 +594,7 @@ export default {
 			);
 			EventBus.$on(
 				'file-opened',
-				(this.initEventBusFn9 = (path) => {
+				(this.initEventBusFn['file-opened'] = (path) => {
 					if (this.tabData.path === path || this.tabData.tempPath === path) {
 						this.history.clear();
 					}
@@ -597,15 +607,15 @@ export default {
 		unbindEvent() {
 			$(document).unbind('mousemove', this.initEventFn1);
 			$(document).unbind('mouseup', this.initEventFn2);
-			EventBus.$off('language-change', this.initEventBusFn1);
-			EventBus.$off('tab-size-change', this.initEventBusFn2);
-			EventBus.$off('close-menu', this.initEventBusFn3);
-			EventBus.$off('theme-changed', this.initEventBusFn4);
-			EventBus.$off('git-diffed', this.initEventBusFn5);
-			EventBus.$off('git-statused', this.initEventBusFn6);
-			EventBus.$off('render-line', this.initEventBusFn7);
-			EventBus.$off('file-saved', this.initEventBusFn8);
-			EventBus.$off('file-opened', this.initEventBusFn9);
+			EventBus.$off('language-change', this.initEventBusFn['language-change']);
+			EventBus.$off('tab-size-change', this.initEventBusFn['tab-size-change']);
+			EventBus.$off('close-menu', this.initEventBusFn['close-menu']);
+			EventBus.$off('theme-changed', this.initEventBusFn['theme-changed']);
+			EventBus.$off('git-diffed', this.initEventBusFn['git-diffed']);
+			EventBus.$off('git-statused', this.initEventBusFn['git-statused']);
+			EventBus.$off('render-line', this.initEventBusFn['render-line']);
+			EventBus.$off('file-saved', this.initEventBusFn['file-saved']);
+			EventBus.$off('file-opened', this.initEventBusFn['file-opened']);
 		},
 		showEditor() {
 			// 元素暂时不可见

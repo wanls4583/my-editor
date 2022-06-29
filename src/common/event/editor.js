@@ -92,6 +92,7 @@ export default class {
 				path: tab.path,
 				language: editor.language,
 				tabSize: editor.tabSize,
+				indent: editor.indent,
 				line: editor.nowCursorPos ? editor.nowCursorPos.line : '?',
 				column: editor.nowCursorPos ? editor.nowCursorPos.column : '?',
 			});

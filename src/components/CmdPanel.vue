@@ -98,8 +98,11 @@ export default {
 				case 'selectLanguage':
 					EventBus.$emit('language-change', { id: globalData.nowEditorId, language: item.value });
 					break;
-				case 'changeIndent':
+				case 'changeTabSize':
 					EventBus.$emit('tab-size-change', item.value);
+					break;
+				case 'changeIndent':
+					EventBus.$emit('indent-change', item.value);
 					break;
 			}
 			this.visible = false;

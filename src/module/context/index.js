@@ -27,6 +27,8 @@ class Context {
 			'tabData',
 			'language',
 			'tabSize',
+			'space',
+			'indent',
 			'nowCursorPos',
 			'maxLine',
 			'maxWidthObj',
@@ -234,7 +236,11 @@ class Context {
 			}
 			tabNum += plus ? 1 : 0;
 			for (let i = 0; i < tabNum; i++) {
-				tabStr += '\t';
+				if (this.indent === 'tab') {
+					tabStr += '\t';
+				} else {
+					tabStr += this.space();
+				}
 			}
 			return tabStr;
 		}

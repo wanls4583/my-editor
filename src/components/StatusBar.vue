@@ -44,18 +44,19 @@ export default {
 			line: 1,
 			column: 0,
 			tabSize: 4,
+			indent: 'tab',
 			language: '',
 			hasEditor: false,
 			languageList: globalData.languageList,
 			tabMenu: [
 				[
 					{
-						op: 'useSpace',
+						op: 'changeIndent',
 						name: 'Indent Using Spacee',
 						value: 'space',
 					},
 					{
-						op: 'useTab',
+						op: 'changeIndent',
 						name: 'Indent Using Tabs',
 						value: 'tab',
 					},
@@ -87,7 +88,7 @@ export default {
 		let indentList = [];
 		for (let i = 1; i <= 8; i++) {
 			indentList.push({
-				op: 'changeIndent',
+				op: 'changeTabSize',
 				name: `Tab Width：${i}`,
 				value: i,
 			});
@@ -101,6 +102,7 @@ export default {
 				if (data) {
 					this.language = data.language;
 					this.tabSize = data.tabSize;
+					this.indent = data.indent;
 					this.line = data.line;
 					this.column = data.column;
 					this.hasEditor = true;
@@ -118,13 +120,16 @@ export default {
 			EventBus.$on('tab-size-change', (tabSize) => {
 				this.tabSize = tabSize;
 			});
+			EventBus.$on('indent-change', (indent) => {
+				this.indent = indent;
+			});
 		},
 		showTabsize() {
 			EventBus.$emit('close-menu');
 			EventBus.$emit('cmd-menu-open', {
 				cmdList: this.tabMenu,
 				hoverCheck: false,
-				value: [this.tabSize],
+				value: [this.tabSize, this.indent],
 			});
 		},
 		showLanguage() {
