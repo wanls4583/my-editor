@@ -819,34 +819,48 @@ export default {
 			this.renderSelectedBgTimer = null;
 			this.activeLineBg = true;
 			this.clearSelectionToken();
-			this.renderSelectionObjs = [];
-			this.fSelecter.ranges.forEach((range) => {
-				this._renderSelectedBg(range, true);
-			});
 			this.renderObjs.forEach((renderObj, index) => {
 				renderObj.bgClass = '';
 				this.$set(this.renderObjs, index, renderObj);
+			});
+			this.fSelecter.ranges.forEach((range) => {
+				this._renderWholeLineBg(range, true);
 			});
 			this.selecter.ranges.forEach((range) => {
 				let _range = this.fSelecter.getRangeByCursorPos(range.start);
 				if (this.searchVisible) {
 					// 优先渲染搜索框的选中范围
 					if (!_range && range.active) {
-						this._renderSelectedBg(range);
+						this._renderWholeLineBg(range);
 					}
 				} else {
-					this._renderSelectedBg(range);
+					this._renderWholeLineBg(range);
 				}
 			});
+			this.$nextTick(() => {
+				this.renderSelectionObjs = [];
+				this.fSelecter.ranges.forEach((range) => {
+					this._renderSelectedBg(range, true);
+				});
+				this.selecter.ranges.forEach((range) => {
+					let _range = this.fSelecter.getRangeByCursorPos(range.start);
+					if (this.searchVisible) {
+						// 优先渲染搜索框的选中范围
+						if (!_range && range.active) {
+							this._renderSelectedBg(range);
+						}
+					} else {
+						this._renderSelectedBg(range);
+					}
+				});
+			});
 		},
-		// 渲染选中背景
-		_renderSelectedBg(range, isFsearch) {
+		// 渲染整行选中的背景
+		_renderWholeLineBg(range, isFsearch) {
 			let firstLine = this.startLine;
 			let lastLine = this.endLine;
 			let start = range.start;
 			let end = range.end;
-			let text = this.myContext.htmls[start.line - 1].text;
-			let endColumn = text.length;
 			let cross = false;
 			firstLine = firstLine > start.line + 1 ? firstLine : start.line + 1;
 			lastLine = lastLine < end.line - 1 ? lastLine : end.line - 1;
@@ -869,50 +883,55 @@ export default {
 					}
 				}
 			}
-			this.$nextTick(() => {
-				if (this.renderedLineMap[start.line]) {
-					let renderObj = this.renderedLineMap[start.line];
-					start.left = this.getExactLeft(start);
-					if (start.line == end.line) {
-						start.width = this.getExactLeft(end) - start.left || 10;
-						start.width += 'px';
-					} else {
-						start.width = this.getExactLeft({ line: start.line, column: text.length }) - start.left || 10;
-						start.width += 'px';
-					}
-					start.left += 'px';
-					this.renderSelectionObjs.push({
-						left: start.left,
-						top: renderObj.top,
-						width: start.width,
-						active: range.active,
-						isFsearch: isFsearch,
-					});
-					if (end.line == start.line) {
-						endColumn = end.column;
-					}
-					// range.active为false时，样式可能只显示边框，不改变字体颜色和背景
-					range.active && this._renderSelectionToken(start.line, start.column, endColumn);
-				}
-				if (end.line > start.line && this.renderedLineMap[end.line]) {
-					let renderObj = this.renderedLineMap[end.line];
-					end.left = '0px';
-					text = this.myContext.htmls[end.line - 1].text;
-					end.width = this.getExactLeft(end) || 10;
-					end.width += 'px';
-					this.renderSelectionObjs.push({
-						left: end.left,
-						top: renderObj.top,
-						width: end.width,
-						active: range.active,
-						isFsearch: isFsearch,
-					});
-					// range.active为false时，样式可能只显示边框，不改变字体颜色和背景
-					range.active && this._renderSelectionToken(end.line, 0, end.column);
-				}
-			});
 			if (start.line === this.nowCursorPos.line || end.line === this.nowCursorPos.line) {
 				this.activeLineBg = false;
+			}
+		},
+		// 渲染首尾行选中的背景
+		_renderSelectedBg(range, isFsearch) {
+			let start = range.start;
+			let end = range.end;
+			let text = this.myContext.htmls[start.line - 1].text;
+			let endColumn = text.length;
+			if (this.renderedLineMap[start.line]) {
+				let renderObj = this.renderedLineMap[start.line];
+				start.left = this.getExactLeft(start);
+				if (start.line == end.line) {
+					start.width = this.getExactLeft(end) - start.left || 10;
+					start.width += 'px';
+				} else {
+					start.width = this.getExactLeft({ line: start.line, column: text.length }) - start.left || 10;
+					start.width += 'px';
+				}
+				start.left += 'px';
+				this.renderSelectionObjs.push({
+					left: start.left,
+					top: renderObj.top,
+					width: start.width,
+					active: range.active,
+					isFsearch: isFsearch,
+				});
+				if (end.line == start.line) {
+					endColumn = end.column;
+				}
+				// range.active为false时，样式可能只显示边框，不改变字体颜色和背景
+				range.active && this._renderSelectionToken(start.line, start.column, endColumn);
+			}
+			if (end.line > start.line && this.renderedLineMap[end.line]) {
+				let renderObj = this.renderedLineMap[end.line];
+				end.left = '0px';
+				text = this.myContext.htmls[end.line - 1].text;
+				end.width = this.getExactLeft(end) || 10;
+				end.width += 'px';
+				this.renderSelectionObjs.push({
+					left: end.left,
+					top: renderObj.top,
+					width: end.width,
+					active: range.active,
+					isFsearch: isFsearch,
+				});
+				// range.active为false时，样式可能只显示边框，不改变字体颜色和背景
+				range.active && this._renderSelectionToken(end.line, 0, end.column);
 			}
 		},
 		renderSelectionToken(line) {
