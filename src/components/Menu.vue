@@ -9,10 +9,7 @@
 			<template v-for="(group, index) in myMenuList">
 				<div class="my-menu-group">
 					<div
-						:class="{
-                            'my-active': checkable && item.checked,
-                            disabled: item.disabled,
-                        }"
+						:class="{'my-active': checkable && item.checked, disabled: item.disabled,}"
 						@mousedown="onClick(item)"
 						@mouseover="onHover(item)"
 						class="my-menu-item my-center-between my-hover"
@@ -133,7 +130,7 @@ export default {
 					item.selected = item.checked;
 					this.indexMap[++index] = item;
 					this.maxIndex = index;
-					if (item.checked) {
+					if (item.checked && this.index === -1) {
 						this.index = index;
 					}
 					return item;
@@ -162,11 +159,17 @@ export default {
 		},
 		setChecked(value) {
 			let index = -1;
-			this.myMenuList.forEach((group) => {
+			this.index = -1;
+			this.myMenuList.forEach((group, i) => {
 				group.forEach((item) => {
-					item.checked = item.value === value;
+					if (this.value instanceof Array) {
+						item.checked = item.value === this.value[i];
+					} else {
+						item.checked = item.value === this.value;
+					}
+					item.selected = item.checked;
 					index++;
-					if (item.checked) {
+					if (item.checked && this.index === -1) {
 						this.index = index;
 					}
 				});
