@@ -22,8 +22,11 @@
 							<span :class="[item.icon]"></span>
 							<span>{{ item.name }}</span>
 						</div>
-						<div class="my-menu-shortcut" v-if="item.shortcut">
-							<span v-if="item.shortcut != 'ignore'">{{ item.shortcut }}</span>
+						<div class="flex--center--start">
+							<div class="my-menu-shortcut" v-if="item.shortcut">
+								<span v-if="item.shortcut != 'ignore'">{{ item.shortcut }}</span>
+							</div>
+							<span class="my-icon my-icon-check" v-if="item.selected"></span>
 						</div>
 					</div>
 				</div>
@@ -53,7 +56,7 @@ export default {
 			default: false,
 		},
 		value: {
-			type: [Number, String],
+			type: [Number, String, Array],
 		},
 	},
 	data() {
@@ -118,11 +121,16 @@ export default {
 			if (menuList[0] && !(menuList[0] instanceof Array)) {
 				menuList = [menuList];
 			}
-			this.myMenuList = menuList.map((group) => {
+			this.myMenuList = menuList.map((group, i) => {
 				return group.map((item) => {
 					item = Object.assign({}, item);
 					item.value = item.value === undefined ? item.name : item.value;
-					item.checked = item.value === this.value;
+					if (this.value instanceof Array) {
+						item.checked = item.value === this.value[i];
+					} else {
+						item.checked = item.value === this.value;
+					}
+					item.selected = item.checked;
 					this.indexMap[++index] = item;
 					this.maxIndex = index;
 					if (item.checked) {

@@ -221,15 +221,6 @@ textarea {
 		}
 	}
 
-	&-icon {
-		display: inline-block;
-		width: 16px;
-		height: 16px;
-		background-size: 100%;
-		background-position: 0;
-		background-repeat: no-repeat;
-	}
-
 	&-file-icon::before {
 		position: relative;
 		display: inline-block;

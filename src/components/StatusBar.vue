@@ -14,9 +14,6 @@
 			<div class="bar-right">
 				<div @mousedown.stop="showTabsize" class="bar-item my-hover" v-if="hasEditor">
 					<span>Tab Size:{{ tabSize }}</span>
-					<div class="my-list" style="position: absolute; bottom: 30px">
-						<Menu :menuList="tabSizeList" :styles="{ position: 'relative' }" :value="tabSize" @change="onTabsizeChange" v-if="tabsizeVisible"></Menu>
-					</div>
 				</div>
 				<div @mousedown.stop="showLanguage" class="bar-item my-hover" v-if="hasEditor">
 					<span>{{ nowLanguage }}</span>
@@ -48,10 +45,32 @@ export default {
 			column: 0,
 			tabSize: 4,
 			language: '',
-			tabsizeVisible: false,
 			hasEditor: false,
-			tabSizeList: [],
 			languageList: globalData.languageList,
+			tabMenu: [
+				[
+					{
+						op: 'useSpace',
+						name: 'Indent Using Spacee',
+						value: 'space',
+					},
+					{
+						op: 'useTab',
+						name: 'Indent Using Tabs',
+						value: 'tab',
+					},
+				],
+				[
+					{
+						op: 'convertTabToSpace',
+						name: 'Convert Indentation to Spaces',
+					},
+					{
+						op: 'convertSpaceToTab',
+						name: 'Convert Indentation to Tabs',
+					},
+				],
+			],
 		};
 	},
 	computed: {
@@ -65,12 +84,15 @@ export default {
 	},
 	created() {
 		this.initEventBus();
+		let indentList = [];
 		for (let i = 1; i <= 8; i++) {
-			this.tabSizeList.push({
+			indentList.push({
+				op: 'changeIndent',
 				name: `Tab Width：${i}`,
 				value: i,
 			});
 		}
+		this.tabMenu.unshift(indentList);
 	},
 	mounted() {},
 	methods: {
@@ -93,14 +115,17 @@ export default {
 			EventBus.$on('language-change', (data) => {
 				this.language = data.language;
 			});
-			EventBus.$on('close-menu', (language) => {
-				this.tabsizeVisible = false;
+			EventBus.$on('tab-size-change', (tabSize) => {
+				this.tabSize = tabSize;
 			});
 		},
 		showTabsize() {
-			let visible = this.tabsizeVisible;
 			EventBus.$emit('close-menu');
-			this.tabsizeVisible = !visible;
+			EventBus.$emit('cmd-menu-open', {
+				cmdList: this.tabMenu,
+				hoverCheck: false,
+				value: [this.tabSize],
+			});
 		},
 		showLanguage() {
 			let cmdList = globalData.languageList.map((item) => {
@@ -118,13 +143,6 @@ export default {
 				cmdList: cmdList,
 				value: globalData.nowEditorId && globalData.$mainWin.getNowEditor().language,
 			});
-		},
-		onTabsizeChange(item) {
-			if (this.tabSize != item.value) {
-				EventBus.$emit('tab-size-change', item.value);
-				this.tabSize = item.value;
-			}
-			this.tabsizeVisible = false;
 		},
 	},
 };

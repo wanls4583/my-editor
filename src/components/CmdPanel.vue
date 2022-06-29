@@ -10,7 +10,7 @@
 				<input ref="input" type="text" v-model="searchText" />
 			</div>
 			<div>
-				<Menu :checkable="true" :menuList="cmdList" :value="value" @change="onChange" class="my-scroll-overlay my-scroll-mini" spellcheck="false" style="position: relative"></Menu>
+				<Menu :checkable="checkable" :hover-check="hoverCheck" :menuList="cmdList" :value="value" @change="onChange" class="my-scroll-overlay my-scroll-mini" spellcheck="false" style="position: relative"></Menu>
 			</div>
 		</div>
 	</div>
@@ -32,6 +32,8 @@ export default {
 			searchText: '',
 			cmdList: [],
 			visible: false,
+			checkable: false,
+			hoverCheck: false,
 		};
 	},
 	watch: {
@@ -52,6 +54,8 @@ export default {
 				this.visible = true;
 				this.searchText = '';
 				this.originCmdList = data.cmdList;
+				this.checkable = data.checkable === undefined ? true : data.checkable;
+				this.hoverCheck = data.hoverCheck === undefined ? false : data.hoverCheck;
 				this.value = data.value;
 				if (this.originCmdList[0] && !(this.originCmdList[0] instanceof Array)) {
 					this.originCmdList = [this.originCmdList];
@@ -93,6 +97,9 @@ export default {
 					break;
 				case 'selectLanguage':
 					EventBus.$emit('language-change', { id: globalData.nowEditorId, language: item.value });
+					break;
+				case 'changeIndent':
+					EventBus.$emit('tab-size-change', item.value);
 					break;
 			}
 			this.visible = false;

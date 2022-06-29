@@ -1,9 +1,23 @@
 .my {
+    &-icon {
+		display: inline-block;
+		width: 16px;
+		height: 16px;
+		background-size: 100%;
+		background-position: 0;
+		background-repeat: no-repeat;
+	}
+
     &-icon-files {
         background-image: url(@/assets/icons/dark/files.svg);
     }
+
     &-icon-search {
         background-image: url(@/assets/icons/dark/search.svg);
+    }
+
+    &-icon-check {
+        background-image: url(@/assets/icons/dark/check.svg);
     }
 }
 .my-theme-light {
@@ -11,8 +25,13 @@
         &-icon-files {
             background-image: url(@/assets/icons/light/files.svg);
         }
+
         &-icon-search {
             background-image: url(@/assets/icons/light/search.svg);
+        }
+
+        &-icon-check {
+            background-image: url(@/assets/icons/light/check.svg);
         }
     }
 }

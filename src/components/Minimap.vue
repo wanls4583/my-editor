@@ -85,6 +85,7 @@ export default {
 			if (type === 'size' || !type) {
 				Object.assign(data, {
 					charHight: this.$parent.charObj.charHight * this.scale,
+					space: this.$parent.space,
 					width: this.width,
 					height: this.height,
 					leftWidth: this.leftWidth,
@@ -220,6 +221,7 @@ export default {
 		},
 		renderSelectedBg() {
 			let results = [];
+			let tabSize = this.$parent.tabSize;
 			for (let line = this.startLine, i = 0; line <= this.$parent.myContext.htmls.length && i < this.maxVisibleLines; i++) {
 				let fold = this.$parent.folder.getFoldByLine(line);
 				let ranges = this.$parent.selecter.getRangeByLine(line);
@@ -255,7 +257,7 @@ export default {
 			function _getLength(text) {
 				let tabNum = text.match(/\t/);
 				tabNum = (tabNum && tabNum.length) || 0;
-				return text.length + 3 * tabNum;
+				return text.length + (tabSize - 1) * tabNum;
 			}
 		},
 		renderDiff() {

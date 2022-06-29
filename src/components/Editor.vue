@@ -405,7 +405,9 @@ export default {
 		tabSize: function (newVal) {
 			this.myContext.htmls.forEach((lineObj) => {
 				lineObj.tabNum = -1;
+				lineObj.html = '';
 			});
+			this.$refs.minimap && this.$refs.minimap.initWorkerData('size');
 			this.render();
 			this.maxWidthObj = { lineId: null, text: '', width: 0 };
 			this.myContext.setLineWidth(this.myContext.htmls);

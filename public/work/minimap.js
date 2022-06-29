@@ -341,6 +341,9 @@ function setData(data) {
 		canvas.width = data.width;
 		sizeChange = true;
 	}
+	if (data.space !== undefined && data.space !== dataObj.space) {
+		sizeChange = true;
+	}
 	if (data.colors || data.scopeIdMap) {
 		sizeChange = true;
 	}
@@ -386,7 +389,7 @@ function getLineObj({ lineId, lineObj }) {
 }
 
 function getDrawText(text) {
-	text = text.replace(/\t/g, '    ');
+	text = text.replace(/\t/g, dataObj.space);
 	return text;
 }
 
