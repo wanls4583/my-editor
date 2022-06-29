@@ -1,5 +1,4 @@
 let cacheMap = {};
-let cacheIds = [];
 let renderedIdMap = {};
 let dataObj = {};
 let canvas = null;
@@ -175,23 +174,6 @@ function drawRightDiff() {
 	allDiffRanges = null;
 }
 
-function drawCursor() {
-	let rgb = getCursorColor();
-	let cursorsImgData = new ImageData(dataObj.width, dataObj.height);
-	for (let i = 0; i < cursors.length; i++) {
-		putRectPixl({ imgData: cursorsImgData, left: 0, top: cursors[i], width: dataObj.width, height: dataObj.charHight, rgb, opacity: 1 });
-	}
-	createImageBitmap(cursorsImgData).then(img => {
-		ctx.clearRect(0, 0, dataObj.width, dataObj.height);
-		ctx.putImageData(canvasImgData, 0, 0);
-		ctx.globalCompositeOperation = 'destination-over';
-		selectedImg && ctx.drawImage(selectedImg, 0, 0);
-		ctx.drawImage(img, 0, 0);
-		cursorsImg = img;
-	});
-	cursors = null;
-}
-
 function drawSelectedBg() {
 	let rgb = getRgb(dataObj.colors['editor.selectionBackground']);
 	let slectedImgData = new ImageData(dataObj.width, dataObj.height);
@@ -200,7 +182,7 @@ function drawSelectedBg() {
 		let width = range.width || 2;
 		if (range.left < dataObj.width) {
 			width = range.left + width > dataObj.width ? dataObj.width - range.left : width;
-			putRectPixl({ imgData: slectedImgData, left: range.left, top: range.top, width: width, height: dataObj.charHight, rgb, opacity: 1 });
+			putRectPixl({ imgData: slectedImgData, left: range.left, top: range.top, width: width, height: dataObj.charHight, rgb });
 		}
 	}
 	createImageBitmap(slectedImgData).then(img => {
@@ -212,6 +194,28 @@ function drawSelectedBg() {
 		selectedImg = img;
 	});
 	slectedRanges = null;
+}
+
+function drawCursor() {
+	let rgb = getCursorColor();
+	let cursorsImgData = new ImageData(dataObj.width, dataObj.height);
+	if(rgb[3]) {
+		rgb = rgb.slice();
+		rgb[3] += Math.floor(255 * 0.4);
+		rgb[3] = rgb[3] > 255 ? 255 : rgb[3];
+	}
+	for (let i = 0; i < cursors.length; i++) {
+		putRectPixl({ imgData: cursorsImgData, left: 0, top: cursors[i], width: dataObj.width, height: dataObj.charHight, rgb });
+	}
+	createImageBitmap(cursorsImgData).then(img => {
+		ctx.clearRect(0, 0, dataObj.width, dataObj.height);
+		ctx.putImageData(canvasImgData, 0, 0);
+		ctx.globalCompositeOperation = 'destination-over';
+		selectedImg && ctx.drawImage(selectedImg, 0, 0);
+		ctx.drawImage(img, 0, 0);
+		cursorsImg = img;
+	});
+	cursors = null;
 }
 
 function drawAllCursor() {
@@ -229,11 +233,9 @@ function drawAllCursor() {
 	allCursors = null;
 }
 
-function putRectPixl({ imgData, left, top, width, height, rgb, opacity }) {
+function putRectPixl({ imgData, left, top, width, height, rgb }) {
 	let index = (imgData.width * top + left) * 4;
 	let originIndex = index;
-	opacity = opacity || 1;
-	opacity = Math.floor(opacity * 255);
 	for (let h = 0; h < height; h++) {
 		for (let w = 0; w < width; w++) {
 			_putPixl(index, rgb);
@@ -248,7 +250,7 @@ function putRectPixl({ imgData, left, top, width, height, rgb, opacity }) {
 			imgData.data[index] = rgb[0];
 			imgData.data[index + 1] = rgb[1];
 			imgData.data[index + 2] = rgb[2];
-			imgData.data[index + 3] = opacity;
+			imgData.data[index + 3] = rgb[3] || 255;
 		}
 	}
 }
@@ -359,6 +361,7 @@ function setData(data) {
 	function _emptyCode() {
 		// 清空数据
 		cacheMap = {};
+		renderedIdMap = {};
 		lines = null;
 		singleLines = null;
 		if (dataObj.width && dataObj.height) {
@@ -476,7 +479,7 @@ function getCharImgData(char, rgb) {
 function getRgb(color) {
 	if (!getRgb[color]) {
 		let rgb = [];
-		for (let i = 1, c = 0; i <= color.length - 2 && c < 3; i += 2, c++) {
+		for (let i = 1; i <= color.length - 2; i += 2) {
 			rgb.push(Number('0x' + color[i] + color[i + 1]));
 		}
 		getRgb[color] = rgb;

@@ -98,7 +98,7 @@ export default {
 					this.setCheckedByIndex(this.index + 1);
 				} else if (e.keyCode === 13) {
 					if (this.index > -1) {
-						this.$emit('change', this.indexMap[this.index]);
+						this.onClick(this.indexMap[this.index]);
 					}
 				}
 			}
@@ -119,22 +119,28 @@ export default {
 				menuList = [menuList];
 			}
 			this.myMenuList = menuList.map((group, i) => {
-				return group.map((item) => {
+				let newGroup = [];
+				group.forEach((item) => {
 					item = Object.assign({}, item);
+					item.group = newGroup;
 					item.value = item.value === undefined ? item.name : item.value;
 					if (this.value instanceof Array) {
-						item.checked = item.value === this.value[i];
+						item.selected = item.value === this.value[i];
 					} else {
-						item.checked = item.value === this.value;
+						item.selected = item.value === this.value;
 					}
-					item.selected = item.checked;
+					if (menuList.length === 1) {
+						item.checked = item.selected;
+						item.selected = false;
+					}
 					this.indexMap[++index] = item;
 					this.maxIndex = index;
 					if (item.checked && this.index === -1) {
 						this.index = index;
 					}
-					return item;
+					newGroup.push(item);
 				});
+				return newGroup;
 			});
 		},
 		scrollToIndex() {
@@ -163,11 +169,14 @@ export default {
 			this.myMenuList.forEach((group, i) => {
 				group.forEach((item) => {
 					if (this.value instanceof Array) {
-						item.checked = item.value === this.value[i];
+						item.selected = item.value === this.value[i];
 					} else {
-						item.checked = item.value === this.value;
+						item.selected = item.value === this.value;
 					}
-					item.selected = item.checked;
+					if (this.myMenuList.length === 1) {
+						item.checked = item.selected;
+						item.selected = false;
+					}
 					index++;
 					if (item.checked && this.index === -1) {
 						this.index = index;
@@ -177,12 +186,12 @@ export default {
 			this.myMenuList.splice();
 		},
 		setCheckedByIndex(index) {
-			this.clearChecked();
 			if (index < 0) {
 				index = this.maxIndex;
 			} else if (index > this.maxIndex) {
 				index = 0;
 			}
+			this.clearChecked();
 			this.indexMap[index].checked = true;
 			this.index = index;
 			this.myMenuList.splice();

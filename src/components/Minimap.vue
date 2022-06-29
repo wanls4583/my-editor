@@ -96,6 +96,7 @@ export default {
 			if (type === 'theme' || !type) {
 				this.preCursorResult = null;
 				this.preAllCursorResult = null;
+				this.renderedIdMap = {};
 				Object.assign(data, {
 					colors: globalData.colors,
 					scopeIdMap: globalData.scopeIdMap,
