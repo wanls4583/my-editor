@@ -403,6 +403,9 @@ export default {
 			this.render();
 		},
 		tabSize: function (newVal) {
+			this.myContext.htmls.forEach((lineObj) => {
+				lineObj.tabNum = -1;
+			});
 			this.render();
 			this.maxWidthObj = { lineId: null, text: '', width: 0 };
 			this.myContext.setLineWidth(this.myContext.htmls);
