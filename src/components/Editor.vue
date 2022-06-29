@@ -809,20 +809,22 @@ export default {
 				return;
 			}
 			this.renderSelectedBgTimer = setTimeout(() => {
-				this.renderSelectedBg();
+				this.renderSelectedBg(true);
 				this.$refs.minimap && this.$refs.minimap.renderSelectedBg();
 				this.renderSelectedBgTimer = null;
 			}, 15);
 		},
-		renderSelectedBg() {
+		renderSelectedBg(isAsync) {
 			clearTimeout(this.renderSelectedBgTimer);
 			this.renderSelectedBgTimer = null;
 			this.activeLineBg = true;
 			this.clearSelectionToken();
-			this.renderObjs.forEach((renderObj, index) => {
-				renderObj.bgClass = '';
-				this.$set(this.renderObjs, index, renderObj);
-			});
+			if (isAsync) {
+				this.renderObjs.forEach((renderObj, index) => {
+					renderObj.bgClass = '';
+					this.$set(this.renderObjs, index, renderObj);
+				});
+			}
 			this.fSelecter.ranges.forEach((range) => {
 				this._renderWholeLineBg(range, true);
 			});

@@ -283,12 +283,9 @@ export default class {
 			}
 			// 最多向上检查5000行
 			if (line >= 1 && cursorPos.line - line < 5000) {
-				this.getBracketMatchTask = globalData.scheduler.addTask(
-					() => {
-						_getBracket.call(this, cursorPos, stack, line, callback);
-					},
-					{ delay: 2 }
-				);
+				this.getBracketMatchTask = globalData.scheduler.addTask(() => {
+					_getBracket.call(this, cursorPos, stack, line, callback);
+				});
 			}
 		}
 	}

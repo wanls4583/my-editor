@@ -174,9 +174,15 @@ export default {
 			this.blockTop = top * this.scale;
 		},
 		render() {
-			this.renderLines();
-			this.renderDiff();
-			this.renderSelectedBg();
+			if (this.renderTimer) {
+				return;
+			}
+			this.renderTimer = setTimeout(() => {
+				this.renderLines();
+				this.renderDiff();
+				this.renderSelectedBg();
+				this.renderTimer = null;
+			}, 15);
 		},
 		renderLines() {
 			let lines = [];
