@@ -701,6 +701,8 @@ Util.command = {
 	INSERT_LINE: 'insertLine',
 	DELETE_LINE: 'deleteLine',
 	REPLACE: 'replace',
+	TAB_TO_SPACE: 'tabToSpace',
+	SPACE_TO_TAB: 'spaceToTab',
 };
 Util.constData = {
 	LINE_COMMENT: 'line-comment',

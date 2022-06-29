@@ -199,7 +199,7 @@ function drawSelectedBg() {
 function drawCursor() {
 	let rgb = getCursorColor();
 	let cursorsImgData = new ImageData(dataObj.width, dataObj.height);
-	if(rgb[3]) {
+	if (rgb[3]) {
 		rgb = rgb.slice();
 		rgb[3] += Math.floor(255 * 0.4);
 		rgb[3] = rgb[3] > 255 ? 255 : rgb[3];
@@ -332,22 +332,13 @@ function initData(data) {
 }
 
 function setData(data) {
-	let sizeChange = false;
 	if (data.height !== undefined && data.height !== dataObj.height) {
 		canvas.height = data.height;
 		leftDiffCanvas.height = data.height;
 		rightDiffCanvas.height = data.height;
-		sizeChange = true;
 	}
 	if (data.width !== undefined && data.width !== dataObj.width) {
 		canvas.width = data.width;
-		sizeChange = true;
-	}
-	if (data.space !== undefined && data.space !== dataObj.space) {
-		sizeChange = true;
-	}
-	if (data.colors || data.scopeIdMap) {
-		sizeChange = true;
 	}
 	if (data.leftWidth !== undefined && data.leftWidth !== dataObj.leftWidth) {
 		leftDiffCanvas.width = data.leftWidth;
@@ -356,9 +347,9 @@ function setData(data) {
 		rightDiffCanvas.width = data.rightWidth;
 	}
 	Object.assign(dataObj, data);
-	sizeChange && _emptyCode();
+	_clearCache();
 
-	function _emptyCode() {
+	function _clearCache() {
 		// 清空数据
 		cacheMap = {};
 		renderedIdMap = {};

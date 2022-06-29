@@ -104,6 +104,12 @@ export default {
 				case 'changeIndent':
 					EventBus.$emit('indent-change', item.value);
 					break;
+				case 'convertTabToSpace':
+					EventBus.$emit('convert-to-space', item.value);
+					break;
+				case 'convertSpaceToTab':
+					EventBus.$emit('convert-to-tab', item.value);
+					break;
 			}
 			this.visible = false;
 		},

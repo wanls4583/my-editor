@@ -96,12 +96,12 @@ export default {
 			if (type === 'theme' || !type) {
 				this.preCursorResult = null;
 				this.preAllCursorResult = null;
-				this.renderedIdMap = {};
 				Object.assign(data, {
 					colors: globalData.colors,
 					scopeIdMap: globalData.scopeIdMap,
 				});
 			}
+			this.renderedIdMap = {};
 			this.worker.postMessage({
 				event: 'set-data',
 				data: data,

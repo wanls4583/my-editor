@@ -211,6 +211,7 @@ export default {
 			renderSelectionObjs: [],
 			renderedLineMap: {},
 			renderedIdMap: {},
+			renderNumsIdMap: {},
 			diffRanges: null,
 			diffTabData: null,
 			tipContent: null,
@@ -538,6 +539,14 @@ export default {
 				})
 			);
 			EventBus.$on(
+				'convert-to-space',
+				(this.initEventBusFn['convert-to-space'] = (indent) => {
+					if (this.active) {
+						this.convertTabToSpace();
+					}
+				})
+			);
+			EventBus.$on(
 				'close-menu',
 				(this.initEventBusFn['close-menu'] = () => {
 					this.menuVisible = false;
@@ -723,6 +732,7 @@ export default {
 			this.endLine = 0;
 			this.renderedLineMap = [];
 			this.renderedIdMap = [];
+			this.renderNumsIdMap = [];
 			for (let i = 0, startLine = this.startLine; i < this.maxVisibleLines && startLine <= this.myContext.htmls.length; i++) {
 				let lineObj = this.myContext.htmls[startLine - 1];
 				let obj = this.getRenderObj(lineObj, startLine);
@@ -764,11 +774,14 @@ export default {
 					}
 				});
 				this.renderNums = this.renderObjs.map((item) => {
-					return {
+					let numObj = {
+						lineId: item.lineId,
 						num: item.num,
 						top: item.top,
 						fold: item.fold,
 					};
+					this.renderNumsIdMap[item.lineId] = numObj;
+					return numObj;
 				});
 				this.setNumExtraData();
 			}
@@ -776,13 +789,16 @@ export default {
 		// 渲染单行代码
 		renderLine(lineId) {
 			let renderObj = this.renderedIdMap[lineId];
+			let numObj = this.renderNumsIdMap[lineId];
 			if (renderObj) {
 				let lineObj = this.myContext.htmls[renderObj.num - 1];
 				if (lineObj && lineObj.lineId === lineId) {
 					let bgClass = renderObj.bgClass;
 					Object.assign(renderObj, this.getRenderObj(lineObj, renderObj.num));
 					renderObj.bgClass = bgClass;
+					numObj.fold = renderObj.fold;
 					this.$set(this.renderObjs, renderObj.index, renderObj);
+					this.$set(this.renderNums, renderObj.index, numObj);
 					this.renderSelectionToken(renderObj.num);
 					this.renderError(renderObj.num);
 				}
@@ -853,46 +869,48 @@ export default {
 					}
 				}
 			}
-			if (this.renderedLineMap[start.line]) {
-				let renderObj = this.renderedLineMap[start.line];
-				start.left = this.getExactLeft(start);
-				if (start.line == end.line) {
-					start.width = this.getExactLeft(end) - start.left || 10;
-					start.width += 'px';
-				} else {
-					start.width = this.getExactLeft({ line: start.line, column: text.length }) - start.left || 10;
-					start.width += 'px';
+			this.$nextTick(() => {
+				if (this.renderedLineMap[start.line]) {
+					let renderObj = this.renderedLineMap[start.line];
+					start.left = this.getExactLeft(start);
+					if (start.line == end.line) {
+						start.width = this.getExactLeft(end) - start.left || 10;
+						start.width += 'px';
+					} else {
+						start.width = this.getExactLeft({ line: start.line, column: text.length }) - start.left || 10;
+						start.width += 'px';
+					}
+					start.left += 'px';
+					this.renderSelectionObjs.push({
+						left: start.left,
+						top: renderObj.top,
+						width: start.width,
+						active: range.active,
+						isFsearch: isFsearch,
+					});
+					if (end.line == start.line) {
+						endColumn = end.column;
+					}
+					// range.active为false时，样式可能只显示边框，不改变字体颜色和背景
+					range.active && this._renderSelectionToken(start.line, start.column, endColumn);
 				}
-				start.left += 'px';
-				this.renderSelectionObjs.push({
-					left: start.left,
-					top: renderObj.top,
-					width: start.width,
-					active: range.active,
-					isFsearch: isFsearch,
-				});
-				if (end.line == start.line) {
-					endColumn = end.column;
+				if (end.line > start.line && this.renderedLineMap[end.line]) {
+					let renderObj = this.renderedLineMap[end.line];
+					end.left = '0px';
+					text = this.myContext.htmls[end.line - 1].text;
+					end.width = this.getExactLeft(end) || 10;
+					end.width += 'px';
+					this.renderSelectionObjs.push({
+						left: end.left,
+						top: renderObj.top,
+						width: end.width,
+						active: range.active,
+						isFsearch: isFsearch,
+					});
+					// range.active为false时，样式可能只显示边框，不改变字体颜色和背景
+					range.active && this._renderSelectionToken(end.line, 0, end.column);
 				}
-				// range.active为false时，样式可能只显示边框，不改变字体颜色和背景
-				range.active && this._renderSelectionToken(start.line, start.column, endColumn);
-			}
-			if (end.line > start.line && this.renderedLineMap[end.line]) {
-				let renderObj = this.renderedLineMap[end.line];
-				end.left = '0px';
-				text = this.myContext.htmls[end.line - 1].text;
-				end.width = this.getExactLeft(end) || 10;
-				end.width += 'px';
-				this.renderSelectionObjs.push({
-					left: end.left,
-					top: renderObj.top,
-					width: end.width,
-					active: range.active,
-					isFsearch: isFsearch,
-				});
-				// range.active为false时，样式可能只显示边框，不改变字体颜色和背景
-				range.active && this._renderSelectionToken(end.line, 0, end.column);
-			}
+			});
 			if (start.line === this.nowCursorPos.line || end.line === this.nowCursorPos.line) {
 				this.activeLineBg = false;
 			}
@@ -1327,6 +1345,88 @@ export default {
 				});
 			}
 		},
+		convertTabToSpace() {
+			let contentChanged = false;
+			this.cursor.multiCursorPos.forEach((cursorPos) => {
+				_checkPos.call(this, cursorPos);
+			});
+			this.selecter.ranges.forEach((range) => {
+				_checkPos.call(this, range.start);
+				_checkPos.call(this, range.end);
+			});
+			this.fSelecter.ranges.forEach((range) => {
+				_checkPos.call(this, range.start);
+				_checkPos.call(this, range.end);
+			});
+			this.folder.folds.forEach((fold) => {
+				let text = this.myContext.htmls[fold.start.line - 1].text;
+				let tabCount = _getTabNum(text);
+				tabCount = tabCount * (this.tabSize - 1);
+				fold.start.startIndex += tabCount;
+				fold.start.endIndex += tabCount;
+				text = this.myContext.htmls[fold.end.line - 1].text;
+				tabCount = _getTabNum(text);
+				tabCount = tabCount * (this.tabSize - 1);
+				fold.end.startIndex += tabCount;
+				fold.end.endIndex += tabCount;
+			});
+			this.myContext.htmls.forEach((lineObj) => {
+				let tabCount = _getTabNum(lineObj.text);
+				tabCount = tabCount * (this.tabSize - 1);
+				if (tabCount > 0) {
+					if (lineObj.tokens) {
+						lineObj.tokens.forEach((token, index) => {
+							if (index > 0) {
+								token.startIndex += tabCount;
+							}
+							token.endIndex += tabCount;
+						});
+					}
+					if (lineObj.folds) {
+						lineObj.folds.forEach((fold, index) => {
+							fold.startIndex += tabCount;
+							fold.endIndex += tabCount;
+						});
+					}
+					if (lineObj.stateFold) {
+						lineObj.stateFold.startIndex += tabCount;
+						lineObj.stateFold.endIndex += tabCount;
+					}
+					lineObj.text = lineObj.text.replace(/(?<=^\s*)\t/g, this.space);
+					lineObj.html = '';
+					lineObj.tabNum = -1;
+					contentChanged = true;
+				}
+			});
+			if (contentChanged) {
+				EventBus.$emit('editor-content-change', { id: this.editorId, path: this.tabData.path });
+			}
+			EventBus.$emit('indent-change', 'space');
+			this.history.pushHistory({ type: Util.command.SPACE_TO_TAB });
+			this.render();
+			this.focus();
+
+			function _getTabNum(text) {
+				let tabNum = 0;
+				let space = /^\s+/.exec(text);
+				if (space) {
+					space = space[0];
+					for (let i = 0; i < space.length; i++) {
+						if (space[i] === '\t') {
+							tabNum++;
+						}
+					}
+				}
+				return tabNum;
+			}
+
+			function _checkPos(cursorPos) {
+				let text = this.myContext.htmls[cursorPos.line - 1].text.slice(0, cursorPos.column);
+				let tabCount = _getTabNum(text);
+				tabCount = tabCount * (this.tabSize - 1);
+				cursorPos.column += tabCount;
+			}
+		},
 		setData(prop, value) {
 			if (typeof this[prop] === 'function') {
 				return;
@@ -1503,6 +1603,7 @@ export default {
 				}
 			}
 			return {
+				lineId: lineObj.lineId,
 				html: html,
 				num: line,
 				top: top,
