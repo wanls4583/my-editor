@@ -257,38 +257,37 @@ function putRectPixl({ imgData, left, top, width, height, rgb }) {
 
 // 定时更新
 function render() {
-	try {
-		if (dataObj.width && dataObj.height && dataObj.charHight && ctx) {
-			if (lines) {
-				drawLines(lines);
-				lines = null;
-			} else if (singleLines) {
-				drawSingleLiens(singleLines);
-				singleLines = null;
+	cancelAnimationFrame(render.timer);
+	render.timer = requestAnimationFrame(() => {
+		try {
+			if (dataObj.width && dataObj.height && dataObj.charHight && ctx) {
+				if (lines) {
+					drawLines(lines);
+					lines = null;
+				} else if (singleLines) {
+					drawSingleLiens(singleLines);
+					singleLines = null;
+				}
+				if (cursors) {
+					drawCursor();
+				}
+				if (allCursors) {
+					drawAllCursor();
+				}
+				if (slectedRanges) {
+					drawSelectedBg();
+				}
+				if (diffRanges) {
+					drawLeftDiff();
+				}
+				if (allDiffRanges) {
+					drawRightDiff();
+				}
 			}
-			if (cursors) {
-				drawCursor();
-			}
-			if (allCursors) {
-				drawAllCursor();
-			}
-			if (slectedRanges) {
-				drawSelectedBg();
-			}
-			if (diffRanges) {
-				drawLeftDiff();
-			}
-			if (allDiffRanges) {
-				drawRightDiff();
-			}
+		} catch (e) {
+			console.log(e);
 		}
-	} catch (e) {
-		console.log(e);
-	}
-	clearTimeout(render.timer);
-	render.timer = setTimeout(() => {
-		render();
-	}, 15);
+	});
 }
 
 function cacheLineObj(item) {
@@ -514,7 +513,6 @@ self.onmessage = function (e) {
 	switch (event) {
 		case 'init':
 			this.initData(data);
-			render();
 			break;
 		case 'set-data':
 			setData(data);
@@ -551,4 +549,5 @@ self.onmessage = function (e) {
 			slectedRanges = data;
 			break;
 	}
+	render();
 };
