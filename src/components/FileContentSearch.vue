@@ -170,11 +170,7 @@ export default {
 			let results = [];
 			searcher.on('message', (data) => {
 				if (data === 'end') {
-					if (!file.path) {
-						this.results = [];
-						this.count = 0;
-					}
-					this.searching = false;
+					this.stopSeach();
 				} else if (data.searchId === this.searchId) {
 					let result = data.results[0];
 					if (!file.path) {
@@ -195,10 +191,10 @@ export default {
 				}
 				if (!refreshTimer) {
 					refreshTimer = setTimeout(() => {
-						// this.$refs.results.addResults(results);
+						this.$refs.results.addResults(results);
 						results = [];
 						refreshTimer = null;
-					}, 15);
+					}, 60);
 				}
 			});
 			return searcher;

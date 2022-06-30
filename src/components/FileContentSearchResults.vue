@@ -6,7 +6,7 @@
 <template>
 	<div @scroll="onScroll" class="results-tree-warp my-scroll-overlay my-scroll-small test123 test123" ref="wrap">
 		<div style="width: 100%; overflow: hidden">
-			<div :style="{ height: _scrollHeight }" class="results-tree">
+			<div :style="{ height: scrollHeight }" class="results-tree">
 				<div :style="{ top: _top }" class="results-tree-content">
 					<div @click.stop="onClickItem(item)" class="tree-item" v-for="item in renderList">
 						<div
@@ -38,6 +38,7 @@ import Util from '@/common/util';
 import globalData from '@/data/globalData';
 
 let preActiveItem = null;
+let openedList = [];
 
 export default {
 	name: 'FileContentSearchResults',
@@ -45,19 +46,15 @@ export default {
 		return {
 			itemHeight: 30,
 			itemPadding: 16,
-			list: [],
-			openedList: [],
 			renderList: [],
 			startLine: 1,
 			maxVisibleLines: 100,
+			scrollHeight: '',
 		};
 	},
 	computed: {
 		_top() {
 			return (this.startLine - 1) * this.itemHeight + 'px';
-		},
-		_scrollHeight() {
-			return this.openedList.length * this.itemHeight + 'px';
 		},
 		_paddingLeft() {
 			return function (item) {
@@ -83,13 +80,13 @@ export default {
 		},
 		initEventBus() {
 			EventBus.$on('icon-changed', () => {
-				this.openedList.forEach((item) => {
+				openedList.forEach((item) => {
 					item.icon = '';
 				});
 				this.render();
 			});
 			EventBus.$on('theme-changed', () => {
-				this.openedList.forEach((item) => {
+				openedList.forEach((item) => {
 					item.icon = '';
 				});
 				this.render();
@@ -111,7 +108,7 @@ export default {
 			cancelAnimationFrame(this.renderTimer);
 			this.renderTimer = requestAnimationFrame(() => {
 				this.maxVisibleLines = Math.ceil(this.$refs.wrap.clientHeight / this.itemHeight) + 1;
-				this.renderList = this.openedList.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines);
+				this.renderList = openedList.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines);
 				this.renderList.forEach((item) => {
 					if (globalData.nowIconData && item.deep == 1) {
 						item.icon = Util.getIconByPath({
@@ -131,8 +128,8 @@ export default {
 			});
 		},
 		addResults(results) {
-			this.list.push(results);
-			this.openedList.push(...this.getRenderList(results, 0));
+			openedList.push(...this.getRenderList(results, 0));
+			this.scrollHeight = openedList.length * this.itemHeight + 'px';
 			this.render();
 		},
 		getRenderList(list, deep) {
@@ -169,8 +166,8 @@ export default {
 			_findItem.call(this, path);
 
 			function _findItem(path) {
-				for (let i = index; i < this.openedList.length; i++) {
-					let item = this.openedList[i];
+				for (let i = index; i < openedList.length; i++) {
+					let item = openedList[i];
 					if (item.path === path) {
 						let wrap = this.$refs.wrap;
 						let scrollTop = wrap.scrollTop;
@@ -216,18 +213,18 @@ export default {
 			function _changOpen(item) {
 				if (item.children.length) {
 					if (item.open) {
-						let index = this.openedList.indexOf(item);
-						this.openedList = this.openedList
+						let index = openedList.indexOf(item);
+						openedList = openedList
 							.slice(0, index + 1)
 							.concat(this.getRenderList(item.children, item.deep))
-							.concat(this.openedList.slice(index + 1));
+							.concat(openedList.slice(index + 1));
 					} else {
-						let index = this.openedList.indexOf(item) + 1;
+						let index = openedList.indexOf(item) + 1;
 						let endIn = index;
-						while (endIn < this.openedList.length && this.openedList[endIn].path === item.path) {
+						while (endIn < openedList.length && openedList[endIn].path === item.path) {
 							endIn++;
 						}
-						this.openedList.splice(index, endIn - index);
+						openedList.splice(index, endIn - index);
 					}
 					this.render();
 				}

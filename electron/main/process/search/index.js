@@ -10,6 +10,20 @@ class Search {
 	constructor() {
 		this.wholeWordPattern = new RegExp(`^(${defaultWordPattern})$`);
 		this.wordPattern = new RegExp(defaultWordPattern);
+		this.sendQueue = [];
+		this.send();
+	}
+	send() {
+		if (this.sendQueue.length) {
+			process.send({ searchId: this.searchId, results: this.sendQueue.shift() });
+		}
+		if (this.sendQueue.length === 0 && this.searchDone === true) {
+			process.send('end');
+		} else {
+			setTimeout(() => {
+				this.send();
+			}, 15);
+		}
 	}
 	search(searchObj) {
 		searchObj = Object.assign({}, searchObj);
@@ -17,9 +31,7 @@ class Search {
 		this.searchId = searchObj.searchId;
 		this.searchObj = searchObj;
 		if (!fs.existsSync(searchObj.path)) {
-			setTimeout(() => {
-				process.send('end');
-			});
+			this.searchDone = true;
 			return;
 		}
 		if (searchObj.excludePath) {
@@ -50,18 +62,18 @@ class Search {
 				files: [],
 				dirs: [searchObj.path],
 				searchObj: searchObj,
-				searchId: this.searchId,
+				searchId: this.searchId
 			});
 		} else {
 			let fileObj = {
 				name: path.basename(searchObj.path),
-				path: searchObj.path,
+				path: searchObj.path
 			};
 			this.searchFiles({
 				files: [fileObj],
 				dirs: [],
 				searchObj: searchObj,
-				searchId: this.searchId,
+				searchId: this.searchId
 			});
 		}
 	}
@@ -84,7 +96,9 @@ class Search {
 			this.searchDir(option);
 			return;
 		}
+		this.searchDiring = true;
 		fs.readdir(dirPath, { encoding: 'utf8' }, (err, files) => {
+			this.searchDiring = false;
 			if (err) {
 				console.log(err);
 				return;
@@ -96,7 +110,7 @@ class Search {
 					if (state.isFile()) {
 						option.files.push({
 							name: item,
-							path: fullPath,
+							path: fullPath
 						});
 						this.searchFiles(option);
 					} else {
@@ -104,23 +118,21 @@ class Search {
 					}
 				} catch (e) {}
 			});
-			this.searchDirTimer = setTimeout(() => {
-				this.searchDir(option);
-			}, 0);
+			this.searchDir(option);
 		});
 	}
 	searchFiles(option) {
 		if (option.searchId !== this.searchId || option.files.searching) {
 			return;
 		}
-		if (option.files.length === 0) {
-			process.send('end');
+		if (option.files.length === 0 && option.dirs.length === 0 && !this.searchDiring) {
+			this.searchDone = true;
 			return;
 		}
 		let fileObj = option.files[0];
 		let basename = path.basename(fileObj.path);
 		let excludePath = option.searchObj.excludePath;
-		let sendQueue = [];
+		let results = [];
 		fileObj.id = this.getIdFromPath(fileObj.path);
 		if (skipSearchFiles.test(basename) || (excludePath && excludePath.test(fileObj.path))) {
 			option.files.shift();
@@ -135,21 +147,21 @@ class Search {
 					return;
 				}
 				if (option.searchObj.lines.length === 1) {
-					sendQueue.push(..._singleLineMatch.call(this, lines));
+					results.push(..._singleLineMatch.call(this, lines));
 				} else {
-					sendQueue.push(..._multiLineMatch.call(this, lines));
+					results.push(..._multiLineMatch.call(this, lines));
 				}
 			},
 			() => {
 				option.files.shift();
 				option.files.searching = false;
-				sendQueue.length && process.send({ searchId: this.searchId, results: sendQueue });
+				if (results.length) {
+					this.sendQueue.push(results);
+				}
 				if (option.searchId !== this.searchId) {
 					return;
 				}
-				this.searchFilesTimer = setTimeout(() => {
-					this.searchFiles(option);
-				}, 0);
+				this.searchFiles(option);
 			}
 		);
 
@@ -167,7 +179,7 @@ class Search {
 						text,
 						range,
 						fileObj,
-						searchObj,
+						searchObj
 					})
 				);
 			}
@@ -202,8 +214,8 @@ class Search {
 					this.createItem({
 						text,
 						range,
-						fileObj,
-					}),
+						fileObj
+					})
 				];
 			}
 		}
@@ -249,7 +261,7 @@ class Search {
 			text: resultText,
 			id: fileObj.id,
 			name: fileObj.name,
-			path: fileObj.path,
+			path: fileObj.path
 		};
 	}
 	htmlTrans(cont) {
