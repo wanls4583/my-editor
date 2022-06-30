@@ -43,6 +43,7 @@ class Context {
 			'fSearcher',
 			'autocomplete',
 			'render',
+			'focus',
 			'unFold',
 			'setNowCursorPos',
 			'setErrors',
@@ -1122,6 +1123,191 @@ class Context {
 				line: line,
 				column: column,
 			};
+		}
+	}
+	convertTabToSpace(command) {
+		let contentChanged = false;
+		this.cursor.multiCursorPos.forEach(cursorPos => {
+			_checkPos.call(this, cursorPos);
+		});
+		this.selecter.ranges.forEach(range => {
+			_checkPos.call(this, range.start);
+			_checkPos.call(this, range.end);
+		});
+		this.fSelecter.ranges.forEach(range => {
+			_checkPos.call(this, range.start);
+			_checkPos.call(this, range.end);
+		});
+		this.folder.folds.forEach(fold => {
+			let text = this.htmls[fold.start.line - 1].text;
+			let tabCount = _getTabNum(text);
+			if (tabCount) {
+				tabCount = tabCount * (this.tabSize - 1);
+				fold.start.startIndex += tabCount;
+				fold.start.endIndex += tabCount;
+			}
+			text = this.htmls[fold.end.line - 1].text;
+			tabCount = _getTabNum(text);
+			if (tabCount) {
+				tabCount = tabCount * (this.tabSize - 1);
+				fold.end.startIndex += tabCount;
+				fold.end.endIndex += tabCount;
+			}
+		});
+		this.htmls.forEach(lineObj => {
+			let tabCount = _getTabNum(lineObj.text);
+			tabCount = tabCount * (this.tabSize - 1);
+			if (tabCount > 0) {
+				if (lineObj.tokens) {
+					lineObj.tokens.forEach((token, index) => {
+						if (index > 0) {
+							token.startIndex += tabCount;
+						}
+						token.endIndex += tabCount;
+					});
+				}
+				if (lineObj.folds) {
+					lineObj.folds.forEach((fold, index) => {
+						fold.startIndex += tabCount;
+						fold.endIndex += tabCount;
+					});
+				}
+				if (lineObj.stateFold) {
+					lineObj.stateFold.startIndex += tabCount;
+					lineObj.stateFold.endIndex += tabCount;
+				}
+				lineObj.text = lineObj.text.replace(/(?<=^\s*)\t/g, this.space);
+				lineObj.html = '';
+				lineObj.tabNum = -1;
+				contentChanged = true;
+			}
+		});
+		if (contentChanged) {
+			EventBus.$emit('editor-content-change', { id: this.editorId, path: this.tabData.path });
+			EventBus.$emit('indent-change', 'space');
+			this.render();
+			this.focus();
+			if (command) {
+				this.history.updateHistory({ type: Util.command.SPACE_TO_TAB });
+			} else {
+				this.history.pushHistory({ type: Util.command.SPACE_TO_TAB });
+			}
+		}
+
+		function _getTabNum(text) {
+			let tabNum = 0;
+			let res = /^\s+/.exec(text);
+			if (res) {
+				res = res[0];
+				for (let i = 0; i < res.length; i++) {
+					if (res[i] === '\t') {
+						tabNum++;
+					}
+				}
+			}
+			return tabNum;
+		}
+
+		function _checkPos(cursorPos) {
+			let text = this.htmls[cursorPos.line - 1].text.slice(0, cursorPos.column);
+			let tabCount = _getTabNum(text);
+			if (tabCount) {
+				tabCount = tabCount * (this.tabSize - 1);
+				cursorPos.column += tabCount;
+			}
+		}
+	}
+	convertSpaceToTab(command) {
+		let contentChanged = false;
+		let indexReg = new RegExp(`^(\\t|${this.space})+`);
+		let reg = new RegExp(`(?<=^\\s*)${this.space}`, 'g');
+		this.cursor.multiCursorPos.forEach(cursorPos => {
+			_checkPos.call(this, cursorPos);
+		});
+		this.selecter.ranges.forEach(range => {
+			_checkPos.call(this, range.start);
+			_checkPos.call(this, range.end);
+		});
+		this.fSelecter.ranges.forEach(range => {
+			_checkPos.call(this, range.start);
+			_checkPos.call(this, range.end);
+		});
+		this.folder.folds.forEach(fold => {
+			let text = this.htmls[fold.start.line - 1].text;
+			let tabCount = _getTabNum(text);
+			if (tabCount) {
+				tabCount = tabCount * (this.tabSize - 1);
+				fold.start.startIndex -= tabCount;
+				fold.start.endIndex -= tabCount;
+			}
+			text = this.htmls[fold.end.line - 1].text;
+			tabCount = _getTabNum(text);
+			if (tabCount) {
+				tabCount = tabCount * (this.tabSize - 1);
+				fold.end.startIndex -= tabCount;
+				fold.end.endIndex -= tabCount;
+			}
+		});
+		this.htmls.forEach(lineObj => {
+			let tabCount = _getTabNum(lineObj.text);
+			tabCount = tabCount * (this.tabSize - 1);
+			if (tabCount > 0) {
+				if (lineObj.tokens) {
+					lineObj.tokens.forEach((token, index) => {
+						if (index > 0) {
+							token.startIndex -= tabCount;
+						}
+						token.endIndex -= tabCount;
+					});
+				}
+				if (lineObj.folds) {
+					lineObj.folds.forEach((fold, index) => {
+						fold.startIndex -= tabCount;
+						fold.endIndex -= tabCount;
+					});
+				}
+				if (lineObj.stateFold) {
+					lineObj.stateFold.startIndex -= tabCount;
+					lineObj.stateFold.endIndex -= tabCount;
+				}
+				lineObj.text = lineObj.text.replace(reg, '\t');
+				lineObj.html = '';
+				lineObj.tabNum = -1;
+				contentChanged = true;
+			}
+		});
+		if (contentChanged) {
+			EventBus.$emit('editor-content-change', { id: this.editorId, path: this.tabData.path });
+			EventBus.$emit('indent-change', 'tab');
+			this.render();
+			this.focus();
+			if (command) {
+				this.history.updateHistory({ type: Util.command.TAB_TO_SPACE });
+			} else {
+				this.history.pushHistory({ type: Util.command.TAB_TO_SPACE });
+			}
+		}
+
+		function _getTabNum(text) {
+			let tabNum = 0;
+			let res = text.match(reg);
+			tabNum = res && res.length;
+			return tabNum;
+		}
+
+		function _checkPos(cursorPos) {
+			let text = this.htmls[cursorPos.line - 1].text;
+			let preText = text.slice(0, cursorPos.column);
+			let tabCount = _getTabNum(preText);
+			tabCount = tabCount * (this.tabSize - 1);
+			if (tabCount) {
+				let index = indexReg.exec(preText)[0].length;
+				if (cursorPos.column > index && text.slice(index, index + 4) === this.space) {
+					cursorPos.column = index - tabCount + 1;
+				} else {
+					cursorPos.column -= tabCount;
+				}
+			}
 		}
 	}
 	// 获取选中范围内的文本

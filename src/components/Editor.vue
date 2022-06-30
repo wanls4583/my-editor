@@ -542,7 +542,15 @@ export default {
 				'convert-to-space',
 				(this.initEventBusFn['convert-to-space'] = (indent) => {
 					if (this.active) {
-						this.convertTabToSpace();
+						this.myContext.convertTabToSpace();
+					}
+				})
+			);
+			EventBus.$on(
+				'convert-to-tab',
+				(this.initEventBusFn['convert-to-tab'] = (indent) => {
+					if (this.active) {
+						this.myContext.convertSpaceToTab();
 					}
 				})
 			);
@@ -618,6 +626,8 @@ export default {
 			$(document).unbind('mouseup', this.initEventFn2);
 			EventBus.$off('language-change', this.initEventBusFn['language-change']);
 			EventBus.$off('tab-size-change', this.initEventBusFn['tab-size-change']);
+			EventBus.$off('convert-to-tab', this.initEventBusFn['convert-to-tab']);
+			EventBus.$off('convert-to-space', this.initEventBusFn['convert-to-space']);
 			EventBus.$off('close-menu', this.initEventBusFn['close-menu']);
 			EventBus.$off('theme-changed', this.initEventBusFn['theme-changed']);
 			EventBus.$off('git-diffed', this.initEventBusFn['git-diffed']);
@@ -1364,88 +1374,6 @@ export default {
 					line: line,
 					column: column,
 				});
-			}
-		},
-		convertTabToSpace() {
-			let contentChanged = false;
-			this.cursor.multiCursorPos.forEach((cursorPos) => {
-				_checkPos.call(this, cursorPos);
-			});
-			this.selecter.ranges.forEach((range) => {
-				_checkPos.call(this, range.start);
-				_checkPos.call(this, range.end);
-			});
-			this.fSelecter.ranges.forEach((range) => {
-				_checkPos.call(this, range.start);
-				_checkPos.call(this, range.end);
-			});
-			this.folder.folds.forEach((fold) => {
-				let text = this.myContext.htmls[fold.start.line - 1].text;
-				let tabCount = _getTabNum(text);
-				tabCount = tabCount * (this.tabSize - 1);
-				fold.start.startIndex += tabCount;
-				fold.start.endIndex += tabCount;
-				text = this.myContext.htmls[fold.end.line - 1].text;
-				tabCount = _getTabNum(text);
-				tabCount = tabCount * (this.tabSize - 1);
-				fold.end.startIndex += tabCount;
-				fold.end.endIndex += tabCount;
-			});
-			this.myContext.htmls.forEach((lineObj) => {
-				let tabCount = _getTabNum(lineObj.text);
-				tabCount = tabCount * (this.tabSize - 1);
-				if (tabCount > 0) {
-					if (lineObj.tokens) {
-						lineObj.tokens.forEach((token, index) => {
-							if (index > 0) {
-								token.startIndex += tabCount;
-							}
-							token.endIndex += tabCount;
-						});
-					}
-					if (lineObj.folds) {
-						lineObj.folds.forEach((fold, index) => {
-							fold.startIndex += tabCount;
-							fold.endIndex += tabCount;
-						});
-					}
-					if (lineObj.stateFold) {
-						lineObj.stateFold.startIndex += tabCount;
-						lineObj.stateFold.endIndex += tabCount;
-					}
-					lineObj.text = lineObj.text.replace(/(?<=^\s*)\t/g, this.space);
-					lineObj.html = '';
-					lineObj.tabNum = -1;
-					contentChanged = true;
-				}
-			});
-			if (contentChanged) {
-				EventBus.$emit('editor-content-change', { id: this.editorId, path: this.tabData.path });
-			}
-			EventBus.$emit('indent-change', 'space');
-			this.history.pushHistory({ type: Util.command.SPACE_TO_TAB });
-			this.render();
-			this.focus();
-
-			function _getTabNum(text) {
-				let tabNum = 0;
-				let space = /^\s+/.exec(text);
-				if (space) {
-					space = space[0];
-					for (let i = 0; i < space.length; i++) {
-						if (space[i] === '\t') {
-							tabNum++;
-						}
-					}
-				}
-				return tabNum;
-			}
-
-			function _checkPos(cursorPos) {
-				let text = this.myContext.htmls[cursorPos.line - 1].text.slice(0, cursorPos.column);
-				let tabCount = _getTabNum(text);
-				tabCount = tabCount * (this.tabSize - 1);
-				cursorPos.column += tabCount;
 			}
 		},
 		setData(prop, value) {

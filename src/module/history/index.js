@@ -25,6 +25,8 @@ export default class {
 			'insertLine',
 			'deleteLine',
 			'replace',
+			'convertTabToSpace',
+			'convertSpaceToTab',
 		]);
 	}
 	reset() {
@@ -117,6 +119,12 @@ export default class {
 			case Util.command.REPLACE:
 				this.cursor.clearCursorPos();
 				this.replace(command.text, command.cursorPos, command);
+				break;
+			case Util.command.TAB_TO_SPACE:
+				this.convertTabToSpace(command);
+				break;
+			case Util.command.SPACE_TO_TAB:
+				this.convertSpaceToTab(command);
 				break;
 		}
 	}
