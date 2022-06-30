@@ -49,7 +49,7 @@ export default {
 			renderList: [],
 			startLine: 1,
 			maxVisibleLines: 100,
-			scrollHeight: '',
+			scrollHeight: '0px',
 		};
 	},
 	computed: {
@@ -130,6 +130,11 @@ export default {
 		addResults(results) {
 			openedList.push(...this.getRenderList(results, 0));
 			this.scrollHeight = openedList.length * this.itemHeight + 'px';
+			this.render();
+		},
+		clear() {
+			openedList = [];
+			this.scrollHeight = '0px';
 			this.render();
 		},
 		getRenderList(list, deep) {

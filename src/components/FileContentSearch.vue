@@ -220,6 +220,7 @@ export default {
 					text: this.text,
 					searchId: this.searchId,
 				});
+				this.$refs.results.clear();
 			}, 300);
 		},
 		stopSeach() {
