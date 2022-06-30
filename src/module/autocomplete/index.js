@@ -83,7 +83,11 @@ class Autocomplete {
 		} else if (this.autoTipList && this.autoTipList.length) {
 			this.selectAutoTip();
 		} else {
-			this.insertContent(this.indent === 'tab' ? '\t' : this.space);
+			if (this.indent === 'space' && /^\s*$/.exec(lineObj.text.slice(0, this.nowCursorPos.column))) {
+				this.insertContent(this.space);
+			} else {
+				this.insertContent('\t');
+			}
 		}
 	}
 	_search() {
