@@ -646,6 +646,7 @@ export default {
 			this.initRenderData();
 			this.setScrollerArea();
 			this.setContentHeight();
+			this.render();
 			this.focus();
 			if (this.type !== 'diff') {
 				// 获取文件git修改记录
