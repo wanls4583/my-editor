@@ -19,6 +19,14 @@
     &-icon-check {
         background-image: url(@/assets/icons/dark/check.svg);
     }
+
+    &-icon-add {
+        background-image: url(@/assets/icons/dark/add.svg);
+    }
+
+    &-icon-close {
+        background-image: url(@/assets/icons/dark/chrome-close.svg);
+    }
 }
 .my-theme-light {
     .my {
@@ -32,6 +40,14 @@
 
         &-icon-check {
             background-image: url(@/assets/icons/light/check.svg);
+        }
+
+        &-icon-add {
+            background-image: url(@/assets/icons/light/add.svg);
+        }
+
+        &-icon-close {
+            background-image: url(@/assets/icons/light/chrome-close.svg);
         }
     }
 }

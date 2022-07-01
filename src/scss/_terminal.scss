@@ -100,8 +100,8 @@
 				background-color: var(--my-tab-hoverBackground);
 				color: var(--my-tab-hoverForeground);
 
-				.icon-close {
-					display: block;
+				.my-icon-close {
+					display: flex;
 				}
 			}
 
@@ -116,8 +116,8 @@
 					border: 1px solid var(--my-contrastActiveBorder) !important;
 				}
 
-				.icon-close {
-					display: block;
+				.my-icon-close {
+					display: flex;
 				}
 			}
 
@@ -138,10 +138,11 @@
 				position: absolute;
 				top: 0;
 				right: 0;
+				width: 40px;
 				height: 100%;
 			}
 
-			.icon-close {
+			.my-icon-close {
 				display: none;
 			}
 		}
@@ -150,17 +151,12 @@
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			width: 40px;
+			width: 30px;
 			font-size: 12px;
-
-			&:hover {
-				.bar-icon {
-					display: block !important;
-				}
-			}
 		}
 
 		.bar-icon {
+			display: flex;
 			padding: 4px;
 			border-radius: 4px;
 			cursor: pointer;
@@ -176,6 +172,6 @@
 		display: flex;
 		align-items: center;
 		height: 100%;
-		padding: 5px 0 5px 15px;
+		padding: 5px 5px 5px 15px;
 	}
 }

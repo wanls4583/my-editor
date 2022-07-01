@@ -18,14 +18,23 @@
 					<div class="bar-content">
 						<span class="bar-text">{{ item.name }}</span>
 						<div class="bar-icon-wrap">
-							<span @click.stop="onClose(item.id)" class="bar-icon iconfont icon-close" title="close"></span>
+							<span @click.stop="onClose(item.id)" class="bar-icon" title="close">
+								<i class="my-icon my-icon-close"></i>
+							</span>
 						</div>
 					</div>
 				</div>
 			</div>
 			<div class="my-terminal-btns">
 				<div class="bar-icon-wrap">
-					<span @click.stop="onToggle()" class="bar-icon iconfont icon-close" title="close"></span>
+					<span @click.stop="onAdd()" class="bar-icon" title="new">
+						<i class="my-icon my-icon-add"></i>
+					</span>
+				</div>
+				<div class="bar-icon-wrap">
+					<span @click.stop="onToggle()" class="bar-icon" title="new">
+						<i class="my-icon my-icon-close"></i>
+					</span>
 				</div>
 			</div>
 		</div>
@@ -79,6 +88,9 @@ export default {
 		},
 		onClose(id) {
 			EventBus.$emit('terminal-close', id);
+		},
+		onAdd() {
+			EventBus.$emit('terminal-new');
 		},
 		onToggle() {
 			EventBus.$emit('terminal-toggle');

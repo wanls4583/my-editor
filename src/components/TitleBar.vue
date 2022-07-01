@@ -23,12 +23,12 @@
 					<span>View</span>
 					<Menu :hoverCheck="true" :menuList="viewMenuList" :styles="{ left: 0, top: _top }" @change="onViewMenuChange" v-if="viewMenuVisible"></Menu>
 				</div>
-				
+				<!--
 				<div @mousedown.stop="showMemu('terminalMenuVisible')" class="bar-item my-hover">
 					<span>Terminal</span>
 					<Menu :hoverCheck="true" :menuList="terminalMenuList" :styles="{ left: 0, top: _top }" @change="onTerminalMenuChange" v-if="terminalMenuVisible"></Menu>
 				</div>
-				
+				-->
 				<div @mousedown.stop="showMemu('preferenceMenuVisible')" class="bar-item my-hover">
 					<span>Preference</span>
 					<Menu :hoverCheck="true" :menuList="preferenceMenuList" :styles="{ left: 0, top: _top }" @change="onPreferenceMenuChange" v-if="preferenceMenuVisible"></Menu>

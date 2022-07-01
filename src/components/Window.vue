@@ -222,6 +222,9 @@ export default {
 			});
 			EventBus.$on('terminal-toggle', () => {
 				this.terminalVisible = !this.terminalVisible;
+				if (this.terminalVisible && !this.terminalList.length) {
+					EventBus.$emit('terminal-new');
+				}
 			});
 			EventBus.$on('dialog-show', (option) => {
 				this.showDialog(option);
