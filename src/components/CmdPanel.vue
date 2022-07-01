@@ -61,7 +61,7 @@ export default {
 			EventBus.$on('cmd-menu-open', (data) => {
 				this.visible = true;
 				this.isCmdSearch = false;
-				this.searchText = data.searchText || '';
+				this.searchText = data.input || '';
 				this.originCmdList = data.cmdList;
 				this.checkable = data.checkable === undefined ? true : data.checkable;
 				this.hoverCheck = data.hoverCheck === undefined ? false : data.hoverCheck;
@@ -80,7 +80,7 @@ export default {
 				this.isCmdSearch = true;
 				this.checkable = true;
 				this.hoverCheck = true;
-				this.searchText = data.searchText || '';
+				this.searchText = data.input || '';
 				this.cmdList = [];
 				this.searchCmd();
 				requestAnimationFrame(() => {
