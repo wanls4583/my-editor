@@ -120,19 +120,22 @@ export default {
 				}
 			}
 		},
+		goToLine(line) {
+			line = line < 0 ? 0 : line;
+			if (globalData.nowEditorId) {
+				let editor = globalData.$mainWin.getNowEditor();
+				line = line > editor.maxLine ? editor.maxLine : line;
+				editor.cursor.setCursorPos({
+					line: line,
+					column: 0,
+				});
+				editor.focus();
+			}
+		},
 		onEnter() {
 			if (this.isCmdSearch && this.searchText.startsWith(':')) {
 				let line = parseInt(this.searchText.slice(1));
-				line = line < 0 ? 0 : line;
-				if (globalData.nowEditorId) {
-					let editor = globalData.$mainWin.getNowEditor();
-					line = line > editor.maxLine ? editor.maxLine : line;
-					editor.cursor.setCursorPos({
-						line: line,
-						column: 0,
-					});
-					editor.focus();
-				}
+				this.goToLine(line);
 				this.visible = false;
 			}
 		},
