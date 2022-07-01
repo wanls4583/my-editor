@@ -723,13 +723,9 @@ export default {
 		},
 		// 渲染
 		render(scrollToCursor) {
-			let renderId = this.renderId + 1 || 1;
-			this.renderId = renderId;
+			cancelAnimationFrame(this.renderTimer);
 			this.renderBracketMatch();
-			this.$nextTick(() => {
-				if (renderId !== this.renderId) {
-					return;
-				}
+			this.renderTimer = requestAnimationFrame(() => {
 				this.renderLines();
 				this.renderSelectedBg();
 				this.renderError();

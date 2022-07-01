@@ -153,29 +153,35 @@ export default {
 				});
 			});
 			EventBus.$on('file-tree-loaded', (list) => {
+				globalData.fileTree.empty();
 				this.initOpendDirList(list);
 			});
 		},
 		initOpendDirList(list) {
-			globalData.fileTree.empty();
-			while (list.length) {
+			if (list.length) {
 				let fileObj = list.shift();
 				let item = fileObj.parentPath && Util.getFileItemByPath(globalData.fileTree, fileObj.path, fileObj.rootPath);
 				if (item) {
-					item.children = this.readdir(item);
-					item.open = true;
-					item.loaded = true;
+					_readDir.call(this, item);
 				} else {
 					item = this.createRootItem(fileObj.path);
-					if (fileObj.open) {
-						item.children = this.readdir(item);
-						item.open = true;
-						item.loaded = true;
-					}
 					globalData.fileTree.push(item);
+					if (fileObj.open) {
+						_readDir.call(this, item);
+					}
 				}
+			} else {
+				this.refreshWorkSpace();
 			}
-			this.refreshWorkSpace();
+
+			function _readDir(item) {
+				this.readdir(item).then((_list) => {
+					item.children = _list;
+					item.open = true;
+					item.loaded = true;
+					this.initOpendDirList(list);
+				});
+			}
 		},
 		setTreeHeight() {
 			this.treeHeight = openedList.length * this.itemHeight;
@@ -250,7 +256,6 @@ export default {
 			return obj;
 		},
 		readdir(item) {
-			let files = null;
 			let filePath = '';
 			if (typeof item === 'string') {
 				filePath = item;
@@ -258,10 +263,16 @@ export default {
 			} else {
 				filePath = item.path;
 			}
-			files = fs.readdirSync(filePath, { encoding: 'utf8' });
-			files = this.createItems(item, files);
-			Object.freeze(files);
-			return files;
+			return new Promise((resolve, reject) => {
+				fs.readdir(filePath, { encoding: 'utf8' }, (err, files) => {
+					if (err) {
+						return resolve([]);
+					}
+					files = this.createItems(item, files);
+					Object.freeze(files);
+					resolve(files);
+				});
+			});
 		},
 		refreshDir(item) {
 			this.refreshFolderTimer = this.refreshFolderTimer || {};
@@ -273,31 +284,32 @@ export default {
 			}, 100);
 
 			function _refresh() {
-				let idMap = {};
-				let list = this.readdir(item);
-				item.children.forEach((item) => {
-					idMap[item.id] = item;
-				});
-				item.children = list.map((item) => {
-					let obj = idMap[item.id];
-					if (obj) {
-						if (obj.path != item.path) {
-							obj.name = item.name;
-							// 递归更新路径
-							this.updateParentPath(obj, item.parentPath);
+				this.readdir(item).then((list) => {
+					let idMap = {};
+					item.children.forEach((item) => {
+						idMap[item.id] = item;
+					});
+					item.children = list.map((item) => {
+						let obj = idMap[item.id];
+						if (obj) {
+							if (obj.path != item.path) {
+								obj.name = item.name;
+								// 递归更新路径
+								this.updateParentPath(obj, item.parentPath);
+							}
+							return obj;
 						}
-						return obj;
+						return item;
+					});
+					if (item.open) {
+						this.closeFolder(item);
+						this.openFolder(item);
 					}
-					return item;
+					if (!item.gitRootPath) {
+						this.watchFileStatus(item.children);
+					}
+					this.render();
 				});
-				if (item.open) {
-					this.closeFolder(item);
-					this.openFolder(item);
-				}
-				if (!item.gitRootPath) {
-					this.watchFileStatus(item.children);
-				}
-				this.render();
 			}
 		},
 		refreshWorkSpace() {
@@ -510,13 +522,14 @@ export default {
 				if (item.type === 'dir') {
 					item.open = !item.open;
 					if (!item.loaded) {
-						let list = this.readdir(item);
-						item.children = list;
-						item.loaded = true;
-						if (!item.gitRootPath) {
-							this.watchFileStatus(item.children);
-						}
-						_changOpen.call(this, item);
+						this.readdir(item).then((list) => {
+							item.children = list;
+							item.loaded = true;
+							if (!item.gitRootPath) {
+								this.watchFileStatus(item.children);
+							}
+							_changOpen.call(this, item);
+						});
 					} else {
 						_changOpen.call(this, item);
 					}

@@ -127,6 +127,9 @@ export default {
 			});
 		},
 		addResults(results) {
+			results.forEach((item) => {
+				Object.freeze(item.children);
+			});
 			openedList = openedList.concat(this.getRenderList(results, 0));
 			this.scrollHeight = openedList.length * this.itemHeight + 'px';
 			this.render();
