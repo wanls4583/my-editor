@@ -1092,6 +1092,7 @@ export default {
 		// 渲染光标
 		renderCursor(scrollToCursor) {
 			let that = this;
+			this.scrollToCursor = scrollToCursor;
 			if (this.renderCursorTimer) {
 				return;
 			}
@@ -1123,7 +1124,7 @@ export default {
 				}
 				left = that.getExactLeft(cursorPos);
 				// 强制滚动使光标处于可见区域
-				if (scrollToCursor && cursorPos === that.nowCursorPos) {
+				if (that.scrollToCursor && cursorPos === that.nowCursorPos) {
 					if (left > that.scrollerArea.width + that.scrollLeft - that.charObj.fullAngleCharWidth) {
 						that.scrollLeft = left + that.charObj.fullAngleCharWidth - that.scrollerArea.width;
 					} else if (left < that.scrollLeft) {
@@ -1250,7 +1251,7 @@ export default {
 				if (searchConfig) {
 					//有效搜索
 					searchDialog.initData({
-						ignoreCase: searchConfig.ignoreCase,
+						matchCase: searchConfig.matchCase,
 						wholeWord: searchConfig.wholeWord,
 						text: searchConfig.text,
 					});
@@ -1421,8 +1422,8 @@ export default {
 						let scrollTop = (this.folder.getRelativeLine(nowCursorPos.line) - 1) * this.charObj.charHight;
 						this.setStartLine(scrollTop);
 					}
-					requestAnimationFrame(() => {
-						this.active && this.renderCursor(true, true);
+					this.$nextTick(() => {
+						this.active && this.renderCursor(true);
 					});
 				});
 			}

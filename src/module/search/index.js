@@ -86,7 +86,7 @@ export default class {
         if (this.wholeWordPattern.test(config.text) && config.wholeWord) {
             source = '(?:\\b|(?<=[^0-9a-zA-Z]))' + source + '(?:\\b|(?=[^0-9a-zA-Z]))';
         }
-        reg = new RegExp('[^\n]*?(' + source + ')|[^\n]*?\n', config.ignoreCase ? 'img' : 'mg');
+        reg = new RegExp('[^\n]*?(' + source + ')|[^\n]*?\n', config.matchCase ? 'mg' : 'img');
         config = config || {};
         while ((exec = reg.exec(text))) {
             if (!exec[1]) {
@@ -305,7 +305,7 @@ export default class {
             result = {
                 text: searchText,
                 wholeWord: wholeWord,
-                ignoreCase: wholeWord,
+                matchCase: wholeWord,
             };
         }
         return result;

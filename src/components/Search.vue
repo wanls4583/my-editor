@@ -22,7 +22,7 @@
                         spellcheck="false"
                         v-model="text"
                     ></textarea>
-                    <span :class="{ 'my-active': ignoreCase }" @click="changeCase" class="my-search-suffix" title="Match Case(Alt+C)">Aa</span>
+                    <span :class="{ 'my-active': matchCase }" @click="changeCase" class="my-search-suffix" title="Match Case(Alt+C)">Aa</span>
                     <span :class="{ 'my-active': wholeWord }" @click="changeWhole" class="my-search-suffix iconfont icon-whole-word" title="Match Whole Word(Alt+W)"></span>
                 </div>
                 <div v-if="count">
@@ -108,7 +108,7 @@ export default {
             replaceText: '',
             replaceVisible: false,
             wholeWord: false,
-            ignoreCase: false,
+            matchCase: false,
             searchPrevActive: false,
             searchNextActive: false,
             input1Focus: false,
@@ -150,7 +150,7 @@ export default {
             return {
                 text: this.text,
                 wholeWord: this.wholeWord,
-                ignoreCase: this.ignoreCase,
+                matchCase: this.matchCase,
             };
         },
         search() {
@@ -162,13 +162,13 @@ export default {
                 }
                 this.$emit('search', {
                     text: this.text,
-                    ignoreCase: this.ignoreCase,
+                    matchCase: this.matchCase,
                     wholeWord: this.wholeWord,
                 });
             });
         },
         changeCase() {
-            this.ignoreCase = !this.ignoreCase;
+            this.matchCase = !this.matchCase;
             this.focus();
             this.onInput();
         },

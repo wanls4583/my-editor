@@ -51,7 +51,7 @@ class Search {
 			if (this.wholeWordPattern.test(searchObj.text) && searchObj.wholeWord) {
 				searchObj.lines[0] = '(?:\\b|(?<=[^0-9a-zA-Z]))' + searchObj.lines[0] + '(?:\\b|(?=[^0-9a-zA-Z]))';
 			}
-			searchObj.lines[0] = new RegExp(searchObj.lines[0], searchObj.ignoreCase ? 'ig' : 'g');
+			searchObj.lines[0] = new RegExp(searchObj.lines[0], searchObj.matchCase ? 'g' : 'ig');
 		}
 		if (searchObj.lines.length > 1) {
 			searchObj.lines.forEach((item, index) => {

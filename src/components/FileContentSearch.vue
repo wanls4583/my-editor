@@ -24,7 +24,7 @@
 							type="text"
 							v-model="text"
 						></textarea>
-						<span :class="{ 'my-active': ignoreCase }" @click="changeCase" class="my-search-suffix" title="Match Case(Alt+C)">Aa</span>
+						<span :class="{ 'my-active': matchCase }" @click="changeCase" class="my-search-suffix" title="Match Case(Alt+C)">Aa</span>
 						<span :class="{ 'my-active': wholeWord }" @click="changeWhole" class="my-search-suffix iconfont icon-whole-word" title="Match Whole Word(Alt+W)"></span>
 					</div>
 					<div class="my-center-start" style="margin-top: 10px" v-show="replaceVisible">
@@ -109,7 +109,7 @@ export default {
 			replaceText: '',
 			replaceVisible: true,
 			wholeWord: false,
-			ignoreCase: false,
+			matchCase: false,
 			input1Focus: false,
 			input2Focus: false,
 			input3Focus: false,
@@ -218,7 +218,7 @@ export default {
 				this.searcher.send({
 					path: this.parsePath(this.includePath),
 					excludePath: this.parsePath(this.excludePath),
-					ignoreCase: this.ignoreCase,
+					matchCase: this.matchCase,
 					wholeWord: this.wholeWord,
 					text: this.text,
 				});
@@ -234,7 +234,7 @@ export default {
 			}
 		},
 		changeCase() {
-			this.ignoreCase = !this.ignoreCase;
+			this.matchCase = !this.matchCase;
 			this.search();
 		},
 		changeWhole() {
@@ -249,7 +249,7 @@ export default {
 			if (!/\n/.test(reg) && this.wholeWordPattern.test(reg) && this.wholeWord) {
 				reg = '(?:\\b|(?<=[^0-9a-zA-Z]))' + reg + '(?:\\b|(?=[^0-9a-zA-Z]))';
 			}
-			reg = new RegExp(reg, this.ignoreCase ? 'igm' : 'gm');
+			reg = new RegExp(reg, this.matchCase ? 'igm' : 'gm');
 			this.replacing = true;
 			_replace.call(this, this.results);
 
