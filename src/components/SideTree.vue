@@ -43,6 +43,7 @@ const path = window.require('path');
 const spawnSync = window.require('child_process').spawnSync;
 
 let preActiveItem = null;
+let openedList = [];
 
 export default {
 	name: 'SideTree',
@@ -53,7 +54,6 @@ export default {
 		return {
 			itemHeight: 30,
 			itemPadding: 20,
-			openedList: [],
 			renderList: [],
 			fileWatchs: [],
 			startLine: 1,
@@ -72,12 +72,6 @@ export default {
 			return function (item) {
 				return item.deep * this.itemPadding - 10 + 'px';
 			};
-		},
-	},
-	watch: {
-		openedList() {
-			globalData.openedFileList = this.openedList;
-			this.setTreeHeight();
 		},
 	},
 	created() {
@@ -103,13 +97,13 @@ export default {
 		},
 		initEventBus() {
 			EventBus.$on('icon-changed', () => {
-				this.openedList.forEach((item) => {
+				openedList.forEach((item) => {
 					item.icon = '';
 				});
 				this.render();
 			});
 			EventBus.$on('theme-changed', () => {
-				this.openedList.forEach((item) => {
+				openedList.forEach((item) => {
 					item.icon = '';
 				});
 				this.render();
@@ -184,12 +178,12 @@ export default {
 			this.refreshWorkSpace();
 		},
 		setTreeHeight() {
-			this.treeHeight = this.openedList.length * this.itemHeight;
+			this.treeHeight = openedList.length * this.itemHeight;
 		},
 		render() {
 			cancelAnimationFrame(this.renderTimer);
 			this.renderTimer = requestAnimationFrame(() => {
-				this.renderList = this.openedList.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines);
+				this.renderList = openedList.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines);
 				this.renderList.forEach((item) => {
 					if (globalData.nowIconData) {
 						item.icon = Util.getIconByPath({
@@ -265,7 +259,9 @@ export default {
 				filePath = item.path;
 			}
 			files = fs.readdirSync(filePath, { encoding: 'utf8' });
-			return this.createItems(item, files);
+			files = this.createItems(item, files);
+			Object.freeze(files);
+			return files;
 		},
 		refreshDir(item) {
 			this.refreshFolderTimer = this.refreshFolderTimer || {};
@@ -349,20 +345,22 @@ export default {
 			}
 		},
 		closeFolder(item) {
-			let index = this.openedList.indexOf(item) + 1;
+			let index = openedList.indexOf(item) + 1;
 			let endIn = index;
-			while (endIn < this.openedList.length && this.openedList[endIn].parentPath != item.parentPath) {
+			while (endIn < openedList.length && openedList[endIn].parentPath != item.parentPath) {
 				endIn++;
 			}
-			this.openedList.splice(index, endIn - index);
+			openedList.splice(index, endIn - index);
 			this.setTreeHeight();
 		},
 		openFolder(item) {
-			let index = this.openedList.indexOf(item);
-			this.openedList = this.openedList
+			let index = openedList.indexOf(item);
+			openedList = openedList
 				.slice(0, index + 1)
 				.concat(this.getRenderList(item.children, item.deep))
-				.concat(this.openedList.slice(index + 1));
+				.concat(openedList.slice(index + 1));
+			globalData.openedFileList = openedList;
+			this.setTreeHeight();
 		},
 		watchFileStatus(list) {
 			list = list || globalData.fileTree;
@@ -446,7 +444,7 @@ export default {
 					if (item.path === path) {
 						let wrap = this.$refs.wrap;
 						let clientHeight = wrap.clientHeight;
-						let height = (this.openedList.indexOf(item) + 1) * this.itemHeight;
+						let height = (openedList.indexOf(item) + 1) * this.itemHeight;
 						if (this.scrollTop + clientHeight < height) {
 							this.setStartLine(height - clientHeight);
 						} else if (this.scrollTop + this.itemHeight > height) {
@@ -467,7 +465,9 @@ export default {
 			}
 		},
 		setOpendList() {
-			this.openedList = this.getRenderList(globalData.fileTree, 0);
+			openedList = this.getRenderList(globalData.fileTree, 0);
+			globalData.openedFileList = openedList;
+			this.setTreeHeight();
 		},
 		getRenderList(list, deep) {
 			let results = [];
