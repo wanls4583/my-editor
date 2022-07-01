@@ -5,20 +5,27 @@
 -->
 <template>
 	<div @selectstart.prevent class="my-terminal-bar" ref="terminalBar">
-		<div class="bar-scroller my-scroll-overlay my-scroll-mini">
-			<div
-				:class="[item.active ? 'my-active' : '']"
-				:title="item.path"
-				@click="onClickItem(item.id)"
-				@contextmenu.prevent.stop="onContextmenu($event, item.id)"
-				class="bar-item my-hover"
-				v-for="(item, index) in terminalList"
-			>
-				<div class="bar-content">
-					<span class="bar-text">{{ item.name }}</span>
-					<div class="bar-icon">
-						<span @click.stop="onClose(item.id)" class="bar-close-icon iconfont icon-close" title="close"></span>
+		<div class="my-center-between my-width-100 my-height-100">
+			<div class="bar-scroller my-scroll-overlay my-scroll-mini">
+				<div
+					:class="[item.active ? 'my-active' : '']"
+					:title="item.path"
+					@click="onClickItem(item.id)"
+					@contextmenu.prevent.stop="onContextmenu($event, item.id)"
+					class="bar-item my-hover"
+					v-for="(item, index) in terminalList"
+				>
+					<div class="bar-content">
+						<span class="bar-text">{{ item.name }}</span>
+						<div class="bar-icon-wrap">
+							<span @click.stop="onClose(item.id)" class="bar-icon iconfont icon-close" title="close"></span>
+						</div>
 					</div>
+				</div>
+			</div>
+			<div class="my-terminal-btns">
+				<div class="bar-icon-wrap">
+					<span @click.stop="onToggle()" class="bar-icon iconfont icon-close" title="close"></span>
 				</div>
 			</div>
 		</div>
@@ -71,7 +78,10 @@ export default {
 			EventBus.$emit('terminal-change', id);
 		},
 		onClose(id) {
-            EventBus.$emit('terminal-close', id);
+			EventBus.$emit('terminal-close', id);
+		},
+		onToggle() {
+			EventBus.$emit('terminal-toggle');
 		},
 		onContextmenu(e, id) {
 			this.$refs.terminalBarMenu.show(e, id);

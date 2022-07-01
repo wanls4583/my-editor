@@ -19,10 +19,16 @@
 					<span>Selection</span>
 					<Menu :hoverCheck="true" :menuList="selectionMenuList" :styles="{ left: 0, top: _top }" @change="onSelectionMenuChange" v-if="selectionMenuVisible"></Menu>
 				</div>
+				<div @mousedown.stop="showMemu('viewMenuVisible')" class="bar-item my-hover">
+					<span>View</span>
+					<Menu :hoverCheck="true" :menuList="viewMenuList" :styles="{ left: 0, top: _top }" @change="onViewMenuChange" v-if="viewMenuVisible"></Menu>
+				</div>
+				
 				<div @mousedown.stop="showMemu('terminalMenuVisible')" class="bar-item my-hover">
 					<span>Terminal</span>
 					<Menu :hoverCheck="true" :menuList="terminalMenuList" :styles="{ left: 0, top: _top }" @change="onTerminalMenuChange" v-if="terminalMenuVisible"></Menu>
 				</div>
+				
 				<div @mousedown.stop="showMemu('preferenceMenuVisible')" class="bar-item my-hover">
 					<span>Preference</span>
 					<Menu :hoverCheck="true" :menuList="preferenceMenuList" :styles="{ left: 0, top: _top }" @change="onPreferenceMenuChange" v-if="preferenceMenuVisible"></Menu>
@@ -75,6 +81,7 @@ export default {
 			fileMenuVisible: false,
 			editMenuVisible: false,
 			selectionMenuVisible: false,
+			viewMenuVisible: false,
 			terminalMenuVisible: false,
 			preferenceMenuVisible: false,
 			maximize: false,
@@ -241,15 +248,23 @@ export default {
 					},
 				],
 			],
+			viewMenuList: [
+				[
+					{
+						name: 'Command Panel',
+						op: 'commandPanel',
+					},
+					{
+						name: 'Terminal',
+						op: 'toogleTerminal',
+					},
+				],
+			],
 			terminalMenuList: [
 				[
 					{
 						name: 'New Terminal',
 						op: 'newTerminal',
-					},
-					{
-						name: 'Toogle Terminal',
-						op: 'toogleTerminal',
 					},
 				],
 			],
@@ -315,6 +330,7 @@ export default {
 				this.fileMenuVisible = false;
 				this.editMenuVisible = false;
 				this.selectionMenuVisible = false;
+				this.viewMenuVisible = false;
 				this.terminalMenuVisible = false;
 				this.preferenceMenuVisible = false;
 			});
@@ -479,13 +495,21 @@ export default {
 			}
 			this.preferenceMenuVisible = false;
 		},
+		onViewMenuChange(item) {
+			switch (item.op) {
+				case 'commandPanel':
+					EventBus.$emit('cmd-search-open');
+					break;
+				case 'toogleTerminal':
+					EventBus.$emit('terminal-toggle');
+					break;
+			}
+			this.viewMenuVisible = false;
+		},
 		onTerminalMenuChange(item) {
 			switch (item.op) {
 				case 'newTerminal':
 					EventBus.$emit('terminal-new');
-					break;
-				case 'toogleTerminal':
-					EventBus.$emit('terminal-toggle');
 					break;
 			}
 			this.terminalMenuVisible = false;
