@@ -14,8 +14,18 @@ class Search {
 		this.send();
 	}
 	send() {
-		if (this.sendQueue.length) {
-			process.send({ searchId: this.searchId, results: this.sendQueue.shift() });
+		if (this.sendQueue.length > 0) {
+			let results = null;
+			if (this.sendQueue.length > 50 || this.searchDone) {
+				// 每次发送100条数据，避免阻塞主进程
+				results = this.sendQueue.slice(0, 50);
+				this.sendQueue = this.sendQueue.slice(50);
+			} else if (this.sendQueue.length > 1) {
+				// 留下最后一项，该项可能需要携带文件信息
+				results = this.sendQueue.slice(0, -1);
+				this.sendQueue = this.sendQueue.slice(-1);
+			}
+			results && process.send({ results: results });
 		}
 		if (this.sendQueue.length === 0 && this.searchDone === true) {
 			process.send('end');
@@ -28,7 +38,6 @@ class Search {
 	search(searchObj) {
 		searchObj = Object.assign({}, searchObj);
 		searchObj.lines = searchObj.text.split('\n');
-		this.searchId = searchObj.searchId;
 		this.searchObj = searchObj;
 		if (!fs.existsSync(searchObj.path)) {
 			this.searchDone = true;
@@ -61,8 +70,7 @@ class Search {
 			this.searchDir({
 				files: [],
 				dirs: [searchObj.path],
-				searchObj: searchObj,
-				searchId: this.searchId
+				searchObj: searchObj
 			});
 		} else {
 			let fileObj = {
@@ -72,22 +80,16 @@ class Search {
 			this.searchFiles({
 				files: [fileObj],
 				dirs: [],
-				searchObj: searchObj,
-				searchId: this.searchId
+				searchObj: searchObj
 			});
 		}
 	}
 	stopSearch() {
 		clearTimeout(this.searchDirTimer);
 		clearTimeout(this.searchFilesTimer);
-		this.searchId = -1;
 	}
 	searchDir(option) {
-		if (option.searchId !== this.searchId) {
-			return;
-		}
 		if (option.dirs.length === 0) {
-			this.searchFiles(option);
 			return;
 		}
 		let dirPath = option.dirs.shift();
@@ -112,27 +114,23 @@ class Search {
 							name: item,
 							path: fullPath
 						});
-						this.searchFiles(option);
 					} else {
 						option.dirs.push(fullPath);
 					}
 				} catch (e) {}
 			});
 			this.searchDir(option);
+			this.searchFiles(option);
 		});
 	}
 	searchFiles(option) {
-		if (option.searchId !== this.searchId || option.files.searching) {
-			return;
-		}
-		if (option.files.length === 0 && option.dirs.length === 0 && !this.searchDiring) {
-			this.searchDone = true;
+		if (option.files.searching || option.files.length === 0) {
 			return;
 		}
 		let fileObj = option.files[0];
 		let basename = path.basename(fileObj.path);
 		let excludePath = option.searchObj.excludePath;
-		let results = [];
+		let finded = false;
 		fileObj.id = this.getIdFromPath(fileObj.path);
 		if (skipSearchFiles.test(basename) || (excludePath && excludePath.test(fileObj.path))) {
 			option.files.shift();
@@ -143,22 +141,20 @@ class Search {
 		this.readFile(
 			fileObj,
 			lines => {
-				if (option.searchId !== this.searchId) {
-					return;
-				}
 				if (option.searchObj.lines.length === 1) {
-					results.push(..._singleLineMatch.call(this, lines));
+					_singleLineMatch.call(this, lines);
 				} else {
-					results.push(..._multiLineMatch.call(this, lines));
+					_multiLineMatch.call(this, lines);
 				}
 			},
 			() => {
 				option.files.shift();
 				option.files.searching = false;
-				if (results.length) {
-					this.sendQueue.push(results);
+				if (finded) {
+					Object.assign(this.sendQueue[this.sendQueue.length - 1], fileObj);
 				}
-				if (option.searchId !== this.searchId) {
+				if (option.files.length === 0 && option.dirs.length === 0 && !this.searchDiring) {
+					this.searchDone = true;
 					return;
 				}
 				this.searchFiles(option);
@@ -169,22 +165,20 @@ class Search {
 			let searchObj = option.searchObj;
 			let text = lines[lines.length - 1];
 			let res = null;
-			let results = [];
 			while ((res = searchObj.lines[0].exec(text))) {
 				let range = {};
 				range.start = { line: lines.length, column: res.index };
 				range.end = { line: lines.length, column: res.index + res[0].length };
-				results.push(
+				this.sendQueue.push(
 					this.createItem({
 						text,
 						range,
-						fileObj,
 						searchObj
 					})
 				);
+				finded = true;
 			}
 			searchObj.lines[0].lastIndex = 0;
-			return results;
 		}
 
 		function _multiLineMatch(lines) {
@@ -210,13 +204,14 @@ class Search {
 					i--;
 					j--;
 				}
-				return [
+				this.sendQueue.push(
 					this.createItem({
 						text,
 						range,
-						fileObj
+						searchObj
 					})
-				];
+				);
+				finded = true;
 			}
 		}
 	}
@@ -232,7 +227,7 @@ class Search {
 				})
 			);
 	}
-	createItem({ text, range, fileObj, searchObj }) {
+	createItem({ text, range, searchObj }) {
 		let _text = text.trimRight();
 		let start = range.start;
 		let end = range.end;
@@ -258,10 +253,7 @@ class Search {
 		return {
 			html,
 			range,
-			text: resultText,
-			id: fileObj.id,
-			name: fileObj.name,
-			path: fileObj.path
+			text: resultText
 		};
 	}
 	htmlTrans(cont) {
@@ -290,7 +282,5 @@ class Search {
 
 const searcher = new Search();
 process.on('message', data => {
-	if (data.searchId) {
-		searcher.search(data);
-	}
+	searcher.search(data);
 });

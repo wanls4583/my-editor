@@ -165,51 +165,54 @@ export default {
 		},
 		createSearch() {
 			let searcher = child_process.fork(path.join(globalData.dirname, 'main/process/search/index.js'));
-			let file = { path: '' };
-			let refreshTimer = null;
 			let results = [];
 			searcher.on('message', (data) => {
 				if (data === 'end') {
 					this.stopSeach();
-				} else if (data.searchId === this.searchId) {
-					let result = data.results[0];
-					if (!file.path) {
-						this.results = [];
-						this.count = 0;
-					}
+				} else {
 					data.results.forEach((item) => {
 						item.open = false;
 						item.active = false;
-						if (result.path !== file.path) {
-							file = { path: result.path, name: result.name, children: [], open: true };
-							results.push(file);
+						this.count += 1;
+						results.push(item);
+						// 搜索完一个文件
+						if (item.path) {
+							let file = { id: item.id, name: item.name, path: item.path, children: results, open: true };
 							this.results.push(file);
+							this.addQueue.push(file);
+							results.forEach((_item) => {
+								_item.id = item.id;
+								_item.name = item.name;
+								_item.path = item.path;
+							});
+							results = [];
+							this.addResults();
 						}
-						file.children.push(item);
-						this.count++;
 					});
-				}
-				if (!refreshTimer) {
-					refreshTimer = setTimeout(() => {
-						this.$refs.results.addResults(results);
-						results = [];
-						refreshTimer = null;
-					}, 60);
 				}
 			});
 			return searcher;
 		},
+		addResults() {
+			if (!this.addTimer) {
+				this.addTimer = setTimeout(() => {
+					this.$refs.results.addResults(this.addQueue);
+					this.addQueue = [];
+					this.addTimer = null;
+				}, 60);
+			}
+		},
 		search() {
 			clearTimeout(this.searchTimer);
 			this.stopSeach();
+			this.results = [];
+			this.addQueue = [];
+			this.count = 0;
 			if (!this.includePath || !this.text || (this.excludePath && this.includePath.startsWith(this.excludePath))) {
-				this.results = [];
-				this.count = 0;
 				return;
 			}
 			this.searchTimer = setTimeout(() => {
 				this.searching = true;
-				this.searchId = Util.getUUID();
 				this.searchingText = this.text;
 				this.searcher = this.createSearch();
 				this.searcher.send({
@@ -218,7 +221,6 @@ export default {
 					ignoreCase: this.ignoreCase,
 					wholeWord: this.wholeWord,
 					text: this.text,
-					searchId: this.searchId,
 				});
 				this.$refs.results.clear();
 			}, 300);
