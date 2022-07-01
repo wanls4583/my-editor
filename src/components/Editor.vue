@@ -718,7 +718,7 @@ export default {
 		focus() {
 			cancelAnimationFrame(this.focusTimer);
 			this.focusTimer = requestAnimationFrame(() => {
-				this.$refs.textarea.focus();
+				this.$refs.textarea && this.$refs.textarea.focus();
 			});
 		},
 		// 渲染
