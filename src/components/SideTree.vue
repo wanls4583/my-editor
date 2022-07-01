@@ -96,6 +96,7 @@ export default {
 			const resizeObserver = new ResizeObserver((entries) => {
 				if (this.$refs.wrap && this.$refs.wrap.clientHeight) {
 					this.domHeight = this.$refs.wrap.clientHeight;
+					this.render();
 				}
 			});
 			resizeObserver.observe(this.$refs.wrap);
