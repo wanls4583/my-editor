@@ -251,7 +251,7 @@ export default {
 			viewMenuList: [
 				[
 					{
-						name: 'Command Panel',
+						name: 'Command Palette',
 						op: 'commandPanel',
 					},
 					{
