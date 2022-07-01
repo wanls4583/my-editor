@@ -457,7 +457,9 @@ export default {
 	},
 	destroyed() {
 		this.unbindEvent();
-		this.myContext.destory();
+		this.myContext.destroy();
+		this.tokenizer.destroy();
+		this.lint.destroy();
 		contexts[this.tabData.id] = null;
 	},
 	methods: {

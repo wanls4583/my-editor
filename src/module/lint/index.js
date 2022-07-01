@@ -33,6 +33,12 @@ export default class {
 	onDeleteContentAfter(nowLine, newLine) {
 		this.parse();
 	}
+	destroy() {
+		if (this.worker) {
+			this.worker.kill();
+			this.worker = null;
+		}
+	}
 	parse() {
 		if (!lintSupport[this.language]) {
 			return;
@@ -56,7 +62,7 @@ export default class {
 			this.worker.send({
 				text: text,
 				parseId: this.parseId,
-				language: this.language,
+				language: this.language
 			});
 		}
 	}

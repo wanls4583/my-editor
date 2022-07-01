@@ -205,6 +205,10 @@ export default class {
 			}
 		});
 	}
+	destroy() {
+		cancelIdleCallback(this.tokenizeLinesTimer);
+		globalData.scheduler.removeTask(this.tokenizeLinesTask);
+	}
 	tokenizeLines(startLine, endLine, callback) {
 		let limit = 5;
 		let processedLines = 0;

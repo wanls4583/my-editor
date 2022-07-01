@@ -77,7 +77,7 @@ class Context {
 		}
 		this[prop] = value;
 	}
-	destory() {
+	destroy() {
 		cancelIdleCallback(this.setLineWidthTimer);
 	}
 	insertContent(text, command) {
