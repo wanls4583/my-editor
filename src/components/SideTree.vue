@@ -169,6 +169,8 @@ export default {
 					globalData.fileTree.push(item);
 					if (fileObj.open) {
 						_readdir.call(this, item);
+					} else {
+						this.initOpendDirList(list);
 					}
 				}
 			} else {
@@ -307,18 +309,12 @@ export default {
 			}
 		},
 		refreshWorkSpace() {
-			globalData.fileTree.forEach((item) => {
-				if (item.open) {
-					this.closeFolder(item);
-					this.openFolder(item);
-				}
-			});
 			this.watchFileStatus();
 			this.watchFolder();
 			this.setOpendList();
 			this.render();
 		},
-		newFileOrDir(dirPath, type) {
+		async newFileOrDir(dirPath, type) {
 			this.newId = 'new' + Util.getUUID();
 			for (let i = 0; i < this.renderList.length; i++) {
 				let item = this.renderList[i];
@@ -331,7 +327,7 @@ export default {
 						deep: item.deep + 1,
 					};
 					if (!item.open) {
-						this.onClickItem(item);
+						await this.onClickItem(item);
 					}
 					obj.icon = Util.getIconByPath({
 						iconData: globalData.nowIconData,
@@ -351,6 +347,9 @@ export default {
 			}
 		},
 		closeFolder(item) {
+			if (!item.open) {
+				return;
+			}
 			let index = openedList.indexOf(item) + 1;
 			let endIn = index;
 			while (endIn < openedList.length && openedList[endIn].parentPath != item.parentPath) {
@@ -358,15 +357,36 @@ export default {
 			}
 			openedList.splice(index, endIn - index);
 			this.setTreeHeight();
+			item.open = false;
+			this.setStartLine(this.checkScrollTop(this.scrollTop));
 		},
 		openFolder(item) {
-			let index = openedList.indexOf(item);
-			openedList = openedList
-				.slice(0, index + 1)
-				.concat(this.getRenderList(item.children, item.deep))
-				.concat(openedList.slice(index + 1));
-			globalData.openedFileList = openedList;
-			this.setTreeHeight();
+			return new Promise((resolve, reject) => {
+				if (item.open) {
+					return resolve();
+				}
+				if (item.loaded) {
+					_open.call(this);
+					resolve();
+				} else {
+					return this.readdir(item).then(() => {
+						_open.call(this);
+						resolve();
+					});
+				}
+			});
+
+			function _open() {
+				let index = openedList.indexOf(item);
+				openedList = openedList
+					.slice(0, index + 1)
+					.concat(this.getRenderList(item.children, item.deep))
+					.concat(openedList.slice(index + 1));
+				globalData.openedFileList = openedList;
+				item.open = true;
+				this.setTreeHeight();
+				this.setStartLine(this.checkScrollTop(this.scrollTop));
+			}
 		},
 		watchFileStatus(list) {
 			list = list || globalData.fileTree;
@@ -462,15 +482,19 @@ export default {
 						} else if (this.scrollTop + this.itemHeight > height) {
 							this.setStartLine(height - this.itemHeight);
 						}
-						if (!item.active) {
-							this.onClickItem(item);
+						if (preActiveItem) {
+							preActiveItem.active = false;
 						}
+						item.active = true;
 						break;
 					} else if (path.startsWith(item.path)) {
 						if (!item.open) {
-							this.onClickItem(item);
+							this.openFolder(item).then(() => {
+								_findItem.call(this, path, item.children);
+							});
+						} else {
+							_findItem.call(this, path, item.children);
 						}
-						_findItem.call(this, path, item.children);
 						break;
 					}
 				}
@@ -524,34 +548,20 @@ export default {
 				preActiveItem = item;
 				globalData.nowFileItem = item;
 				if (item.type === 'dir') {
-					item.open = !item.open;
 					if (!item.loaded) {
-						this.readdir(item).then(() => {
+						this.openFolder(item).then(() => {
 							if (!item.gitRootPath) {
 								this.watchFileStatus(item.children);
 							}
-							_changOpen.call(this, item);
 						});
 					} else {
-						_changOpen.call(this, item);
+						item.open ? this.closeFolder(item) : this.openFolder(item);
 					}
 				} else {
 					EventBus.$emit('file-open', item);
 				}
 			} else if (item.type === 'dir') {
-				item.open = !item.open;
-				_changOpen.call(this, item);
-			}
-
-			function _changOpen(item) {
-				if (item.children.length) {
-					if (item.open) {
-						this.openFolder(item);
-					} else {
-						this.closeFolder(item);
-					}
-					this.setStartLine(this.checkScrollTop(this.scrollTop));
-				}
+				item.open ? this.closeFolder(item) : this.openFolder(item);
 			}
 		},
 		onWheel(e) {
