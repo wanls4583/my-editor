@@ -84,9 +84,7 @@
 					</div>
 				</div>
 			</div>
-			<div class="my-search-results">
-				<file-content-search-results :list="results" ref="results"></file-content-search-results>
-			</div>
+			<file-content-search-results :list="results" ref="results"></file-content-search-results>
 		</div>
 		<div class="my-search-replacing" v-if="replacing"></div>
 	</div>

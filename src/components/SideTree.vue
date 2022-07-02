@@ -182,9 +182,6 @@ export default {
 				});
 			}
 		},
-		setTreeHeight() {
-			this.treeHeight = openedList.length * this.itemHeight;
-		},
 		render() {
 			cancelAnimationFrame(this.renderTimer);
 			this.renderTimer = requestAnimationFrame(() => {
@@ -439,6 +436,12 @@ export default {
 			});
 			return results;
 		},
+		showScrollBar() {
+			this.scrollVisible = true;
+		},
+		hideScrollBar() {
+			this.scrollVisible = false;
+		},
 		focusItem(path) {
 			// root列表可能存在父子关系，优先从子列表中查找
 			let list = globalData.fileTree.slice().sort((a, b) => {
@@ -473,6 +476,22 @@ export default {
 				}
 			}
 		},
+		checkScrollTop(scrollTop) {
+			if (scrollTop > this.treeHeight - this.domHeight) {
+				scrollTop = this.treeHeight - this.domHeight;
+			}
+			scrollTop = scrollTop < 0 ? 0 : scrollTop;
+			return scrollTop;
+		},
+		setStartLine(scrollTop) {
+			this.startLine = Math.floor(scrollTop / this.itemHeight) + 1;
+			this.scrollTop = scrollTop;
+			this.deltaTop = scrollTop % this.itemHeight;
+			this.render();
+		},
+		setTreeHeight() {
+			this.treeHeight = openedList.length * this.itemHeight;
+		},
 		setOpendList() {
 			openedList = this.getRenderList(globalData.fileTree, 0);
 			globalData.openedFileList = openedList;
@@ -492,18 +511,6 @@ export default {
 					}
 				});
 			}
-		},
-		showScrollBar() {
-			this.scrollVisible = true;
-		},
-		hideScrollBar() {
-			this.scrollVisible = false;
-		},
-		setStartLine(scrollTop) {
-			this.startLine = Math.floor(scrollTop / this.itemHeight) + 1;
-			this.scrollTop = scrollTop;
-			this.deltaTop = scrollTop % this.itemHeight;
-			this.render();
 		},
 		getNowHash(cwd) {
 			return spawnSync('git', ['log', '-1', '--format=%H'], { cwd: cwd }).stdout.toString();
@@ -543,7 +550,7 @@ export default {
 					} else {
 						this.closeFolder(item);
 					}
-					this.render();
+					this.setStartLine(this.checkScrollTop(this.scrollTop));
 				}
 			}
 		},

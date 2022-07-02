@@ -4,34 +4,32 @@
  * @Description: 
 -->
 <template>
-	<div @scroll="onScroll" class="results-tree-warp my-scroll-overlay my-scroll-small test123 test123" ref="wrap">
-		<div style="width: 100%; overflow: hidden">
-			<div :style="{ height: scrollHeight }" class="results-tree">
-				<div :style="{ top: _top }" class="results-tree-content">
-					<div @click.stop="onClickItem(item)" class="tree-item" v-for="item in renderList">
-						<div
-							:class="[item.active ? 'my-active' : '']"
-							:style="{ 'padding-left': _paddingLeft(item) }"
-							:title="item.deep === 1 ? item.path : item.text"
-							@contextmenu.stop.prevent
-							class="tree-item-title my-center-start"
-						>
-							<template v-if="item.deep === 1">
-								<span class="left-icon iconfont icon-down1" v-if="item.open"></span>
-								<span class="left-icon iconfont icon-right" v-else></span>
-							</template>
-							<div :class="[item.icon]" class="tree-item-content my-center-start">
-								<span class="tree-item-text" style="margin-left: 4px" v-html="item.html"></span>
-								<span class="my-search-count" v-if="item.deep === 1">{{ item.children.length }}</span>
-							</div>
-						</div>
+	<div @mouseenter="showScrollBar" @mouseleave="hideScrollBar" @mousemove="showScrollBar" @scroll="onScroll" @wheel.stop="onWheel" class="my-results-scroller" ref="wrap">
+		<div :style="{ top: -deltaTop + 'px' }" class="my-results-content">
+			<div @click.stop="onClickItem(item)" class="tree-item" v-for="item in renderList">
+				<div
+					:class="[item.active ? 'my-active' : '']"
+					:style="{ 'padding-left': _paddingLeft(item) }"
+					:title="item.deep === 1 ? item.path : item.text"
+					@contextmenu.stop.prevent
+					class="tree-item-title my-center-start"
+				>
+					<template v-if="item.deep === 1">
+						<span class="left-icon iconfont icon-down1" v-if="item.open"></span>
+						<span class="left-icon iconfont icon-right" v-else></span>
+					</template>
+					<div :class="[item.icon]" class="tree-item-content my-center-start">
+						<span class="tree-item-text" style="margin-left: 4px" v-html="item.html"></span>
+						<span class="my-search-count" v-if="item.deep === 1">{{ item.children.length }}</span>
 					</div>
 				</div>
 			</div>
 		</div>
+		<v-scroll-bar :class="{'my-scroll-visible': scrollVisible}" :height="treeHeight" :scroll-top="scrollTop" @scroll="onScroll" class="my-scroll-small"></v-scroll-bar>
 	</div>
 </template>
 <script>
+import VScrollBar from './VScrollBar.vue';
 import EventBus from '@/event';
 import Util from '@/common/util';
 import globalData from '@/data/globalData';
@@ -47,14 +45,17 @@ export default {
 			itemPadding: 16,
 			renderList: [],
 			startLine: 1,
+			scrollTop: 0,
+			deltaTop: 0,
+			treeHeight: 0,
 			maxVisibleLines: 100,
-			scrollHeight: '0px',
+			scrollVisible: false,
 		};
 	},
+	components: {
+		VScrollBar,
+	},
 	computed: {
-		_top() {
-			return (this.startLine - 1) * this.itemHeight + 'px';
-		},
 		_paddingLeft() {
 			return function (item) {
 				return item.deep * this.itemPadding + 'px';
@@ -65,6 +66,8 @@ export default {
 		this.initEventBus();
 	},
 	mounted() {
+		this.domHeight = this.$refs.wrap.clientHeight;
+		this.maxVisibleLines = Math.ceil(this.domHeight / this.itemHeight) + 1;
 		this.render();
 		this.initResizeEvent();
 	},
@@ -72,6 +75,8 @@ export default {
 		initResizeEvent() {
 			const resizeObserver = new ResizeObserver((entries) => {
 				if (this.$refs.wrap && this.$refs.wrap.clientHeight) {
+					this.domHeight = this.$refs.wrap.clientHeight;
+					this.maxVisibleLines = Math.ceil(this.domHeight / this.itemHeight) + 1;
 					this.render();
 				}
 			});
@@ -103,10 +108,15 @@ export default {
 				}
 			});
 		},
+		showScrollBar() {
+			this.scrollVisible = true;
+		},
+		hideScrollBar() {
+			this.scrollVisible = false;
+		},
 		render() {
 			cancelAnimationFrame(this.renderTimer);
 			this.renderTimer = requestAnimationFrame(() => {
-				this.maxVisibleLines = Math.ceil(this.$refs.wrap.clientHeight / this.itemHeight) + 1;
 				this.renderList = openedList.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines);
 				this.renderList.forEach((item) => {
 					if (globalData.nowIconData && item.deep == 1) {
@@ -131,13 +141,60 @@ export default {
 				Object.freeze(item.children);
 			});
 			openedList = openedList.concat(this.getRenderList(results, 0));
-			this.scrollHeight = openedList.length * this.itemHeight + 'px';
+			this.setTreeHeight();
 			this.render();
 		},
 		clear() {
 			openedList = [];
-			this.scrollHeight = '0px';
+			this.setTreeHeight();
 			this.render();
+		},
+		focusItem(path) {
+			let index = 0;
+			_findItem.call(this, path);
+
+			function _findItem(path) {
+				for (let i = index; i < openedList.length; i++) {
+					let item = openedList[i];
+					if (item.path === path) {
+						let scrollTop = this.itemHeight * i - this.domHeight / 2;
+						if (scrollTop > this.treeHeight - this.domHeight) {
+							scrollTop = this.treeHeight - this.domHeight;
+						} else if (scrollTop < 0) {
+							scrollTop = 0;
+						}
+						this.setStartLine(scrollTop);
+						if (!item.active) {
+							this.onClickItem(item);
+						}
+						break;
+					} else if (path.startsWith(item.path)) {
+						if (!item.open) {
+							index = i + 1;
+							this.onClickItem(item).then(() => {
+								_findItem.call(this, path);
+							});
+							break;
+						}
+					}
+				}
+			}
+		},
+		checkScrollTop(scrollTop) {
+			if (scrollTop > this.treeHeight - this.domHeight) {
+				scrollTop = this.treeHeight - this.domHeight;
+			}
+			scrollTop = scrollTop < 0 ? 0 : scrollTop;
+			return scrollTop;
+		},
+		setStartLine(scrollTop) {
+			this.startLine = Math.floor(scrollTop / this.itemHeight) + 1;
+			this.scrollTop = scrollTop;
+			this.deltaTop = scrollTop % this.itemHeight;
+			this.render();
+		},
+		setTreeHeight() {
+			this.treeHeight = openedList.length * this.itemHeight;
 		},
 		getRenderList(list, deep) {
 			let results = [];
@@ -167,39 +224,6 @@ export default {
 				html: html,
 				text: text,
 			};
-		},
-		focusItem(path) {
-			let index = 0;
-			_findItem.call(this, path);
-
-			function _findItem(path) {
-				for (let i = index; i < openedList.length; i++) {
-					let item = openedList[i];
-					if (item.path === path) {
-						let wrap = this.$refs.wrap;
-						let scrollTop = wrap.scrollTop;
-						let clientHeight = wrap.clientHeight;
-						let height = (i + 1) * this.itemHeight;
-						if (scrollTop + clientHeight < height) {
-							wrap.scrollTop = height - clientHeight;
-						} else if (scrollTop + this.itemHeight > height) {
-							wrap.scrollTop = height - this.itemHeight;
-						}
-						if (!item.active) {
-							this.onClickItem(item);
-						}
-						break;
-					} else if (path.startsWith(item.path)) {
-						if (!item.open) {
-							index = i + 1;
-							this.onClickItem(item).then(() => {
-								_findItem.call(this, path);
-							});
-							break;
-						}
-					}
-				}
-			}
 		},
 		onClickItem(item) {
 			if (!item.active) {
@@ -233,14 +257,32 @@ export default {
 						}
 						openedList.splice(index, endIn - index);
 					}
-					this.render();
+					this.setTreeHeight();
+					this.setStartLine(this.checkScrollTop(this.scrollTop));
 				}
 			}
 		},
+		onWheel(e) {
+			this.scrollDeltaY = e.deltaY;
+			if (this.scrollDeltaY && !this.wheelTask) {
+				this.wheelTask = globalData.scheduler.addUiTask(() => {
+					if (this.scrollDeltaY) {
+						try {
+							let scrollTop = this.scrollTop + this.scrollDeltaY;
+							this.setStartLine(this.checkScrollTop(scrollTop));
+						} catch (e) {
+							console.log(e);
+						}
+						this.scrollDeltaY = 0;
+					} else {
+						globalData.scheduler.removeUiTask(this.wheelTask);
+						this.wheelTask = null;
+					}
+				});
+			}
+		},
 		onScroll(e) {
-			let scrollTop = e.target.scrollTop;
-			this.startLine = Math.floor(scrollTop / this.itemHeight) + 1;
-			this.render();
+			this.setStartLine(e);
 		},
 	},
 };
