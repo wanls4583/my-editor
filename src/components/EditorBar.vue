@@ -69,10 +69,7 @@ export default {
 	methods: {
 		initEventBus() {
 			EventBus.$on('editor-changed', (data) => {
-				this.$nextTick(() => {
-					let $tab = $(this.$refs.editorBar).find('div.my-active');
-					$tab.length && $tab[0].scrollIntoView();
-				});
+				this.scrollToView();
 			});
 			EventBus.$on('git-statused', (data) => {
 				for (let i = 0; i < this.editorList.length; i++) {
@@ -103,6 +100,17 @@ export default {
 					}
 				}
 			});
+		},
+		scrollToView() {
+			_scrollToView.call(this);
+			setTimeout(() => {
+				_scrollToView.call(this);
+			}, 300);
+
+			function _scrollToView() {
+				let $tab = $(this.$refs.editorBar).find('div.my-active');
+				$tab.length && $tab[0].scrollIntoView();
+			}
 		},
 		onClickItem(id) {
 			EventBus.$emit('editor-change', id);

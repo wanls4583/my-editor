@@ -155,6 +155,7 @@ export default {
 			});
 			EventBus.$on('file-tree-loaded', (list) => {
 				globalData.fileTree.empty();
+				this.initOpendDiring = true;
 				this.initOpendDirList(list);
 			});
 		},
@@ -175,11 +176,11 @@ export default {
 				}
 			} else {
 				this.refreshWorkSpace();
+				this.initOpendDiring = false;
 			}
 
 			function _readdir(item) {
-				this.readdir(item).then(() => {
-					item.open = true;
+				this.openFolder(item).then(() => {
 					this.initOpendDirList(list);
 				});
 			}
@@ -261,11 +262,13 @@ export default {
 					if (err) {
 						return resolve([]);
 					}
-					files = this.createItems(item, files);
-					item.loaded = true;
-					item.children = files;
-					Object.freeze(files);
-					resolve(files);
+					if (!item.loaded) {
+						files = this.createItems(item, files);
+						item.loaded = true;
+						item.children = files;
+						Object.freeze(files);
+					}
+					resolve();
 				});
 			});
 		},
@@ -280,7 +283,7 @@ export default {
 
 			function _refresh() {
 				let children = item.children || [];
-				this.readdir(item).then((list) => {
+				this.readdir(item).then(() => {
 					let idMap = {};
 					children.forEach((item) => {
 						idMap[item.id] = item;
@@ -362,9 +365,6 @@ export default {
 		},
 		openFolder(item) {
 			return new Promise((resolve, reject) => {
-				if (item.open) {
-					return resolve();
-				}
 				if (item.loaded) {
 					_open.call(this);
 					resolve();
@@ -377,14 +377,16 @@ export default {
 			});
 
 			function _open() {
-				let index = openedList.indexOf(item);
-				openedList = openedList
-					.slice(0, index + 1)
-					.concat(this.getRenderList(item.children, item.deep))
-					.concat(openedList.slice(index + 1));
-				globalData.openedFileList = openedList;
-				item.open = true;
-				this.setTreeHeight();
+				if (!item.open) {
+					let index = openedList.indexOf(item);
+					openedList = openedList
+						.slice(0, index + 1)
+						.concat(this.getRenderList(item.children, item.deep))
+						.concat(openedList.slice(index + 1));
+					globalData.openedFileList = openedList;
+					item.open = true;
+					this.setTreeHeight();
+				}
 				this.setStartLine(this.checkScrollTop(this.scrollTop));
 			}
 		},
@@ -463,29 +465,32 @@ export default {
 			this.scrollVisible = false;
 		},
 		focusItem(path) {
-			// root列表可能存在父子关系，优先从子列表中查找
-			let list = globalData.fileTree.slice().sort((a, b) => {
-				return b.path.length - a.path.length;
-			});
+			clearTimeout(this.focusItemTimer);
 
-			_findItem.call(this, path, list);
+			this.focusItemTimer = setTimeout(() => {
+				if (this.initOpendDiring) {
+					this.focusItem(path);
+					return;
+				}
+				// root列表可能存在父子关系，优先从子列表中查找
+				let list = globalData.fileTree.slice().sort((a, b) => {
+					return b.path.length - a.path.length;
+				});
+				_findItem.call(this, path, list);
+			}, 15);
 
 			function _findItem(path, list) {
 				for (let i = 0; i < list.length; i++) {
 					let item = list[i];
 					if (item.path === path) {
-						let wrap = this.$refs.wrap;
-						let clientHeight = wrap.clientHeight;
-						let height = (openedList.indexOf(item) + 1) * this.itemHeight;
-						if (this.scrollTop + clientHeight < height) {
-							this.setStartLine(height - clientHeight);
-						} else if (this.scrollTop + this.itemHeight > height) {
-							this.setStartLine(height - this.itemHeight);
-						}
+						let scrollTop = openedList.indexOf(item) * this.itemHeight - this.domHeight / 2;
 						if (preActiveItem) {
 							preActiveItem.active = false;
 						}
 						item.active = true;
+						preActiveItem = item;
+						globalData.nowFileItem = item;
+						this.setStartLine(this.checkScrollTop(scrollTop));
 						break;
 					} else if (path.startsWith(item.path)) {
 						if (!item.open) {
