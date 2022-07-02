@@ -268,7 +268,7 @@ export default {
 						item.children = files;
 						Object.freeze(files);
 					}
-					resolve();
+					resolve(item.children);
 				});
 			});
 		},

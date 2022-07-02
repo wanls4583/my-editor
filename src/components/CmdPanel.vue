@@ -82,7 +82,7 @@ export default {
 				this.hoverCheck = true;
 				this.searchText = data.input || '';
 				this.cmdList = [];
-				this.searchCmd();
+				this.searchCmd(1);
 				requestAnimationFrame(() => {
 					this.$refs.input.focus();
 				});
@@ -109,7 +109,7 @@ export default {
 				this.cmdList = this.originCmdList.slice();
 			}
 		},
-		searchCmd() {
+		searchCmd(delay) {
 			this.cmdList = [];
 			if (this.searchText.startsWith(':')) {
 				let editor = globalData.nowEditorId && globalData.$mainWin.getNowEditor();
@@ -120,10 +120,10 @@ export default {
 					this.cmdList = [{ name: 'Open a Editor first to go to a line' }];
 				}
 			} else {
-				this.searchFile();
+				this.searchFile(delay);
 			}
 		},
-		searchFile() {
+		searchFile(delay) {
 			let results = [];
 			let searchText = this.searchText;
 			let timestamp = Date.now();
@@ -131,7 +131,7 @@ export default {
 			clearTimeout(this.searchFileTimer);
 			this.searchFileTimer = setTimeout(() => {
 				_search.call(this, globalData.fileTree.slice());
-			}, 500);
+			}, delay || 300);
 
 			function _search(list) {
 				if (list.length) {
