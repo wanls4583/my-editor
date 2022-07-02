@@ -63,6 +63,10 @@ export default {
 		value: {
 			type: [Number, String, Array],
 		},
+		top: {
+			type: Number,
+			default: 0,
+		},
 	},
 	components: {
 		VScrollBar,
@@ -94,6 +98,12 @@ export default {
 				this.scrollToIndex();
 			});
 		},
+		scrollTop() {
+			this.$emit('scroll', this.scrollTop);
+		},
+		top() {
+			this.setStartLine(this.checkScrollTop(this.top));
+		},
 	},
 	created() {
 		this.initMenu();
@@ -122,8 +132,6 @@ export default {
 			let index = -1;
 			let menuList = this.menuList;
 			this.index = -1;
-			this.startLine = 1;
-			this.scrollTop = 0;
 			if (menuList[0] && !(menuList[0] instanceof Array)) {
 				menuList = [menuList];
 			}
@@ -159,7 +167,7 @@ export default {
 			this.menuHeight = this.contentHeight;
 			this.menuHeight = this.menuHeight > 500 ? 500 : this.menuHeight;
 			this.maxVisibleLines = Math.ceil(500 / this.itemHeight) + 1;
-			this.render();
+			this.setStartLine(this.checkScrollTop(this.top));
 		},
 		render() {
 			this.renderList = this.myMenuList.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines);
@@ -178,6 +186,13 @@ export default {
 		},
 		hideScrollBar() {
 			this.scrollVisible = false;
+		},
+		checkScrollTop(scrollTop) {
+			if (scrollTop > this.contentHeight - this.menuHeight) {
+				scrollTop = this.contentHeight - this.menuHeight;
+			}
+			scrollTop = scrollTop < 0 ? 0 : scrollTop;
+			return scrollTop;
 		},
 		setStartLine(scrollTop) {
 			this.startLine = Math.floor(scrollTop / this.itemHeight) + 1;
@@ -244,11 +259,7 @@ export default {
 					if (this.scrollDeltaY) {
 						try {
 							let scrollTop = this.scrollTop + this.scrollDeltaY;
-							if (scrollTop > this.contentHeight - this.menuHeight) {
-								scrollTop = this.contentHeight - this.menuHeight;
-							}
-							scrollTop = scrollTop < 0 ? 0 : scrollTop;
-							this.onScroll(scrollTop);
+							this.onScroll(this.checkScrollTop(scrollTop));
 						} catch (e) {
 							console.log(e);
 						}

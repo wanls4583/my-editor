@@ -502,7 +502,7 @@ class Util {
 	static getIdFromPath(filePath, mtimeMs) {
 		let id = '';
 		try {
-			stat = fs.statSync(filePath);
+			let stat = fs.statSync(filePath);
 			id = `file-${stat.dev}-${stat.ino}${mtimeMs ? '-' + stat.mtimeMs : ''}`;
 		} catch (e) {
 			id = Util.getUUID();

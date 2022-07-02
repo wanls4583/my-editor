@@ -10,7 +10,7 @@
 				<input @keydown.enter="onEnter" @keydown.esc="onCancel" ref="input" type="text" v-model="searchText" />
 			</div>
 			<div>
-				<Menu :checkable="checkable" :hover-check="hoverCheck" :menuList="cmdList" :value="value" @change="onChange" spellcheck="false" style="position: relative"></Menu>
+				<Menu :checkable="checkable" :hover-check="hoverCheck" :menuList="cmdList" :top="scrollTop" :value="value" @change="onChange" @scroll="onScroll" spellcheck="false" style="position: relative"></Menu>
 			</div>
 		</div>
 	</div>
@@ -23,6 +23,7 @@ import EventBus from '@/event';
 import globalData from '@/data/globalData';
 import Context from '@/module/context/index';
 
+const path = window.require('path');
 const contexts = Context.contexts;
 
 export default {
@@ -38,6 +39,7 @@ export default {
 			visible: false,
 			checkable: false,
 			hoverCheck: false,
+			scrollTop: 0,
 		};
 	},
 	watch: {
@@ -89,6 +91,7 @@ export default {
 			});
 		},
 		searchMenu() {
+			this.scrollTop = 0;
 			if (this.searchText) {
 				let menu = [];
 				this.originCmdList[0].forEach((item) => {
@@ -110,7 +113,7 @@ export default {
 			}
 		},
 		searchCmd(delay) {
-			this.cmdList = [];
+			this.scrollTop = 0;
 			if (this.searchText.startsWith(':')) {
 				let editor = globalData.nowEditorId && globalData.$mainWin.getNowEditor();
 				if (editor) {
@@ -125,17 +128,22 @@ export default {
 		},
 		searchFile(delay) {
 			let results = [];
-			let searchText = this.searchText;
 			let timestamp = Date.now();
+			let searchId = Util.getUUID();
+			let searchText = _reverseString(this.searchText.replace(/[\\\/]/g, path.sep));
+			this.searchId = searchId;
 
 			clearTimeout(this.searchFileTimer);
-			this.searchFileTimer = setTimeout(() => {
-				_search.call(this, globalData.fileTree.slice());
-			}, delay || 300);
+			this.searchFileTimer = null;
+			globalData.scheduler.removeTask(this.searchFileTask);
+			_search.call(this, globalData.fileTree.slice());
 
 			function _search(list) {
 				if (list.length) {
 					_readdir(list.shift()).then((children) => {
+						if (searchId !== this.searchId) {
+							return;
+						}
 						children.forEach((item) => {
 							if (item.type === 'file') {
 								_match(item);
@@ -143,17 +151,19 @@ export default {
 								list.push(item);
 							}
 						});
-						if (Date.now() - timestamp >= 2) {
-							this.cmdList = results;
-							this.searchFileTimer = setTimeout(() => {
-								_search.call(this, list);
-							}, 0);
-						} else {
+						this.searchFileTask = globalData.scheduler.addTask(() => {
 							_search.call(this, list);
-						}
+						});
 					});
 				} else {
-					this.cmdList = results;
+					clearTimeout(this.searchFileTimer);
+					this.cmdList = _sort(results);
+				}
+				if (!this.searchFileTimer) {
+					this.searchFileTimer = setTimeout(() => {
+						this.cmdList = _sort(results);
+						this.searchFileTimer = null;
+					}, 100);
 				}
 			}
 
@@ -167,19 +177,36 @@ export default {
 
 			function _match(item) {
 				if (searchText) {
-					let m = Util.fuzzyMatch(item.name, searchText, true);
+					let m = Util.fuzzyMatch(searchText, _reverseString(item.path), true);
 					if (m) {
 						results.push({
 							name: item.name,
 							desc: item.path,
+							op: 'openFile',
+							item: item,
+							score: m.score,
+							indexs: m.indexs,
 						});
 					}
 				} else {
 					results.push({
 						name: item.name,
 						desc: item.path,
+						item: item,
+						op: 'openFile',
+						score: 0,
 					});
 				}
+			}
+
+			function _reverseString(str) {
+				return str.split('').reduce((reversed, character) => character + reversed, '');
+			}
+
+			function _sort(results) {
+				return results.sort((a, b) => {
+					return b.score - a.score;
+				});
 			}
 		},
 		goToLine() {
@@ -232,6 +259,7 @@ export default {
 				this.scrollLeft = 0;
 			}
 			clearTimeout(this.searchFileTimer);
+			globalData.scheduler.removeTask(this.searchFileTask);
 			this.visible = false;
 		},
 		onChange(item) {
@@ -264,7 +292,14 @@ export default {
 					EventBus.$emit('convert-to-tab', item.value);
 					this.visible = false;
 					break;
+				case 'openFile':
+					EventBus.$emit('file-open', item.item);
+					this.onCancel();
+					break;
 			}
+		},
+		onScroll(e) {
+			this.scrollTop = e;
 		},
 	},
 };
