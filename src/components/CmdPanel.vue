@@ -10,7 +10,7 @@
 				<input @keydown.enter="onEnter" @keydown.esc="onCancel" ref="input" type="text" v-model="searchText" />
 			</div>
 			<div>
-				<Menu :checkable="checkable" :hover-check="hoverCheck" :menuList="cmdList" :value="value" @change="onChange" class="my-scroll-overlay my-scroll-mini" spellcheck="false" style="position: relative"></Menu>
+				<Menu :checkable="checkable" :hover-check="hoverCheck" :menuList="cmdList" :value="value" @change="onChange" spellcheck="false" style="position: relative"></Menu>
 			</div>
 		</div>
 	</div>
@@ -56,7 +56,7 @@ export default {
 	methods: {
 		initEventBus() {
 			EventBus.$on('close-menu', () => {
-				this.visible = false;
+				this.onCancel();
 			});
 			EventBus.$on('cmd-menu-open', (data) => {
 				this.visible = true;
@@ -119,6 +119,67 @@ export default {
 				} else {
 					this.cmdList = [{ name: 'Open a Editor first to go to a line' }];
 				}
+			} else {
+				this.searchFile();
+			}
+		},
+		searchFile() {
+			let results = [];
+			let searchText = this.searchText;
+			let timestamp = Date.now();
+
+			clearTimeout(this.searchFileTimer);
+			this.searchFileTimer = setTimeout(() => {
+				_search.call(this, globalData.fileTree.slice());
+			}, 500);
+
+			function _search(list) {
+				if (list.length) {
+					_readdir(list.shift()).then((children) => {
+						children.forEach((item) => {
+							if (item.type === 'file') {
+								_match(item);
+							} else if (!globalData.skipSearchDirs.test(item.path)) {
+								list.push(item);
+							}
+						});
+						if (Date.now() - timestamp >= 2) {
+							this.cmdList = results;
+							this.searchFileTimer = setTimeout(() => {
+								_search.call(this, list);
+							}, 0);
+						} else {
+							_search.call(this, list);
+						}
+					});
+				} else {
+					this.cmdList = results;
+				}
+			}
+
+			function _readdir(item) {
+				if (item.loaded) {
+					return Promise.resolve(item.children);
+				} else {
+					return globalData.$fileTree.readdir(item);
+				}
+			}
+
+			function _match(item) {
+				if (searchText) {
+					let m = Util.fuzzyMatch(item.name, searchText, true);
+					if (m) {
+						results.push({
+							name: item.name,
+							desc: item.path,
+						});
+					}
+				} else {
+					results.push({
+						name: item.name,
+						desc: item.path,
+					});
+				}
 			}
 		},
 		goToLine() {
@@ -170,6 +231,7 @@ export default {
 				this.scrollTop = 0;
 				this.scrollLeft = 0;
 			}
+			clearTimeout(this.searchFileTimer);
 			this.visible = false;
 		},
 		onChange(item) {

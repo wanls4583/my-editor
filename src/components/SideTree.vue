@@ -79,6 +79,7 @@ export default {
 		this.watchFileStatus();
 		this.watchFolder();
 		this.setOpendList();
+		globalData.$fileTree = this;
 	},
 	mounted() {
 		this.domHeight = this.$refs.wrap.clientHeight;
@@ -162,19 +163,19 @@ export default {
 				let fileObj = list.shift();
 				let item = fileObj.parentPath && Util.getFileItemByPath(globalData.fileTree, fileObj.path, fileObj.rootPath);
 				if (item) {
-					_readDir.call(this, item);
+					_readdir.call(this, item);
 				} else {
 					item = this.createRootItem(fileObj.path);
 					globalData.fileTree.push(item);
 					if (fileObj.open) {
-						_readDir.call(this, item);
+						_readdir.call(this, item);
 					}
 				}
 			} else {
 				this.refreshWorkSpace();
 			}
 
-			function _readDir(item) {
+			function _readdir(item) {
 				this.readdir(item).then(() => {
 					item.open = true;
 					this.initOpendDirList(list);
@@ -255,13 +256,15 @@ export default {
 		},
 		readdir(item) {
 			return new Promise((resolve, reject) => {
+				item.loaded = false;
+				item.children = [];
 				fs.readdir(item.path, { encoding: 'utf8' }, (err, files) => {
 					if (err) {
 						return resolve([]);
 					}
 					files = this.createItems(item, files);
-					item.children = files;
 					item.loaded = true;
+					item.children = files;
 					Object.freeze(files);
 					resolve(files);
 				});

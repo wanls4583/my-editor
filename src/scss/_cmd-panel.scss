@@ -1,32 +1,33 @@
 .my {
-    &-cmd-panel {
-        position: absolute;
-        top: 35px;
-        left: 50%;
-        z-index: 99;
-        transform: translateX(-50%);
-        min-width: 500px;
-        box-shadow: 0px 0px 8px 2px var(--my-widget-shadow);
+	&-cmd-panel {
+		position: absolute;
+		top: 35px;
+		left: 50%;
+		z-index: 99;
+		transform: translateX(-50%);
+		width: 50%;
+		max-width: 700px;
+		box-shadow: 0px 0px 8px 2px var(--my-widget-shadow);
 
-        .my-scroll-overlay {
-            max-height: 500px;
-        }
-    }
+		.my-menu {
+			max-height: 600px;
+		}
+	}
 
-    &-cmd-search {
-        padding: 5px;
+	&-cmd-search {
+		padding: 5px;
 
-        input {
-            width: 100%;
-            height: 30px;
-            background-color: var(--my-input-background);
-            color: var(--my-input-foreground);
-            border: 1px solid transparent;
-            border-color: var(--my-input-border);
-            outline: none;
-            &:focus {
-                border-color: var(--my-focusBorder);
-            }
-        }
-    }
+		input {
+			width: 100%;
+			height: 30px;
+			background-color: var(--my-input-background);
+			color: var(--my-input-foreground);
+			border: 1px solid transparent;
+			border-color: var(--my-input-border);
+			outline: none;
+			&:focus {
+				border-color: var(--my-focusBorder);
+			}
+		}
+	}
 }

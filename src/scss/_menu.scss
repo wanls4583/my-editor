@@ -12,8 +12,23 @@
 			background-color: transparent;
 			color: var(--my-foreground);
 
+			&-scroller {
+				position: relative;
+				overflow: hidden;
+			}
+
+			&-content {
+				position: absolute;
+				left: 0;
+				width: 100%;
+				height: 200%;
+				overflow: hidden;
+				contain: strict;
+				transform: translate3d(0px, 0px, 0px);
+			}
+
 			.my-menu-item {
-				height: 26px;
+				height: 30px;
 
 				&.my-active {
 					border-style: solid;
@@ -59,19 +74,6 @@
 		box-shadow: 2px 2px 8px var(--my-widget-shadow);
 		background-color: var(--my-menu-background);
 		color: var(--my-menu-foreground);
-
-		&-title {
-			display: flex;
-			align-items: center;
-
-			.my-file-icon {
-				display: flex;
-
-				&::before {
-					margin-left: -5px;
-				}
-			}
-		}
 	}
 
 	&-separator {
@@ -114,12 +116,38 @@
 		}
 	}
 
-	&-menu-content {
+	&-menu-left {
+		flex-grow: 1;
+		display: flex;
+		align-items: center;
+		overflow: hidden;
+
+		.my-file-icon {
+			display: flex;
+
+			&::before {
+				margin-left: 0px;
+			}
+		}
+	}
+
+	&-menu-title {
+		flex-shrink: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	&-menu-desc {
+		flex-grow: 1;
+		margin-left: 10px;
+		overflow: hidden;
+		text-overflow: ellipsis;
 		font-size: 12px;
 		color: #999999;
 	}
 
 	&-menu-shortcut {
+		flex-shrink: 0;
 		min-width: 80px;
 		margin-left: 20px;
 		text-align: right;

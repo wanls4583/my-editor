@@ -4,20 +4,25 @@
  * @Description: 
 -->
 <template>
-	<div :style="styles" @mousedown.stop class="my-menu my-shadow my-border" ref="scroller">
-		<div ref="content" v-show="visible">
-			<template v-for="(group, index) in myMenuList">
-				<div class="my-menu-group">
-					<div
-						:class="{'my-active': checkable && item.checked, disabled: item.disabled,}"
-						@mousedown="onClick(item)"
-						@mouseover="onHover(item)"
-						class="my-menu-item my-center-between my-hover"
-						v-for="item in group"
-					>
-						<div class="my-menu-title">
+	<div
+		:style="styles"
+		@mousedown.stop
+		@mouseenter="showScrollBar"
+		@mouseleave="hideScrollBar"
+		@mousemove="showScrollBar"
+		@wheel.stop="onWheel"
+		class="my-menu my-shadow my-border"
+		ref="scroller"
+		v-show="myMenuList.length"
+	>
+		<div :style="{height: menuHeight + 'px'}" class="my-menu-scroller">
+			<div :style="{ top: -deltaTop + 'px' }" class="my-menu-content" ref="content">
+				<template v-for="item in renderList">
+					<div :class="{'my-active': checkable && item.checked, disabled: item.disabled,}" @mousedown="onClick(item)" @mouseover="onHover(item)" class="my-menu-item my-center-between my-hover">
+						<div class="my-menu-left">
 							<span :class="[item.icon]"></span>
-							<span>{{ item.name }}</span>
+							<span class="my-menu-title">{{ item.name }}</span>
+							<span class="my-menu-desc">{{ item.desc }}</span>
 						</div>
 						<div class="flex--center--start">
 							<div class="my-menu-shortcut" v-if="item.shortcut">
@@ -26,14 +31,17 @@
 							<span class="my-icon my-icon-check" v-if="item.selected"></span>
 						</div>
 					</div>
-				</div>
-				<div class="my-separator" v-if="index < myMenuList.length - 1"></div>
-			</template>
+					<div class="my-separator" v-if="item.groupEnd"></div>
+				</template>
+			</div>
+			<v-scroll-bar :class="{'my-scroll-visible': scrollVisible}" :height="contentHeight" :scroll-top="scrollTop" @scroll="onScroll"></v-scroll-bar>
 		</div>
 	</div>
 </template>
 <script>
+import VScrollBar from './VScrollBar.vue';
 import $ from 'jquery';
+
 export default {
 	name: 'Menu',
 	props: {
@@ -56,22 +64,23 @@ export default {
 			type: [Number, String, Array],
 		},
 	},
+	components: {
+		VScrollBar,
+	},
 	data() {
 		return {
 			index: -1,
-			itemHeight: 26,
+			itemHeight: 30,
+			menuHeight: 0,
+			contentHeight: 0,
+			deltaTop: 0,
+			scrollTop: 0,
+			startLine: 1,
+			maxVisibleLines: 1,
+			scrollVisible: false,
 			myMenuList: [],
+			groupList: [],
 		};
-	},
-	computed: {
-		visible() {
-			for (let i = 0; i < this.myMenuList.length; i++) {
-				if (this.myMenuList[i].length) {
-					return true;
-				}
-			}
-			return false;
-		},
 	},
 	watch: {
 		menuList() {
@@ -98,7 +107,7 @@ export default {
 					this.setCheckedByIndex(this.index + 1);
 				} else if (e.keyCode === 13) {
 					if (this.index > -1) {
-						this.onClick(this.indexMap[this.index]);
+						this.onClick(this.myMenuList[this.index]);
 					}
 				}
 			}
@@ -113,19 +122,21 @@ export default {
 			let index = -1;
 			let menuList = this.menuList;
 			this.index = -1;
-			this.maxIndex = -1;
-			this.indexMap = {};
+			this.startLine = 1;
+			this.scrollTop = 0;
 			if (menuList[0] && !(menuList[0] instanceof Array)) {
 				menuList = [menuList];
 			}
-			this.myMenuList = menuList.map((group, i) => {
+			this.myMenuList = [];
+			this.groupList = menuList.map((group, gIndex) => {
 				let newGroup = [];
-				group.forEach((item) => {
+				group.forEach((item, iIndex) => {
+					index++;
 					item = Object.assign({}, item);
 					item.group = newGroup;
 					item.value = item.value === undefined ? item.name : item.value;
 					if (this.value instanceof Array) {
-						item.selected = item.value === this.value[i];
+						item.selected = item.value === this.value[gIndex];
 					} else {
 						item.selected = item.value === this.value;
 					}
@@ -133,47 +144,61 @@ export default {
 						item.checked = item.selected;
 						item.selected = false;
 					}
-					this.indexMap[++index] = item;
-					this.maxIndex = index;
+					if (iIndex === group.length - 1 && gIndex < menuList.length - 1) {
+						item.groupEnd = true;
+					}
 					if (item.checked && this.index === -1) {
 						this.index = index;
 					}
 					newGroup.push(item);
+					this.myMenuList.push(item);
 				});
 				return newGroup;
 			});
+			this.contentHeight = this.myMenuList.length * this.itemHeight + 11 * (menuList.length - 1);
+			this.menuHeight = this.contentHeight;
+			this.menuHeight = this.menuHeight > 500 ? 500 : this.menuHeight;
+			this.maxVisibleLines = Math.ceil(500 / this.itemHeight) + 1;
+			this.render();
+		},
+		render() {
+			this.renderList = this.myMenuList.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines);
 		},
 		scrollToIndex() {
-			let $scroller = this.$refs.scroller;
-			let height = (this.index + 1) * this.itemHeight;
-			if ($scroller && height > $scroller.clientHeight + $scroller.scrollTop) {
-				$scroller.scrollTop = height - $scroller.clientHeight;
-			} else if ($scroller && height < $scroller.scrollTop + this.itemHeight) {
-				$scroller.scrollTop = height - this.itemHeight;
+			let scrollTop = this.index * this.itemHeight - this.menuHeight / 2;
+			if (scrollTop > this.contentHeight - this.menuHeight) {
+				scrollTop = this.contentHeight - this.menuHeight;
+			} else if (scrollTop < 0) {
+				scrollTop = 0;
 			}
+			this.setStartLine(scrollTop);
 		},
-		onClick(item) {
-			if (item.disabled) {
-				return;
-			}
-			this.clearChecked();
-			item.checked = true;
-			this.$emit('change', item);
+		showScrollBar() {
+			this.scrollVisible = true;
 		},
-		onHover(item) {
-			this.hoverCheck && this.setChecked(item.value);
+		hideScrollBar() {
+			this.scrollVisible = false;
+		},
+		setStartLine(scrollTop) {
+			this.startLine = Math.floor(scrollTop / this.itemHeight) + 1;
+			this.scrollTop = scrollTop;
+			this.deltaTop = scrollTop % this.itemHeight;
+			this.render();
 		},
 		setChecked(value) {
+			if (value === undefined) {
+				return;
+			}
 			let index = -1;
 			this.index = -1;
-			this.myMenuList.forEach((group, i) => {
+			this.groupList.forEach((group, i) => {
 				group.forEach((item) => {
 					if (this.value instanceof Array) {
 						item.selected = item.value === this.value[i];
 					} else {
 						item.selected = item.value === this.value;
 					}
-					if (this.myMenuList.length === 1) {
+					if (this.menuList.length === 1) {
 						item.checked = item.selected;
 						item.selected = false;
 					}
@@ -187,21 +212,56 @@ export default {
 		},
 		setCheckedByIndex(index) {
 			if (index < 0) {
-				index = this.maxIndex;
-			} else if (index > this.maxIndex) {
+				index = this.myMenuList.length - 1;
+			} else if (index > this.myMenuList.length - 1) {
 				index = 0;
 			}
 			this.clearChecked();
-			this.indexMap[index].checked = true;
+			this.myMenuList[index].checked = true;
 			this.index = index;
 			this.myMenuList.splice();
 		},
 		clearChecked() {
-			this.myMenuList.forEach((group) => {
-				group.forEach((item) => {
-					item.checked = false;
-				});
+			this.myMenuList.forEach((item) => {
+				item.checked = false;
 			});
+		},
+		onClick(item) {
+			if (item.disabled) {
+				return;
+			}
+			this.clearChecked();
+			item.checked = true;
+			this.$emit('change', item);
+		},
+		onHover(item) {
+			this.hoverCheck && this.setChecked(item.value);
+		},
+		onWheel(e) {
+			this.scrollDeltaY = e.deltaY;
+			if (this.scrollDeltaY && !this.wheelTask) {
+				this.wheelTask = globalData.scheduler.addUiTask(() => {
+					if (this.scrollDeltaY) {
+						try {
+							let scrollTop = this.scrollTop + this.scrollDeltaY;
+							if (scrollTop > this.contentHeight - this.menuHeight) {
+								scrollTop = this.contentHeight - this.menuHeight;
+							}
+							scrollTop = scrollTop < 0 ? 0 : scrollTop;
+							this.onScroll(scrollTop);
+						} catch (e) {
+							console.log(e);
+						}
+						this.scrollDeltaY = 0;
+					} else {
+						globalData.scheduler.removeUiTask(this.wheelTask);
+						this.wheelTask = null;
+					}
+				});
+			}
+		},
+		onScroll(e) {
+			this.setStartLine(e);
 		},
 	},
 };
