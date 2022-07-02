@@ -1376,6 +1376,11 @@ export default {
 				});
 			}
 		},
+		scrollToLine(line) {
+			let scrollTop = (line - 1) * this.charObj.charHight - this.scrollerArea.height / 2;
+			scrollTop = scrollTop > 0 ? scrollTop : 0;
+			this.setStartLine(scrollTop);
+		},
 		setData(prop, value) {
 			if (typeof this[prop] === 'function') {
 				return;

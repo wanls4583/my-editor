@@ -112,34 +112,64 @@ export default {
 		searchCmd() {
 			this.cmdList = [];
 			if (this.searchText.startsWith(':')) {
-				if (globalData.nowEditorId) {
-					let editor = globalData.$mainWin.getNowEditor();
+				let editor = globalData.nowEditorId && globalData.$mainWin.getNowEditor();
+				if (editor) {
 					this.cmdList = [{ name: `Current Line：${editor.cursor.nowCursorPos.line}，Type a Line number between 1 and ${editor.maxLine} to navigate to` }];
+					this.goToLine();
 				} else {
 					this.cmdList = [{ name: 'Open a Editor first to go to a line' }];
 				}
 			}
 		},
-		goToLine(line) {
-			line = line < 0 ? 0 : line;
-			if (globalData.nowEditorId) {
-				let editor = globalData.$mainWin.getNowEditor();
-				line = line > editor.maxLine ? editor.maxLine : line;
-				editor.cursor.setCursorPos({
-					line: line,
-					column: 0,
-				});
-				editor.focus();
+		goToLine() {
+			let editor = globalData.nowEditorId && globalData.$mainWin.getNowEditor();
+			if (editor) {
+				let line = parseInt(this.searchText.slice(1));
+				if (line > 0 && line <= editor.maxLine) {
+					this.nowCursorPos = this.nowCursorPos || editor.nowCursorPos;
+					this.scrollTop = this.scrollTop || editor.scrollTop;
+					this.scrollLeft = this.scrollLeft || editor.scrollLeft;
+					editor.scrollToLine(line);
+					if (this.preCursorPos) {
+						this.preCursorPos = editor.cursor.updateCursorPos(this.preCursorPos, line, 0);
+					} else {
+						this.preCursorPos = editor.cursor.addCursorPos({
+							line: line,
+							column: 0,
+						});
+					}
+				}
 			}
 		},
 		onEnter() {
-			if (this.isCmdSearch && this.searchText.startsWith(':')) {
-				let line = parseInt(this.searchText.slice(1));
-				this.goToLine(line);
-				this.visible = false;
+			if (this.isCmdSearch) {
+				if (this.searchText.startsWith(':')) {
+					let editor = globalData.nowEditorId && globalData.$mainWin.getNowEditor();
+					let line = parseInt(this.searchText.slice(1));
+					if (editor && line && this.preCursorPos && this.preCursorPos.line === line) {
+						editor.searcher.clearSearch();
+						editor.cursor.setCursorPos(this.preCursorPos);
+						editor.focus();
+						this.visible = false;
+					}
+				}
 			}
 		},
 		onCancel() {
+			if (this.nowCursorPos) {
+				let editor = globalData.nowEditorId && globalData.$mainWin.getNowEditor();
+				if (editor) {
+					editor.setStartLine(this.scrollTop);
+					editor.scrollLeft = this.scrollLeft;
+					editor.cursor.removeCursor(this.preCursorPos);
+					editor.cursor.addCursorPos(this.nowCursorPos);
+					editor.focus();
+				}
+				this.preCursorPos = null;
+				this.nowCursorPos = null;
+				this.scrollTop = 0;
+				this.scrollLeft = 0;
+			}
 			this.visible = false;
 		},
 		onChange(item) {
