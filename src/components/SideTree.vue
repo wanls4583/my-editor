@@ -175,10 +175,8 @@ export default {
 			}
 
 			function _readDir(item) {
-				this.readdir(item).then((_list) => {
-					item.children = _list;
+				this.readdir(item).then(() => {
 					item.open = true;
-					item.loaded = true;
 					this.initOpendDirList(list);
 				});
 			}
@@ -256,19 +254,14 @@ export default {
 			return obj;
 		},
 		readdir(item) {
-			let filePath = '';
-			if (typeof item === 'string') {
-				filePath = item;
-				item = null;
-			} else {
-				filePath = item.path;
-			}
 			return new Promise((resolve, reject) => {
-				fs.readdir(filePath, { encoding: 'utf8' }, (err, files) => {
+				fs.readdir(item.path, { encoding: 'utf8' }, (err, files) => {
 					if (err) {
 						return resolve([]);
 					}
 					files = this.createItems(item, files);
+					item.children = files;
+					item.loaded = true;
 					Object.freeze(files);
 					resolve(files);
 				});
@@ -284,12 +277,13 @@ export default {
 			}, 100);
 
 			function _refresh() {
+				let children = item.children || [];
 				this.readdir(item).then((list) => {
 					let idMap = {};
-					item.children.forEach((item) => {
+					children.forEach((item) => {
 						idMap[item.id] = item;
 					});
-					item.children = list.map((item) => {
+					item.children = item.children.map((item) => {
 						let obj = idMap[item.id];
 						if (obj) {
 							if (obj.path != item.path) {
@@ -522,9 +516,7 @@ export default {
 				if (item.type === 'dir') {
 					item.open = !item.open;
 					if (!item.loaded) {
-						this.readdir(item).then((list) => {
-							item.children = list;
-							item.loaded = true;
+						this.readdir(item).then(() => {
 							if (!item.gitRootPath) {
 								this.watchFileStatus(item.children);
 							}
