@@ -84,6 +84,7 @@ export default {
 			scrollVisible: false,
 			myMenuList: [],
 			groupList: [],
+			renderList: [],
 		};
 	},
 	watch: {
@@ -138,7 +139,8 @@ export default {
 			this.myMenuList = [];
 			this.groupList = menuList.map((group, gIndex) => {
 				let newGroup = [];
-				group.forEach((item, iIndex) => {
+				for (let iIndex = 0; iIndex < group.length; iIndex++) {
+					let item = group[iIndex];
 					index++;
 					item = Object.assign({}, item);
 					item.group = newGroup;
@@ -160,7 +162,7 @@ export default {
 					}
 					newGroup.push(item);
 					this.myMenuList.push(item);
-				});
+				}
 				return newGroup;
 			});
 			this.contentHeight = this.myMenuList.length * this.itemHeight + 11 * (menuList.length - 1);
@@ -170,7 +172,10 @@ export default {
 			this.setStartLine(this.checkScrollTop(this.top));
 		},
 		render() {
-			this.renderList = this.myMenuList.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines);
+			cancelAnimationFrame(this.renderTimer);
+			this.renderTimer = requestAnimationFrame(() => {
+				this.renderList = this.myMenuList.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines);
+			});
 		},
 		scrollToIndex() {
 			let scrollTop = this.index * this.itemHeight - this.menuHeight / 2;

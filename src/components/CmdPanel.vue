@@ -140,39 +140,43 @@ export default {
 
 			function _search(list) {
 				if (list.length) {
-					_readdir(list.shift()).then((children) => {
-						if (searchId !== this.searchId) {
-							return;
-						}
-						children.forEach((item) => {
-							if (item.type === 'file') {
-								_match(item);
-							} else if (!globalData.skipSearchDirs.test(item.path)) {
-								list.push(item);
-							}
+					let item = list.shift();
+					if (item.loaded) {
+						_checkFile.call(this, item.children, list);
+					} else {
+						globalData.$fileTree.readdir(item).then(() => {
+							_checkFile.call(this, item.children, list);
 						});
-						this.searchFileTask = globalData.scheduler.addTask(() => {
-							_search.call(this, list);
-						});
-					});
+					}
 				} else {
 					clearTimeout(this.searchFileTimer);
 					this.cmdList = _sort(results);
 				}
 				if (!this.searchFileTimer) {
-					this.searchFileTimer = setTimeout(() => {
-						this.cmdList = _sort(results);
-						this.searchFileTimer = null;
-					}, 100);
+					this.searchFileTimer = setTimeout(
+						() => {
+							this.cmdList = _sort(results);
+							this.searchFileTimer = null;
+						},
+						this.cmdList.length < 100 ? 50 : 200
+					);
 				}
 			}
 
-			function _readdir(item) {
-				if (item.loaded) {
-					return Promise.resolve(item.children);
-				} else {
-					return globalData.$fileTree.readdir(item);
+			function _checkFile(children, list) {
+				if (searchId !== this.searchId) {
+					return;
 				}
+				children.forEach((item) => {
+					if (item.type === 'file') {
+						_match(item);
+					} else if (!globalData.skipSearchDirs.test(item.path)) {
+						list.push(item);
+					}
+				});
+				this.searchFileTask = globalData.scheduler.addTask(() => {
+					_search.call(this, list);
+				});
 			}
 
 			function _match(item) {
