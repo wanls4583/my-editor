@@ -80,8 +80,8 @@ export default {
 				data = data || {};
 				this.visible = true;
 				this.isCmdSearch = true;
-				this.checkable = true;
-				this.hoverCheck = true;
+				this.checkable = false;
+				this.hoverCheck = false;
 				this.searchText = data.input || '';
 				this.cmdList = [];
 				this.searchCmd(1);
@@ -150,16 +150,13 @@ export default {
 					}
 				} else {
 					clearTimeout(this.searchFileTimer);
-					this.cmdList = _sort(results);
+					this.cmdList = _sort(results).slice();
 				}
 				if (!this.searchFileTimer) {
-					this.searchFileTimer = setTimeout(
-						() => {
-							this.cmdList = _sort(results);
-							this.searchFileTimer = null;
-						},
-						this.cmdList.length < 100 ? 50 : 200
-					);
+					this.searchFileTimer = setTimeout(() => {
+						this.cmdList = _sort(results).slice();
+						this.searchFileTimer = null;
+					}, delay || 200);
 				}
 			}
 
