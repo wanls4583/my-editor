@@ -80,7 +80,7 @@ export default {
 				data = data || {};
 				this.visible = true;
 				this.isCmdSearch = true;
-				this.checkable = false;
+				this.checkable = true;
 				this.hoverCheck = false;
 				this.searchText = data.input || '';
 				this.cmdList = [];
@@ -112,7 +112,7 @@ export default {
 				this.cmdList = this.originCmdList.slice();
 			}
 		},
-		searchCmd(delay) {
+		searchCmd() {
 			this.scrollTop = 0;
 			if (this.searchText.startsWith(':')) {
 				let editor = globalData.nowEditorId && globalData.$mainWin.getNowEditor();
@@ -123,10 +123,10 @@ export default {
 					this.cmdList = [{ name: 'Open a Editor first to go to a line' }];
 				}
 			} else {
-				this.searchFile(delay);
+				this.searchFile();
 			}
 		},
-		searchFile(delay) {
+		searchFile() {
 			let results = [];
 			let timestamp = Date.now();
 			let searchId = Util.getUUID();
@@ -152,11 +152,11 @@ export default {
 					clearTimeout(this.searchFileTimer);
 					this.cmdList = _sort(results).slice();
 				}
-				if (!this.searchFileTimer) {
+				if (!this.searchFileTimer && results.length < 100) {
 					this.searchFileTimer = setTimeout(() => {
 						this.cmdList = _sort(results).slice();
 						this.searchFileTimer = null;
-					}, delay || 200);
+					}, 60);
 				}
 			}
 

@@ -172,10 +172,7 @@ export default {
 			this.setStartLine(this.checkScrollTop(this.top));
 		},
 		render() {
-			cancelAnimationFrame(this.renderTimer);
-			this.renderTimer = requestAnimationFrame(() => {
-				this.renderList = this.myMenuList.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines);
-			});
+			this.renderList = this.myMenuList.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines);
 		},
 		scrollToIndex() {
 			let scrollTop = this.index * this.itemHeight - this.menuHeight / 2;
@@ -228,7 +225,7 @@ export default {
 					}
 				});
 			});
-			this.myMenuList.splice();
+			this.render();
 		},
 		setCheckedByIndex(index) {
 			if (index < 0) {
@@ -239,7 +236,7 @@ export default {
 			this.clearChecked();
 			this.myMenuList[index].checked = true;
 			this.index = index;
-			this.myMenuList.splice();
+			this.render();
 		},
 		clearChecked() {
 			this.myMenuList.forEach((item) => {
