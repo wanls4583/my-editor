@@ -10,7 +10,18 @@
 				<input @keydown.enter="onEnter" @keydown.esc="onCancel" ref="input" spellcheck="false" type="text" v-model="searchText" />
 			</div>
 			<div>
-				<Menu :checkable="checkable" :hover-check="hoverCheck" :menuList="cmdList" :top="scrollTop" :value="value" @change="onChange" @scroll="onScroll" spellcheck="false" style="position: relative"></Menu>
+				<Menu
+					:checkable="checkable"
+					:hover-check="hoverCheck"
+					:menuList="cmdList"
+					:top="scrollTop"
+					:value="value"
+					@change="onChange"
+					@scroll="onScroll"
+					ref="menu"
+					spellcheck="false"
+					style="position: relative"
+				></Menu>
 			</div>
 		</div>
 	</div>
@@ -150,15 +161,15 @@ export default {
 					}
 				} else {
 					clearTimeout(this.searchFileTimer);
-					this.cmdList = _sort(results).slice();
+					this.$refs.menu.setMenuList(_sort(results));
 				}
 				if (!this.searchFileTimer) {
 					this.searchFileTimer = setTimeout(
 						() => {
-							this.cmdList = _sort(results).slice();
+							this.$refs.menu.setMenuList(_sort(results));
 							this.searchFileTimer = null;
 						},
-						results.length < 100 ? 30 : 500
+						results.length ? 60 : 0
 					);
 				}
 			}

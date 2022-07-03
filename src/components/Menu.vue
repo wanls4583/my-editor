@@ -106,7 +106,9 @@ export default {
 			this.$emit('scroll', this.scrollTop);
 		},
 		top() {
-			this.setStartLine(this.checkScrollTop(this.top));
+			if (this.top !== this.scrollTop) {
+				this.setStartLine(this.checkScrollTop(this.top));
+			}
 		},
 	},
 	created() {
@@ -145,7 +147,7 @@ export default {
 				for (let iIndex = 0; iIndex < group.length; iIndex++) {
 					let item = group[iIndex];
 					index++;
-					item = Object.assign({}, item);
+					item = { ...item };
 					item.group = newGroup;
 					item.value = item.value === undefined ? item.name : item.value;
 					if (this.value instanceof Array) {
@@ -168,10 +170,7 @@ export default {
 				}
 				return newGroup;
 			});
-			this.contentHeight = this.myMenuList.length * this.itemHeight + 11 * (menuList.length - 1);
-			this.menuHeight = this.contentHeight;
-			this.menuHeight = this.menuHeight > 500 ? 500 : this.menuHeight;
-			this.maxVisibleLines = Math.ceil(500 / this.itemHeight) + 1;
+			this.setTreeHeight();
 			this.setStartLine(this.checkScrollTop(this.top));
 		},
 		render() {
@@ -184,6 +183,12 @@ export default {
 					item._name = Util.getMatchHtml(item.name, item.nameIndexs);
 				}
 			});
+		},
+		setMenuList(list) {
+			this.groupList = [list];
+			this.myMenuList = list;
+			this.setTreeHeight();
+			this.setStartLine(this.checkScrollTop(this.top));
 		},
 		scrollToIndex() {
 			let scrollTop = this.index * this.itemHeight - this.menuHeight / 2;
@@ -206,6 +211,12 @@ export default {
 			}
 			scrollTop = scrollTop < 0 ? 0 : scrollTop;
 			return scrollTop;
+		},
+		setTreeHeight() {
+			this.contentHeight = this.myMenuList.length * this.itemHeight + 11 * (this.groupList.length - 1);
+			this.menuHeight = this.contentHeight;
+			this.menuHeight = this.menuHeight > 500 ? 500 : this.menuHeight;
+			this.maxVisibleLines = Math.ceil(500 / this.itemHeight) + 1;
 		},
 		setStartLine(scrollTop) {
 			this.startLine = Math.floor(scrollTop / this.itemHeight) + 1;
