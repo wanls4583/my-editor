@@ -44,10 +44,8 @@ export default class {
 		this.editorList.forEach(item => {
 			if (globalData.nowIconTheme.value) {
 				let icon = Util.getIconByPath({
-					iconData: globalData.nowIconData,
 					filePath: item.path,
 					fileType: 'file',
-					themeType: globalData.nowTheme.type,
 				});
 				item.icon = icon ? `my-file-icon my-file-icon-${icon}` : '';
 			} else {

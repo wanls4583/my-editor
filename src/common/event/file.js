@@ -369,10 +369,8 @@ export default class {
 			fileObj.saved = true;
 		} else {
 			let icon = Util.getIconByPath({
-				iconData: globalData.nowIconData,
 				filePath: filePath,
 				fileType: 'file',
-				thmeType: globalData.nowTheme.type,
 			});
 			icon = icon ? `my-file-icon my-file-icon-${icon}` : '';
 			fileObj = {
@@ -392,10 +390,8 @@ export default class {
 	createEmptyTabItem() {
 		let titleCount = this.titleCount++;
 		let icon = Util.getIconByPath({
-			iconData: globalData.nowIconData,
 			filePath: '',
 			fileType: 'file',
-			thmeType: globalData.nowTheme.type,
 		});
 		icon = icon ? `my-file-icon my-file-icon-${icon}` : '';
 		return {

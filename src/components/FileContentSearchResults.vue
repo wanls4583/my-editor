@@ -121,10 +121,8 @@ export default {
 				this.renderList.forEach((item) => {
 					if (globalData.nowIconData && item.deep == 1) {
 						item.icon = Util.getIconByPath({
-							iconData: globalData.nowIconData,
 							filePath: item.path,
 							fileType: 'file',
-							themeType: globalData.nowTheme.type,
 						});
 						item.icon = item.icon ? `my-file-icon my-file-icon-${item.icon}` : '';
 					}

@@ -39,6 +39,16 @@ export default class {
 					case 'KeyS':
 						e.preventDefault();
 						EventBus.$emit('file-save', { id: globalData.nowEditorId });
+					case 'KeyG': //ctrl+g，跳转
+						e.preventDefault();
+						EventBus.$emit('menu-close');
+						EventBus.$emit('cmd-search-open', { input: ':' });
+						break;
+					case 'KeyP': //ctrl+p，命令面板
+						e.preventDefault();
+						EventBus.$emit('menu-close');
+						EventBus.$emit('cmd-search-open');
+						break;
 				}
 			}
 		}

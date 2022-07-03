@@ -101,11 +101,6 @@ export default class {
 					e.preventDefault();
 					this.openSearch();
 					break;
-				case 71: //ctrl+g，跳转
-					e.preventDefault();
-					EventBus.$emit('menu-close');
-					EventBus.$emit('cmd-search-open', { input: ':' });
-					break;
 				case 72: //ctrl+H，搜素替换
 					e.preventDefault();
 					this.openSearch(true);

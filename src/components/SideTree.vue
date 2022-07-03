@@ -192,8 +192,6 @@ export default {
 				this.renderList.forEach((item) => {
 					if (globalData.nowIconData) {
 						item.icon = Util.getIconByPath({
-							iconData: globalData.nowIconData,
-							themeType: globalData.nowTheme.type,
 							filePath: item.path,
 							fileType: item.type,
 							opened: item.open,
@@ -333,8 +331,6 @@ export default {
 						await this.onClickItem(item);
 					}
 					obj.icon = Util.getIconByPath({
-						iconData: globalData.nowIconData,
-						themeType: globalData.nowTheme.type,
 						filePath: '',
 						fileType: type,
 						opened: false,

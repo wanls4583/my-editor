@@ -439,10 +439,12 @@ class Util {
 		}
 		return new RegExp(wordPattern);
 	}
-	static getIconByPath({ iconData, filePath, themType, fileType, opened, isRoot }) {
+	static getIconByPath({ fileType, filePath, opened, isRoot }) {
 		let fileName = /[^\\\/]+$/.exec(filePath);
 		let suffix1 = '';
 		let suffix2 = '';
+		let iconData = globalData.nowIconData;
+		let themType = globalData.nowTheme.type;
 		fileName = fileName && fileName[0];
 		if (fileName) {
 			suffix1 = /(?<=\.)[^\.]+$/.exec(fileName);

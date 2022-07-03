@@ -208,6 +208,11 @@ export default {
 						op: 'moveLineDown',
 						shortcut: 'Ctrl+Shift+Down',
 					},
+					{
+						name: 'Go to Line',
+						op: 'gotoLine',
+						shortcut: 'Ctrl+G',
+					},
 				],
 				[
 					{
@@ -253,6 +258,7 @@ export default {
 					{
 						name: 'Command Palette',
 						op: 'commandPanel',
+						shortcut: 'Ctrl+P',
 					},
 					{
 						name: 'Terminal',
@@ -457,6 +463,10 @@ export default {
 					break;
 				case 'moveLineDown':
 					this.context.moveLineDown();
+					break;
+				case 'gotoLine':
+					EventBus.$emit('menu-close');
+					EventBus.$emit('cmd-search-open', { input: ':' });
 					break;
 				case 'addCursorAbove':
 					this.editor.cursor.addCursorAbove();

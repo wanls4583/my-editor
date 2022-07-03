@@ -156,7 +156,7 @@ export default {
 					this.searchFileTimer = setTimeout(() => {
 						this.cmdList = _sort(results).slice();
 						this.searchFileTimer = null;
-					}, 60);
+					}, 30);
 				}
 			}
 
@@ -177,6 +177,8 @@ export default {
 			}
 
 			function _match(item) {
+				let icon = Util.getIconByPath({ filePath: item.path, fileType: 'file' });
+				icon = icon ? `my-file-icon my-file-icon-${icon}` : '';
 				if (searchText) {
 					let m = Util.fuzzyMatch(searchText, _reverseString(item.path), true);
 					if (m) {
@@ -196,8 +198,9 @@ export default {
 							op: 'openFile',
 							item: item,
 							score: m.score,
-							descIndexs: descIndexs,
-							nameIndexs: nameIndexs,
+							descIndexs,
+							nameIndexs,
+							icon,
 						});
 					}
 				} else {
@@ -207,6 +210,7 @@ export default {
 						item: item,
 						op: 'openFile',
 						score: 0,
+						icon,
 					});
 				}
 			}
