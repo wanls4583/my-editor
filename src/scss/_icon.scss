@@ -27,6 +27,14 @@
     &-icon-close {
         background-image: url(@/assets/icons/dark/chrome-close.svg);
     }
+    
+    &-icon-right {
+        background-image: url(@/assets/icons/dark/chevron-right.svg);
+    }
+
+    &-icon-down {
+        background-image: url(@/assets/icons/dark/chevron-down.svg);
+    }
 }
 .my-theme-light {
     .my {
@@ -48,6 +56,14 @@
 
         &-icon-close {
             background-image: url(@/assets/icons/light/chrome-close.svg);
+        }
+
+        &-icon-right {
+            background-image: url(@/assets/icons/light/chevron-right.svg);
+        }
+
+        &-icon-down {
+            background-image: url(@/assets/icons/light/chevron-down.svg);
         }
     }
 }

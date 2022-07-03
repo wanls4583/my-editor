@@ -16,8 +16,8 @@
 						class="tree-item-title my-center-start"
 					>
 						<template v-if="item.type === 'dir'">
-							<span class="left-icon iconfont icon-down1" v-if="item.open"></span>
-							<span class="left-icon iconfont icon-right" v-else></span>
+							<span class="my-icon my-icon-down" v-if="item.open"></span>
+							<span class="my-icon my-icon-right" v-else></span>
 						</template>
 						<div :class="[item.icon, item.statusColor]" class="tree-item-content">
 							<div class="my-center-between" style="width:100%;overflow:hidden">
