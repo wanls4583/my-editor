@@ -152,11 +152,14 @@ export default {
 					clearTimeout(this.searchFileTimer);
 					this.cmdList = _sort(results).slice();
 				}
-				if (!this.searchFileTimer && results.length < 100) {
-					this.searchFileTimer = setTimeout(() => {
-						this.cmdList = _sort(results).slice();
-						this.searchFileTimer = null;
-					}, 30);
+				if (!this.searchFileTimer) {
+					this.searchFileTimer = setTimeout(
+						() => {
+							this.cmdList = _sort(results).slice();
+							this.searchFileTimer = null;
+						},
+						results.length < 100 ? 30 : 500
+					);
 				}
 			}
 

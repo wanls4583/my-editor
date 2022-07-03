@@ -227,7 +227,7 @@ export default {
 
 			function _check(item, list) {
 				item.children.forEach((item) => {
-					if (item.type === 'dir' && !globalData.skipSearchDirs.test(item.path)) {
+					if (item.type === 'dir' && item.deep <= 4 && !globalData.skipSearchDirs.test(item.path)) {
 						list.push(item);
 					}
 				});
