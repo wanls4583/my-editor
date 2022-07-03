@@ -235,20 +235,21 @@ export default {
 				let text = this.$parent.myContext.htmls[line - 1].text;
 				let top = i * this.$parent.charObj.charHight * this.scale;
 				if (ranges.length) {
-					ranges.forEach((range) => {
-						if (range.start.line === line) {
-							let left = _getLength(text.slice(0, range.start.column));
-							let width = 0;
-							if (range.start.line === range.end.line) {
-								width = _getLength(text.slice(range.start.column, range.end.column));
-							} else {
-								width = _getLength(text.slice(range.start.column, text.length));
-							}
-							results.push({ top, left, width });
-						} else {
-							results.push({ top, left: 0, width: _getLength(text.slice(0, range.end.column)) });
-						}
-					});
+					// ranges.forEach((range) => {
+					// 	if (range.start.line === line) {
+					// 		let left = _getLength(text.slice(0, range.start.column));
+					// 		let width = 0;
+					// 		if (range.start.line === range.end.line) {
+					// 			width = _getLength(text.slice(range.start.column, range.end.column));
+					// 		} else {
+					// 			width = _getLength(text.slice(range.start.column, text.length));
+					// 		}
+					// 		results.push({ top, left, width });
+					// 	} else {
+					// 		results.push({ top, left: 0, width: _getLength(text.slice(0, range.end.column)) });
+					// 	}
+					// });
+					results.push(top);
 				} else {
 					let range = this.$parent.selecter.getRangeWithCursorPos({ line: line, column: 0 });
 					range && results.push(top);
