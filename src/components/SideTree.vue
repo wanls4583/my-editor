@@ -176,6 +176,7 @@ export default {
 				}
 			} else {
 				this.refreshWorkSpace();
+				this.preLoadFolder();
 				this.initOpendDiring = false;
 			}
 
@@ -204,6 +205,36 @@ export default {
 					item.status = item.status.status;
 				});
 			});
+		},
+		preLoadFolder() {
+			cancelIdleCallback(this.preLoadFolderTimer);
+			this.preLoadFolderTimer = requestIdleCallback(() => {
+				_preloadFolder.call(this, globalData.fileTree.slice());
+			});
+
+			function _preloadFolder(list) {
+				if (list.length) {
+					let item = list.shift();
+					if (!item.loaded) {
+						this.readdir(item).then(() => {
+							_check.call(this, item, list);
+						});
+					} else {
+						_check.call(this, item, list);
+					}
+				}
+			}
+
+			function _check(item, list) {
+				item.children.forEach((item) => {
+					if (item.type === 'dir' && !globalData.skipSearchDirs.test(item.path)) {
+						list.push(item);
+					}
+				});
+				this.searchFileTask = globalData.scheduler.addTask(() => {
+					_preloadFolder.call(this, list);
+				});
+			}
 		},
 		createItems(parentItem, files) {
 			let results = [];

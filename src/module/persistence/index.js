@@ -46,10 +46,11 @@ export default class {
 	loadFileTree() {
 		if (fs.existsSync(globalData.fileTreePath)) {
 			Util.loadJsonFile(globalData.fileTreePath).then(data => {
-				if (data && data.length) {
-					EventBus.$emit('file-tree-loaded', data);
-				}
+				data = data || [];
+				EventBus.$emit('file-tree-loaded', data);
 			});
+		} else {
+			EventBus.$emit('file-tree-loaded', data);
 		}
 	}
 	storeTabData() {
