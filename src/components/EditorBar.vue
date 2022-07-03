@@ -17,7 +17,7 @@
 				<div :class="[item.icon]" class="bar-content">
 					<span :class="[item.statusColor]">
 						<span class="bar-text">{{ item.name }}</span>
-						<span class="bar-status">{{item.status}}</span>
+						<span class="bar-status" v-if="item.status!=='!!'">{{item.status}}</span>
 					</span>
 					<div class="bar-icon">
 						<span @click.stop="onClose(item.id)" class="bar-close-icon iconfont icon-close" title="close" v-show="item.saved"></span>

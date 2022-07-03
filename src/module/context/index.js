@@ -217,7 +217,7 @@ class Context {
 		this.setAutoTip(null);
 		this.render(true);
 		EventBus.$emit('editor-content-change', { id: this.editorId, path: this.tabData.path });
-		EventBus.$emit('git-diff', this.tabData.path);
+		this.tabData.status !== '!!' && EventBus.$emit('git-diff', this.tabData.path);
 		let historyObj = {
 			type: Util.command.DELETE,
 			cursorPos: Object.assign({}, newPos),
@@ -466,7 +466,7 @@ class Context {
 		this.setAutoTip(null);
 		this.render(true);
 		EventBus.$emit('editor-content-change', { id: this.editorId, path: this.tabData.path });
-		EventBus.$emit('git-diff', this.tabData.path);
+		this.tabData.status !== '!!' && EventBus.$emit('git-diff', this.tabData.path);
 		// 更新最大文本宽度
 		if (startObj.width >= this.maxWidthObj.width) {
 			this.setEditorData('maxWidthObj', {
@@ -1190,8 +1190,8 @@ class Context {
 		});
 		if (contentChanged) {
 			EventBus.$emit('editor-content-change', { id: this.editorId, path: this.tabData.path });
-			EventBus.$emit('git-diff', this.tabData.path);
 			EventBus.$emit('indent-change', 'space');
+			this.tabData.status !== '!!' && EventBus.$emit('git-diff', this.tabData.path);
 			this.render();
 			this.focus();
 			if (command) {
@@ -1291,8 +1291,8 @@ class Context {
 		});
 		if (contentChanged) {
 			EventBus.$emit('editor-content-change', { id: this.editorId, path: this.tabData.path });
-			EventBus.$emit('git-diff', this.tabData.path);
 			EventBus.$emit('indent-change', 'tab');
+			this.tabData.status !== '!!' && EventBus.$emit('git-diff', this.tabData.path);
 			this.render();
 			this.focus();
 			if (command) {

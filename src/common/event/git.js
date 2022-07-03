@@ -59,6 +59,9 @@ export default class {
 		if (!nowCommit) {
 			return;
 		}
+		if (this.getIgnore(filePath)) {
+			return;
+		}
 		if (!stagedContent) {
 			this.getStagedContent(filePath).then(stagedContent => {
 				this.cacheFile(fileIndex, stagedContent);
@@ -252,6 +255,16 @@ export default class {
 			console.log(e);
 		}
 		return fileIndex;
+	}
+	getIgnore(filePath) {
+		let ignoreed = false;
+		try {
+			ignoreed = spawnSync('git', ['check-ignore', filePath], { cwd: path.dirname(filePath) });
+			ignoreed = ignoreed.stdout.toString();
+		} catch (e) {
+			console.log(e);
+		}
+		return ignoreed;
 	}
 	getStagedContent(filePath) {
 		let child = null;

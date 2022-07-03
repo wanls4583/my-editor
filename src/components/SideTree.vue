@@ -22,7 +22,7 @@
 						<div :class="[item.icon, item.statusColor]" class="tree-item-content">
 							<div class="my-center-between" style="width:100%;overflow:hidden">
 								<span class="tree-item-text">{{item.name}}</span>
-								<span style="margin:0 5px 0 10px;flex-shrink:0" v-if="item.type === 'file'">{{item.status}}</span>
+								<span style="margin:0 5px 0 10px;flex-shrink:0" v-if="item.type==='file'&&item.status!='!!'">{{item.status}}</span>
 							</div>
 						</div>
 					</div>
@@ -206,6 +206,7 @@ export default {
 						item.icon = item.icon ? `my-file-icon my-file-icon-${item.icon}` : '';
 					}
 					if (item.gitIgnore && gitIgnoreMap[item.gitIgnore] && item.relativePath && gitIgnoreMap[item.gitIgnore].ignores(item.relativePath)) {
+						item.status = '!!';
 						item.statusColor = 'my-status-ignore';
 					} else {
 						item.status = Util.getFileStatus(item.path);
