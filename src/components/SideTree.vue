@@ -207,8 +207,10 @@ export default {
 			});
 		},
 		preLoadFolder() {
+			globalData.scheduler.removeTask(this.preLoadFolderTask);
 			cancelIdleCallback(this.preLoadFolderTimer);
 			this.preLoadFolderTimer = requestIdleCallback(() => {
+				this.preLoadFolderStartTime = Date.now();
 				_preloadFolder.call(this, globalData.fileTree.slice());
 			});
 
@@ -231,9 +233,12 @@ export default {
 						list.push(item);
 					}
 				});
-				this.searchFileTask = globalData.scheduler.addTask(() => {
-					_preloadFolder.call(this, list);
-				});
+				// 最多加载30秒
+				if (Date.now() - this.preLoadFolderStartTime < 30000) {
+					this.preLoadFolderTask = globalData.scheduler.addTask(() => {
+						_preloadFolder.call(this, list);
+					});
+				}
 			}
 		},
 		createItems(parentItem, files) {
