@@ -228,31 +228,16 @@ export default {
 		},
 		renderSelectedBg() {
 			let results = [];
+			let fResults = [];
 			let tabSize = this.$parent.tabSize;
 			for (let line = this.startLine, i = 0; line <= this.$parent.myContext.htmls.length && i < this.maxVisibleLines; i++) {
 				let fold = this.$parent.folder.getFoldByLine(line);
-				let ranges = this.$parent.selecter.getRangeByLine(line);
 				let text = this.$parent.myContext.htmls[line - 1].text;
 				let top = i * this.$parent.charObj.charHight * this.scale;
-				if (ranges.length) {
-					// ranges.forEach((range) => {
-					// 	if (range.start.line === line) {
-					// 		let left = _getLength(text.slice(0, range.start.column));
-					// 		let width = 0;
-					// 		if (range.start.line === range.end.line) {
-					// 			width = _getLength(text.slice(range.start.column, range.end.column));
-					// 		} else {
-					// 			width = _getLength(text.slice(range.start.column, text.length));
-					// 		}
-					// 		results.push({ top, left, width });
-					// 	} else {
-					// 		results.push({ top, left: 0, width: _getLength(text.slice(0, range.end.column)) });
-					// 	}
-					// });
+				if (this.$parent.fSelecter.getRangeByLine(line).length || this.$parent.selecter.getRangeWithCursorPos({ line: line, column: 0 })) {
+					fResults.push(top);
+				} else if (this.$parent.fSelecter.getRangeByLine(line).length || this.$parent.selecter.getRangeWithCursorPos({ line: line, column: 0 })) {
 					results.push(top);
-				} else {
-					let range = this.$parent.selecter.getRangeWithCursorPos({ line: line, column: 0 });
-					range && results.push(top);
 				}
 				if (fold) {
 					line = fold.end.line;
@@ -260,7 +245,7 @@ export default {
 					line++;
 				}
 			}
-			this.worker.postMessage({ event: 'render-selected-bg', data: results });
+			this.worker.postMessage({ event: 'render-selected-bg', data: { results, fResults } });
 
 			function _getLength(text) {
 				let tabNum = text.match(/\t/);

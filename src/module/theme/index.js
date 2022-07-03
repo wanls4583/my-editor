@@ -13,7 +13,7 @@ const path = require('path');
 const settingMap = {
 	foreground: 'color',
 	background: 'background-color',
-	fontStyle: 'font-style',
+	fontStyle: 'font-style'
 };
 
 export default class {
@@ -28,7 +28,7 @@ export default class {
 			globalData.nowTheme = {
 				value: option.value,
 				type: option.type,
-				path: option.path,
+				path: option.path
 			};
 			EventBus.$emit('theme-changed', option.value);
 		});
@@ -53,7 +53,7 @@ export default class {
 	loadIconTheme(option) {
 		if (!option.path) {
 			globalData.nowIconTheme = {
-				value: option.value,
+				value: option.value
 			};
 			globalData.nowIconData = null;
 			EventBus.$emit('icon-changed');
@@ -116,7 +116,7 @@ export default class {
 				_setFileExtensions(data);
 				globalData.nowIconTheme = {
 					value: option.value,
-					path: option.path,
+					path: option.path
 				};
 				globalData.nowIconData = data;
 				EventBus.$emit('icon-changed', option.value);
@@ -148,7 +148,7 @@ export default class {
 					fileExtensions: data.fileExtensions,
 					fileNames: data.fileNames,
 					folderNames: data.folderNames,
-					folderNamesExpanded: data.folderNamesExpanded,
+					folderNamesExpanded: data.folderNamesExpanded
 				};
 			}
 		}
@@ -203,7 +203,7 @@ export default class {
 						scopes: scope.split(' '),
 						level: _getLevel(scope),
 						settings: token.settings,
-						settingsStr: settingsStr,
+						settingsStr: settingsStr
 					});
 					scopeId++;
 				});
@@ -281,6 +281,7 @@ export default class {
 		_toolbar();
 		_badge();
 		_git();
+		_minimap();
 
 		// base
 		function _base() {
@@ -946,6 +947,14 @@ export default class {
 				} else {
 					result.colors['diffEditor.insertedTextBackground'] = 'rgba(75, 102, 22, 0.5)';
 				}
+			}
+		}
+		function _minimap() {
+			if (!result.colors['minimap.selectionHighlight']) {
+				result.colors['minimap.selectionHighlight'] = result.colors['editor.selectionBackground'];
+			}
+			if (!result.colors['minimap.findMatchHighlight']) {
+				result.colors['minimap.findMatchHighlight'] = result.colors['editor.findMatchBackground'];
 			}
 		}
 	}

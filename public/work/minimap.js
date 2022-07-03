@@ -11,7 +11,7 @@ let lines = null;
 let singleLines = null;
 let diffRanges = null;
 let allDiffRanges = null;
-let slectedRanges = null;
+let selectedData = null;
 let cursors = null;
 let allCursors = null;
 let cursorsImg = null;
@@ -174,28 +174,39 @@ function drawRightDiff() {
 }
 
 function drawSelectedBg() {
-	let rgb = getRgb(dataObj.colors['editor.selectionBackground']);
-	let slectedImgData = new ImageData(dataObj.width, dataObj.height);
-	for (let i = 0; i < slectedRanges.length; i++) {
-		let range = slectedRanges[i];
-		if (typeof range === 'object') {
-			let width = range.width || 2;
-			if (range.left < dataObj.width) {
-				width = range.left + width > dataObj.width ? dataObj.width - range.left : width;
-				putRectPixl({ imgData: slectedImgData, left: range.left, top: range.top, width: width, height: dataObj.charHight, rgb });
-			}
-		} else {
-			putRectPixl({ imgData: slectedImgData, left: 0, top: range, width: dataObj.width, height: dataObj.charHight, rgb });
+	let results = selectedData.results.map(item => {
+		return {
+			rgb: getRgb(dataObj.colors['minimap.selectionHighlight']),
+			top: item
+		};
+	});
+	let fResults = selectedData.fResults.map(item => {
+		return {
+			rgb: getRgb(dataObj.colors['minimap.findMatchHighlight']),
+			top: item
+		};
+	});
+	results = results.concat(fResults);
+	if (results.length) {
+		let slectedImgData = new ImageData(dataObj.width, dataObj.height);
+		for (let i = 0; i < results.length; i++) {
+			let item = results[i];
+			putRectPixl({ imgData: slectedImgData, left: 0, top: item.top, width: dataObj.width, height: dataObj.charHight, rgb: item.rgb });
 		}
-	}
-	createImageBitmap(slectedImgData).then(img => {
+		createImageBitmap(slectedImgData).then(img => {
+			ctx.clearRect(0, 0, dataObj.width, dataObj.height);
+			ctx.putImageData(canvasImgData, 0, 0);
+			ctx.drawImage(img, 0, 0);
+			cursorsImg && ctx.drawImage(cursorsImg, 0, 0);
+			selectedImg = img;
+		});
+	} else if (selectedImg) {
 		ctx.clearRect(0, 0, dataObj.width, dataObj.height);
 		ctx.putImageData(canvasImgData, 0, 0);
-		ctx.drawImage(img, 0, 0);
 		cursorsImg && ctx.drawImage(cursorsImg, 0, 0);
-		selectedImg = img;
-	});
-	slectedRanges = null;
+		selectedImg = null;
+	}
+	selectedData = null;
 }
 
 function drawCursor() {
@@ -275,7 +286,7 @@ function render() {
 				if (allCursors) {
 					drawAllCursor();
 				}
-				if (slectedRanges) {
+				if (selectedData) {
 					drawSelectedBg();
 				}
 				if (diffRanges) {
@@ -547,7 +558,7 @@ self.onmessage = function (e) {
 			allCursors = data;
 			break;
 		case 'render-selected-bg':
-			slectedRanges = data;
+			selectedData = data;
 			break;
 	}
 	render();
