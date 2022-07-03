@@ -251,7 +251,7 @@ export default {
 					});
 				} else {
 					let range = this.$parent.selecter.getRangeWithCursorPos({ line: line, column: 0 });
-					range && results.push({ top, left: 0, width: _getLength(text) });
+					range && results.push(top);
 				}
 				if (fold) {
 					line = fold.end.line;

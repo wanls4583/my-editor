@@ -32,7 +32,7 @@ function drawLine({ top, lineObj }) {
 		cacheMap[lineObj.lineId] = {
 			text: lineObj.text,
 			preRuleId: lineObj.preRuleId,
-			imgData: _createImageData(),
+			imgData: _createImageData()
 		};
 	}
 
@@ -136,7 +136,6 @@ function drawSingleLiens(singleLines) {
 		drawLine(singleLines[key]);
 	}
 	ctx.putImageData(canvasImgData, 0, 0);
-	ctx.globalCompositeOperation = 'destination-over';
 	cursorsImg && ctx.drawImage(cursorsImg, 0, 0);
 	selectedImg && ctx.drawImage(selectedImg, 0, 0);
 }
@@ -179,16 +178,19 @@ function drawSelectedBg() {
 	let slectedImgData = new ImageData(dataObj.width, dataObj.height);
 	for (let i = 0; i < slectedRanges.length; i++) {
 		let range = slectedRanges[i];
-		let width = range.width || 2;
-		if (range.left < dataObj.width) {
-			width = range.left + width > dataObj.width ? dataObj.width - range.left : width;
-			putRectPixl({ imgData: slectedImgData, left: range.left, top: range.top, width: width, height: dataObj.charHight, rgb });
+		if (typeof range === 'object') {
+			let width = range.width || 2;
+			if (range.left < dataObj.width) {
+				width = range.left + width > dataObj.width ? dataObj.width - range.left : width;
+				putRectPixl({ imgData: slectedImgData, left: range.left, top: range.top, width: width, height: dataObj.charHight, rgb });
+			}
+		} else {
+			putRectPixl({ imgData: slectedImgData, left: 0, top: range, width: dataObj.width, height: dataObj.charHight, rgb });
 		}
 	}
 	createImageBitmap(slectedImgData).then(img => {
 		ctx.clearRect(0, 0, dataObj.width, dataObj.height);
 		ctx.putImageData(canvasImgData, 0, 0);
-		ctx.globalCompositeOperation = 'destination-over';
 		ctx.drawImage(img, 0, 0);
 		cursorsImg && ctx.drawImage(cursorsImg, 0, 0);
 		selectedImg = img;
@@ -210,7 +212,6 @@ function drawCursor() {
 	createImageBitmap(cursorsImgData).then(img => {
 		ctx.clearRect(0, 0, dataObj.width, dataObj.height);
 		ctx.putImageData(canvasImgData, 0, 0);
-		ctx.globalCompositeOperation = 'destination-over';
 		selectedImg && ctx.drawImage(selectedImg, 0, 0);
 		ctx.drawImage(img, 0, 0);
 		cursorsImg = img;
@@ -399,7 +400,7 @@ function getDrawTokens(tokens) {
 		preToken = {
 			scopeId: scopeId,
 			startIndex: item.startIndex,
-			endIndex: item.endIndex,
+			endIndex: item.endIndex
 		};
 		htmlTokens.push(preToken);
 	}
