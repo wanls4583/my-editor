@@ -12,12 +12,14 @@ let singleLines = null;
 let diffRanges = null;
 let allDiffRanges = null;
 let selectedData = null;
+let allSelectedData = null;
 let cursors = null;
 let allCursors = null;
 let cursorsImg = null;
 let allCursorImg = null;
 let canvasImgData = null;
 let selectedImg = null;
+let allSelectedImg = null;
 let leftDiffCanvasImgData = null;
 let rightDiffCanvasImgData = null;
 
@@ -166,9 +168,8 @@ function drawRightDiff() {
 			putRectPixl({ imgData: rightDiffCanvasImgData, left: 0, top: item.top, width: 5, height: item.height, rgb });
 		});
 		rightDiffCtx.putImageData(rightDiffCanvasImgData, 0, 0);
-		if (allCursorImg) {
-			rightDiffCtx.drawImage(allCursorImg, 0, 0);
-		}
+		allCursorImg && rightDiffCtx.drawImage(allCursorImg, 0, 0);
+		allSelectedImg && rightDiffCtx.drawImage(allSelectedImg, 0, 0);
 	}
 	allDiffRanges = null;
 }
@@ -209,18 +210,41 @@ function drawSelectedBg() {
 	selectedData = null;
 }
 
+function drawAllSelected() {
+	if (allSelectedData.length) {
+		let rgb = getRgb(dataObj.colors['minimap.findMatchHighlight']);
+		let imgData = new ImageData(dataObj.width, dataObj.height);
+		for (let i = 0; i < allSelectedData.length; i++) {
+			putRectPixl({ imgData: imgData, left: 5, top: allSelectedData[i], width: 5, height: dataObj.charHight * 2, rgb });
+		}
+		createImageBitmap(imgData).then(img => {
+			rightDiffCtx.clearRect(0, 0, dataObj.rightWidth, dataObj.height);
+			rightDiffCtx.putImageData(rightDiffCanvasImgData, 0, 0);
+			rightDiffCtx.drawImage(img, 0, 0);
+			allCursorImg && rightDiffCtx.drawImage(allCursorImg, 0, 0);
+			allSelectedImg = img;
+		});
+	} else if (allSelectedImg) {
+		rightDiffCtx.clearRect(0, 0, dataObj.rightWidth, dataObj.height);
+		rightDiffCtx.putImageData(rightDiffCanvasImgData, 0, 0);
+		allCursorImg && rightDiffCtx.drawImage(allCursorImg, 0, 0);
+		allSelectedImg = null;
+	}
+	allSelectedData = null;
+}
+
 function drawCursor() {
 	let rgb = getCursorColor();
-	let cursorsImgData = new ImageData(dataObj.width, dataObj.height);
+	let imgData = new ImageData(dataObj.width, dataObj.height);
 	if (rgb[3]) {
 		rgb = rgb.slice();
 		rgb[3] += Math.floor(255 * 0.4);
 		rgb[3] = rgb[3] > 255 ? 255 : rgb[3];
 	}
 	for (let i = 0; i < cursors.length; i++) {
-		putRectPixl({ imgData: cursorsImgData, left: 0, top: cursors[i], width: dataObj.width, height: dataObj.charHight, rgb });
+		putRectPixl({ imgData: imgData, left: 0, top: cursors[i], width: dataObj.width, height: dataObj.charHight, rgb });
 	}
-	createImageBitmap(cursorsImgData).then(img => {
+	createImageBitmap(imgData).then(img => {
 		ctx.clearRect(0, 0, dataObj.width, dataObj.height);
 		ctx.putImageData(canvasImgData, 0, 0);
 		selectedImg && ctx.drawImage(selectedImg, 0, 0);
@@ -232,14 +256,15 @@ function drawCursor() {
 
 function drawAllCursor() {
 	let rgb = getCursorColor(true);
-	let allCursorsImgData = new ImageData(dataObj.width, dataObj.height);
+	let imgData = new ImageData(dataObj.width, dataObj.height);
 	for (let i = 0; i < allCursors.length; i++) {
-		putRectPixl({ imgData: allCursorsImgData, left: 0, top: allCursors[i], width: dataObj.width, height: dataObj.charHight, rgb });
+		putRectPixl({ imgData: imgData, left: 0, top: allCursors[i], width: dataObj.width, height: dataObj.charHight, rgb });
 	}
-	createImageBitmap(allCursorsImgData).then(img => {
+	createImageBitmap(imgData).then(img => {
 		rightDiffCtx.clearRect(0, 0, dataObj.rightWidth, dataObj.height);
 		rightDiffCtx.putImageData(rightDiffCanvasImgData, 0, 0);
 		rightDiffCtx.drawImage(img, 0, 0);
+		allSelectedImg && rightDiffCtx.drawImage(allSelectedImg, 0, 0);
 		allCursorImg = img;
 	});
 	allCursors = null;
@@ -288,6 +313,9 @@ function render() {
 				}
 				if (selectedData) {
 					drawSelectedBg();
+				}
+				if (allSelectedData) {
+					drawAllSelected();
 				}
 				if (diffRanges) {
 					drawLeftDiff();
@@ -559,6 +587,9 @@ self.onmessage = function (e) {
 			break;
 		case 'render-selected-bg':
 			selectedData = data;
+			break;
+		case 'render-selected-all':
+			allSelectedData = data;
 			break;
 	}
 	render();

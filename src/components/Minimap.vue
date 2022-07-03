@@ -96,6 +96,7 @@ export default {
 			if (type === 'theme' || !type) {
 				this.preCursorResult = null;
 				this.preAllCursorResult = null;
+				this.preAllSearchResult = null;
 				Object.assign(data, {
 					colors: globalData.colors,
 					scopeIdMap: globalData.scopeIdMap,
@@ -253,6 +254,29 @@ export default {
 				return text.length + (tabSize - 1) * tabNum;
 			}
 		},
+		renderAllSearchdBg() {
+			let list = this.$parent.fSelecter.ranges.toArray();
+			let results = [];
+			let preCursorPos = {};
+			let preTop = -1;
+			let endLine = this.getEndLine();
+			for (let i = 0; i < list.length; i++) {
+				let cursorPos = list[i].start;
+				if (cursorPos.line !== preCursorPos.line && !this.$parent.folder.getLineInFold(cursorPos.line)) {
+					let line = this.$parent.folder.getRelativeLine(cursorPos.line);
+					let top = Math.round((((line - 1) * this.$parent.charObj.charHight) / this.contentHeight) * this.height);
+					if (top - preTop >= 4) {
+						preTop = top;
+						results.push(top);
+					}
+				}
+				preCursorPos = cursorPos;
+			}
+			if (this.preAllSearchResult + '' !== results + '') {
+				this.preAllSearchResult = results;
+				this.worker.postMessage({ event: 'render-selected-all', data: results });
+			}
+		},
 		renderDiff() {
 			let diffRanges = [];
 			let endLine = 0;
@@ -327,6 +351,7 @@ export default {
 				resultObj.type = item.type;
 				resultObj.top = (item.line - 1) * this.$parent.charObj.charHight * scale;
 				resultObj.height = this.$parent.charObj.charHight * item.length * scale;
+				resultObj.height = resultObj.height < 4 ? 4 : resultObj.height;
 				resultObj.top = Math.ceil(resultObj.top);
 				resultObj.height = Math.ceil(resultObj.height);
 				return resultObj;
@@ -358,6 +383,7 @@ export default {
 		renderAllCursor() {
 			let list = this.$parent.cursor.multiCursorPos.toArray();
 			let results = [];
+			let preTop = -1;
 			let preCursorPos = {};
 			let endLine = this.getEndLine();
 			for (let i = 0; i < list.length; i++) {
@@ -365,7 +391,10 @@ export default {
 				if (cursorPos.line !== preCursorPos.line && !this.$parent.folder.getLineInFold(cursorPos.line)) {
 					let line = this.$parent.folder.getRelativeLine(cursorPos.line);
 					let top = Math.round((((line - 1) * this.$parent.charObj.charHight) / this.contentHeight) * this.height);
-					results.push(top);
+					if (preTop !== top) {
+						preTop = top;
+						results.push(top);
+					}
 				}
 				preCursorPos = cursorPos;
 			}
