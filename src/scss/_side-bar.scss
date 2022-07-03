@@ -57,6 +57,10 @@
 					border-color: var(--my-contrastActiveBorder);
 					background-color: var(--my-list-activeSelectionBackground);
 					color: var(--my-list-activeSelectionForeground);
+
+					.tree-item-content {
+						color: var(--my-list-activeSelectionForeground);
+					}
 				}
 			}
 
