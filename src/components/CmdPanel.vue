@@ -7,7 +7,7 @@
 	<div @mousedown.stop class="my-cmd-panel my-list" v-if="visible">
 		<div>
 			<div class="my-cmd-search">
-				<input @keydown.enter="onEnter" @keydown.esc="onCancel" ref="input" type="text" v-model="searchText" />
+				<input @keydown.enter="onEnter" @keydown.esc="onCancel" ref="input" spellcheck="false" type="text" v-model="searchText" />
 			</div>
 			<div>
 				<Menu :checkable="checkable" :hover-check="hoverCheck" :menuList="cmdList" :top="scrollTop" :value="value" @change="onChange" @scroll="onScroll" spellcheck="false" style="position: relative"></Menu>
@@ -180,13 +180,24 @@ export default {
 				if (searchText) {
 					let m = Util.fuzzyMatch(searchText, _reverseString(item.path), true);
 					if (m) {
+						let nameIndexs = [];
+						let descIndexs = [];
+						m.indexs.forEach((index) => {
+							descIndexs.push(item.path.length - 1 - index);
+							if (item.name.length - 1 - index >= 0) {
+								nameIndexs.push(item.name.length - 1 - index);
+							}
+						});
+						nameIndexs.reverse();
+						descIndexs.reverse();
 						results.push({
 							name: item.name,
 							desc: item.path,
 							op: 'openFile',
 							item: item,
 							score: m.score,
-							indexs: m.indexs,
+							descIndexs: descIndexs,
+							nameIndexs: nameIndexs,
 						});
 					}
 				} else {

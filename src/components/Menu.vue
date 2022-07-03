@@ -21,8 +21,10 @@
 					<div :class="{'my-active': checkable && item.checked, disabled: item.disabled,}" @mousedown="onClick(item)" @mouseover="onHover(item)" class="my-menu-item my-center-between my-hover">
 						<div class="my-menu-left">
 							<span :class="[item.icon]"></span>
-							<span class="my-menu-title">{{ item.name }}</span>
-							<span class="my-menu-desc">{{ item.desc }}</span>
+							<span class="my-menu-title" v-html="item._name" v-if="item._name"></span>
+							<span class="my-menu-title" v-else>{{item.name}}</span>
+							<span class="my-menu-desc" v-html="item._desc" v-if="item._desc"></span>
+							<span class="my-menu-desc" v-else>{{item.desc}}</span>
 						</div>
 						<div class="flex--center--start">
 							<div class="my-menu-shortcut" v-if="item.shortcut">
@@ -40,6 +42,7 @@
 </template>
 <script>
 import VScrollBar from './VScrollBar.vue';
+import Util from '@/common/util';
 import $ from 'jquery';
 
 export default {
@@ -173,6 +176,14 @@ export default {
 		},
 		render() {
 			this.renderList = this.myMenuList.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines);
+			this.renderList.forEach((item) => {
+				if (item.desc && !item._desc) {
+					item._desc = Util.getMatchHtml(item.desc, item.descIndexs || []);
+				}
+				if (item.nameIndexs && item.nameIndexs.length && !item._name) {
+					item._name = Util.getMatchHtml(item.name, item.nameIndexs);
+				}
+			});
 		},
 		scrollToIndex() {
 			let scrollTop = this.index * this.itemHeight - this.menuHeight / 2;

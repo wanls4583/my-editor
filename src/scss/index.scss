@@ -250,6 +250,15 @@ textarea {
 		background-position: center;
 	}
 
+	&-match-char {
+		opacity: 1;
+		font-weight: bold;
+	}
+
+	&-unmatch-char {
+		opacity: 0.5;
+	}
+
 	&-center-center {
 		display: flex;
 		align-items: center;

@@ -1,49 +1,48 @@
 .my {
-    &-auto {
-        position: absolute;
-        z-index: 99;
-        min-width: 200px;
-        max-height: 275px;
-        user-select: none;
-        border: 1px solid var(--my-editorSuggestWidget-border);
-        background-color: var(--my-editorSuggestWidget-background);
-        box-shadow: 0px 0px 8px 2px var(--my-editorSuggestWidget-shadow);
-        color: var(--my-editorSuggestWidget-foreground);
-        cursor: default;
+	&-auto {
+		position: absolute;
+		z-index: 99;
+		min-width: 200px;
+		max-height: 275px;
+		user-select: none;
+		border: 1px solid var(--my-editorSuggestWidget-border);
+		background-color: var(--my-editorSuggestWidget-background);
+		box-shadow: 0px 0px 8px 2px var(--my-editorSuggestWidget-shadow);
+		color: var(--my-editorSuggestWidget-foreground);
+		cursor: default;
+	}
 
-        .match-char {
-            font-weight: bold;
-            color: var(--my-editorSuggestWidget-highlightForeground);
-        }
-    }
+	&-auto-item {
+		position: relative;
+		height: 25px;
+		padding-right: 10px;
+		white-space: nowrap;
+		cursor: pointer;
 
-    &-auto-item {
-        position: relative;
-        height: 25px;
-        padding-right: 10px;
-        white-space: nowrap;
-        cursor: pointer;
+		&:hover {
+			background-color: var(--my-list-hoverBackground);
+		}
 
-        &:hover {
-            background-color: var(--my-list-hoverBackground);
-        }
+		&.my-active {
+			background-color: var(--my-editorSuggestWidget-selectedBackground);
+			color: var(--my-editorSuggestWidget-selectedForeground);
 
-        &.my-active {
-            background-color: var(--my-editorSuggestWidget-selectedBackground);
-            color: var(--my-editorSuggestWidget-selectedForeground);
+			.my-match-char {
+				color: var(--my-editorSuggestWidget-focusHighlightForeground);
+			}
+		}
 
-            .match-char {
-                color: var(--my-editorSuggestWidget-focusHighlightForeground);
-            }
-        }
-    }
+		.my-match-char {
+			color: var(--my-editorSuggestWidget-highlightForeground);
+		}
+	}
 
-    &-auto-icon {
-        width: 25px;
-    }
+	&-auto-icon {
+		width: 25px;
+	}
 
-    &-auto-desc {
-        opacity: 0.6;
-        margin-left: 50px;
-    }
+	&-auto-desc {
+		opacity: 0.6;
+		margin-left: 50px;
+	}
 }

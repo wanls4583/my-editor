@@ -91,7 +91,7 @@ class Util {
 			charWidth: charWidth,
 			fullAngleCharWidth: fullAngleCharWidth,
 			charHight: charHight,
-			fontSize: fontSize,
+			fontSize: fontSize
 		};
 	}
 	/**
@@ -239,7 +239,7 @@ class Util {
 					} else {
 						return context[property];
 					}
-				},
+				}
 			};
 		});
 		Object.defineProperties(target, result);
@@ -380,7 +380,7 @@ class Util {
 				word: word,
 				wordMap: wordMap,
 				towMap: towMap,
-				wordLength: wordLength,
+				wordLength: wordLength
 			};
 		}
 
@@ -400,7 +400,7 @@ class Util {
 				if (++count === wordLength) {
 					result = {
 						score: score,
-						indexs: indexs,
+						indexs: indexs
 					};
 					return true;
 				}
@@ -583,7 +583,7 @@ class Util {
 		return {
 			status,
 			originStatus,
-			statusColor,
+			statusColor
 		};
 
 		function _getStatus(status) {
@@ -645,6 +645,25 @@ class Util {
 		}
 		return menuPos;
 	}
+	static getMatchHtml(text, indexs) {
+		let index = 0;
+		let html = '';
+		for (let i = 0; i < indexs.length; i++) {
+			let _index = indexs[i];
+			if (_index >= text.length) {
+				break;
+			}
+			if (index < _index) {
+				html += `<span class="my-unmatch-char">${Util.htmlTrans(text.slice(index, _index))}</span>`;
+			}
+			html += `<span class="my-match-char">${Util.htmlTrans(text[_index])}</span>`;
+			index = _index + 1;
+		}
+		if (index < text.length) {
+			html += `<span class="my-unmatch-char">${Util.htmlTrans(text.slice(index))}</span>`;
+		}
+		return html;
+	}
 }
 Array.prototype.peek = function (index) {
 	if (this.length) {
@@ -686,7 +705,7 @@ Util.fullAngleReg =
 	/[\x00-\x1f\x80-\xa0\xad\u1680\u180E\u2000-\u200f\u2028\u2029\u202F\u205F\u3000\uFEFF\uFFF9-\uFFFC]|[\u1100-\u115F\u11A3-\u11A7\u11FA-\u11FF\u2329-\u232A\u2E80-\u2E99\u2E9B-\u2EF3\u2F00-\u2FD5\u2FF0-\u2FFB\u3000-\u303E\u3041-\u3096\u3099-\u30FF\u3105-\u312D\u3131-\u318E\u3190-\u31BA\u31C0-\u31E3\u31F0-\u321E\u3220-\u3247\u3250-\u32FE\u3300-\u4DBF\u4E00-\uA48C\uA490-\uA4C6\uA960-\uA97C\uAC00-\uD7A3\uD7B0-\uD7C6\uD7CB-\uD7FB\uF900-\uFAFF\uFE10-\uFE19\uFE30-\uFE52\uFE54-\uFE66\uFE68-\uFE6B\uFF01-\uFF60\uFFE0-\uFFE6]|[\uD800-\uDBFF][\uDC00-\uDFFF]/g;
 Util.keyCode = {
 	DELETE: 46,
-	BACKSPACE: 8,
+	BACKSPACE: 8
 };
 Util.command = {
 	DELETE: 'delete',
@@ -702,12 +721,12 @@ Util.command = {
 	DELETE_LINE: 'deleteLine',
 	REPLACE: 'replace',
 	TAB_TO_SPACE: 'tabToSpace',
-	SPACE_TO_TAB: 'spaceToTab',
+	SPACE_TO_TAB: 'spaceToTab'
 };
 Util.constData = {
 	LINE_COMMENT: 'line-comment',
 	BLOCK_COMMENT: 'block-comment',
 	BRACKET: 'bracket',
-	TAG: 'tag',
+	TAG: 'tag'
 };
 export default Util;

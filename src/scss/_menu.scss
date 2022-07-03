@@ -111,7 +111,7 @@
 
 			.my-menu-title,
 			.my-menu-shortcut {
-				color: #999999;
+				opacity: 0.5;
 			}
 		}
 	}
@@ -135,6 +135,10 @@
 		flex-shrink: 0;
 		overflow: hidden;
 		text-overflow: ellipsis;
+
+		.my-unmatch-char {
+			opacity: 1;
+		}
 	}
 
 	&-menu-desc {
@@ -143,7 +147,6 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 		font-size: 12px;
-		color: #999999;
 	}
 
 	&-menu-shortcut {
