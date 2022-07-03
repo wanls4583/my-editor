@@ -285,6 +285,14 @@ class Util {
 			filePath = path.dirname(filePath);
 		}
 	}
+	static getIgnore(filePath) {
+		while (filePath.length > 3) {
+			if (fs.existsSync(path.join(filePath, '.gitignore'))) {
+				return path.join(filePath, '.gitignore');
+			}
+			filePath = path.dirname(filePath);
+		}
+	}
 	/**
 	 * 模糊匹配【word是否存在于target中】
 	 * @param {String} word 被搜索的单词

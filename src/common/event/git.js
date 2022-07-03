@@ -3,6 +3,7 @@ import globalData from '@/data/globalData';
 import Util from '../util';
 import Context from '@/module/context/index';
 import { diffLinesRaw } from 'jest-diff';
+import Ignore from 'ignore';
 
 const spawnSync = window.require('child_process').spawnSync;
 const spawn = window.require('child_process').spawn;
@@ -43,6 +44,9 @@ export default class {
 					);
 				}
 			}, 500);
+		});
+		EventBus.$on('git-ignore', filePath => {
+			this.parseGitIgnore(filePath);
 		});
 		EventBus.$on('window-close', () => {
 			this.statusProcess && this.statusProcess.kill();
@@ -89,7 +93,7 @@ export default class {
 						type: 'D',
 						line: line,
 						added: [],
-						deleted: [item[1]],
+						deleted: [item[1]]
 					};
 					diffObjs.push(preDiffObj);
 				}
@@ -102,7 +106,7 @@ export default class {
 						type: 'A',
 						line: line,
 						added: [item[1]],
-						deleted: [],
+						deleted: []
 					};
 					diffObjs.push(preDiffObj);
 				}
@@ -118,33 +122,33 @@ export default class {
 						type: 'M',
 						line: item.line,
 						added: nextItem.added,
-						deleted: item.deleted,
+						deleted: item.deleted
 					});
 				} else if (item.deleted.length > nextItem.added.length) {
 					results.push({
 						type: 'M',
 						line: item.line,
 						added: nextItem.added,
-						deleted: item.deleted.slice(0, nextItem.added.length),
+						deleted: item.deleted.slice(0, nextItem.added.length)
 					});
 					results.push({
 						type: 'D',
 						line: item.line + nextItem.added.length,
 						added: [],
-						deleted: item.deleted.slice(nextItem.added.length),
+						deleted: item.deleted.slice(nextItem.added.length)
 					});
 				} else {
 					results.push({
 						type: 'M',
 						line: item.line,
 						added: nextItem.added.slice(0, item.deleted.length),
-						deleted: item.deleted,
+						deleted: item.deleted
 					});
 					results.push({
 						type: 'A',
 						line: item.line + item.deleted.length,
 						added: nextItem.added.slice(item.deleted.length),
-						deleted: [],
+						deleted: []
 					});
 				}
 				i++;
@@ -166,6 +170,28 @@ export default class {
 		this.fileCacheMap[fileIndex] = stagedContent;
 		this.fileCacheMap.size += stagedContent.length;
 	}
+	parseGitIgnore(filePath) {
+		try {
+			if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+				Util.readFile(filePath).then(data => {
+					let lines = data.split(/\r\n|\n/);
+					lines = lines.filter(line => {
+						return line && !/^\s*#/.test(line);
+					});
+					if (lines.length) {
+						let ignore = Ignore();
+						ignore.add(lines);
+						EventBus.$emit('git-ignored', {
+							path: filePath,
+							ignore: ignore
+						});
+					}
+				});
+			}
+		} catch (e) {
+			console.log(e);
+		}
+	}
 	createStatusProcess() {
 		this.statusProcess = child_process.fork(path.join(globalData.dirname, 'main/process/git/index.js'));
 		this.statusProcess.on('message', data => {
@@ -181,7 +207,7 @@ export default class {
 	watchFileStatus(filePath) {
 		this.statusProcess.send({
 			type: 'start',
-			path: filePath,
+			path: filePath
 		});
 	}
 	stopWatchFileStatus(filePath) {

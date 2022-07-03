@@ -44,6 +44,7 @@ const spawnSync = window.require('child_process').spawnSync;
 
 let preActiveItem = null;
 let openedList = [];
+let gitIgnoreMap = {};
 
 export default {
 	name: 'SideTree',
@@ -139,6 +140,10 @@ export default {
 			EventBus.$on('git-statused', (data) => {
 				this.render();
 			});
+			EventBus.$on('git-ignored', (data) => {
+				gitIgnoreMap[data.path] = data.ignore;
+				this.render();
+			});
 			EventBus.$on('folder-opened', () => {
 				this.refreshWorkSpace();
 			});
@@ -200,9 +205,13 @@ export default {
 						});
 						item.icon = item.icon ? `my-file-icon my-file-icon-${item.icon}` : '';
 					}
-					item.status = Util.getFileStatus(item.path);
-					item.statusColor = item.status.statusColor;
-					item.status = item.status.status;
+					if (item.gitIgnore && gitIgnoreMap[item.gitIgnore] && item.relativePath && gitIgnoreMap[item.gitIgnore].ignores(item.relativePath)) {
+						item.statusColor = 'my-status-ignore';
+					} else {
+						item.status = Util.getFileStatus(item.path);
+						item.statusColor = item.status.statusColor;
+						item.status = item.status.status;
+					}
 				});
 			});
 		},
@@ -256,6 +265,7 @@ export default {
 					parentPath: parentItem.path,
 					rootPath: parentItem.rootPath,
 					gitRootPath: parentItem.gitRootPath,
+					gitIgnore: parentItem.gitIgnore,
 					relativePath: path.join(parentItem.relativePath, name),
 					gitRelativePath: (parentItem.gitRootPath && path.join(parentItem.gitRelativePath, name)) || '',
 					deep: parentItem.deep + 1,
@@ -345,6 +355,13 @@ export default {
 				});
 			}
 		},
+		refreshGitIgnore(gitIgnore) {
+			this.refreshGitIgnoreTimer = this.refreshGitIgnoreTimer || {};
+			clearTimeout(this.refreshGitIgnoreTimer[gitIgnore]);
+			this.refreshGitIgnoreTimer[gitIgnore] = setTimeout(() => {
+				EventBus.$emit('git-ignore', gitIgnore);
+			}, 100);
+		},
 		refreshWorkSpace() {
 			this.watchFileStatus();
 			this.watchFolder();
@@ -427,8 +444,10 @@ export default {
 			list.forEach((item) => {
 				if (item.type === 'dir' && !item.gitRootPath && fs.existsSync(item.path)) {
 					if ((item.deep === 0 && Util.checkGitRep(item.path)) || (item.deep > 0 && fs.existsSync(path.join(item.path, '.git')))) {
-						this.updateGitRootPath(item, item.path);
+						let gitIgnore = Util.getIgnore(item.path);
+						this.updateGitRootPath(item, item.path, gitIgnore);
 						EventBus.$emit('git-status-start', item.path);
+						gitIgnore && this.refreshGitIgnore(gitIgnore);
 					} else {
 						this.watchFileStatus(item.children);
 					}
@@ -436,6 +455,7 @@ export default {
 			});
 		},
 		watchFolder() {
+			let ignoreTimer = {};
 			this.removeFileWatcher();
 			globalData.fileTree.forEach((item) => {
 				let watcher = fs.watch(item.path, { recursive: true }, (event, filename) => {
@@ -448,6 +468,9 @@ export default {
 									this.refreshDir(treeItem);
 								}
 							});
+						}
+						if (filename === '.gitignore') {
+							this.refreshGitIgnore(path.join(item.path, '.gitignore'));
 						}
 					}
 				});
@@ -467,11 +490,12 @@ export default {
 				this.updateParentPath(item, parentPath);
 			});
 		},
-		updateGitRootPath(item, gitRootPath) {
+		updateGitRootPath(item, gitRootPath, gitIgnore) {
 			item.gitRootPath = gitRootPath;
+			item.gitIgnore = gitIgnore;
 			item.gitRelativePath = path.relative(gitRootPath, item.path);
 			item.children.forEach((item) => {
-				this.updateGitRootPath(item, gitRootPath);
+				this.updateGitRootPath(item, gitRootPath, gitIgnore);
 			});
 		},
 		sortFileList(results) {
