@@ -103,7 +103,7 @@
 			></search-dialog>
 		</div>
 		<div class="my-minimap-wrap" v-if="type !== 'diff'">
-			<minimap :content-height="contentHeight" :now-line="startLine" :scroll-top="scrollTop" ref="minimap"></minimap>
+			<minimap :content-height="contentHeight" :now-line="startLine" :scroll-top="scrollTop" ref="minimap" v-if="minimapVisible"></minimap>
 		</div>
 		<v-scroll-bar :class="{'my-scroll-visible': scrollVisible}" :height="contentHeight" :scroll-top="scrollTop" @scroll="onVBarScroll" class="my-editor-scrollbar-v"></v-scroll-bar>
 		<editor-menu ref="menu"></editor-menu>
@@ -227,6 +227,7 @@ export default {
 			diffMarginTop: 0,
 			toShowdiffObj: null,
 			scrollVisible: false,
+			minimapVisible: true,
 			scrollerArea: { width: 0, height: 0 },
 			nowCursorPos: { line: 1, column: 0 },
 			bracketMatch: { start: {}, end: {} },
@@ -597,6 +598,18 @@ export default {
 					if (this.tabData.id === data.id) {
 						this.myContext.reload(data.text);
 						this.cursor.setCursorPos(data.cursorPos);
+					}
+				})
+			);
+			EventBus.$on(
+				'minimap-toggle',
+				(this.initEventBusFn['minimap-toggle'] = () => {
+					this.minimapVisible = !this.minimapVisible;
+					if (this.active) {
+						this.$nextTick(() => {
+							this.$refs.minimap && this.$refs.minimap.renderAllDiff(true);
+							this.render();
+						});
 					}
 				})
 			);

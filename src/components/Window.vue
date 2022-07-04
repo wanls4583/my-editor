@@ -12,7 +12,7 @@
 		class="my-window"
 		ref="window"
 	>
-		<div :style="{ width: leftWidth + 'px' }" class="my-left-warp" v-if="mode === 'app'">
+		<div :style="{ width: leftWidth + 'px' }" class="my-left-warp" v-show="sidebarVisible">
 			<!-- 侧边栏 -->
 			<activity-bar ref="activityBar"></activity-bar>
 			<div style="flex-grow:1">
@@ -44,7 +44,7 @@
 		<!-- 顶部菜单栏 -->
 		<title-bar :height="topBarHeight" ref="titleBar"></title-bar>
 		<!-- 状态栏 -->
-		<status-bar :height="statusHeight" ref="statusBar"></status-bar>
+		<status-bar :height="statusHeight" ref="statusBar" v-show="statusbarVisible"></status-bar>
 		<cmd-panel></cmd-panel>
 		<Dialog :btns="dialogBtns" :content="dialogContent" :icon="this.dialogIcon" :icon-color="this.dialogIconColor" :overlay="true" :title="dialogTilte" @close="closeDialog" v-show="dialogVisible"></Dialog>
 	</div>
@@ -104,6 +104,8 @@ export default {
 			dialogIcon: '',
 			dialogIconColor: '',
 			terminalVisible: false,
+			sidebarVisible: true,
+			statusbarVisible: true,
 			terminalHeight: 300,
 			themeType: 'dark',
 			activity: 'files',
@@ -116,7 +118,9 @@ export default {
 			return this.topBarHeight + 'px';
 		},
 		_statusHeight() {
-			return this.statusHeight + 'px';
+			if (this.statusbarVisible) {
+				return this.statusHeight + 'px';
+			}
 		},
 	},
 	provide() {
@@ -225,6 +229,12 @@ export default {
 				if (this.terminalVisible && !this.terminalList.length) {
 					EventBus.$emit('terminal-new');
 				}
+			});
+			EventBus.$on('sidebar-toggle', () => {
+				this.sidebarVisible = !this.sidebarVisible;
+			});
+			EventBus.$on('statusbar-toggle', () => {
+				this.statusbarVisible = !this.statusbarVisible;
 			});
 			EventBus.$on('dialog-show', (option) => {
 				this.showDialog(option);

@@ -21,7 +21,7 @@
 				</div>
 				<div @mousedown.stop="showMemu('viewMenuVisible')" class="bar-item my-hover">
 					<span>View</span>
-					<Menu :hoverCheck="true" :menuList="viewMenuList" :styles="{ left: 0, top: _top }" @change="onViewMenuChange" v-if="viewMenuVisible"></Menu>
+					<Menu :checkable="false" :menuList="viewMenuList" :styles="{ left: 0, top: _top }" @change="onViewMenuChange" v-if="viewMenuVisible"></Menu>
 				</div>
 				<!--
 				<div @mousedown.stop="showMemu('terminalMenuVisible')" class="bar-item my-hover">
@@ -262,7 +262,22 @@ export default {
 					},
 					{
 						name: 'Terminal',
-						op: 'toogleTerminal',
+						op: 'toggleTerminal',
+					},
+					{
+						name: 'Minimap',
+						op: 'toggleMinimap',
+						selected: true,
+					},
+					{
+						name: 'Sidebar',
+						op: 'toggleSidebar',
+						selected: true,
+					},
+					{
+						name: 'Statusbar',
+						op: 'toggleStatusbar',
+						selected: true,
 					},
 				],
 			],
@@ -509,10 +524,24 @@ export default {
 				case 'commandPanel':
 					EventBus.$emit('cmd-search-open');
 					break;
-				case 'toogleTerminal':
+				case 'toggleTerminal':
 					EventBus.$emit('terminal-toggle');
 					break;
+				case 'toggleMinimap':
+					EventBus.$emit('minimap-toggle');
+					break;
+				case 'toggleSidebar':
+					EventBus.$emit('sidebar-toggle');
+					break;
+				case 'toggleStatusbar':
+					EventBus.$emit('statusbar-toggle');
+					break;
 			}
+			this.viewMenuList[0].forEach((_item) => {
+				if (_item.op === item.op) {
+					_item.selected = !_item.selected;
+				}
+			});
 			this.viewMenuVisible = false;
 		},
 		onTerminalMenuChange(item) {

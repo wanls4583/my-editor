@@ -26,11 +26,11 @@
 							<span class="my-menu-desc" v-html="item._desc" v-if="item._desc"></span>
 							<span class="my-menu-desc" v-else>{{item.desc}}</span>
 						</div>
-						<div class="flex--center--start">
+						<div class="my-center-start">
 							<div class="my-menu-shortcut" v-if="item.shortcut">
 								<span v-if="item.shortcut != 'ignore'">{{ item.shortcut }}</span>
 							</div>
-							<span class="my-icon my-icon-check" v-if="item.selected"></span>
+							<span class="my-icon my-icon-check" v-if="item._selected"></span>
 						</div>
 					</div>
 					<div class="my-separator" v-if="item.groupEnd"></div>
@@ -150,14 +150,16 @@ export default {
 					item = { ...item };
 					item.group = newGroup;
 					item.value = item.value === undefined ? item.name : item.value;
-					if (this.value instanceof Array) {
-						item.selected = item.value === this.value[gIndex];
-					} else {
-						item.selected = item.value === this.value;
+					item._selected = item.selected;
+					if (!item._selected) {
+						if (this.value instanceof Array) {
+							item._selected = item.value === this.value[gIndex];
+						} else {
+							item._selected = item.value === this.value;
+						}
 					}
 					if (menuList.length === 1) {
-						item.checked = item.selected;
-						item.selected = false;
+						item.checked = item._selected;
 					}
 					if (iIndex === group.length - 1 && gIndex < menuList.length - 1) {
 						item.groupEnd = true;
@@ -232,14 +234,16 @@ export default {
 			this.index = -1;
 			this.groupList.forEach((group, i) => {
 				group.forEach((item) => {
-					if (this.value instanceof Array) {
-						item.selected = item.value === this.value[i];
-					} else {
-						item.selected = item.value === this.value;
+					item._selected = item.selected;
+					if (!item._selected) {
+						if (this.value instanceof Array) {
+							item._selected = item.value === this.value[i];
+						} else {
+							item._selected = item.value === this.value;
+						}
 					}
 					if (this.menuList.length === 1) {
-						item.checked = item.selected;
-						item.selected = false;
+						item.checked = item._selected;
 					}
 					index++;
 					if (item.checked && this.index === -1) {
