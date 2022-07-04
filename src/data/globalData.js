@@ -20,7 +20,7 @@ const prettierOptions = {
 	arrowParens: 'always',
 	bracketSameLine: false,
 	bracketSpacing: false,
-	embeddedLanguageFormatting: 'off',
+	embeddedLanguageFormatting: 'auto',
 	htmlWhitespaceSensitivity: 'css',
 	insertPragma: false,
 	jsxSingleQuote: false,

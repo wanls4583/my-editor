@@ -268,17 +268,26 @@ export default class {
 				let context = contexts[globalData.nowEditorId];
 				let cursorOffset = editor.nowCursorPos.column;
 				let text = context.getAllText();
+				let result = null;
+				let cursorPos = null;
+				let options = {
+					...globalData.prettierOptions,
+					parser: globalData.prettierParsers[editor.language]
+				};
 				for (let i = 0; i < editor.nowCursorPos.line - 1; i++) {
 					cursorOffset += context.htmls[i].text.length + 1;
 				}
-				EventBus.$emit('editor-formated', {
-					id: id,
-					result: Prettier.formatWithCursor(text, {
-						...globalData.prettierOptions,
-						cursorOffset: cursorOffset,
-						parser: globalData.prettierParsers[editor.language]
-					})
-				});
+				options.cursorOffset = cursorOffset;
+				result = Prettier.formatWithCursor(text, options);
+				if (text !== result.formatted) {
+					text = result.formatted.slice(0, result.cursorOffset).split(/\n/);
+					cursorPos = { line: text.length, column: text.peek().length };
+					EventBus.$emit('editor-formated', {
+						id,
+						cursorPos,
+						text: result.formatted
+					});
+				}
 			}
 		}, 50);
 	}

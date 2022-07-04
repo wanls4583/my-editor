@@ -595,7 +595,8 @@ export default {
 				'editor-formated',
 				(this.initEventBusFn['editor-formated'] = (data) => {
 					if (this.tabData.id === data.id) {
-						this.myContext.reload(data.result.formatted);
+						this.myContext.reload(data.text);
+						this.cursor.setCursorPos(data.cursorPos);
 					}
 				})
 			);
