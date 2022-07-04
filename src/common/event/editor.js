@@ -278,16 +278,18 @@ export default class {
 					cursorOffset += context.htmls[i].text.length + 1;
 				}
 				options.cursorOffset = cursorOffset;
-				result = Prettier.formatWithCursor(text, options);
-				if (text !== result.formatted) {
-					text = result.formatted.slice(0, result.cursorOffset).split(/\n/);
-					cursorPos = { line: text.length, column: text.peek().length };
-					EventBus.$emit('editor-formated', {
-						id,
-						cursorPos,
-						text: result.formatted
-					});
-				}
+				try {
+					result = Prettier.formatWithCursor(text, options);
+					if (text !== result.formatted) {
+						text = result.formatted.slice(0, result.cursorOffset).split(/\n/);
+						cursorPos = { line: text.length, column: text.peek().length };
+						EventBus.$emit('editor-formated', {
+							id,
+							cursorPos,
+							text: result.formatted
+						});
+					}
+				} catch (e) {}
 			}
 		}, 50);
 	}
