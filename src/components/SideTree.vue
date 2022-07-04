@@ -405,7 +405,7 @@ export default {
 			}
 			let index = openedList.indexOf(item) + 1;
 			let endIn = index;
-			while (endIn < openedList.length && openedList[endIn].parentPath != item.parentPath) {
+			while (endIn < openedList.length && openedList[endIn].deep > item.deep) {
 				endIn++;
 			}
 			openedList.splice(index, endIn - index);

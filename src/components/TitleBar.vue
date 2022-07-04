@@ -292,14 +292,7 @@ export default {
 		_top() {
 			return this.height + 2 + 'px';
 		},
-		editor() {
-			return this.getNowEditor();
-		},
-		context() {
-			return this.getNowContext();
-		},
 	},
-	inject: ['getNowEditor', 'getNowContext'],
 	created() {
 		if (this.mode === 'app') {
 			this.fileMenuList.splice(1, 0, [
@@ -393,6 +386,8 @@ export default {
 			this.fileMenuVisible = false;
 		},
 		onEditMenuChange(item) {
+			let editor = globalData.$mainWin.getNowEditor();
+			let context = globalData.$mainWin.getNowContext();
 			switch (item.op) {
 				case 'findInFiles':
 					EventBus.$emit('find-in-folder');
@@ -401,98 +396,102 @@ export default {
 					EventBus.$emit('find-in-folder', { replace: true });
 					break;
 			}
-			if (!this.editor) {
+			if (!editor) {
 				this.editMenuVisible = false;
 				return;
 			}
 			switch (item.op) {
 				case 'undo':
-					this.editor.history.undo();
-					this.editor.focus();
+					editor.history.undo();
+					editor.focus();
 					break;
 				case 'redo':
-					this.editor.history.redo();
-					this.editor.focus();
+					editor.history.redo();
+					editor.focus();
 					break;
 				case 'cut':
-					Util.writeClipboard(this.context.getCopyText(true));
-					this.editor.focus();
+					Util.writeClipboard(context.getCopyText(true));
+					editor.focus();
 					break;
 				case 'copy':
-					Util.writeClipboard(this.context.getCopyText());
-					this.editor.focus();
+					Util.writeClipboard(context.getCopyText());
+					editor.focus();
 					break;
 				case 'paste':
 					Util.readClipboard().then((text) => {
-						this.context.insertContent(text);
+						context.insertContent(text);
 					});
-					this.editor.focus();
+					editor.focus();
 					break;
 				case 'deleteLine':
-					this.context.deleteLine();
-					this.editor.focus();
+					context.deleteLine();
+					editor.focus();
 					break;
 				case 'find':
-					this.editor.openSearch();
-					this.editor.focus();
+					editor.openSearch();
+					editor.focus();
 					break;
 				case 'replace':
-					this.editor.openSearch(true);
-					this.editor.focus();
+					editor.openSearch(true);
+					editor.focus();
 					break;
 			}
 			this.editMenuVisible = false;
 		},
 		onSelectionMenuChange(item) {
-			if (!this.editor) {
+			let editor = globalData.$mainWin.getNowEditor();
+			let context = globalData.$mainWin.getNowContext();
+			switch (item.op) {
+				case 'gotoLine':
+					EventBus.$emit('menu-close');
+					EventBus.$emit('cmd-search-open', { input: ':' });
+					break;
+			}
+			if (!editor) {
 				this.selectionMenuVisible = false;
 				return;
 			}
 			switch (item.op) {
 				case 'selectAll':
-					this.editor.selecter.selectAll();
+					editor.selecter.selectAll();
 					break;
 				case 'copyLineUp':
-					this.context.copyLineUp();
+					context.copyLineUp();
 					break;
 				case 'copyLineDown':
-					this.context.copyLineDown();
+					context.copyLineDown();
 					break;
 				case 'moveLineUp':
-					this.context.moveLineUp();
+					context.moveLineUp();
 					break;
 				case 'moveLineDown':
-					this.context.moveLineDown();
-					break;
-				case 'gotoLine':
-					EventBus.$emit('menu-close');
-					EventBus.$emit('cmd-search-open', { input: ':' });
+					context.moveLineDown();
 					break;
 				case 'addCursorAbove':
-					this.editor.cursor.addCursorAbove();
+					editor.cursor.addCursorAbove();
 					break;
 				case 'addCursorBelow':
-					this.editor.cursor.addCursorBelow();
+					editor.cursor.addCursorBelow();
 					break;
 				case 'addCursorLineEnds':
-					this.editor.cursor.addCursorLineEnds();
+					editor.cursor.addCursorLineEnds();
 					break;
 				case 'addNextOccurence':
-					this.editor.searchWord('down');
+					editor.searchWord('down');
 					break;
 				case 'addPrevOccurence':
-					this.editor.searchWord('up');
+					editor.searchWord('up');
 					break;
 				case 'selectAllOccurence':
-					this.editor.selecter.selectAllOccurence();
+					editor.selecter.selectAllOccurence();
 					break;
 				case 'switchMultiKeyCode':
-					this.editor.cursor.switchMultiKeyCode();
-					item.keyCode = this.editor.cursor.multiKeyCode;
+					editor.cursor.switchMultiKeyCode();
+					item.keyCode = editor.cursor.multiKeyCode;
 					item.name = `Switch ${item.keyCode === 'alt' ? 'Ctrl' : 'Alt'}+Click to Multi-Cursor`;
 					break;
 			}
-			this.editor.focus();
+			editor.focus();
 			this.selectionMenuVisible = false;
 		},
 		onPreferenceMenuChange(item) {
