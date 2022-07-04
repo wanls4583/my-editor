@@ -10,7 +10,7 @@ import expand from 'emmet';
 import globalData from '@/data/globalData';
 
 const regs = {
-	endTag: /(?=\<\/)/,
+	endTag: /(?=\<\/)/
 };
 
 class Context {
@@ -43,12 +43,11 @@ class Context {
 			'fSearcher',
 			'autocomplete',
 			'render',
-			'focus',
 			'unFold',
 			'setNowCursorPos',
 			'setErrors',
 			'setAutoTip',
-			'getStrWidth',
+			'getStrWidth'
 		]);
 		this.setEditorData = (prop, value) => {
 			editor.setData(prop, value);
@@ -67,7 +66,7 @@ class Context {
 			tokens: [],
 			folds: [],
 			states: [],
-			stateFold: null,
+			stateFold: null
 		});
 		this.lineIdMap.set(this.htmls[0].lineId, this.htmls[0]);
 	}
@@ -131,7 +130,7 @@ class Context {
 			let active = commandObj.active || false;
 			let pos = {
 				line: cursorPos.line,
-				column: cursorPos.column,
+				column: cursorPos.column
 			};
 			if (!text) {
 				return;
@@ -157,7 +156,7 @@ class Context {
 			if (active) {
 				this.selecter.addRange({
 					start: historyObj.preCursorPos,
-					end: historyObj.cursorPos,
+					end: historyObj.cursorPos
 				});
 			}
 		});
@@ -180,7 +179,7 @@ class Context {
 				tokens: null,
 				folds: null,
 				states: null,
-				stateFold: null,
+				stateFold: null
 			};
 			this.lineIdMap.set(item.lineId, item);
 			return item;
@@ -216,12 +215,12 @@ class Context {
 		this.setErrors([]);
 		this.setAutoTip(null);
 		this.render(true);
-		EventBus.$emit('editor-content-change', { id: this.editorId, path: this.tabData.path });
+		this.contentChanged();
 		this.tabData.status !== '!!' && EventBus.$emit('git-diff', this.tabData.path);
 		let historyObj = {
 			type: Util.command.DELETE,
 			cursorPos: Object.assign({}, newPos),
-			preCursorPos: Object.assign({}, cursorPos),
+			preCursorPos: Object.assign({}, cursorPos)
 		};
 		return historyObj;
 
@@ -255,7 +254,7 @@ class Context {
 					start: item.preCursorPos,
 					end: item.cursorPos,
 					margin: item.margin,
-					active: item.active,
+					active: item.active
 				};
 				return obj;
 			});
@@ -311,7 +310,7 @@ class Context {
 		function _deleteCursorPos(cursorPos) {
 			let pos = {
 				line: cursorPos.line,
-				column: cursorPos.column,
+				column: cursorPos.column
 			};
 			pos.line -= lineDelta;
 			if (prePos && pos.line === prePos.line) {
@@ -326,7 +325,7 @@ class Context {
 			columnDelta += historyObj.preCursorPos.column - prePos.column;
 			that.cursor.addCursorPos({
 				line: prePos.line,
-				column: prePos.column,
+				column: prePos.column
 			});
 		}
 
@@ -352,7 +351,7 @@ class Context {
 			columnDelta += historyObj.preCursorPos.column - prePos.column;
 			that.cursor.addCursorPos({
 				line: prePos.line,
-				column: prePos.column,
+				column: prePos.column
 			});
 		}
 	}
@@ -419,7 +418,7 @@ class Context {
 					deleteText = '\n';
 					originPos = {
 						line: cursorPos.line - 1,
-						column: 0,
+						column: 0
 					};
 				}
 			} else {
@@ -427,7 +426,7 @@ class Context {
 				text = text.slice(0, cursorPos.column) + text.slice(cursorPos.column + 1);
 				originPos = {
 					line: cursorPos.line,
-					column: cursorPos.column + 1,
+					column: cursorPos.column + 1
 				};
 			}
 			startObj.text = text;
@@ -465,14 +464,14 @@ class Context {
 		this.setErrors([]);
 		this.setAutoTip(null);
 		this.render(true);
-		EventBus.$emit('editor-content-change', { id: this.editorId, path: this.tabData.path });
+		this.contentChanged();
 		this.tabData.status !== '!!' && EventBus.$emit('git-diff', this.tabData.path);
 		// 更新最大文本宽度
 		if (startObj.width >= this.maxWidthObj.width) {
 			this.setEditorData('maxWidthObj', {
 				lineId: startObj.lineId,
 				text: startObj.text,
-				width: startObj.width,
+				width: startObj.width
 			});
 		} else if (rangeUuid.indexOf(this.maxWidthObj.lineId) > -1) {
 			this.setMaxWidth();
@@ -484,7 +483,7 @@ class Context {
 			text: deleteText,
 			keyCode: keyCode,
 			margin: margin,
-			active: range && range.active,
+			active: range && range.active
 		};
 		return historyObj;
 	}
@@ -495,7 +494,7 @@ class Context {
 		let startTime = Date.now();
 		let maxWidthObj = {
 			line: this.htmls[0].lineId,
-			width: 0,
+			width: 0
 		};
 		clearTimeout(this.setMaxWidthTimer);
 		_setMaxWidth();
@@ -507,7 +506,7 @@ class Context {
 					maxWidthObj = {
 						lineId: item.lineId,
 						text: item.text,
-						width: item.width,
+						width: item.width
 					};
 				}
 				index++;
@@ -548,7 +547,7 @@ class Context {
 						maxWidthObj = {
 							lineId: lineObj.lineId,
 							text: lineObj.text,
-							width: width,
+							width: width
 						};
 					}
 				}
@@ -647,7 +646,7 @@ class Context {
 		let historyObj = {
 			type: direct === 'down' ? Util.command.MOVEUP : Util.command.MOVEDOWN,
 			cursorPos: historyPosList,
-			searchConifg: searchConifg, // 记录搜索配置
+			searchConifg: searchConifg // 记录搜索配置
 		};
 		if (!command) {
 			// 新增历史记录
@@ -689,15 +688,15 @@ class Context {
 		}
 		let start = {
 			line: upLine,
-			column: 0,
+			column: 0
 		};
 		let end = {
 			line: downLine,
-			column: this.htmls[downLine - 1].text.length,
+			column: this.htmls[downLine - 1].text.length
 		};
 		this._deleteContent({
 			start: start,
-			end: end,
+			end: end
 		});
 		this._insertContent(text, start);
 	}
@@ -794,7 +793,7 @@ class Context {
 		let historyObj = {
 			type: direct === 'down' ? Util.command.DELETE_COPY_DOWN : Util.command.DELETE_COPY_UP,
 			cursorPos: historyPosList,
-			searchConifg: searchConifg, // 记录搜索配置
+			searchConifg: searchConifg // 记录搜索配置
 		};
 		if (!command) {
 			// 新增历史记录
@@ -845,7 +844,7 @@ class Context {
 			}
 			range = {
 				start: { line: upLine, column: startColumn },
-				end: { line: downLine, column: endColumn },
+				end: { line: downLine, column: endColumn }
 			};
 			cursorPosList.push(range);
 		});
@@ -883,7 +882,7 @@ class Context {
 		let historyObj = {
 			type: direct === 'down' ? Util.command.COPY_UP : Util.command.COPY_DOWN,
 			cursorPos: historyPosList,
-			searchConifg: command.searchConifg,
+			searchConifg: command.searchConifg
 		};
 		this.history.updateHistory(historyObj);
 		this.searcher.refreshSearch(command.searchConifg);
@@ -914,7 +913,7 @@ class Context {
 		let historyObj = {
 			type: Util.command.DELETE_LINE,
 			cursorPos: originList,
-			searchConifg: searchConifg,
+			searchConifg: searchConifg
 		};
 		// 撤销或重做操作后，更新历史记录
 		this.history.updateHistory(historyObj);
@@ -980,7 +979,7 @@ class Context {
 			}
 			range = {
 				start: { line: upLine, column: startColumn },
-				end: { line: downLine, column: endColumn },
+				end: { line: downLine, column: endColumn }
 			};
 			texts.push(this.getRangeText(range.start, range.end));
 			cursorPosList.push(range);
@@ -1004,7 +1003,7 @@ class Context {
 			type: Util.command.INSERT_LINE,
 			cursorPos: originList,
 			text: texts,
-			searchConifg: searchConifg,
+			searchConifg: searchConifg
 		};
 		if (!command) {
 			// 新增历史记录
@@ -1020,7 +1019,7 @@ class Context {
 	reload(text) {
 		let range = {
 			start: { line: 1, column: 0 },
-			end: { line: this.htmls.length, column: this.htmls.peek().text.length },
+			end: { line: this.htmls.length, column: this.htmls.peek().text.length }
 		};
 		this.searcher.clearSearch();
 		this.replace(text, [range]);
@@ -1082,7 +1081,7 @@ class Context {
 				let range = null;
 				range = {
 					start: { line: cursorPos.line, column: cursorPos.column - word.length },
-					end: { line: cursorPos.line, column: cursorPos.column },
+					end: { line: cursorPos.line, column: cursorPos.column }
 				};
 				ranges.push(range);
 			});
@@ -1121,7 +1120,7 @@ class Context {
 			}
 			return {
 				line: line,
-				column: column,
+				column: column
 			};
 		}
 	}
@@ -1189,11 +1188,10 @@ class Context {
 			}
 		});
 		if (contentChanged) {
-			EventBus.$emit('editor-content-change', { id: this.editorId, path: this.tabData.path });
+			this.contentChanged();
 			EventBus.$emit('indent-change', 'space');
 			this.tabData.status !== '!!' && EventBus.$emit('git-diff', this.tabData.path);
 			this.render();
-			this.focus();
 			if (command) {
 				this.history.updateHistory({ type: Util.command.SPACE_TO_TAB, tabSize, space });
 			} else {
@@ -1290,11 +1288,10 @@ class Context {
 			}
 		});
 		if (contentChanged) {
-			EventBus.$emit('editor-content-change', { id: this.editorId, path: this.tabData.path });
+			this.contentChanged();
 			EventBus.$emit('indent-change', 'tab');
 			this.tabData.status !== '!!' && EventBus.$emit('git-diff', this.tabData.path);
 			this.render();
-			this.focus();
 			if (command) {
 				this.history.updateHistory({ type: Util.command.TAB_TO_SPACE, tabSize, space });
 			} else {
@@ -1323,6 +1320,10 @@ class Context {
 				}
 			}
 		}
+	}
+	contentChanged() {
+		this.allText = '';
+		EventBus.$emit('editor-content-change', { id: this.editorId, path: this.tabData.path });
 	}
 	// 获取选中范围内的文本
 	getRangeText(start, end) {
@@ -1361,20 +1362,20 @@ class Context {
 			if (item.line > 1) {
 				start = {
 					line: item.line - 1,
-					column: this.htmls[item.line - 2].text.length,
+					column: this.htmls[item.line - 2].text.length
 				};
 			} else {
 				start = {
 					line: item.line,
-					column: 0,
+					column: 0
 				};
 			}
 			range = {
 				start: start,
 				end: {
 					line: item.line,
-					column: this.htmls[item.line - 1].text.length,
-				},
+					column: this.htmls[item.line - 1].text.length
+				}
 			};
 			ranges.push(range);
 			prePos = item;
@@ -1392,11 +1393,14 @@ class Context {
 		return text.slice(1);
 	}
 	getAllText() {
-		return this.htmls
-			.map(item => {
-				return item.text;
-			})
-			.join('\n');
+		if (!this.allText) {
+			this.allText = this.htmls
+				.map(item => {
+					return item.text;
+				})
+				.join('\n');
+		}
+		return this.allText;
 	}
 }
 Context.contexts = {};

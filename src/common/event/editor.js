@@ -5,6 +5,7 @@ import globalData from '@/data/globalData';
 import Util from '@/common/util';
 
 const remote = window.require('@electron/remote');
+const Prettier = window.require('prettier');
 const contexts = Context.contexts;
 
 export default class {
@@ -47,6 +48,9 @@ export default class {
 				tab.saved = false;
 				this.editorList.splice();
 			}
+		});
+		EventBus.$on('editor-format', id => {
+			this.formatCode(id);
 		});
 		EventBus.$on('language-check', () => {
 			this.checkLanguage();
@@ -94,7 +98,7 @@ export default class {
 				tabSize: editor.tabSize,
 				indent: editor.indent,
 				line: editor.nowCursorPos ? editor.nowCursorPos.line : '?',
-				column: editor.nowCursorPos ? editor.nowCursorPos.column : '?',
+				column: editor.nowCursorPos ? editor.nowCursorPos.column : '?'
 			});
 		});
 	}
@@ -165,22 +169,22 @@ export default class {
 									success: () => {
 										_closeTab.call(this, resolve);
 										EventBus.$emit('dialog-close');
-									},
+									}
 								});
 							} else {
 								_closeTab.call(this, resolve);
 								EventBus.$emit('dialog-close');
 							}
-						},
+						}
 					},
 					{
 						name: '不保存',
 						callback: () => {
 							_closeTab.call(this, resolve);
 							EventBus.$emit('dialog-close');
-						},
-					},
-				],
+						}
+					}
+				]
 			});
 		}
 	}
@@ -255,5 +259,27 @@ export default class {
 				globalData.$mainWin.getNowEditor().focus();
 			}
 		});
+	}
+	formatCode(id) {
+		clearTimeout(this.formatCodeTimer);
+		this.formatCodeTimer = setTimeout(() => {
+			let editor = globalData.nowEditorId && globalData.$mainWin.getNowEditor();
+			if (editor && globalData.prettierParsers[editor.language] && id === globalData.nowEditorId) {
+				let context = contexts[globalData.nowEditorId];
+				let cursorOffset = editor.nowCursorPos.column;
+				let text = context.getAllText();
+				for (let i = 0; i < editor.nowCursorPos.line - 1; i++) {
+					cursorOffset += context.htmls[i].text.length + 1;
+				}
+				EventBus.$emit('editor-formated', {
+					id: id,
+					result: Prettier.formatWithCursor(text, {
+						...globalData.prettierOptions,
+						cursorOffset: cursorOffset,
+						parser: globalData.prettierParsers[editor.language]
+					})
+				});
+			}
+		}, 50);
 	}
 }

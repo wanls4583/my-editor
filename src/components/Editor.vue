@@ -106,8 +106,7 @@
 			<minimap :content-height="contentHeight" :now-line="startLine" :scroll-top="scrollTop" ref="minimap"></minimap>
 		</div>
 		<v-scroll-bar :class="{'my-scroll-visible': scrollVisible}" :height="contentHeight" :scroll-top="scrollTop" @scroll="onVBarScroll" class="my-editor-scrollbar-v"></v-scroll-bar>
-		<!-- 右键菜单 -->
-		<Menu :checkable="false" :menuList="menuList" :styles="menuStyle" @change="onClickMenu" ref="menu" v-show="menuVisible"></Menu>
+		<editor-menu ref="menu"></editor-menu>
 		<tip :content="tipContent" :styles="tipStyle" ref="tip" v-show="tipContent"></tip>
 		<div :style="{top: diffTop + 'px', height: diffHeight+'px'}" class="my-diff-editor" ref="diff" v-if="diffVisible">
 			<div class="my-diff-bar">
@@ -133,6 +132,7 @@ import Cursor from '@/module/cursor/index';
 import History from '@/module/history/index';
 import Context from '@/module/context/index';
 import ShortCut from '@/module/shortcut/editor';
+import EditorMenu from './EditorMenu.vue';
 import SearchDialog from './Search';
 import Menu from './Menu';
 import AutoTip from './AutoTip';
@@ -163,6 +163,7 @@ export default {
 		Minimap,
 		VScrollBar,
 		HScrollBar,
+		EditorMenu,
 	},
 	props: {
 		type: String,
@@ -215,7 +216,6 @@ export default {
 			diffRanges: null,
 			diffTabData: null,
 			tipContent: null,
-			menuVisible: false,
 			searchVisible: false,
 			selectedFg: false,
 			activeLineBg: true,
@@ -233,34 +233,7 @@ export default {
 			tipStyle: { top: '0px', left: '0px' },
 			autoTipStyle: { top: '50%', left: '50%' },
 			maxWidthObj: { lineId: null, text: '', width: 0 },
-			menuStyle: { top: '0px', left: '0px', 'min-width': '200px' },
 			charObj: { charWidth: 7.15, fullAngleCharWidth: 15, charHight: 20 },
-			menuList: [
-				[
-					{
-						name: 'Reveal in File Explorer',
-						op: 'revealInFileExplorer',
-						shortcut: 'ignore',
-					},
-				],
-				[
-					{
-						name: 'Cut',
-						op: 'cut',
-						shortcut: 'Ctrl+X',
-					},
-					{
-						name: 'Copy',
-						op: 'copy',
-						shortcut: 'Ctrl+C',
-					},
-					{
-						name: 'Paste',
-						op: 'paste',
-						shortcut: 'Ctrl+V',
-					},
-				],
-			],
 		};
 	},
 	computed: {
@@ -559,7 +532,6 @@ export default {
 			EventBus.$on(
 				'close-menu',
 				(this.initEventBusFn['close-menu'] = () => {
-					this.menuVisible = false;
 					this.autoTipList = null;
 					this.autocomplete.stop();
 				})
@@ -619,6 +591,14 @@ export default {
 					}
 				})
 			);
+			EventBus.$on(
+				'editor-formated',
+				(this.initEventBusFn['editor-formated'] = (data) => {
+					if (this.tabData.id === data.id) {
+						this.myContext.reload(data.result.formatted);
+					}
+				})
+			);
 			EventBus.$on('window-close', () => {
 				this.lint.worker && this.lint.worker.kill();
 			});
@@ -637,6 +617,7 @@ export default {
 			EventBus.$off('render-line', this.initEventBusFn['render-line']);
 			EventBus.$off('file-saved', this.initEventBusFn['file-saved']);
 			EventBus.$off('file-opened', this.initEventBusFn['file-opened']);
+			EventBus.$off('editor-formated', this.initEventBusFn['editor-formated']);
 		},
 		showEditor() {
 			// 元素暂时不可见
@@ -732,6 +713,7 @@ export default {
 				this.renderSelectedBg();
 				this.renderError();
 				this.renderCursor(scrollToCursor);
+				this.focus();
 				this.$refs.minimap && this.$refs.minimap.render();
 			});
 		},
@@ -1711,31 +1693,7 @@ export default {
 				this.focus();
 				return;
 			}
-			this.menuVisible = true;
-			this.$nextTick(() => {
-				this.menuStyle = Util.getMemnuPos(e, this.$refs.menu.$el, this.$refs.editor);
-				this.focus();
-			});
-		},
-		// 选中菜单
-		onClickMenu(menu) {
-			switch (menu.op) {
-				case 'revealInFileExplorer':
-					EventBus.$emit('reveal-in-file-explorer', this.tabData.path);
-					break;
-				case 'cut':
-				case 'copy':
-					Util.writeClipboard(this.myContext.getCopyText(menu.op === 'cut'));
-					break;
-				case 'paste':
-					this.$refs.textarea.focus();
-					Util.readClipboard().then((text) => {
-						this.myContext.insertContent(text);
-					});
-					break;
-			}
-			this.menuVisible = false;
-			this.focus();
+			this.$refs.menu.show(e);
 		},
 		// 选中自动提示
 		onClickAuto(item) {

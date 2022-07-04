@@ -5,6 +5,7 @@
  */
 import Util from '@/common/util';
 import EventBus from '@/event';
+import globalData from '../../data/globalData';
 
 export default class {
 	constructor(editor, context) {
@@ -53,6 +54,9 @@ export default class {
 					break;
 				case 68: //ctrl+shift+D
 					this.copyLineUp();
+					break;
+				case 72: //ctrl+shift+H
+					EventBus.$emit('editor-format', globalData.nowEditorId);
 					break;
 				case 75: //ctrl+shift+K
 					this.deleteLine();

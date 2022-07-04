@@ -14,7 +14,7 @@ import Menu from './Menu';
 import EventBus from '@/event';
 
 export default {
-	name: 'EditorBar',
+	name: 'EditorBarMenu',
 	components: {
 		Menu,
 	},
