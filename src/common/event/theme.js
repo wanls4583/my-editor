@@ -17,26 +17,32 @@ export default class {
 		EventBus.$on('cmd-menu-theme-open', () => {
 			const cmdList = globalData.themes.map(item => {
 				return item.map(item => {
-					return Object.assign({ op: 'changeTheme' }, item);
+					item = Object.assign({ op: 'changeTheme' }, item);
+					item.active = item.value === globalData.nowTheme.value;
+					item.selected = item.active;
+					return item;
 				});
 			});
 			EventBus.$emit('cmd-menu-open', {
-				cmdList: cmdList,
-				value: globalData.nowTheme.value,
+				cmdList: cmdList
 			});
 		});
 		EventBus.$on('cmd-menu-icon-theme-open', () => {
 			const cmdList = globalData.iconThemes.map(item => {
-				return Object.assign({ op: 'changeIconTheme' }, item);
+				item = Object.assign({ op: 'changeIconTheme' }, item);
+				item.active = item.value === globalData.nowIconTheme.value;
+				item.selected = item.active;
+				return item;
 			});
 			cmdList.push({
 				name: 'None',
 				value: 'none',
 				op: 'changeIconTheme',
+				active: 'none' === globalData.nowIconTheme.value,
+				selected: 'none' === globalData.nowIconTheme.value
 			});
 			EventBus.$emit('cmd-menu-open', {
-				cmdList: cmdList,
-				value: globalData.nowIconTheme.value,
+				cmdList: cmdList
 			});
 		});
 	}
@@ -45,7 +51,7 @@ export default class {
 			if (globalData.nowIconTheme.value) {
 				let icon = Util.getIconByPath({
 					filePath: item.path,
-					fileType: 'file',
+					fileType: 'file'
 				});
 				item.icon = icon ? `my-file-icon my-file-icon-${icon}` : '';
 			} else {

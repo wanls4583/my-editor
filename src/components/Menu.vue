@@ -13,13 +13,16 @@
 		@wheel.stop="onWheel"
 		class="my-menu my-shadow my-border"
 		ref="scroller"
-		v-show="myMenuList.length"
+		v-show="allMenuList.length"
 	>
 		<div :style="{height: menuHeight + 'px'}" class="my-menu-scroller">
 			<div :style="{ top: -deltaTop + 'px' }" class="my-menu-content" ref="content">
 				<template v-for="item in renderList">
-					<div :class="{'my-active': checkable && item.checked, disabled: item.disabled,}" @mousedown="onClick(item)" @mouseover="onHover(item)" class="my-menu-item my-center-between my-hover">
+					<div :class="{'my-active': checkable && item.active, disabled: item.disabled,}" @mousedown="onClick(item)" @mouseover="onHover(item)" class="my-menu-item my-center-between my-hover">
 						<div class="my-menu-left">
+							<span class="my-menu-left-select" v-if="leftSelect">
+								<span class="my-icon my-icon-check" v-if="item.selected"></span>
+							</span>
 							<span :class="[item.icon]"></span>
 							<span class="my-menu-title" v-html="item._name" v-if="item._name"></span>
 							<span class="my-menu-title" v-else>{{item.name}}</span>
@@ -30,10 +33,10 @@
 							<div class="my-menu-shortcut" v-if="item.shortcut">
 								<span v-if="item.shortcut != 'ignore'">{{ item.shortcut }}</span>
 							</div>
-							<span class="my-icon my-icon-check" v-if="item._selected"></span>
+							<span class="my-icon my-icon-check" style="margin-left:15px" v-if="item.selected&&!leftSelect"></span>
 						</div>
 					</div>
-					<div class="my-separator" v-if="item.groupEnd"></div>
+					<div class="my-separator" v-if="item.seprator"></div>
 				</template>
 			</div>
 			<v-scroll-bar :class="{'my-scroll-visible': scrollVisible}" :height="contentHeight" :scroll-top="scrollTop" @scroll="onScroll"></v-scroll-bar>
@@ -55,6 +58,10 @@ export default {
 		styles: {
 			type: Object,
 		},
+		leftSelect: {
+			type: Boolean,
+			default: false,
+		},
 		checkable: {
 			type: Boolean,
 			default: true,
@@ -62,9 +69,6 @@ export default {
 		hoverCheck: {
 			type: Boolean,
 			default: false,
-		},
-		value: {
-			type: [Number, String, Array],
 		},
 		top: {
 			type: Number,
@@ -84,18 +88,15 @@ export default {
 			scrollTop: 0,
 			startLine: 1,
 			maxVisibleLines: 1,
+			groups: 0,
 			scrollVisible: false,
-			myMenuList: [],
-			groupList: [],
+			allMenuList: [],
 			renderList: [],
 		};
 	},
 	watch: {
 		menuList() {
 			this.initMenu();
-		},
-		value(newVal) {
-			this.setChecked(newVal);
 		},
 		index() {
 			this.$nextTick(() => {
@@ -123,7 +124,7 @@ export default {
 					this.setCheckedByIndex(this.index + 1);
 				} else if (e.keyCode === 13) {
 					if (this.index > -1) {
-						this.onClick(this.myMenuList[this.index]);
+						this.onClick(this.allMenuList[this.index]);
 					}
 				}
 			}
@@ -137,46 +138,44 @@ export default {
 		initMenu() {
 			let index = -1;
 			let menuList = this.menuList;
+			this.groups = 0;
 			this.index = -1;
+			this.allMenuList = [];
+			this.originMenuList = [];
 			if (menuList[0] && !(menuList[0] instanceof Array)) {
+				this.originMenuList = this.menuList;
 				menuList = [menuList];
 			}
-			this.myMenuList = [];
-			this.groupList = menuList.map((group, gIndex) => {
-				let newGroup = [];
-				for (let iIndex = 0; iIndex < group.length; iIndex++) {
-					let item = group[iIndex];
-					index++;
-					item = { ...item };
-					item.group = newGroup;
-					item.value = item.value === undefined ? item.name : item.value;
-					item._selected = item.selected;
-					if (!item._selected) {
-						if (this.value instanceof Array) {
-							item._selected = item.value === this.value[gIndex];
-						} else {
-							item._selected = item.value === this.value;
-						}
+			menuList.forEach((group, gIndex) => {
+				for (let i = 0; i < group.length; i++) {
+					let item = group[i];
+					let renderObj = {
+						name: item.name,
+						desc: item.desc,
+						icon: item.icon,
+						shortcut: item.shortcut,
+						selected: item.selected,
+						active: item.active,
+						nameIndexs: item.nameIndexs,
+						descIndexs: item.descIndexs,
+						index: ++index,
+					};
+					if (i === group.length - 1 && gIndex < menuList.length - 1) {
+						renderObj.seprator = true;
 					}
-					if (menuList.length === 1 || !(this.value instanceof Array)) {
-						item.checked = item._selected;
-					}
-					if (iIndex === group.length - 1 && gIndex < menuList.length - 1) {
-						item.groupEnd = true;
-					}
-					if (item.checked && this.index === -1) {
+					if (item.active && this.index === -1) {
 						this.index = index;
 					}
-					newGroup.push(item);
-					this.myMenuList.push(item);
+					this.allMenuList.push(renderObj);
+					this.originMenuList.push(item);
 				}
-				return newGroup;
+				this.groups++;
 			});
 			this.setTreeHeight();
 			this.setStartLine(this.checkScrollTop(this.top));
 		},
 		render() {
-			this.renderList = this.myMenuList.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines);
+			this.renderList = this.allMenuList.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines);
 			this.renderList.forEach((item) => {
 				if (item.desc && !item._desc) {
 					item._desc = Util.getMatchHtml(item.desc, item.descIndexs || []);
@@ -187,8 +186,7 @@ export default {
 			});
 		},
 		setMenuList(list) {
-			this.groupList = [list];
-			this.myMenuList = list;
+			this.allMenuList = list;
 			this.setTreeHeight();
 			this.setStartLine(this.checkScrollTop(this.top));
 		},
@@ -215,7 +213,7 @@ export default {
 			return scrollTop;
 		},
 		setTreeHeight() {
-			this.contentHeight = this.myMenuList.length * this.itemHeight + 11 * (this.groupList.length - 1);
+			this.contentHeight = this.allMenuList.length * this.itemHeight + 11 * (this.groups - 1);
 			this.menuHeight = this.contentHeight;
 			this.menuHeight = this.menuHeight > 500 ? 500 : this.menuHeight;
 			this.maxVisibleLines = Math.ceil(500 / this.itemHeight) + 1;
@@ -226,59 +224,33 @@ export default {
 			this.deltaTop = scrollTop % this.itemHeight;
 			this.render();
 		},
-		setChecked(value) {
-			if (value === undefined) {
-				return;
-			}
-			let index = -1;
-			this.index = -1;
-			this.groupList.forEach((group, i) => {
-				group.forEach((item) => {
-					item._selected = item.selected;
-					if (!item._selected) {
-						if (this.value instanceof Array) {
-							item._selected = item.value === this.value[i];
-						} else {
-							item._selected = item.value === this.value;
-						}
-					}
-					if (this.menuList.length === 1 || !(this.value instanceof Array)) {
-						item.checked = item._selected;
-					}
-					index++;
-					if (item.checked && this.index === -1) {
-						this.index = index;
-					}
-				});
-			});
-			this.render();
-		},
 		setCheckedByIndex(index) {
 			if (index < 0) {
-				index = this.myMenuList.length - 1;
-			} else if (index > this.myMenuList.length - 1) {
+				index = this.allMenuList.length - 1;
+			} else if (index > this.allMenuList.length - 1) {
 				index = 0;
 			}
 			this.clearChecked();
-			this.myMenuList[index].checked = true;
+			this.allMenuList[index].active = true;
 			this.index = index;
 			this.render();
 		},
 		clearChecked() {
-			this.myMenuList.forEach((item) => {
-				item.checked = false;
+			this.allMenuList.forEach((item) => {
+				item.active = false;
 			});
 		},
 		onClick(item) {
 			if (item.disabled) {
 				return;
 			}
-			this.clearChecked();
-			item.checked = true;
-			this.$emit('change', item);
+			this.setCheckedByIndex(item.index);
+			this.$emit('change', this.originMenuList[item.index]);
 		},
 		onHover(item) {
-			this.hoverCheck && this.setChecked(item.value);
+			if (this.hoverCheck && this.checkable) {
+				this.setCheckedByIndex(item.index);
+			}
 		},
 		onWheel(e) {
 			this.scrollDeltaY = e.deltaY;

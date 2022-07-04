@@ -10,18 +10,7 @@
 				<input @keydown.enter="onEnter" @keydown.esc="onCancel" ref="input" spellcheck="false" type="text" v-model="searchText" />
 			</div>
 			<div>
-				<Menu
-					:checkable="checkable"
-					:hover-check="hoverCheck"
-					:menuList="cmdList"
-					:top="scrollTop"
-					:value="value"
-					@change="onChange"
-					@scroll="onScroll"
-					ref="menu"
-					spellcheck="false"
-					style="position: relative"
-				></Menu>
+				<Menu :checkable="checkable" :hover-check="hoverCheck" :menuList="cmdList" :top="scrollTop" @change="onChange" @scroll="onScroll" ref="menu" style="position: relative"></Menu>
 			</div>
 		</div>
 	</div>

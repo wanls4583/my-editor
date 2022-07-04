@@ -125,28 +125,40 @@ export default {
 			});
 		},
 		showTabsize() {
+			let cmdList = this.tabMenu.map((group, index) => {
+				return group.map((item) => {
+					item = Object.assign({}, item);
+					if (index === 0) {
+						item.selected = item.value === this.tabSize;
+					} else if (index === 1) {
+						item.selected = item.value === this.indent;
+					}
+					return item;
+				});
+			});
 			EventBus.$emit('close-menu');
 			EventBus.$emit('cmd-menu-open', {
-				cmdList: this.tabMenu,
+				cmdList: cmdList,
 				hoverCheck: false,
-				value: [this.tabSize, this.indent],
 			});
 		},
 		showLanguage() {
+			let value = globalData.nowEditorId && globalData.$mainWin.getNowEditor().language;
 			let cmdList = globalData.languageList.map((item) => {
 				let icon = Util.getIconByExtensions(item.extensions || []);
 				icon = icon ? `my-file-icon my-file-icon-${icon}` : '';
 				return {
-					op: 'selectLanguage',
+					icon,
 					name: item.name + (item.language ? `（${item.language}）` : ''),
 					value: item.value,
-					icon,
+					op: 'selectLanguage',
+					active: value === item.value,
+					selected: value === item.value,
 				};
 			});
 			EventBus.$emit('close-menu');
 			EventBus.$emit('cmd-menu-open', {
 				cmdList: cmdList,
-				value: globalData.nowEditorId && globalData.$mainWin.getNowEditor().language,
 			});
 		},
 	},

@@ -21,7 +21,7 @@
 				</div>
 				<div @mousedown.stop="showMemu('viewMenuVisible')" class="bar-item my-hover">
 					<span>View</span>
-					<Menu :checkable="false" :menuList="viewMenuList" :styles="{ left: 0, top: _top }" @change="onViewMenuChange" v-if="viewMenuVisible"></Menu>
+					<Menu :hoverCheck="true" :left-select="true" :menuList="viewMenuList" :styles="{ left: 0, top: _top }" @change="onViewMenuChange" v-if="viewMenuVisible"></Menu>
 				</div>
 				<!--
 				<div @mousedown.stop="showMemu('terminalMenuVisible')" class="bar-item my-hover">
@@ -537,11 +537,7 @@ export default {
 					EventBus.$emit('statusbar-toggle');
 					break;
 			}
-			this.viewMenuList[0].forEach((_item) => {
-				if (_item.op === item.op) {
-					_item.selected = !_item.selected;
-				}
-			});
+			item.selected = !item.selected;
 			this.viewMenuVisible = false;
 		},
 		onTerminalMenuChange(item) {

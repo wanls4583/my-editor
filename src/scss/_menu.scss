@@ -84,7 +84,7 @@
 
 	&-menu-item {
 		position: relative;
-		padding: 0 10px;
+		padding-right: 10px;
 		white-space: nowrap;
 		min-width: 80px;
 		height: 30px;
@@ -121,6 +121,7 @@
 		display: flex;
 		align-items: center;
 		overflow: hidden;
+		padding-left: 10px;
 
 		.my-file-icon {
 			display: flex;
@@ -129,6 +130,12 @@
 				margin-left: 0px;
 			}
 		}
+	}
+
+	&-menu-left-select {
+		display: flex;
+		width: 20px;
+		margin-left: -5px;
 	}
 
 	&-menu-title {
