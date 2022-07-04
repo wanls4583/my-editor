@@ -161,7 +161,9 @@ export default {
 					}
 				} else {
 					clearTimeout(this.searchFileTimer);
-					this.$refs.menu.setMenuList(_sort(results));
+					this.$nextTick(() => {
+						this.$refs.menu.setMenuList(_sort(results));
+					});
 				}
 				if (!this.searchFileTimer) {
 					this.searchFileTimer = setTimeout(

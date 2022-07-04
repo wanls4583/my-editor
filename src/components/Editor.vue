@@ -515,7 +515,7 @@ export default {
 			);
 			EventBus.$on(
 				'convert-to-space',
-				(this.initEventBusFn['convert-to-space'] = (indent) => {
+				(this.initEventBusFn['convert-to-space'] = () => {
 					if (this.active) {
 						this.myContext.convertTabToSpace();
 					}
@@ -523,7 +523,7 @@ export default {
 			);
 			EventBus.$on(
 				'convert-to-tab',
-				(this.initEventBusFn['convert-to-tab'] = (indent) => {
+				(this.initEventBusFn['convert-to-tab'] = () => {
 					if (this.active) {
 						this.myContext.convertSpaceToTab();
 					}
@@ -714,7 +714,6 @@ export default {
 				this.renderSelectedBg();
 				this.renderError();
 				this.renderCursor(scrollToCursor);
-				this.focus();
 				this.$refs.minimap && this.$refs.minimap.render();
 			});
 		},
