@@ -158,7 +158,7 @@ export default {
 							item._selected = item.value === this.value;
 						}
 					}
-					if (menuList.length === 1) {
+					if (menuList.length === 1 || !(this.value instanceof Array)) {
 						item.checked = item._selected;
 					}
 					if (iIndex === group.length - 1 && gIndex < menuList.length - 1) {
@@ -242,7 +242,7 @@ export default {
 							item._selected = item.value === this.value;
 						}
 					}
-					if (this.menuList.length === 1) {
+					if (this.menuList.length === 1 || !(this.value instanceof Array)) {
 						item.checked = item._selected;
 					}
 					index++;
