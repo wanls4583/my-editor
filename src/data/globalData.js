@@ -16,43 +16,6 @@ const nowIconTheme = {
 	value: 'material-icon-theme',
 	path: path.join(dirname, 'main/extensions/theme-material-icon/dist/material-icons.json')
 };
-const prettierOptions = {
-	arrowParens: 'always',
-	bracketSameLine: false,
-	bracketSpacing: false,
-	embeddedLanguageFormatting: 'auto',
-	htmlWhitespaceSensitivity: 'css',
-	insertPragma: false,
-	jsxSingleQuote: false,
-	printWidth: 200,
-	proseWrap: 'preserve',
-	quoteProps: 'as-needed',
-	requirePragma: false,
-	semi: true,
-	singleQuote: false,
-	tabWidth: 4,
-	trailingComma: 'none',
-	useTabs: true,
-	vueIndentScriptAndStyle: false
-};
-const prettierParsers = {
-	// html: 'html',
-	xml: 'html',
-	vue: 'vue',
-	css: 'css',
-	less: 'less',
-	scss: 'scss',
-	yaml: 'yaml',
-	json: 'json',
-	dart: 'babel',
-	markdown: 'markdown',
-	shellscript: 'babel',
-	javascript: 'babel',
-	javascriptreact: 'babel',
-	typescript: 'typescript',
-	typescriptreact: 'typescript',
-	coffeescript: 'typescript'
-};
 const skipSearchDirs = /[\\\/](node_modules|dist|\.git|\.vscode|\.idea|\.DS_Store)(?=[\\\/]|$)/;
 const skipSearchFiles = /^npm-debug.log|^yarn-debug.log|^yarn-error.log|^pnpm-debug.log|\.suo|\.ntvs|\.njsproj|\.sln|\.sw/;
 const defaultWordPattern = '(-?\\d*\\.\\d\\w*)|([^\\`\\~\\!\\@\\%\\^\\&\\*\\(\\)\\-\\=\\+\\[\\{\\]\\}\\\\\\|\\;\\:\\\'\\"\\,\\.\\<\\>/\\?\\s]+)';
@@ -87,8 +50,6 @@ export default {
 	defaultWordPattern: defaultWordPattern,
 	nowTheme: nowTheme,
 	nowIconTheme: nowIconTheme,
-	prettierOptions: prettierOptions,
-	prettierParsers: prettierParsers,
 	scopeIdMap: {},
 	scopeReg: null,
 	colors: {},
