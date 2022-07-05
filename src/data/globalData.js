@@ -36,8 +36,8 @@ const prettierOptions = {
 	vueIndentScriptAndStyle: false
 };
 const prettierParsers = {
+	// html: 'html',
 	xml: 'html',
-	html: 'html',
 	vue: 'vue',
 	css: 'css',
 	less: 'less',
