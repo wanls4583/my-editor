@@ -59,11 +59,21 @@ export default {
 	created() {
 		this.initEventBus();
 	},
+	destroyed() {
+		this.unbindEvent();
+	},
 	methods: {
 		initEventBus() {
-			EventBus.$on('close-menu', () => {
-				this.menuVisible = false;
-			});
+			this.initEventBusFn = {};
+			EventBus.$on(
+				'close-menu',
+				(this.initEventBusFn['close-menu'] = () => {
+					this.menuVisible = false;
+				})
+			);
+		},
+		unbindEvent() {
+			EventBus.$off('close-menu', this.initEventBusFn['close-menu']);
 		},
 		show(e) {
 			this.menuVisible = true;

@@ -622,6 +622,7 @@ export default {
 			$(document).unbind('mouseup', this.initEventFn2);
 			EventBus.$off('language-change', this.initEventBusFn['language-change']);
 			EventBus.$off('tab-size-change', this.initEventBusFn['tab-size-change']);
+			EventBus.$off('indent-change', this.initEventBusFn['indent-change']);
 			EventBus.$off('convert-to-tab', this.initEventBusFn['convert-to-tab']);
 			EventBus.$off('convert-to-space', this.initEventBusFn['convert-to-space']);
 			EventBus.$off('close-menu', this.initEventBusFn['close-menu']);
@@ -632,6 +633,8 @@ export default {
 			EventBus.$off('file-saved', this.initEventBusFn['file-saved']);
 			EventBus.$off('file-opened', this.initEventBusFn['file-opened']);
 			EventBus.$off('editor-formated', this.initEventBusFn['editor-formated']);
+			EventBus.$off('minimap-toggle', this.initEventBusFn['minimap-toggle']);
+			EventBus.$off('window-close', this.initEventBusFn['window-close']);
 		},
 		showEditor() {
 			// 元素暂时不可见
