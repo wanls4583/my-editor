@@ -2,7 +2,7 @@ import EventBus from '@/event';
 import globalData from '@/data/globalData';
 import Util from '../util';
 import Context from '@/module/context/index';
-import { diffLinesRaw } from 'jest-diff';
+import diffSequences from 'diff-sequences'
 import Ignore from 'ignore';
 
 const spawnSync = window.require('child_process').spawnSync;
@@ -72,50 +72,56 @@ export default class {
 		}
 
 		function _diff(text) {
-			let diffs = diffLinesRaw(text.split('\n'), textArr);
+			let diffs = this.diff(text.split('\n'), textArr);
 			EventBus.$emit('git-diffed', { path: filePath, result: this.parseDiff(diffs) });
 		}
 	}
-	parseDiff(diffs) {
-		let results = [];
-		let diffObjs = [];
-		let preDiffObj = null;
-		let line = 1;
-		for (let i = 0; i < diffs.length; i++) {
-			let item = diffs[i];
-			if (item[0] === 0) {
-				//common
-				line++;
-				preDiffObj = null;
-			} else if (item[0] === -1) {
-				//delete
-				if (preDiffObj && preDiffObj.type === 'D' && preDiffObj.line === line) {
-					preDiffObj.deleted.push(item[1]);
-				} else {
-					preDiffObj = {
-						type: 'D',
-						line: line,
-						added: [],
-						deleted: [item[1]]
-					};
-					diffObjs.push(preDiffObj);
-				}
-			} else if (item[0] === 1) {
-				//add
-				if (preDiffObj && preDiffObj.type === 'A' && preDiffObj.line + preDiffObj.added.length === line) {
-					preDiffObj.added.push(item[1]);
-				} else {
-					preDiffObj = {
-						type: 'A',
-						line: line,
-						added: [item[1]],
-						deleted: []
-					};
-					diffObjs.push(preDiffObj);
-				}
-				line++;
+	diff(a, b) {
+		let aIndex = 0;
+		let bIndex = 0;
+		const diffObjs = [];
+		const isCommon = (aIndex, bIndex) => a[aIndex] === b[bIndex];
+		const foundSubsequence = (nCommon, aCommon, bCommon) => {
+			if (aIndex !== aCommon) {
+				diffObjs.push({
+					type: 'D',
+					line: bIndex + 1,
+					added: [],
+					deleted: a.slice(aIndex, aCommon)
+				})
 			}
+			if (bIndex !== bCommon) {
+				diffObjs.push({
+					type: 'A',
+					line: bIndex + 1,
+					added: b.slice(bIndex, bCommon),
+					deleted: []
+				})
+			}
+			aIndex = aCommon + nCommon;
+			bIndex = bCommon + nCommon;
+		};
+		diffSequences(a.length, b.length, isCommon, foundSubsequence);
+		if (aIndex !== a.length) {
+			diffObjs.push({
+				type: 'D',
+				line: bIndex + 1,
+				added: [],
+				deleted: a.slice(aIndex)
+			})
 		}
+		if (bIndex !== b.length) {
+			diffObjs.push({
+				type: 'A',
+				line: bIndex + 1,
+				added: b.slice(bIndex),
+				deleted: []
+			})
+		}
+		return diffObjs;
+	}
+	parseDiff(diffObjs) {
+		let results = [];
 		for (let i = 0; i < diffObjs.length; i++) {
 			let item = diffObjs[i];
 			let nextItem = diffObjs[i + 1];
