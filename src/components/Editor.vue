@@ -434,6 +434,7 @@ export default {
 		this.myContext.destroy();
 		this.tokenizer.destroy();
 		this.lint.destroy();
+		this.history.destroyed();
 		contexts[this.tabData.id] = null;
 	},
 	methods: {

@@ -29,7 +29,7 @@ export default class {
 			'convertSpaceToTab',
 		]);
 	}
-	reset() {
+	destroy() {
 		this.history = [];
 	}
 	// 撤销操作
