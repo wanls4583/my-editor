@@ -73,7 +73,7 @@ export default class {
 
 		function _diff(text) {
 			let diffs = this.diff(text.split('\n'), textArr);
-			EventBus.$emit('git-diffed', { path: filePath, result: this.parseDiff(diffs) });
+			EventBus.$emit('git-diffed', { path: filePath, result: this.parseDiff(diffs, textArr.length) });
 		}
 	}
 	diff(a, b) {
@@ -120,7 +120,7 @@ export default class {
 		}
 		return diffObjs;
 	}
-	parseDiff(diffObjs) {
+	parseDiff(diffObjs, endLine) {
 		let results = [];
 		for (let i = 0; i < diffObjs.length; i++) {
 			let item = diffObjs[i];
@@ -134,18 +134,25 @@ export default class {
 						deleted: item.deleted
 					});
 				} else if (item.deleted.length > nextItem.added.length) {
-					results.push({
+					let diffObj = {
 						type: 'M',
 						line: item.line,
 						added: nextItem.added,
 						deleted: item.deleted.slice(0, nextItem.added.length)
-					});
-					results.push({
-						type: 'D',
-						line: item.line + nextItem.added.length,
-						added: [],
-						deleted: item.deleted.slice(nextItem.added.length)
-					});
+					}
+					results.push(diffObj);
+					if (item.line + nextItem.added.length > endLine) {
+						for (let i = nextItem.added.length; i < item.deleted.length; i++) {
+							diffObj.deleted.push(item.deleted[i]);
+						}
+					} else {
+						results.push({
+							type: 'D',
+							line: item.line + nextItem.added.length,
+							added: [],
+							deleted: item.deleted.slice(nextItem.added.length)
+						});
+					}
 				} else {
 					results.push({
 						type: 'M',
