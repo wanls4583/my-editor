@@ -4,9 +4,20 @@ import EventBus from '@/event';
 import globalData from '@/data/globalData';
 import Util from '@/common/util';
 
+import * as prettierStandalone from 'prettier/standalone';
+import * as angularPlugin from 'prettier/parser-angular';
+import * as babelPlugin from 'prettier/parser-babel';
+import * as glimmerPlugin from 'prettier/parser-glimmer';
+import * as graphqlPlugin from 'prettier/parser-graphql';
+import * as htmlPlugin from 'prettier/parser-html';
+import * as markdownPlugin from 'prettier/parser-markdown';
+import * as meriyahPlugin from 'prettier/parser-meriyah';
+import * as typescriptPlugin from 'prettier/parser-typescript';
+import * as yamlPlugin from 'prettier/parser-yaml';
+
 const remote = window.require('@electron/remote');
-const Prettier = window.require('prettier');
 const contexts = Context.contexts;
+const plugins = [angularPlugin, babelPlugin, glimmerPlugin, graphqlPlugin, htmlPlugin, markdownPlugin, meriyahPlugin, typescriptPlugin, yamlPlugin];
 
 export default class {
 	constructor() {
@@ -267,19 +278,17 @@ export default class {
 			if (editor && globalData.prettierParsers[editor.language] && id === globalData.nowEditorId) {
 				let context = contexts[globalData.nowEditorId];
 				let cursorOffset = editor.nowCursorPos.column;
+				let parser = globalData.prettierParsers[editor.language];
 				let text = context.getAllText();
 				let result = null;
 				let cursorPos = null;
-				let options = {
-					...globalData.prettierOptions,
-					parser: globalData.prettierParsers[editor.language]
-				};
+				let options = { ...globalData.prettierOptions, plugins, parser };
 				for (let i = 0; i < editor.nowCursorPos.line - 1; i++) {
 					cursorOffset += context.htmls[i].text.length + 1;
 				}
 				options.cursorOffset = cursorOffset;
 				try {
-					result = Prettier.formatWithCursor(text, options);
+					result = prettierStandalone.formatWithCursor(text, options);
 					if (text !== result.formatted) {
 						text = result.formatted.slice(0, result.cursorOffset).split(/\n/);
 						cursorPos = { line: text.length, column: text.peek().length };
