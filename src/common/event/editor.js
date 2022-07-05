@@ -3,6 +3,7 @@ import Context from '@/module/context/index';
 import EventBus from '@/event';
 import globalData from '@/data/globalData';
 import Util from '@/common/util';
+import JsBeautify from 'js-beautify';
 
 const remote = window.require('@electron/remote');
 const Prettier = window.require('prettier');
@@ -264,33 +265,85 @@ export default class {
 		clearTimeout(this.formatCodeTimer);
 		this.formatCodeTimer = setTimeout(() => {
 			let editor = globalData.nowEditorId && globalData.$mainWin.getNowEditor();
-			if (editor && globalData.prettierParsers[editor.language] && id === globalData.nowEditorId) {
+			let parser = editor && this.getFormatParser(editor.language);
+			if (editor && parser && id === globalData.nowEditorId) {
 				let context = contexts[globalData.nowEditorId];
 				let cursorOffset = editor.nowCursorPos.column;
+				let cursorComment = this.getCursorComment(editor.language);
 				let text = context.getAllText();
 				let result = null;
 				let cursorPos = null;
-				let options = {
-					...globalData.prettierOptions,
-					parser: globalData.prettierParsers[editor.language]
-				};
 				for (let i = 0; i < editor.nowCursorPos.line - 1; i++) {
 					cursorOffset += context.htmls[i].text.length + 1;
 				}
-				options.cursorOffset = cursorOffset;
+				text = text.slice(0, cursorOffset) + cursorComment + text.slice(cursorOffset);
 				try {
-					result = Prettier.formatWithCursor(text, options);
-					if (text !== result.formatted) {
-						text = result.formatted.slice(0, result.cursorOffset).split(/\n/);
-						cursorPos = { line: text.length, column: text.peek().length };
+					result = parser(text);
+					if (text !== result) {
+						let beforeText = '';
+						let afterText = '';
+						cursorOffset = result.indexOf(cursorComment);
+						afterText = result.slice(cursorOffset + cursorComment.length);
+						if (result[cursorOffset - 1] === '\n') {
+							beforeText = result.slice(0, cursorOffset - 1);
+						} else {
+							beforeText = result.slice(0, cursorOffset);
+						}
+						result = beforeText + afterText;
+						beforeText = beforeText.split(/\n/);
+						cursorPos = { line: beforeText.length, column: beforeText.peek().length };
 						EventBus.$emit('editor-formated', {
 							id,
 							cursorPos,
-							text: result.formatted
+							text: result
 						});
 					}
 				} catch (e) {}
 			}
 		}, 50);
+	}
+	getFormatParser(language) {
+		let parser = null;
+		switch (language) {
+			case 'javascript':
+			case 'javascriptreact':
+			case 'typescript':
+			case 'typescriptreact':
+			case 'coffeescript':
+				parser = JsBeautify.js;
+				break;
+			case 'html':
+			case 'vue':
+			case 'xml':
+				parser = JsBeautify.html;
+				break;
+			case 'css':
+			case 'scss':
+			case 'less':
+				parser = JsBeautify.css;
+				break;
+		}
+		return parser;
+	}
+	getCursorComment(language) {
+		let comment = '';
+		switch (language) {
+			case 'javascript':
+			case 'javascriptreact':
+			case 'typescript':
+			case 'typescriptreact':
+			case 'coffeescript':
+			case 'css':
+			case 'scss':
+			case 'less':
+				comment = `/*${Util.getUUID()}*/`;
+				break;
+			case 'html':
+			case 'vue':
+			case 'xml':
+				comment = `<!--${Util.getUUID()}-->`;
+				break;
+		}
+		return comment;
 	}
 }
