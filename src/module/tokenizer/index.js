@@ -148,32 +148,22 @@ export default class {
 		foldMap.__foldReg__ = new RegExp(source, 'g');
 	}
 	onInsertContentAfter(nowLine, newLine) {
+		globalData.scheduler.removeTask(this.tokenizeLinesTask);
 		if (nowLine <= this.currentLine) {
 			this.currentLine = nowLine;
-			globalData.scheduler.removeTask(this.tokenizeLinesTask);
-			this.$nextTick(() => {
-				if (this.currentLine !== nowLine) {
-					return;
-				}
-				this.tokenizeLines(nowLine);
-			});
-		} else {
-			this.tokenizeVisibleLins();
 		}
+		this.$nextTick(() => {
+			this.tokenizeVisibleLins();
+		});
 	}
 	onDeleteContentAfter(nowLine, newLine) {
+		globalData.scheduler.removeTask(this.tokenizeLinesTask);
 		if (newLine <= this.currentLine) {
 			this.currentLine = newLine;
-			globalData.scheduler.removeTask(this.tokenizeLinesTask);
-			this.$nextTick(() => {
-				if (this.currentLine !== newLine) {
-					return;
-				}
-				this.tokenizeLines(newLine);
-			});
-		} else {
-			this.tokenizeVisibleLins();
 		}
+		this.$nextTick(() => {
+			this.tokenizeVisibleLins();
+		});
 	}
 	tokenizeVisibleLins() {
 		let tokenizeVisibleLinsId = this.tokenizeVisibleLinsId + 1 || 1;
