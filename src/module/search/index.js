@@ -7,15 +7,12 @@ import Util from '@/common/util';
 
 export default class {
     constructor(editor, context, selecter) {
+        this.editor = editor;
+        this.context = context;
         this.selecter = selecter;
-        this.initProperties(editor, context);
-        this.wordPattern = Util.getWordPattern(this.language);
+        this.wordPattern = Util.getWordPattern(this.editor.language);
         this.wholeWordPattern = new RegExp(`^(${this.wordPattern.source})$`);
         this.wordPattern = new RegExp(this.wordPattern.source, 'g');
-    }
-    initProperties(editor, context) {
-        Util.defineProperties(this, editor, ['language', 'fSearcher', 'searcher', 'nowCursorPos', 'cursor', '$nextTick', '$refs']);
-        Util.defineProperties(this, context, ['htmls', 'getRangeText', 'getAllText']);
     }
     search(searchObj) {
         let resultObj = null;
@@ -34,14 +31,14 @@ export default class {
             resultObj = this._search(config);
         }
         if (resultObj && resultObj.result) {
-            if (this.searcher === this || searchObj.increase) {
+            if (this.editor.searcher === this || searchObj.increase) {
                 if (hasCache) {
-                    this.cursor.addCursorPos(resultObj.result.end);
+                    this.editor.cursor.addCursorPos(resultObj.result.end);
                     this.selecter.addActive(resultObj.result.end);
                 } else {
                     //当前光标已处于选中区域边界，则不处理（历史记录后退时可能存在多个选中区域的情况）
                     if (this.selecter.activedRanges.size === 0) {
-                        this.cursor.setCursorPos(resultObj.result.end);
+                        this.editor.cursor.setCursorPos(resultObj.result.end);
                     } else {
                         this.initIndexs();
                     }
@@ -50,8 +47,8 @@ export default class {
             } else {
                 if (hasCache) {
                     this.selecter.setActive(resultObj.result.end);
-                    this.cursor.setCursorPos(resultObj.result.end);
-                    this.searcher.clearSearch(); //搜索框确认搜索后，删除按键搜索
+                    this.editor.cursor.setCursorPos(resultObj.result.end);
+                    this.editor.searcher.clearSearch(); //搜索框确认搜索后，删除按键搜索
                 } else {
                     this.selecter.addRange(resultObj.results);
                     this.clearActive();
@@ -67,7 +64,6 @@ export default class {
         };
     }
     _search(config) {
-        let that = this;
         let reg = null;
         let exec = null;
         let start = null;
@@ -79,7 +75,7 @@ export default class {
         let line = 1;
         let column = 0;
         let index = 0;
-        let text = this.getAllText();
+        let text = this.context.getAllText();
         let lines = config.text.split(/\n/);
         let source = config.text.replace(/\\|\.|\*|\+|\-|\?|\(|\)|\[|\]|\{|\}|\^|\$|\~|\!|\&|\|/g, '\\$&');
         //完整匹配
@@ -108,7 +104,7 @@ export default class {
                     end: end,
                 };
                 results.push(rangePos);
-                if (!result && Util.comparePos(end, that.nowCursorPos) >= 0) {
+                if (!result && Util.comparePos(end, this.editor.nowCursorPos) >= 0) {
                     result = rangePos;
                     index = results.length - 1;
                     indexs[results.length - 1] = true;
@@ -156,7 +152,7 @@ export default class {
         return new Promise((resolve) => {
             let refreshSearchId = this.refreshSearch.id + 1 || 1;
             this.refreshSearch.id = refreshSearchId;
-            this.$nextTick(() => {
+            this.editor.$nextTick(() => {
                 if (this.refreshSearch.id !== refreshSearchId) {
                     return;
                 }
@@ -239,12 +235,12 @@ export default class {
         let results = this.cacheData.results;
         let result = null;
         let index = 0;
-        if (this.fSearcher === this && !increase) {
+        if (this.editor.fSearcher === this && !increase) {
             // 搜索框移动活动区域
             if (direct === 'up') {
-                this.setPrevActive(this.nowCursorPos);
+                this.setPrevActive(this.editor.nowCursorPos);
             } else {
-                this.setNextActive(this.nowCursorPos);
+                this.setNextActive(this.editor.nowCursorPos);
             }
             index = this.cacheData.index;
             result = this.cacheData.results[index];
@@ -291,12 +287,12 @@ export default class {
         let result = null;
         let wholeWord = false;
         let searchText = '';
-        let range = this.searcher.selecter.getRangeByCursorPos(this.nowCursorPos);
-        if (this.searcher === this && this.selecter.ranges.size > 0) {
+        let range = this.editor.searcher.selecter.getRangeByCursorPos(this.editor.nowCursorPos);
+        if (this.editor.searcher === this && this.selecter.ranges.size > 0) {
             return null;
         }
         if (range) {
-            searchText = this.getRangeText(range.start, range.end);
+            searchText = this.context.getRangeText(range.start, range.end);
         } else {
             searchText = this.getNowWord().text;
             wholeWord = true;
@@ -311,9 +307,9 @@ export default class {
         return result;
     }
     getNowWord() {
-        let text = this.htmls[this.nowCursorPos.line - 1].text;
+        let text = this.context.htmls[this.editor.nowCursorPos.line - 1].text;
         let str = '';
-        let index = this.nowCursorPos.column;
+        let index = this.editor.nowCursorPos.column;
         let startColumn = index;
         let endColumn = index;
         let res = null;
@@ -333,11 +329,11 @@ export default class {
             text: str,
             range: {
                 start: {
-                    line: this.nowCursorPos.line,
+                    line: this.editor.nowCursorPos.line,
                     column: startColumn,
                 },
                 end: {
-                    line: this.nowCursorPos.line,
+                    line: this.editor.nowCursorPos.line,
                     column: endColumn,
                 },
             },
