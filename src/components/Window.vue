@@ -103,10 +103,10 @@ export default {
 			dialogBtns: [],
 			dialogIcon: '',
 			dialogIconColor: '',
-			terminalVisible: false,
+			terminalVisible: globalData.views.terminal,
 			sidebarVisible: globalData.views.sidebar,
 			statusbarVisible: globalData.views.statusbar,
-			terminalHeight: 300,
+			terminalHeight: 260,
 			themeType: 'dark',
 			activity: 'files',
 			leftWidth: 400,
@@ -221,9 +221,6 @@ export default {
 			});
 			EventBus.$on('activity-change', (activity) => {
 				this.activity = activity;
-			});
-			EventBus.$on('terminal-new', () => {
-				this.terminalVisible = true;
 			});
 			EventBus.$on('terminal-toggle', () => {
 				this.terminalVisible = !this.terminalVisible;
