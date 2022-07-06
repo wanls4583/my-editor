@@ -18,9 +18,10 @@ const regs = {
 
 export default class {
 	constructor(editor, context) {
+		this.editor = editor;
+		this.context = context;
 		this.currentLine = 1;
 		this.initRegistry();
-		this.initProperties(editor, context);
 		this.initLanguage(editor.language);
 	}
 	initRegistry() {
@@ -94,10 +95,6 @@ export default class {
 		this.tokenizeVisibleLins();
 		return Promise.resolve();
 	}
-	initProperties(editor, context) {
-		Util.defineProperties(this, editor, ['editorId', 'startLine', 'diffObj', 'maxVisibleLines', 'maxLine', 'space', 'folder', '$nextTick']);
-		Util.defineProperties(this, context, ['htmls']);
-	}
 	initLanguageConifg(foldMap, data) {
 		let source = [];
 		foldMap.__comments__ = {
@@ -147,12 +144,18 @@ export default class {
 		source = source.replace(/[\{\}\(\)\[\]\&\?\+\*\\]/g, '\\$&');
 		foldMap.__foldReg__ = new RegExp(source, 'g');
 	}
+	destroy() {
+		this.editor = null;
+		this.context = null;
+		cancelIdleCallback(this.tokenizeLinesTimer);
+		globalData.scheduler.removeTask(this.tokenizeLinesTask);
+	}
 	onInsertContentAfter(nowLine, newLine) {
 		globalData.scheduler.removeTask(this.tokenizeLinesTask);
 		if (nowLine <= this.currentLine) {
 			this.currentLine = nowLine;
 		}
-		this.$nextTick(() => {
+		this.editor.$nextTick(() => {
 			this.tokenizeVisibleLins();
 		});
 	}
@@ -161,29 +164,29 @@ export default class {
 		if (newLine <= this.currentLine) {
 			this.currentLine = newLine;
 		}
-		this.$nextTick(() => {
+		this.editor.$nextTick(() => {
 			this.tokenizeVisibleLins();
 		});
 	}
 	tokenizeVisibleLins() {
 		let tokenizeVisibleLinsId = this.tokenizeVisibleLinsId + 1 || 1;
 		this.tokenizeVisibleLinsId = tokenizeVisibleLinsId;
-		this.$nextTick(() => {
+		this.editor.$nextTick(() => {
 			if (this.tokenizeVisibleLinsId !== tokenizeVisibleLinsId) {
 				return;
 			}
-			let startLine = this.startLine;
-			let endLine = this.startLine + this.maxVisibleLines;
-			endLine = this.folder.getRealLine(endLine);
+			let startLine = this.editor.startLine;
+			let endLine = this.editor.startLine + this.editor.maxVisibleLines;
+			endLine = this.editor.folder.getRealLine(endLine);
 			startLine = startLine < this.currentLine ? this.currentLine : startLine;
 			if (endLine >= startLine) {
 				// 先渲染可视范围内的行
 				this.tokenizeLines(startLine, endLine, () => {
 					// 考虑到当前行可能处于内嵌语法中，渲染前2000行
-					startLine = this.startLine - 2000;
+					startLine = this.editor.startLine - 2000;
 					startLine = startLine < 1 ? 1 : startLine;
 					// 考虑到minimap渲染的行数，这里乘以10
-					endLine = this.folder.getRealLine(endLine + this.maxVisibleLines * 10);
+					endLine = this.editor.folder.getRealLine(endLine + this.editor.maxVisibleLines * 10);
 					if (startLine > this.currentLine) {
 						this.tokenizeLines(startLine, endLine, () => {
 							this.tokenizeLines(this.currentLine);
@@ -195,17 +198,13 @@ export default class {
 			}
 		});
 	}
-	destroy() {
-		cancelIdleCallback(this.tokenizeLinesTimer);
-		globalData.scheduler.removeTask(this.tokenizeLinesTask);
-	}
 	tokenizeLines(startLine, endLine, callback) {
 		let limit = 5;
 		let processedLines = 0;
 		let originStartLine = startLine;
 		let startTime = Date.now();
-		endLine = endLine || this.maxLine;
-		endLine = endLine > this.maxLine ? this.maxLine : endLine;
+		endLine = endLine || this.editor.maxLine;
+		endLine = endLine > this.editor.maxLine ? this.editor.maxLine : endLine;
 		cancelIdleCallback(this.tokenizeLinesTimer);
 		globalData.scheduler.removeTask(this.tokenizeLinesTask);
 		if (this.scopeName && !this.grammar) {
@@ -216,17 +215,17 @@ export default class {
 			return;
 		}
 		while (startLine <= endLine) {
-			let lineObj = this.htmls[startLine - 1];
+			let lineObj = this.context.htmls[startLine - 1];
 			if (!lineObj.tokens) {
 				//文本超过一万时跳过高亮
 				let data = this.tokenizeLine(startLine);
 				lineObj.tokens = data.tokens;
 				lineObj.folds = data.folds;
 				lineObj.stateFold = data.stateFold;
-				EventBus.$emit('render-line', { editorId: this.editorId, lineId: lineObj.lineId });
+				EventBus.$emit('render-line', { editorId: this.editor.editorId, lineId: lineObj.lineId });
 				if (!lineObj.states || (lineObj.states.equals && !lineObj.states.equals(data.states)) || lineObj.states.toString() !== data.states.toString()) {
 					lineObj.states = data.states;
-					lineObj = this.htmls[startLine];
+					lineObj = this.context.htmls[startLine];
 					if (lineObj) {
 						lineObj.tokens = null;
 						lineObj.html = '';
@@ -256,9 +255,9 @@ export default class {
 		}
 	}
 	tokenizeLine(line) {
-		let lineText = this.htmls[line - 1].text;
+		let lineText = this.context.htmls[line - 1].text;
 		let folds = [];
-		if (lineText.length > 10000 || !this.scopeName || line <= this.diffObj.deletedLength) {
+		if (lineText.length > 10000 || !this.scopeName || line <= this.editor.diffObj.deletedLength) {
 			return {
 				tokens: [
 					{
@@ -272,14 +271,14 @@ export default class {
 			};
 		}
 		let states = null;
-		if (this.diffObj.states) {
-			if (line === this.diffObj.deletedLength + 1) {
-				states = this.diffObj.states;
+		if (this.editor.diffObj.states) {
+			if (line === this.editor.diffObj.deletedLength + 1) {
+				states = this.editor.diffObj.states;
 			} else {
-				states = this.htmls[line - 2].states || vsctm.INITIAL;
+				states = this.context.htmls[line - 2].states || vsctm.INITIAL;
 			}
 		} else {
-			states = (this.htmls[line - 2] && this.htmls[line - 2].states) || vsctm.INITIAL;
+			states = (this.context.htmls[line - 2] && this.context.htmls[line - 2].states) || vsctm.INITIAL;
 		}
 		let lineTokens = this.grammar.tokenizeLine(lineText, states);
 		let stateFold = this.addFold(line, lineTokens.tokens, folds);
@@ -328,7 +327,7 @@ export default class {
 				return `<span class="${item.selector}" data-column="${item.startIndex}" data-end="${item.endIndex}">${Util.htmlTrans(value)}</span>`;
 			})
 			.join('')
-			.replace(/\t/g, this.space);
+			.replace(/\t/g, this.editor.space);
 
 		function _compair(scope1, scope2) {
 			scope1 = globalData.scopeIdMap[scope1];
@@ -375,8 +374,8 @@ export default class {
 		let scopeName = '';
 		let startIndex = 0;
 		let existTag = false;
-		let lineText = this.htmls[line - 1].text;
-		let stateFold = line > 1 ? this.htmls[line - 2].stateFold : null;
+		let lineText = this.context.htmls[line - 1].text;
+		let stateFold = line > 1 ? this.context.htmls[line - 2].stateFold : null;
 		//给字符串token打上标记
 		tokens.forEach(token => {
 			if (regs.stringToken.test(token.scopes.join('.'))) {
