@@ -12,19 +12,16 @@ const lintSupport = { css: true, scss: true, less: true, html: true, javascript:
 
 export default class {
 	constructor(editor, context) {
-		this.initProperties(editor, context);
+		this.editor = editor;
+		this.context = context;
 		this.initLanguage(editor.language);
-	}
-	initProperties(editor, context) {
-		Util.defineProperties(this, context, ['htmls', 'getAllText']);
-		Util.defineProperties(this, editor, ['setErrors']);
 	}
 	initLanguage(language) {
 		if (this.language === language) {
 			return;
 		}
 		this.language = language;
-		this.setErrors([]);
+		this.editor.setErrors([]);
 		this.parse();
 	}
 	onInsertContentAfter(nowLine, newLine) {
@@ -34,6 +31,10 @@ export default class {
 		this.parse();
 	}
 	destroy() {
+		this.editor = null;
+		this.context = null;
+		clearTimeout(this.parseTimer);
+		clearTimeout(this.closeWorkTimer);
 		if (this.worker) {
 			this.worker.kill();
 			this.worker = null;
@@ -57,7 +58,7 @@ export default class {
 		}, 500);
 
 		function _send() {
-			const text = this.getAllText();
+			const text = this.context.getAllText();
 			this.parseId = Util.getUUID();
 			this.worker.send({
 				text: text,
@@ -70,7 +71,7 @@ export default class {
 		this.worker = child_process.fork(path.join(globalData.dirname, 'main/process/lint/index.js'));
 		this.worker.on('message', data => {
 			if (data.parseId === this.parseId) {
-				this.setErrors(data.results);
+				this.editor.setErrors(data.results);
 				this.parseId = '';
 				// 30秒后，如果没有编辑内容，则关闭子进程
 				this.closeWorkTimer = setTimeout(() => {
