@@ -1,4 +1,8 @@
 .my {
+	&-status-rename {
+		color: var(--my-gitDecoration-untrackedResourceForeground);
+	}
+
 	&-status-untracked {
 		color: var(--my-gitDecoration-untrackedResourceForeground);
 	}

@@ -169,7 +169,7 @@ export default class {
 				return false;
 			}
 			// 单行注释
-			if (startFold.type === Util.constData.LINE_COMMENT) {
+			if (startFold.type === Util.CONST_DATA.LINE_COMMENT) {
 				let endLine = startLine;
 				let fold = null;
 				line = startLine + 1;
@@ -178,7 +178,7 @@ export default class {
 					let text = lineObj.text.trimLeft();
 					let startIndex = lineObj.text.length - text.length;
 					let _fold = lineObj.folds && lineObj.folds[0];
-					if (_fold && _fold.type === Util.constData.LINE_COMMENT && _fold.startIndex === startIndex) {
+					if (_fold && _fold.type === Util.CONST_DATA.LINE_COMMENT && _fold.startIndex === startIndex) {
 						endLine = line;
 						fold = _fold;
 						if (foldIconCheck && endLine - startLine > 1) {
@@ -255,7 +255,7 @@ export default class {
 				for (let i = folds.length - 1; i >= 0; i--) {
 					let fold = folds[i];
 					// 跳过标签名
-					if (fold.type === Util.constData.TAG) {
+					if (fold.type === Util.CONST_DATA.TAG) {
 						continue;
 					} else if (fold.side > 0 && (line < cursorPos.line || fold.endIndex < cursorPos.column)) {
 						stack.push(fold);

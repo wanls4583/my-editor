@@ -112,7 +112,7 @@ class Util {
 		if (typeof end != 'undefined') {
 			str = str.substring(0, end - start);
 		}
-		var match = str.match(this.fullAngleReg);
+		var match = str.match(Util.FULL_ANGLE_REG);
 		var width = str.length * charW;
 		var tabNum = str.match(/\t/g);
 		tabNum = (tabNum && tabNum.length) || 0;
@@ -578,7 +578,7 @@ class Util {
 		let status = fileStatus[filePath] || '';
 		let originStatus = status;
 		let statusColor = '';
-		status = _getStatus(status);
+		status = Util.getStatus(status);
 		if (!status && globalData.dirStatus[gitDir]) {
 			let dirStatus = globalData.dirStatus[gitDir];
 			for (let i = 0; i < dirStatus.length; i++) {
@@ -595,25 +595,27 @@ class Util {
 			originStatus,
 			statusColor
 		};
-
-		function _getStatus(status) {
-			Util.getFileStatus.statusMap = Util.getFileStatus.statusMap || {};
-			let result = Util.getFileStatus.statusMap[status];
-			if (result) {
-				return result;
-			}
-			let level = 0;
-			let statusLeveMap = { '?': 1, A: 2, M: 3, D: 4 };
-			result = '';
-			for (let i = 0; i < status.length; i++) {
-				if (statusLeveMap[status[i]] > level) {
-					level = statusLeveMap[status[i]];
-					result = status[i];
-				}
-			}
-			Util.getFileStatus.statusMap[status] = result;
+	}
+	static getStatus(status) {
+		Util.getStatus.statusMap = Util.getStatus.statusMap || {};
+		let result = Util.getStatus.statusMap[status];
+		if (result) {
 			return result;
 		}
+		let level = 0;
+		result = '';
+		for (let i = 0; i < status.length; i++) {
+			if (Util.STATUS_LEVEMAP[status[i]] > level) {
+				level = Util.STATUS_LEVEMAP[status[i]];
+				result = status[i];
+			}
+		}
+		Util.getStatus.statusMap[status] = result;
+		return result;
+	}
+	static getStatusLevel(status) {
+		status = Util.getStatus(status);
+		return Util.STATUS_LEVEMAP[status]
 	}
 	static getFileStatusColor(status) {
 		let statusMap = {};
@@ -621,14 +623,16 @@ class Util {
 		for (let i = 0; i < status.length; i++) {
 			statusMap[status[i]] = true;
 		}
-		if (statusMap['M']) {
-			statusColor = 'my-status-modified';
-		} else if (statusMap['A']) {
-			statusColor = 'my-status-added';
+		if (statusMap['R']) {
+			statusColor = 'my-status-rename';
 		} else if (statusMap['?']) {
 			statusColor = 'my-status-untracked';
 		} else if (statusMap['D']) {
 			statusColor = 'my-status-deleted';
+		} else if (statusMap['M']) {
+			statusColor = 'my-status-modified';
+		} else if (statusMap['A']) {
+			statusColor = 'my-status-added';
 		}
 		return statusColor;
 	}
@@ -711,13 +715,13 @@ String.prototype.peek = function (index) {
 	}
 };
 //全角符号和中文字符
-Util.fullAngleReg =
+Util.FULL_ANGLE_REG =
 	/[\x00-\x1f\x80-\xa0\xad\u1680\u180E\u2000-\u200f\u2028\u2029\u202F\u205F\u3000\uFEFF\uFFF9-\uFFFC]|[\u1100-\u115F\u11A3-\u11A7\u11FA-\u11FF\u2329-\u232A\u2E80-\u2E99\u2E9B-\u2EF3\u2F00-\u2FD5\u2FF0-\u2FFB\u3000-\u303E\u3041-\u3096\u3099-\u30FF\u3105-\u312D\u3131-\u318E\u3190-\u31BA\u31C0-\u31E3\u31F0-\u321E\u3220-\u3247\u3250-\u32FE\u3300-\u4DBF\u4E00-\uA48C\uA490-\uA4C6\uA960-\uA97C\uAC00-\uD7A3\uD7B0-\uD7C6\uD7CB-\uD7FB\uF900-\uFAFF\uFE10-\uFE19\uFE30-\uFE52\uFE54-\uFE66\uFE68-\uFE6B\uFF01-\uFF60\uFFE0-\uFFE6]|[\uD800-\uDBFF][\uDC00-\uDFFF]/g;
-Util.keyCode = {
+Util.KEYCODE = {
 	DELETE: 46,
 	BACKSPACE: 8
 };
-Util.command = {
+Util.HISTORY_COMMAND = {
 	DELETE: 'delete',
 	INSERT: 'insert',
 	MOVEUP: 'moveLineUp',
@@ -733,10 +737,11 @@ Util.command = {
 	TAB_TO_SPACE: 'tabToSpace',
 	SPACE_TO_TAB: 'spaceToTab'
 };
-Util.constData = {
+Util.CONST_DATA = {
 	LINE_COMMENT: 'line-comment',
 	BLOCK_COMMENT: 'block-comment',
 	BRACKET: 'bracket',
 	TAG: 'tag'
 };
+Util.STATUS_LEVEMAP = { A: 1, M: 2, D: 3, '?': 4, R: 5 }
 export default Util;

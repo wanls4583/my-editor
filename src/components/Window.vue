@@ -65,7 +65,7 @@ import Context from '@/module/context/index';
 import Theme from '@/module/theme';
 import EventBus from '@/event';
 import Util from '@/common/util';
-import CommonEvent from '@/common/event';
+import CommonEvent from '@/events';
 import WinShorcut from '@/module/shortcut/window';
 import Persistence from '@/module/persistence';
 import $ from 'jquery';

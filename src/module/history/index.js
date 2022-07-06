@@ -68,11 +68,11 @@ export default class {
 	doCommand(command) {
 		let commandType = command.type || (command instanceof Array ? command[0].type : command.type);
 		switch (commandType) {
-			case Util.command.DELETE:
+			case Util.HISTORY_COMMAND.DELETE:
 				this.cursor.clearCursorPos();
-				this.deleteContent(Util.keyCode.BACKSPACE, command);
+				this.deleteContent(Util.KEYCODE.BACKSPACE, command);
 				break;
-			case Util.command.INSERT:
+			case Util.HISTORY_COMMAND.INSERT:
 				this.cursor.clearCursorPos();
 				if (command instanceof Array) {
 					var text = [];
@@ -84,46 +84,46 @@ export default class {
 					this.insertContent(command.text, command);
 				}
 				break;
-			case Util.command.DELETE_LINE:
+			case Util.HISTORY_COMMAND.DELETE_LINE:
 				this.cursor.clearCursorPos();
 				this.deleteLine(command);
 				break;
-			case Util.command.INSERT_LINE:
+			case Util.HISTORY_COMMAND.INSERT_LINE:
 				this.cursor.clearCursorPos();
 				this.insertLine(command);
 				break;
-			case Util.command.MOVEUP:
+			case Util.HISTORY_COMMAND.MOVEUP:
 				this.cursor.clearCursorPos();
 				this.moveLineUp(command);
 				break;
-			case Util.command.MOVEDOWN:
+			case Util.HISTORY_COMMAND.MOVEDOWN:
 				this.cursor.clearCursorPos();
 				this.moveLineDown(command);
 				break;
-			case Util.command.COPY_DOWN:
+			case Util.HISTORY_COMMAND.COPY_DOWN:
 				this.cursor.clearCursorPos();
 				this.copyLineDown(command);
 				break;
-			case Util.command.DELETE_COPY_DOWN:
+			case Util.HISTORY_COMMAND.DELETE_COPY_DOWN:
 				this.cursor.clearCursorPos();
 				this.deleteCopyLineDown(command);
 				break;
-			case Util.command.COPY_UP:
+			case Util.HISTORY_COMMAND.COPY_UP:
 				this.cursor.clearCursorPos();
 				this.copyLineUp(command);
 				break;
-			case Util.command.DELETE_COPY_UP:
+			case Util.HISTORY_COMMAND.DELETE_COPY_UP:
 				this.cursor.clearCursorPos();
 				this.deleteCopyLineUp(command);
 				break;
-			case Util.command.REPLACE:
+			case Util.HISTORY_COMMAND.REPLACE:
 				this.cursor.clearCursorPos();
 				this.replace(command.text, command.cursorPos, command);
 				break;
-			case Util.command.TAB_TO_SPACE:
+			case Util.HISTORY_COMMAND.TAB_TO_SPACE:
 				this.convertTabToSpace(command);
 				break;
-			case Util.command.SPACE_TO_TAB:
+			case Util.HISTORY_COMMAND.SPACE_TO_TAB:
 				this.convertSpaceToTab(command);
 				break;
 		}
@@ -167,18 +167,18 @@ export default class {
 		function _combCheck(lastCommand, command) {
 			// 检测是否为连续插入或连续删除
 			if (
-				(command.type == Util.command.DELETE || command.type == Util.command.INSERT) &&
+				(command.type == Util.HISTORY_COMMAND.DELETE || command.type == Util.HISTORY_COMMAND.INSERT) &&
 				lastCommand &&
 				lastCommand.type == command.type &&
 				lastCommand.preCursorPos.line == command.cursorPos.line &&
 				Date.now() - that.pushHistoryTime < 2000
 			) {
-				if (lastCommand.type == Util.command.DELETE) {
+				if (lastCommand.type == Util.HISTORY_COMMAND.DELETE) {
 					if (Util.comparePos(lastCommand.cursorPos, command.preCursorPos) == 0) {
 						return true;
 					}
 				}
-				if (lastCommand.type == Util.command.INSERT) {
+				if (lastCommand.type == Util.HISTORY_COMMAND.INSERT) {
 					if (Util.comparePos(lastCommand.cursorPos, command.preCursorPos) == 0 || Util.comparePos(lastCommand.cursorPos, command.cursorPos) == 0) {
 						return true;
 					}
@@ -188,13 +188,13 @@ export default class {
 
 		// 检查两次操作是否可以合并
 		function _combCommand(lastCommand, command) {
-			if (lastCommand.type === Util.command.DELETE) {
+			if (lastCommand.type === Util.HISTORY_COMMAND.DELETE) {
 				command.preCursorPos.column -= lastCommand.cursorPos.column - lastCommand.preCursorPos.column;
 				lastCommand.preCursorPos = command.preCursorPos;
 				lastCommand.cursorPos = command.cursorPos;
 			} else {
 				lastCommand.cursorPos = command.cursorPos;
-				if (command.keyCode === Util.keyCode.DELETE) {
+				if (command.keyCode === Util.KEYCODE.DELETE) {
 					lastCommand.text = lastCommand.text + command.text;
 				} else {
 					lastCommand.text = command.text + lastCommand.text;

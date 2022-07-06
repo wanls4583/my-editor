@@ -43,12 +43,16 @@ class StatusWatcher {
 		let results = [];
 		lines = lines.split('\n');
 		lines.forEach(line => {
-			let status = /^([\s\S]{2})\s*([^\s]+)\s*$/.exec(line);
-			if (status) {
-				results.push({
-					path: path.join(gitDir, status[2]),
-					status: status[1],
-				});
+			if (line.length > 3) {
+				let status = line[0] + line[1];
+				let filePath = /[^\s]+$/.exec(line);
+				filePath = filePath && filePath[0];
+				if (filePath) {
+					results.push({
+						path: path.join(gitDir, filePath),
+						status: status,
+					});
+				}
 			}
 		});
 		return results;

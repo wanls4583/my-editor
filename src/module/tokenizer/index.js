@@ -417,7 +417,7 @@ export default class {
 							lineText: lineText,
 						});
 						// 单行注释
-						if (lastFold && lastFold.type === Util.constData.LINE_COMMENT) {
+						if (lastFold && lastFold.type === Util.CONST_DATA.LINE_COMMENT) {
 							break outerLoop;
 						}
 						scopeName = token.scopes[i];
@@ -446,7 +446,7 @@ export default class {
 			});
 		}
 		if (folds.length) {
-			return folds.peek().type === Util.constData.BLOCK_COMMENT ? folds.peek() : null;
+			return folds.peek().type === Util.CONST_DATA.BLOCK_COMMENT ? folds.peek() : null;
 		} else {
 			return stateFold;
 		}
@@ -467,15 +467,15 @@ export default class {
 		} else {
 			preFold = stateFold;
 		}
-		if (preFold && preFold.type === Util.constData.BLOCK_COMMENT && preFold.side < 0) {
+		if (preFold && preFold.type === Util.CONST_DATA.BLOCK_COMMENT && preFold.side < 0) {
 			reg = foldMap.__endCommentReg__;
 		}
 		while ((res = reg.exec(text))) {
-			let type = Util.constData.BRACKET;
+			let type = Util.CONST_DATA.BRACKET;
 			if (foldMap.__comments__.lineComment === res[0]) {
-				type = Util.constData.LINE_COMMENT;
+				type = Util.CONST_DATA.LINE_COMMENT;
 			} else if (foldMap.__comments__.blockComment[0] === res[0] || foldMap.__comments__.blockComment[1] === res[0]) {
-				type = Util.constData.BLOCK_COMMENT;
+				type = Util.CONST_DATA.BLOCK_COMMENT;
 			}
 			// 如果处于字符串中，则无效
 			if (_inString(res)) {
@@ -487,11 +487,11 @@ export default class {
 				side: foldMap[res[0]],
 				type: type,
 			});
-			if (type === Util.constData.BLOCK_COMMENT && foldMap[res[0]] < 0) {
+			if (type === Util.CONST_DATA.BLOCK_COMMENT && foldMap[res[0]] < 0) {
 				foldMap.__endCommentReg__.lastIndex = reg.lastIndex;
 				reg.lastIndex = 0;
 				reg = foldMap.__endCommentReg__;
-			} else if (type === Util.constData.LINE_COMMENT) {
+			} else if (type === Util.CONST_DATA.LINE_COMMENT) {
 				break;
 			}
 		}
@@ -536,7 +536,7 @@ export default class {
 				startIndex: token.startIndex,
 				endIndex: token.endIndex,
 				side: side,
-				type: Util.constData.TAG,
+				type: Util.CONST_DATA.TAG,
 			});
 			return true;
 		}

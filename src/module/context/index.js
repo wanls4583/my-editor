@@ -219,7 +219,7 @@ class Context {
 		this.contentChanged();
 		this.tabData.status !== '!!' && EventBus.$emit('git-diff', this.tabData.path);
 		let historyObj = {
-			type: Util.command.DELETE,
+			type: Util.HISTORY_COMMAND.DELETE,
 			cursorPos: Object.assign({}, newPos),
 			preCursorPos: Object.assign({}, cursorPos)
 		};
@@ -359,7 +359,7 @@ class Context {
 	// 删除内容
 	_deleteContent(cursorPos, keyCode) {
 		let range = null;
-		let margin = keyCode === Util.keyCode.DELETE ? 'left' : 'right';
+		let margin = keyCode === Util.KEYCODE.DELETE ? 'left' : 'right';
 		cursorPos.moveWidth = 0; //去除上下移动光标的初始宽度记录
 		if (cursorPos.start && cursorPos.end) {
 			//删除范围内的内容
@@ -408,7 +408,7 @@ class Context {
 			}
 			newPos.line = start.line;
 			newPos.column = start.column;
-		} else if (Util.keyCode.DELETE == keyCode) {
+		} else if (Util.KEYCODE.DELETE == keyCode) {
 			// 向后删除一个字符
 			if (cursorPos.column == text.length) {
 				// 光标处于行尾
@@ -478,7 +478,7 @@ class Context {
 			this.setMaxWidth();
 		}
 		let historyObj = {
-			type: Util.command.INSERT,
+			type: Util.HISTORY_COMMAND.INSERT,
 			cursorPos: Object.assign({}, newPos),
 			preCursorPos: Object.assign({}, originPos),
 			text: deleteText,
@@ -645,7 +645,7 @@ class Context {
 			}
 		});
 		let historyObj = {
-			type: direct === 'down' ? Util.command.MOVEUP : Util.command.MOVEDOWN,
+			type: direct === 'down' ? Util.HISTORY_COMMAND.MOVEUP : Util.HISTORY_COMMAND.MOVEDOWN,
 			cursorPos: historyPosList,
 			searchConifg: searchConifg // 记录搜索配置
 		};
@@ -792,7 +792,7 @@ class Context {
 			}
 		});
 		let historyObj = {
-			type: direct === 'down' ? Util.command.DELETE_COPY_DOWN : Util.command.DELETE_COPY_UP,
+			type: direct === 'down' ? Util.HISTORY_COMMAND.DELETE_COPY_DOWN : Util.HISTORY_COMMAND.DELETE_COPY_UP,
 			cursorPos: historyPosList,
 			searchConifg: searchConifg // 记录搜索配置
 		};
@@ -881,7 +881,7 @@ class Context {
 			}
 		});
 		let historyObj = {
-			type: direct === 'down' ? Util.command.COPY_UP : Util.command.COPY_DOWN,
+			type: direct === 'down' ? Util.HISTORY_COMMAND.COPY_UP : Util.HISTORY_COMMAND.COPY_DOWN,
 			cursorPos: historyPosList,
 			searchConifg: command.searchConifg
 		};
@@ -912,7 +912,7 @@ class Context {
 			}
 		});
 		let historyObj = {
-			type: Util.command.DELETE_LINE,
+			type: Util.HISTORY_COMMAND.DELETE_LINE,
 			cursorPos: originList,
 			searchConifg: searchConifg
 		};
@@ -1001,7 +1001,7 @@ class Context {
 			this.cursor.addCursorPos(item);
 		});
 		let historyObj = {
-			type: Util.command.INSERT_LINE,
+			type: Util.HISTORY_COMMAND.INSERT_LINE,
 			cursorPos: originList,
 			text: texts,
 			searchConifg: searchConifg
@@ -1193,9 +1193,9 @@ class Context {
 			this.tabData.status !== '!!' && EventBus.$emit('git-diff', this.tabData.path);
 			this.render();
 			if (command) {
-				this.history.updateHistory({ type: Util.command.SPACE_TO_TAB, tabSize, space });
+				this.history.updateHistory({ type: Util.HISTORY_COMMAND.SPACE_TO_TAB, tabSize, space });
 			} else {
-				this.history.pushHistory({ type: Util.command.SPACE_TO_TAB, tabSize, space });
+				this.history.pushHistory({ type: Util.HISTORY_COMMAND.SPACE_TO_TAB, tabSize, space });
 			}
 		}
 
@@ -1293,9 +1293,9 @@ class Context {
 			this.tabData.status !== '!!' && EventBus.$emit('git-diff', this.tabData.path);
 			this.render();
 			if (command) {
-				this.history.updateHistory({ type: Util.command.TAB_TO_SPACE, tabSize, space });
+				this.history.updateHistory({ type: Util.HISTORY_COMMAND.TAB_TO_SPACE, tabSize, space });
 			} else {
-				this.history.pushHistory({ type: Util.command.TAB_TO_SPACE, tabSize, space });
+				this.history.pushHistory({ type: Util.HISTORY_COMMAND.TAB_TO_SPACE, tabSize, space });
 			}
 		}
 

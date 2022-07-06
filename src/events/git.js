@@ -1,6 +1,6 @@
 import EventBus from '@/event';
 import globalData from '@/data/globalData';
-import Util from '../util';
+import Util from '@/common/util';
 import Context from '@/module/context/index';
 import diffSequences from 'diff-sequences'
 import Ignore from 'ignore';
@@ -235,7 +235,6 @@ export default class {
 		let results = data.results;
 		let statusMap = {};
 		let dirStatus = [];
-		let statusLevel = { '?': 1, A: 2, M: 3, D: 4 };
 		globalData.fileStatus[gitDir] = statusMap;
 		globalData.dirStatus[gitDir] = dirStatus;
 		results.forEach(item => {
@@ -243,7 +242,9 @@ export default class {
 			statusMap[item.path] = item.status;
 			while (parentPath.length >= gitDir.length) {
 				if (statusMap[parentPath]) {
-					if (statusLevel[item.status] > statusLevel[statusMap[parentPath]]) {
+					let statusLevel1 = Util.getStatusLevel(item.status);
+					let statusLevel2 = Util.getStatusLevel(statusMap[parentPath]);
+					if (statusLevel1 > statusLevel2) {
 						statusMap[parentPath] = item.status;
 					}
 				} else {

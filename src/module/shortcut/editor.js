@@ -177,12 +177,12 @@ export default class {
 						this.selectAutoTip();
 					}
 					break;
-				case Util.keyCode.DELETE: //delete
-					this.deleteContent(Util.keyCode.DELETE);
+				case Util.KEYCODE.DELETE: //delete
+					this.deleteContent(Util.KEYCODE.DELETE);
 					this.autocomplete.search();
 					break;
-				case Util.keyCode.BACKSPACE: //backspace
-					this.deleteContent(Util.keyCode.BACKSPACE);
+				case Util.KEYCODE.BACKSPACE: //backspace
+					this.deleteContent(Util.KEYCODE.BACKSPACE);
 					this.autocomplete.search();
 					break;
 			}
