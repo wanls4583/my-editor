@@ -15,42 +15,10 @@ const regs = {
 
 class Context {
 	constructor(editor) {
+		this.editor = editor;
 		this.lineId = 1;
 		this.serial = 1;
-		this.initProperties(editor);
 		this.reset();
-	}
-	initProperties(editor) {
-		Util.defineProperties(this, editor, [
-			'editorId',
-			'tabData',
-			'language',
-			'tabSize',
-			'space',
-			'indent',
-			'nowCursorPos',
-			'maxLine',
-			'maxWidthObj',
-			'cursor',
-			'history',
-			'tokenizer',
-			'lint',
-			'folder',
-			'selecter',
-			'searcher',
-			'fSelecter',
-			'fSearcher',
-			'autocomplete',
-			'render',
-			'unFold',
-			'setNowCursorPos',
-			'setErrors',
-			'setAutoTip',
-			'getStrWidth'
-		]);
-		this.setEditorData = (prop, value) => {
-			editor.setData(prop, value);
-		};
 	}
 	reset() {
 		this.htmls = [];
@@ -77,6 +45,7 @@ class Context {
 	}
 	destroy() {
 		this.reset();
+		this.editor = null;
 		this.allText = '';
 		cancelIdleCallback(this.setLineWidthTimer);
 	}
@@ -86,13 +55,13 @@ class Context {
 		let serial = false;
 		if (!command) {
 			// 如果有选中区域，需要先删除选中区域
-			if (this.selecter.activedRanges.size) {
+			if (this.editor.selecter.activedRanges.size) {
 				let _historyArr = this.deleteContent();
 				// 连续操作标识
 				_historyArr.serial = this.serial++;
 				serial = _historyArr.serial;
 			}
-			cursorPosList = this.cursor.multiCursorPos.toArray();
+			cursorPosList = this.editor.cursor.multiCursorPos.toArray();
 		} else {
 			command.forEach(item => {
 				// 多个插入的光标可能相同，这里不能先添加光标
@@ -103,14 +72,14 @@ class Context {
 		historyArr.serial = serial;
 		if (!command) {
 			// 新增历史记录
-			this.history.pushHistory(historyArr);
+			this.editor.history.pushHistory(historyArr);
 		} else {
 			// 撤销或重做操作后，更新历史记录
 			historyArr.serial = command.serial;
-			historyArr.length && this.history.updateHistory(historyArr);
+			historyArr.length && this.editor.history.updateHistory(historyArr);
 		}
-		this.setNowCursorPos(this.cursor.multiCursorPos.get(0));
-		this.fSearcher.refreshSearch();
+		this.editor.setNowCursorPos(this.editor.cursor.multiCursorPos.get(0));
+		this.editor.fSearcher.refreshSearch();
 		return historyArr;
 	}
 	_insertMultiContent(text, cursorPosList, command) {
@@ -120,7 +89,7 @@ class Context {
 		let texts = text instanceof Array ? text : text.split(/\r\n|\n/);
 		let lineDelta = 0;
 		let columnDelta = 0;
-		this.cursor.clearCursorPos();
+		this.editor.cursor.clearCursorPos();
 		if (text === '\n') {
 			texts = ['\n'];
 		}
@@ -150,12 +119,12 @@ class Context {
 			lineDelta += historyObj.cursorPos.line - historyObj.preCursorPos.line;
 			columnDelta += historyObj.cursorPos.column - historyObj.preCursorPos.column;
 			if (margin === 'right') {
-				this.cursor.addCursorPos(historyObj.cursorPos);
+				this.editor.cursor.addCursorPos(historyObj.cursorPos);
 			} else {
-				this.cursor.addCursorPos(historyObj.preCursorPos);
+				this.editor.cursor.addCursorPos(historyObj.preCursorPos);
 			}
 			if (active) {
-				this.selecter.addRange({
+				this.editor.selecter.addRange({
 					start: historyObj.preCursorPos,
 					end: historyObj.cursorPos
 				});
@@ -188,7 +157,7 @@ class Context {
 		if (text.length > 1) {
 			// 换行对齐
 			if (!text[0].text && alignmentTab) {
-				let tabStr = _getTabStr.call(this, nowLineText, this.folder.getRangeFold(cursorPos.line, true));
+				let tabStr = _getTabStr.call(this, nowLineText, this.editor.folder.getRangeFold(cursorPos.line, true));
 				if (tabStr) {
 					text[1].text = tabStr + text[1].text.trimLeft();
 				}
@@ -208,16 +177,16 @@ class Context {
 			this.htmls.splice(cursorPos.line - 1, 1, text[0]);
 		}
 		newPos.line += text.length - 1;
-		this.setEditorData('maxLine', this.htmls.length);
-		this.lint.onInsertContentAfter(cursorPos.line, newPos.line);
-		this.tokenizer.onInsertContentAfter(cursorPos.line, newPos.line);
-		this.folder.onInsertContentAfter(Object.assign({}, cursorPos), Object.assign({}, newPos));
+		this.editor.setData('maxLine', this.htmls.length);
+		this.editor.lint.onInsertContentAfter(cursorPos.line, newPos.line);
+		this.editor.tokenizer.onInsertContentAfter(cursorPos.line, newPos.line);
+		this.editor.folder.onInsertContentAfter(Object.assign({}, cursorPos), Object.assign({}, newPos));
 		this.setLineWidth(text);
-		this.setErrors([]);
-		this.setAutoTip(null);
-		this.render(true);
+		this.editor.setErrors([]);
+		this.editor.setAutoTip(null);
+		this.editor.render(true);
 		this.contentChanged();
-		this.tabData.status !== '!!' && EventBus.$emit('git-diff', this.tabData.path);
+		this.editor.tabData.status !== '!!' && EventBus.$emit('git-diff', this.editor.tabData.path);
 		let historyObj = {
 			type: Util.HISTORY_COMMAND.DELETE,
 			cursorPos: Object.assign({}, newPos),
@@ -233,14 +202,14 @@ class Context {
 			if (spaceNum) {
 				tabNum = /\t+/.exec(spaceNum[0]);
 				tabNum = (tabNum && tabNum[0].length) || 0;
-				tabNum = tabNum + Math.ceil((spaceNum[0].length - tabNum) / this.tabSize);
+				tabNum = tabNum + Math.ceil((spaceNum[0].length - tabNum) / this.editor.tabSize);
 			}
 			tabNum += plus ? 1 : 0;
 			for (let i = 0; i < tabNum; i++) {
-				if (this.indent === 'tab') {
+				if (this.editor.indent === 'tab') {
 					tabStr += '\t';
 				} else {
-					tabStr += this.space;
+					tabStr += this.editor.space;
 				}
 			}
 			return tabStr;
@@ -260,8 +229,8 @@ class Context {
 				return obj;
 			});
 		} else {
-			this.cursor.multiCursorPos.forEach(item => {
-				let range = this.selecter.getRangeByCursorPos(item);
+			this.editor.cursor.multiCursorPos.forEach(item => {
+				let range = this.editor.selecter.getRangeByCursorPos(item);
 				if (range) {
 					if (Util.comparePos(range.start, item) === 0) {
 						range.margin = 'left';
@@ -277,33 +246,32 @@ class Context {
 		historyArr = this._deleteMultiContent(rangeList, keyCode);
 		if (!command) {
 			// 新增历史记录
-			historyArr.length && this.history.pushHistory(historyArr);
+			historyArr.length && this.editor.history.pushHistory(historyArr);
 		} else {
 			// 撤销或重做操作后，更新历史记录
 			historyArr.serial = command.serial;
-			this.history.updateHistory(historyArr);
+			this.editor.history.updateHistory(historyArr);
 			historyArr.forEach(item => {
-				this.cursor.addCursorPos(item.cursorPos);
+				this.editor.cursor.addCursorPos(item.cursorPos);
 			});
 		}
-		this.setNowCursorPos(this.cursor.multiCursorPos.get(0));
-		this.searcher.clearSearch();
-		this.fSearcher.refreshSearch();
+		this.editor.setNowCursorPos(this.editor.cursor.multiCursorPos.get(0));
+		this.editor.searcher.clearSearch();
+		this.editor.fSearcher.refreshSearch();
 		return historyArr;
 	}
 	_deleteMultiContent(rangeList, keyCode) {
-		let that = this;
 		let historyArr = [];
 		let historyObj = null;
 		let prePos = null;
 		let lineDelta = 0;
 		let columnDelta = 0;
-		this.cursor.clearCursorPos();
+		this.editor.cursor.clearCursorPos();
 		rangeList.forEach(item => {
 			if (item.start && item.end) {
-				_deleteRangePos(item);
+				_deleteRangePos.call(this, item);
 			} else {
-				_deleteCursorPos(item);
+				_deleteCursorPos.call(this, item);
 			}
 		});
 		return historyArr;
@@ -319,12 +287,12 @@ class Context {
 			} else {
 				columnDelta = 0;
 			}
-			historyObj = that._deleteContent(pos, keyCode);
+			historyObj = this._deleteContent(pos, keyCode);
 			historyObj.text && historyArr.push(historyObj);
 			prePos = historyObj.cursorPos;
 			lineDelta += historyObj.preCursorPos.line - prePos.line;
 			columnDelta += historyObj.preCursorPos.column - prePos.column;
-			that.cursor.addCursorPos({
+			this.editor.cursor.addCursorPos({
 				line: prePos.line,
 				column: prePos.column
 			});
@@ -345,12 +313,12 @@ class Context {
 			} else {
 				columnDelta = 0;
 			}
-			historyObj = that._deleteContent(rangePos, keyCode);
+			historyObj = this._deleteContent(rangePos, keyCode);
 			historyObj.text && historyArr.push(historyObj);
 			prePos = historyObj.cursorPos;
 			lineDelta += historyObj.preCursorPos.line - prePos.line;
 			columnDelta += historyObj.preCursorPos.column - prePos.column;
-			that.cursor.addCursorPos({
+			this.editor.cursor.addCursorPos({
 				line: prePos.line,
 				column: prePos.column
 			});
@@ -382,9 +350,9 @@ class Context {
 			startObj = this.htmls[start.line - 1];
 			text = startObj.text;
 			deleteText = this.getRangeText(range.start, range.end);
-			if (start.line == 1 && end.line == this.maxLine) {
+			if (start.line == 1 && end.line == this.editor.maxLine) {
 				//全选删除
-				rangeUuid = [this.maxWidthObj.lineId];
+				rangeUuid = [this.editor.maxWidthObj.lineId];
 				this.lineIdMap.clear();
 			} else {
 				rangeUuid = this.htmls.slice(start.line - 1, end.line).map(item => {
@@ -451,30 +419,30 @@ class Context {
 			}
 			startObj.text = text;
 		}
-		startObj.width = this.getStrWidth(startObj.text);
+		startObj.width = this.editor.getStrWidth(startObj.text);
 		startObj.tabNum = -1;
 		startObj.html = '';
 		startObj.tokens = null;
 		startObj.folds = null;
 		startObj.states = null;
 		startObj.stateFold = null;
-		this.setEditorData('maxLine', this.htmls.length);
-		this.lint.onDeleteContentAfter(originPos.line, newPos.line);
-		this.tokenizer.onDeleteContentAfter(originPos.line, newPos.line);
-		this.folder.onDeleteContentAfter(Object.assign({}, originPos), Object.assign({}, newPos));
-		this.setErrors([]);
-		this.setAutoTip(null);
-		this.render(true);
+		this.editor.setData('maxLine', this.htmls.length);
+		this.editor.lint.onDeleteContentAfter(originPos.line, newPos.line);
+		this.editor.tokenizer.onDeleteContentAfter(originPos.line, newPos.line);
+		this.editor.folder.onDeleteContentAfter(Object.assign({}, originPos), Object.assign({}, newPos));
+		this.editor.setErrors([]);
+		this.editor.setAutoTip(null);
+		this.editor.render(true);
 		this.contentChanged();
-		this.tabData.status !== '!!' && EventBus.$emit('git-diff', this.tabData.path);
+		this.editor.tabData.status !== '!!' && EventBus.$emit('git-diff', this.editor.tabData.path);
 		// 更新最大文本宽度
-		if (startObj.width >= this.maxWidthObj.width) {
-			this.setEditorData('maxWidthObj', {
+		if (startObj.width >= this.editor.maxWidthObj.width) {
+			this.editor.setData('maxWidthObj', {
 				lineId: startObj.lineId,
 				text: startObj.text,
 				width: startObj.width
 			});
-		} else if (rangeUuid.indexOf(this.maxWidthObj.lineId) > -1) {
+		} else if (rangeUuid.indexOf(this.editor.maxWidthObj.lineId) > -1) {
 			this.setMaxWidth();
 		}
 		let historyObj = {
@@ -490,7 +458,6 @@ class Context {
 	}
 	// 获取最大宽度
 	setMaxWidth() {
-		let that = this;
 		let index = 0;
 		let startTime = Date.now();
 		let maxWidthObj = {
@@ -498,11 +465,11 @@ class Context {
 			width: 0
 		};
 		clearTimeout(this.setMaxWidthTimer);
-		_setMaxWidth();
+		_setMaxWidth.call(this);
 
 		function _setMaxWidth() {
-			while (index < that.htmls.length) {
-				let item = that.htmls[index];
+			while (index < this.htmls.length) {
+				let item = this.htmls[index];
 				if (item.width > maxWidthObj.width) {
 					maxWidthObj = {
 						lineId: item.lineId,
@@ -515,12 +482,12 @@ class Context {
 					break;
 				}
 			}
-			if (index < that.htmls.length) {
-				that.setMaxWidthTimer = setTimeout(() => {
-					_setMaxWidth();
+			if (index < this.htmls.length) {
+				this.setMaxWidthTimer = setTimeout(() => {
+					_setMaxWidth.call(this);
 				}, 20);
 			} else {
-				that.setEditorData('maxWidthObj', maxWidthObj);
+				this.editor.setData('maxWidthObj', maxWidthObj);
 			}
 		}
 	}
@@ -529,11 +496,10 @@ class Context {
 	 * @param {Array} texts
 	 */
 	setLineWidth(texts) {
-		let that = this;
 		let index = 0;
-		let maxWidthObj = this.maxWidthObj;
+		let maxWidthObj = this.editor.maxWidthObj;
 		globalData.scheduler.removeTask(this.setLineWidthTask);
-		_setLineWidth();
+		_setLineWidth.call(this);
 
 		function _setLineWidth() {
 			let startTime = Date.now();
@@ -541,8 +507,8 @@ class Context {
 			let limit = 5;
 			while (index < texts.length) {
 				let lineObj = texts[index];
-				if (that.lineIdMap.has(lineObj.lineId)) {
-					let width = that.getStrWidth(lineObj.text);
+				if (this.lineIdMap.has(lineObj.lineId)) {
+					let width = this.editor.getStrWidth(lineObj.text);
 					lineObj.width = width;
 					if (width > maxWidthObj.width) {
 						maxWidthObj = {
@@ -558,10 +524,10 @@ class Context {
 					break;
 				}
 			}
-			that.setEditorData('maxWidthObj', maxWidthObj);
+			this.editor.setData('maxWidthObj', maxWidthObj);
 			if (index < texts.length) {
-				that.setLineWidthTask = globalData.scheduler.addTask(() => {
-					_setLineWidth();
+				this.setLineWidthTask = globalData.scheduler.addTask(() => {
+					_setLineWidth.call(this);
 				});
 			}
 		}
@@ -582,24 +548,24 @@ class Context {
 			searchConifg = command.searchConifg;
 			cursorPosList = command.cursorPos;
 		} else {
-			searchConifg = this.searcher.getConfig();
+			searchConifg = this.editor.searcher.getConfig();
 			cursorPosList = [];
 			// 过滤光标，去除上下相邻的光标
-			this.cursor.multiCursorPos.toArray().forEach(item => {
-				let range = this.selecter.getRangeByCursorPos(item); //当前光标处于活动区域边界
+			this.editor.cursor.multiCursorPos.toArray().forEach(item => {
+				let range = this.editor.selecter.getRangeByCursorPos(item); //当前光标处于活动区域边界
 				let pass = true;
 				let line = range ? range.start.line : item.line;
 				if (prePos) {
 					let preLine = prePos.end ? prePos.end.line : prePos.line;
 					if (preLine + 1 === line || preLine === line) {
 						//和之前的光标冲突，移除当前光标所处的活动区域
-						range && this.selecter.removeRange(range);
+						range && this.editor.selecter.removeRange(range);
 						pass = false;
 					}
 				}
 				if (pass) {
 					var enLine = (range && range.end.line) || line;
-					if ((line === 1 && direct === 'up') || (enLine === this.maxLine && direct === 'down')) {
+					if ((line === 1 && direct === 'up') || (enLine === this.editor.maxLine && direct === 'down')) {
 						pass = false;
 					} else {
 						if (range) {
@@ -627,21 +593,21 @@ class Context {
 				// 更新光标坐标
 				pos.line = pos.line + delta;
 			}
-			historyPosList.push(range ? this.selecter.clone(range, ['margin']) : Object.assign({}, pos));
+			historyPosList.push(range ? this.editor.selecter.clone(range, ['margin']) : Object.assign({}, pos));
 			index++;
 		}
 		if (!historyPosList.length) {
 			return;
 		}
-		this.searcher.clearSearch();
-		this.cursor.clearCursorPos();
+		this.editor.searcher.clearSearch();
+		this.editor.cursor.clearCursorPos();
 		// 恢复活动区域和光标
 		historyPosList.forEach(item => {
 			if (item.start) {
-				this.cursor.addCursorPos(item.margin === 'left' ? item.start : item.end);
-				this.selecter.addRange(item);
+				this.editor.cursor.addCursorPos(item.margin === 'left' ? item.start : item.end);
+				this.editor.selecter.addRange(item);
 			} else {
-				this.cursor.addCursorPos(item);
+				this.editor.cursor.addCursorPos(item);
 			}
 		});
 		let historyObj = {
@@ -651,14 +617,14 @@ class Context {
 		};
 		if (!command) {
 			// 新增历史记录
-			this.history.pushHistory(historyObj);
-			this.searcher.refreshSearch(searchConifg);
+			this.editor.history.pushHistory(historyObj);
+			this.editor.searcher.refreshSearch(searchConifg);
 		} else {
 			// 撤销或重做操作后，更新历史记录
-			this.history.updateHistory(historyObj);
-			this.searcher.refreshSearch(command.searchConifg);
+			this.editor.history.updateHistory(historyObj);
+			this.editor.searcher.refreshSearch(command.searchConifg);
 		}
-		this.fSearcher.refreshSearch();
+		this.editor.fSearcher.refreshSearch();
 	}
 	_moveLine(cursorPos, direct) {
 		let range = cursorPos.start ? cursorPos : null;
@@ -720,11 +686,11 @@ class Context {
 			searchConifg = command.searchConifg;
 			originList = command.cursorPos;
 		} else {
-			searchConifg = this.searcher.getConfig();
+			searchConifg = this.editor.searcher.getConfig();
 			originList = [];
 			// 过滤重叠光标和活动区域
-			this.cursor.multiCursorPos.toArray().forEach(item => {
-				let range = this.selecter.getRangeByCursorPos(item);
+			this.editor.cursor.multiCursorPos.toArray().forEach(item => {
+				let range = this.editor.selecter.getRangeByCursorPos(item);
 				let line = (range && range.start.line) || item.line;
 				let pass = true;
 				if (prePos) {
@@ -778,17 +744,17 @@ class Context {
 			} else {
 				originPos.line = line;
 			}
-			historyPosList.push(originPos.start ? this.selecter.clone(originPos, ['margin']) : Object.assign({}, originPos));
+			historyPosList.push(originPos.start ? this.editor.selecter.clone(originPos, ['margin']) : Object.assign({}, originPos));
 		});
-		this.searcher.clearSearch();
-		this.cursor.clearCursorPos();
+		this.editor.searcher.clearSearch();
+		this.editor.cursor.clearCursorPos();
 		// 恢复活动区域和光标
 		historyPosList.forEach(item => {
 			if (item.start) {
-				this.cursor.addCursorPos(item.margin === 'left' ? item.start : item.end);
-				this.selecter.addRange(item);
+				this.editor.cursor.addCursorPos(item.margin === 'left' ? item.start : item.end);
+				this.editor.selecter.addRange(item);
 			} else {
-				this.cursor.addCursorPos(item);
+				this.editor.cursor.addCursorPos(item);
 			}
 		});
 		let historyObj = {
@@ -798,14 +764,14 @@ class Context {
 		};
 		if (!command) {
 			// 新增历史记录
-			this.history.pushHistory(historyObj);
-			this.searcher.refreshSearch(searchConifg);
+			this.editor.history.pushHistory(historyObj);
+			this.editor.searcher.refreshSearch(searchConifg);
 		} else {
 			// 撤销或重做操作后，更新历史记录
-			this.history.updateHistory(historyObj);
-			this.searcher.refreshSearch(command.searchConifg);
+			this.editor.history.updateHistory(historyObj);
+			this.editor.searcher.refreshSearch(command.searchConifg);
 		}
-		this.fSearcher.refreshSearch();
+		this.editor.fSearcher.refreshSearch();
 	}
 	// 删除上面一行
 	deleteCopyLineUp(command) {
@@ -836,7 +802,7 @@ class Context {
 			endColumn = this.htmls[downLine - 1].text.length;
 			if (upLine < 1) {
 				upLine = 1;
-				if (downLine < this.maxLine) {
+				if (downLine < this.editor.maxLine) {
 					downLine++;
 					endColumn = 0;
 				}
@@ -867,17 +833,17 @@ class Context {
 					originPos.line = item.cursorPos.line;
 				}
 			}
-			historyPosList.push(originPos.start ? this.selecter.clone(originPos, ['margin']) : Object.assign({}, originPos));
+			historyPosList.push(originPos.start ? this.editor.selecter.clone(originPos, ['margin']) : Object.assign({}, originPos));
 		});
-		this.searcher.clearSearch();
-		this.cursor.clearCursorPos();
+		this.editor.searcher.clearSearch();
+		this.editor.cursor.clearCursorPos();
 		// 恢复活动区域和光标
 		historyPosList.forEach(item => {
 			if (item.start) {
-				this.cursor.addCursorPos(item.margin === 'left' ? item.start : item.end);
-				this.selecter.addRange(item);
+				this.editor.cursor.addCursorPos(item.margin === 'left' ? item.start : item.end);
+				this.editor.selecter.addRange(item);
 			} else {
-				this.cursor.addCursorPos(item);
+				this.editor.cursor.addCursorPos(item);
 			}
 		});
 		let historyObj = {
@@ -885,9 +851,9 @@ class Context {
 			cursorPos: historyPosList,
 			searchConifg: command.searchConifg
 		};
-		this.history.updateHistory(historyObj);
-		this.searcher.refreshSearch(command.searchConifg);
-		this.fSearcher.refreshSearch();
+		this.editor.history.updateHistory(historyObj);
+		this.editor.searcher.refreshSearch(command.searchConifg);
+		this.editor.fSearcher.refreshSearch();
 	}
 	// 插入当前行
 	insertLine(command) {
@@ -901,14 +867,14 @@ class Context {
 			cursorPosList.push({ line: line, column: this.htmls[line - 1].text.length });
 		});
 		this._insertMultiContent(texts, cursorPosList);
-		this.searcher.clearSearch();
-		this.cursor.clearCursorPos();
+		this.editor.searcher.clearSearch();
+		this.editor.cursor.clearCursorPos();
 		originList.forEach(item => {
 			if (item.start) {
-				this.cursor.addCursorPos(item.margin === 'left' ? item.start : item.end);
-				this.selecter.addRange(item);
+				this.editor.cursor.addCursorPos(item.margin === 'left' ? item.start : item.end);
+				this.editor.selecter.addRange(item);
 			} else {
-				this.cursor.addCursorPos(item);
+				this.editor.cursor.addCursorPos(item);
 			}
 		});
 		let historyObj = {
@@ -917,9 +883,9 @@ class Context {
 			searchConifg: searchConifg
 		};
 		// 撤销或重做操作后，更新历史记录
-		this.history.updateHistory(historyObj);
-		this.searcher.refreshSearch(command.searchConifg);
-		this.fSearcher.refreshSearch();
+		this.editor.history.updateHistory(historyObj);
+		this.editor.searcher.refreshSearch(command.searchConifg);
+		this.editor.fSearcher.refreshSearch();
 	}
 	// 删除当前行
 	deleteLine(command) {
@@ -933,9 +899,9 @@ class Context {
 			searchConifg = command.searchConifg;
 			originList = command.cursorPos;
 		} else {
-			searchConifg = this.searcher.getConfig();
-			this.cursor.multiCursorPos.forEach(item => {
-				let range = this.selecter.getRangeByCursorPos(item);
+			searchConifg = this.editor.searcher.getConfig();
+			this.editor.cursor.multiCursorPos.forEach(item => {
+				let range = this.editor.selecter.getRangeByCursorPos(item);
 				let line = (range && range.start.line) || item.line;
 				let pass = true;
 				if (prePos) {
@@ -971,7 +937,7 @@ class Context {
 			endColumn = this.htmls[downLine - 1].text.length;
 			if (upLine < 1) {
 				upLine = 1;
-				if (downLine < this.maxLine) {
+				if (downLine < this.editor.maxLine) {
 					downLine++;
 					endColumn = 0;
 				}
@@ -995,10 +961,10 @@ class Context {
 			column = column > this.htmls[line - 1].text.length ? this.htmls[line - 1].text.length : column;
 			historyPosList.push({ line: line, column: column });
 		});
-		this.searcher.clearSearch();
-		this.cursor.clearCursorPos();
+		this.editor.searcher.clearSearch();
+		this.editor.cursor.clearCursorPos();
 		historyPosList.forEach(item => {
-			this.cursor.addCursorPos(item);
+			this.editor.cursor.addCursorPos(item);
 		});
 		let historyObj = {
 			type: Util.HISTORY_COMMAND.INSERT_LINE,
@@ -1008,13 +974,13 @@ class Context {
 		};
 		if (!command) {
 			// 新增历史记录
-			this.history.pushHistory(historyObj);
+			this.editor.history.pushHistory(historyObj);
 		} else {
 			// 撤销或重做操作后，更新历史记录
-			this.history.updateHistory(historyObj);
-			this.searcher.refreshSearch(command.searchConifg);
+			this.editor.history.updateHistory(historyObj);
+			this.editor.searcher.refreshSearch(command.searchConifg);
 		}
-		this.fSearcher.refreshSearch();
+		this.editor.fSearcher.refreshSearch();
 	}
 	// 文件变动，重写加载文件内容
 	reload(text) {
@@ -1022,7 +988,7 @@ class Context {
 			start: { line: 1, column: 0 },
 			end: { line: this.htmls.length, column: this.htmls.peek().text.length }
 		};
-		this.searcher.clearSearch();
+		this.editor.searcher.clearSearch();
 		this.replace(text, [range]);
 	}
 	replace(texts, ranges) {
@@ -1030,11 +996,11 @@ class Context {
 		let serial = this.serial++;
 		historyArr = this._deleteMultiContent(ranges);
 		historyArr.serial = serial;
-		historyArr.length && this.history.pushHistory(historyArr);
-		historyArr = this._insertMultiContent(texts, this.cursor.multiCursorPos.toArray());
+		historyArr.length && this.editor.history.pushHistory(historyArr);
+		historyArr = this._insertMultiContent(texts, this.editor.cursor.multiCursorPos.toArray());
 		historyArr.serial = serial;
-		historyArr.length && this.history.pushHistory(historyArr);
-		return this.fSearcher.refreshSearch();
+		historyArr.length && this.editor.history.pushHistory(historyArr);
+		return this.editor.fSearcher.refreshSearch();
 	}
 	// 点击自动提示替换输入的内容
 	replaceTip(tip) {
@@ -1052,7 +1018,7 @@ class Context {
 		_updatePos.call(this);
 		if (tip.type === Enum.TOKEN_TYPE.CSS_PROPERTY) {
 			//选中css属性名后，自动弹出属性值列表
-			this.autocomplete.search();
+			this.editor.autocomplete.search();
 		}
 
 		function _getResult(tip) {
@@ -1077,7 +1043,7 @@ class Context {
 
 		function _getRanges() {
 			let ranges = [];
-			this.cursor.multiCursorPos.forEach(cursorPos => {
+			this.editor.cursor.multiCursorPos.forEach(cursorPos => {
 				let range = null;
 				range = {
 					start: { line: cursorPos.line, column: cursorPos.column - word.length },
@@ -1095,16 +1061,16 @@ class Context {
 				if (exec) {
 					let text = result.slice(exec.index);
 					let deltaArr = text.split('\n');
-					let multiCursorPos = this.cursor.multiCursorPos.toArray();
+					let multiCursorPos = this.editor.cursor.multiCursorPos.toArray();
 					for (let i = multiCursorPos.length - 1; i >= 0; i--) {
 						let cursorPos = _getDeltaPos.call(this, deltaArr, multiCursorPos[i]);
-						this.cursor.updateCursorPos(multiCursorPos[i], cursorPos.line, cursorPos.column);
+						this.editor.cursor.updateCursorPos(multiCursorPos[i], cursorPos.line, cursorPos.column);
 					}
 				}
 			} else if (tip.type === Enum.TOKEN_TYPE.ATTR_NAME) {
 				//选中标签属性后，光标移动端""内
-				this.cursor.multiCursorPos.forEach(item => {
-					this.cursor.moveCursor(item, 'left');
+				this.editor.cursor.multiCursorPos.forEach(item => {
+					this.editor.cursor.moveCursor(item, 'left');
 				});
 			}
 		}
@@ -1126,24 +1092,24 @@ class Context {
 	}
 	convertTabToSpace(command) {
 		let contentChanged = false;
-		let tabSize = this.tabSize;
-		let space = this.space;
+		let tabSize = this.editor.tabSize;
+		let space = this.editor.space;
 		if (command) {
 			tabSize = command.tabSize;
 			space = command.space;
 		}
-		this.cursor.multiCursorPos.forEach(cursorPos => {
+		this.editor.cursor.multiCursorPos.forEach(cursorPos => {
 			_checkPos.call(this, cursorPos);
 		});
-		this.selecter.ranges.forEach(range => {
+		this.editor.selecter.ranges.forEach(range => {
 			_checkPos.call(this, range.start);
 			_checkPos.call(this, range.end);
 		});
-		this.fSelecter.ranges.forEach(range => {
+		this.editor.fSelecter.ranges.forEach(range => {
 			_checkPos.call(this, range.start);
 			_checkPos.call(this, range.end);
 		});
-		this.folder.folds.forEach(fold => {
+		this.editor.folder.folds.forEach(fold => {
 			let text = this.htmls[fold.start.line - 1].text;
 			let tabCount = _getTabNum(text);
 			if (tabCount) {
@@ -1190,12 +1156,12 @@ class Context {
 		if (contentChanged) {
 			this.contentChanged();
 			EventBus.$emit('indent-change', 'space');
-			this.tabData.status !== '!!' && EventBus.$emit('git-diff', this.tabData.path);
-			this.render();
+			this.editor.tabData.status !== '!!' && EventBus.$emit('git-diff', this.editor.tabData.path);
+			this.editor.render();
 			if (command) {
-				this.history.updateHistory({ type: Util.HISTORY_COMMAND.SPACE_TO_TAB, tabSize, space });
+				this.editor.history.updateHistory({ type: Util.HISTORY_COMMAND.SPACE_TO_TAB, tabSize, space });
 			} else {
-				this.history.pushHistory({ type: Util.HISTORY_COMMAND.SPACE_TO_TAB, tabSize, space });
+				this.editor.history.pushHistory({ type: Util.HISTORY_COMMAND.SPACE_TO_TAB, tabSize, space });
 			}
 		}
 
@@ -1224,26 +1190,26 @@ class Context {
 	}
 	convertSpaceToTab(command) {
 		let contentChanged = false;
-		let tabSize = this.tabSize;
-		let space = this.space;
+		let tabSize = this.editor.tabSize;
+		let space = this.editor.space;
 		if (command) {
 			tabSize = command.tabSize;
 			space = command.space;
 		}
 		let indexReg = new RegExp(`^(\\t|${space})+`);
 		let reg = new RegExp(`(?<=^\\s*)${space}`, 'g');
-		this.cursor.multiCursorPos.forEach(cursorPos => {
+		this.editor.cursor.multiCursorPos.forEach(cursorPos => {
 			_checkPos.call(this, cursorPos);
 		});
-		this.selecter.ranges.forEach(range => {
+		this.editor.selecter.ranges.forEach(range => {
 			_checkPos.call(this, range.start);
 			_checkPos.call(this, range.end);
 		});
-		this.fSelecter.ranges.forEach(range => {
+		this.editor.fSelecter.ranges.forEach(range => {
 			_checkPos.call(this, range.start);
 			_checkPos.call(this, range.end);
 		});
-		this.folder.folds.forEach(fold => {
+		this.editor.folder.folds.forEach(fold => {
 			let text = this.htmls[fold.start.line - 1].text;
 			let tabCount = _getTabNum(text);
 			if (tabCount) {
@@ -1290,12 +1256,12 @@ class Context {
 		if (contentChanged) {
 			this.contentChanged();
 			EventBus.$emit('indent-change', 'tab');
-			this.tabData.status !== '!!' && EventBus.$emit('git-diff', this.tabData.path);
-			this.render();
+			this.editor.tabData.status !== '!!' && EventBus.$emit('git-diff', this.editor.tabData.path);
+			this.editor.render();
 			if (command) {
-				this.history.updateHistory({ type: Util.HISTORY_COMMAND.TAB_TO_SPACE, tabSize, space });
+				this.editor.history.updateHistory({ type: Util.HISTORY_COMMAND.TAB_TO_SPACE, tabSize, space });
 			} else {
-				this.history.pushHistory({ type: Util.HISTORY_COMMAND.TAB_TO_SPACE, tabSize, space });
+				this.editor.history.pushHistory({ type: Util.HISTORY_COMMAND.TAB_TO_SPACE, tabSize, space });
 			}
 		}
 
@@ -1323,7 +1289,7 @@ class Context {
 	}
 	contentChanged() {
 		this.allText = '';
-		EventBus.$emit('editor-content-change', { id: this.editorId, path: this.tabData.path });
+		EventBus.$emit('editor-content-change', { id: this.editor.editorId, path: this.editor.tabData.path });
 	}
 	// 获取选中范围内的文本
 	getRangeText(start, end) {
@@ -1336,7 +1302,7 @@ class Context {
 				return item.text;
 			});
 			text += arr.length ? '\n' + arr.join('\n') : '';
-			if (end.line <= this.maxLine) {
+			if (end.line <= this.editor.maxLine) {
 				text += '\n' + this.htmls[end.line - 1].text.slice(0, end.column);
 			}
 		} else {
@@ -1349,8 +1315,8 @@ class Context {
 		let text = '';
 		let prePos = null;
 		let ranges = [];
-		this.cursor.multiCursorPos.forEach(item => {
-			let range = this.selecter.getRangeByCursorPos(item);
+		this.editor.cursor.multiCursorPos.forEach(item => {
+			let range = this.editor.selecter.getRangeByCursorPos(item);
 			let start = null;
 			if (range) {
 				ranges.push(range);
@@ -1386,9 +1352,9 @@ class Context {
 		});
 		if (cut) {
 			let historyArr = this._deleteMultiContent(ranges);
-			historyArr.length && this.history.pushHistory(historyArr);
-			this.searcher.clearSearch();
-			this.fSearcher.refreshSearch();
+			historyArr.length && this.editor.history.pushHistory(historyArr);
+			this.editor.searcher.clearSearch();
+			this.editor.fSearcher.refreshSearch();
 		}
 		return text.slice(1);
 	}
