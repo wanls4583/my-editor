@@ -1,4 +1,5 @@
 import EventBus from '@/event';
+import Util from '@/common/util';
 import globalData from '@/data/globalData';
 
 const path = window.require('path');
@@ -27,7 +28,7 @@ export default class {
 			name = path.basename(dirPath);
 			tab.name = name;
 			tab.path = dirPath;
-			tab.id = this.terminalId++;
+			tab.id = Util.getUUID();
 			this.terminalList.push(tab);
 			EventBus.$emit('terminal-change', tab.id);
 		});
@@ -48,6 +49,9 @@ export default class {
 		});
 		EventBus.$on('terminal-close-all', id => {
 			this.terminalList.empty();
+			if (globalData.views.terminal) {
+				EventBus.$emit('terminal-toggle');
+			}
 		});
 		EventBus.$on('terminal-loaded', list => {
 			this.loadTerminal(list);
@@ -77,6 +81,9 @@ export default class {
 				}
 				break;
 			}
+		}
+		if (this.terminalList.length === 0 && globalData.views.terminal) {
+			EventBus.$emit('terminal-toggle');
 		}
 	}
 	closeTerminalToLeft(id) {
