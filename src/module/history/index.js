@@ -7,29 +7,14 @@ import Util from '@/common/util';
 import EventBus from '@/event';
 export default class {
 	constructor(editor, context) {
+		this.editor = editor;
+		this.context = context;
 		this.history = [];
 		this.history.index = 0;
-		this.initProperties(editor, context);
-	}
-	initProperties(editor, context) {
-		Util.defineProperties(this, editor, ['editorId', 'cursor']);
-		Util.defineProperties(this, context, [
-			'insertContent',
-			'deleteContent',
-			'moveLineUp',
-			'moveLineDown',
-			'copyLineUp',
-			'copyLineDown',
-			'deleteCopyLineUp',
-			'deleteCopyLineDown',
-			'insertLine',
-			'deleteLine',
-			'replace',
-			'convertTabToSpace',
-			'convertSpaceToTab',
-		]);
 	}
 	destroy() {
+		this.editor = null;
+		this.context = null;
 		this.history = [];
 	}
 	// 撤销操作
@@ -44,7 +29,7 @@ export default class {
 				_command && _command.serial === command.serial && this.undo();
 			}
 			if (this.history.index === this.savedIndex) {
-				EventBus.$emit('editor-saved', this.editorId);
+				EventBus.$emit('editor-saved', this.editor.editorId);
 			}
 		}
 	}
@@ -60,7 +45,7 @@ export default class {
 				_command && _command.serial === command.serial && this.redo();
 			}
 			if (this.history.index === this.savedIndex) {
-				EventBus.$emit('editor-saved', this.editorId);
+				EventBus.$emit('editor-saved', this.editor.editorId);
 			}
 		}
 	}
@@ -69,62 +54,62 @@ export default class {
 		let commandType = command.type || (command instanceof Array ? command[0].type : command.type);
 		switch (commandType) {
 			case Util.HISTORY_COMMAND.DELETE:
-				this.cursor.clearCursorPos();
-				this.deleteContent(Util.KEYCODE.BACKSPACE, command);
+				this.editor.cursor.clearCursorPos();
+				this.context.deleteContent(Util.KEYCODE.BACKSPACE, command);
 				break;
 			case Util.HISTORY_COMMAND.INSERT:
-				this.cursor.clearCursorPos();
+				this.editor.cursor.clearCursorPos();
 				if (command instanceof Array) {
 					var text = [];
 					command.forEach(item => {
 						text.push(item.text);
 					});
-					this.insertContent(text, command);
+					this.context.insertContent(text, command);
 				} else {
-					this.insertContent(command.text, command);
+					this.context.insertContent(command.text, command);
 				}
 				break;
 			case Util.HISTORY_COMMAND.DELETE_LINE:
-				this.cursor.clearCursorPos();
-				this.deleteLine(command);
+				this.editor.cursor.clearCursorPos();
+				this.context.deleteLine(command);
 				break;
 			case Util.HISTORY_COMMAND.INSERT_LINE:
-				this.cursor.clearCursorPos();
-				this.insertLine(command);
+				this.editor.cursor.clearCursorPos();
+				this.context.insertLine(command);
 				break;
 			case Util.HISTORY_COMMAND.MOVEUP:
-				this.cursor.clearCursorPos();
-				this.moveLineUp(command);
+				this.editor.cursor.clearCursorPos();
+				this.context.moveLineUp(command);
 				break;
 			case Util.HISTORY_COMMAND.MOVEDOWN:
-				this.cursor.clearCursorPos();
-				this.moveLineDown(command);
+				this.editor.cursor.clearCursorPos();
+				this.context.moveLineDown(command);
 				break;
 			case Util.HISTORY_COMMAND.COPY_DOWN:
-				this.cursor.clearCursorPos();
-				this.copyLineDown(command);
+				this.editor.cursor.clearCursorPos();
+				this.context.copyLineDown(command);
 				break;
 			case Util.HISTORY_COMMAND.DELETE_COPY_DOWN:
-				this.cursor.clearCursorPos();
-				this.deleteCopyLineDown(command);
+				this.editor.cursor.clearCursorPos();
+				this.context.deleteCopyLineDown(command);
 				break;
 			case Util.HISTORY_COMMAND.COPY_UP:
-				this.cursor.clearCursorPos();
-				this.copyLineUp(command);
+				this.editor.cursor.clearCursorPos();
+				this.context.copyLineUp(command);
 				break;
 			case Util.HISTORY_COMMAND.DELETE_COPY_UP:
-				this.cursor.clearCursorPos();
-				this.deleteCopyLineUp(command);
+				this.editor.cursor.clearCursorPos();
+				this.context.deleteCopyLineUp(command);
 				break;
 			case Util.HISTORY_COMMAND.REPLACE:
-				this.cursor.clearCursorPos();
-				this.replace(command.text, command.cursorPos, command);
+				this.editor.cursor.clearCursorPos();
+				this.context.replace(command.text, command.cursorPos, command);
 				break;
 			case Util.HISTORY_COMMAND.TAB_TO_SPACE:
-				this.convertTabToSpace(command);
+				this.context.convertTabToSpace(command);
 				break;
 			case Util.HISTORY_COMMAND.SPACE_TO_TAB:
-				this.convertSpaceToTab(command);
+				this.context.convertSpaceToTab(command);
 				break;
 		}
 	}
@@ -133,21 +118,20 @@ export default class {
 		while (this.history.length > this.history.index) {
 			this.history.pop();
 		}
-		let that = this;
 		let lastCommand = this.history[this.history.index - 1];
 		command = this.sortComand(command);
 		if (command instanceof Array && !command.length) {
 			return;
 		}
 		if (lastCommand instanceof Array && command instanceof Array && lastCommand.length === command.length && Date.now() - this.pushHistoryTime < 2000) {
-			if (_checkSameOp(lastCommand) && _checkSameOp(command) && _combCheck(lastCommand[0], command[0])) {
+			if (_checkSameOp(lastCommand) && _checkSameOp(command) && _combCheck.call(this, lastCommand[0], command[0])) {
 				for (let i = 0; i < lastCommand.length; i++) {
 					_combCommand(lastCommand[i], command[i]);
 				}
 			} else {
 				this.history.push(command);
 			}
-		} else if (_combCheck(lastCommand, command)) {
+		} else if (_combCheck.call(this, lastCommand, command)) {
 			_combCommand(lastCommand, command);
 		} else {
 			this.history.push(command);
@@ -171,7 +155,7 @@ export default class {
 				lastCommand &&
 				lastCommand.type == command.type &&
 				lastCommand.preCursorPos.line == command.cursorPos.line &&
-				Date.now() - that.pushHistoryTime < 2000
+				Date.now() - this.pushHistoryTime < 2000
 			) {
 				if (lastCommand.type == Util.HISTORY_COMMAND.DELETE) {
 					if (Util.comparePos(lastCommand.cursorPos, command.preCursorPos) == 0) {

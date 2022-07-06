@@ -115,9 +115,9 @@ export default class {
         cursorPos.line = line;
         cursorPos.column = column;
         this.multiCursorPos.insert(cursorPos);
-        if (cursorPos === this.this.editor.nowCursorPos) {
+        if (cursorPos === this.editor.nowCursorPos) {
             //触发滚动
-            this.editor.setNowCursorPos(this.this.editor.nowCursorPos);
+            this.editor.setNowCursorPos(this.editor.nowCursorPos);
         } else {
             this.editor.renderCursor();
         }
@@ -128,7 +128,7 @@ export default class {
         if (cursorPos) {
             cursorPos.del = true;
             this.multiCursorPos.delete(cursorPos);
-            if (cursorPos === this.this.editor.nowCursorPos) {
+            if (cursorPos === this.editor.nowCursorPos) {
                 this.editor.setNowCursorPos(null);
             }
             this.editor.renderCursor();
