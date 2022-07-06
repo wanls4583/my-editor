@@ -9,61 +9,37 @@ import globalData from '../../data/globalData';
 
 export default class {
 	constructor(editor, context) {
-		this.initProperties(editor, context);
-	}
-	initProperties(editor, context) {
-		Util.defineProperties(this, editor, [
-			'editorId',
-			'nowCursorPos',
-			'cursor',
-			'selecter',
-			'searcher',
-			'autocomplete',
-			'fSearcher',
-			'history',
-			'autoTipList',
-			'setAutoTip',
-			'prevAutoTip',
-			'nextAutoTip',
-			'selectAutoTip',
-			'searchWord',
-			'openSearch',
-			'$emit'
-		]);
-		Util.defineProperties(this, context, ['htmls', 'insertContent', 'deleteContent', 'moveLineUp', 'moveLineDown', 'copyLineUp', 'copyLineDown', 'deleteLine']);
-		this.setEditorData = (prop, value) => {
-			editor.setData(prop, value);
-		};
+		this.editor = editor;
+		this.context = context;
 	}
 	onKeydown(e) {
-		let that = this;
 		if (e.ctrlKey && e.shiftKey) {
 			e.preventDefault();
 			switch (e.keyCode) {
 				case 37: //ctrl+shift+left
-					this.selecter.select('left', true);
+					this.editor.selecter.select('left', true);
 					break;
 				case 38: //ctrl+shift+up
-					this.moveLineUp();
+					this.context.moveLineUp();
 					break;
 				case 39: //ctrl+shift+right
-					this.selecter.select('right', true);
+					this.editor.selecter.select('right', true);
 					break;
 				case 40: //ctrl+shift+down
-					this.moveLineDown();
+					this.context.moveLineDown();
 					break;
 				case 68: //ctrl+shift+D
-					this.copyLineUp();
+					this.context.copyLineUp();
 					break;
 				case 72: //ctrl+shift+H
 					EventBus.$emit('editor-format', globalData.nowEditorId);
 					break;
 				case 75: //ctrl+shift+K
-					this.deleteLine();
+					this.context.deleteLine();
 					break;
 				case 76: //ctrl+alt+L
 					e.preventDefault();
-					this.cursor.addCursorLineEnds();
+					this.editor.cursor.addCursorLineEnds();
 					break;
 			}
 			return false;
@@ -71,133 +47,133 @@ export default class {
 			switch (e.keyCode) {
 				case 38: //ctrl+alt+up
 					e.preventDefault();
-					this.cursor.addCursorAbove();
+					this.editor.cursor.addCursorAbove();
 					break;
 				case 40: //ctrl+alt+down
 					e.preventDefault();
-					this.cursor.addCursorBelow();
+					this.editor.cursor.addCursorBelow();
 					break;
 			}
 		} else if (e.altKey && e.shiftKey) {
 			switch (e.keyCode) {
 				case 40: //alt+shift+down
 					e.preventDefault();
-					this.copyLineDown();
+					this.context.copyLineDown();
 					break;
 			}
 		} else if (e.ctrlKey) {
 			switch (e.keyCode) {
 				case 37: //left arrow
-					_moveCursor('left', true);
+					_moveCursor.call(this, 'left', true);
 					break;
 				case 39: //right arrow
-					_moveCursor('right', true);
+					_moveCursor.call(this, 'right', true);
 					break;
 				case 65: //ctrl+A,全选
 					e.preventDefault();
-					this.selecter.selectAll();
+					this.editor.selecter.selectAll();
 					break;
 				case 68: //ctrl+D，搜素
 					e.preventDefault();
-					this.searchWord('down');
+					this.editor.searchWord('down');
 					break;
 				case 70: //ctrl+F，搜素
 					e.preventDefault();
-					this.openSearch();
+					this.editor.openSearch();
 					break;
 				case 72: //ctrl+H，搜素替换
 					e.preventDefault();
-					this.openSearch(true);
+					this.editor.openSearch(true);
 					break;
 				case 83: //ctrl+s 保存
-					this.$emit('file-save', { id: this.editorId });
+					EventBus.$emit('file-save', { id: this.editor.editorId });
 					break;
 				case 90: //ctrl+Z，撤销
 				case 122:
 					e.preventDefault();
-					this.history.undo();
+					this.editor.history.undo();
 					break;
 				case 89: //ctrl+Y，重做
 				case 121:
 					e.preventDefault();
-					this.history.redo();
+					this.editor.history.redo();
 					break;
 			}
 		} else if (e.shiftKey) {
 			switch (e.keyCode) {
 				case 37: //left arrow
-					this.selecter.select('left');
+					this.editor.selecter.select('left');
 					break;
 				case 38: //up arrow
-					this.selecter.select('up');
+					this.editor.selecter.select('up');
 					break;
 				case 39: //right arrow
-					this.selecter.select('right');
+					this.editor.selecter.select('right');
 					break;
 				case 40: //down arrow
-					this.selecter.select('down');
+					this.editor.selecter.select('down');
 					break;
 			}
 		} else {
 			switch (e.keyCode) {
 				case 9: //tab键
 					e.preventDefault();
-					this.autocomplete.emmet();
+					this.editor.autocomplete.emmet();
 					break;
 				case 37: //left arrow
-					_moveCursor('left');
+					_moveCursor.call(this, 'left');
 					break;
 				case 35: //end键
-					_moveCursor('end');
+					_moveCursor.call(this, 'end');
 					break;
 				case 36: //home键
-					_moveCursor('home');
+					_moveCursor.call(this, 'home');
 					break;
 				case 38: //up arrow
-					if (this.autoTipList && this.autoTipList.length) {
-						that.prevAutoTip();
+					if (this.editor.autoTipList && this.editor.autoTipList.length) {
+						this.editor.prevAutoTip();
 					} else {
-						_moveCursor('up');
+						_moveCursor.call(this, 'up');
 					}
 					break;
 				case 39: //right arrow
-					_moveCursor('right');
+					_moveCursor.call(this, 'right');
 					break;
 				case 40: //down arrow
-					if (this.autoTipList && this.autoTipList.length) {
-						that.nextAutoTip();
+					if (this.editor.autoTipList && this.editor.autoTipList.length) {
+						this.editor.nextAutoTip();
 					} else {
-						_moveCursor('down');
+						_moveCursor.call(this, 'down');
 					}
 					break;
 				case 13:
 				case 100: //enter
-					if (this.autoTipList && this.autoTipList.length) {
+					if (this.editor.autoTipList && this.editor.autoTipList.length) {
 						e.preventDefault();
-						this.selectAutoTip();
+						this.editor.selectAutoTip();
 					}
 					break;
 				case Util.KEYCODE.DELETE: //delete
-					this.deleteContent(Util.KEYCODE.DELETE);
-					this.autocomplete.search();
+					this.context.deleteContent(Util.KEYCODE.DELETE);
+					this.editor.autocomplete.search();
 					break;
 				case Util.KEYCODE.BACKSPACE: //backspace
-					this.deleteContent(Util.KEYCODE.BACKSPACE);
-					this.autocomplete.search();
+					this.context.deleteContent(Util.KEYCODE.BACKSPACE);
+					this.editor.autocomplete.search();
 					break;
 			}
 		}
 
 		function _moveCursor(direct, wholeWord) {
 			//ctrl+d后，第一次移动光标只是取消选中状态
-			if (!that.selecter.getRangeByCursorPos(that.nowCursorPos)) {
-				that.cursor.multiCursorPos.forEach(cursorPos => {
-					that.cursor.moveCursor(cursorPos, direct, wholeWord);
+			if (!this.editor.selecter.getRangeByCursorPos(this.editor.nowCursorPos)) {
+				this.editor.cursor.multiCursorPos.forEach(cursorPos => {
+					this.editor.cursor.moveCursor(cursorPos, direct, wholeWord);
 				});
 			}
-			that.setAutoTip(null); //取消自动提示
-			that.searcher.clearSearch();
-			that.fSearcher.clearActive();
+			this.editor.setAutoTip(null); //取消自动提示
+			this.editor.searcher.clearSearch();
+			this.editor.fSearcher.clearActive();
 		}
 	}
 }

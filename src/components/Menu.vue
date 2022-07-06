@@ -143,7 +143,6 @@ export default {
 			this.allMenuList = [];
 			this.originMenuList = [];
 			if (menuList[0] && !(menuList[0] instanceof Array)) {
-				this.originMenuList = this.menuList;
 				menuList = [menuList];
 			}
 			menuList.forEach((group, gIndex) => {

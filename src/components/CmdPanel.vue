@@ -117,7 +117,7 @@ export default {
 			if (this.searchText.startsWith(':')) {
 				let editor = globalData.nowEditorId && globalData.$mainWin.getNowEditor();
 				if (editor) {
-					this.cmdList = [{ name: `Current Line：${editor.cursor.nowCursorPos.line}，Type a Line number between 1 and ${editor.maxLine} to navigate to` }];
+					this.cmdList = [{ name: `Current Line：${editor.nowCursorPos.line}，Type a Line number between 1 and ${editor.maxLine} to navigate to` }];
 					this.goToLine();
 				} else {
 					this.cmdList = [{ name: 'Open a Editor first to go to a line' }];

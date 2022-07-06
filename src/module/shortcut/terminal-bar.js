@@ -6,12 +6,7 @@
 import Util from '@/common/util';
 
 export default class {
-	constructor(terminalBar) {
-		this.initProperties(terminalBar);
-	}
-	initProperties(terminalBar) {
-		Util.defineProperties(this, terminalBar, ['$emit']);
-	}
+	constructor() { }
 	onKeydown(e) {
 		if (e.ctrlKey) {
 			if (this.pressK) {

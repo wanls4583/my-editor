@@ -6,10 +6,7 @@
 import EventBus from '@/event';
 
 export default class {
-	constructor(titleBar) {
-		this.initProperties(titleBar);
-	}
-	initProperties(titleBar) {}
+	constructor() { }
 	onKeydown(e) {
 		if (e.ctrlKey) {
 			if (this.pressK) {

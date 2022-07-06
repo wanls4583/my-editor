@@ -10,12 +10,7 @@ import globalData from '@/data/globalData';
 const remote = window.require('@electron/remote');
 
 export default class {
-	constructor(win) {
-		this.initProperties(win);
-	}
-	initProperties(win) {
-		Util.defineProperties(this, win, []);
-	}
+	constructor() { }
 	onKeydown(e) {
 		if (e.ctrlKey) {
 			if (e.shiftKey) {
