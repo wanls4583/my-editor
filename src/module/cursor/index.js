@@ -11,25 +11,24 @@ const regs = {
 };
 export default class {
     constructor(editor, context) {
-        this.initProperties(editor, context);
+        this.editor = editor;
+        this.context = context;
         this.multiCursorPos = new Btree(Util.comparePos);
         this.multiKeyCode = 'ctrl';
-        this.wordPattern = Util.getWordPattern(this.language);
+        this.wordPattern = Util.getWordPattern(this.editor.language);
         this.rightWrodPattern = new RegExp(`^(${this.wordPattern.source})`);
         this.leftWrodPattern = new RegExp(`(${this.wordPattern.source})$`);
     }
-    initProperties(editor, context) {
-        Util.defineProperties(this, editor, ['language', 'nowCursorPos', 'searcher', 'selecter', 'setNowCursorPos', 'renderCursor', 'getColumnByWidth', 'getStrWidth']);
-        Util.defineProperties(this, context, ['htmls']);
-    }
     destroy() {
+        this.editor = null;
+        this.context = null;
         this.multiCursorPos.empty();
     }
     // 添加光标
     addCursorPos(cursorPos) {
         let pos = this.getCursorsByLineColumn(cursorPos.line, cursorPos.column);
         if (pos) {
-            this.setNowCursorPos(pos);
+            this.editor.setNowCursorPos(pos);
             return pos;
         }
         cursorPos = {
@@ -37,58 +36,58 @@ export default class {
             column: cursorPos.column,
         };
         this.multiCursorPos.insert(cursorPos);
-        this.setNowCursorPos(cursorPos);
+        this.editor.setNowCursorPos(cursorPos);
         return cursorPos;
     }
     addCursorAbove() {
         this.multiCursorPos.forEach((item) => {
             if (item.line > 1) {
-                let width = item.moveWidth || this.getStrWidth(this.htmls[item.line - 1].text, 0, item.column);
-                let column = this.getColumnByWidth(this.htmls[item.line - 2].text, width);
+                let width = item.moveWidth || this.editor.getStrWidth(this.context.htmls[item.line - 1].text, 0, item.column);
+                let column = this.editor.getColumnByWidth(this.context.htmls[item.line - 2].text, width);
                 let cursorPos = this.addCursorPos({
                     line: item.line - 1,
                     column: column,
                 });
                 cursorPos.moveWidth = width;
-                this.setNowCursorPos(cursorPos);
+                this.editor.setNowCursorPos(cursorPos);
             }
         });
     }
     addCursorBelow() {
         this.multiCursorPos.forEach((item) => {
-            if (item.line < this.htmls.length) {
-                let width = item.moveWidth || this.getStrWidth(this.htmls[item.line - 1].text, 0, item.column);
-                let column = this.getColumnByWidth(this.htmls[item.line].text, width);
+            if (item.line < this.context.htmls.length) {
+                let width = item.moveWidth || this.editor.getStrWidth(this.context.htmls[item.line - 1].text, 0, item.column);
+                let column = this.editor.getColumnByWidth(this.context.htmls[item.line].text, width);
                 let cursorPos = this.addCursorPos({
                     line: item.line + 1,
                     column: column,
                 });
                 cursorPos.moveWidth = width;
-                this.setNowCursorPos(cursorPos);
+                this.editor.setNowCursorPos(cursorPos);
             }
         });
     }
     addCursorLineEnds() {
-        if (this.selecter.activedRanges.size) {
+        if (this.editor.selecter.activedRanges.size) {
             this.clearCursorPos();
-            this.selecter.activedRanges.forEach((item) => {
+            this.editor.selecter.activedRanges.forEach((item) => {
                 let startLine = item.start.line;
                 let endLine = item.end.line;
                 while (startLine < endLine) {
                     this.addCursorPos({
                         line: startLine,
-                        column: this.htmls[startLine - 1].text.length,
+                        column: this.context.htmls[startLine - 1].text.length,
                     });
                     startLine++;
                 }
-                this.setNowCursorPos(
+                this.editor.setNowCursorPos(
                     this.addCursorPos({
                         line: endLine,
-                        column: this.htmls[endLine - 1].text.length,
+                        column: this.context.htmls[endLine - 1].text.length,
                     })
                 );
             });
-            this.searcher.clearSearch();
+            this.editor.searcher.clearSearch();
         }
     }
     // 设置光标
@@ -105,7 +104,7 @@ export default class {
         }
         this.multiCursorPos.empty();
         this.multiCursorPos.insert(cursorPos);
-        this.setNowCursorPos(cursorPos);
+        this.editor.setNowCursorPos(cursorPos);
         return cursorPos;
     }
     updateCursorPos(cursorPos, line, column) {
@@ -116,11 +115,11 @@ export default class {
         cursorPos.line = line;
         cursorPos.column = column;
         this.multiCursorPos.insert(cursorPos);
-        if (cursorPos === this.nowCursorPos) {
+        if (cursorPos === this.this.editor.nowCursorPos) {
             //触发滚动
-            this.setNowCursorPos(this.nowCursorPos);
+            this.editor.setNowCursorPos(this.this.editor.nowCursorPos);
         } else {
-            this.renderCursor();
+            this.editor.renderCursor();
         }
         return cursorPos;
     }
@@ -129,10 +128,10 @@ export default class {
         if (cursorPos) {
             cursorPos.del = true;
             this.multiCursorPos.delete(cursorPos);
-            if (cursorPos === this.nowCursorPos) {
-                this.setNowCursorPos(null);
+            if (cursorPos === this.this.editor.nowCursorPos) {
+                this.editor.setNowCursorPos(null);
             }
-            this.renderCursor();
+            this.editor.renderCursor();
         }
     }
     removeCursorInRange(range) {
@@ -153,7 +152,7 @@ export default class {
                 item.del = true;
                 this.multiCursorPos.delete(item);
             });
-            this.renderCursor();
+            this.editor.renderCursor();
         }
     }
     clearCursorPos() {
@@ -161,7 +160,7 @@ export default class {
             item.del = true;
         });
         this.multiCursorPos.empty();
-        this.setNowCursorPos(null);
+        this.editor.setNowCursorPos(null);
     }
     getCursorsByLine(line) {
         let results = [];
@@ -194,37 +193,37 @@ export default class {
     }
     // 移动光标
     moveCursor(cursorPos, direct, wholeWord) {
-        let text = this.htmls[cursorPos.line - 1].text;
+        let text = this.context.htmls[cursorPos.line - 1].text;
         let line = cursorPos.line;
         let column = cursorPos.column;
         // 去除上下移动光标的初始宽度记录
-        if(direct !== 'up' && direct !== 'down') {
+        if (direct !== 'up' && direct !== 'down') {
             cursorPos.moveWidth = 0;
         }
         if (direct === 'home') {
             column = 0;
         } else if (direct === 'end') {
-            column = this.htmls[line - 1].text.length;
+            column = this.context.htmls[line - 1].text.length;
         } else if (direct === 'up') {
             if (line > 1) {
-                let width = cursorPos.moveWidth || this.getStrWidth(text, 0, column);
+                let width = cursorPos.moveWidth || this.editor.getStrWidth(text, 0, column);
                 cursorPos.moveWidth = width;
                 line--;
-                text = this.htmls[line - 1].text;
-                column = this.getColumnByWidth(text, width);
+                text = this.context.htmls[line - 1].text;
+                column = this.editor.getColumnByWidth(text, width);
             }
         } else if (direct === 'down') {
-            if (line < this.htmls.length) {
-                let width = cursorPos.moveWidth || this.getStrWidth(text, 0, column);
+            if (line < this.context.htmls.length) {
+                let width = cursorPos.moveWidth || this.editor.getStrWidth(text, 0, column);
                 cursorPos.moveWidth = width;
                 line++;
-                text = this.htmls[line - 1].text;
-                column = this.getColumnByWidth(text, width);
+                text = this.context.htmls[line - 1].text;
+                column = this.editor.getColumnByWidth(text, width);
             }
         } else if (direct === 'left') {
             while (column === 0 && line > 1) {
                 line--;
-                text = this.htmls[line - 1].text;
+                text = this.context.htmls[line - 1].text;
                 column = text.length;
             }
             if (column > 0) {
@@ -248,10 +247,10 @@ export default class {
                 }
             }
         } else {
-            while (column === text.length && line < this.htmls.length) {
+            while (column === text.length && line < this.context.htmls.length) {
                 line++;
                 column = 0;
-                text = this.htmls[line - 1].text;
+                text = this.context.htmls[line - 1].text;
             }
             if (column < text.length) {
                 if (wholeWord) {
