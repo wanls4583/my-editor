@@ -104,8 +104,8 @@ export default {
 			dialogIcon: '',
 			dialogIconColor: '',
 			terminalVisible: false,
-			sidebarVisible: true,
-			statusbarVisible: true,
+			sidebarVisible: globalData.views.sidebar,
+			statusbarVisible: globalData.views.statusbar,
 			terminalHeight: 300,
 			themeType: 'dark',
 			activity: 'files',
@@ -145,6 +145,7 @@ export default {
 		this.initEventBus();
 		this.persistence.loadFileTree();
 		this.persistence.loadTabData();
+		this.persistence.loadTerminalTabData();
 		currentWindow.on('blur', () => {
 			EventBus.$emit('close-menu');
 		});

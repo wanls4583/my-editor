@@ -49,6 +49,9 @@ export default class {
 		EventBus.$on('terminal-close-all', id => {
 			this.terminalList.empty();
 		});
+		EventBus.$on('terminal-loaded', list => {
+			this.loadTerminal(list);
+		});
 	}
 	getTerminalTabById(id) {
 		for (let i = 0; i < this.terminalList.length; i++) {
@@ -101,5 +104,10 @@ export default class {
 		this.terminalList.empty();
 		this.terminalList.push(tab);
 		EventBus.$emit('terminal-change', tab.id);
+	}
+	loadTerminal(list) {
+		list.forEach((item) => {
+			this.terminalList.push(item);
+		});
 	}
 }

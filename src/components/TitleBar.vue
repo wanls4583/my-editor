@@ -262,21 +262,26 @@ export default {
 					{
 						name: 'Terminal',
 						op: 'toggleTerminal',
+						shortcut: 'Ctrl+`',
+						selected: globalData.views.terminal,
 					},
 					{
 						name: 'Minimap',
 						op: 'toggleMinimap',
-						selected: true,
+						shortcut: 'Ctrl+Shift+M',
+						selected: globalData.views.minimap,
 					},
 					{
 						name: 'Sidebar',
 						op: 'toggleSidebar',
-						selected: true,
+						shortcut: 'Ctrl+Shift+L',
+						selected: globalData.views.sidebar,
 					},
 					{
 						name: 'Statusbar',
 						op: 'toggleStatusbar',
-						selected: true,
+						shortcut: 'Ctrl+Shift+B',
+						selected: globalData.views.statusbar,
 					},
 				],
 			],
@@ -346,6 +351,22 @@ export default {
 				this.viewMenuVisible = false;
 				this.terminalMenuVisible = false;
 				this.preferenceMenuVisible = false;
+			});
+			EventBus.$on('terminal-toggle', () => {
+				this.viewMenuList[0][1].selected = !this.viewMenuList[0][1].selected;
+				globalData.views.terminal = !globalData.views.terminal;
+			});
+			EventBus.$on('minimap-toggle', () => {
+				this.viewMenuList[0][2].selected = !this.viewMenuList[0][2].selected;
+				globalData.views.minimap = !globalData.views.minimap;
+			});
+			EventBus.$on('sidebar-toggle', () => {
+				this.viewMenuList[0][3].selected = !this.viewMenuList[0][3].selected;
+				globalData.views.sidebar = !globalData.views.sidebar;
+			});
+			EventBus.$on('statusbar-toggle', () => {
+				this.viewMenuList[0][4].selected = !this.viewMenuList[0][4].selected;
+				globalData.views.statusbar = !globalData.views.statusbar;
 			});
 		},
 		showMemu(prop) {
@@ -544,7 +565,6 @@ export default {
 					EventBus.$emit('statusbar-toggle');
 					break;
 			}
-			item.selected = !item.selected;
 			requestAnimationFrame(() => {
 				this.viewMenuVisible = false;
 			});

@@ -102,8 +102,8 @@
 				v-show="searchVisible"
 			></search-dialog>
 		</div>
-		<div class="my-minimap-wrap" v-if="type !== 'diff'">
-			<minimap :content-height="contentHeight" :now-line="startLine" :scroll-top="scrollTop" ref="minimap" v-if="minimapVisible"></minimap>
+		<div class="my-minimap-wrap" v-if="minimapVisible">
+			<minimap :content-height="contentHeight" :now-line="startLine" :scroll-top="scrollTop" ref="minimap"></minimap>
 		</div>
 		<v-scroll-bar :class="{'my-scroll-visible': scrollVisible}" :height="contentHeight" :scroll-top="scrollTop" @scroll="onVBarScroll" class="my-editor-scrollbar-v"></v-scroll-bar>
 		<editor-menu ref="menu"></editor-menu>
@@ -227,7 +227,7 @@ export default {
 			diffMarginTop: 0,
 			toShowdiffObj: null,
 			scrollVisible: false,
-			minimapVisible: true,
+			minimapVisible: false,
 			scrollerArea: { width: 0, height: 0 },
 			nowCursorPos: { line: 1, column: 0 },
 			bracketMatch: { start: {}, end: {} },
@@ -488,6 +488,7 @@ export default {
 			this.wordPattern = Util.getWordPattern(this.language);
 			this.wordPattern = new RegExp(`^(${this.wordPattern.source})`);
 			this.selectedFg = !!globalData.colors['editor.selectionForeground'];
+			this.minimapVisible = this.type !== 'diff' && globalData.views.minimap;
 		},
 		initRenderData() {
 			this.charObj = Util.getCharWidth(this.$refs.content, '<div class="my-line"><div class="my-code">[dom]</div></div>');

@@ -18,12 +18,14 @@ export default class {
 		this.storeGlobalData();
 		this.storeFileTree();
 		this.storeTabData();
+		this.storeTerminalTabData();
 		this.storeTempData();
 	}
 	storeGlobalData() {
 		let data = {
 			nowTheme: globalData.nowTheme,
 			nowIconTheme: globalData.nowIconTheme,
+			views: globalData.views
 		};
 		Util.writeFileSync(globalData.configPath, JSON.stringify(data));
 	}
@@ -71,6 +73,26 @@ export default class {
 			Util.loadJsonFile(globalData.tabPath).then(data => {
 				if (data && data.length) {
 					EventBus.$emit('editor-loaded', data);
+				}
+			});
+		}
+	}
+	storeTerminalTabData() {
+		let data = globalData.terminalList.map(item => {
+			return {
+				id: item.id,
+				name: item.name,
+				path: item.path,
+				active: item.active,
+			};
+		});
+		Util.writeFileSync(globalData.terminalTabPath, JSON.stringify(data));
+	}
+	loadTerminalTabData() {
+		if (fs.existsSync(globalData.terminalTabPath)) {
+			Util.loadJsonFile(globalData.terminalTabPath).then(data => {
+				if (data && data.length) {
+					EventBus.$emit('terminal-loaded', data);
 				}
 			});
 		}
