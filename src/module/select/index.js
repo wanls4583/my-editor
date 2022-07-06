@@ -16,21 +16,14 @@ const comparator = function (a, b) {
 
 export default class {
     constructor(editor, context) {
-        this.initProperties(editor, context);
+        this.editor = editor;
+        this.context = context;
         this.ranges = new Btree(comparator);
         this.activedRanges = new Btree(comparator);
     }
-    initProperties(editor, context) {
-        Util.defineProperties(this, editor, ['cursor', 'renderSelectedBgAsync', 'clearSelectionToken']);
-        Util.defineProperties(this, context, ['htmls']);
-        this.setContextData = (prop, value) => {
-            context.setData(prop, value);
-        };
-        this.setEditorData = (prop, value) => {
-            editor.setData(prop, value);
-        };
-    }
     destroy() {
+        this.editor = null;
+        this.context = null;
         this.ranges.empty();
         this.activedRanges.empty();
     }
@@ -93,12 +86,12 @@ export default class {
         return false;
     }
     select(direct, wholeWord) {
-        this.cursor.multiCursorPos.forEach((cursorPos) => {
+        this.editor.cursor.multiCursorPos.forEach((cursorPos) => {
             let range = this.getRangeByCursorPos(cursorPos);
             if (range) {
                 let start = range.start;
                 let end = range.end;
-                this.cursor.moveCursor(cursorPos, direct, wholeWord);
+                this.editor.cursor.moveCursor(cursorPos, direct, wholeWord);
                 if (direct === 'left') {
                     if (Util.comparePos(cursorPos, range.start) < 0) {
                         start = cursorPos;
@@ -118,7 +111,7 @@ export default class {
                 });
             } else {
                 let start = Object.assign({}, cursorPos);
-                let end = this.cursor.moveCursor(cursorPos, direct, wholeWord);
+                let end = this.editor.cursor.moveCursor(cursorPos, direct, wholeWord);
                 range = this.createRange(start, end);
                 if (range) {
                     this.addRange({
@@ -128,15 +121,15 @@ export default class {
                 }
             }
         });
-        this.renderSelectedBgAsync();
+        this.editor.renderSelectedBgAsync();
     }
     selectAll() {
         let end = {
-            line: this.htmls.length,
-            column: this.htmls.peek().text.length,
+            line: this.context.htmls.length,
+            column: this.context.htmls.peek().text.length,
         };
-        this.setEditorData('forceCursorView', false);
-        this.cursor.setCursorPos(end);
+        this.editor.setData('forceCursorView', false);
+        this.editor.cursor.setCursorPos(end);
         this.setRange(
             {
                 line: 1,
@@ -144,18 +137,18 @@ export default class {
             },
             end
         );
-        this.renderSelectedBgAsync();
+        this.editor.renderSelectedBgAsync();
     }
     selectAllOccurence() {
-        this.cursor.clearCursorPos();
+        this.editor.cursor.clearCursorPos();
         this.ranges.forEach((item) => {
-            this.cursor.addCursorPos(item.end);
+            this.editor.cursor.addCursorPos(item.end);
             if (!item.active) {
                 item.active = true;
                 this.activedRanges.insert(item);
             }
         });
-        this.renderSelectedBgAsync();
+        this.editor.renderSelectedBgAsync();
     }
     addActive(cursorPos) {
         let range = this.getRangeByCursorPos(cursorPos);
@@ -163,7 +156,7 @@ export default class {
             range.active = true;
             this.activedRanges.insert(range);
         }
-        this.renderSelectedBgAsync();
+        this.editor.renderSelectedBgAsync();
     }
     // 添加选中区域
     addRange(ranges) {
@@ -180,7 +173,7 @@ export default class {
             } else if (!same) {
                 return;
             }
-            let active = this.cursor.getCursorsByLineColumn(start.line, start.column) || this.cursor.getCursorsByLineColumn(end.line, end.column);
+            let active = this.editor.cursor.getCursorsByLineColumn(start.line, start.column) || this.editor.cursor.getCursorsByLineColumn(end.line, end.column);
             range = {
                 start: {
                     line: start.line,
@@ -193,8 +186,8 @@ export default class {
                 active: !!active,
             };
             let _range = this.getRange(range);
-            if(_range) {
-                if(!_range.active) {
+            if (_range) {
+                if (!_range.active) {
                     _range.active = active;
                     this.activedRanges.insert(_range);
                 }
@@ -206,7 +199,7 @@ export default class {
                 this.filterRange(range);
             }
         });
-        this.renderSelectedBgAsync();
+        this.editor.renderSelectedBgAsync();
         return ranges instanceof Array ? results : results[0];
     }
     removeRange(range) {
@@ -215,9 +208,9 @@ export default class {
             if (range.active) {
                 this.activedRanges.delete(range);
             }
-            this.cursor.removeCursor(range.start);
-            this.cursor.removeCursor(range.end);
-            this.renderSelectedBgAsync();
+            this.editor.cursor.removeCursor(range.start);
+            this.editor.cursor.removeCursor(range.end);
+            this.editor.renderSelectedBgAsync();
         }
     }
     /**
@@ -234,7 +227,7 @@ export default class {
         } else if (!same) {
             return;
         }
-        let active = this.cursor.getCursorsByLineColumn(start.line, start.column) || this.cursor.getCursorsByLineColumn(end.line, end.column);
+        let active = this.editor.cursor.getCursorsByLineColumn(start.line, start.column) || this.editor.cursor.getCursorsByLineColumn(end.line, end.column);
         let range = {
             start: Object.assign({}, start),
             end: Object.assign({}, end),
@@ -243,7 +236,7 @@ export default class {
         this.clearRange();
         this.ranges.insert(range);
         active && this.activedRanges.insert(range);
-        this.renderSelectedBgAsync();
+        this.editor.renderSelectedBgAsync();
         return range;
     }
     setActive(cursorPos) {
@@ -256,7 +249,7 @@ export default class {
             range.active = true;
             this.activedRanges.insert(range);
         }
-        this.renderSelectedBgAsync();
+        this.editor.renderSelectedBgAsync();
     }
     updateRange(target, range) {
         let start = range.start;
@@ -276,7 +269,7 @@ export default class {
         target.end.column = end.column;
         this.ranges.insert(target);
         this.filterRange(target);
-        this.renderSelectedBgAsync();
+        this.editor.renderSelectedBgAsync();
     }
     filterRange(range) {
         let it = this.ranges.search(range);
@@ -295,8 +288,8 @@ export default class {
         dels.forEach((item) => {
             this.ranges.delete(item);
             this.activedRanges.delete(item);
-            this.cursor.removeCursor(item.start);
-            this.cursor.removeCursor(item.end);
+            this.editor.cursor.removeCursor(item.start);
+            this.editor.cursor.removeCursor(item.end);
         });
     }
     createRange(start, end) {
@@ -318,14 +311,14 @@ export default class {
     clearRange() {
         this.ranges.empty();
         this.activedRanges.empty();
-        this.renderSelectedBgAsync();
+        this.editor.renderSelectedBgAsync();
     }
     clearActive() {
         this.activedRanges.forEach((item) => {
             item.active = false;
         });
         this.activedRanges.empty();
-        this.renderSelectedBgAsync();
+        this.editor.renderSelectedBgAsync();
     }
     clearInactiveRange() {
         if (!this.activedRanges.size) {
@@ -336,7 +329,7 @@ export default class {
                     this.ranges.delete(item);
                 }
             });
-            this.renderSelectedBgAsync();
+            this.editor.renderSelectedBgAsync();
         }
     }
     clone(range, properties) {
