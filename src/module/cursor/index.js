@@ -22,6 +22,9 @@ export default class {
         Util.defineProperties(this, editor, ['language', 'nowCursorPos', 'searcher', 'selecter', 'setNowCursorPos', 'renderCursor', 'getColumnByWidth', 'getStrWidth']);
         Util.defineProperties(this, context, ['htmls']);
     }
+    destroy() {
+        this.multiCursorPos.empty();
+    }
     // 添加光标
     addCursorPos(cursorPos) {
         let pos = this.getCursorsByLineColumn(cursorPos.line, cursorPos.column);

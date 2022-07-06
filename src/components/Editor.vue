@@ -435,6 +435,30 @@ export default {
 		this.tokenizer.destroy();
 		this.lint.destroy();
 		this.history.destroy();
+		this.selecter.destroy();
+		this.fSelecter.destroy();
+		this.cursor.destroy();
+		this.tokenizer = null;
+		this.lint = null;
+		this.history = null;
+		this.selecter = null;
+		this.fSelecter = null;
+		this.cursor = null;
+		this.renderedLineMap = null;
+		this.renderedIdMap = null;
+		this.errorMap = null;
+		this.errors = null;
+		this.autoTipList = null;
+		this.renderObjs = null;
+		this.renderNums = null;
+		this.renderCursorObjs = null;
+		this.renderSelectionObjs = null;
+		this.renderedLineMap = null;
+		this.renderedIdMap = null;
+		this.renderNumsIdMap = null;
+		this.diffRanges = null;
+		this.diffTabData = null;
+		this.tipContent = null;
 		contexts[this.tabData.id] = null;
 	},
 	methods: {

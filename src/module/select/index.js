@@ -30,6 +30,10 @@ export default class {
             editor.setData(prop, value);
         };
     }
+    destroy() {
+        this.ranges.empty();
+        this.activedRanges.empty();
+    }
     getRange(range) {
         let it = this.ranges.search(range);
         return it && it.next();
