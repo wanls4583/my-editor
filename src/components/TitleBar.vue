@@ -61,8 +61,7 @@ import Menu from './Menu';
 import ShortCut from '@/module/shortcut/menu-bar';
 import EventBus from '@/event';
 import $ from 'jquery';
-const require = window.require || window.parent.require || function () {};
-const remote = require('@electron/remote');
+const remote = window.require('@electron/remote');
 const currentWindow = remote && remote.getCurrentWindow();
 
 export default {

@@ -8,8 +8,7 @@ import Util from '@/common/util';
 import Enum from '@/data/enum';
 import globalData from '@/data/globalData';
 
-const require = window.require || window.parent.require || function () { };
-const path = require('path');
+const path = window.require('path');
 
 const regs = {
 	stringToken: /(?:\.|^)(?:string|regexp)(?:\.|$)/,
@@ -562,7 +561,7 @@ class Autocomplete {
 		if (this.htmlData) {
 			return this.htmlData;
 		} else {
-			const htmlData = require(path.join(globalData.dirname, 'main/data/browsers.html-data'));
+			const htmlData = window.require(path.join(globalData.dirname, 'main/data/browsers.html-data'));
 			this.htmlData = htmlData;
 			htmlData.tagMap = {};
 			htmlData.tags.forEach(item => {
@@ -575,7 +574,7 @@ class Autocomplete {
 		if (this.cssData) {
 			return this.cssData;
 		} else {
-			const cssData = require(path.join(globalData.dirname, 'main/data/browsers.css-data'));
+			const cssData = window.require(path.join(globalData.dirname, 'main/data/browsers.css-data'));
 			this.cssData = cssData;
 			cssData.propertyMap = {};
 			cssData.properties.forEach(item => {

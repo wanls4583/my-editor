@@ -8,8 +8,7 @@ import globalData from '@/data/globalData';
 import chroma from 'chroma-js';
 import EventBus from '@/event';
 
-const require = window.require || window.parent.require || function () {};
-const path = require('path');
+const path = window.require('path');
 const settingMap = {
 	foreground: 'color',
 	background: 'background-color',
