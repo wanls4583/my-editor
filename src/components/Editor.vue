@@ -439,12 +439,18 @@ export default {
 		this.fSelecter.destroy();
 		this.cursor.destroy();
 		this.autocomplete.destroy();
+		this.folder.destroy();
+
+		contexts[this.tabData.id] = null;
 		this.tokenizer = null;
 		this.lint = null;
 		this.history = null;
 		this.selecter = null;
 		this.fSelecter = null;
 		this.cursor = null;
+		this.autocomplete = null;
+		this.folder = null;
+
 		this.renderedLineMap = null;
 		this.renderedIdMap = null;
 		this.errorMap = null;
@@ -460,7 +466,6 @@ export default {
 		this.diffRanges = null;
 		this.diffTabData = null;
 		this.tipContent = null;
-		contexts[this.tabData.id] = null;
 	},
 	methods: {
 		// 初始化数据

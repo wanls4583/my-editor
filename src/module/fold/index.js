@@ -19,14 +19,14 @@ singleTag.forEach(tag => {
 
 export default class {
 	constructor(editor, context) {
+		this.editor = editor;
+		this.context = context;
 		this.folds = new Btree(comparator);
-		this.editorFunObj = {};
-		this.initProperties(editor, context);
 	}
-	initProperties(editor, context) {
-		Util.defineProperties(this.editorFunObj, editor, ['unFold']);
-		Util.defineProperties(this, editor, ['selecter']);
-		Util.defineProperties(this, context, ['htmls']);
+	destroy() {
+		this.editor = null;
+		this.context = null;
+		this.folds.empty();
 	}
 	onInsertContentAfter(preCursorPos, cursorPos) {
 		let folds = this.folds.toArray();
@@ -36,7 +36,7 @@ export default class {
 			let fold = folds[i];
 			if (fold.start.line < preCursorPos.line) {
 				if (fold.end.line > preCursorPos.line) {
-					this.editorFunObj.unFold(fold.start.line);
+					this.editor.unFold(fold.start.line);
 				}
 			} else {
 				afterIndex = i;
@@ -45,7 +45,7 @@ export default class {
 		}
 		if (cursorPos.line > preCursorPos.line) {
 			if (folds[afterIndex] && folds[afterIndex].start.line === preCursorPos.line) {
-				this.editorFunObj.unFold(preCursorPos.line);
+				this.editor.unFold(preCursorPos.line);
 				afterIndex++;
 			}
 			// 更新后面的行号
@@ -65,11 +65,11 @@ export default class {
 			if (starLine <= preCursorPos.line) {
 				if (starLine < preCursorPos.line) {
 					if ((starLine >= cursorPos.line && starLine < preCursorPos.line) || (starLine < cursorPos.line && endLine > cursorPos.line)) {
-						this.editorFunObj.unFold(starLine);
+						this.editor.unFold(starLine);
 					}
 				} else {
 					if (preCursorPos.line > cursorPos.line) {
-						this.editorFunObj.unFold(starLine);
+						this.editor.unFold(starLine);
 					}
 				}
 			} else {
@@ -94,7 +94,7 @@ export default class {
 				let fold = this.getFoldByLine(line);
 				if (fold) {
 					if (fold.end.line > resultFold.end.line) {
-						this.editorFunObj.unFold(line);
+						this.editor.unFold(line);
 					}
 				}
 			}
@@ -142,7 +142,7 @@ export default class {
 	getRangeFold(line, foldIconCheck) {
 		let stack = [];
 		let startLine = line;
-		let lineObj = this.htmls[startLine - 1];
+		let lineObj = this.context.htmls[startLine - 1];
 		let startFold = null;
 		if (lineObj.folds && lineObj.folds.length) {
 			for (let i = 0; i < lineObj.folds.length; i++) {
@@ -173,8 +173,8 @@ export default class {
 				let endLine = startLine;
 				let fold = null;
 				line = startLine + 1;
-				while (line <= this.htmls.length) {
-					let lineObj = this.htmls[line - 1];
+				while (line <= this.context.htmls.length) {
+					let lineObj = this.context.htmls[line - 1];
 					let text = lineObj.text.trimLeft();
 					let startIndex = lineObj.text.length - text.length;
 					let _fold = lineObj.folds && lineObj.folds[0];
@@ -206,8 +206,8 @@ export default class {
 		let line = startFold.line;
 		let stack = [];
 		let resultFold = null;
-		while (line <= this.htmls.length && (!foldIconCheck || line - startFold.line <= 1)) {
-			let lineObj = this.htmls[line - 1];
+		while (line <= this.context.htmls.length && (!foldIconCheck || line - startFold.line <= 1)) {
+			let lineObj = this.context.htmls[line - 1];
 			if (lineObj.folds && lineObj.folds.length) {
 				for (let i = 0; i < lineObj.folds.length; i++) {
 					let fold = lineObj.folds[i];
@@ -248,7 +248,7 @@ export default class {
 			let count = 0;
 			let startTime = Date.now();
 			while (line >= 1) {
-				let folds = this.htmls[line - 1].folds;
+				let folds = this.context.htmls[line - 1].folds;
 				if (!folds) {
 					return callback(null);
 				}
