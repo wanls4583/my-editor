@@ -438,6 +438,7 @@ export default {
 		this.selecter.destroy();
 		this.fSelecter.destroy();
 		this.cursor.destroy();
+		this.autocomplete.destroy();
 		this.tokenizer = null;
 		this.lint = null;
 		this.history = null;

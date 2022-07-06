@@ -8,7 +8,7 @@ import Util from '@/common/util';
 import Enum from '@/data/enum';
 import globalData from '@/data/globalData';
 
-const require = window.require || window.parent.require || function () {};
+const require = window.require || window.parent.require || function () { };
 const path = require('path');
 
 const regs = {
@@ -28,20 +28,22 @@ const regs = {
 
 class Autocomplete {
 	constructor(editor, context) {
-		this.initProperties(editor, context);
+		this.editor = editor;
+		this.context = context;
 		this.doneMap = {};
 		this.results = [];
-		this.wordPattern = Util.getWordPattern(this.language);
+		this.wordPattern = Util.getWordPattern(this.editor.language);
 		this.wordPattern = new RegExp(`^(${this.wordPattern.source})$`);
-	}
-	initProperties(editor, context) {
-		Util.defineProperties(this, editor, ['indent', 'space', 'language', 'cursor', 'nowCursorPos', 'tokenizer', 'autoTipList', 'setAutoTip', 'selectAutoTip']);
-		Util.defineProperties(this, context, ['htmls', 'replaceTip', 'insertContent']);
 	}
 	reset() {
 		this.currentLine = 1;
 		this.results = [];
 		this.doneMap = {};
+	}
+	destroy() {
+		this.reset();
+		this.editor = null;
+		this.context = null;
 	}
 	stop() {
 		cancelIdleCallback(this.searchTimer);
@@ -53,10 +55,10 @@ class Autocomplete {
 		});
 	}
 	emmet() {
-		let lineObj = this.htmls[this.nowCursorPos.line - 1];
-		let tokenIndex = this.getTokenIndex(this.nowCursorPos);
+		let lineObj = this.context.htmls[this.editor.nowCursorPos.line - 1];
+		let tokenIndex = this.getTokenIndex(this.editor.nowCursorPos);
 		let nowToken = lineObj.tokens[tokenIndex];
-		let word = nowToken && lineObj.text.slice(nowToken.startIndex, this.nowCursorPos.column);
+		let word = nowToken && lineObj.text.slice(nowToken.startIndex, this.editor.nowCursorPos.column);
 		let emmetObj = null;
 		let type = '';
 		if (word) {
@@ -79,24 +81,24 @@ class Autocomplete {
 			}
 		}
 		if (emmetObj) {
-			this.replaceTip({ word: emmetObj.abbreviation, result: emmetObj.abbreviation, type: type });
-		} else if (this.autoTipList && this.autoTipList.length) {
-			this.selectAutoTip();
+			this.context.replaceTip({ word: emmetObj.abbreviation, result: emmetObj.abbreviation, type: type });
+		} else if (this.editor.autoTipList && this.editor.autoTipList.length) {
+			this.editor.selectAutoTip();
 		} else {
-			if (this.indent === 'space' && /^\s*$/.exec(lineObj.text.slice(0, this.nowCursorPos.column))) {
-				this.insertContent(this.space);
+			if (this.editor.indent === 'space' && /^\s*$/.exec(lineObj.text.slice(0, this.editor.nowCursorPos.column))) {
+				this.context.insertContent(this.editor.space);
 			} else {
-				this.insertContent('\t');
+				this.context.insertContent('\t');
 			}
 		}
 	}
 	_search() {
-		let lineObj = this.htmls[this.nowCursorPos.line - 1];
-		let tokenIndex = this.getTokenIndex(this.nowCursorPos);
+		let lineObj = this.context.htmls[this.editor.nowCursorPos.line - 1];
+		let tokenIndex = this.getTokenIndex(this.editor.nowCursorPos);
 		let nowToken = lineObj.tokens[tokenIndex];
-		let word = nowToken && lineObj.text.slice(nowToken.startIndex, this.nowCursorPos.column);
+		let word = nowToken && lineObj.text.slice(nowToken.startIndex, this.editor.nowCursorPos.column);
 		this.reset();
-		this.setAutoTip(null);
+		this.editor.setAutoTip(null);
 		if (!word) {
 			return;
 		}
@@ -110,7 +112,7 @@ class Autocomplete {
 				this._searchTagName(word);
 			} else if (this._isAttrNameToken(nowToken)) {
 				//属性名
-				let tag = this._getPreTagName(tokenIndex, this.nowCursorPos.line);
+				let tag = this._getPreTagName(tokenIndex, this.editor.nowCursorPos.line);
 				if (tag) {
 					this._searchTagAttrName(word, tag);
 				}
@@ -130,7 +132,7 @@ class Autocomplete {
 						this._searchCssProperty(word);
 					}
 				} else {
-					let property = this._getPreCssProperty(tokenIndex, this.nowCursorPos.line);
+					let property = this._getPreCssProperty(tokenIndex, this.editor.nowCursorPos.line);
 					if (property) {
 						this._searchCssValue(word, property);
 					}
@@ -205,8 +207,8 @@ class Autocomplete {
 		let line = this.currentLine;
 		let startTime = Date.now();
 		let processedLines = 0;
-		while (line <= this.htmls.length) {
-			let lineObj = this.htmls[line - 1];
+		while (line <= this.context.htmls.length) {
+			let lineObj = this.context.htmls[line - 1];
 			line++;
 			if (!lineObj.tokens) {
 				continue;
@@ -220,7 +222,7 @@ class Autocomplete {
 		}
 		this.currentLine = line;
 		this._showTip(showAll);
-		if (line <= this.htmls.length) {
+		if (line <= this.context.htmls.length) {
 			this.searchTimer = requestIdleCallback(() => {
 				this._searchDocument(callback, showAll);
 			});
@@ -277,8 +279,8 @@ class Autocomplete {
 		});
 	}
 	_searchStyle(word, nowToken) {
-		let column = this.nowCursorPos.column;
-		let lineObj = this.htmls[this.nowCursorPos.line - 1];
+		let column = this.editor.nowCursorPos.column;
+		let lineObj = this.context.htmls[this.editor.nowCursorPos.line - 1];
 		let keyValue = null;
 		word = lineObj.text.slice(nowToken.startIndex, column);
 		keyValue = regs.styleCss.exec(word);
@@ -447,7 +449,7 @@ class Autocomplete {
 		let tag = '';
 		let count = 0;
 		outerLoop: while (line >= 1) {
-			let lineObj = this.htmls[line - 1];
+			let lineObj = this.context.htmls[line - 1];
 			if (!lineObj.tokens) {
 				break;
 			}
@@ -472,7 +474,7 @@ class Autocomplete {
 		let property = '';
 		let count = 0;
 		outerLoop: while (line >= 1) {
-			let lineObj = this.htmls[line - 1];
+			let lineObj = this.context.htmls[line - 1];
 			if (!lineObj.tokens) {
 				break;
 			}
@@ -533,7 +535,7 @@ class Autocomplete {
 			return b.score - a.score;
 		});
 		results = this.results.slice(0, limit);
-		this.setAutoTip(results);
+		this.editor.setAutoTip(results);
 	}
 	checkEmmetValid(text) {
 		let _text = '';
@@ -546,7 +548,7 @@ class Autocomplete {
 		return !!regs.emmet.exec(text);
 	}
 	getTokenIndex(cursorPos) {
-		let tokens = this.htmls[cursorPos.line - 1].tokens;
+		let tokens = this.context.htmls[cursorPos.line - 1].tokens;
 		if (tokens) {
 			for (let i = 0; i < tokens.length; i++) {
 				if (tokens[i].startIndex < cursorPos.column && tokens[i].endIndex >= cursorPos.column) {
