@@ -645,9 +645,14 @@ export default {
 					}
 				})
 			);
-			EventBus.$on('window-close', () => {
-				this.lint.worker && this.lint.worker.kill();
-			});
+			EventBus.$on(
+				'window-close',
+				(this.initEventBusFn['window-close'] = () => {
+					try {
+						this.lint.worker && this.lint.worker.kill();
+					} catch (e) {}
+				})
+			);
 		},
 		unbindEvent() {
 			$(document).unbind('mousemove', this.initEventFn1);

@@ -49,7 +49,9 @@ export default class {
 			this.parseGitIgnore(filePath);
 		});
 		EventBus.$on('window-close', () => {
-			this.statusProcess && this.statusProcess.kill();
+			try {
+				this.statusProcess && this.statusProcess.kill();
+			} catch (e) { }
 		});
 	}
 	getDiff(filePath, textArr) {
