@@ -398,7 +398,9 @@ export default {
 					EventBus.$emit('workspace-open');
 					break;
 			}
-			this.fileMenuVisible = false;
+			requestAnimationFrame(() => {
+				this.fileMenuVisible = false;
+			});
 		},
 		onEditMenuChange(item) {
 			let editor = globalData.$mainWin.getNowEditor();
@@ -451,7 +453,9 @@ export default {
 					editor.focus();
 					break;
 			}
-			this.editMenuVisible = false;
+			requestAnimationFrame(() => {
+				this.editMenuVisible = false;
+			});
 		},
 		onSelectionMenuChange(item) {
 			let editor = globalData.$mainWin.getNowEditor();
@@ -507,7 +511,9 @@ export default {
 					break;
 			}
 			editor.focus();
-			this.selectionMenuVisible = false;
+			requestAnimationFrame(() => {
+				this.selectionMenuVisible = false;
+			});
 		},
 		onPreferenceMenuChange(item) {
 			switch (item.op) {
@@ -517,7 +523,9 @@ export default {
 				case 'changeIconTheme':
 					EventBus.$emit('cmd-menu-icon-theme-open');
 			}
-			this.preferenceMenuVisible = false;
+			requestAnimationFrame(() => {
+				this.preferenceMenuVisible = false;
+			});
 		},
 		onViewMenuChange(item) {
 			switch (item.op) {
@@ -538,7 +546,9 @@ export default {
 					break;
 			}
 			item.selected = !item.selected;
-			this.viewMenuVisible = false;
+			requestAnimationFrame(() => {
+				this.viewMenuVisible = false;
+			});
 		},
 		onTerminalMenuChange(item) {
 			switch (item.op) {
@@ -546,7 +556,9 @@ export default {
 					EventBus.$emit('terminal-new');
 					break;
 			}
-			this.terminalMenuVisible = false;
+			requestAnimationFrame(() => {
+				this.terminalMenuVisible = false;
+			});
 		},
 	},
 };
