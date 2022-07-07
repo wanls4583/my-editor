@@ -4,7 +4,6 @@ import Util from '@/common/util';
 import Context from '@/module/context/index';
 import Ignore from 'ignore';
 
-const spawnSync = window.require('child_process').spawnSync;
 const child_process = window.require('child_process');
 const path = window.require('path');
 const fs = window.require('fs');
