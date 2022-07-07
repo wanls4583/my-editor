@@ -122,16 +122,40 @@ export default class {
 		return diffObjs;
 
 		function _lcs(a, b) {
-			let aLen = a.length;
-			let bLen = b.length;
 			let result = [];
 			let item = {};
-			let dp = new Array(a.length + 1).fill(0);
-			for (let i = 0; i < a.length + 1; i++) {
-				dp[i] = new Array(b.length + 1).fill(0);
+			let aIndex = 0;
+			let bIndex = 0;
+			let preSames = 0;
+			let endSames = 0;
+			while (a[aIndex] === b[bIndex] && a[aIndex] !== undefined) {
+				aIndex++;
+				bIndex++;
+				preSames++;
 			}
-			for (let i = 1; i <= a.length; i++) {
-				for (let j = 1; j <= b.length; j++) {
+			if (preSames) {
+				a = a.slice(preSames);
+				b = b.slice(preSames);
+			}
+			aIndex = a.length - 1;
+			bIndex = b.length - 1;
+			while (a[aIndex] === b[bIndex] && a[aIndex] !== undefined) {
+				aIndex--;
+				bIndex--;
+				endSames++;
+			}
+			if (endSames) {
+				a = a.slice(0, -endSames);
+				b = b.slice(0, -endSames);
+			}
+			let aLen = a.length;
+			let bLen = b.length;
+			let dp = new Array(aLen + 1).fill(0);
+			for (let i = 0; i < aLen + 1; i++) {
+				dp[i] = new Array(bLen + 1).fill(0);
+			}
+			for (let i = 1; i <= aLen; i++) {
+				for (let j = 1; j <= bLen; j++) {
 					if (a[i - 1] === b[j - 1]) {
 						dp[i][j] = dp[i - 1][j - 1] + 1;
 					} else if (dp[i][j - 1] > dp[i - 1][j]) {
@@ -149,8 +173,8 @@ export default class {
 						item.length++;
 					} else {
 						item = {
-							aIndex: aLen - 1,
-							bIndex: bLen - 1,
+							aIndex: aLen - 1 + preSames,
+							bIndex: bLen - 1 + preSames,
 							length: 1
 						};
 						result.push(item);
@@ -166,7 +190,22 @@ export default class {
 					bLen -= 1;
 				}
 			}
-			return result.reverse();
+			if (preSames) {
+				result.push({
+					aIndex: 0,
+					bIndex: 0,
+					length: preSames
+				});
+			}
+			result.reverse();
+			if (endSames) {
+				result.push({
+					aIndex: a.length + preSames,
+					bIndex: b.length + preSames,
+					length: endSames
+				});
+			}
+			return result;
 		}
 	}
 	parseDiff(diffObjs, endLine) {
