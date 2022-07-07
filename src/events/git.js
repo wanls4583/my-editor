@@ -2,7 +2,6 @@ import EventBus from '@/event';
 import globalData from '@/data/globalData';
 import Util from '@/common/util';
 import Context from '@/module/context/index';
-import diffSequences from 'diff-sequences'
 import Ignore from 'ignore';
 
 const spawnSync = window.require('child_process').spawnSync;
@@ -82,28 +81,28 @@ export default class {
 		let aIndex = 0;
 		let bIndex = 0;
 		const diffObjs = [];
-		const isCommon = (aIndex, bIndex) => a[aIndex] === b[bIndex];
-		const foundSubsequence = (nCommon, aCommon, bCommon) => {
-			if (aIndex !== aCommon) {
+		const lcs = _lcs(a, b);
+		for (let i = 0; i < lcs.length; i++) {
+			let item = lcs[i];
+			if (aIndex !== item.aIndex) {
 				diffObjs.push({
 					type: 'D',
 					line: bIndex + 1,
 					added: [],
-					deleted: a.slice(aIndex, aCommon)
+					deleted: a.slice(aIndex, item.aIndex)
 				})
 			}
-			if (bIndex !== bCommon) {
+			if (bIndex !== item.bIndex) {
 				diffObjs.push({
 					type: 'A',
 					line: bIndex + 1,
-					added: b.slice(bIndex, bCommon),
+					added: b.slice(bIndex, item.bIndex),
 					deleted: []
 				})
 			}
-			aIndex = aCommon + nCommon;
-			bIndex = bCommon + nCommon;
-		};
-		diffSequences(a.length, b.length, isCommon, foundSubsequence);
+			aIndex = item.aIndex + item.length;
+			bIndex = item.bIndex + item.length;
+		}
 		if (aIndex !== a.length) {
 			diffObjs.push({
 				type: 'D',
@@ -121,6 +120,54 @@ export default class {
 			})
 		}
 		return diffObjs;
+
+		function _lcs(a, b) {
+			let aLen = a.length;
+			let bLen = b.length;
+			let result = [];
+			let item = {};
+			let dp = new Array(a.length + 1).fill(0);
+			for (let i = 0; i < a.length + 1; i++) {
+				dp[i] = new Array(b.length + 1).fill(0);
+			}
+			for (let i = 1; i <= a.length; i++) {
+				for (let j = 1; j <= b.length; j++) {
+					if (a[i - 1] === b[j - 1]) {
+						dp[i][j] = dp[i - 1][j - 1] + 1;
+					} else if (dp[i][j - 1] > dp[i - 1][j]) {
+						dp[i][j] = dp[i][j - 1];
+					} else {
+						dp[i][j] = dp[i - 1][j];
+					}
+				}
+			}
+			while (aLen && bLen && dp[aLen][bLen]) {
+				if (a[aLen - 1] === b[bLen - 1]) {
+					if (item.aIndex === aLen && item.bIndex === bLen) {
+						item.aIndex--;
+						item.bIndex--;
+						item.length++;
+					} else {
+						item = {
+							aIndex: aLen - 1,
+							bIndex: bLen - 1,
+							length: 1
+						};
+						result.push(item);
+					}
+					aLen -= 1;
+					bLen -= 1;
+				} else if (dp[aLen - 1][bLen - 1] === dp[aLen][bLen]) {
+					aLen -= 1;
+					bLen -= 1;
+				} else if (dp[aLen - 1][bLen] === dp[aLen][bLen]) {
+					aLen -= 1;
+				} else {
+					bLen -= 1;
+				}
+			}
+			return result.reverse();
+		}
 	}
 	parseDiff(diffObjs, endLine) {
 		let results = [];
