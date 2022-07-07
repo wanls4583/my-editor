@@ -124,6 +124,7 @@
 <script>
 import Tokenizer from '@/module/tokenizer/index';
 import Lint from '@/module/lint/index';
+import Formatter from '@/module/format/index';
 import Autocomplete from '@/module/autocomplete/index';
 import Fold from '@/module/fold/index';
 import Search from '@/module/search/index';
@@ -475,6 +476,7 @@ export default {
 			this.maxWidthObj.lineId = this.myContext.htmls[0].lineId;
 			this.tokenizer = new Tokenizer(this, this.myContext);
 			this.lint = new Lint(this, this.myContext);
+			this.formatter = new Formatter(this, this.myContext);
 			this.autocomplete = new Autocomplete(this, this.myContext);
 			this.folder = new Fold(this, this.myContext);
 			this.history = new History(this, this.myContext);
@@ -625,11 +627,10 @@ export default {
 				})
 			);
 			EventBus.$on(
-				'editor-formated',
-				(this.initEventBusFn['editor-formated'] = (data) => {
-					if (this.tabData.id === data.id) {
-						this.myContext.reload(data.text);
-						this.cursor.setCursorPos(data.cursorPos);
+				'editor-format',
+				(this.initEventBusFn['editor-format'] = (id) => {
+					if (id === this.tabData.id) {
+						this.formatter.format();
 					}
 				})
 			);
@@ -650,6 +651,7 @@ export default {
 				(this.initEventBusFn['window-close'] = () => {
 					try {
 						this.lint.worker && this.lint.worker.kill();
+						this.formatter.worker && this.formatter.worker.kill();
 					} catch (e) {}
 				})
 			);
@@ -669,7 +671,7 @@ export default {
 			EventBus.$off('render-line', this.initEventBusFn['render-line']);
 			EventBus.$off('file-saved', this.initEventBusFn['file-saved']);
 			EventBus.$off('file-opened', this.initEventBusFn['file-opened']);
-			EventBus.$off('editor-formated', this.initEventBusFn['editor-formated']);
+			EventBus.$off('editor-format', this.initEventBusFn['editor-format']);
 			EventBus.$off('minimap-toggle', this.initEventBusFn['minimap-toggle']);
 			EventBus.$off('window-close', this.initEventBusFn['window-close']);
 		},
