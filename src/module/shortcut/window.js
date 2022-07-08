@@ -47,6 +47,7 @@ export default class {
 					case 'KeyS':
 						e.preventDefault();
 						EventBus.$emit('file-save', { id: globalData.nowEditorId });
+						break;
 					case 'KeyG': //ctrl+g，跳转
 						e.preventDefault();
 						EventBus.$emit('menu-close');

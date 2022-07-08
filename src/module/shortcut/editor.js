@@ -85,9 +85,6 @@ export default class {
 					e.preventDefault();
 					this.editor.openSearch(true);
 					break;
-				case 83: //ctrl+s 保存
-					EventBus.$emit('file-save', { id: this.editor.editorId });
-					break;
 				case 90: //ctrl+Z，撤销
 				case 122:
 					e.preventDefault();
