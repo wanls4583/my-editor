@@ -30,7 +30,6 @@ export default class {
         this.editor = null;
         this.context = null;
         clearTimeout(this.runTimer);
-        clearTimeout(this.closeWorkTimer);
         EventBus.$off('format-worker-done', this.workerFn);
         if (worker) {
             worker.kill();
@@ -38,16 +37,11 @@ export default class {
         }
     }
     run() {
+        if (!worker) {
+            this.createProcess();
+        }
         clearTimeout(this.runTimer);
-        clearTimeout(this.closeWorkTimer);
         this.runTimer = setTimeout(() => {
-            if (worker && this.workerId) {
-                worker.kill();
-                worker = null;
-            }
-            if (this.workerId || !worker) {
-                this.createProcess();
-            }
             _send.call(this);
         }, 50);
 
@@ -66,11 +60,9 @@ export default class {
         worker = child_process.fork(path.join(globalData.dirname, 'main/process/format/index.js'));
         worker.on('message', data => {
             EventBus.$emit('format-worker-done', data)
-            // 30秒后，如果没有编辑内容，则关闭子进程
-            this.closeWorkTimer = setTimeout(() => {
-                worker && worker.kill();
-                worker = null;
-            }, 30000);
+        });
+        worker.on('close', () => {
+            this.createProcess();
         });
     }
 }

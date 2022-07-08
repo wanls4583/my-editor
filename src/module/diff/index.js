@@ -33,7 +33,6 @@ export default class {
         this.editor = null;
         this.context = null;
         clearTimeout(this.runTimer);
-        clearTimeout(this.closeWorkTimer);
         EventBus.$off('diff-worker-done', this.workerFn);
         if (worker) {
             worker.kill();
@@ -41,16 +40,11 @@ export default class {
         }
     }
     run() {
+        if (!worker) {
+			this.createProcess();
+		}
         clearTimeout(this.runTimer);
-        clearTimeout(this.closeWorkTimer);
         this.runTimer = setTimeout(() => {
-            if (worker && this.workerId) {
-                worker.kill();
-                worker = null;
-            }
-            if (this.workerId || !worker) {
-                this.createProcess();
-            }
             _send.call(this);
         }, 500);
 
@@ -68,11 +62,6 @@ export default class {
         worker = child_process.fork(path.join(globalData.dirname, 'main/process/git/diff.js'));
         worker.on('message', data => {
             EventBus.$emit('diff-worker-done', data);
-            // 30秒后，如果没有活动，则关闭子进程
-            this.closeWorkTimer = setTimeout(() => {
-                worker && worker.kill();
-                worker = null;
-            }, 30000);
         });
     }
 }
