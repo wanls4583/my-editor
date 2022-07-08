@@ -30,7 +30,7 @@ class Differ {
 
         function _diff(text) {
             let diffs = this.diff(text.split('\n'), textArr);
-            process.send({ parseDiffId, path: filePath, result: this.parseDiff(diffs, textArr.length) });
+            process.send({ parseDiffId, path: filePath, result: this.parseResult(diffs, textArr.length) });
         }
     }
     diff(a, b) {
@@ -187,7 +187,7 @@ class Differ {
             return (indexs.length && _lis(indexs)) || [];
         }
     }
-    parseDiff(diffObjs, endLine) {
+    parseResult(diffObjs, endLine) {
         let results = [];
         for (let i = 0; i < diffObjs.length; i++) {
             let item = diffObjs[i];
