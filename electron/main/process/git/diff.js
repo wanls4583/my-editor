@@ -8,7 +8,7 @@ class Differ {
         this.cacheIndexs = [];
         this.fileCacheMap = { size: 0 };
     }
-    parseDiff({ filePath, text, parseDiffId }) {
+    parseDiff({ filePath, text, workerId }) {
         let nowCommit = this.getNowHash(filePath);
         let fileIndex = nowCommit + '-' + this.getCacheHash(filePath);
         let stagedContent = this.fileCacheMap[fileIndex];
@@ -29,8 +29,12 @@ class Differ {
         }
 
         function _diff(text) {
-            let diffs = this.diff(text.split('\n'), textArr);
-            process.send({ parseDiffId, path: filePath, result: this.parseResult(diffs, textArr.length) });
+            try {
+                let diffs = this.diff(text.split('\n'), textArr);
+                process.send({ workerId, path: filePath, result: this.parseResult(diffs, textArr.length) });
+            } catch (e) {
+                console.log(e);
+            }
         }
     }
     diff(a, b) {

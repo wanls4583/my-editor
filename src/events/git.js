@@ -25,18 +25,6 @@ export default class {
 		EventBus.$on('git-status-stop', filePath => {
 			this.stopWatchFileStatus(filePath);
 		});
-		EventBus.$on('git-diff', filePath => {
-			clearTimeout(this.gitDiffTimer[filePath]);
-			this.gitDiffTimer[filePath] = setTimeout(() => {
-				let tab = filePath && Util.getTabByPath(globalData.editorList, filePath);
-				if (tab && tab.active && filePath) {
-					this.parseDiff({
-						filePath,
-						text: contexts[tab.id].getAllText()
-					});
-				}
-			}, 500);
-		});
 		EventBus.$on('git-ignore', filePath => {
 			this.parseGitIgnore(filePath);
 		});
@@ -67,40 +55,6 @@ export default class {
 		} catch (e) {
 			console.log(e);
 		}
-	}
-	parseDiff({ filePath, text }) {
-		clearTimeout(this.closeDiffTimer);
-		if (this.diffProcess && this.parseDiffId) {
-			this.diffProcess.kill();
-			this.diffProcess = null;
-		}
-		if (this.parseDiffId || !this.diffProcess) {
-			this.createDiffProcess();
-		}
-		_send.call(this);
-
-		function _send() {
-			this.parseDiffId = Util.getUUID();
-			this.diffProcess.send({
-				text,
-				filePath,
-				parseDiffId: this.parseDiffId,
-			});
-		}
-	}
-	createDiffProcess() {
-		this.diffProcess = child_process.fork(path.join(globalData.dirname, 'main/process/git/diff.js'));
-		this.diffProcess.on('message', data => {
-			if (data.parseDiffId === this.parseDiffId) {
-				EventBus.$emit('git-diffed', { path: data.path, result: data.result });
-				this.parseDiffId = '';
-				// 30秒后，如果没有活动，则关闭子进程
-				this.closeDiffTimer = setTimeout(() => {
-					this.diffProcess && this.diffProcess.kill();
-					this.diffProcess = null;
-				}, 30000);
-			}
-		});
 	}
 	createStatusProcess() {
 		this.statusProcess = child_process.fork(path.join(globalData.dirname, 'main/process/git/status.js'));

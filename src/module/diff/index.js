@@ -16,22 +16,25 @@ export default class {
     constructor(editor, context) {
         this.editor = editor;
         this.context = context;
-        EventBus.$on('format-worker-done', this.workerFn = (data) => {
+        EventBus.$on('diff-worker-done', this.workerFn = (data) => {
             if (data.workerId === this.workerId) {
-                this.context.reload(data.text);
-                this.editor.cursor.setCursorPos(data.cursorPos);
+                this.editor.setDiffObjs(data.result);
                 this.workerId = '';
             }
         });
     }
-    onInsertContentAfter(nowLine, newLine) { }
-    onDeleteContentAfter(nowLine, newLine) { }
+    onInsertContentAfter(nowLine, newLine) {
+        this.run();
+    }
+    onDeleteContentAfter(nowLine, newLine) {
+        this.run();
+    }
     destroy() {
         this.editor = null;
         this.context = null;
         clearTimeout(this.runTimer);
         clearTimeout(this.closeWorkTimer);
-        EventBus.$off('format-worker-done', this.workerFn);
+        EventBus.$off('diff-worker-done', this.workerFn);
         if (worker) {
             worker.kill();
             worker = null;
@@ -49,24 +52,23 @@ export default class {
                 this.createProcess();
             }
             _send.call(this);
-        }, 50);
+        }, 500);
 
         function _send() {
             const text = this.context.getAllText();
             this.workerId = Util.getUUID();
             worker.send({
                 text: text,
+                filePath: this.editor.tabData.path,
                 workerId: this.workerId,
-                cursorPos: this.editor.nowCursorPos,
-                language: this.editor.language
             });
         }
     }
     createProcess() {
-        worker = child_process.fork(path.join(globalData.dirname, 'main/process/format/index.js'));
+        worker = child_process.fork(path.join(globalData.dirname, 'main/process/git/diff.js'));
         worker.on('message', data => {
-            EventBus.$emit('format-worker-done', data)
-            // 30秒后，如果没有编辑内容，则关闭子进程
+            EventBus.$emit('diff-worker-done', data);
+            // 30秒后，如果没有活动，则关闭子进程
             this.closeWorkTimer = setTimeout(() => {
                 worker && worker.kill();
                 worker = null;

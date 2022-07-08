@@ -125,6 +125,7 @@
 import Tokenizer from '@/module/tokenizer/index';
 import Lint from '@/module/lint/index';
 import Formatter from '@/module/format/index';
+import Differ from '@/module/diff/index';
 import Autocomplete from '@/module/autocomplete/index';
 import Fold from '@/module/fold/index';
 import Search from '@/module/search/index';
@@ -477,6 +478,7 @@ export default {
 			this.tokenizer = new Tokenizer(this, this.myContext);
 			this.lint = new Lint(this, this.myContext);
 			this.formatter = new Formatter(this, this.myContext);
+			this.differ = new Differ(this, this.myContext);
 			this.autocomplete = new Autocomplete(this, this.myContext);
 			this.folder = new Fold(this, this.myContext);
 			this.history = new History(this, this.myContext);
@@ -581,11 +583,10 @@ export default {
 				})
 			);
 			EventBus.$on(
-				'git-diffed',
-				(this.initEventBusFn['git-diffed'] = (data) => {
-					if (data && data.path === this.tabData.path) {
-						this.diffRanges = data.result;
-						this.active && this.$refs.minimap && this.$refs.minimap.renderAllDiff(true);
+				'git-diff',
+				(this.initEventBusFn['git-diff'] = (data) => {
+					if (this.active && data && data.path === this.tabData.path) {
+						this.differ.run();
 					}
 				})
 			);
@@ -596,7 +597,7 @@ export default {
 						let status = null;
 						status = Util.getFileStatus(this.tabData.path);
 						if (this.preStatus !== status.originStatus) {
-							this.active && EventBus.$emit('git-diff', this.tabData.path);
+							this.active && this.differ.run();
 							this.preStatus = status.originStatus;
 						}
 					}
@@ -630,7 +631,7 @@ export default {
 				'editor-format',
 				(this.initEventBusFn['editor-format'] = (id) => {
 					if (id === this.tabData.id) {
-						this.formatter.format();
+						this.formatter.run();
 					}
 				})
 			);
@@ -666,7 +667,7 @@ export default {
 			EventBus.$off('convert-to-space', this.initEventBusFn['convert-to-space']);
 			EventBus.$off('close-menu', this.initEventBusFn['close-menu']);
 			EventBus.$off('theme-changed', this.initEventBusFn['theme-changed']);
-			EventBus.$off('git-diffed', this.initEventBusFn['git-diffed']);
+			EventBus.$off('git-diff', this.initEventBusFn['git-diff']);
 			EventBus.$off('git-statused', this.initEventBusFn['git-statused']);
 			EventBus.$off('render-line', this.initEventBusFn['render-line']);
 			EventBus.$off('file-saved', this.initEventBusFn['file-saved']);
@@ -689,7 +690,7 @@ export default {
 			this.focus();
 			if (this.type !== 'diff') {
 				// 获取文件git修改记录
-				EventBus.$emit('git-diff', this.tabData.path);
+				this.differ.run();
 				this.preStatus = this.tabData.status;
 			}
 		},
@@ -1424,6 +1425,10 @@ export default {
 				return;
 			}
 			this[prop] = value;
+		},
+		setDiffObjs(diffRanges) {
+			this.diffRanges = diffRanges;
+			this.$refs.minimap && this.$refs.minimap.renderAllDiff(true);
 		},
 		setNumExtraData() {
 			this.renderNums = this.renderNums.map((item) => {

@@ -4,17 +4,26 @@
  * @Description:
  */
 import Util from '@/common/util';
+import EventBus from '@/event';
 import globalData from '@/data/globalData';
 
 const path = window.require('path');
 const child_process = window.require('child_process');
 const lintSupport = { css: true, scss: true, less: true, html: true, javascript: true };
 
+let worker = null;
+
 export default class {
 	constructor(editor, context) {
 		this.editor = editor;
 		this.context = context;
 		this.initLanguage(editor.language);
+		EventBus.$on('lint-worker-done', this.workerFn = (data) => {
+            if (data.parseId === this.parseId) {
+				this.editor.setErrors(data.results);
+				this.parseId = '';
+			}
+        });
 	}
 	initLanguage(language) {
 		if (this.language === language) {
@@ -33,25 +42,26 @@ export default class {
 	destroy() {
 		this.editor = null;
 		this.context = null;
-		clearTimeout(this.parseTimer);
+		clearTimeout(this.runTimer);
 		clearTimeout(this.closeWorkTimer);
-		if (this.worker) {
-			this.worker.kill();
-			this.worker = null;
+		EventBus.$off('lint-worker-done', this.workerFn);
+		if (worker) {
+			worker.kill();
+			worker = null;
 		}
 	}
 	parse() {
 		if (!lintSupport[this.language]) {
 			return;
 		}
-		clearTimeout(this.parseTimer);
+		clearTimeout(this.runTimer);
 		clearTimeout(this.closeWorkTimer);
-		this.parseTimer = setTimeout(() => {
-			if (this.worker && this.parseId) {
-				this.worker.kill();
-				this.worker = null;
+		this.runTimer = setTimeout(() => {
+			if (worker && this.parseId) {
+				worker.kill();
+				worker = null;
 			}
-			if (this.parseId || !this.worker) {
+			if (this.parseId || !worker) {
 				this.createProcess();
 			}
 			_send.call(this);
@@ -60,7 +70,7 @@ export default class {
 		function _send() {
 			const text = this.context.getAllText();
 			this.parseId = Util.getUUID();
-			this.worker.send({
+			worker.send({
 				text: text,
 				parseId: this.parseId,
 				language: this.language
@@ -68,17 +78,14 @@ export default class {
 		}
 	}
 	createProcess() {
-		this.worker = child_process.fork(path.join(globalData.dirname, 'main/process/lint/index.js'));
-		this.worker.on('message', data => {
-			if (data.parseId === this.parseId) {
-				this.editor.setErrors(data.results);
-				this.parseId = '';
-				// 30秒后，如果没有编辑内容，则关闭子进程
-				this.closeWorkTimer = setTimeout(() => {
-					this.worker && this.worker.kill();
-					this.worker = null;
-				}, 30000);
-			}
+		worker = child_process.fork(path.join(globalData.dirname, 'main/process/lint/index.js'));
+		worker.on('message', data => {
+			EventBus.$emit('lint-worker-done', data);
+			// 30秒后，如果没有活动，则关闭子进程
+			this.closeWorkTimer = setTimeout(() => {
+				worker && worker.kill();
+				worker = null;
+			}, 30000);
 		});
 	}
 }

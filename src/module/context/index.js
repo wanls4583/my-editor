@@ -186,7 +186,7 @@ class Context {
 		this.editor.setAutoTip(null);
 		this.editor.render(true);
 		this.contentChanged();
-		this.editor.tabData.status !== '!!' && EventBus.$emit('git-diff', this.editor.tabData.path);
+		this.editor.tabData.status !== '!!' && this.editor.differ.run();
 		let historyObj = {
 			type: Util.HISTORY_COMMAND.DELETE,
 			cursorPos: Object.assign({}, newPos),
@@ -434,7 +434,7 @@ class Context {
 		this.editor.setAutoTip(null);
 		this.editor.render(true);
 		this.contentChanged();
-		this.editor.tabData.status !== '!!' && EventBus.$emit('git-diff', this.editor.tabData.path);
+		this.editor.tabData.status !== '!!' && this.editor.differ.run();
 		// 更新最大文本宽度
 		if (startObj.width >= this.editor.maxWidthObj.width) {
 			this.editor.setData('maxWidthObj', {
@@ -1156,7 +1156,7 @@ class Context {
 		if (contentChanged) {
 			this.contentChanged();
 			EventBus.$emit('indent-change', 'space');
-			this.editor.tabData.status !== '!!' && EventBus.$emit('git-diff', this.editor.tabData.path);
+			this.editor.tabData.status !== '!!' && this.editor.differ.run();
 			this.editor.render();
 			if (command) {
 				this.editor.history.updateHistory({ type: Util.HISTORY_COMMAND.SPACE_TO_TAB, tabSize, space });
@@ -1256,7 +1256,7 @@ class Context {
 		if (contentChanged) {
 			this.contentChanged();
 			EventBus.$emit('indent-change', 'tab');
-			this.editor.tabData.status !== '!!' && EventBus.$emit('git-diff', this.editor.tabData.path);
+			this.editor.tabData.status !== '!!' && this.editor.differ.run();
 			this.editor.render();
 			if (command) {
 				this.editor.history.updateHistory({ type: Util.HISTORY_COMMAND.TAB_TO_SPACE, tabSize, space });
