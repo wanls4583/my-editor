@@ -117,6 +117,5 @@ class Worker {
 const worker = new Worker();
 
 process.on('message', data => {
-    console.log(data);
     worker.formatCode(data);
 });

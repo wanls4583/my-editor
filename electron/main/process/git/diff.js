@@ -37,7 +37,7 @@ class Differ {
         let aIndex = 0;
         let bIndex = 0;
         const diffObjs = [];
-        const lcs = _lcs(a, b);
+        const lcs = this.lcs(a, b);
         for (let i = 0; i < lcs.length; i++) {
             let item = lcs[i];
             if (aIndex !== item.aIndex) {
@@ -76,92 +76,115 @@ class Differ {
             })
         }
         return diffObjs;
+    }
+    lcs(a, b) {
+        let result = [];
+        let aIndex = 0;
+        let bIndex = 0;
+        let preSames = 0;
+        let endSames = 0;
+        while (a[aIndex] === b[bIndex] && a[aIndex] !== undefined) {
+            aIndex++;
+            bIndex++;
+            preSames++;
+        }
+        if (preSames) {
+            a = a.slice(preSames);
+            b = b.slice(preSames);
+        }
+        aIndex = a.length - 1;
+        bIndex = b.length - 1;
+        while (a[aIndex] === b[bIndex] && a[aIndex] !== undefined) {
+            aIndex--;
+            bIndex--;
+            endSames++;
+        }
+        if (endSames) {
+            a = a.slice(0, -endSames);
+            b = b.slice(0, -endSames);
+        }
+        let arr = _lcs(a, b);
+        let preItem = {};
+        for (let i = 0; i < arr.length; i++) {
+            let item = arr[i];
+            if (preItem.aIndex + preItem.length !== item.aIndex || preItem.bIndex + preItem.length !== item.bIndex) {
+                item.length = 1;
+                result.push(item);
+                preItem = item;
+            } else {
+                preItem.length++;
+            }
+        }
+        if (preSames) {
+            for (let i = 0; i < result.length; i++) {
+                result[i].aIndex += preSames;
+                result[i].bIndex += preSames;
+            }
+            result.unshift({ aIndex: 0, bIndex: 0, length: preSames });
+        }
+        if (endSames) {
+            result.push({ aIndex: a.length + preSames, bIndex: b.length + preSames, length: endSames });
+        }
+        return result;
 
-        function _lcs(a, b) {
-            let result = [];
-            let item = {};
-            let aIndex = 0;
-            let bIndex = 0;
-            let preSames = 0;
-            let endSames = 0;
-            while (a[aIndex] === b[bIndex] && a[aIndex] !== undefined) {
-                aIndex++;
-                bIndex++;
-                preSames++;
-            }
-            if (preSames) {
-                a = a.slice(preSames);
-                b = b.slice(preSames);
-            }
-            aIndex = a.length - 1;
-            bIndex = b.length - 1;
-            while (a[aIndex] === b[bIndex] && a[aIndex] !== undefined) {
-                aIndex--;
-                bIndex--;
-                endSames++;
-            }
-            if (endSames) {
-                a = a.slice(0, -endSames);
-                b = b.slice(0, -endSames);
-            }
-            let aLen = a.length;
-            let bLen = b.length;
-            let dp = new Array(aLen + 1).fill(0);
-            for (let i = 0; i < aLen + 1; i++) {
-                dp[i] = new Array(bLen + 1).fill(0);
-            }
-            for (let i = 1; i <= aLen; i++) {
-                for (let j = 1; j <= bLen; j++) {
-                    if (a[i - 1] === b[j - 1]) {
-                        dp[i][j] = dp[i - 1][j - 1] + 1;
-                    } else if (dp[i][j - 1] > dp[i - 1][j]) {
-                        dp[i][j] = dp[i][j - 1];
-                    } else {
-                        dp[i][j] = dp[i - 1][j];
-                    }
-                }
-            }
-            while (aLen && bLen && dp[aLen][bLen]) {
-                if (a[aLen - 1] === b[bLen - 1]) {
-                    if (item.aIndex === aLen && item.bIndex === bLen) {
-                        item.aIndex--;
-                        item.bIndex--;
-                        item.length++;
-                    } else {
-                        item = {
-                            aIndex: aLen - 1 + preSames,
-                            bIndex: bLen - 1 + preSames,
-                            length: 1
-                        };
-                        result.push(item);
-                    }
-                    aLen -= 1;
-                    bLen -= 1;
-                } else if (dp[aLen - 1][bLen - 1] === dp[aLen][bLen]) {
-                    aLen -= 1;
-                    bLen -= 1;
-                } else if (dp[aLen - 1][bLen] === dp[aLen][bLen]) {
-                    aLen -= 1;
+        function _lis(indexs) {
+            let len = 1;
+            let dp = new Array(indexs.length);
+            let results = [];
+            dp[0] = null;
+            dp[1] = indexs[0];
+            for (let i = 1; i < indexs.length; i++) {
+                if (indexs[i].aIndex > dp[len].aIndex) {
+                    dp[++len] = indexs[i];
+                    indexs[i].prev = dp[len - 1];
                 } else {
-                    bLen -= 1;
+                    let l = 1,
+                        r = len,
+                        pos = 0;
+                    while (l <= r) {
+                        let mid = (l + r) >> 1;
+                        if (dp[mid].aIndex < indexs[i].aIndex) {
+                            pos = mid;
+                            l = mid + 1;
+                        } else {
+                            r = mid - 1;
+                        }
+                    }
+                    dp[pos + 1] = indexs[i];
+                    indexs[i].prev = dp[pos];
                 }
             }
-            if (preSames) {
-                result.push({
-                    aIndex: 0,
-                    bIndex: 0,
-                    length: preSames
-                });
+            let node = dp[len];
+            while (node) {
+                results.push(node);
+                node = node.prev;
             }
-            result.reverse();
-            if (endSames) {
-                result.push({
-                    aIndex: a.length + preSames,
-                    bIndex: b.length + preSames,
-                    length: endSames
-                });
+            results.reverse();
+            return results;
+        }
+
+        // 最长公共子序列
+        function _lcs(a, b) {
+            let aMap = new Map();
+            let indexs = [];
+            for (let i = 0; i < a.length; i++) {
+                let item = a[i];
+                if (aMap.has(item)) {
+                    aMap.get(item).push(i);
+                } else {
+                    aMap.set(item, [i]);
+                }
             }
-            return result;
+            for (let i = 0; i < b.length; i++) {
+                let item = b[i];
+                if (aMap.has(item)) {
+                    let aArr = aMap.get(item);
+                    for (let j = aArr.length - 1; j >= 0; j--) {
+                        indexs.push({ aIndex: aArr[j], bIndex: i });
+                    }
+                }
+            }
+            return (indexs.length && _lis(indexs)) || [];
         }
     }
     parseDiff(diffObjs, endLine) {
@@ -178,25 +201,31 @@ class Differ {
                         deleted: item.deleted
                     });
                 } else if (item.deleted.length > nextItem.added.length) {
-                    let diffObj = {
+                    // let diffObj = {
+                    //     type: 'M',
+                    //     line: item.line,
+                    //     added: nextItem.added,
+                    //     deleted: item.deleted.slice(0, nextItem.added.length)
+                    // }
+                    // results.push(diffObj);
+                    // if (item.line + nextItem.added.length > endLine) {
+                    //     for (let i = nextItem.added.length; i < item.deleted.length; i++) {
+                    //         diffObj.deleted.push(item.deleted[i]);
+                    //     }
+                    // } else {
+                    //     results.push({
+                    //         type: 'D',
+                    //         line: item.line + nextItem.added.length,
+                    //         added: [],
+                    //         deleted: item.deleted.slice(nextItem.added.length)
+                    //     });
+                    // }
+                    results.push({
                         type: 'M',
                         line: item.line,
                         added: nextItem.added,
-                        deleted: item.deleted.slice(0, nextItem.added.length)
-                    }
-                    results.push(diffObj);
-                    if (item.line + nextItem.added.length > endLine) {
-                        for (let i = nextItem.added.length; i < item.deleted.length; i++) {
-                            diffObj.deleted.push(item.deleted[i]);
-                        }
-                    } else {
-                        results.push({
-                            type: 'D',
-                            line: item.line + nextItem.added.length,
-                            added: [],
-                            deleted: item.deleted.slice(nextItem.added.length)
-                        });
-                    }
+                        deleted: item.deleted
+                    });
                 } else {
                     results.push({
                         type: 'M',
@@ -261,15 +290,15 @@ class Differ {
         });
     }
     getIgnore(filePath) {
-		let ignoreed = false;
-		try {
-			ignoreed = spawnSync('git', ['check-ignore', filePath], { cwd: path.dirname(filePath) });
-			ignoreed = ignoreed.stdout.toString();
-		} catch (e) {
-			console.log(e);
-		}
-		return ignoreed;
-	}
+        let ignoreed = false;
+        try {
+            ignoreed = spawnSync('git', ['check-ignore', filePath], { cwd: path.dirname(filePath) });
+            ignoreed = ignoreed.stdout.toString();
+        } catch (e) {
+            console.log(e);
+        }
+        return ignoreed;
+    }
 }
 
 const differ = new Differ();
