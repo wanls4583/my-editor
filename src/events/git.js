@@ -69,18 +69,15 @@ export default class {
 		}
 	}
 	parseDiff({ filePath, text }) {
-		clearTimeout(this.parseDiffTimer);
 		clearTimeout(this.closeDiffTimer);
-		this.parseDiffTimer = setTimeout(() => {
-			if (this.diffProcess && this.parseDiffId) {
-				this.diffProcess.kill();
-				this.diffProcess = null;
-			}
-			if (this.parseDiffId || !this.diffProcess) {
-				this.createDiffProcess();
-			}
-			_send.call(this);
-		}, 500);
+		if (this.diffProcess && this.parseDiffId) {
+			this.diffProcess.kill();
+			this.diffProcess = null;
+		}
+		if (this.parseDiffId || !this.diffProcess) {
+			this.createDiffProcess();
+		}
+		_send.call(this);
 
 		function _send() {
 			this.parseDiffId = Util.getUUID();

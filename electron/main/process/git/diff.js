@@ -8,7 +8,7 @@ class Differ {
         this.cacheIndexs = [];
         this.fileCacheMap = { size: 0 };
     }
-    getDiff({ filePath, text, parseDiffId }) {
+    parseDiff({ filePath, text, parseDiffId }) {
         let nowCommit = this.getNowHash(filePath);
         let fileIndex = nowCommit + '-' + this.getCacheHash(filePath);
         let stagedContent = this.fileCacheMap[fileIndex];
@@ -303,5 +303,5 @@ class Differ {
 
 const differ = new Differ();
 process.on('message', data => {
-    differ.getDiff(data);
+    differ.parseDiff(data);
 });
