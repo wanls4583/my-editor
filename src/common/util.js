@@ -223,7 +223,8 @@ class Util {
 	static diffObj(obj1, obj2) {
 		return JSON.stringify(obj1) !== JSON.stringify(obj2);
 	}
-	static createWorker(funStr) {
+	static createWorker(fun) {
+		var funStr = `(${fun.toString()})()`;
 		var blob = new Blob([funStr]);
 		var url = window.URL.createObjectURL(blob);
 		var worker = new Worker(url);

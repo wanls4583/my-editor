@@ -16,6 +16,9 @@ import EventBus from '@/event';
 import globalData from '@/data/globalData';
 import $ from 'jquery';
 import Util from '@/common/util';
+import minimapWorker from '@/work/minimap';
+
+const path = window.require('path');
 
 export default {
 	name: 'Minimap',
@@ -53,7 +56,7 @@ export default {
 		},
 	},
 	created() {
-		this.worker = new Worker('work/minimap.js');
+		this.worker = Util.createWorker(minimapWorker);
 		this.renderedIdMap = {};
 	},
 	mounted() {
