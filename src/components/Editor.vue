@@ -468,6 +468,16 @@ export default {
 		this.diffRanges = null;
 		this.diffTabData = null;
 		this.tipContent = null;
+
+		cancelAnimationFrame(this.focusTimer);
+		cancelAnimationFrame(this.renderTimer);
+		clearTimeout(this.curserTimer);
+		clearTimeout(this.renderSelectedBgTimer);
+		clearTimeout(this.bracketMatchTimer);
+		clearTimeout(this.setAutoTip.hideTimer);
+		clearTimeout(this.compositionendTimer);
+		globalData.scheduler.removeUiTask(this.moveTask);
+		globalData.scheduler.removeUiTask(this.wheelTask);
 	},
 	methods: {
 		// 初始化数据

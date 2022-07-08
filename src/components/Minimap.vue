@@ -81,6 +81,8 @@ export default {
 	destroyed() {
 		this.worker.terminate();
 		this.unbindEvent();
+		clearTimeout(this.renderTimer);
+		globalData.scheduler.removeUiTask(this.moveTask);
 	},
 	methods: {
 		initWorkerData(type) {

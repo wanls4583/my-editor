@@ -52,7 +52,7 @@ export default class {
 				EventBus.$emit('file-tree-loaded', data);
 			});
 		} else {
-			EventBus.$emit('file-tree-loaded', data);
+			EventBus.$emit('file-tree-loaded', []);
 		}
 	}
 	storeTabData() {

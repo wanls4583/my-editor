@@ -44,6 +44,7 @@ export default {
 	},
 	destroyed() {
 		this.unbindEvent();
+		globalData.scheduler.removeUiTask(this.moveHsliderTask);
 	},
 	methods: {
 		initResizeEvent() {

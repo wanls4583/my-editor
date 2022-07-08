@@ -1,13 +1,11 @@
 import EventBus from '@/event';
 import globalData from '@/data/globalData';
 import Util from '@/common/util';
-import Context from '@/module/context/index';
 import Ignore from 'ignore';
 
 const child_process = window.require('child_process');
 const path = window.require('path');
 const fs = window.require('fs');
-const contexts = Context.contexts;
 
 export default class {
 	constructor() {
