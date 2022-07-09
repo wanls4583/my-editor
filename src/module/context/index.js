@@ -156,7 +156,7 @@ class Context {
 		});
 		if (text.length > 1) {
 			// 换行对齐
-			if (!text[0].text && alignmentTab) {
+			if (!text[0].text && cursorPos.column === nowLineText.length && alignmentTab) {
 				let tabStr = _getTabStr.call(this, nowLineText, this.editor.folder.getRangeFold(cursorPos.line, true));
 				if (tabStr) {
 					text[1].text = tabStr + text[1].text.trimLeft();
@@ -455,6 +455,46 @@ class Context {
 			active: range && range.active
 		};
 		return historyObj;
+	}
+	insertLineUp() {
+		let cursorPosList = [];
+		let preItem = {};
+		let lineOne = false;
+		this.editor.cursor.multiCursorPos.forEach((item) => {
+			if (preItem.line !== item.line) {
+				if (item.line === 1) {
+					cursorPosList.push({
+						line: item.line,
+						column: 0
+					});
+					lineOne = true;
+				} else {
+					cursorPosList.push({
+						line: item.line - 1,
+						column: this.htmls[item.line - 2].text.length
+					});
+				}
+			}
+			preItem = item;
+		});
+		this.editor.history.pushHistory(this._insertMultiContent('\n', cursorPosList));
+		if (lineOne) {
+			this.editor.cursor.updateCursorPos(this.editor.cursor.multiCursorPos.get(0), 1, 0);
+		}
+	}
+	insertLineDown() {
+		let cursorPosList = [];
+		let preItem = {};
+		this.editor.cursor.multiCursorPos.forEach((item) => {
+			if (preItem.line !== item.line) {
+				cursorPosList.push({
+					line: item.line,
+					column: this.htmls[item.line - 1].text.length
+				});
+			}
+			preItem = item;
+		});
+		this.editor.history.pushHistory(this._insertMultiContent('\n', cursorPosList));
 	}
 	// 获取最大宽度
 	setMaxWidth() {
