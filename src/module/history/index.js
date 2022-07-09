@@ -55,7 +55,7 @@ export default class {
 		switch (commandType) {
 			case Util.HISTORY_COMMAND.DELETE:
 				this.editor.cursor.clearCursorPos();
-				this.context.deleteContent(Util.KEYCODE.BACKSPACE, command);
+				this.context.deleteContent('left', command);
 				break;
 			case Util.HISTORY_COMMAND.INSERT:
 				this.editor.cursor.clearCursorPos();

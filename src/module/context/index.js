@@ -215,7 +215,7 @@ class Context {
 			return tabStr;
 		}
 	}
-	deleteContent(keyCode, command) {
+	deleteContent(direct, command) {
 		let historyArr = [];
 		let rangeList = [];
 		if (command) {
@@ -243,7 +243,7 @@ class Context {
 				}
 			});
 		}
-		historyArr = this._deleteMultiContent(rangeList, keyCode);
+		historyArr = this._deleteMultiContent(rangeList, direct);
 		if (!command) {
 			// 新增历史记录
 			historyArr.length && this.editor.history.pushHistory(historyArr);
@@ -260,7 +260,7 @@ class Context {
 		this.editor.fSearcher.refreshSearch();
 		return historyArr;
 	}
-	_deleteMultiContent(rangeList, keyCode) {
+	_deleteMultiContent(rangeList, direct) {
 		let historyArr = [];
 		let historyObj = null;
 		let prePos = null;
@@ -287,7 +287,7 @@ class Context {
 			} else {
 				columnDelta = 0;
 			}
-			historyObj = this._deleteContent(pos, keyCode);
+			historyObj = this._deleteContent(pos, direct);
 			historyObj.text && historyArr.push(historyObj);
 			prePos = historyObj.cursorPos;
 			lineDelta += historyObj.preCursorPos.line - prePos.line;
@@ -313,7 +313,7 @@ class Context {
 			} else {
 				columnDelta = 0;
 			}
-			historyObj = this._deleteContent(rangePos, keyCode);
+			historyObj = this._deleteContent(rangePos, direct);
 			historyObj.text && historyArr.push(historyObj);
 			prePos = historyObj.cursorPos;
 			lineDelta += historyObj.preCursorPos.line - prePos.line;
@@ -325,9 +325,9 @@ class Context {
 		}
 	}
 	// 删除内容
-	_deleteContent(cursorPos, keyCode) {
+	_deleteContent(cursorPos, direct) {
 		let range = null;
-		let margin = keyCode === Util.KEYCODE.DELETE ? 'left' : 'right';
+		let margin = direct === 'right' ? 'left' : 'right';
 		cursorPos.moveWidth = 0; //去除上下移动光标的初始宽度记录
 		if (cursorPos.start && cursorPos.end) {
 			//删除范围内的内容
@@ -376,7 +376,7 @@ class Context {
 			}
 			newPos.line = start.line;
 			newPos.column = start.column;
-		} else if (Util.KEYCODE.DELETE == keyCode) {
+		} else if (direct === 'right') {
 			// 向后删除一个字符
 			if (cursorPos.column == text.length) {
 				// 光标处于行尾
@@ -450,7 +450,7 @@ class Context {
 			cursorPos: Object.assign({}, newPos),
 			preCursorPos: Object.assign({}, originPos),
 			text: deleteText,
-			keyCode: keyCode,
+			direct: direct,
 			margin: margin,
 			active: range && range.active
 		};
@@ -496,79 +496,39 @@ class Context {
 		});
 		this.editor.history.pushHistory(this._insertMultiContent('\n', cursorPosList));
 	}
-	// 获取最大宽度
-	setMaxWidth() {
-		let index = 0;
-		let startTime = Date.now();
-		let maxWidthObj = {
-			line: this.htmls[0].lineId,
-			width: 0
-		};
-		clearTimeout(this.setMaxWidthTimer);
-		_setMaxWidth.call(this);
-
-		function _setMaxWidth() {
-			while (index < this.htmls.length) {
-				let item = this.htmls[index];
-				if (item.width > maxWidthObj.width) {
-					maxWidthObj = {
-						lineId: item.lineId,
-						text: item.text,
-						width: item.width
-					};
-				}
-				index++;
-				if (Date.now() - startTime > 20) {
-					break;
-				}
-			}
-			if (index < this.htmls.length) {
-				this.setMaxWidthTimer = setTimeout(() => {
-					_setMaxWidth.call(this);
-				}, 20);
-			} else {
-				this.editor.setData('maxWidthObj', maxWidthObj);
-			}
-		}
-	}
 	/**
-	 * 设置每行文本的宽度
-	 * @param {Array} texts
+	 * 向前或者向后删除一个单词
+	 * @param {String} direct [left|right] 
 	 */
-	setLineWidth(texts) {
-		let index = 0;
-		let maxWidthObj = this.editor.maxWidthObj;
-		globalData.scheduler.removeTask(this.setLineWidthTask);
-		_setLineWidth.call(this);
-
-		function _setLineWidth() {
-			let startTime = Date.now();
-			let count = 0;
-			let limit = 5;
-			while (index < texts.length) {
-				let lineObj = texts[index];
-				if (this.lineIdMap.has(lineObj.lineId)) {
-					let width = this.editor.getStrWidth(lineObj.text);
-					lineObj.width = width;
-					if (width > maxWidthObj.width) {
-						maxWidthObj = {
-							lineId: lineObj.lineId,
-							text: lineObj.text,
-							width: width
-						};
+	deleteWord(direct) {
+		if (this.editor.selecter.size > 0) {
+			this.deleteContent(direct);
+		} else {
+			let preRange = null;
+			let rangeList = [];
+			this.editor.cursor.multiCursorPos.forEach(item => {
+				if (direct === 'left') {
+					let end = { line: item.line, column: item.column };
+					let cursorPos = this.editor.cursor.moveCursor(item, direct, true);
+					if (preRange && Util.comparePos(preRange.start, cursorPos) === 0) {
+						preRange.end = end;
+					} else if (Util.comparePos(cursorPos, end) < 0) {
+						preRange = { start: cursorPos, end: end };
+						rangeList.push(preRange);
+					}
+				} else if (direct === 'right') {
+					let start = { line: item.line, column: item.column };
+					let cursorPos = this.editor.cursor.moveCursor(item, direct, true);
+					if (preRange && Util.comparePos(preRange.end, cursorPos) === 0) {
+						return;
+					} else if (Util.comparePos(cursorPos, start) > 0) {
+						preRange = { start: start, end: cursorPos };
+						rangeList.push(preRange);
 					}
 				}
-				index++;
-				count++;
-				if (count >= limit && Date.now() - startTime >= 5) {
-					break;
-				}
-			}
-			this.editor.setData('maxWidthObj', maxWidthObj);
-			if (index < texts.length) {
-				this.setLineWidthTask = globalData.scheduler.addTask(() => {
-					_setLineWidth.call(this);
-				});
+			});
+			if (rangeList.length) {
+				this.editor.history.pushHistory(this._deleteMultiContent(rangeList, direct));
 			}
 		}
 	}
@@ -1330,6 +1290,82 @@ class Context {
 	contentChanged() {
 		this.allText = '';
 		EventBus.$emit('editor-content-change', { id: this.editor.editorId, path: this.editor.tabData.path });
+	}
+	// 获取最大宽度
+	setMaxWidth() {
+		let index = 0;
+		let startTime = Date.now();
+		let maxWidthObj = {
+			line: this.htmls[0].lineId,
+			width: 0
+		};
+		clearTimeout(this.setMaxWidthTimer);
+		_setMaxWidth.call(this);
+
+		function _setMaxWidth() {
+			while (index < this.htmls.length) {
+				let item = this.htmls[index];
+				if (item.width > maxWidthObj.width) {
+					maxWidthObj = {
+						lineId: item.lineId,
+						text: item.text,
+						width: item.width
+					};
+				}
+				index++;
+				if (Date.now() - startTime > 20) {
+					break;
+				}
+			}
+			if (index < this.htmls.length) {
+				this.setMaxWidthTimer = setTimeout(() => {
+					_setMaxWidth.call(this);
+				}, 20);
+			} else {
+				this.editor.setData('maxWidthObj', maxWidthObj);
+			}
+		}
+	}
+	/**
+	 * 设置每行文本的宽度
+	 * @param {Array} texts
+	 */
+	setLineWidth(texts) {
+		let index = 0;
+		let maxWidthObj = this.editor.maxWidthObj;
+		globalData.scheduler.removeTask(this.setLineWidthTask);
+		_setLineWidth.call(this);
+
+		function _setLineWidth() {
+			let startTime = Date.now();
+			let count = 0;
+			let limit = 5;
+			while (index < texts.length) {
+				let lineObj = texts[index];
+				if (this.lineIdMap.has(lineObj.lineId)) {
+					let width = this.editor.getStrWidth(lineObj.text);
+					lineObj.width = width;
+					if (width > maxWidthObj.width) {
+						maxWidthObj = {
+							lineId: lineObj.lineId,
+							text: lineObj.text,
+							width: width
+						};
+					}
+				}
+				index++;
+				count++;
+				if (count >= limit && Date.now() - startTime >= 5) {
+					break;
+				}
+			}
+			this.editor.setData('maxWidthObj', maxWidthObj);
+			if (index < texts.length) {
+				this.setLineWidthTask = globalData.scheduler.addTask(() => {
+					_setLineWidth.call(this);
+				});
+			}
+		}
 	}
 	// 获取选中范围内的文本
 	getRangeText(start, end) {

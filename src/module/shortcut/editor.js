@@ -109,6 +109,16 @@ export default class {
 					e.preventDefault();
 					this.editor.history.redo();
 					break;
+				case 'Delete': //delete
+					e.preventDefault();
+					this.context.deleteWord('right');
+					this.editor.autocomplete.search();
+					break;
+				case 'Backspace': //backspace
+					e.preventDefault();
+					this.context.deleteWord('left');
+					this.editor.autocomplete.search();
+					break;
 			}
 		} else if (e.shiftKey) {
 			switch (e.code) {
@@ -175,12 +185,12 @@ export default class {
 					break;
 				case 'Delete': //delete
 					e.preventDefault();
-					this.context.deleteContent(Util.KEYCODE.DELETE);
+					this.context.deleteContent('right');
 					this.editor.autocomplete.search();
 					break;
 				case 'Backspace': //backspace
 					e.preventDefault();
-					this.context.deleteContent(Util.KEYCODE.BACKSPACE);
+					this.context.deleteContent('left');
 					this.editor.autocomplete.search();
 					break;
 			}
