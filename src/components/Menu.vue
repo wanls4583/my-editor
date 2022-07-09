@@ -186,6 +186,8 @@ export default {
 		},
 		setMenuList(list) {
 			this.allMenuList = list;
+			this.originMenuList = list;
+			this.groups = 1;
 			this.setTreeHeight();
 			this.setStartLine(this.checkScrollTop(this.top));
 		},

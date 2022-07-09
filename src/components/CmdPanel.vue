@@ -198,6 +198,7 @@ export default {
 						nameIndexs.reverse();
 						descIndexs.reverse();
 						results.push({
+							index: results.length,
 							name: item.name,
 							desc: item.path,
 							op: 'openFile',
@@ -210,6 +211,7 @@ export default {
 					}
 				} else {
 					results.push({
+						index: results.length,
 						name: item.name,
 						desc: item.path,
 						item: item,
