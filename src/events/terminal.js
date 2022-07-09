@@ -15,12 +15,13 @@ export default class {
 			let nowFileItem = globalData.nowFileItem;
 			let tab = {};
 			let name = '';
-			if (!dirPath) {
-				dirPath = window.process.env.HOME;
-				if (nowFileItem) {
-					dirPath = nowFileItem.rootPath;
-				}
+			if (!dirPath && nowFileItem) {
+				dirPath = nowFileItem.rootPath;
 			}
+			dirPath = dirPath
+				|| window.process.env.HOME
+				|| window.process.env.HOMEPATH
+				|| globalData.userPath;
 			name = path.basename(dirPath);
 			tab.name = name;
 			tab.path = dirPath;
