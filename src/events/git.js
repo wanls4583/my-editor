@@ -14,7 +14,9 @@ export default class {
 		this.gitStautsMap = {};
 		this.gitDiffTimer = {};
 		this.init();
-		this.createStatusProcess();
+		setTimeout(()=>{
+			this.createStatusProcess();
+		}, 500);
 	}
 	init() {
 		EventBus.$on('git-status-start', filePath => {
@@ -67,6 +69,12 @@ export default class {
 		});
 	}
 	watchFileStatus(filePath) {
+		if (!this.statusProcess) {
+			setTimeout(() => {
+				this.watchFileStatus(filePath);
+			}, 500);
+			return;
+		}
 		this.statusProcess.send({
 			type: 'start',
 			path: filePath
