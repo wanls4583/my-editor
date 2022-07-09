@@ -509,7 +509,7 @@ class Context {
 			this.editor.cursor.multiCursorPos.forEach(item => {
 				if (direct === 'left') {
 					let end = { line: item.line, column: item.column };
-					let cursorPos = this.editor.cursor.moveCursor(item, direct, true);
+					let cursorPos = this.editor.cursor.moveCursor(item, direct, true, true);
 					if (preRange && Util.comparePos(preRange.start, cursorPos) === 0) {
 						preRange.end = end;
 					} else if (Util.comparePos(cursorPos, end) < 0) {
@@ -518,7 +518,7 @@ class Context {
 					}
 				} else if (direct === 'right') {
 					let start = { line: item.line, column: item.column };
-					let cursorPos = this.editor.cursor.moveCursor(item, direct, true);
+					let cursorPos = this.editor.cursor.moveCursor(item, direct, true, true);
 					if (preRange && Util.comparePos(preRange.end, cursorPos) === 0) {
 						return;
 					} else if (Util.comparePos(cursorPos, start) > 0) {

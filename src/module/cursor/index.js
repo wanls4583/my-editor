@@ -192,7 +192,7 @@ export default class {
         return it && it.next();
     }
     // 移动光标
-    moveCursor(cursorPos, direct, wholeWord) {
+    moveCursor(cursorPos, direct, wholeWord, stopUpdate) {
         let text = this.context.htmls[cursorPos.line - 1].text;
         let line = cursorPos.line;
         let column = cursorPos.column;
@@ -272,7 +272,7 @@ export default class {
                 }
             }
         }
-        this.updateCursorPos(cursorPos, line, column);
+        !stopUpdate && this.updateCursorPos(cursorPos, line, column);
 
         return {
             line: line,
