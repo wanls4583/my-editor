@@ -54,6 +54,10 @@ class Autocomplete {
 		});
 	}
 	emmet() {
+		if (this.editor.autoTipList && this.editor.autoTipList.length) {
+			_insertTab.call(this);
+			return;
+		}
 		let lineObj = this.context.htmls[this.editor.nowCursorPos.line - 1];
 		let tokenIndex = this.getTokenIndex(this.editor.nowCursorPos);
 		let nowToken = lineObj.tokens[tokenIndex];
@@ -81,9 +85,11 @@ class Autocomplete {
 		}
 		if (emmetObj) {
 			this.context.replaceTip({ word: emmetObj.abbreviation, result: emmetObj.abbreviation, type: type });
-		} else if (this.editor.autoTipList && this.editor.autoTipList.length) {
-			this.editor.selectAutoTip();
 		} else {
+			_insertTab.call(this);
+		}
+		
+		function _insertTab() {
 			if (this.editor.indent === 'space' && /^\s*$/.exec(lineObj.text.slice(0, this.editor.nowCursorPos.column))) {
 				this.context.insertContent(this.editor.space);
 			} else {
