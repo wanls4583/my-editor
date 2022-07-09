@@ -18,12 +18,13 @@ import Util from '@/common/util';
 import EventBus from '@/event';
 import $ from 'jquery';
 
+const path = window.require('path');
 const { ipcRenderer } = window.require('electron');
 
 export default {
 	name: 'Terminal',
 	props: {
-		id: { type: Number, default: 0 },
+		id: String,
 		path: String,
 	},
 	data() {
@@ -116,6 +117,16 @@ export default {
 			});
 			this.terminal.onResize((data) => {
 				this.setResize(data);
+			});
+			this.terminal.onTitleChange((data) => {
+				let title = '';
+				try {
+					title = path.parse(data);
+					title = title.name;
+				} catch (e) {
+					title = data;
+				}
+				EventBus.$emit('terminal-title-change', { id: this.id, title });
 			});
 			this.terminal.attachCustomKeyEventHandler((e) => {
 				if (e.ctrlKey && e.code === 'KeyC' && e.type === 'keydown') {

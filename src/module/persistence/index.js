@@ -82,6 +82,7 @@ export default class {
 			return {
 				id: item.id,
 				name: item.name,
+				title: item.title,
 				path: item.path,
 				active: item.active,
 			};

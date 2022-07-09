@@ -18,11 +18,7 @@ export default class {
 			if (!dirPath) {
 				dirPath = window.process.env.HOME;
 				if (nowFileItem) {
-					if (nowFileItem.type === 'file') {
-						dirPath = path.dirname(nowFileItem.path);
-					} else {
-						dirPath = nowFileItem.path;
-					}
+					dirPath = nowFileItem.rootPath;
 				}
 			}
 			name = path.basename(dirPath);
@@ -55,6 +51,11 @@ export default class {
 		});
 		EventBus.$on('terminal-loaded', list => {
 			this.loadTerminal(list);
+		});
+		EventBus.$on('terminal-title-change', ({ id, title }) => {
+			let tab = this.getTerminalTabById(id);
+			tab.title = title;
+			this.terminalList.splice();
 		});
 	}
 	getTerminalTabById(id) {

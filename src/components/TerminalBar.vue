@@ -9,14 +9,13 @@
 			<div class="bar-scroller my-scroll-overlay my-scroll-mini">
 				<div
 					:class="[item.active ? 'my-active' : '']"
-					:title="item.path"
 					@click="onClickItem(item.id)"
 					@contextmenu.prevent.stop="onContextmenu($event, item.id)"
 					class="bar-item my-hover"
 					v-for="(item, index) in terminalList"
 				>
 					<div class="bar-content">
-						<span class="bar-text">{{ item.name }}</span>
+						<span class="bar-text">{{ item.title || item.name }}</span>
 						<div class="bar-icon-wrap">
 							<span @click.stop="onClose(item.id)" class="bar-icon" title="close">
 								<i class="my-icon my-icon-close"></i>
