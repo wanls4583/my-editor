@@ -18,10 +18,7 @@ export default class {
 			if (!dirPath && nowFileItem) {
 				dirPath = nowFileItem.rootPath;
 			}
-			dirPath = dirPath
-				|| window.process.env.HOME
-				|| window.process.env.HOMEPATH
-				|| globalData.userPath;
+			dirPath = dirPath || globalData.homePath;
 			name = path.basename(dirPath);
 			tab.name = name;
 			tab.path = dirPath;

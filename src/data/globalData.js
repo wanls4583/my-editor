@@ -6,7 +6,7 @@ const remote = window.require('@electron/remote');
 const fs = window.require('fs');
 const path = window.require('path');
 const dirname = remote.app.getAppPath();
-const userPath = remote.app.getPath('userData');
+const homePath = remote.app.getPath('home');
 
 const nowTheme = {
 	value: 'Monokai',
@@ -31,7 +31,7 @@ const globalData = {
 	scheduler: new Scheduler(),
 	enum: Enum,
 	dirname: dirname,
-	userPath: userPath,
+	homePath: homePath,
 	configPath: configPath,
 	fileTreePath: fileTreePath,
 	cachePath: cachePath,
