@@ -52,7 +52,11 @@ export default class {
                 text: text,
                 workerId: this.workerId,
                 cursorPos: this.editor.nowCursorPos,
-                language: this.editor.language
+                language: this.editor.language,
+                options: {
+                    indent_size: this.editor.tabSize,
+                    indent_with_tabs: this.editor.indent === 'tab'
+                }
             });
         }
     }

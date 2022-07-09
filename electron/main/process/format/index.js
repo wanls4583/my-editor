@@ -2,15 +2,16 @@ const JsBeautify = require('js-beautify');
 
 class Worker {
     constructor() {
-
+        this.options = { max_preserve_newlines: 2, indent_size: 4, indent_with_tabs: true };
     }
-    formatCode({ workerId, text, cursorPos, language }) {
+    formatCode({ workerId, text, cursorPos, language, options }) {
         let parser = this.getFormatParser(language);
         let charCount = this.getCharAndSpaceCount(text.split('\n'), cursorPos);
         let endSpaceCount = charCount.endSpaceCount;
         charCount = charCount.charCount;
         try {
-            let result = parser(text);
+            let opt = Object.assign({}, this.options);
+            let result = parser(text, Object.assign(opt, options));
             if (result !== text) {
                 cursorPos = this.getCursorOffset(result, charCount, endSpaceCount);
                 cursorPos = result.slice(0, cursorPos).split('\n');
