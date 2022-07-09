@@ -19,7 +19,7 @@
 							<span class="my-icon my-icon-down" v-if="item.open"></span>
 							<span class="my-icon my-icon-right" v-else></span>
 						</template>
-						<div :class="[item.icon, item.statusColor]" class="tree-item-content">
+						<div :class="[item.icon, item.statusColor]" :style="{'margin-left': item.marginLeft}" class="tree-item-content">
 							<div class="my-center-between" style="width:100%;overflow:hidden">
 								<span class="tree-item-text">{{item.name}}</span>
 								<span style="margin:0 5px 0 10px;flex-shrink:0" v-if="item.type==='file'&&item.status!='!!'">{{item.status}}</span>
@@ -194,6 +194,7 @@ export default {
 		render() {
 			cancelAnimationFrame(this.renderTimer);
 			this.renderTimer = requestAnimationFrame(() => {
+				let preItem = {};
 				this.renderList = openedList.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines);
 				this.renderList.forEach((item) => {
 					if (globalData.nowIconData) {
@@ -213,6 +214,14 @@ export default {
 						item.statusColor = item.status.statusColor;
 						item.status = item.status.status;
 					}
+					if(item.type === 'file') {
+						if(preItem.type === 'file') {
+							item.marginLeft = preItem.marginLeft;
+						} else if(preItem.path === item.parentPath) {
+							item.marginLeft = '10px';
+						}
+					}
+					preItem = item;
 				});
 			});
 		},

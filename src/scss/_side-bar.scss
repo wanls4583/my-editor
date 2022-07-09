@@ -83,6 +83,10 @@
 				width: 20px;
 				height: 20px;
 			}
+			
+			.my-file-icon::before {
+				margin-left: 0;		
+			}
 		}
 	}
 
