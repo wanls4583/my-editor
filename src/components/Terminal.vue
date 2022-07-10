@@ -53,12 +53,12 @@ export default {
 		this.terminal.loadAddon(this.searchAddon);
 		this.terminal.loadAddon(new WebLinksAddon());
 		this.terminal.open(this.$refs.terminal);
+		this.createTerminal();
 		this.initEvent();
 		this.initTerminalEvent();
 		this.initResizeEvent();
 		requestAnimationFrame(() => {
 			this.fitAddon.fit();
-			this.createTerminal();
 		});
 	},
 	destroyed() {

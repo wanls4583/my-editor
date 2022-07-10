@@ -393,35 +393,22 @@ export default class {
 			delete this.fileWatcherTimer[filePath];
 		}
 	}
-	copyToClip(filePaths) {
+	copyToClip(filePath) {
 		const clipboard = window.require('clipboard-files');
-		filePaths = filePaths.filter(file => {
-			return fs.existsSync(file);
-		});
-		clipboard.writeFiles(filePaths);
+		clipboard.writeFiles(filePath);
 	}
-	copyFileToClip(filePaths) {
-		try {
-			this.copyToClip(filePaths);
-			EventBus.$emit('file-copyed', filePaths);
-		} catch (e) {
-			EventBus.$emit('file-copy-fail', filePaths);
-		}
+	copyFileToClip(filePath) {
+		this.copyToClip(filePath);
+		EventBus.$emit('file-copyed', filePath);
 	}
-	cutFileToClip(filePaths) {
-		try {
-			this.copyToClip(filePaths);
-			EventBus.$emit('file-cuted', filePaths);
-		} catch (e) {
-			EventBus.$emit('file-cut-fail', filePaths);
-		}
+	cutFileToClip(filePath) {
+		this.copyToClip(filePath);
 	}
 	paste(destPath, cutPath) {
 		const clipboard = window.require('clipboard-files');
 		const fse = window.require('fs-extra');
 		if (!fs.existsSync(destPath)) {
 			console.log(`dir "${destPath}" not exsit`);
-			EventBus.$emit('file-paste-fail', destPath);
 			return;
 		}
 		try {
@@ -440,49 +427,24 @@ export default class {
 				}
 			});
 		} catch (e) {
-			EventBus.$emit('file-paste-fail', destPath);
 			console.log(`copy to "${destPath}" fail`);
 		}
 	}
 	rename(filePath, newName) {
 		let target = path.join(path.dirname(filePath), newName);
-		fs.rename(filePath, target, err => {
-			if (err) throw err;
-			EventBus.$emit('file-renamed', filePath, newName);
-		});
+		fs.rename(filePath, target);
 	}
 	createFile(filePath) {
 		const fse = window.require('fs-extra');
-		fse.ensureFile(filePath)
-			.then(() => {
-				EventBus.$emit('file-created', filePath);
-			})
-			.catch(() => {
-				EventBus.$emit('file-create-fail', filePath);
-				console.error(err);
-			});
+		fse.ensureFile(filePath);
 	}
 	createFolder(filePath) {
 		const fse = window.require('fs-extra');
-		fse.ensureDir(filePath)
-			.then(() => {
-				EventBus.$emit('folder-created', filePath);
-			})
-			.catch(() => {
-				EventBus.$emit('folder-create-fail', filePath);
-				console.error(err);
-			});
+		fse.ensureDir(filePath);
 	}
 	delete(filePath) {
 		const fse = window.require('fs-extra');
-		fse.remove(filePath)
-			.then(() => {
-				EventBus.$emit('file-deleted', filePath);
-			})
-			.catch(err => {
-				EventBus.$emit('file-delete-fail', filePath);
-				console.error(err);
-			});
+		fse.remove(filePath);
 	}
 	getEditorMap() {
 		let editorMap = {};
