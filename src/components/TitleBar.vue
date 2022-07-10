@@ -34,7 +34,7 @@
 					<Menu :hoverCheck="true" :menuList="preferenceMenuList" :styles="{ left: 0, top: _top }" @change="onPreferenceMenuChange" v-if="preferenceMenuVisible"></Menu>
 				</div>
 			</div>
-			<div class="bar-right" v-if="mode === 'app'">
+			<div class="bar-right">
 				<!-- 最小化 -->
 				<div @click="onMinimize" class="bar-item my-hover" style="width: 35px; height: 35px">
 					<span class="iconfont icon-zuixiaohua"></span>
@@ -84,7 +84,6 @@ export default {
 			terminalMenuVisible: false,
 			preferenceMenuVisible: false,
 			maximize: false,
-			mode: remote ? 'app' : 'web',
 			fileMenuList: [
 				[
 					{
@@ -313,24 +312,22 @@ export default {
 		},
 	},
 	created() {
-		if (this.mode === 'app') {
-			this.fileMenuList.splice(1, 0, [
-				{
-					name: 'Open File',
-					op: 'openFile',
-					shortcut: 'Ctrl+O',
-				},
-				{
-					name: 'Open Folder',
-					op: 'openFolder',
-					shortcut: 'Ctrl+K Ctrl+O',
-				},
-				{
-					name: 'Open Workspace',
-					op: 'openWorkspace',
-				},
-			]);
-		}
+		this.fileMenuList.splice(1, 0, [
+			{
+				name: 'Open File',
+				op: 'openFile',
+				shortcut: 'Ctrl+O',
+			},
+			{
+				name: 'Open Folder',
+				op: 'openFolder',
+				shortcut: 'Ctrl+K Ctrl+O',
+			},
+			{
+				name: 'Open Workspace',
+				op: 'openWorkspace',
+			},
+		]);
 		this.shortcut = new ShortCut(this);
 		this.initEventBus();
 		$(window).on('keydown', (e) => {
@@ -338,9 +335,7 @@ export default {
 		});
 	},
 	mounted() {
-		if (this.mode === 'app') {
-			this.maximize = currentWindow.isMaximized();
-		}
+		this.maximize = currentWindow.isMaximized();
 	},
 	methods: {
 		initEventBus() {

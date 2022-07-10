@@ -110,7 +110,6 @@ export default {
 			themeType: 'dark',
 			activity: 'files',
 			leftWidth: 400,
-			mode: remote ? 'app' : 'mode',
 		};
 	},
 	computed: {
@@ -135,7 +134,6 @@ export default {
 	},
 	created() {
 		const currentWindow = remote.getCurrentWindow();
-		const size = remote.screen.getPrimaryDisplay().size;
 		window.globalData = globalData;
 		globalData.$mainWin = this;
 		this.commonEvent = new CommonEvent(this);
@@ -166,11 +164,6 @@ export default {
 				}, 0);
 			}
 		};
-		// 大尺寸屏幕上，放大显示比例
-		// if (size.width > 1400) {
-		// 	globalData.zoomLevel = 0.5;
-		// }
-		remote.getCurrentWindow().webContents.setZoomLevel(globalData.zoomLevel);
 	},
 	mounted() {
 		window.test = this;

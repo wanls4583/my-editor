@@ -4,13 +4,11 @@ import EventBus from '@/event';
 import globalData from '@/data/globalData';
 import Util from '@/common/util';
 
-const remote = window.require('@electron/remote');
 const contexts = Context.contexts;
 
 export default class {
 	constructor() {
 		this.editorList = globalData.editorList;
-		this.mode = remote ? 'app' : 'mode';
 		this.init();
 	}
 	init() {
@@ -159,18 +157,13 @@ export default class {
 					{
 						name: '保存',
 						callback: () => {
-							if (this.mode === 'app') {
-								EventBus.$emit('file-save', {
-									id: id,
-									success: () => {
-										_closeTab.call(this, resolve);
-										EventBus.$emit('dialog-close');
-									}
-								});
-							} else {
-								_closeTab.call(this, resolve);
-								EventBus.$emit('dialog-close');
-							}
+							EventBus.$emit('file-save', {
+								id: id,
+								success: () => {
+									_closeTab.call(this, resolve);
+									EventBus.$emit('dialog-close');
+								}
+							});
 						}
 					},
 					{

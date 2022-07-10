@@ -7,6 +7,7 @@ const fs = window.require('fs');
 const path = window.require('path');
 const dirname = remote.app.getAppPath();
 const homePath = remote.app.getPath('home');
+const userPath = remote.app.getPath('userData');
 
 const nowTheme = {
 	value: 'Monokai',
@@ -21,11 +22,11 @@ const views = { terminal: false, minimap: true, sidebar: true, statusbar: true }
 const skipSearchDirs = /[\\\/](node_modules|dist|\.git|\.vscode|\.idea|\.DS_Store)(?=[\\\/]|$)/;
 const skipSearchFiles = /^npm-debug.log|^yarn-debug.log|^yarn-error.log|^pnpm-debug.log|\.suo|\.ntvs|\.njsproj|\.sln|\.sw/;
 const defaultWordPattern = '(-?\\d*\\.\\d\\w*)|([^\\`\\~\\!\\@\\%\\^\\&\\*\\(\\)\\-\\=\\+\\[\\{\\]\\}\\\\\\|\\;\\:\\\'\\"\\,\\.\\<\\>/\\?\\s]+)';
-const fileTreePath = path.join(remote.app.getPath('userData'), 'userData/file_tree.my');
-const configPath = path.join(remote.app.getPath('userData'), 'userData/config.my');
-const cachePath = path.join(remote.app.getPath('userData'), 'userData/cache');
-const tabPath = path.join(remote.app.getPath('userData'), 'userData/tab.my');
-const terminalTabPath = path.join(remote.app.getPath('userData'), 'userData/tab_terminal.my');
+const fileTreePath = path.join(userPath, 'userData/file_tree.my');
+const configPath = path.join(userPath, 'userData/config.my');
+const cachePath = path.join(userPath, 'userData/cache');
+const tabPath = path.join(userPath, 'userData/tab.my');
+const terminalTabPath = path.join(userPath, 'userData/tab_terminal.my');
 
 const globalData = {
 	scheduler: new Scheduler(),
