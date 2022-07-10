@@ -2,12 +2,18 @@ import Scheduler from '../common/scheduler';
 import Enum from './enum';
 import Util from '../common/util';
 
-const remote = window.require('@electron/remote');
+const App = require('nw.gui').App.get();
 const fs = window.require('fs');
 const path = window.require('path');
-const dirname = remote.app.getAppPath();
-const homePath = remote.app.getPath('home');
-const userPath = remote.app.getPath('userData');
+const dirname = App.startPath;
+const userPath = App.dataPath;
+const homePath =
+	process.env.HOME ||
+	process.env.HOMEDRIVE &&
+	process.env.HOMEPATH &&
+	path.join(process.env.HOMEDRIVE, process.env.HOMEPATH)
+	|| userPath;
+
 
 const nowTheme = {
 	value: 'Monokai',

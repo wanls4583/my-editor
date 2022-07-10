@@ -73,8 +73,8 @@ import globalData from '@/data/globalData';
 
 const fs = window.require('fs');
 const path = window.require('path');
-const remote = window.require('@electron/remote');
 const contexts = Context.contexts;
+const currentWindow = require('nw.gui').Window.get();
 
 export default {
 	components: {
@@ -133,9 +133,9 @@ export default {
 		};
 	},
 	created() {
-		const currentWindow = remote.getCurrentWindow();
 		window.globalData = globalData;
 		globalData.$mainWin = this;
+		currentWindow.zoomLevel = globalData.zoomLevel;
 		this.commonEvent = new CommonEvent(this);
 		this.winShorcut = new WinShorcut(this);
 		this.persistence = new Persistence();
@@ -148,21 +148,18 @@ export default {
 			EventBus.$emit('close-menu');
 		});
 		currentWindow.on('close', (e) => {
-			this.closeMain = true;
+			EventBus.$emit('window-close');
+			setTimeout(() => {
+				if (this.isReload) {
+					currentWindow.reload();
+				} else {
+					currentWindow.close(true);
+				}
+			}, 0);
 		});
 		window.onbeforeunload = (e) => {
-			if (!this.preCloseDone) {
-				EventBus.$emit('window-close');
-				e.returnValue = false;
-				setTimeout(() => {
-					this.preCloseDone = true;
-					if (this.closeMain) {
-						currentWindow.close();
-					} else {
-						currentWindow.reload();
-					}
-				}, 0);
-			}
+			this.isReload = true;
+			currentWindow.close();
 		};
 	},
 	mounted() {

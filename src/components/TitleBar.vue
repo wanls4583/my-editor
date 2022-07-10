@@ -61,8 +61,8 @@ import Menu from './Menu';
 import ShortCut from '@/module/shortcut/menu-bar';
 import EventBus from '@/event';
 import $ from 'jquery';
-const remote = window.require('@electron/remote');
-const currentWindow = remote && remote.getCurrentWindow();
+
+const currentWindow = require('nw.gui').Window.get();
 
 export default {
 	name: 'TitleBar',
@@ -333,9 +333,17 @@ export default {
 		$(window).on('keydown', (e) => {
 			this.shortcut.onKeydown(e);
 		});
-	},
-	mounted() {
-		this.maximize = currentWindow.isMaximized();
+		currentWindow.on('maximize', () => {
+			this.maximize = true;
+		});
+		currentWindow.on('maximize', () => {
+			this.minimize = true;
+		});
+		currentWindow.on('restore', () => {
+			if (!this.minimize) {
+				this.maximize = false;
+			}
+		});
 	},
 	methods: {
 		initEventBus() {
@@ -375,12 +383,10 @@ export default {
 		// 最大化
 		onMaximize() {
 			currentWindow.maximize();
-			this.maximize = true;
 		},
 		// 最大化
 		onUnmaximize() {
 			currentWindow.unmaximize();
-			this.maximize = false;
 		},
 		// 关闭窗口
 		onClose() {

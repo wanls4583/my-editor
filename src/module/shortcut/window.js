@@ -3,11 +3,10 @@
  * @Date: 2022-02-18 16:13:15
  * @Description:
  */
-import Util from '@/common/util';
 import EventBus from '@/event';
 import globalData from '@/data/globalData';
 
-const remote = window.require('@electron/remote');
+const currentWindow = require('nw.gui').Window.get();
 
 export default class {
 	constructor() { }
@@ -37,12 +36,12 @@ export default class {
 					case 'Equal':
 						e.preventDefault();
 						globalData.zoomLevel += 0.5;
-						remote.getCurrentWindow().webContents.setZoomLevel(globalData.zoomLevel);
+						currentWindow.zoomLevel = globalData.zoomLevel;
 						break;
 					case 'Minus':
 						e.preventDefault();
 						globalData.zoomLevel -= 0.5;
-						remote.getCurrentWindow().webContents.setZoomLevel(globalData.zoomLevel);
+						currentWindow.zoomLevel = globalData.zoomLevel;
 						break;
 					case 'KeyS':
 						e.preventDefault();

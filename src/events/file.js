@@ -2,9 +2,9 @@ import EventBus from '@/event';
 import Context from '@/module/context/index';
 import globalData from '@/data/globalData';
 import Util from '@/common/util';
+import FileDialog from '@/common/file';
 
 const { ipcRenderer } = window.require('electron');
-const remote = window.require('@electron/remote');
 const fs = window.require('fs');
 const path = window.require('path');
 const contexts = Context.contexts;
@@ -48,7 +48,7 @@ export default class {
 		});
 		EventBus.$on('reveal-in-file-explorer', path => {
 			if (path) {
-				remote.shell.showItemInFolder(path);
+				nw.Shell.showItemInFolder(path);
 			}
 		});
 		EventBus.$on('file-copy', fileObj => {
@@ -119,25 +119,17 @@ export default class {
 		}
 	}
 	choseFolder() {
-		let win = remote.getCurrentWindow();
-		let options = {
+		return FileDialog.showOpenDialog({
 			title: '选择文件夹',
-			properties: ['openDirectory', 'multiSelections'],
-		};
-		return remote.dialog
-			.showOpenDialog(win, options)
-			.then(result => {
-				let results = [];
-				if (!result.canceled && result.filePaths) {
-					result.filePaths.forEach(item => {
-						results.push(this.createRootDirItem(item));
-					});
-					return results;
-				}
-			})
-			.catch(err => {
-				console.log(err);
+			type: 'dir',
+			multiple: true
+		}).then(result => {
+			let results = [];
+			result.forEach(item => {
+				results.push(this.createRootDirItem(item.path));
 			});
+			return results;
+		});
 	}
 	openFile(fileObj, choseFile) {
 		let tab = fileObj && Util.getTabByPath(this.editorList, fileObj.path);
@@ -218,26 +210,17 @@ export default class {
 		}
 	}
 	choseFile() {
-		let win = remote.getCurrentWindow();
-		let options = {
+		return FileDialog.showOpenDialog({
 			title: '选择文件',
-			properties: ['openFile', 'multiSelections'],
-		};
-		return remote.dialog
-			.showOpenDialog(win, options)
-			.then(result => {
-				let results = [];
-				if (!result.canceled && result.filePaths) {
-					result.filePaths.forEach(item => {
-						let obj = this.createTabItem(item);
-						results.push(obj);
-					});
-					return results;
-				}
-			})
-			.catch(err => {
-				console.log(err);
+			multiple: true
+		}).then(result => {
+			let results = [];
+			result.forEach(item => {
+				let obj = this.createTabItem(item.path);
+				results.push(obj);
 			});
+			return results;
+		});
 	}
 	saveFile(id, saveAs) {
 		let tab = Util.getTabById(this.editorList, id);
@@ -252,61 +235,44 @@ export default class {
 					EventBus.$emit('file-saved', tab.path);
 				});
 			} else {
-				let win = remote.getCurrentWindow();
-				let options = {
-					title: '请选择要保存的文件名',
-					buttonLabel: '保存',
-				};
-				return remote.dialog.showSaveDialog(win, options).then(result => {
-					if (!result.canceled && result.filePath) {
-						return Util.writeFile(result.filePath, contexts[id].getAllText()).then(() => {
-							if (!tab.path) {
-								tab.path = result.filePath;
-								tab.mtimeMs = fs.statSync(tab.path).mtimeMs;
-								tab.name = tab.path.match(/[^\\\/]+$/)[0];
-								tab.saved = true;
-							}
-						});
-					} else {
-						return Promise.reject();
-					}
+				return FileDialog.showSaveDialog({
+					title: '选择文件',
+				}).then(result => {
+					return Util.writeFile(result.path, contexts[id].getAllText()).then(() => {
+						if (!tab.path) {
+							tab.path = result.path;
+							tab.mtimeMs = fs.statSync(tab.path).mtimeMs;
+							tab.name = tab.path.match(/[^\\\/]+$/)[0];
+							tab.saved = true;
+						}
+					});
 				});
 			}
 		}
 		return Promise.resolve();
 	}
 	openWorkspace() {
-		let win = remote.getCurrentWindow();
-		let options = {
+		return FileDialog.showOpenDialog({
 			title: '选择文件',
-			properties: ['openFile'],
-		};
-		return remote.dialog
-			.showOpenDialog(win, options)
-			.then(result => {
-				if (!result.canceled && result.filePaths) {
-					let workSpacePath = result.filePaths[0];
-					Util.loadJsonFile(workSpacePath).then(data => {
-						let folders = data.folders;
-						let exsitMap = {};
-						globalData.fileTree.forEach(item => {
-							exsitMap[item.path] = true;
-						});
-						folders = folders.filter(item => {
-							return !exsitMap[item.path];
-						});
-						folders = folders.map(item => {
-							return this.createRootDirItem(item.path);
-						});
-						globalData.fileTree.push(...folders);
-						EventBus.$emit('workspace-opened');
-						globalData.workSpacePath = workSpacePath;
-					});
-				}
-			})
-			.catch(err => {
-				console.log(err);
+		}).then(result => {
+			let workSpacePath = result.path;
+			Util.loadJsonFile(workSpacePath).then(data => {
+				let folders = data.folders;
+				let exsitMap = {};
+				globalData.fileTree.forEach(item => {
+					exsitMap[item.path] = true;
+				});
+				folders = folders.filter(item => {
+					return !exsitMap[item.path];
+				});
+				folders = folders.map(item => {
+					return this.createRootDirItem(item.path);
+				});
+				globalData.fileTree.push(...folders);
+				EventBus.$emit('workspace-opened');
+				globalData.workSpacePath = workSpacePath;
 			});
+		});
 	}
 	saveWorkspace(saveAs) {
 		let list = globalData.fileTree.map(item => {
@@ -316,17 +282,10 @@ export default class {
 			folders: list,
 		});
 		if (saveAs) {
-			let win = remote.getCurrentWindow();
-			let options = {
-				title: '请选择要保存的文件名',
-				buttonLabel: '保存',
-			};
-			return remote.dialog.showSaveDialog(win, options).then(result => {
-				if (!result.canceled && result.filePath) {
-					return Util.writeFile(result.filePath, data);
-				} else {
-					return Promise.reject();
-				}
+			return FileDialog.showSaveDialog({
+				title: '选择文件',
+			}).then(result => {
+				return Util.writeFile(result.path, data);
 			});
 		} else if (globalData.workSpacePath) {
 			return Util.writeFile(globalData.workSpacePath, data);
