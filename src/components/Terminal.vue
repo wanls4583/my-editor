@@ -19,7 +19,6 @@ import EventBus from '@/event';
 import $ from 'jquery';
 
 const path = window.require('path');
-// const { ipcRenderer } = window.require('electron');
 
 export default {
 	name: 'Terminal',
@@ -63,26 +62,9 @@ export default {
 		});
 	},
 	destroyed() {
-		ipcRenderer.send('terminal-destroy', {
-			id: this.id,
-		});
+		this.ptyServer.kill();
 	},
 	methods: {
-		setResize(data) {
-			ipcRenderer.send('terminal-resize', {
-				id: this.id,
-				rows: data.rows,
-				cols: data.cols,
-			});
-		},
-		createTerminal() {
-			ipcRenderer.send('terminal-add', {
-				id: this.id,
-				rows: this.terminal.rows,
-				cols: this.terminal.cols,
-				cwd: this.path,
-			});
-		},
 		initEvent() {
 			EventBus.$on('theme-changed', () => {
 				this.terminal.setOption('theme', {
@@ -104,19 +86,11 @@ export default {
 			resizeObserver.observe(this.$refs.terminal);
 		},
 		initTerminalEvent() {
-			ipcRenderer.on('terminal-data', (event, data) => {
-				if (this.id === data.id) {
-					this.terminal.write(data.text);
-				}
-			});
 			this.terminal.onData((text) => {
-				ipcRenderer.send('terminal-write', {
-					id: this.id,
-					text: text,
-				});
+				this.ptyServer.write(text);
 			});
 			this.terminal.onResize((data) => {
-				this.setResize(data);
+				this.ptyServer.resize(data.cols, data.rows);
 			});
 			this.terminal.onTitleChange((data) => {
 				let title = '';
@@ -138,6 +112,20 @@ export default {
 					}
 				}
 				return true;
+			});
+		},
+		createTerminal() {
+			const pty = window.require('node-pty');
+			const shell = window.require('os').platform() === 'win32' ? 'powershell.exe' : 'bash';
+			this.ptyServer = pty.spawn(shell, [], {
+				name: 'xterm-' + this.id,
+				cols: this.terminal.cols,
+				rows: this.terminal.rows,
+				cwd: this.path,
+				env: process.env,
+			});
+			this.ptyServer.on('data', (data) => {
+				this.terminal.write(data);
 			});
 		},
 		onContextmenu(e) {
