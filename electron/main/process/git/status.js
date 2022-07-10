@@ -13,11 +13,12 @@ class StatusWatcher {
 		this.gitTimer[gitDir] = setTimeout(() => {
 			let result = '';
 			let child = null;
-			if (process.platform === 'win32') {
-				child = spawn('cmd', ['/C chcp 65001>nul && git status -s'], { cwd: gitDir });
-			} else {
-				child = spawn('git', ['status', '-s'], { cwd: gitDir });
-			}
+			// if (process.platform === 'win32') {
+			// 	child = spawn('cmd', ['/C chcp 65001>nul && git status -s'], { cwd: gitDir });
+			// } else {
+			// 	child = spawn('git', ['status', '-s'], { cwd: gitDir });
+			// }
+			child = spawn('git', ['status', '-s'], { cwd: gitDir });
 			new Promise((resolve, reject) => {
 				child.stdout.on('data', data => {
 					result += data;
