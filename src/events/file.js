@@ -4,7 +4,6 @@ import globalData from '@/data/globalData';
 import Util from '@/common/util';
 import FileDialog from '@/common/file';
 
-// const { ipcRenderer } = window.require('electron');
 const fs = window.require('fs');
 const path = window.require('path');
 const contexts = Context.contexts;
@@ -53,27 +52,27 @@ export default class {
 		});
 		EventBus.$on('file-copy', fileObj => {
 			this.cutPath = '';
-			this.copyFileToClip(fileObj);
+			this.copyFileToClip(fileObj.path);
 		});
 		EventBus.$on('file-cut', fileObj => {
 			this.cutPath = fileObj.path;
-			this.cutFileToClip(fileObj);
+			this.cutFileToClip(fileObj.path);
 		});
 		EventBus.$on('file-paste', fileObj => {
-			this.pasteFileFromClip(fileObj, this.cutPath);
+			this.paste(fileObj.path, this.cutPath);
 			this.cutPath = '';
 		});
 		EventBus.$on('file-rename', (filePath, newFileNmme) => {
-			ipcRenderer.send('file-rename', filePath, newFileNmme);
+			this.rename(filePath, newFileNmme);
 		});
 		EventBus.$on('file-create', filePath => {
-			ipcRenderer.send('file-create', filePath);
+			this.createFile(filePath);
 		});
 		EventBus.$on('folder-create', filePath => {
-			ipcRenderer.send('folder-create', filePath);
+			this.createFolder(filePath);
 		});
 		EventBus.$on('file-delete', fileObj => {
-			ipcRenderer.send('file-delete', fileObj.path);
+			this.delete(fileObj.path);
 		});
 		EventBus.$on('workspace-save-as', () => {
 			this.saveWorkspace(true);
@@ -291,15 +290,6 @@ export default class {
 			return Util.writeFile(globalData.workSpacePath, data);
 		}
 	}
-	copyFileToClip(fileObj) {
-		ipcRenderer.send('file-copy', [fileObj.path]);
-	}
-	cutFileToClip(fileObj) {
-		ipcRenderer.send('file-cut', [fileObj.path]);
-	}
-	pasteFileFromClip(fileObj, cutPath) {
-		ipcRenderer.send('file-paste', fileObj.path, cutPath);
-	}
 	createRootDirItem(filePath) {
 		return {
 			id: Util.getIdFromPath(filePath),
@@ -402,6 +392,97 @@ export default class {
 			delete this.fileWatcherMap[filePath];
 			delete this.fileWatcherTimer[filePath];
 		}
+	}
+	copyToClip(filePaths) {
+		const clipboard = window.require('clipboard-files');
+		filePaths = filePaths.filter(file => {
+			return fs.existsSync(file);
+		});
+		clipboard.writeFiles(filePaths);
+	}
+	copyFileToClip(filePaths) {
+		try {
+			this.copyToClip(filePaths);
+			EventBus.$emit('file-copyed', filePaths);
+		} catch (e) {
+			EventBus.$emit('file-copy-fail', filePaths);
+		}
+	}
+	cutFileToClip(filePaths) {
+		try {
+			this.copyToClip(filePaths);
+			EventBus.$emit('file-cuted', filePaths);
+		} catch (e) {
+			EventBus.$emit('file-cut-fail', filePaths);
+		}
+	}
+	paste(destPath, cutPath) {
+		const clipboard = window.require('clipboard-files');
+		const fse = window.require('fs-extra');
+		if (!fs.existsSync(destPath)) {
+			console.log(`dir "${destPath}" not exsit`);
+			EventBus.$emit('file-paste-fail', destPath);
+			return;
+		}
+		try {
+			const filePaths = clipboard.readFiles();
+			filePaths.forEach(filePath => {
+				if (fs.existsSync(filePath)) {
+					let target = path.join(destPath, path.basename(filePath));
+					let copy = cutPath === filePath ? fse.move : fse.copy;
+					copy(filePath, target)
+						.then(() => {
+							EventBus.$emit('file-pasted', filePath);
+						})
+						.catch(() => {
+							console.log(`copy "${filePath}" to "${target}" fail`);
+						});
+				}
+			});
+		} catch (e) {
+			EventBus.$emit('file-paste-fail', destPath);
+			console.log(`copy to "${destPath}" fail`);
+		}
+	}
+	rename(filePath, newName) {
+		let target = path.join(path.dirname(filePath), newName);
+		fs.rename(filePath, target, err => {
+			if (err) throw err;
+			EventBus.$emit('file-renamed', filePath, newName);
+		});
+	}
+	createFile(filePath) {
+		const fse = window.require('fs-extra');
+		fse.ensureFile(filePath)
+			.then(() => {
+				EventBus.$emit('file-created', filePath);
+			})
+			.catch(() => {
+				EventBus.$emit('file-create-fail', filePath);
+				console.error(err);
+			});
+	}
+	createFolder(filePath) {
+		const fse = window.require('fs-extra');
+		fse.ensureDir(filePath)
+			.then(() => {
+				EventBus.$emit('folder-created', filePath);
+			})
+			.catch(() => {
+				EventBus.$emit('folder-create-fail', filePath);
+				console.error(err);
+			});
+	}
+	delete(filePath) {
+		const fse = window.require('fs-extra');
+		fse.remove(filePath)
+			.then(() => {
+				EventBus.$emit('file-deleted', filePath);
+			})
+			.catch(err => {
+				EventBus.$emit('file-delete-fail', filePath);
+				console.error(err);
+			});
 	}
 	getEditorMap() {
 		let editorMap = {};

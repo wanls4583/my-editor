@@ -1,7 +1,6 @@
 {
     "name": "my-editor",
     "version": "1.0.0",
-    "description": "A minimal Electron application",
     "main": "http://localhost:8080",
     "node-remote": "http://localhost:8080",
     "window": {
@@ -9,43 +8,9 @@
         "frame": false
     },
     "scripts": {
-        "start": "electron .",
-        "build": "electron-builder"
-    },
-    "build": {
-        "appId": "my-editor.lisong.hn.cn",
-        "asar": true,
-        "directories": {
-            "output": "dist"
-        },
-        "win": {
-            "target": [
-                {
-                    "target": "nsis"
-                }
-            ],
-            "icon": "./render/favicon.ico",
-            "asarUnpack": [
-                "src/**",
-                "README.md"
-            ]
-        },
-        "nsis": {
-            "oneClick": false,
-            "allowElevation": true,
-            "allowToChangeInstallationDirectory": true,
-            "installerIcon": "./render/favicon.ico",
-            "uninstallerIcon": "./render/favicon.ico",
-            "createDesktopShortcut": true,
-            "createStartMenuShortcut": true
-        }
-    },
-    "devDependencies": {
-        "electron": "^17.4.1",
-        "electron-builder": "^23.0.3"
+        "start": "nw ."
     },
     "dependencies": {
-        "@electron/remote": "^2.0.5",
         "eslint": "^7.32.0",
         "stylelint": "^14.8.0",
         "stylelint-config-css-modules": "^4.1.0",
