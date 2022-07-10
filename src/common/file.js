@@ -14,6 +14,7 @@ export default {
                 let files = $input[0].files;
                 $input.remove();
                 if (files.length) {
+                    files = Array.prototype.slice.call(files);
                     files = multiple ? files : files[0];
                     resolve(files);
                 } else {
@@ -21,6 +22,8 @@ export default {
                 }
             });
             $(document.body).append($input);
+            $input.hide();
+            $input.click();
         });
     },
     showSaveDialog({ dir, title, filename }) {
@@ -41,6 +44,8 @@ export default {
                 }
             });
             $(document.body).append($input);
+            $input.hide();
+            $input.click();
         });
     }
 }

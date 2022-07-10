@@ -19,7 +19,7 @@ import EventBus from '@/event';
 import $ from 'jquery';
 
 const path = window.require('path');
-const { ipcRenderer } = window.require('electron');
+// const { ipcRenderer } = window.require('electron');
 
 export default {
 	name: 'Terminal',

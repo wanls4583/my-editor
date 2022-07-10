@@ -62,7 +62,7 @@ import ShortCut from '@/module/shortcut/menu-bar';
 import EventBus from '@/event';
 import $ from 'jquery';
 
-const currentWindow = require('nw.gui').Window.get();
+const currentWindow = nw.Window.get();
 
 export default {
 	name: 'TitleBar',
@@ -336,11 +336,13 @@ export default {
 		currentWindow.on('maximize', () => {
 			this.maximize = true;
 		});
-		currentWindow.on('maximize', () => {
+		currentWindow.on('minimize', () => {
 			this.minimize = true;
 		});
 		currentWindow.on('restore', () => {
-			if (!this.minimize) {
+			if(this.minimize) {
+				this.minimize = false;
+			} else {
 				this.maximize = false;
 			}
 		});

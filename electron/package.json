@@ -2,7 +2,12 @@
     "name": "my-editor",
     "version": "1.0.0",
     "description": "A minimal Electron application",
-    "main": "main.js",
+    "main": "http://localhost:8080",
+    "node-remote": "http://localhost:8080",
+    "window": {
+        "toolbar": false,
+        "frame": false
+    },
     "scripts": {
         "start": "electron .",
         "build": "electron-builder"

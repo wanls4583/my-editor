@@ -71,6 +71,8 @@ export default class {
 		return _loadTheme.call(this, option.path);
 
 		function _loadTheme(fullPath) {
+			let scheme = 'my-file://';
+			scheme = '';
 			return Util.loadJsonFile(fullPath).then(data => {
 				let fonts = data.fonts || [];
 				let css = '';
@@ -79,7 +81,7 @@ export default class {
 					font.src.forEach((src, index) => {
 						let url = path.join(fullPath, '../' + src.path);
 						url = url.replace(/\\/g, '/');
-						fontFace += `url('my-file://${url}')`;
+						fontFace += `url('${scheme}${url}')`;
 						fontFace += ` format('${src.format}')`;
 						fontFace += index < font - src.length - 1 ? ', ' : '';
 					});
@@ -105,7 +107,7 @@ export default class {
 						let imgUrl = path.join(fullPath, '../' + icon.iconPath);
 						imgUrl = imgUrl.replace(/\\/g, '/');
 						css += 'content:"";';
-						css += `background-image:url(my-file://${imgUrl})`;
+						css += `background-image:url(${scheme}${imgUrl})`;
 					}
 					css += '}\n';
 				}

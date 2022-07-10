@@ -2,7 +2,7 @@ import Scheduler from '../common/scheduler';
 import Enum from './enum';
 import Util from '../common/util';
 
-const App = require('nw.gui').App.get();
+const App = nw.App;
 const fs = window.require('fs');
 const path = window.require('path');
 const dirname = App.startPath;

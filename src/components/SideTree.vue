@@ -85,6 +85,7 @@ export default {
 	mounted() {
 		this.domHeight = this.$refs.wrap.clientHeight;
 		this.maxVisibleLines = Math.ceil(this.domHeight / this.itemHeight) + 1;
+		this.initResizeEvent();
 		this.render();
 	},
 	methods: {
@@ -92,7 +93,7 @@ export default {
 			const resizeObserver = new ResizeObserver((entries) => {
 				if (this.$refs.wrap && this.$refs.wrap.clientHeight) {
 					this.domHeight = this.$refs.wrap.clientHeight;
-					this.render();
+					this.setStartLine(this.checkScrollTop(this.scrollTop));
 				}
 			});
 			resizeObserver.observe(this.$refs.wrap);

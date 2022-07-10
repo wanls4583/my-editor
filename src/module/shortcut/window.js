@@ -6,7 +6,7 @@
 import EventBus from '@/event';
 import globalData from '@/data/globalData';
 
-const currentWindow = require('nw.gui').Window.get();
+const currentWindow = nw.Window.get();
 
 export default class {
 	constructor() { }

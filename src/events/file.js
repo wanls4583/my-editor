@@ -4,7 +4,7 @@ import globalData from '@/data/globalData';
 import Util from '@/common/util';
 import FileDialog from '@/common/file';
 
-const { ipcRenderer } = window.require('electron');
+// const { ipcRenderer } = window.require('electron');
 const fs = window.require('fs');
 const path = window.require('path');
 const contexts = Context.contexts;

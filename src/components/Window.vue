@@ -74,7 +74,7 @@ import globalData from '@/data/globalData';
 const fs = window.require('fs');
 const path = window.require('path');
 const contexts = Context.contexts;
-const currentWindow = require('nw.gui').Window.get();
+const currentWindow = nw.Window.get();
 
 export default {
 	components: {
