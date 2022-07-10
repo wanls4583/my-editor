@@ -17,38 +17,47 @@ export default class {
 			switch (e.code) {
 				case 'Enter':
 					e.preventDefault();
+					e.stopPropagation();
 					this.context.insertLineUp();
 					break;
 				case 'ArrowLeft': //ctrl+shift+left
 					e.preventDefault();
+					e.stopPropagation();
 					this.editor.selecter.select('left', true);
 					break;
 				case 'ArrowUp': //ctrl+shift+up
 					e.preventDefault();
+					e.stopPropagation();
 					this.context.moveLineUp();
 					break;
 				case 'ArrowRight': //ctrl+shift+right
 					e.preventDefault();
+					e.stopPropagation();
 					this.editor.selecter.select('right', true);
 					break;
 				case 'ArrowDown': //ctrl+shift+down
 					e.preventDefault();
+					e.stopPropagation();
 					this.context.moveLineDown();
 					break;
 				case 'KeyD': //ctrl+shift+D
 					e.preventDefault();
+					e.stopPropagation();
 					this.context.copyLineUp();
 					break;
 				case 'KeyH': //ctrl+shift+H
 					e.preventDefault();
+					e.stopPropagation();
 					EventBus.$emit('editor-format', globalData.nowEditorId);
 					break;
 				case 'KeyK': //ctrl+shift+K
 					e.preventDefault();
+					e.stopPropagation();
 					this.context.deleteLine();
 					break;
 				case 'KeyL': //ctrl+alt+L
 					e.preventDefault();
+					e.stopPropagation();
 					this.editor.cursor.addCursorLineEnds();
 					break;
 			}
@@ -57,10 +66,12 @@ export default class {
 			switch (e.code) {
 				case 'ArrowUp': //ctrl+alt+up
 					e.preventDefault();
+					e.stopPropagation();
 					this.editor.cursor.addCursorAbove();
 					break;
 				case 'ArrowDown': //ctrl+alt+down
 					e.preventDefault();
+					e.stopPropagation();
 					this.editor.cursor.addCursorBelow();
 					break;
 			}
@@ -68,6 +79,7 @@ export default class {
 			switch (e.code) {
 				case 'ArrowDown': //alt+shift+down
 					e.preventDefault();
+					e.stopPropagation();
 					this.context.copyLineDown();
 					break;
 			}
@@ -75,47 +87,58 @@ export default class {
 			switch (e.code) {
 				case 'Enter':
 					e.preventDefault();
+					e.stopPropagation();
 					this.context.insertLineDown();
 					break;
 				case 'ArrowLeft': //left arrow
 					e.preventDefault();
+					e.stopPropagation();
 					_moveCursor.call(this, 'left', true);
 					break;
 				case 'ArrowRight': //right arrow
 					e.preventDefault();
+					e.stopPropagation();
 					_moveCursor.call(this, 'right', true);
 					break;
 				case 'KeyA': //ctrl+A,全选
 					e.preventDefault();
+					e.stopPropagation();
 					this.editor.selecter.selectAll();
 					break;
 				case 'KeyD': //ctrl+D，搜素
 					e.preventDefault();
+					e.stopPropagation();
 					this.editor.searchWord('down');
 					break;
 				case 'KeyF': //ctrl+F，搜素
 					e.preventDefault();
+					e.stopPropagation();
 					this.editor.openSearch();
 					break;
 				case 'KeyH': //ctrl+H，搜素替换
 					e.preventDefault();
+					e.stopPropagation();
 					this.editor.openSearch(true);
 					break;
 				case 'KeyZ': //ctrl+Z，撤销
 					e.preventDefault();
+					e.stopPropagation();
 					this.editor.history.undo();
 					break;
 				case 'KeyY': //ctrl+Y，重做
 					e.preventDefault();
+					e.stopPropagation();
 					this.editor.history.redo();
 					break;
 				case 'Delete': //delete
 					e.preventDefault();
+					e.stopPropagation();
 					this.context.deleteWord('right');
 					this.editor.autocomplete.search();
 					break;
 				case 'Backspace': //backspace
 					e.preventDefault();
+					e.stopPropagation();
 					this.context.deleteWord('left');
 					this.editor.autocomplete.search();
 					break;
@@ -124,18 +147,22 @@ export default class {
 			switch (e.code) {
 				case 'ArrowLeft': //left arrow
 					e.preventDefault();
+					e.stopPropagation();
 					this.editor.selecter.select('left');
 					break;
 				case 'ArrowUp': //up arrow
 					e.preventDefault();
+					e.stopPropagation();
 					this.editor.selecter.select('up');
 					break;
 				case 'ArrowRight': //right arrow
 					e.preventDefault();
+					e.stopPropagation();
 					this.editor.selecter.select('right');
 					break;
 				case 'ArrowDown': //down arrow
 					e.preventDefault();
+					e.stopPropagation();
 					this.editor.selecter.select('down');
 					break;
 			}
@@ -143,22 +170,27 @@ export default class {
 			switch (e.code) {
 				case 'Tab': //tab键
 					e.preventDefault();
+					e.stopPropagation();
 					this.editor.autocomplete.emmet();
 					break;
 				case 'ArrowLeft': //left arrow
 					e.preventDefault();
+					e.stopPropagation();
 					_moveCursor.call(this, 'left');
 					break;
 				case 'End': //end键
 					e.preventDefault();
+					e.stopPropagation();
 					_moveCursor.call(this, 'end');
 					break;
 				case 'Home': //home键
 					e.preventDefault();
+					e.stopPropagation();
 					_moveCursor.call(this, 'home');
 					break;
 				case 'ArrowUp': //up arrow
 					e.preventDefault();
+					e.stopPropagation();
 					if (this.editor.autoTipList && this.editor.autoTipList.length) {
 						this.editor.prevAutoTip();
 					} else {
@@ -167,10 +199,12 @@ export default class {
 					break;
 				case 'ArrowRight': //right arrow
 					e.preventDefault();
+					e.stopPropagation();
 					_moveCursor.call(this, 'right');
 					break;
 				case 'ArrowDown': //down arrow
 					e.preventDefault();
+					e.stopPropagation();
 					if (this.editor.autoTipList && this.editor.autoTipList.length) {
 						this.editor.nextAutoTip();
 					} else {
@@ -180,16 +214,19 @@ export default class {
 				case 'Enter':
 					if (this.editor.autoTipList && this.editor.autoTipList.length) {
 						e.preventDefault();
+						e.stopPropagation();
 						this.editor.selectAutoTip();
 					}
 					break;
 				case 'Delete': //delete
 					e.preventDefault();
+					e.stopPropagation();
 					this.context.deleteContent('right');
 					this.editor.autocomplete.search();
 					break;
 				case 'Backspace': //backspace
 					e.preventDefault();
+					e.stopPropagation();
 					this.context.deleteContent('left');
 					this.editor.autocomplete.search();
 					break;
