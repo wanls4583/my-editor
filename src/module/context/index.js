@@ -79,7 +79,6 @@ class Context {
 			historyArr.length && this.editor.history.updateHistory(historyArr);
 		}
 		this.editor.setNowCursorPos(this.editor.cursor.multiCursorPos.get(0));
-		this.editor.fSearcher.refreshSearch();
 		return historyArr;
 	}
 	_insertMultiContent(text, cursorPosList, command) {
@@ -257,7 +256,6 @@ class Context {
 		}
 		this.editor.setNowCursorPos(this.editor.cursor.multiCursorPos.get(0));
 		this.editor.searcher.clearSearch();
-		this.editor.fSearcher.refreshSearch();
 		return historyArr;
 	}
 	_deleteMultiContent(rangeList, direct) {
@@ -624,7 +622,6 @@ class Context {
 			this.editor.history.updateHistory(historyObj);
 			this.editor.searcher.refreshSearch(command.searchConifg);
 		}
-		this.editor.fSearcher.refreshSearch();
 	}
 	_moveLine(cursorPos, direct) {
 		let range = cursorPos.start ? cursorPos : null;
@@ -771,7 +768,6 @@ class Context {
 			this.editor.history.updateHistory(historyObj);
 			this.editor.searcher.refreshSearch(command.searchConifg);
 		}
-		this.editor.fSearcher.refreshSearch();
 	}
 	// 删除上面一行
 	deleteCopyLineUp(command) {
@@ -853,7 +849,6 @@ class Context {
 		};
 		this.editor.history.updateHistory(historyObj);
 		this.editor.searcher.refreshSearch(command.searchConifg);
-		this.editor.fSearcher.refreshSearch();
 	}
 	// 插入当前行
 	insertLine(command) {
@@ -885,7 +880,6 @@ class Context {
 		// 撤销或重做操作后，更新历史记录
 		this.editor.history.updateHistory(historyObj);
 		this.editor.searcher.refreshSearch(command.searchConifg);
-		this.editor.fSearcher.refreshSearch();
 	}
 	// 删除当前行
 	deleteLine(command) {
@@ -980,7 +974,6 @@ class Context {
 			this.editor.history.updateHistory(historyObj);
 			this.editor.searcher.refreshSearch(command.searchConifg);
 		}
-		this.editor.fSearcher.refreshSearch();
 	}
 	// 文件变动，重写加载文件内容
 	reload(text) {
@@ -1000,7 +993,6 @@ class Context {
 		historyArr = this._insertMultiContent(texts, this.editor.cursor.multiCursorPos.toArray());
 		historyArr.serial = serial;
 		historyArr.length && this.editor.history.pushHistory(historyArr);
-		return this.editor.fSearcher.refreshSearch();
 	}
 	// 点击自动提示替换输入的内容
 	replaceTip(tip) {
@@ -1430,7 +1422,6 @@ class Context {
 			let historyArr = this._deleteMultiContent(ranges);
 			historyArr.length && this.editor.history.pushHistory(historyArr);
 			this.editor.searcher.clearSearch();
-			this.editor.fSearcher.refreshSearch();
 		}
 		return text.slice(1);
 	}

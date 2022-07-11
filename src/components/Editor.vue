@@ -86,21 +86,10 @@
 				></textarea>
 				<h-scroll-bar :class="{'my-scroll-visible': scrollVisible}" :scroll-left="scrollLeft" :width="_contentMinWidth" @scroll="onHBarScroll" class="my-editor-scrollbar-h"></h-scroll-bar>
 				<div class="my-scroller-shadow-left" v-if="_leftShadow"></div>
-				<div class="my-scroller-shadow-right" v-if="_rightShadow"></div>
+				<div class="my-scroller-shadow-right" v-if="_rightShadow && minimapVisible"></div>
 			</div>
 			<!-- 搜索框 -->
-			<search-dialog
-				:count="searchCount"
-				:now="searchNow"
-				@close="onCloseSearch"
-				@next="onSearchNext()"
-				@prev="onSearchPrev()"
-				@replace="replace"
-				@replaceAll="replaceAll"
-				@search="onSearch"
-				ref="searchDialog"
-				v-show="searchVisible"
-			></search-dialog>
+			<search-dialog ref="searchDialog" v-show="searchVisible"></search-dialog>
 		</div>
 		<div class="my-minimap-wrap" v-if="minimapVisible">
 			<minimap :content-height="contentHeight" :now-line="startLine" :scroll-top="scrollTop" ref="minimap"></minimap>
@@ -221,8 +210,6 @@ export default {
 			searchVisible: false,
 			selectedFg: false,
 			activeLineBg: true,
-			searchNow: 1,
-			searchCount: 0,
 			diffVisible: false,
 			diffHeight: 200,
 			diffTop: 0,
@@ -642,6 +629,14 @@ export default {
 				(this.initEventBusFn['editor-format'] = (id) => {
 					if (id === this.tabData.id) {
 						this.formatter.run();
+					}
+				})
+			);
+			EventBus.$on(
+				'editor-content-change',
+				(this.initEventBusFn['editor-content-change'] = (data) => {
+					if (data.id === this.tabData.id) {
+						this.searchVisible && this.$refs.searchDialog.search();
 					}
 				})
 			);
@@ -1289,28 +1284,16 @@ export default {
 		// ctrl+f打开搜索
 		openSearch(replaceMode) {
 			let searchDialog = this.$refs.searchDialog;
-			if (this.searchVisible && (this.fSelecter.activedRanges.size || !this.cursorFocus)) {
-				//无效操作
-				return;
-			}
+			let data = { replaceVisible: !!replaceMode, matchCase: false, wholeWord: false };
+			this.searchVisible = true;
 			if (this.cursorFocus) {
 				let searchConfig = this.fSearcher.getSearchConfig();
-				if (searchConfig) {
-					//有效搜索
-					searchDialog.initData({
-						matchCase: searchConfig.matchCase,
-						wholeWord: searchConfig.wholeWord,
-						text: searchConfig.text,
-					});
-				} else if (this.searchVisible) {
-					//无效搜索
-					return;
+				if (searchConfig && searchConfig.text !== searchDialog.text) {
+					data.text = searchConfig.text;
 				}
 			}
-			this.searchVisible = true;
-			this.fSearcher.clearSearch();
-			this.searchText({ config: searchDialog.getData() });
-			searchDialog.initData({ replaceVisible: !!replaceMode });
+			searchDialog.initData(data);
+			searchDialog.search();
 			searchDialog.focus();
 		},
 		// 搜索完整单词
@@ -1318,46 +1301,7 @@ export default {
 			let resultObj = null;
 			this.searcher.search({ direct: direct });
 			if (this.searchVisible) {
-				if (this.fSelecter.activedRanges.size === 0) {
-					let searchConfig = this.fSearcher.getSearchConfig();
-					if (searchConfig) {
-						this.fSearcher.clearSearch();
-						resultObj = this.fSearcher.search({ direct: direct, increase: true });
-					}
-				} else {
-					resultObj = this.fSearcher.search({ direct: direct, increase: true });
-				}
-				if (resultObj) {
-					this.searchNow = resultObj.now;
-					this.searchCount = resultObj.count;
-				}
-			}
-		},
-		searchText(option) {
-			let resultObj = this.fSearcher.search(option);
-			if (resultObj) {
-				this.searchNow = resultObj.now;
-				this.searchCount = resultObj.count;
-			} else {
-				this.searchCount = 0;
-			}
-		},
-		replace(data) {
-			if (this.fSelecter.activedRanges.size) {
-				let range = this.fSearcher.getNowRange();
-				this.myContext.replace(data.text, [range]).then(() => {
-					this.searchText();
-				});
-			} else {
-				this.searchText();
-			}
-		},
-		replaceAll(data) {
-			if (this.fSelecter.ranges.size) {
-				this.myContext.replace(data.text, this.fSelecter.ranges.toArray()).then(() => {
-					this.fSearcher.clearSearch();
-					this.searchCount = 0;
-				});
+				this.$searchDialog.searchWord(direct);
 			}
 		},
 		// 上一个提示
@@ -2050,25 +1994,6 @@ export default {
 				return;
 			}
 			this.shortcut.onKeydown(e);
-		},
-		// 搜索框首次搜索
-		onSearch(config) {
-			this.fSearcher.clearSearch();
-			this.searchText({ config: config });
-		},
-		onSearchNext() {
-			this.searchText({ direct: 'next' });
-		},
-		onSearchPrev() {
-			this.searchText({ direct: 'up' });
-		},
-		onCloseSearch() {
-			this.focus();
-			if (this.fSelecter.activedRanges.size) {
-				this.searcher.clone(this.fSearcher.getCacheData());
-			}
-			this.fSearcher.clearSearch();
-			this.searchVisible = false;
 		},
 		onShowDiff(line) {
 			let preDiff = this.getPrevDiff(this.diffRanges, line);

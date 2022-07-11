@@ -11,17 +11,7 @@
 		<div style="flex-grow: 1">
 			<div class="my-search-top">
 				<div :class="{ 'my-active': input1Focus }" class="my-search-input">
-					<textarea
-						:style="{ height: input1Height + 'px' }"
-						@blur="input1Focus = false"
-						@focus="input1Focus = true"
-						@input="onInput"
-						@keydown="onKeydown"
-						ref="input1"
-						spellcheck="false"
-						type="text"
-						v-model="text"
-					></textarea>
+					<textarea :style="{ height: input1Height + 'px' }" @blur="input1Focus = false" @focus="input1Focus = true" @keydown="onKeydown" ref="input1" spellcheck="false" type="text" v-model="text"></textarea>
 					<span :class="{ 'my-active': matchCase }" @click="changeCase" class="my-search-suffix" title="Match Case(Alt+C)">Aa</span>
 					<span :class="{ 'my-active': wholeWord }" @click="changeWhole" class="my-search-suffix iconfont icon-whole-word" title="Match Whole Word(Alt+W)"></span>
 				</div>
@@ -83,16 +73,6 @@
 import $ from 'jquery';
 export default {
 	name: 'Search',
-	props: {
-		now: {
-			type: Number,
-			default: 1,
-		},
-		count: {
-			type: Number,
-			default: 0,
-		},
-	},
 	data() {
 		return {
 			text: '',
@@ -108,12 +88,15 @@ export default {
 			nextFocus: false,
 			input1Height: 30,
 			input2Height: 30,
+			count: 0,
+			now: 0,
 		};
 	},
 	watch: {
 		text() {
 			let lines = this.text.split(/\n/);
 			this.input1Height = lines.length * 20 + 10;
+			this.search();
 		},
 		replaceText() {
 			let lines = this.replaceText.split(/\n/);
@@ -121,6 +104,7 @@ export default {
 		},
 	},
 	created() {
+		this.editor = this.$parent;
 		$(document).on(
 			'keydown',
 			(this.keydownFn = (e) => {
@@ -135,6 +119,7 @@ export default {
 		);
 	},
 	destroyed() {
+		this.editor = null;
 		$(document).unbind('keydown', this.keydownFn);
 	},
 	methods: {
@@ -151,18 +136,44 @@ export default {
 			};
 		},
 		search() {
-			let searchId = this.search.id || 1;
-			this.search.id = searchId;
-			this.$nextTick(() => {
-				if (this.search.id !== searchId) {
-					return;
-				}
-				this.$emit('search', {
-					text: this.text,
-					matchCase: this.matchCase,
-					wholeWord: this.wholeWord,
+			clearTimeout(this.searchTimer);
+			this.searchTimer = setTimeout(() => {
+				this.editor.fSearcher.clearSearch();
+				this.searchText({
+					config: {
+						text: this.text,
+						matchCase: this.matchCase,
+						wholeWord: this.wholeWord,
+					},
 				});
-			});
+			}, 100);
+		},
+		searchText(option) {
+			let resultObj = this.editor.fSearcher.search(option);
+			if (resultObj) {
+				this.now = resultObj.now;
+				this.count = resultObj.count;
+			} else {
+				this.count = 0;
+			}
+		},
+		searchWord(direct) {
+			if (this.editor.fSelecter.activedRanges.size === 0) {
+				let searchConfig = this.editor.fSearcher.getSearchConfig();
+				if (searchConfig) {
+					this.editor.fSearcher.clearSearch();
+					this.text = searchConfig.text;
+					this.wholeWord = searchConfig.wholeWord;
+					this.matchCase = searchConfig.matchCase;
+					resultObj = this.editor.fSearcher.search({ direct: direct, increase: true });
+				}
+			} else {
+				resultObj = this.editor.fSearcher.search({ direct: direct, increase: true });
+			}
+			if (resultObj) {
+				this.now = resultObj.now;
+				this.count = resultObj.count;
+			}
 		},
 		changeCase() {
 			this.matchCase = !this.matchCase;
@@ -181,28 +192,36 @@ export default {
 			if (!this.count) {
 				return;
 			}
-			this.$emit('next');
+			this.searchText({ direct: 'next' });
 		},
 		searchPrev() {
 			if (!this.count) {
 				return;
 			}
-			this.$emit('prev');
+			this.searchText({ direct: 'up' });
 		},
 		replace() {
-			if (!this.count) {
-				return;
+			if (this.editor.fSelecter.activedRanges.size) {
+				let range = this.editor.fSearcher.getNowRange();
+				this.editor.myContext.replace(this.replaceText, [range]);
+				this.searchText();
 			}
-			this.$emit('replace', { text: this.replaceText });
 		},
 		replaceAll() {
-			if (!this.count) {
-				return;
+			if (this.editor.fSelecter.ranges.size) {
+				this.editor.myContext.replace(this.replaceText, this.editor.fSelecter.ranges.toArray());
+				this.editor.fSearcher.clearSearch();
+				this.count = 0;
 			}
-			this.$emit('replaceAll', { text: this.replaceText });
 		},
 		close() {
-			this.$emit('close');
+			this.editor.focus();
+			// 复制搜索框的结果到普通选区
+			if (this.editor.fSelecter.activedRanges.size) {
+				this.editor.searcher.clone(this.editor.fSearcher.getCacheData());
+			}
+			this.editor.fSearcher.clearSearch();
+			this.editor.searchVisible = false;
 		},
 		focus() {
 			this.$refs.input1.focus();
@@ -217,10 +236,10 @@ export default {
 		onKeydown(e) {
 			if (e.keyCode === 13 || e.keyCode === 100) {
 				e.preventDefault();
-				if(e.shiftKey) {
-					this.$emit('prev');
+				if (e.shiftKey) {
+					this.searchPrev();
 				} else {
-					this.$emit('next');
+					this.searchNext();
 				}
 			}
 		},
@@ -235,12 +254,6 @@ export default {
 					}
 				}
 			}
-		},
-		onInput() {
-			clearTimeout(this.searchTimer);
-			this.searchTimer = setTimeout(() => {
-				this.search();
-			}, 100);
 		},
 	},
 };
