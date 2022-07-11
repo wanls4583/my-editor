@@ -136,6 +136,7 @@ class Context {
 		let lineObj = this.htmls[cursorPos.line - 1];
 		let nowLineText = lineObj.text;
 		let newPos = Object.assign({}, cursorPos);
+		let isLineFeed = text === '\n' || text === '\r\n';
 		cursorPos.moveWidth = 0; //去除上下移动光标的初始宽度记录
 		text = text.split(/\r\n|\n/);
 		text = text.map(item => {
@@ -155,8 +156,12 @@ class Context {
 		});
 		if (text.length > 1) {
 			// 换行对齐
-			if (!text[0].text && cursorPos.column === nowLineText.length && alignmentTab) {
-				let tabStr = _getTabStr.call(this, nowLineText, this.editor.folder.getRangeFold(cursorPos.line, true));
+			if (isLineFeed && alignmentTab) {
+				let tabStr = _getTabStr.call(
+					this,
+					nowLineText,
+					nowLineText.length === cursorPos.column && this.editor.folder.getRangeFold(cursorPos.line, true)
+				);
 				if (tabStr) {
 					text[1].text = tabStr + text[1].text.trimLeft();
 				}
