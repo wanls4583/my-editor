@@ -12,7 +12,9 @@ export default class {
 	}
 	init() {
 		EventBus.$on('terminal-new', dirPath => {
-			if (globalData.fileTree.length) {
+			if(dirPath) {
+				this.addTerminal(dirPath);
+			} else if (globalData.fileTree.length) {
 				this.selectTermialCwd();
 			} else {
 				this.addTerminal(globalData.homePath);
