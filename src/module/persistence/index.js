@@ -69,6 +69,7 @@ export default class {
 					active: item.active,
 					saved: item.saved,
 				});
+				preItem = item;
 			}
 		});
 		Util.writeFileSync(globalData.tabPath, JSON.stringify(data));
