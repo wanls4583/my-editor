@@ -36,12 +36,12 @@ export default class {
 				switch (e.code) {
 					case 'Equal':
 						e.preventDefault();
-						globalData.zoomLevel += 0.5;
+						globalData.zoomLevel += 1;
 						remote.getCurrentWindow().webContents.setZoomLevel(globalData.zoomLevel);
 						break;
 					case 'Minus':
 						e.preventDefault();
-						globalData.zoomLevel -= 0.5;
+						globalData.zoomLevel -= 1;
 						remote.getCurrentWindow().webContents.setZoomLevel(globalData.zoomLevel);
 						break;
 					case 'KeyS':

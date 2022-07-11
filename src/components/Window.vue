@@ -144,6 +144,7 @@ export default {
 		this.persistence.loadFileTree();
 		this.persistence.loadTabData();
 		this.persistence.loadTerminalTabData();
+		currentWindow.webContents.setZoomLevel(globalData.zoomLevel);
 		currentWindow.on('blur', () => {
 			EventBus.$emit('close-menu');
 		});

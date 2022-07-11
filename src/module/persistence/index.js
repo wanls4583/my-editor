@@ -25,7 +25,8 @@ export default class {
 		let data = {
 			nowTheme: globalData.nowTheme,
 			nowIconTheme: globalData.nowIconTheme,
-			views: globalData.views
+			views: globalData.views,
+			zoomLevel: globalData.zoomLevel
 		};
 		Util.writeFileSync(globalData.configPath, JSON.stringify(data));
 	}

@@ -3,7 +3,12 @@
  * @Date: 2022-03-09 09:58:18
  * @Description:
  */
-const { BrowserWindow, Menu, app, protocol } = require('electron');
+const {
+	BrowserWindow,
+	Menu,
+	app,
+	protocol
+} = require('electron');
 const main = require('@electron/remote/main');
 const path = require('path');
 const Terminal = require('./main/terminal').Terminal;
@@ -16,7 +21,6 @@ function createWindow(name, url, type, parent) {
 	const win = new BrowserWindow({
 		transparent: true,
 		frame: false,
-		show: false,
 		parent: parent,
 		webPreferences: {
 			nodeIntegration: true,
@@ -38,30 +42,24 @@ function createWindow(name, url, type, parent) {
 	return win;
 }
 
-app.whenReady()
-	.then(() => {
-		// Menu.setApplicationMenu(null); //屏蔽默认快捷键
-		initProtocol();
-		main.initialize();
-		if (process.argv[2] === 'development') {
-			mainWin = createWindow('main', 'http://localhost:8080/', 'remote');
-		} else {
-			mainWin = createWindow('main', 'render/index.html');
-		}
-		mainWin.show();
-		mainWin.terminal = new Terminal(mainWin.webContents);
-		mainWin.fileOp = new FileOp(mainWin.webContents);
-		initEvent();
-	})
-	.catch(err => {
-		console.log(err);
-	});
+app.whenReady().then(() => {
+	initProtocol();
+	main.initialize();
+	Menu.setApplicationMenu(null); //屏蔽默认快捷键
+	if (process.argv[2] === 'development') {
+		mainWin = createWindow('main', 'http://localhost:8080/', 'remote');
+	} else {
+		mainWin = createWindow('main', 'render/index.html');
+	}
+	mainWin.terminal = new Terminal(mainWin.webContents);
+	mainWin.fileOp = new FileOp(mainWin.webContents);
+	initEvent();
+}).catch(err => {
+	console.log(err);
+});
 
 function initEvent() {
-	app.on('activate', function () {
-		// if (BrowserWindow.getAllWindows().length === 0) createWindow()
-	});
-	app.on('window-all-closed', function () {
+	app.on('window-all-closed', function() {
 		if (process.platform !== 'darwin') app.quit();
 	});
 }

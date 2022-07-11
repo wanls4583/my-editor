@@ -17,6 +17,7 @@ export default class {
 	constructor(editor, context) {
 		this.editor = editor;
 		this.context = context;
+		this.initTimestamp = Date.now();
 		this.initLanguage(editor.language);
 		EventBus.$on('lint-worker-done', this.workerFn = (data) => {
 			if (data.parseId === this.parseId) {
@@ -54,6 +55,13 @@ export default class {
 			return;
 		}
 		if (!worker) {
+			//避免启动时阻塞UI线程
+			if(Date.now() - this.initTimestamp < 2000) {
+				setTimeout(()=>{
+					this.parse();
+				}, 500)
+				return;
+			}
 			this.createProcess();
 		}
 		clearTimeout(this.runTimer);

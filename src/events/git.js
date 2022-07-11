@@ -14,9 +14,10 @@ export default class {
 		this.gitStautsMap = {};
 		this.gitDiffTimer = {};
 		this.init();
+		//避免启动是window-defender阻塞UI
 		setTimeout(()=>{
 			this.createStatusProcess();
-		}, 500);
+		}, 2000);
 	}
 	init() {
 		EventBus.$on('git-status-start', filePath => {
