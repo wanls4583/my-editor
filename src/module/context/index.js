@@ -56,8 +56,8 @@ class Context {
 		if (!command) {
 			// 如果有选中区域，需要先删除选中区域
 			if (this.editor.selecter.activedRanges.size) {
-				let _historyArr = this.deleteContent();
-				// 连续操作标识
+				let _historyArr = this.deleteContent('left', null, true);
+				// 历史记录连续操作标识
 				_historyArr.serial = this.serial++;
 				serial = _historyArr.serial;
 			}
@@ -214,7 +214,14 @@ class Context {
 			return tabStr;
 		}
 	}
-	deleteContent(direct, command) {
+	/**
+	 * 
+	 * @param {String} direct 删除方向【left|right】
+	 * @param {Object|Array} command 历史记录【从历史记录中恢复】
+	 * @param {Boolean} justDeleteRange 是否只删除选区范围
+	 * @returns 
+	 */
+	deleteContent(direct, command, justDeleteRange) {
 		let historyArr = [];
 		let rangeList = [];
 		if (command) {
@@ -242,7 +249,7 @@ class Context {
 				}
 			});
 		}
-		historyArr = this._deleteMultiContent(rangeList, direct);
+		historyArr = this._deleteMultiContent(rangeList, direct, justDeleteRange);
 		if (!command) {
 			// 新增历史记录
 			historyArr.length && this.editor.history.pushHistory(historyArr);
@@ -258,14 +265,21 @@ class Context {
 		this.editor.searcher.clearSearch();
 		return historyArr;
 	}
-	_deleteMultiContent(rangeList, direct) {
+	/**
+	 * 同时删除多处
+	 * @param {Array} rangeOrCursorList 选区范围或者光标列表 
+	 * @param {String} direct 删除方向【left|right】
+	 * @param {Boolean} justDeleteRange 是否只删除选区范围
+	 * @returns 历史记录列表
+	 */
+	_deleteMultiContent(rangeOrCursorList, direct, justDeleteRange) {
 		let historyArr = [];
 		let historyObj = null;
 		let prePos = null;
 		let lineDelta = 0;
 		let columnDelta = 0;
 		this.editor.cursor.clearCursorPos();
-		rangeList.forEach(item => {
+		rangeOrCursorList.forEach(item => {
 			if (item.start && item.end) {
 				_deleteRangePos.call(this, item);
 			} else {
@@ -285,15 +299,22 @@ class Context {
 			} else {
 				columnDelta = 0;
 			}
-			historyObj = this._deleteContent(pos, direct);
-			historyObj.text && historyArr.push(historyObj);
-			prePos = historyObj.cursorPos;
-			lineDelta += historyObj.preCursorPos.line - prePos.line;
-			columnDelta += historyObj.preCursorPos.column - prePos.column;
-			this.editor.cursor.addCursorPos({
-				line: prePos.line,
-				column: prePos.column
-			});
+			if (justDeleteRange) {
+				this.editor.cursor.addCursorPos({
+					line: pos.line,
+					column: pos.column
+				});
+			} else {
+				historyObj = this._deleteContent(pos, direct);
+				historyObj.text && historyArr.push(historyObj);
+				prePos = historyObj.cursorPos;
+				lineDelta += historyObj.preCursorPos.line - prePos.line;
+				columnDelta += historyObj.preCursorPos.column - prePos.column;
+				this.editor.cursor.addCursorPos({
+					line: prePos.line,
+					column: prePos.column
+				});
+			}
 		}
 
 		function _deleteRangePos(rangePos) {

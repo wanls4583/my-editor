@@ -678,6 +678,7 @@ export default {
 			EventBus.$off('file-saved', this.initEventBusFn['file-saved']);
 			EventBus.$off('file-opened', this.initEventBusFn['file-opened']);
 			EventBus.$off('editor-format', this.initEventBusFn['editor-format']);
+			EventBus.$off('editor-content-change', this.initEventBusFn['editor-content-change']);
 			EventBus.$off('minimap-toggle', this.initEventBusFn['minimap-toggle']);
 			EventBus.$off('window-close', this.initEventBusFn['window-close']);
 		},

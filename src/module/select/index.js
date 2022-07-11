@@ -263,11 +263,13 @@ export default class {
             return false;
         }
         this.ranges.delete(target);
+        this.activedRanges.delete(target);
         target.start.line = start.line;
         target.start.column = start.column;
         target.end.line = end.line;
         target.end.column = end.column;
         this.ranges.insert(target);
+        target.active && this.activedRanges.insert(target);
         this.filterRange(target);
         this.editor.renderSelectedBgAsync();
     }
