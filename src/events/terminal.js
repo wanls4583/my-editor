@@ -124,7 +124,6 @@ export default class {
 				active: nowFileItem.rootPath === item.path
 			}
 		});
-		EventBus.$emit('close-menu');
 		EventBus.$emit('cmd-menu-open', {
 			cmdList: cmdList,
 		});

@@ -41,7 +41,7 @@
 				background-color: var(--my-tab-hoverBackground);
 				color: var(--my-tab-hoverForeground);
 				.bar-close-icon {
-					display: block;
+					display: flex;
 				}
 			}
 
@@ -57,7 +57,7 @@
 				}
 
 				.bar-close-icon {
-					display: block;
+					display: flex;
 				}
 			}
 
@@ -100,7 +100,7 @@
 
 				&:hover {
 					.bar-close-icon {
-						display: block !important;
+						display: flex !important;
 					}
 
 					.bar-dot {

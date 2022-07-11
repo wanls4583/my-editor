@@ -56,7 +56,7 @@ export default class {
 		}
 		if (!worker) {
 			//避免启动时阻塞UI线程
-			if(Date.now() - this.initTimestamp < 2000) {
+			if(Date.now() - this.initTimestamp < 3000) {
 				setTimeout(()=>{
 					this.parse();
 				}, 500)

@@ -769,13 +769,17 @@ export default {
 		},
 		// 渲染
 		render(scrollToCursor) {
-			cancelAnimationFrame(this.renderTimer);
-			this.renderBracketMatch();
-			this.renderTimer = requestAnimationFrame(() => {
+			let renderId = this.renderId++ || 0;
+			this.renderId = renderId;
+			this.$nextTick(() => {
+				if (renderId !== this.renderId) {
+					return;
+				}
 				this.renderLines();
 				this.renderSelectedBg();
 				this.renderError();
 				this.renderCursor(scrollToCursor);
+				this.renderBracketMatch();
 				this.$refs.minimap && this.$refs.minimap.render();
 			});
 		},
@@ -1166,12 +1170,13 @@ export default {
 					return;
 				}
 				left = that.getExactLeft(cursorPos);
+				console.log(that.scrollToCursor);
 				// 强制滚动使光标处于可见区域
 				if (that.scrollToCursor && cursorPos === that.nowCursorPos) {
 					if (left > that.scrollerArea.width + that.scrollLeft - that.charObj.fullAngleCharWidth) {
 						that.scrollLeft = left + that.charObj.fullAngleCharWidth - that.scrollerArea.width;
-					} else if (left < that.scrollLeft) {
-						that.scrollLeft = left - 1;
+					} else if (left < that.scrollLeft + that.charObj.fullAngleCharWidth) {
+						that.scrollLeft = left - that.charObj.fullAngleCharWidth;
 					}
 				}
 				if (cursorPos === that.nowCursorPos) {

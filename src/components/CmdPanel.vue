@@ -72,7 +72,7 @@ export default {
 					this.originCmdList = [this.originCmdList];
 				}
 				this.searchMenu();
-				requestAnimationFrame(() => {
+				this.$nextTick(() => {
 					this.$refs.input.focus();
 				});
 			});
@@ -85,7 +85,7 @@ export default {
 				this.searchText = data.input || '';
 				this.cmdList = [];
 				this.searchCmd(1);
-				requestAnimationFrame(() => {
+				this.$nextTick(() => {
 					this.$refs.input.focus();
 				});
 			});

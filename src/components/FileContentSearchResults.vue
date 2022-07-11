@@ -15,8 +15,8 @@
 					class="tree-item-title my-center-start"
 				>
 					<template v-if="item.deep === 1">
-						<span class="left-icon iconfont icon-down1" v-if="item.open"></span>
-						<span class="left-icon iconfont icon-right" v-else></span>
+						<span class="my-icon my-icon-down" v-if="item.open"></span>
+						<span class="my-icon my-icon-right" v-else></span>
 					</template>
 					<div :class="[item.icon]" class="tree-item-content my-center-start">
 						<span class="tree-item-text" style="margin-left: 4px" v-html="item.html"></span>

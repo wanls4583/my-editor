@@ -10,7 +10,7 @@
 				<div class="side-search-title my-shadow">SEARCH</div>
 				<div style="position: relative; padding: 0 10px 0 20px">
 					<div @click="replaceVisible = !replaceVisible" class="my-search-left active-click" style="border-radius: 0" tabindex="-1">
-						<span :class="{ 'icon-down1': replaceVisible, 'icon-right': !replaceVisible }" class="iconfont" style="font-size: 14px" title="Toggle Replace mode"></span>
+						<span :class="{ 'my-icon-down': replaceVisible, 'my-icon-right': !replaceVisible }" class="my-icon" title="Toggle Replace mode"></span>
 					</div>
 					<div :class="{ 'my-active': input1Focus }" class="my-search-input">
 						<textarea
@@ -52,7 +52,7 @@
 					</div>
 				</div>
 				<div style="padding: 0 10px 0 20px">
-					<div style="line-height: 30px">files to include</div>
+					<div style="line-height: 30px">files to exclude</div>
 					<div :class="{ 'my-active': input3Focus }" class="my-search-input">
 						<textarea
 							:style="{ height: input3Height + 'px' }"
