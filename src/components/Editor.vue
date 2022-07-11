@@ -1170,7 +1170,6 @@ export default {
 					return;
 				}
 				left = that.getExactLeft(cursorPos);
-				console.log(that.scrollToCursor);
 				// 强制滚动使光标处于可见区域
 				if (that.scrollToCursor && cursorPos === that.nowCursorPos) {
 					if (left > that.scrollerArea.width + that.scrollLeft - that.charObj.fullAngleCharWidth) {
