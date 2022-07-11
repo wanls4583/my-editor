@@ -12,19 +12,14 @@ export default class {
 	}
 	init() {
 		EventBus.$on('terminal-new', dirPath => {
-			let nowFileItem = globalData.nowFileItem;
-			let tab = {};
-			let name = '';
-			if (!dirPath && nowFileItem) {
-				dirPath = nowFileItem.rootPath;
+			if (globalData.fileTree.length) {
+				this.selectTermialCwd();
+			} else {
+				this.addTerminal(globalData.homePath);
 			}
-			dirPath = dirPath || globalData.homePath;
-			name = path.basename(dirPath);
-			tab.name = name;
-			tab.path = dirPath;
-			tab.id = Util.getUUID();
-			this.terminalList.push(tab);
-			EventBus.$emit('terminal-change', tab.id);
+		});
+		EventBus.$on('terminal-cwd', dirPath => {
+			this.addTerminal(dirPath);
 		});
 		EventBus.$on('terminal-close', id => {
 			this.closeTerminal(id);
@@ -56,12 +51,14 @@ export default class {
 			this.terminalList.splice();
 		});
 	}
-	getTerminalTabById(id) {
-		for (let i = 0; i < this.terminalList.length; i++) {
-			if (id === this.terminalList[i].id) {
-				return this.terminalList[i];
-			}
-		}
+	addTerminal(dirPath) {
+		let tab = {};
+		let name = path.basename(dirPath);
+		tab.name = name;
+		tab.path = dirPath;
+		tab.id = Util.getUUID();
+		this.terminalList.push(tab);
+		EventBus.$emit('terminal-change', tab.id);
 	}
 	changeTerminalTab(id) {
 		this.terminalList.forEach(item => {
@@ -115,5 +112,28 @@ export default class {
 		list.forEach((item) => {
 			this.terminalList.push(item);
 		});
+	}
+	selectTermialCwd() {
+		let nowFileItem = globalData.nowFileItem || {};
+		let cmdList = globalData.fileTree.map(item => {
+			return {
+				name: item.name,
+				desc: item.path,
+				value: item.path,
+				op: 'selectTermialCwd',
+				active: nowFileItem.rootPath === item.path
+			}
+		});
+		EventBus.$emit('close-menu');
+		EventBus.$emit('cmd-menu-open', {
+			cmdList: cmdList,
+		});
+	}
+	getTerminalTabById(id) {
+		for (let i = 0; i < this.terminalList.length; i++) {
+			if (id === this.terminalList[i].id) {
+				return this.terminalList[i];
+			}
+		}
 	}
 }

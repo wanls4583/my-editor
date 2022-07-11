@@ -57,15 +57,19 @@ export default class {
 		}
 	}
 	storeTabData() {
-		let data = globalData.editorList.map(item => {
-			return {
-				id: item.id,
-				name: item.name,
-				path: item.path,
-				tempPath: (!item.saved && path.join(globalData.cachePath, item.id)) || '',
-				active: item.active,
-				saved: item.saved,
-			};
+		let data = [];
+		let preItem = {};
+		globalData.editorList.forEach(item => {
+			if(item.id !== preItem.id) {
+				data.push({
+					id: item.id,
+					name: item.name,
+					path: item.path,
+					tempPath: (!item.saved && path.join(globalData.cachePath, item.id)) || '',
+					active: item.active,
+					saved: item.saved,
+				});
+			}
 		});
 		Util.writeFileSync(globalData.tabPath, JSON.stringify(data));
 	}
@@ -79,14 +83,19 @@ export default class {
 		}
 	}
 	storeTerminalTabData() {
-		let data = globalData.terminalList.map(item => {
-			return {
-				id: item.id,
-				name: item.name,
-				title: item.title,
-				path: item.path,
-				active: item.active,
-			};
+		let data = [];
+		let preItem = {};
+		globalData.terminalList.map(item => {
+			if (item.id !== preItem.id) {
+				data.push({
+					id: item.id,
+					name: item.name,
+					title: item.title,
+					path: item.path,
+					active: item.active,
+				});
+				preItem = item;
+			}
 		});
 		Util.writeFileSync(globalData.terminalTabPath, JSON.stringify(data));
 	}

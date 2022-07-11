@@ -187,6 +187,10 @@ export default {
 							this.addResults();
 						}
 					});
+					// 最多搜索30000个结果
+					if(this.count > 30000) {
+						this.stopSeach();
+					}
 				}
 			});
 			return searcher;

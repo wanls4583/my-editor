@@ -26,6 +26,7 @@ export default {
 	props: {
 		id: String,
 		path: String,
+		active: Boolean,
 	},
 	data() {
 		return {};
@@ -34,6 +35,11 @@ export default {
 		_id() {
 			return 'terminal-' + this.id;
 		},
+	},
+	watch: {
+		active() {
+			this.active && this.terminal.focus();
+		}
 	},
 	created() {},
 	mounted() {
@@ -60,7 +66,8 @@ export default {
 		this.initResizeEvent();
 		requestAnimationFrame(() => {
 			this.fitAddon.fit();
-			this.createTerminal();
+			this.terminal.focus();
+			this.createPty();
 		});
 	},
 	destroyed() {
@@ -76,7 +83,7 @@ export default {
 				cols: data.cols,
 			});
 		},
-		createTerminal() {
+		createPty() {
 			ipcRenderer.send('terminal-add', {
 				id: this.id,
 				rows: this.terminal.rows,

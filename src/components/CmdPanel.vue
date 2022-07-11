@@ -319,6 +319,10 @@ export default {
 					EventBus.$emit('file-open', item.item);
 					this.onCancel();
 					break;
+				case 'selectTermialCwd': //选择终端工作目录
+					EventBus.$emit('terminal-cwd', item.value);
+					this.onCancel();
+					break;
 			}
 		},
 		onScroll(e) {
