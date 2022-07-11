@@ -217,7 +217,11 @@ export default {
 		onKeydown(e) {
 			if (e.keyCode === 13 || e.keyCode === 100) {
 				e.preventDefault();
-				this.$emit('next');
+				if(e.shiftKey) {
+					this.$emit('prev');
+				} else {
+					this.$emit('next');
+				}
 			}
 		},
 		onKeyDown2(e) {

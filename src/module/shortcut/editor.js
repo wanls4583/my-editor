@@ -165,6 +165,11 @@ export default class {
 					e.stopPropagation();
 					this.editor.selecter.select('down');
 					break;
+				case 'KeyD': //shift+D，搜素
+					e.preventDefault();
+					e.stopPropagation();
+					this.editor.searchWord('up');
+					break;
 			}
 		} else {
 			switch (e.code) {

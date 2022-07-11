@@ -1809,12 +1809,12 @@ export default {
 				if (this.mouseUpTime && Date.now() - this.mouseUpTime < 200) {
 					//双击选中单词
 					this.mouseStartObj.doubleClick = true;
-					this.searchWord();
+					this.searchWord('down');
 				}
 			}
 			this.mouseStartObj.cursorPos = cursorPos;
 			// 删除非活动区域的选中区域
-			this.searcher.clearSearch(true);
+			// this.searcher.clearSearch(true);
 			this.focus();
 		},
 		onErrorMousemove(e, line) {

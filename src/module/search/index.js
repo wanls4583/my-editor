@@ -28,7 +28,7 @@ export default class {
             if (!config || !config.text) {
                 return { now: 0, count: 0 };
             }
-            resultObj = this._search(config);
+            resultObj = this.execSearch(config);
         }
         if (resultObj && resultObj.result) {
             if (this.editor.searcher === this || searchObj.increase) {
@@ -63,14 +63,14 @@ export default class {
             count: count,
         };
     }
-    _search(config) {
+    execSearch(config) {
         let reg = null;
         let exec = null;
         let start = null;
         let end = null;
         let result = null;
         let results = [];
-        let indexs = {};
+        let indexMap = new Map();
         let rangePos = null;
         let line = 1;
         let column = 0;
@@ -107,38 +107,34 @@ export default class {
                 if (!result && Util.comparePos(end, this.editor.nowCursorPos) >= 0) {
                     result = rangePos;
                     index = results.length - 1;
-                    indexs[results.length - 1] = true;
+                    indexMap.set(results.length - 1, true);
                 }
             }
         }
         if (!results.length) {
             return null;
         }
-        if (!result && results.length) {
-            index = 0;
-            result = results[0];
-        }
         this.cacheData = {
             config: config,
             results: results,
-            indexs: indexs,
+            indexMap: indexMap,
             index: index,
         };
         return {
             now: this.cacheData.index + 1,
+            result: result || results,
             results: results,
-            result: result,
         };
     }
     initIndexs() {
         let ranges = this.selecter.activedRanges.toArray();
-        this.cacheData.indexs = {};
+        this.cacheData.indexMap.clear();
         ranges.forEach((range) => {
             for (let i = 0; i < this.cacheData.results.length; i++) {
                 let item = this.cacheData.results[i];
                 if (Util.comparePos(range.start, item.start) === 0) {
                     this.cacheData.index = i;
-                    this.cacheData.indexs[i] = true;
+                    this.cacheData.indexMap.set(i, true);
                     break;
                 }
             }
@@ -185,10 +181,22 @@ export default class {
     clearActive() {
         if (this.cacheData) {
             this.cacheData.index = -1;
-            this.cacheData.indexs = {};
+            this.cacheData.indexMap.clear();
             this.selecter.clearActive();
         }
     }
+    removeNow() {
+        this.cacheData.results.splice(this.cacheData.index, 1);
+        this.cacheData.index--;
+    }
+    // 克隆缓存，当关闭搜索框时候，搜索框的的结果将克隆到searcher
+    clone(cacheData) {
+        this.cacheData = cacheData;
+        if (cacheData) {
+            this.selecter.addRange(cacheData.results);
+        }
+    }
+    // 搜索框移动到上一个区域
     setPrevActive(cursorPos) {
         let results = this.cacheData.results;
         let index = this.cacheData.index;
@@ -201,7 +209,9 @@ export default class {
                 break;
             }
         }
+        return this.cacheData.index;
     }
+    // 搜索框移动到下一个区域
     setNextActive(cursorPos) {
         let results = this.cacheData.results;
         let index = this.cacheData.index;
@@ -214,16 +224,7 @@ export default class {
                 break;
             }
         }
-    }
-    removeNow() {
-        this.cacheData.results.splice(this.cacheData.index, 1);
-        this.cacheData.index--;
-    }
-    clone(cacheData) {
-        this.cacheData = cacheData;
-        if (cacheData) {
-            this.selecter.addRange(cacheData.results);
-        }
+        return this.cacheData.index;
     }
     getCacheData() {
         return this.cacheData;
@@ -236,34 +237,26 @@ export default class {
         let result = null;
         let index = 0;
         if (this.editor.fSearcher === this && !increase) {
-            // 搜索框移动活动区域
+            // 搜索框移动活动区域，可循环移动
             if (direct === 'up') {
-                this.setPrevActive(this.editor.nowCursorPos);
+                index = this.setPrevActive(this.editor.nowCursorPos);
             } else {
-                this.setNextActive(this.editor.nowCursorPos);
+                index = this.setNextActive(this.editor.nowCursorPos);
             }
-            index = this.cacheData.index;
             result = this.cacheData.results[index];
-            this.cacheData.indexs = { i: true };
+            this.cacheData.indexMap.clear();
         } else {
-            //CTRL+D移动活动区域
-            let indexs = this.cacheData.indexs;
-            let delta = 0;
-            if (direct === 'up') {
-                delta = -1;
-            } else {
-                delta = 1;
-            }
-            index = this.cacheData.index + delta;
-            if (index == results.length) {
-                index = 0;
-            } else if (index < 0) {
-                index = results.length - 1;
-            }
-            // 已经没有非活动区域
-            if (!indexs[index]) {
+            //Ctrl+D/Shfit+D移动活动区域，只看移动一个轮回
+            if (this.cacheData.indexMap.size < results.length) {
+                if (direct === 'up') {
+                    index = this.cacheData.index - 1;
+                } else {
+                    index = this.cacheData.index + 1;
+                }
+                index = index === results.length ? 0 : index;
+                index = index < 0 ? 0 : index;
                 result = results[index];
-                indexs[index] = true;
+                this.cacheData.indexMap.set(index, true);
                 this.cacheData.index = index;
             } else {
                 index = this.cacheData.index;
@@ -287,13 +280,17 @@ export default class {
         let result = null;
         let wholeWord = false;
         let searchText = '';
-        let range = this.editor.searcher.selecter.getRangeByCursorPos(this.editor.nowCursorPos);
-        if (this.editor.searcher === this && this.selecter.ranges.size > 0) {
+        let range = null;
+        // 非搜索框模式下，存在多个选区则不进行搜索
+        if (this === this.editor.searcher && this.selecter.ranges.size > 1) {
             return null;
         }
+        range = this.editor.searcher.selecter.getRangeByCursorPos(this.editor.nowCursorPos);
         if (range) {
+            // 待搜索内容为选中的内容
             searchText = this.context.getRangeText(range.start, range.end);
         } else {
+            // 待搜索内容为光标处的单词
             searchText = this.getNowWord().text;
             wholeWord = true;
         }
@@ -307,12 +304,14 @@ export default class {
         return result;
     }
     getNowWord() {
-        let text = this.context.htmls[this.editor.nowCursorPos.line - 1].text;
         let str = '';
+        let res = null;
         let index = this.editor.nowCursorPos.column;
         let startColumn = index;
         let endColumn = index;
-        let res = null;
+        let text = this.context.htmls[this.editor.nowCursorPos.line - 1].text;
+        // 单词头部离当前光标最多50个字符的距离
+        text = index > 50 ? text.slice(index - 50) : text;
         while ((res = this.wordPattern.exec(text))) {
             if (res.index <= index && res.index + res[0].length >= index) {
                 startColumn = res.index;
@@ -328,14 +327,8 @@ export default class {
         return {
             text: str,
             range: {
-                start: {
-                    line: this.editor.nowCursorPos.line,
-                    column: startColumn,
-                },
-                end: {
-                    line: this.editor.nowCursorPos.line,
-                    column: endColumn,
-                },
+                start: { line: this.editor.nowCursorPos.line, column: startColumn, },
+                end: { line: this.editor.nowCursorPos.line, column: endColumn, },
             },
         };
     }
