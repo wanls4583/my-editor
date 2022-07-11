@@ -114,6 +114,17 @@ export default {
 						shortcut: 'Ctrl+Shift+S',
 					},
 				],
+				[
+					{
+						name: 'Reload',
+						op: 'reload',
+						shortcut: 'Ctrl+R',
+					},
+					{
+						name: 'Exit',
+						op: 'exit',
+					},
+				],
 			],
 			editMenuList: [
 				[
@@ -411,6 +422,12 @@ export default {
 					break;
 				case 'openWorkspace':
 					EventBus.$emit('workspace-open');
+					break;
+				case 'reload':
+					currentWindow.reload();
+					break;
+				case 'exit':
+					currentWindow.close();
 					break;
 			}
 			requestAnimationFrame(() => {

@@ -145,18 +145,26 @@ export default {
 		this.persistence.loadTabData();
 		this.persistence.loadTerminalTabData();
 		currentWindow.webContents.setZoomLevel(globalData.zoomLevel);
-		currentWindow.on('blur', () => {
-			EventBus.$emit('close-menu');
-		});
-		currentWindow.on('close', (e) => {
-			this.closeMain = true;
-		});
+		currentWindow.on(
+			'blur',
+			(this.winFn1 = () => {
+				EventBus.$emit('close-menu');
+			})
+		);
+		currentWindow.on(
+			'close',
+			(this.winFn2 = () => {
+				this.closeMain = true;
+			})
+		);
 		window.onbeforeunload = (e) => {
 			if (!this.preCloseDone) {
 				EventBus.$emit('window-close');
 				e.returnValue = false;
 				setTimeout(() => {
 					this.preCloseDone = true;
+					currentWindow.removeListener('blur', this.winFn1);
+					currentWindow.removeListener('close', this.winFn2);
 					if (this.closeMain) {
 						currentWindow.close();
 					} else {
