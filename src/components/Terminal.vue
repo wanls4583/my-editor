@@ -39,6 +39,7 @@ export default {
 	mounted() {
 		this.terminal = new Terminal({
 			windowsMode: true,
+			fontSize: 16,
 			fontFamily: 'Consolas',
 			cursorBlink: true,
 			theme: {
