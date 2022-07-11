@@ -21,6 +21,7 @@ function createWindow(name, url, type, parent) {
 	const win = new BrowserWindow({
 		transparent: true,
 		frame: false,
+		show: false,
 		parent: parent,
 		webPreferences: {
 			nodeIntegration: true,
@@ -44,6 +45,7 @@ function createWindow(name, url, type, parent) {
 
 app.whenReady().then(() => {
 	initProtocol();
+	initEvent();
 	main.initialize();
 	Menu.setApplicationMenu(null); //屏蔽默认快捷键
 	if (process.argv[2] === 'development') {
@@ -53,7 +55,7 @@ app.whenReady().then(() => {
 	}
 	mainWin.terminal = new Terminal(mainWin.webContents);
 	mainWin.fileOp = new FileOp(mainWin.webContents);
-	initEvent();
+	mainWin.show();
 }).catch(err => {
 	console.log(err);
 });
