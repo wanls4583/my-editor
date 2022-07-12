@@ -278,7 +278,7 @@ class Differ {
     }
     getStagedContent(filePath) {
         let child = spawn('git', ['show', `:./${path.basename(filePath)}`], { cwd: path.dirname(filePath) });
-        return new Promise(resolve => {
+        return new Promise((resolve, reject) => {
             let result = '';
             child.stdout.on('data', data => {
                 result += data;

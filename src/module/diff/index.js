@@ -40,9 +40,12 @@ export default class {
         }
     }
     run() {
+        if (!this.editor.tabData.path) {
+            return;
+        }
         if (!worker) {
-			this.createProcess();
-		}
+            this.createProcess();
+        }
         clearTimeout(this.runTimer);
         this.runTimer = setTimeout(() => {
             _send.call(this);

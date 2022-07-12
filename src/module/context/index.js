@@ -81,7 +81,7 @@ class Context {
 		this.editor.setNowCursorPos(this.editor.cursor.multiCursorPos.get(0));
 		return historyArr;
 	}
-	_insertMultiContent({ text, cursorPosList, command }) {
+	_insertMultiContent({ text, cursorPosList, command, afterCursorPosList }) {
 		let prePos = null;
 		let historyObj = null;
 		let historyArr = [];
@@ -130,7 +130,9 @@ class Context {
 			}
 			historyArr.push(historyObj);
 		});
-		if (command && command.originCursorPosList) {
+		if (afterCursorPosList) {
+			this.addCursorList(afterCursorPosList);
+		} else if (command && command.originCursorPosList) {
 			this.addCursorList(command.originCursorPosList);
 		} else if (command && command.afterCursorPosList) {
 			this.addCursorList(command.afterCursorPosList);
@@ -282,7 +284,7 @@ class Context {
 	 * @param {Boolean} justDeleteRange 是否只删除选区范围
 	 * @returns 历史记录列表
 	 */
-	_deleteMultiContent({ rangeOrCursorList, direct, justDeleteRange, command }) {
+	_deleteMultiContent({ rangeOrCursorList, direct = 'left', justDeleteRange, command }) {
 		let historyArr = [];
 		let historyObj = null;
 		let prePos = null;
@@ -610,139 +612,155 @@ class Context {
 			this.editor.history.pushHistory(historyArr);
 		}
 	}
-	moveLineUp(command) {
-		this.moveLine(command, 'up');
-	}
-	moveLineDown(command) {
-		this.moveLine(command, 'down');
-	}
-	moveLine(command, direct) {
+	// 向上移动整行内容
+	moveLineUp() {
+		let historyArr = null;
+		let serial = this.serial++;
+		let preLine = null;
+		let texts = [];
 		let cursorPosList = [];
-		let historyPosList = [];
-		let index = 0;
-		let prePos = null;
-		let searchConifg = null;
-		if (command) {
-			searchConifg = command.searchConifg;
-			cursorPosList = command.cursorPos;
-		} else {
-			searchConifg = this.editor.searcher.getConfig();
-			cursorPosList = [];
-			// 过滤光标，去除上下相邻的光标
-			this.editor.cursor.multiCursorPos.toArray().forEach(item => {
-				let range = this.editor.selecter.getRangeByCursorPos(item); //当前光标处于活动区域边界
-				let pass = true;
-				let line = range ? range.start.line : item.line;
-				if (prePos) {
-					let preLine = prePos.end ? prePos.end.line : prePos.line;
-					if (preLine + 1 === line || preLine === line) {
-						//和之前的光标冲突，移除当前光标所处的活动区域
-						range && this.editor.selecter.removeRange(range);
-						pass = false;
-					}
-				}
-				if (pass) {
-					var enLine = (range && range.end.line) || line;
-					if ((line === 1 && direct === 'up') || (enLine === this.editor.maxLine && direct === 'down')) {
-						pass = false;
-					} else {
-						if (range) {
-							range.margin = Util.comparePos(range.start, item) === 0 ? 'left' : 'right';
-							prePos = range;
-						} else {
-							prePos = item;
-						}
-						cursorPosList.push(prePos);
-					}
-				}
-			});
-		}
-		while (index < cursorPosList.length) {
-			let pos = cursorPosList[index];
-			let range = pos.start ? pos : null;
-			this._moveLine(pos, direct);
-			//移动光标和选区
-			let delta = direct === 'down' ? 1 : -1;
+		let originCursorPosList = [];
+		let afterCursorPosList = [];
+		let list = this.editor.cursor.multiCursorPos.toArray();
+		for (let i = list.length - 1; i >= 0; i--) {
+			let item = list[i];
+			let range = this.editor.selecter.getRangeByCursorPos(item);
 			if (range) {
-				//更新选中区域坐标
-				range.start.line = range.start.line + delta;
-				range.end.line = range.end.line + delta;
+				if (range.start.line + 1 !== preLine && range.start.line > 1) {
+					range.margin = Util.comparePos(range.start, item) === 0 ? 'left' : 'right';
+					cursorPosList.push({
+						start: { line: range.start.line - 1, column: 0 },
+						end: { line: range.end.line, column: this.htmls[range.end.line - 1].text.length }
+					});
+					texts.push(
+						this.getRangeText(
+							{ line: range.start.line, column: 0 },
+							{ line: range.end.line, column: this.htmls[range.end.line - 1].text.length }
+						)
+						+ '\n'
+						+ this.htmls[range.start.line - 2].text
+					);
+					afterCursorPosList.push({
+						start: { line: range.start.line - 1, column: range.start.column },
+						end: { line: range.end.line - 1, column: range.end.column },
+					});
+					preLine = range.start.line;
+				} else {
+					afterCursorPosList.push({
+						start: { line: range.start.line, column: range.start.column },
+						end: { line: range.end.line, column: range.end.column },
+					});
+				}
+				originCursorPosList.push({
+					start: { line: range.start.line, column: range.start.column },
+					end: { line: range.end.line, column: range.end.column },
+				});
 			} else {
-				// 更新光标坐标
-				pos.line = pos.line + delta;
+				if (item.line + 1 !== preLine && item.line > 1) {
+					cursorPosList.push({
+						start: { line: item.line - 1, column: 0 },
+						end: { line: item.line, column: this.htmls[item.line - 1].text.length }
+					});
+					texts.push(this.htmls[item.line - 1].text + '\n' + this.htmls[item.line - 2].text);
+					afterCursorPosList.push({ line: item.line - 1, column: item.column });
+					preLine = item.line;
+				} else {
+					afterCursorPosList.push({ line: item.line, column: item.column });
+				}
+				originCursorPosList.push({ line: item.line, column: item.column });
 			}
-			historyPosList.push(range ? this.editor.selecter.clone(range, ['margin']) : Object.assign({}, pos));
-			index++;
 		}
-		if (!historyPosList.length) {
-			return;
-		}
-		this.editor.searcher.clearSearch();
-		this.editor.cursor.clearCursorPos();
-		// 恢复活动区域和光标
-		historyPosList.forEach(item => {
-			if (item.start) {
-				this.editor.cursor.addCursorPos(item.margin === 'left' ? item.start : item.end);
-				this.editor.selecter.addRange(item);
-			} else {
-				this.editor.cursor.addCursorPos(item);
-			}
-		});
-		let historyObj = {
-			type: direct === 'down' ? Util.HISTORY_COMMAND.MOVEUP : Util.HISTORY_COMMAND.MOVEDOWN,
-			cursorPos: historyPosList,
-			searchConifg: searchConifg // 记录搜索配置
-		};
-		if (!command) {
-			// 新增历史记录
-			this.editor.history.pushHistory(historyObj);
-			this.editor.searcher.refreshSearch(searchConifg);
-		} else {
-			// 撤销或重做操作后，更新历史记录
-			this.editor.history.updateHistory(historyObj);
-			this.editor.searcher.refreshSearch(command.searchConifg);
+		if (cursorPosList.length) {
+			cursorPosList.reverse();
+			originCursorPosList.reverse();
+			afterCursorPosList.reverse();
+			texts.reverse();
+			historyArr = this._deleteMultiContent({ rangeOrCursorList: cursorPosList });
+			historyArr.serial = serial;
+			historyArr.originCursorPosList = originCursorPosList;
+			this.editor.history.pushHistory(historyArr);
+			historyArr = this._insertMultiContent({
+				text: texts,
+				cursorPosList: historyArr.map((item) => { return item.cursorPos }),
+				afterCursorPosList: afterCursorPosList
+			});
+			historyArr.serial = serial;
+			historyArr.afterCursorPosList = afterCursorPosList;
+			this.editor.history.pushHistory(historyArr);
 		}
 	}
-	_moveLine(cursorPos, direct) {
-		let range = cursorPos.start ? cursorPos : null;
-		let upLine = 0;
-		let downLine = 0;
-		let text = '';
-		// 当前光标处于选中区域边界
-		if (range) {
-			text = this.htmls
-				.slice(range.start.line - 1, range.end.line)
-				.map(item => {
-					return item.text;
-				})
-				.join('\n');
-			if (direct === 'down') {
-				upLine = range.start.line;
-				downLine = range.end.line + 1;
-				text = this.htmls[downLine - 1].text + '\n' + text;
+	// 向下移动整行内容
+	moveLineDown() {
+		let historyArr = null;
+		let serial = this.serial++;
+		let preLine = null;
+		let texts = [];
+		let cursorPosList = [];
+		let originCursorPosList = [];
+		let afterCursorPosList = [];
+		let list = this.editor.cursor.multiCursorPos.toArray();
+		for (let i = 0; i < list.length; i++) {
+			let item = list[i];
+			let range = this.editor.selecter.getRangeByCursorPos(item);
+			if (range) {
+				if (range.start.line - 1 !== preLine && range.end.line < this.editor.maxLine) {
+					range.margin = Util.comparePos(range.start, item) === 0 ? 'left' : 'right';
+					cursorPosList.push({
+						start: { line: range.start.line, column: 0 },
+						end: { line: range.end.line + 1, column: this.htmls[range.end.line].text.length }
+					});
+					texts.push(
+						this.htmls[range.end.line].text
+						+ '\n'
+						+ this.getRangeText(
+							{ line: range.start.line, column: 0 },
+							{ line: range.end.line, column: this.htmls[range.end.line - 1].text.length }
+						)
+					);
+					afterCursorPosList.push({
+						start: { line: range.start.line + 1, column: range.start.column },
+						end: { line: range.end.line + 1, column: range.end.column },
+					});
+					preLine = range.end.line;
+				} else {
+					afterCursorPosList.push({
+						start: { line: range.start.line, column: range.start.column },
+						end: { line: range.end.line, column: range.end.column },
+					});
+				}
+				originCursorPosList.push({
+					start: { line: range.start.line, column: range.start.column },
+					end: { line: range.end.line, column: range.end.column },
+				});
 			} else {
-				upLine = range.start.line - 1;
-				downLine = range.end.line;
-				text = text + '\n' + this.htmls[upLine - 1].text;
+				if (item.line - 1 !== preLine && item.line < this.editor.maxLine) {
+					cursorPosList.push({
+						start: { line: item.line, column: 0 },
+						end: { line: item.line + 1, column: this.htmls[item.line].text.length }
+					});
+					texts.push(this.htmls[item.line].text + '\n' + this.htmls[item.line - 1].text);
+					afterCursorPosList.push({ line: item.line + 1, column: item.column });
+					preLine = item.line;
+				} else {
+					afterCursorPosList.push({ line: item.line, column: item.column });
+				}
+				originCursorPosList.push({ line: item.line, column: item.column });
 			}
-		} else {
-			upLine = cursorPos.line - (direct === 'down' ? 0 : 1);
-			downLine = upLine + 1;
-			text = this.htmls[downLine - 1].text + '\n' + this.htmls[upLine - 1].text;
 		}
-		let start = {
-			line: upLine,
-			column: 0
-		};
-		let end = {
-			line: downLine,
-			column: this.htmls[downLine - 1].text.length
-		};
-		this._deleteContent({
-			start: start,
-			end: end
-		});
-		this._insertContent(text, start);
+		if (cursorPosList.length) {
+			historyArr = this._deleteMultiContent({ rangeOrCursorList: cursorPosList });
+			historyArr.serial = serial;
+			historyArr.originCursorPosList = originCursorPosList;
+			this.editor.history.pushHistory(historyArr);
+			historyArr = this._insertMultiContent({
+				text: texts,
+				cursorPosList: historyArr.map((item) => { return item.cursorPos }),
+				afterCursorPosList: afterCursorPosList
+			});
+			historyArr.serial = serial;
+			historyArr.afterCursorPosList = afterCursorPosList;
+			this.editor.history.pushHistory(historyArr);
+		}
 	}
 	// 向上复制一行
 	copyLineUp(command) {
