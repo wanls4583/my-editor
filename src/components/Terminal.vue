@@ -70,7 +70,11 @@ export default {
 			this.createPty();
 		});
 	},
+	beforeDestroy() {
+		this.resizeObserver.unobserve(this.$refs.terminal);
+	},
 	destroyed() {
+		this.terminal.dispose();
 		ipcRenderer.send('terminal-destroy', {
 			id: this.id,
 		});
@@ -101,7 +105,7 @@ export default {
 			});
 		},
 		initResizeEvent() {
-			const resizeObserver = new ResizeObserver((entries) => {
+			this.resizeObserver = new ResizeObserver((entries) => {
 				cancelAnimationFrame(this.fitTimer);
 				this.fitTimer = requestAnimationFrame(() => {
 					if (this.$refs.terminal && this.$refs.terminal.clientHeight) {
@@ -109,7 +113,7 @@ export default {
 					}
 				});
 			});
-			resizeObserver.observe(this.$refs.terminal);
+			this.resizeObserver.observe(this.$refs.terminal);
 		},
 		initTerminalEvent() {
 			ipcRenderer.on('terminal-data', (event, data) => {

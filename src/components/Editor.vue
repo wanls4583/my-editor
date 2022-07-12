@@ -418,6 +418,9 @@ export default {
 			}
 		}
 	},
+	beforeDestroy() {
+		this.resizeObserver.unobserve(this.$refs.editor);
+	},
 	destroyed() {
 		this.unbindEvent();
 		this.myContext.destroy();
@@ -507,7 +510,7 @@ export default {
 			$(document).on('mouseup', this.initEventFn2);
 		},
 		initResizeEvent() {
-			const resizeObserver = new ResizeObserver((entries) => {
+			this.resizeObserver = new ResizeObserver((entries) => {
 				if (this.active) {
 					this.$nextTick(() => {
 						if (this.$refs.scroller) {
@@ -516,7 +519,7 @@ export default {
 					});
 				}
 			});
-			resizeObserver.observe(this.$refs.editor);
+			this.resizeObserver.observe(this.$refs.editor);
 		},
 		initEventBus() {
 			this.initEventBusFn = {};

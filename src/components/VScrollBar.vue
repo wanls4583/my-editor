@@ -42,18 +42,21 @@ export default {
 		this.initResizeEvent();
 		this.initEvent();
 	},
+	beforeDestroy() {
+		this.resizeObserver.unobserve(this.$refs.bar);
+	},
 	destroyed() {
 		this.unbindEvent();
 		globalData.scheduler.removeUiTask(this.moveHsliderTask);
 	},
 	methods: {
 		initResizeEvent() {
-			const resizeObserver = new ResizeObserver((entries) => {
+			this.resizeObserver = new ResizeObserver((entries) => {
 				if (this.$refs.bar && this.$refs.bar.clientHeight) {
 					this.barHeight = this.$refs.bar.clientHeight;
 				}
 			});
-			resizeObserver.observe(this.$refs.bar);
+			this.resizeObserver.observe(this.$refs.bar);
 		},
 		initEvent() {
 			this.initEventFn1 = (e) => {

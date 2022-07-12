@@ -78,6 +78,9 @@ export default {
 		this.initWorkerData('theme');
 		this.initEvent();
 	},
+	beforeDestroy() {
+		this.resizeObserver.unobserve(this.$refs.wrap);
+	},
 	destroyed() {
 		this.worker.terminate();
 		this.unbindEvent();
@@ -136,7 +139,7 @@ export default {
 			);
 		},
 		initResizeEvent() {
-			const resizeObserver = new ResizeObserver((entries) => {
+			this.resizeObserver = new ResizeObserver((entries) => {
 				if (this.$refs.wrap && this.$refs.wrap.clientHeight) {
 					requestAnimationFrame(() => {
 						this.setSize();
@@ -145,7 +148,7 @@ export default {
 					});
 				}
 			});
-			resizeObserver.observe(this.$refs.wrap);
+			this.resizeObserver.observe(this.$refs.wrap);
 		},
 		unbindEvent() {
 			$(document).unbind('mousemove', this.initEvent.fn1);
