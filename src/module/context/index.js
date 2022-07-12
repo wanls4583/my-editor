@@ -71,7 +71,8 @@ class Context {
 		historyArr = this._insertMultiContent({ text, cursorPosList, command });
 		historyArr.serial = serial;
 		if (command) {
-			historyArr.length && this.editor.history.updateHistory(historyArr);
+			historyArr.originCursorPosList = command.originCursorPosList;
+			this.editor.history.updateHistory(historyArr);
 		} else {
 			this.editor.history.pushHistory(historyArr);
 		}
@@ -125,7 +126,7 @@ class Context {
 				};
 			}
 			historyArr.push(historyObj);
-			if (!command || !command.originPosList) {
+			if (!command || !command.originCursorPosList) {
 				if (margin === 'right') {
 					this.editor.cursor.addCursorPos(historyObj.cursorPos);
 				} else {
@@ -133,9 +134,9 @@ class Context {
 				}
 			}
 		});
-		if (command && command.originPosList) {
-			for (let i = 0; i < command.originPosList.length; i++) {
-				this.editor.cursor.addCursorPos(command.originPosList[i]);
+		if (command && command.originCursorPosList) {
+			for (let i = 0; i < command.originCursorPosList.length; i++) {
+				this.editor.cursor.addCursorPos(command.originCursorPosList[i]);
 			}
 		}
 		return historyArr;
@@ -265,15 +266,11 @@ class Context {
 		}
 		historyArr = this._deleteMultiContent({ rangeOrCursorList: rangeList, direct, justDeleteRange, command });
 		if (command) {
-			// 撤销或重做操作后，更新历史记录
 			historyArr.serial = command.serial;
+			historyArr.originCursorPosList = command.originCursorPosList;
 			this.editor.history.updateHistory(historyArr);
-			historyArr.forEach(item => {
-				this.editor.cursor.addCursorPos(item.cursorPos);
-			});
 		} else {
-			// 新增历史记录
-			historyArr.length && this.editor.history.pushHistory(historyArr);
+			this.editor.history.pushHistory(historyArr);
 		}
 		this.editor.setNowCursorPos(this.editor.cursor.multiCursorPos.get(0));
 		this.editor.searcher.clearSearch();
@@ -300,6 +297,11 @@ class Context {
 				_deleteCursorPos.call(this, item);
 			}
 		});
+		if (command && command.originCursorPosList) {
+			for (let i = 0; i < command.originCursorPosList.length; i++) {
+				this.editor.cursor.addCursorPos(command.originCursorPosList[i]);
+			}
+		}
 		return historyArr;
 
 		function _deleteCursorPos(cursorPos) {
@@ -324,7 +326,7 @@ class Context {
 				columnDelta += historyObj.preCursorPos.column - prePos.column;
 			}
 			historyArr.push(historyObj);
-			if (!command || !command.originPosList) {
+			if (!command || !command.originCursorPosList) {
 				this.editor.cursor.addCursorPos({
 					line: historyObj.cursorPos.line,
 					column: historyObj.cursorPos.column
@@ -358,7 +360,7 @@ class Context {
 				columnDelta += historyObj.preCursorPos.column - prePos.column;
 			}
 			historyArr.push(historyObj);
-			if (!command || !command.originPosList) {
+			if (!command || !command.originCursorPosList) {
 				this.editor.cursor.addCursorPos({
 					line: historyObj.cursorPos.line,
 					column: historyObj.cursorPos.column
@@ -498,10 +500,12 @@ class Context {
 		};
 		return historyObj;
 	}
-	insertLineUp() {
+	insertEmptyLineUp() {
 		let cursorPosList = [];
 		let preItem = {};
 		let lineOne = false;
+		let historyArr = null;
+		let originCursorPosList = [];
 		this.editor.cursor.multiCursorPos.forEach((item) => {
 			if (preItem.line !== item.line) {
 				if (item.line === 1) {
@@ -517,16 +521,24 @@ class Context {
 					});
 				}
 			}
+			originCursorPosList.push({
+				line: item.line,
+				column: item.column
+			});
 			preItem = item;
 		});
-		this.editor.history.pushHistory(this._insertMultiContent({ text: '\n', cursorPosList }));
+		historyArr = this._insertMultiContent({ text: '\n', cursorPosList });
+		historyArr.originCursorPosList = originCursorPosList;
+		this.editor.history.pushHistory(historyArr);
 		if (lineOne) {
 			this.editor.cursor.updateCursorPos(this.editor.cursor.multiCursorPos.get(0), 1, 0);
 		}
 	}
-	insertLineDown() {
+	insertEmptyLineDown() {
 		let cursorPosList = [];
 		let preItem = {};
+		let historyArr = null;
+		let originCursorPosList = [];
 		this.editor.cursor.multiCursorPos.forEach((item) => {
 			if (preItem.line !== item.line) {
 				cursorPosList.push({
@@ -534,9 +546,15 @@ class Context {
 					column: this.htmls[item.line - 1].text.length
 				});
 			}
+			originCursorPosList.push({
+				line: item.line,
+				column: item.column
+			});
 			preItem = item;
 		});
-		this.editor.history.pushHistory(this._insertMultiContent({ text: '\n', cursorPosList }));
+		historyArr = this._insertMultiContent({ text: '\n', cursorPosList });
+		historyArr.originCursorPosList = originCursorPosList;
+		this.editor.history.pushHistory(historyArr);
 	}
 	/**
 	 * 向前或者向后删除一个单词

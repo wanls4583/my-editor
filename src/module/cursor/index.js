@@ -13,8 +13,11 @@ export default class {
     constructor(editor, context) {
         this.editor = editor;
         this.context = context;
-        this.multiCursorPos = new Btree(Util.comparePos);
         this.multiKeyCode = 'ctrl';
+        this.reset();
+    }
+    reset() {
+        this.multiCursorPos = new Btree(Util.comparePos);
         this.wordPattern = Util.getWordPattern(this.editor.language);
         this.rightWrodPattern = new RegExp(`^(${this.wordPattern.source})`);
         this.leftWrodPattern = new RegExp(`(${this.wordPattern.source})$`);

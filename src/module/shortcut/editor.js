@@ -18,7 +18,7 @@ export default class {
 				case 'Enter':
 					e.preventDefault();
 					e.stopPropagation();
-					this.context.insertLineUp();
+					this.context.insertEmptyLineUp();
 					break;
 				case 'ArrowLeft': //ctrl+shift+left
 					e.preventDefault();
@@ -88,7 +88,7 @@ export default class {
 				case 'Enter':
 					e.preventDefault();
 					e.stopPropagation();
-					this.context.insertLineDown();
+					this.context.insertEmptyLineDown();
 					break;
 				case 'ArrowLeft': //left arrow
 					e.preventDefault();
