@@ -131,17 +131,11 @@ class Context {
 			historyArr.push(historyObj);
 		});
 		if (command && command.originCursorPosList) {
-			for (let i = 0; i < command.originCursorPosList.length; i++) {
-				this.editor.cursor.addCursorPos(command.originCursorPosList[i]);
-			}
+			this.addCursorList(command.originCursorPosList);
 		} else if (command && command.afterCursorPosList) {
-			for (let i = 0; i < command.afterCursorPosList.length; i++) {
-				this.editor.cursor.addCursorPos(command.afterCursorPosList[i]);
-			}
+			this.addCursorList(command.afterCursorPosList);
 		} else {
-			for (let i = 0; i < historyArr.length; i++) {
-				this.editor.cursor.addCursorPos(historyArr[i].cursorPos);
-			}
+			this.addCursorList(historyArr.map((item) => { return item.cursorPos }));
 		}
 		return historyArr;
 	}
@@ -303,17 +297,11 @@ class Context {
 			}
 		});
 		if (command && command.originCursorPosList) {
-			for (let i = 0; i < command.originCursorPosList.length; i++) {
-				this.editor.cursor.addCursorPos(command.originCursorPosList[i]);
-			}
+			this.addCursorList(command.originCursorPosList);
 		} else if (command && command.afterCursorPosList) {
-			for (let i = 0; i < command.afterCursorPosList.length; i++) {
-				this.editor.cursor.addCursorPos(command.afterCursorPosList[i]);
-			}
+			this.addCursorList(command.afterCursorPosList);
 		} else {
-			for (let i = 0; i < historyArr.length; i++) {
-				this.editor.cursor.addCursorPos(historyArr[i].cursorPos);
-			}
+			this.addCursorList(historyArr.map((item) => { return item.cursorPos }));
 		}
 		this.editor.searcher.clearSearch();
 		return historyArr;
@@ -503,6 +491,17 @@ class Context {
 			active: range && range.active
 		};
 		return historyObj;
+	}
+	addCursorList(cursorPosList) {
+		for (let i = 0; i < cursorPosList.length; i++) {
+			let item = cursorPosList[i];
+			if (item.start && item.end) {
+				this.editor.selecter.addRange({ start: item.start, end: item.end, active: true });
+				this.editor.cursor.addCursorPos(item.margin === 'left' ? item.start : item.end);
+			} else {
+				this.editor.cursor.addCursorPos(item);
+			}
+		}
 	}
 	insertEmptyLineUp() {
 		let cursorPosList = [];
