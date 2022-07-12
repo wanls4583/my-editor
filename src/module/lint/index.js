@@ -51,13 +51,13 @@ export default class {
 		}
 	}
 	parse() {
-		if (!lintSupport[this.language]) {
+		if (!lintSupport[this.language] || !this.editor) {
 			return;
 		}
 		if (!worker) {
 			//避免启动时阻塞UI线程
-			if(Date.now() - this.initTimestamp < 3000) {
-				setTimeout(()=>{
+			if (Date.now() - this.initTimestamp < 3000) {
+				this.runTimer = setTimeout(() => {
 					this.parse();
 				}, 500)
 				return;

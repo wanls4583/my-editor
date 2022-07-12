@@ -52,31 +52,28 @@ class Context {
 	insertContent(text, command) {
 		let historyArr = null;
 		let cursorPosList = [];
-		let serial = false;
-		if (!command) {
-			// 如果有选中区域，需要先删除选中区域
-			if (this.editor.selecter.activedRanges.size) {
-				let _historyArr = this.deleteContent('left', null, true);
-				// 历史记录连续操作标识
-				_historyArr.serial = this.serial++;
-				serial = _historyArr.serial;
-			}
-			cursorPosList = this.editor.cursor.multiCursorPos.toArray();
-		} else {
+		let serial = ''; // 历史记录连续操作标识
+		if (command) {
 			command.forEach(item => {
 				// 多个插入的光标可能相同，这里不能先添加光标
 				cursorPosList.push(item.cursorPos);
 			});
+			serial = command.serial;
+		} else {
+			serial = this.serial++;
+			// 如果有选中区域，需要先删除选中区域
+			if (this.editor.selecter.activedRanges.size) {
+				let _historyArr = this.deleteContent('left', null, true);
+				_historyArr.serial = serial;
+			}
+			cursorPosList = this.editor.cursor.multiCursorPos.toArray();
 		}
 		historyArr = this._insertMultiContent(text, cursorPosList, command);
 		historyArr.serial = serial;
-		if (!command) {
-			// 新增历史记录
-			this.editor.history.pushHistory(historyArr);
-		} else {
-			// 撤销或重做操作后，更新历史记录
-			historyArr.serial = command.serial;
+		if (command) {
 			historyArr.length && this.editor.history.updateHistory(historyArr);
+		} else {
+			this.editor.history.pushHistory(historyArr);
 		}
 		this.editor.setNowCursorPos(this.editor.cursor.multiCursorPos.get(0));
 		return historyArr;
@@ -89,7 +86,7 @@ class Context {
 		let lineDelta = 0;
 		let columnDelta = 0;
 		this.editor.cursor.clearCursorPos();
-		if (text === '\n') {
+		if (text === '\n' || text === '\r\n') {
 			texts = ['\n'];
 		}
 		cursorPosList.forEach((cursorPos, index) => {
@@ -123,8 +120,8 @@ class Context {
 				}
 			} else {
 				historyObj = {
-					cursorPos: pos,
-					preCursorPos: pos
+					cursorPos: { line: pos.line, column: pos.column },
+					preCursorPos: { line: pos.line, column: pos.column }
 				};
 			}
 			historyArr.push(historyObj);
@@ -190,10 +187,10 @@ class Context {
 		this.editor.lint.onInsertContentAfter(cursorPos.line, newPos.line);
 		this.editor.tokenizer.onInsertContentAfter(cursorPos.line, newPos.line);
 		this.editor.folder.onInsertContentAfter(Object.assign({}, cursorPos), Object.assign({}, newPos));
-		this.setLineWidth(text);
 		this.editor.setErrors([]);
 		this.editor.setAutoTip(null);
 		this.editor.render(true);
+		this.setLineWidth(text);
 		this.contentChanged();
 		this.editor.tabData.status !== '!!' && this.editor.differ.run();
 		let historyObj = {
@@ -260,16 +257,16 @@ class Context {
 			});
 		}
 		historyArr = this._deleteMultiContent(rangeList, direct, justDeleteRange);
-		if (!command) {
-			// 新增历史记录
-			historyArr.length && this.editor.history.pushHistory(historyArr);
-		} else {
+		if (command) {
 			// 撤销或重做操作后，更新历史记录
 			historyArr.serial = command.serial;
 			this.editor.history.updateHistory(historyArr);
 			historyArr.forEach(item => {
 				this.editor.cursor.addCursorPos(item.cursorPos);
 			});
+		} else {
+			// 新增历史记录
+			historyArr.length && this.editor.history.pushHistory(historyArr);
 		}
 		this.editor.setNowCursorPos(this.editor.cursor.multiCursorPos.get(0));
 		this.editor.searcher.clearSearch();

@@ -178,7 +178,7 @@ export default class {
 				lastCommand.cursorPos = command.cursorPos;
 			} else {
 				lastCommand.cursorPos = command.cursorPos;
-				if (command.keyCode === Util.KEYCODE.DELETE) {
+				if (command.direct === 'right') {
 					lastCommand.text = lastCommand.text + command.text;
 				} else {
 					lastCommand.text = command.text + lastCommand.text;
@@ -191,10 +191,10 @@ export default class {
 		let index = this.history.index;
 		if (command instanceof Array) {
 			command.forEach((item, _index) => {
-				item.keyCode = this.history[index - 1][_index].keyCode;
+				item.direct = this.history[index - 1][_index].direct;
 			});
 		} else {
-			command.keyCode = this.history[index - 1].keyCode;
+			command.direct = this.history[index - 1].direct;
 		}
 		this.history[index - 1] = this.sortComand(command);
 	}
