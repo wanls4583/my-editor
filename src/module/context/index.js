@@ -273,7 +273,6 @@ class Context {
 			this.editor.history.pushHistory(historyArr);
 		}
 		this.editor.setNowCursorPos(this.editor.cursor.multiCursorPos.get(0));
-		this.editor.searcher.clearSearch();
 		return historyArr;
 	}
 	/**
@@ -302,6 +301,7 @@ class Context {
 				this.editor.cursor.addCursorPos(command.originCursorPosList[i]);
 			}
 		}
+		this.editor.searcher.clearSearch();
 		return historyArr;
 
 		function _deleteCursorPos(cursorPos) {
@@ -561,35 +561,50 @@ class Context {
 	 * @param {String} direct [left|right] 
 	 */
 	deleteWord(direct) {
-		if (this.editor.selecter.size > 0) {
-			this.deleteContent(direct);
-		} else {
-			let preRange = null;
-			let rangeList = [];
-			this.editor.cursor.multiCursorPos.forEach(item => {
-				if (direct === 'left') {
-					let end = { line: item.line, column: item.column };
-					let cursorPos = this.editor.cursor.moveCursor(item, direct, true, true);
-					if (preRange && Util.comparePos(preRange.start, cursorPos) === 0) {
-						preRange.end = end;
-					} else if (Util.comparePos(cursorPos, end) < 0) {
-						preRange = { start: cursorPos, end: end };
-						rangeList.push(preRange);
-					}
-				} else if (direct === 'right') {
-					let start = { line: item.line, column: item.column };
-					let cursorPos = this.editor.cursor.moveCursor(item, direct, true, true);
-					if (preRange && Util.comparePos(preRange.end, cursorPos) === 0) {
-						return;
-					} else if (Util.comparePos(cursorPos, start) > 0) {
-						preRange = { start: start, end: cursorPos };
-						rangeList.push(preRange);
-					}
+		let preRange = null;
+		let historyArr = null;
+		let rangeList = [];
+		let originCursorPosList = [];
+		this.editor.cursor.multiCursorPos.forEach(item => {
+			let range = this.editor.selecter.getRangeByCursorPos(item);
+			let start = null, end = null;
+			if (range) {
+				if (preRange && Util.comparePos(range.start, preRange.end) < 0) {
+					rangeList.pop();
 				}
-			});
-			if (rangeList.length) {
-				this.editor.history.pushHistory(this._deleteMultiContent({ rangeOrCursorList: rangeList, direct }));
+				if (Util.comparePos(range.start, item) === 0) {
+					range.margin = 'left';
+				} else {
+					range.margin = 'right';
+				}
+				preRange = range;
+				rangeList.push(preRange);
+			} else {
+				if (direct === 'left') {
+					end = { line: item.line, column: item.column };
+					start = this.editor.cursor.moveCursor(item, direct, true, true);
+				} else {
+					start = { line: item.line, column: item.column };
+					end = this.editor.cursor.moveCursor(item, direct, true, true);
+				}
+				if (preRange && Util.comparePos(preRange.end, start) >= 0) {
+					if (!preRange.active) {
+						preRange.end = end;
+					}
+				} else if (Util.comparePos(end, start) > 0) {
+					preRange = { start: start, end: end };
+					rangeList.push(preRange);
+				}
 			}
+			originCursorPosList.push({
+				line: item.line,
+				column: item.column
+			});
+		});
+		if (rangeList.length) {
+			historyArr = this._deleteMultiContent({ rangeOrCursorList: rangeList, direct });
+			historyArr.originCursorPosList = originCursorPosList;
+			this.editor.history.pushHistory(historyArr);
 		}
 	}
 	moveLineUp(command) {
