@@ -68,7 +68,7 @@ class Context {
 			}
 			cursorPosList = this.editor.cursor.multiCursorPos.toArray();
 		}
-		historyArr = this._insertMultiContent(text, cursorPosList, command);
+		historyArr = this._insertMultiContent({ text, cursorPosList, command });
 		historyArr.serial = serial;
 		if (command) {
 			historyArr.length && this.editor.history.updateHistory(historyArr);
@@ -78,7 +78,7 @@ class Context {
 		this.editor.setNowCursorPos(this.editor.cursor.multiCursorPos.get(0));
 		return historyArr;
 	}
-	_insertMultiContent(text, cursorPosList, command) {
+	_insertMultiContent({ text, cursorPosList, command }) {
 		let prePos = null;
 		let historyObj = null;
 		let historyArr = [];
@@ -125,12 +125,19 @@ class Context {
 				};
 			}
 			historyArr.push(historyObj);
-			if (margin === 'right') {
-				this.editor.cursor.addCursorPos(historyObj.cursorPos);
-			} else {
-				this.editor.cursor.addCursorPos(historyObj.preCursorPos);
+			if (!command || !command.originPosList) {
+				if (margin === 'right') {
+					this.editor.cursor.addCursorPos(historyObj.cursorPos);
+				} else {
+					this.editor.cursor.addCursorPos(historyObj.preCursorPos);
+				}
 			}
 		});
+		if (command && command.originPosList) {
+			for (let i = 0; i < command.originPosList.length; i++) {
+				this.editor.cursor.addCursorPos(command.originPosList[i]);
+			}
+		}
 		return historyArr;
 	}
 	// 插入内容
@@ -256,7 +263,7 @@ class Context {
 				}
 			});
 		}
-		historyArr = this._deleteMultiContent(rangeList, direct, justDeleteRange);
+		historyArr = this._deleteMultiContent({ rangeOrCursorList: rangeList, direct, justDeleteRange, command });
 		if (command) {
 			// 撤销或重做操作后，更新历史记录
 			historyArr.serial = command.serial;
@@ -279,7 +286,7 @@ class Context {
 	 * @param {Boolean} justDeleteRange 是否只删除选区范围
 	 * @returns 历史记录列表
 	 */
-	_deleteMultiContent(rangeOrCursorList, direct, justDeleteRange) {
+	_deleteMultiContent({ rangeOrCursorList, direct, justDeleteRange, command }) {
 		let historyArr = [];
 		let historyObj = null;
 		let prePos = null;
@@ -317,10 +324,12 @@ class Context {
 				columnDelta += historyObj.preCursorPos.column - prePos.column;
 			}
 			historyArr.push(historyObj);
-			this.editor.cursor.addCursorPos({
-				line: historyObj.cursorPos.line,
-				column: historyObj.cursorPos.column
-			});
+			if (!command || !command.originPosList) {
+				this.editor.cursor.addCursorPos({
+					line: historyObj.cursorPos.line,
+					column: historyObj.cursorPos.column
+				});
+			}
 		}
 
 		function _deleteRangePos(rangePos) {
@@ -349,10 +358,12 @@ class Context {
 				columnDelta += historyObj.preCursorPos.column - prePos.column;
 			}
 			historyArr.push(historyObj);
-			this.editor.cursor.addCursorPos({
-				line: historyObj.cursorPos.line,
-				column: historyObj.cursorPos.column
-			});
+			if (!command || !command.originPosList) {
+				this.editor.cursor.addCursorPos({
+					line: historyObj.cursorPos.line,
+					column: historyObj.cursorPos.column
+				});
+			}
 		}
 	}
 	// 删除内容
@@ -508,7 +519,7 @@ class Context {
 			}
 			preItem = item;
 		});
-		this.editor.history.pushHistory(this._insertMultiContent('\n', cursorPosList));
+		this.editor.history.pushHistory(this._insertMultiContent({ text: '\n', cursorPosList }));
 		if (lineOne) {
 			this.editor.cursor.updateCursorPos(this.editor.cursor.multiCursorPos.get(0), 1, 0);
 		}
@@ -525,7 +536,7 @@ class Context {
 			}
 			preItem = item;
 		});
-		this.editor.history.pushHistory(this._insertMultiContent('\n', cursorPosList));
+		this.editor.history.pushHistory(this._insertMultiContent({ text: '\n', cursorPosList }));
 	}
 	/**
 	 * 向前或者向后删除一个单词
@@ -559,7 +570,7 @@ class Context {
 				}
 			});
 			if (rangeList.length) {
-				this.editor.history.pushHistory(this._deleteMultiContent(rangeList, direct));
+				this.editor.history.pushHistory(this._deleteMultiContent({ rangeOrCursorList: rangeList, direct }));
 			}
 		}
 	}
@@ -760,7 +771,7 @@ class Context {
 			texts.push(text);
 			cursorPosList.push({ line: line, column: this.htmls[line - 1].text.length });
 		});
-		this._insertMultiContent(texts, cursorPosList).forEach((item, index) => {
+		this._insertMultiContent({ text: texts, cursorPosList }).forEach((item, index) => {
 			let line = 0;
 			let originPos = originList[index];
 			line = item.cursorPos.line;
@@ -844,7 +855,7 @@ class Context {
 			};
 			cursorPosList.push(range);
 		});
-		this._deleteMultiContent(cursorPosList).forEach((item, index) => {
+		this._deleteMultiContent({ rangeOrCursorList: cursorPosList }).forEach((item, index) => {
 			let originPos = originList[index];
 			if (originPos.start) {
 				let delta = originPos.end.line - originPos.start.line;
@@ -894,7 +905,7 @@ class Context {
 			line = line < 1 ? 1 : line;
 			cursorPosList.push({ line: line, column: this.htmls[line - 1].text.length });
 		});
-		this._insertMultiContent(texts, cursorPosList);
+		this._insertMultiContent({ text: texts, cursorPosList });
 		this.editor.searcher.clearSearch();
 		this.editor.cursor.clearCursorPos();
 		originList.forEach(item => {
@@ -978,7 +989,7 @@ class Context {
 			texts.push(this.getRangeText(range.start, range.end));
 			cursorPosList.push(range);
 		});
-		this._deleteMultiContent(cursorPosList).forEach((item, index) => {
+		this._deleteMultiContent({ rangeOrCursorList: cursorPosList }).forEach((item, index) => {
 			let originPos = originList[index];
 			let line = item.cursorPos.line;
 			let column = originList[index].column;
@@ -1020,10 +1031,13 @@ class Context {
 	replace(texts, ranges) {
 		let historyArr = null;
 		let serial = this.serial++;
-		historyArr = this._deleteMultiContent(ranges);
+		historyArr = this._deleteMultiContent({ rangeOrCursorList: ranges });
 		historyArr.serial = serial;
 		historyArr.length && this.editor.history.pushHistory(historyArr);
-		historyArr = this._insertMultiContent(texts, this.editor.cursor.multiCursorPos.toArray());
+		historyArr = this._insertMultiContent({
+			text: texts,
+			cursorPosList: this.editor.cursor.multiCursorPos.toArray()
+		});
 		historyArr.serial = serial;
 		historyArr.length && this.editor.history.pushHistory(historyArr);
 	}
@@ -1452,7 +1466,7 @@ class Context {
 			text = str[0] === '\n' ? (text += str) : (text += '\n' + str);
 		});
 		if (cut) {
-			let historyArr = this._deleteMultiContent(ranges);
+			let historyArr = this._deleteMultiContent({ rangeOrCursorList: ranges });
 			historyArr.length && this.editor.history.pushHistory(historyArr);
 			this.editor.searcher.clearSearch();
 		}
