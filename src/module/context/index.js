@@ -58,7 +58,6 @@ class Context {
 				// 多个插入的光标可能相同，这里不能先添加光标
 				cursorPosList.push(item.cursorPos);
 			});
-			serial = command.serial;
 		} else {
 			serial = this.serial++;
 			// 如果有选中区域，需要先删除选中区域
@@ -69,11 +68,14 @@ class Context {
 			cursorPosList = this.editor.cursor.multiCursorPos.toArray();
 		}
 		historyArr = this._insertMultiContent({ text, cursorPosList, command });
-		historyArr.serial = serial;
 		if (command) {
-			historyArr.originCursorPosList = command.originCursorPosList;
+			historyArr.serial = command.serial;
+			historyArr.afterCursorPosList = command.afterCursorPosList;
+			historyArr.originCursorPosList = command._originCursorPosList;
+			historyArr._originCursorPosList = command.originCursorPosList;
 			this.editor.history.updateHistory(historyArr);
 		} else {
+			historyArr.serial = serial;
 			this.editor.history.pushHistory(historyArr);
 		}
 		this.editor.setNowCursorPos(this.editor.cursor.multiCursorPos.get(0));
@@ -121,22 +123,24 @@ class Context {
 				}
 			} else {
 				historyObj = {
+					type: Util.HISTORY_COMMAND.DELETE,
 					cursorPos: { line: pos.line, column: pos.column },
 					preCursorPos: { line: pos.line, column: pos.column }
 				};
 			}
 			historyArr.push(historyObj);
-			if (!command || !command.originCursorPosList) {
-				if (margin === 'right') {
-					this.editor.cursor.addCursorPos(historyObj.cursorPos);
-				} else {
-					this.editor.cursor.addCursorPos(historyObj.preCursorPos);
-				}
-			}
 		});
 		if (command && command.originCursorPosList) {
 			for (let i = 0; i < command.originCursorPosList.length; i++) {
 				this.editor.cursor.addCursorPos(command.originCursorPosList[i]);
+			}
+		} else if (command && command.afterCursorPosList) {
+			for (let i = 0; i < command.afterCursorPosList.length; i++) {
+				this.editor.cursor.addCursorPos(command.afterCursorPosList[i]);
+			}
+		} else {
+			for (let i = 0; i < historyArr.length; i++) {
+				this.editor.cursor.addCursorPos(historyArr[i].cursorPos);
 			}
 		}
 		return historyArr;
@@ -267,7 +271,9 @@ class Context {
 		historyArr = this._deleteMultiContent({ rangeOrCursorList: rangeList, direct, justDeleteRange, command });
 		if (command) {
 			historyArr.serial = command.serial;
-			historyArr.originCursorPosList = command.originCursorPosList;
+			historyArr.afterCursorPosList = command.afterCursorPosList;
+			historyArr.originCursorPosList = command._originCursorPosList;
+			historyArr._originCursorPosList = command.originCursorPosList;
 			this.editor.history.updateHistory(historyArr);
 		} else {
 			this.editor.history.pushHistory(historyArr);
@@ -300,6 +306,14 @@ class Context {
 			for (let i = 0; i < command.originCursorPosList.length; i++) {
 				this.editor.cursor.addCursorPos(command.originCursorPosList[i]);
 			}
+		} else if (command && command.afterCursorPosList) {
+			for (let i = 0; i < command.afterCursorPosList.length; i++) {
+				this.editor.cursor.addCursorPos(command.afterCursorPosList[i]);
+			}
+		} else {
+			for (let i = 0; i < historyArr.length; i++) {
+				this.editor.cursor.addCursorPos(historyArr[i].cursorPos);
+			}
 		}
 		this.editor.searcher.clearSearch();
 		return historyArr;
@@ -317,21 +331,16 @@ class Context {
 			}
 			if (justDeleteRange || pos.line === 1 && pos.column === 0) {
 				historyObj = {
+					type: Util.HISTORY_COMMAND.INSERT,
 					cursorPos: { line: pos.line, column: pos.column }
 				}
 			} else {
 				historyObj = this._deleteContent(pos, direct);
+				lineDelta += historyObj.preCursorPos.line - historyObj.cursorPos.line;
+				columnDelta += historyObj.preCursorPos.column - historyObj.cursorPos.column;
 				prePos = historyObj.cursorPos;
-				lineDelta += historyObj.preCursorPos.line - prePos.line;
-				columnDelta += historyObj.preCursorPos.column - prePos.column;
 			}
 			historyArr.push(historyObj);
-			if (!command || !command.originCursorPosList) {
-				this.editor.cursor.addCursorPos({
-					line: historyObj.cursorPos.line,
-					column: historyObj.cursorPos.column
-				});
-			}
 		}
 
 		function _deleteRangePos(rangePos) {
@@ -351,21 +360,16 @@ class Context {
 			}
 			if (Util.comparePos(start, end) === 0) {
 				historyObj = {
+					type: Util.HISTORY_COMMAND.INSERT,
 					cursorPos: { line: start.line, column: start.column }
 				}
 			} else {
 				historyObj = this._deleteContent(rangePos, direct);
+				lineDelta += historyObj.preCursorPos.line - historyObj.cursorPos.line;
+				columnDelta += historyObj.preCursorPos.column - historyObj.cursorPos.column;
 				prePos = historyObj.cursorPos;
-				lineDelta += historyObj.preCursorPos.line - prePos.line;
-				columnDelta += historyObj.preCursorPos.column - prePos.column;
 			}
 			historyArr.push(historyObj);
-			if (!command || !command.originCursorPosList) {
-				this.editor.cursor.addCursorPos({
-					line: historyObj.cursorPos.line,
-					column: historyObj.cursorPos.column
-				});
-			}
 		}
 	}
 	// 删除内容
