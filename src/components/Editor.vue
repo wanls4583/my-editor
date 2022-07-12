@@ -1179,6 +1179,7 @@ export default {
 						that.scrollLeft = left + that.charObj.fullAngleCharWidth - that.scrollerArea.width;
 					} else if (left < that.scrollLeft + that.charObj.fullAngleCharWidth) {
 						that.scrollLeft = left - that.charObj.fullAngleCharWidth;
+						that.scrollLeft = that.scrollLeft < 0 ? 0 : that.scrollLeft;
 					}
 				}
 				if (cursorPos === that.nowCursorPos) {

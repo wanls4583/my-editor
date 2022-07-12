@@ -15,7 +15,7 @@ export default class {
 		this.gitDiffTimer = {};
 		this.init();
 		//避免启动是window-defender阻塞UI
-		setTimeout(()=>{
+		setTimeout(() => {
 			this.createStatusProcess();
 		}, 2000);
 	}
@@ -82,8 +82,10 @@ export default class {
 		});
 	}
 	stopWatchFileStatus(filePath) {
-		this.statusProcess.send({ type: 'stop', path: filePath });
-		delete globalData.fileStatus[filePath];
+		if (globalData.fileStatus[filePath]) {
+			this.statusProcess.send({ type: 'stop', path: filePath });
+			delete globalData.fileStatus[filePath];
+		}
 	}
 	parseStatus(data) {
 		let gitDir = data.gitDir;
