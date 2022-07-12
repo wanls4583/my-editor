@@ -101,32 +101,37 @@ class Context {
 				line: cursorPos.line,
 				column: cursorPos.column
 			};
-			if (!text) {
-				return;
-			}
 			pos.line += lineDelta;
 			if (prePos && pos.line === prePos.line) {
 				pos.column += columnDelta;
 			} else {
 				columnDelta = 0;
 			}
-			historyObj = this._insertContent(_text, pos, !command);
+			if (_text) {
+				historyObj = this._insertContent(_text, pos, !command);
+				prePos = historyObj.cursorPos;
+				historyObj.margin = margin;
+				historyObj.active = active;
+				lineDelta += historyObj.cursorPos.line - historyObj.preCursorPos.line;
+				columnDelta += historyObj.cursorPos.column - historyObj.preCursorPos.column;
+				if (active) {
+					this.editor.selecter.addRange({
+						start: historyObj.preCursorPos,
+						end: historyObj.cursorPos,
+						active: true
+					});
+				}
+			} else {
+				historyObj = {
+					cursorPos: pos,
+					preCursorPos: pos
+				};
+			}
 			historyArr.push(historyObj);
-			prePos = historyObj.cursorPos;
-			historyObj.margin = margin;
-			historyObj.active = active;
-			lineDelta += historyObj.cursorPos.line - historyObj.preCursorPos.line;
-			columnDelta += historyObj.cursorPos.column - historyObj.preCursorPos.column;
 			if (margin === 'right') {
 				this.editor.cursor.addCursorPos(historyObj.cursorPos);
 			} else {
 				this.editor.cursor.addCursorPos(historyObj.preCursorPos);
-			}
-			if (active) {
-				this.editor.selecter.addRange({
-					start: historyObj.preCursorPos,
-					end: historyObj.cursorPos
-				});
 			}
 		});
 		return historyArr;
@@ -304,22 +309,21 @@ class Context {
 			} else {
 				columnDelta = 0;
 			}
-			if (justDeleteRange) {
-				this.editor.cursor.addCursorPos({
-					line: pos.line,
-					column: pos.column
-				});
+			if (justDeleteRange || pos.line === 1 && pos.column === 0) {
+				historyObj = {
+					cursorPos: { line: pos.line, column: pos.column }
+				}
 			} else {
 				historyObj = this._deleteContent(pos, direct);
-				historyObj.text && historyArr.push(historyObj);
 				prePos = historyObj.cursorPos;
 				lineDelta += historyObj.preCursorPos.line - prePos.line;
 				columnDelta += historyObj.preCursorPos.column - prePos.column;
-				this.editor.cursor.addCursorPos({
-					line: prePos.line,
-					column: prePos.column
-				});
 			}
+			historyArr.push(historyObj);
+			this.editor.cursor.addCursorPos({
+				line: historyObj.cursorPos.line,
+				column: historyObj.cursorPos.column
+			});
 		}
 
 		function _deleteRangePos(rangePos) {
@@ -337,14 +341,20 @@ class Context {
 			} else {
 				columnDelta = 0;
 			}
-			historyObj = this._deleteContent(rangePos, direct);
-			historyObj.text && historyArr.push(historyObj);
-			prePos = historyObj.cursorPos;
-			lineDelta += historyObj.preCursorPos.line - prePos.line;
-			columnDelta += historyObj.preCursorPos.column - prePos.column;
+			if (Util.comparePos(start, end) === 0) {
+				historyObj = {
+					cursorPos: { line: start.line, column: start.column }
+				}
+			} else {
+				historyObj = this._deleteContent(rangePos, direct);
+				prePos = historyObj.cursorPos;
+				lineDelta += historyObj.preCursorPos.line - prePos.line;
+				columnDelta += historyObj.preCursorPos.column - prePos.column;
+			}
+			historyArr.push(historyObj);
 			this.editor.cursor.addCursorPos({
-				line: prePos.line,
-				column: prePos.column
+				line: historyObj.cursorPos.line,
+				column: historyObj.cursorPos.column
 			});
 		}
 	}

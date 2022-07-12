@@ -166,6 +166,7 @@ export default class {
             let start = range.start;
             let end = range.end;
             let same = Util.comparePos(start, end);
+            let active = false;
             if (same > 0) {
                 let tmp = start;
                 start = end;
@@ -173,7 +174,12 @@ export default class {
             } else if (!same) {
                 return;
             }
-            let active = this.editor.cursor.getCursorsByLineColumn(start.line, start.column) || this.editor.cursor.getCursorsByLineColumn(end.line, end.column);
+            if (range.active !== undefined) {
+                active = range.active
+            } else {
+                active = this.editor.cursor.getCursorsByLineColumn(start.line, start.column)
+                    || this.editor.cursor.getCursorsByLineColumn(end.line, end.column);
+            }
             range = {
                 start: {
                     line: start.line,
