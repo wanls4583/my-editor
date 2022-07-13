@@ -114,13 +114,6 @@ class Context {
 				historyObj.active = active;
 				lineDelta += historyObj.cursorPos.line - historyObj.preCursorPos.line;
 				columnDelta += historyObj.cursorPos.column - historyObj.preCursorPos.column;
-				if (active) {
-					this.editor.selecter.addRange({
-						start: historyObj.preCursorPos,
-						end: historyObj.cursorPos,
-						active: true
-					});
-				}
 			} else {
 				historyObj = {
 					type: Util.HISTORY_COMMAND.DELETE,
@@ -138,7 +131,17 @@ class Context {
 		} else if (command && command.afterCursorPosList) {
 			this.addCursorList(command.afterCursorPosList);
 		} else {
-			this.addCursorList(historyArr.map((item) => { return item.cursorPos }));
+			this.addCursorList(historyArr.map((item) => {
+				if (item.active) {
+					return {
+						start: historyObj.preCursorPos,
+						end: historyObj.cursorPos,
+						margin: item.margin
+					}
+				}
+				return item.cursorPos
+			}
+			));
 		}
 		return historyArr;
 	}
