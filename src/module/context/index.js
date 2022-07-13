@@ -626,7 +626,7 @@ class Context {
 			let item = list[i];
 			let range = this.editor.selecter.getRangeByCursorPos(item);
 			if (range) {
-				if (range.start.line + 1 < preLine && range.start.line > 1) { //添加替换区域
+				if (range.end.line + 1 < preLine && range.start.line > 1) { //添加替换区域
 					cursorPosList.push({
 						start: { line: range.start.line - 1, column: 0 },
 						end: { line: range.end.line, column: this.htmls[range.end.line - 1].text.length }
