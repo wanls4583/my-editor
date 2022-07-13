@@ -775,8 +775,16 @@ class Context {
 			this.editor.history.pushHistory(historyArr);
 		}
 	}
-	// 向上复制一行
+	// 向上复制行内容
 	copyLineUp() {
+		this.copyLine('up');
+	}
+	// 向下复制行内容
+	copyLineDown() {
+		this.copyLine('down');
+	}
+	// 复制行内容
+	copyLine(direct = 'up') {
 		let historyArr = null;
 		let index = 0;
 		let preLine = -1;
@@ -807,11 +815,11 @@ class Context {
 				text = this.htmls[item.line - 1].text + '\n';
 				originCursorPosList.push({ line: item.line, column: item.column });
 			}
-			if (cursorPos.line > preLine) {
+			if (cursorPos.line > preLine) { //添加移动区域
 				cursorPosList.push(cursorPos);
 				texts.push(text);
 				preItem = range || item;
-			} else if (range) {
+			} else if (range) { //合并移动区域
 				if (range.end.line > range.start.line) {
 					texts[texts.length - 1] +=
 						this.htmls.slice(range.start.line, range.end.line).map((item) => {
@@ -824,25 +832,38 @@ class Context {
 		}
 		historyArr = this._insertMultiContent({ text: texts, cursorPosList, afterCursorPosList });
 		historyArr.originCursorPosList = originCursorPosList;
+		historyArr.afterCursorPosList = afterCursorPosList;
+		// 更正光标位置
 		for (let i = 0; i < historyArr.length; i++) {
 			let cursorPos = historyArr[i].cursorPos;
 			let item = list[index];
+			let nextItem = null;
 			let preLine = -1;
 			let preCursorPos = null;
 			if (item.start) {
 				let delta = item.end.line - item.start.line;
 				preLine = item.end.line;
-				preCursorPos = {
-					start: { line: cursorPos.line, column: item.start.column },
-					end: { line: cursorPos.line + delta, column: item.end.column },
-				};
-				afterCursorPosList.push(preCursorPos);
+				if (direct === 'up') {
+					preCursorPos = {
+						start: { line: cursorPos.line, column: item.start.column },
+						end: { line: cursorPos.line + delta, column: item.end.column },
+					};
+				} else {
+					preCursorPos = {
+						start: { line: cursorPos.line - 1 - delta, column: item.start.column },
+						end: { line: cursorPos.line - 1, column: item.end.column },
+					}
+				}
 			} else {
 				preLine = item.line;
-				preCursorPos = { line: cursorPos.line, column: item.column };
-				afterCursorPosList.push(preCursorPos);
+				if (direct === 'up') {
+					preCursorPos = { line: cursorPos.line, column: item.column };
+				} else {
+					preCursorPos = { line: cursorPos.line - 1, column: item.column };
+				}
 			}
-			let nextItem = list[++index];
+			afterCursorPosList.push(preCursorPos);
+			nextItem = list[++index];
 			while (nextItem) {
 				let line = preCursorPos.end ? preCursorPos.end.line : preCursorPos.line;
 				if (nextItem.start) {
@@ -867,12 +888,8 @@ class Context {
 				nextItem = list[++index];
 			}
 		}
-		this.addCursorList(afterCursorPosList);
-		historyArr.afterCursorPosList = afterCursorPosList;
 		this.editor.history.pushHistory(historyArr);
-	}
-	// 向下复制一行
-	copyLineDown() {
+		this.addCursorList(afterCursorPosList);
 	}
 	// 插入当前行
 	insertLine(command) {
