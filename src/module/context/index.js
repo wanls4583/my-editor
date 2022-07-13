@@ -616,7 +616,7 @@ class Context {
 	moveLineUp() {
 		let historyArr = null;
 		let serial = this.serial++;
-		let preLine = Infinity;
+		let nextLine = Infinity;
 		let texts = [];
 		let cursorPosList = [];
 		let originCursorPosList = [];
@@ -625,56 +625,54 @@ class Context {
 		for (let i = list.length - 1; i >= 0; i--) {
 			let item = list[i];
 			let range = this.editor.selecter.getRangeByCursorPos(item);
+			let replaceRange = null;
 			if (range) {
-				if (range.end.line + 1 < preLine && range.start.line > 1) { //添加替换区域
-					cursorPosList.push({
-						start: { line: range.start.line - 1, column: 0 },
-						end: { line: range.end.line, column: this.htmls[range.end.line - 1].text.length }
-					});
-					texts.push(
-						this.getRangeText(
-							{ line: range.start.line, column: 0 },
-							{ line: range.end.line, column: this.htmls[range.end.line - 1].text.length }
-						)
-						+ '\n'
-						+ this.htmls[range.start.line - 2].text
-					);
-					preLine = range.start.line;
-				} else if (range.start.line > 1) { //和上一个替换区域合并
-					let preRange = cursorPosList.peek();
-					preRange.start = { line: range.start.line - 1, column: 0 };
-					texts[texts.length - 1] =
-						this.getRangeText(
-							{ line: range.start.line, column: 0 },
-							{ line: preRange.end.line, column: this.htmls[preRange.end.line - 1].text.length }
-						)
-						+ '\n'
-						+ this.htmls[range.start.line - 2].text;
-					preLine = range.start.line;
-				}
-				if (range.start.line > 1) { //如果选区开始行大于1，则将被保留
-					afterCursorPosList.push({
-						start: { line: range.start.line - 1, column: range.start.column },
-						end: { line: range.end.line - 1, column: range.end.column },
-					});
+				replaceRange = {
+					start: { line: range.start.line - 1, column: 0 },
+					end: { line: range.end.line, column: this.htmls[range.end.line - 1].text.length }
 				}
 				originCursorPosList.push({
 					start: { line: range.start.line, column: range.start.column },
 					end: { line: range.end.line, column: range.end.column },
 				});
 			} else {
-				if (item.line + 1 < preLine && item.line > 1) { //该行将被上移
-					cursorPosList.push({
-						start: { line: item.line - 1, column: 0 },
-						end: { line: item.line, column: this.htmls[item.line - 1].text.length }
-					});
-					afterCursorPosList.push({ line: item.line - 1, column: item.column });
-					texts.push(this.htmls[item.line - 1].text + '\n' + this.htmls[item.line - 2].text);
-					preLine = item.line;
-				} else if (item.line === preLine) { //该行将被上移
-					afterCursorPosList.push({ line: item.line - 1, column: item.column });
+				replaceRange = {
+					start: { line: item.line - 1, column: 0 },
+					end: { line: item.line, column: this.htmls[item.line - 1].text.length }
 				}
 				originCursorPosList.push({ line: item.line, column: item.column });
+			}
+			if (replaceRange.start.line > 0) {
+				if (replaceRange.end.line >= nextLine) { //和下一个替换区域相邻，合并区域
+					let nextRange = cursorPosList.peek();
+					nextRange.start = replaceRange.start;
+					texts[texts.length - 1] =
+						this.getRangeText(
+							{ line: replaceRange.start.line + 1, column: 0 },
+							{ line: nextRange.end.line, column: this.htmls[nextRange.end.line - 1].text.length }
+						)
+						+ '\n'
+						+ this.htmls[replaceRange.start.line - 1].text;
+				} else { //添加替换区域
+					cursorPosList.push(replaceRange);
+					texts.push(
+						this.getRangeText(
+							{ line: replaceRange.start.line + 1, column: 0 },
+							{ line: replaceRange.end.line, column: this.htmls[replaceRange.end.line - 1].text.length }
+						)
+						+ '\n'
+						+ this.htmls[replaceRange.start.line - 1].text
+					);
+				}
+				nextLine = replaceRange.start.line;
+				if (range) {
+					afterCursorPosList.push({
+						start: { line: range.start.line - 1, column: range.start.column },
+						end: { line: range.end.line - 1, column: range.end.column },
+					});
+				} else {
+					afterCursorPosList.push({ line: item.line - 1, column: item.column });
+				}
 			}
 		}
 		if (cursorPosList.length) {
