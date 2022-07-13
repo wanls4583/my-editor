@@ -616,7 +616,7 @@ class Context {
 	moveLineUp() {
 		let historyArr = null;
 		let serial = this.serial++;
-		let preLine = null;
+		let preLine = Infinity;
 		let texts = [];
 		let cursorPosList = [];
 		let originCursorPosList = [];
@@ -626,8 +626,7 @@ class Context {
 			let item = list[i];
 			let range = this.editor.selecter.getRangeByCursorPos(item);
 			if (range) {
-				if (range.start.line + 1 !== preLine && range.start.line > 1) {
-					range.margin = Util.comparePos(range.start, item) === 0 ? 'left' : 'right';
+				if (range.start.line + 1 < preLine && range.start.line > 1) { //添加替换区域
 					cursorPosList.push({
 						start: { line: range.start.line - 1, column: 0 },
 						end: { line: range.end.line, column: this.htmls[range.end.line - 1].text.length }
@@ -640,15 +639,23 @@ class Context {
 						+ '\n'
 						+ this.htmls[range.start.line - 2].text
 					);
+					preLine = range.start.line;
+				} else if (range.start.line > 1) { //和上一个替换区域合并
+					let preRange = cursorPosList.peek();
+					preRange.start = { line: range.start.line - 1, column: 0 };
+					texts[texts.length - 1] =
+						this.getRangeText(
+							{ line: range.start.line, column: 0 },
+							{ line: preRange.end.line, column: this.htmls[preRange.end.line - 1].text.length }
+						)
+						+ '\n'
+						+ this.htmls[range.start.line - 2].text;
+					preLine = range.start.line;
+				}
+				if (range.start.line > 1) { //如果选区开始行大于1，则将被保留
 					afterCursorPosList.push({
 						start: { line: range.start.line - 1, column: range.start.column },
 						end: { line: range.end.line - 1, column: range.end.column },
-					});
-					preLine = range.start.line;
-				} else {
-					afterCursorPosList.push({
-						start: { line: range.start.line, column: range.start.column },
-						end: { line: range.end.line, column: range.end.column },
 					});
 				}
 				originCursorPosList.push({
@@ -656,16 +663,16 @@ class Context {
 					end: { line: range.end.line, column: range.end.column },
 				});
 			} else {
-				if (item.line + 1 !== preLine && item.line > 1) {
+				if (item.line + 1 < preLine && item.line > 1) { //该行将被上移
 					cursorPosList.push({
 						start: { line: item.line - 1, column: 0 },
 						end: { line: item.line, column: this.htmls[item.line - 1].text.length }
 					});
-					texts.push(this.htmls[item.line - 1].text + '\n' + this.htmls[item.line - 2].text);
 					afterCursorPosList.push({ line: item.line - 1, column: item.column });
+					texts.push(this.htmls[item.line - 1].text + '\n' + this.htmls[item.line - 2].text);
 					preLine = item.line;
-				} else {
-					afterCursorPosList.push({ line: item.line, column: item.column });
+				} else if (item.line === preLine) { //该行将被上移
+					afterCursorPosList.push({ line: item.line - 1, column: item.column });
 				}
 				originCursorPosList.push({ line: item.line, column: item.column });
 			}
@@ -693,7 +700,7 @@ class Context {
 	moveLineDown() {
 		let historyArr = null;
 		let serial = this.serial++;
-		let preLine = null;
+		let preLine = -Infinity;
 		let texts = [];
 		let cursorPosList = [];
 		let originCursorPosList = [];
@@ -703,7 +710,7 @@ class Context {
 			let item = list[i];
 			let range = this.editor.selecter.getRangeByCursorPos(item);
 			if (range) {
-				if (range.start.line - 1 !== preLine && range.end.line < this.editor.maxLine) {
+				if (range.start.line - 1 > preLine && range.end.line < this.editor.maxLine) {
 					range.margin = Util.comparePos(range.start, item) === 0 ? 'left' : 'right';
 					cursorPosList.push({
 						start: { line: range.start.line, column: 0 },
@@ -722,18 +729,13 @@ class Context {
 						end: { line: range.end.line + 1, column: range.end.column },
 					});
 					preLine = range.end.line;
-				} else {
-					afterCursorPosList.push({
-						start: { line: range.start.line, column: range.start.column },
-						end: { line: range.end.line, column: range.end.column },
-					});
 				}
 				originCursorPosList.push({
 					start: { line: range.start.line, column: range.start.column },
 					end: { line: range.end.line, column: range.end.column },
 				});
 			} else {
-				if (item.line - 1 !== preLine && item.line < this.editor.maxLine) {
+				if (item.line - 1 > preLine && item.line < this.editor.maxLine) {
 					cursorPosList.push({
 						start: { line: item.line, column: 0 },
 						end: { line: item.line + 1, column: this.htmls[item.line].text.length }
@@ -741,8 +743,6 @@ class Context {
 					texts.push(this.htmls[item.line].text + '\n' + this.htmls[item.line - 1].text);
 					afterCursorPosList.push({ line: item.line + 1, column: item.column });
 					preLine = item.line;
-				} else {
-					afterCursorPosList.push({ line: item.line, column: item.column });
 				}
 				originCursorPosList.push({ line: item.line, column: item.column });
 			}
