@@ -707,42 +707,55 @@ class Context {
 		for (let i = 0; i < list.length; i++) {
 			let item = list[i];
 			let range = this.editor.selecter.getRangeByCursorPos(item);
+			let replaceRange = null;
+			let replaceText = '';
+			let joinRange = false;
 			if (range) {
-				if (range.start.line - 1 > preLine && range.end.line < this.editor.maxLine) {
-					range.margin = Util.comparePos(range.start, item) === 0 ? 'left' : 'right';
-					cursorPosList.push({
-						start: { line: range.start.line, column: 0 },
-						end: { line: range.end.line + 1, column: this.htmls[range.end.line].text.length }
-					});
-					texts.push(
-						this.htmls[range.end.line].text
-						+ '\n'
-						+ this.getRangeText(
-							{ line: range.start.line, column: 0 },
-							{ line: range.end.line, column: this.htmls[range.end.line - 1].text.length }
-						)
-					);
-					afterCursorPosList.push({
-						start: { line: range.start.line + 1, column: range.start.column },
-						end: { line: range.end.line + 1, column: range.end.column },
-					});
-					preLine = range.end.line;
+				replaceRange = {
+					start: { line: range.start.line, column: 0 },
+					end: { line: range.end.line + 1, column: this.htmls[range.end.line].text.length }
 				}
 				originCursorPosList.push({
 					start: { line: range.start.line, column: range.start.column },
 					end: { line: range.end.line, column: range.end.column },
 				});
 			} else {
-				if (item.line - 1 > preLine && item.line < this.editor.maxLine) {
-					cursorPosList.push({
-						start: { line: item.line, column: 0 },
-						end: { line: item.line + 1, column: this.htmls[item.line].text.length }
-					});
-					texts.push(this.htmls[item.line].text + '\n' + this.htmls[item.line - 1].text);
-					afterCursorPosList.push({ line: item.line + 1, column: item.column });
-					preLine = item.line;
+				replaceRange = {
+					start: { line: item.line, column: 0 },
+					end: { line: item.line + 1, column: this.htmls[item.line].text.length }
 				}
 				originCursorPosList.push({ line: item.line, column: item.column });
+			}
+			if (replaceRange.end.line < this.editor.maxLine) {
+				if (replaceRange.start.line <= preLine + 1) { //和上一个替换区域相邻，合并区域
+					let preRange = cursorPosList.peek();
+					preRange.end = replaceRange.end;
+					replaceRange = preRange;
+					joinRange = true;
+				} else { //添加替换区域
+					cursorPosList.push(replaceRange);
+				}
+				replaceText =
+					this.htmls[replaceRange.end.line - 1].text
+					+ '\n'
+					+ this.getRangeText(
+						{ line: replaceRange.start.line, column: 0 },
+						{ line: replaceRange.end.line - 1, column: this.htmls[replaceRange.end.line - 2].text.length }
+					);
+				if (joinRange) {
+					texts[texts.length - 1] = replaceText;
+				} else {
+					texts.push(replaceText);
+				}
+				if (range) {
+					afterCursorPosList.push({
+						start: { line: range.start.line + 1, column: range.start.column },
+						end: { line: range.end.line + 1, column: range.end.column },
+					});
+				} else {
+					afterCursorPosList.push({ line: item.line + 1, column: item.column });
+				}
+				preLine = replaceRange.end.line;
 			}
 		}
 		if (cursorPosList.length) {
