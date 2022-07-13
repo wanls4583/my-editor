@@ -626,6 +626,8 @@ class Context {
 			let item = list[i];
 			let range = this.editor.selecter.getRangeByCursorPos(item);
 			let replaceRange = null;
+			let replaceText = '';
+			let joinRange = false;
 			if (range) {
 				replaceRange = {
 					start: { line: range.start.line - 1, column: 0 },
@@ -646,25 +648,23 @@ class Context {
 				if (replaceRange.end.line >= nextLine) { //和下一个替换区域相邻，合并区域
 					let nextRange = cursorPosList.peek();
 					nextRange.start = replaceRange.start;
-					texts[texts.length - 1] =
-						this.getRangeText(
-							{ line: replaceRange.start.line + 1, column: 0 },
-							{ line: nextRange.end.line, column: this.htmls[nextRange.end.line - 1].text.length }
-						)
-						+ '\n'
-						+ this.htmls[replaceRange.start.line - 1].text;
+					replaceRange = nextRange;
+					joinRange = true;
 				} else { //添加替换区域
 					cursorPosList.push(replaceRange);
-					texts.push(
-						this.getRangeText(
-							{ line: replaceRange.start.line + 1, column: 0 },
-							{ line: replaceRange.end.line, column: this.htmls[replaceRange.end.line - 1].text.length }
-						)
-						+ '\n'
-						+ this.htmls[replaceRange.start.line - 1].text
-					);
 				}
-				nextLine = replaceRange.start.line;
+				replaceText =
+					this.getRangeText(
+						{ line: replaceRange.start.line + 1, column: 0 },
+						{ line: replaceRange.end.line, column: this.htmls[replaceRange.end.line - 1].text.length }
+					)
+					+ '\n'
+					+ this.htmls[replaceRange.start.line - 1].text;
+				if (joinRange) {
+					texts[texts.length - 1] = replaceText;
+				} else {
+					texts.push(replaceText);
+				}
 				if (range) {
 					afterCursorPosList.push({
 						start: { line: range.start.line - 1, column: range.start.column },
@@ -673,6 +673,7 @@ class Context {
 				} else {
 					afterCursorPosList.push({ line: item.line - 1, column: item.column });
 				}
+				nextLine = replaceRange.start.line;
 			}
 		}
 		if (cursorPosList.length) {
