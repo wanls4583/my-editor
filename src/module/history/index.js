@@ -114,7 +114,7 @@ export default class {
 		}
 	}
 	// 添加历史记录
-	pushHistory(command) {
+	pushHistory(command, historyJoinAble) {
 		while (this.history.length > this.history.index) {
 			this.history.pop();
 		}
@@ -123,16 +123,20 @@ export default class {
 		if (command instanceof Array && !command.length) {
 			return;
 		}
-		if (lastCommand instanceof Array && command instanceof Array && lastCommand.length === command.length && Date.now() - this.pushHistoryTime < 2000) {
-			if (_checkSameOp(lastCommand) && _checkSameOp(command) && _combCheck.call(this, lastCommand[0], command[0])) {
-				for (let i = 0; i < lastCommand.length; i++) {
-					_combCommand(lastCommand[i], command[i]);
+		if(historyJoinAble) {
+			if (lastCommand instanceof Array && command instanceof Array && lastCommand.length === command.length && Date.now() - this.pushHistoryTime < 2000) {
+				if (_checkSameOp(lastCommand) && _checkSameOp(command) && _combCheck.call(this, lastCommand[0], command[0])) {
+					for (let i = 0; i < lastCommand.length; i++) {
+						_combCommand(lastCommand[i], command[i]);
+					}
+				} else {
+					this.history.push(command);
 				}
+			} else if (_combCheck.call(this, lastCommand, command)) {
+				_combCommand(lastCommand, command);
 			} else {
 				this.history.push(command);
 			}
-		} else if (_combCheck.call(this, lastCommand, command)) {
-			_combCommand(lastCommand, command);
 		} else {
 			this.history.push(command);
 		}
