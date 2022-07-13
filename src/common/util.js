@@ -725,16 +725,6 @@ Util.KEYCODE = {
 Util.HISTORY_COMMAND = {
 	DELETE: 'delete',
 	INSERT: 'insert',
-	MOVEUP: 'moveLineUp',
-	MOVEDOWN: 'moveLineDown',
-	COPY_UP: 'copyLineUp',
-	COPY_DOWN: 'copyLineDown',
-	DELETE_COPY_UP: 'deleteCopyLineUp',
-	DELETE_COPY_DOWN: 'deleteCopyLineDown',
-	REPLACE: 'replace',
-	INSERT_LINE: 'insertLine',
-	DELETE_LINE: 'deleteLine',
-	REPLACE: 'replace',
 	TAB_TO_SPACE: 'tabToSpace',
 	SPACE_TO_TAB: 'spaceToTab'
 };
@@ -744,5 +734,6 @@ Util.CONST_DATA = {
 	BRACKET: 'bracket',
 	TAG: 'tag'
 };
-Util.STATUS_LEVEMAP = { A: 1, M: 2, D: 3, '?': 4, R: 5 }
+Util.STATUS_LEVEMAP = { A: 1, M: 2, D: 3, '?': 4, R: 5 };
+
 export default Util;

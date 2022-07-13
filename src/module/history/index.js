@@ -69,42 +69,6 @@ export default class {
 					this.context.insertContent(command.text, command);
 				}
 				break;
-			case Util.HISTORY_COMMAND.DELETE_LINE:
-				this.editor.cursor.clearCursorPos();
-				this.context.deleteLine(command);
-				break;
-			case Util.HISTORY_COMMAND.INSERT_LINE:
-				this.editor.cursor.clearCursorPos();
-				this.context.insertLine(command);
-				break;
-			case Util.HISTORY_COMMAND.MOVEUP:
-				this.editor.cursor.clearCursorPos();
-				this.context.moveLineUp(command);
-				break;
-			case Util.HISTORY_COMMAND.MOVEDOWN:
-				this.editor.cursor.clearCursorPos();
-				this.context.moveLineDown(command);
-				break;
-			case Util.HISTORY_COMMAND.COPY_DOWN:
-				this.editor.cursor.clearCursorPos();
-				this.context.copyLineDown(command);
-				break;
-			case Util.HISTORY_COMMAND.DELETE_COPY_DOWN:
-				this.editor.cursor.clearCursorPos();
-				this.context.deleteCopyLineDown(command);
-				break;
-			case Util.HISTORY_COMMAND.COPY_UP:
-				this.editor.cursor.clearCursorPos();
-				this.context.copyLineUp(command);
-				break;
-			case Util.HISTORY_COMMAND.DELETE_COPY_UP:
-				this.editor.cursor.clearCursorPos();
-				this.context.deleteCopyLineUp(command);
-				break;
-			case Util.HISTORY_COMMAND.REPLACE:
-				this.editor.cursor.clearCursorPos();
-				this.context.replace(command.text, command.cursorPos, command);
-				break;
 			case Util.HISTORY_COMMAND.TAB_TO_SPACE:
 				this.context.convertTabToSpace(command);
 				break;
