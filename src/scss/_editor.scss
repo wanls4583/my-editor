@@ -114,20 +114,13 @@
 		}
 	}
 
-	&-indent-view {
-		position: absolute;
-		top: 0;
-		left: 0;
-		right: 0;
-		z-index: 1;
-	}
-
 	&-bg-view {
 		position: absolute;
 		top: 0;
 		left: 0;
 		right: 0;
-		z-index: 2;
+		z-index: 1;
+		pointer-events: none;
 	}
 
 	&-lines-view {
@@ -135,7 +128,16 @@
 		top: 0;
 		left: 0;
 		right: 0;
+		z-index: 2;
+	}
+
+	&-indent-view {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
 		z-index: 3;
+		pointer-events: none;
 	}
 
 	&-cursor-view {
@@ -144,6 +146,7 @@
 		left: 0;
 		right: 0;
 		z-index: 4;
+		pointer-events: none;
 	}
 
 	&-cursor {

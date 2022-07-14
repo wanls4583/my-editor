@@ -145,7 +145,12 @@ export default class {
 				case 'BracketRight':
 					e.preventDefault();
 					e.stopPropagation();
-					this.context.addIndent();
+					this.context.addAnIndent();
+					break;
+				case 'BracketLeft':
+					e.preventDefault();
+					e.stopPropagation();
+					this.context.removeAnIndent();
 					break;
 			}
 		} else if (e.shiftKey) {

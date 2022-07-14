@@ -1322,12 +1322,12 @@ class Context {
 			}
 		}
 	}
-	addIndent() {
+	addAnIndent() {
+		let preLine = -1;
 		let historyArr = null;
 		let cursorPosList = [];
-		let originCursorPosList = [];
 		let afterCursorPosList = [];
-		let preLine = -1;
+		let originCursorPosList = this.getOriginCursorPosList();
 		let text = this.editor.indent === 'tab' ? '\t' : Util.space(this.editor.tabSize);
 		let charSize = this.editor.indent === 'tab' ? 1 : this.editor.tabSize;
 		this.editor.cursor.multiCursorPos.forEach((item) => {
@@ -1338,11 +1338,6 @@ class Context {
 						cursorPosList.push({ line: line, column: 0 });
 					}
 				}
-				originCursorPosList.push({
-					start: { line: range.start.line, column: range.start.column },
-					end: { line: range.end.line, column: range.end.column },
-					ending: Util.comparePos(range.start, range) === 0 ? 'left' : 'right'
-				});
 				afterCursorPosList.push({
 					start: { line: range.start.line, column: range.start.column + charSize },
 					end: { line: range.end.line, column: range.end.column + charSize },
@@ -1353,10 +1348,6 @@ class Context {
 				if (preLine !== item.line) {
 					cursorPosList.push({ line: item.line, column: 0 });
 				}
-				originCursorPosList.push({
-					line: item.line,
-					column: item.column
-				});
 				afterCursorPosList.push({
 					line: item.line,
 					column: item.column + charSize
@@ -1369,8 +1360,73 @@ class Context {
 		this.addCursorList(afterCursorPosList);
 		this.editor.history.pushHistory(historyArr);
 	}
-	removeIndent() {
+	removeAnIndent() {
+		let preLine = -1;
+		let historyArr = null;
+		let cursorPosList = [];
+		let afterCursorPosList = [];
+		let originCursorPosList = this.getOriginCursorPosList();
+		this.editor.cursor.multiCursorPos.forEach((item) => {
+			let range = this.editor.selecter.getRangeByCursorPos(item);
+			if (range) {
+				let afterStart = { line: range.start.line, column: range.start.column };
+				let afterEnd = { line: range.end.line, column: range.end.column };
+				let ending = Util.comparePos(range.start, range) === 0 ? 'left' : 'right';
+				if (preLine !== range.start.line) {
+					for (let line = range.start.line; line <= range.end.line; line++) {
+						let charSize = _getCharSize.call(this, line);
+						if (charSize) {
+							cursorPosList.push({
+								start: { line: line, column: 0 },
+								end: { line: line, column: charSize }
+							});
+							if (line === afterStart.line) {
+								afterStart.column -= charSize;
+							}
+							if (line === afterEnd.line) {
+								afterEnd.column -= charSize;
+							}
+						}
+					}
+				}
+				afterCursorPosList.push({ start: afterStart, end: afterEnd, ending: ending });
+				preLine = range.start.line;
+			} else {
+				let afterCursorPos = { line: item.line, column: item.column }
+				if (preLine !== item.line) {
+					let charSize = _getCharSize.call(this, item.line);
+					if (charSize) {
+						cursorPosList.push({
+							start: { line: item.line, column: 0 },
+							end: { line: item.line, column: charSize }
+						});
+						afterCursorPos.column -= charSize;
+					}
+				}
+				afterCursorPosList.push(afterCursorPos);
+			}
+		});
+		historyArr = this._deleteMultiContent({ rangeOrCursorList: cursorPosList });
+		historyArr.originCursorPosList = originCursorPosList;
+		historyArr.afterCursorPosList = afterCursorPosList;
+		this.addCursorList(afterCursorPosList);
+		this.editor.history.pushHistory(historyArr);
 
+		function _getCharSize(line) {
+			let text = this.htmls[line - 1].text;
+			let charSize = 0;
+			for (let i = 0; i < this.editor.tabSize; i++) {
+				if (text[i] === ' ') {
+					charSize++;
+				} else if (text[i] === '\t') {
+					charSize++;
+					break;
+				} else {
+					break;
+				}
+			}
+			return charSize;
+		}
 	}
 	contentChanged() {
 		this.allText = '';
@@ -1451,6 +1507,25 @@ class Context {
 				});
 			}
 		}
+	}
+	getOriginCursorPosList() {
+		let originCursorPosList = [];
+		this.editor.cursor.multiCursorPos.forEach((item) => {
+			let range = this.editor.selecter.getRangeByCursorPos(item);
+			if (range) {
+				originCursorPosList.push({
+					start: { line: range.start.line, column: range.start.column },
+					end: { line: range.end.line, column: range.end.column },
+					ending: Util.comparePos(range.start, range) === 0 ? 'left' : 'right'
+				});
+			} else {
+				originCursorPosList.push({
+					line: item.line,
+					column: item.column
+				});
+			}
+		});
+		return originCursorPosList;
 	}
 	// 获取选中范围内的文本
 	getRangeText(start, end) {
