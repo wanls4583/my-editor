@@ -282,7 +282,7 @@ export default class {
 			states = (this.context.htmls[line - 2] && this.context.htmls[line - 2].states) || vsctm.INITIAL;
 		}
 		lineTokens = this.grammar.tokenizeLine(lineText, states);
-		lineTokens.tokens.forEach((token)=>{
+		lineTokens.tokens.forEach((token) => {
 			token.scope = token.scopes.join(' ');
 		});
 		stateFold = this.addFold(line, lineTokens.tokens, folds);
@@ -452,6 +452,10 @@ export default class {
 		}
 		while ((res = reg.exec(text))) {
 			let type = Util.CONST_DATA.BRACKET;
+			// 跳过标签开始/结束标记
+			if (res[0] === '<' || res[0] === '>') {
+				continue;
+			}
 			if (foldMap.__comments__.lineComment === res[0]) {
 				type = Util.CONST_DATA.LINE_COMMENT;
 			} else if (foldMap.__comments__.blockComment[0] === res[0]
