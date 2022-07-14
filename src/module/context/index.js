@@ -1002,7 +1002,7 @@ class Context {
 		this.replace(text, [range]);
 		// 格式化内容时，延迟渲染，等待高亮
 		cancelAnimationFrame(this.renderTimer);
-		this.renderTimer = setTimeout(()=>{
+		this.renderTimer = setTimeout(() => {
 			this.renderTimer = null;
 			this.render();
 		}, 200);
@@ -1321,6 +1321,56 @@ class Context {
 				}
 			}
 		}
+	}
+	addIndent() {
+		let historyArr = null;
+		let cursorPosList = [];
+		let originCursorPosList = [];
+		let afterCursorPosList = [];
+		let preLine = -1;
+		let text = this.editor.indent === 'tab' ? '\t' : Util.space(this.editor.tabSize);
+		let charSize = this.editor.indent === 'tab' ? 1 : this.editor.tabSize;
+		this.editor.cursor.multiCursorPos.forEach((item) => {
+			let range = this.editor.selecter.getRangeByCursorPos(item);
+			if (range) {
+				if (preLine !== range.start.line) {
+					for (let line = range.start.line; line <= range.end.line; line++) {
+						cursorPosList.push({ line: line, column: 0 });
+					}
+				}
+				originCursorPosList.push({
+					start: { line: range.start.line, column: range.start.column },
+					end: { line: range.end.line, column: range.end.column },
+					ending: Util.comparePos(range.start, range) === 0 ? 'left' : 'right'
+				});
+				afterCursorPosList.push({
+					start: { line: range.start.line, column: range.start.column + charSize },
+					end: { line: range.end.line, column: range.end.column + charSize },
+					ending: Util.comparePos(range.start, range) === 0 ? 'left' : 'right'
+				})
+				preLine = range.start.line;
+			} else {
+				if (preLine !== item.line) {
+					cursorPosList.push({ line: item.line, column: 0 });
+				}
+				originCursorPosList.push({
+					line: item.line,
+					column: item.column
+				});
+				afterCursorPosList.push({
+					line: item.line,
+					column: item.column + charSize
+				});
+			}
+		});
+		historyArr = this._insertMultiContent({ text: text, cursorPosList });
+		historyArr.originCursorPosList = originCursorPosList;
+		historyArr.afterCursorPosList = afterCursorPosList;
+		this.addCursorList(afterCursorPosList);
+		this.editor.history.pushHistory(historyArr);
+	}
+	removeIndent() {
+
 	}
 	contentChanged() {
 		this.allText = '';

@@ -142,6 +142,11 @@ export default class {
 					this.context.deleteWord('left');
 					this.editor.autocomplete.search();
 					break;
+				case 'BracketRight':
+					e.preventDefault();
+					e.stopPropagation();
+					this.context.addIndent();
+					break;
 			}
 		} else if (e.shiftKey) {
 			switch (e.code) {
