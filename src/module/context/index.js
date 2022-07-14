@@ -437,7 +437,7 @@ class Context {
 					this.htmls.splice(cursorPos.line, 1);
 					deleteText = '\n';
 					originPos = {
-						line: cursorPos.line - 1,
+						line: cursorPos.line + 1,
 						column: 0
 					};
 				}
