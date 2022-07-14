@@ -461,6 +461,7 @@ export default {
 
 		cancelAnimationFrame(this.focusTimer);
 		cancelAnimationFrame(this.renderTimer);
+		cancelAnimationFrame(this.renderCursorTimer);
 		clearTimeout(this.curserTimer);
 		clearTimeout(this.renderSelectedBgTimer);
 		clearTimeout(this.bracketMatchTimer);
