@@ -122,16 +122,6 @@ export default {
 			}
 		},
 	},
-	provide() {
-		return {
-			getNowEditor: () => {
-				return this.getNowEditor();
-			},
-			getNowContext: () => {
-				return this.getNowContext();
-			},
-		};
-	},
 	created() {
 		const currentWindow = remote.getCurrentWindow();
 		window.globalData = globalData;

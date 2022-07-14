@@ -56,11 +56,6 @@ export default {
 			list: [],
 		};
 	},
-	provide() {
-		return {
-			rootList: this.list,
-		};
-	},
 	created() {
 		this.shortcut = new ShortCut(this);
 		this.initEventBus();

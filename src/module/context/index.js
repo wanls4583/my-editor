@@ -54,10 +54,12 @@ class Context {
 		let cursorPosList = [];
 		let serial = ''; // 历史记录连续操作标识
 		let historyJoinAble = true;
+		let delDirect = '';
 		if (command) {
 			command.forEach(item => {
 				// 多个插入的光标可能相同，这里不能先添加光标
 				cursorPosList.push(item.cursorPos);
+				delDirect = item.delDirect;
 			});
 		} else {
 			serial = this.serial++;
@@ -77,12 +79,10 @@ class Context {
 		} else {
 			this.addCursorList(
 				historyArr.map((item) => {
-					if (item.isSelection) {
-						return {
-							start: item.preCursorPos,
-							end: item.cursorPos,
-							ending: item.ending
-						}
+					if (item.ending) {
+						return { start: item.preCursorPos, end: item.cursorPos, ending: item.ending }
+					} else if (delDirect === 'right') {
+						return item.preCursorPos;
 					}
 					return item.cursorPos
 				})
@@ -119,8 +119,6 @@ class Context {
 		cursorPosList.forEach((cursorPos, index) => {
 			let _text = texts.length === cursorPosList.length ? texts[index] : text;
 			let commandObj = (command && command[index]) || {};
-			let ending = commandObj.ending || 'right';
-			let isSelection = commandObj.isSelection || false;
 			let pos = {
 				line: cursorPos.line,
 				column: cursorPos.column
@@ -134,8 +132,7 @@ class Context {
 			if (_text) {
 				historyObj = this._insertContent(_text, pos, !command);
 				prePos = historyObj.cursorPos;
-				historyObj.ending = ending;
-				historyObj.isSelection = isSelection;
+				commandObj.ending && (historyObj.ending = commandObj.ending);
 				lineDelta += historyObj.cursorPos.line - historyObj.preCursorPos.line;
 				columnDelta += historyObj.cursorPos.column - historyObj.preCursorPos.column;
 			} else {
@@ -240,23 +237,19 @@ class Context {
 	}
 	/**
 	 * 
-	 * @param {String} direct 删除方向【left|right】
+	 * @param {String} delDirect 删除方向【left|right】
 	 * @param {Object|Array} command 历史记录【从历史记录中恢复】
 	 * @param {Boolean} justDeleteRange 是否只删除选区范围
 	 * @returns 
 	 */
-	deleteContent(direct, command, justDeleteRange) {
+	deleteContent(delDirect, command, justDeleteRange) {
 		let historyArr = [];
 		let rangeList = [];
 		let historyJoinAble = true;
 		if (command) {
 			rangeList = command.map(item => {
-				let obj = {
-					start: item.preCursorPos,
-					end: item.cursorPos,
-					ending: item.ending,
-					isSelection: item.isSelection
-				};
+				let obj = { start: item.preCursorPos, end: item.cursorPos, };
+				item.ending && (obj.ending = item.ending);
 				return obj;
 			});
 		} else {
@@ -268,7 +261,6 @@ class Context {
 					} else {
 						range.ending = 'right';
 					}
-					range.isSelection = true;
 					rangeList.push(range);
 					historyJoinAble = false;
 				} else {
@@ -276,7 +268,12 @@ class Context {
 				}
 			});
 		}
-		historyArr = this._deleteMultiContent({ rangeOrCursorList: rangeList, direct, justDeleteRange, command });
+		historyArr = this._deleteMultiContent({
+			rangeOrCursorList: rangeList,
+			delDirect,
+			justDeleteRange,
+			command
+		});
 		if (command && command.originCursorPosList) {
 			this.addCursorList(command.originCursorPosList);
 		} else if (command && command.afterCursorPosList) {
@@ -299,12 +296,12 @@ class Context {
 	/**
 	 * 同时删除多处
 	 * @param {Array} rangeOrCursorList 选区范围或者光标列表 
-	 * @param {String} direct 删除方向【left|right】
+	 * @param {String} delDirect 删除方向【left|right】
 	 * @param {Boolean} justDeleteRange 是否只删除选区范围
 	 * @returns 历史记录列表
 	 */
 	_deleteMultiContent({
-		direct = 'left',
+		delDirect = 'left',
 		rangeOrCursorList,
 		justDeleteRange,
 	}) {
@@ -341,7 +338,7 @@ class Context {
 					cursorPos: { line: pos.line, column: pos.column }
 				}
 			} else {
-				historyObj = this._deleteContent(pos, direct);
+				historyObj = this._deleteContent(pos, delDirect);
 				lineDelta += historyObj.preCursorPos.line - historyObj.cursorPos.line;
 				columnDelta += historyObj.preCursorPos.column - historyObj.cursorPos.column;
 				prePos = historyObj.cursorPos;
@@ -370,7 +367,7 @@ class Context {
 					cursorPos: { line: start.line, column: start.column }
 				}
 			} else {
-				historyObj = this._deleteContent(rangePos, direct);
+				historyObj = this._deleteContent(rangePos, delDirect);
 				lineDelta += historyObj.preCursorPos.line - historyObj.cursorPos.line;
 				columnDelta += historyObj.preCursorPos.column - historyObj.cursorPos.column;
 				prePos = historyObj.cursorPos;
@@ -379,15 +376,15 @@ class Context {
 		}
 	}
 	// 删除内容
-	_deleteContent(cursorPos, direct) {
+	_deleteContent(cursorPos, delDirect) {
 		let range = null;
-		let ending = direct === 'right' ? 'left' : 'right';
-		cursorPos.moveWidth = 0; //去除上下移动光标的初始宽度记录
 		if (cursorPos.start && cursorPos.end) {
 			//删除范围内的内容
 			range = cursorPos;
 			cursorPos = range.end;
-			ending = range.ending;
+		} else {
+			//去除上下移动光标的初始宽度记录
+			cursorPos.moveWidth = 0;
 		}
 		let start = null;
 		let startObj = this.htmls[cursorPos.line - 1];
@@ -430,7 +427,7 @@ class Context {
 			}
 			newPos.line = start.line;
 			newPos.column = start.column;
-		} else if (direct === 'right') {
+		} else if (delDirect === 'right') {
 			// 向后删除一个字符
 			if (cursorPos.column == text.length) {
 				// 光标处于行尾
@@ -504,10 +501,9 @@ class Context {
 			cursorPos: Object.assign({}, newPos),
 			preCursorPos: Object.assign({}, originPos),
 			text: deleteText,
-			direct: direct,
-			ending: ending,
-			isSelection: range && range.isSelection
+			delDirect: delDirect
 		};
+		range && range.ending && (historyObj.ending = range.ending);
 		return historyObj;
 	}
 	addCursorList(cursorPosList) {
@@ -599,9 +595,9 @@ class Context {
 	}
 	/**
 	 * 向前或者向后删除一个单词
-	 * @param {String} direct [left|right] 
+	 * @param {String} delDirect [left|right] 
 	 */
-	deleteWord(direct) {
+	deleteWord(delDirect) {
 		let preRange = null;
 		let historyArr = null;
 		let rangeList = [];
@@ -621,15 +617,15 @@ class Context {
 				preRange = range;
 				rangeList.push(preRange);
 			} else {
-				if (direct === 'left') {
+				if (delDirect === 'left') {
 					end = { line: item.line, column: item.column };
-					start = this.editor.cursor.moveCursor(item, direct, true, true);
+					start = this.editor.cursor.moveCursor(item, delDirect, true, true);
 				} else {
 					start = { line: item.line, column: item.column };
-					end = this.editor.cursor.moveCursor(item, direct, true, true);
+					end = this.editor.cursor.moveCursor(item, delDirect, true, true);
 				}
 				if (preRange && Util.comparePos(preRange.end, start) >= 0) {
-					if (!preRange.isSelection) {
+					if (!preRange.ending) {
 						preRange.end = end;
 					}
 				} else if (Util.comparePos(end, start) > 0) {
@@ -643,7 +639,7 @@ class Context {
 			});
 		});
 		if (rangeList.length) {
-			historyArr = this._deleteMultiContent({ rangeOrCursorList: rangeList, direct });
+			historyArr = this._deleteMultiContent({ rangeOrCursorList: rangeList, delDirect });
 			historyArr.originCursorPosList = originCursorPosList;
 			this.addCursorList(historyArr.map((item) => { return item.cursorPos }));
 			this.editor.history.pushHistory(historyArr);
@@ -820,7 +816,7 @@ class Context {
 		this.copyLine('down');
 	}
 	// 复制行内容
-	copyLine(direct = 'up') {
+	copyLine(copyDirect = 'up') {
 		let historyArr = null;
 		let index = 0;
 		let preLine = -1;
@@ -876,7 +872,7 @@ class Context {
 			if (item.start) {
 				let delta = item.end.line - item.start.line;
 				preLine = item.end.line;
-				if (direct === 'up') {
+				if (copyDirect === 'up') {
 					preCursorPos = {
 						start: { line: cursorPos.line, column: item.start.column },
 						end: { line: cursorPos.line + delta, column: item.end.column },
@@ -889,7 +885,7 @@ class Context {
 				}
 			} else {
 				preLine = item.line;
-				if (direct === 'up') {
+				if (copyDirect === 'up') {
 					preCursorPos = { line: cursorPos.line, column: item.column };
 				} else {
 					preCursorPos = { line: cursorPos.line - 1, column: item.column };

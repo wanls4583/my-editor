@@ -28,11 +28,6 @@ export default {
             },
         };
     },
-    provide() {
-        return {
-            rootList: this.list,
-        };
-    },
     created() {
         this.initEventBus();
     },

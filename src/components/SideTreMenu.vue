@@ -185,7 +185,6 @@ export default {
 			},
 		};
 	},
-	provide() {},
 	created() {
 		this.initEventBus();
 	},

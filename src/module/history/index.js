@@ -87,9 +87,18 @@ export default class {
 		if (command instanceof Array && !command.length) {
 			return;
 		}
-		if(historyJoinAble) {
-			if (lastCommand instanceof Array && command instanceof Array && lastCommand.length === command.length && Date.now() - this.pushHistoryTime < 2000) {
-				if (_checkSameOp(lastCommand) && _checkSameOp(command) && _combCheck.call(this, lastCommand[0], command[0])) {
+		if (historyJoinAble) {
+			if (
+				lastCommand instanceof Array
+				&& command instanceof Array
+				&& lastCommand.length === command.length
+				&& Date.now() - this.pushHistoryTime < 2000
+			) {
+				if (
+					_checkSameOp(lastCommand)
+					&& _checkSameOp(command)
+					&& _combCheck.call(this, lastCommand[0], command[0])
+				) {
 					for (let i = 0; i < lastCommand.length; i++) {
 						_combCommand(lastCommand[i], command[i]);
 					}
@@ -119,11 +128,15 @@ export default class {
 		function _combCheck(lastCommand, command) {
 			// 检测是否为连续插入或连续删除
 			if (
-				(command.type == Util.HISTORY_COMMAND.DELETE || command.type == Util.HISTORY_COMMAND.INSERT) &&
-				lastCommand &&
-				lastCommand.type == command.type &&
-				lastCommand.preCursorPos.line == command.cursorPos.line &&
-				Date.now() - this.pushHistoryTime < 2000
+				(
+					command.type === Util.HISTORY_COMMAND.DELETE
+					|| command.type === Util.HISTORY_COMMAND.INSERT
+				)
+				&& lastCommand
+				&& lastCommand.type === command.type
+				&& lastCommand.delDirect === command.delDirect
+				&& lastCommand.preCursorPos.line === command.cursorPos.line
+				&& Date.now() - this.pushHistoryTime < 2000
 			) {
 				if (lastCommand.type == Util.HISTORY_COMMAND.DELETE) {
 					if (Util.comparePos(lastCommand.cursorPos, command.preCursorPos) == 0) {
@@ -131,7 +144,8 @@ export default class {
 					}
 				}
 				if (lastCommand.type == Util.HISTORY_COMMAND.INSERT) {
-					if (Util.comparePos(lastCommand.cursorPos, command.preCursorPos) == 0 || Util.comparePos(lastCommand.cursorPos, command.cursorPos) == 0) {
+					if (Util.comparePos(lastCommand.cursorPos, command.preCursorPos) == 0
+						|| Util.comparePos(lastCommand.cursorPos, command.cursorPos) == 0) {
 						return true;
 					}
 				}
@@ -146,7 +160,7 @@ export default class {
 				lastCommand.cursorPos = command.cursorPos;
 			} else {
 				lastCommand.cursorPos = command.cursorPos;
-				if (command.direct === 'right') {
+				if (command.delDirect === 'right') {
 					lastCommand.text = lastCommand.text + command.text;
 				} else {
 					lastCommand.text = command.text + lastCommand.text;
@@ -159,10 +173,10 @@ export default class {
 		let index = this.history.index;
 		if (command instanceof Array) {
 			command.forEach((item, _index) => {
-				item.direct = this.history[index - 1][_index].direct;
+				item.delDirect = this.history[index - 1][_index].delDirect;
 			});
 		} else {
-			command.direct = this.history[index - 1].direct;
+			command.delDirect = this.history[index - 1].delDirect;
 		}
 		this.history[index - 1] = this.sortComand(command);
 	}
