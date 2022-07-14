@@ -255,9 +255,10 @@ export default class {
 				for (let i = folds.length - 1; i >= 0; i--) {
 					let fold = folds[i];
 					// 跳过标签名
-					if (fold.type === Util.CONST_DATA.TAG) {
-						continue;
-					} else if (fold.side > 0 && (line < cursorPos.line || fold.endIndex < cursorPos.column)) {
+					// if (fold.type === Util.CONST_DATA.TAG) {
+					// 	continue;
+					// }
+					if (fold.side > 0 && (line < cursorPos.line || fold.endIndex < cursorPos.column)) {
 						stack.push(fold);
 					} else if (fold.side < 0 && (line < cursorPos.line || fold.startIndex <= cursorPos.column)) {
 						let exsitEnd = false;

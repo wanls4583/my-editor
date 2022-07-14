@@ -13,7 +13,7 @@ const fs = window.require('fs');
 const path = window.require('path');
 
 const regs = {
-	stringToken: /(\.|^)string(\.|$)/,
+	stringToken: /(?:\.|^)(?:string|regexp)(?:\.|$)/,
 };
 
 export default class {
@@ -79,12 +79,17 @@ export default class {
 				this.sourceFoldMap = grammarData.sourceFoldMap;
 				this.scopeMap = grammarData.scopeIdMap;
 				this.hasTextGrammar = grammarData.hasTextGrammar;
+				this.scopeNamesReg = grammarData.scopeNamesReg;
 			} else {
 				return this.registry.loadGrammar(this.scopeName).then(grammar => {
 					this.grammar = grammar;
+					// 该语言可能包含多种内嵌子语言
+					this.scopeNamesReg = Object.keys(this.sourceFoldMap).join('|').replace(/\./g, '\\.');
+					this.scopeNamesReg = new RegExp(this.scopeNamesReg, 'ig');
 					globalData.grammars[this.scopeName] = {
 						grammar: grammar,
 						sourceFoldMap: this.sourceFoldMap,
+						scopeNamesReg: this.scopeNamesReg,
 						scopeIdMap: this.scopeMap,
 						hasTextGrammar: this.hasTextGrammar,
 					};
@@ -257,20 +262,16 @@ export default class {
 	tokenizeLine(line) {
 		let lineText = this.context.htmls[line - 1].text;
 		let folds = [];
+		let states = null;
+		let lineTokens = null;
+		let stateFold = null;
 		if (lineText.length > 10000 || !this.scopeName || line <= this.editor.diffObj.deletedLength) {
 			return {
-				tokens: [
-					{
-						scopes: ['plain'],
-						startIndex: 0,
-						endIndex: lineText.length,
-					},
-				],
 				folds: [],
 				states: vsctm.INITIAL,
+				tokens: [{ scopes: ['plain'], startIndex: 0, endIndex: lineText.length, },],
 			};
 		}
-		let states = null;
 		if (this.editor.diffObj.states) {
 			if (line === this.editor.diffObj.deletedLength + 1) {
 				states = this.editor.diffObj.states;
@@ -280,8 +281,11 @@ export default class {
 		} else {
 			states = (this.context.htmls[line - 2] && this.context.htmls[line - 2].states) || vsctm.INITIAL;
 		}
-		let lineTokens = this.grammar.tokenizeLine(lineText, states);
-		let stateFold = this.addFold(line, lineTokens.tokens, folds);
+		lineTokens = this.grammar.tokenizeLine(lineText, states);
+		lineTokens.tokens.forEach((token)=>{
+			token.scope = token.scopes.join(' ');
+		});
+		stateFold = this.addFold(line, lineTokens.tokens, folds);
 		lineTokens.tokens.peek().endIndex = lineText.length; //某些情况下，会大于lineText.length
 		return {
 			tokens: lineTokens.tokens,
@@ -343,7 +347,6 @@ export default class {
 		if (token.scopeId) {
 			return token.scopeId;
 		}
-		token.scope = scopes.join(' ');
 		outerLoop: for (let i = scopes.length - 1; i >= 0; i--) {
 			let scope = scopes[i];
 			if (scope in this.scopeMap) {
@@ -371,61 +374,50 @@ export default class {
 		return result;
 	}
 	addFold(line, tokens, folds) {
-		let scopeName = '';
-		let startIndex = 0;
 		let existTag = false;
 		let lineText = this.context.htmls[line - 1].text;
 		let stateFold = line > 1 ? this.context.htmls[line - 2].stateFold : null;
-		//给字符串token打上标记
 		tokens.forEach(token => {
-			if (regs.stringToken.test(token.scopes.join('.'))) {
-				token.isString = true;
+			if (regs.stringToken.test(token.scope)) {
+				token.isStringToken = true;
 			}
 		});
-		outerLoop: for (let index = 0; index < tokens.length; index++) {
+		for (let index = 0; index < tokens.length; index++) {
 			let token = tokens[index];
-			let _scopeName = '';
 			let foldMap = null;
-			for (let i = token.scopes.length - 1; i >= 0; i--) {
-				foldMap = this.sourceFoldMap[token.scopes[i]];
-				if (!foldMap) {
-					continue;
-				}
-				_scopeName = token.scopes[i];
-				if (scopeName || index === tokens.length - 1) {
-					if (_scopeName !== scopeName || index === tokens.length - 1) {
-						let endIndex = index === tokens.length - 1 ? token.endIndex : token.startIndex;
-						let lastFold = this.addBracket({
-							tokens: tokens,
-							line: line,
-							foldMap: foldMap,
-							folds: folds,
-							startIndex: startIndex,
-							endIndex: endIndex,
-							stateFold: stateFold,
-							lineText: lineText,
-						});
-						// 单行注释
-						if (lastFold && lastFold.type === Util.CONST_DATA.LINE_COMMENT) {
-							break outerLoop;
-						}
-						scopeName = token.scopes[i];
-						startIndex = token.startIndex;
+			let lastFold = null;
+			let scopeNames = null;
+			if (token.isString) {
+				continue;
+			}
+			scopeNames = token.scope.match(this.scopeNamesReg);
+			if (scopeNames) {
+				// 一种语言中可能包含多种内嵌语言，优先处理内嵌语言
+				for (let i = scopeNames.length - 1; i >= 0; i--) {
+					if (this.sourceFoldMap[scopeNames[i]]) {
+						foldMap = this.sourceFoldMap[scopeNames[i]];
+						break;
 					}
-				} else {
-					scopeName = token.scopes[i];
-					startIndex = token.startIndex;
 				}
+			}
+			if (!foldMap) {
 				break;
 			}
-			if (
-				this.addTagFold({
-					token: token,
-					foldMap: foldMap,
-					folds: folds,
-					lineText: lineText,
-				})
-			) {
+			lastFold = this.addBracket({
+				line: line,
+				foldMap: foldMap,
+				folds: folds,
+				startIndex: token.startIndex,
+				endIndex: token.endIndex,
+				stateFold: stateFold,
+				lineText: lineText,
+			});
+			// 单行注释
+			if (lastFold && lastFold.type === Util.CONST_DATA.LINE_COMMENT) {
+				break;
+			}
+			// 添加标签名标记
+			if (this.addTagFold({ token: token, foldMap: foldMap, folds: folds, lineText: lineText, })) {
 				existTag = true;
 			}
 		}
@@ -435,13 +427,12 @@ export default class {
 			});
 		}
 		if (folds.length) {
-			return folds.peek().type === Util.CONST_DATA.BLOCK_COMMENT ? folds.peek() : null;
+			return folds.peek();
 		} else {
 			return stateFold;
 		}
 	}
 	addBracket(option) {
-		let tokens = option.tokens;
 		let foldMap = option.foldMap;
 		let folds = option.folds;
 		let startIndex = option.startIndex;
@@ -463,12 +454,9 @@ export default class {
 			let type = Util.CONST_DATA.BRACKET;
 			if (foldMap.__comments__.lineComment === res[0]) {
 				type = Util.CONST_DATA.LINE_COMMENT;
-			} else if (foldMap.__comments__.blockComment[0] === res[0] || foldMap.__comments__.blockComment[1] === res[0]) {
+			} else if (foldMap.__comments__.blockComment[0] === res[0]
+				|| foldMap.__comments__.blockComment[1] === res[0]) {
 				type = Util.CONST_DATA.BLOCK_COMMENT;
-			}
-			// 如果处于字符串中，则无效
-			if (_inString(res)) {
-				continue;
 			}
 			folds.push({
 				startIndex: startIndex + res.index,
@@ -476,31 +464,22 @@ export default class {
 				side: foldMap[res[0]],
 				type: type,
 			});
-			if (type === Util.CONST_DATA.BLOCK_COMMENT && foldMap[res[0]] < 0) {
-				foldMap.__endCommentReg__.lastIndex = reg.lastIndex;
-				reg.lastIndex = 0;
-				reg = foldMap.__endCommentReg__;
-			} else if (type === Util.CONST_DATA.LINE_COMMENT) {
+			if (type === Util.CONST_DATA.BLOCK_COMMENT) {
+				if (foldMap[res[0]] < 0) { //注释块开始标记，进入注释块结束标记搜索
+					foldMap.__endCommentReg__.lastIndex = reg.lastIndex;
+					reg.lastIndex = 0;
+					reg = foldMap.__endCommentReg__;
+				} else if (reg === foldMap.__endCommentReg__) { //注释块结束标记，恢复其他折叠标记搜索
+					foldMap.__foldReg__.lastIndex = reg.lastIndex;
+					reg.lastIndex = 0;
+					reg = foldMap.__foldReg__;
+				}
+			} else if (type === Util.CONST_DATA.LINE_COMMENT) { //单行注释开始标记
 				break;
 			}
 		}
 		reg.lastIndex = 0;
 		return folds.length && folds.peek();
-
-		function _inString(res) {
-			let index = res.index;
-			for (let i = 0; i < tokens.length; i++) {
-				if (tokens[i].startIndex <= index && tokens[i].endIndex > index) {
-					if (tokens[i].isString) {
-						return true;
-					}
-					break;
-				} else if (tokens[i].startIndex > index) {
-					break;
-				}
-			}
-			return false;
-		}
 	}
 	addTagFold(option) {
 		let token = option.token;
