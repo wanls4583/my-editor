@@ -48,6 +48,18 @@ class Context {
 		this.editor = null;
 		this.allText = '';
 		cancelIdleCallback(this.setLineWidthTimer);
+		cancelAnimationFrame(this.renderTimer);
+		clearTimeout(this.renderTimer);
+	}
+	render(scrollToCursor) {
+		this.scrollToCursor = scrollToCursor;
+		if (this.renderTimer) {
+			return;
+		}
+		this.renderTimer = requestAnimationFrame(() => {
+			this.editor.render(this.scrollToCursor);
+			this.renderTimer = null;
+		});
 	}
 	insertContent(text, command) {
 		let historyArr = null;
@@ -203,7 +215,7 @@ class Context {
 		this.editor.folder.onInsertContentAfter(Object.assign({}, cursorPos), Object.assign({}, newPos));
 		this.editor.setErrors([]);
 		this.editor.setAutoTip(null);
-		this.editor.render(true);
+		this.render(true);
 		this.setLineWidth(text);
 		this.contentChanged();
 		this.editor.tabData.status !== '!!' && this.editor.differ.run();
@@ -483,7 +495,7 @@ class Context {
 		this.editor.folder.onDeleteContentAfter(Object.assign({}, originPos), Object.assign({}, newPos));
 		this.editor.setErrors([]);
 		this.editor.setAutoTip(null);
-		this.editor.render(true);
+		this.render(true);
 		this.contentChanged();
 		this.editor.tabData.status !== '!!' && this.editor.differ.run();
 		// 更新最大文本宽度
@@ -988,6 +1000,12 @@ class Context {
 		};
 		this.editor.searcher.clearSearch();
 		this.replace(text, [range]);
+		// 格式化内容时，延迟渲染，等待高亮
+		cancelAnimationFrame(this.renderTimer);
+		this.renderTimer = setTimeout(()=>{
+			this.renderTimer = null;
+			this.render();
+		}, 200);
 	}
 	replace(texts, ranges) {
 		let historyArr = null;
@@ -1174,7 +1192,7 @@ class Context {
 			this.contentChanged();
 			EventBus.$emit('indent-change', 'space');
 			this.editor.tabData.status !== '!!' && this.editor.differ.run();
-			this.editor.render();
+			this.render();
 			if (command) {
 				this.editor.history.updateHistory({ type: Util.HISTORY_COMMAND.SPACE_TO_TAB, tabSize, space });
 			} else {
@@ -1274,7 +1292,7 @@ class Context {
 			this.contentChanged();
 			EventBus.$emit('indent-change', 'tab');
 			this.editor.tabData.status !== '!!' && this.editor.differ.run();
-			this.editor.render();
+			this.render();
 			if (command) {
 				this.editor.history.updateHistory({ type: Util.HISTORY_COMMAND.TAB_TO_SPACE, tabSize, space });
 			} else {
