@@ -424,7 +424,8 @@ class Util {
 		}
 		return str;
 	}
-	static getLanguageById(languageList, language) {
+	static getLanguageById(language) {
+		let languageList = globalData.languageList;
 		for (let i = 0; i < languageList.length; i++) {
 			if (languageList[i].language === language) {
 				return languageList[i];
@@ -440,7 +441,7 @@ class Util {
 	}
 	static getWordPattern(language) {
 		let wordPattern = globalData.defaultWordPattern;
-		language = Util.getLanguageById(globalData.languageList, language);
+		language = Util.getLanguageById(language);
 		if (language) {
 			let _wordPattern = globalData.sourceWordMap[language.scopeName];
 			_wordPattern = _wordPattern && _wordPattern.pattern;

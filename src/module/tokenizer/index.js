@@ -44,11 +44,11 @@ export default class {
 					if (language.configPath) {
 						return Util.loadJsonFile(language.configPath).then(data => {
 							// 每种语言都有对应的折叠标记
-							this.sourceFoldMap[language.scopeName] = {};
+							this.sourceConfigMap[language.scopeName] = {};
 							globalData.sourceWordMap[language.scopeName] = data.wordPattern;
 							// 是否存在标记性语言
 							this.hasTextGrammar = this.hasTextGrammar || language.scopeName.startsWith('text');
-							this.initLanguageConifg(this.sourceFoldMap[language.scopeName], data);
+							this.initLanguageConifg(this.sourceConfigMap[language.scopeName], data);
 							return Util.readFile(language.path).then(data => vsctm.parseRawGrammar(data.toString(), language.path));
 						});
 					} else {
@@ -66,17 +66,17 @@ export default class {
 		this.language = language;
 		this.grammar = null;
 		this.foldType = 1;
-		this.sourceFoldMap = {};
+		this.sourceConfigMap = {};
 		this.scopeMap = {};
 		this.hasTextGrammar = false;
 		this.currentLine = 1;
-		language = Util.getLanguageById(globalData.languageList, language);
+		language = Util.getLanguageById(language);
 		this.scopeName = (language && language.scopeName) || '';
 		if (this.scopeName) {
 			if (globalData.grammars[this.scopeName]) {
 				let grammarData = globalData.grammars[this.scopeName];
 				this.grammar = grammarData.grammar;
-				this.sourceFoldMap = grammarData.sourceFoldMap;
+				this.sourceConfigMap = grammarData.sourceConfigMap;
 				this.scopeMap = grammarData.scopeIdMap;
 				this.hasTextGrammar = grammarData.hasTextGrammar;
 				this.scopeNamesReg = grammarData.scopeNamesReg;
@@ -84,11 +84,11 @@ export default class {
 				return this.registry.loadGrammar(this.scopeName).then(grammar => {
 					this.grammar = grammar;
 					// 该语言可能包含多种内嵌子语言
-					this.scopeNamesReg = Object.keys(this.sourceFoldMap).join('|').replace(/\./g, '\\.');
+					this.scopeNamesReg = Object.keys(this.sourceConfigMap).join('|').replace(/\./g, '\\.');
 					this.scopeNamesReg = new RegExp(this.scopeNamesReg, 'ig');
 					globalData.grammars[this.scopeName] = {
 						grammar: grammar,
-						sourceFoldMap: this.sourceFoldMap,
+						sourceConfigMap: this.sourceConfigMap,
 						scopeNamesReg: this.scopeNamesReg,
 						scopeIdMap: this.scopeMap,
 						hasTextGrammar: this.hasTextGrammar,
@@ -394,8 +394,8 @@ export default class {
 			if (scopeNames) {
 				// 一种语言中可能包含多种内嵌语言，优先处理内嵌语言
 				for (let i = scopeNames.length - 1; i >= 0; i--) {
-					if (this.sourceFoldMap[scopeNames[i]]) {
-						foldMap = this.sourceFoldMap[scopeNames[i]];
+					if (this.sourceConfigMap[scopeNames[i]]) {
+						foldMap = this.sourceConfigMap[scopeNames[i]];
 						break;
 					}
 				}

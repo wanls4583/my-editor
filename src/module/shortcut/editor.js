@@ -60,8 +60,12 @@ export default class {
 					e.stopPropagation();
 					this.editor.cursor.addCursorLineEnds();
 					break;
+				case 'Slash': //ctrl+shift+/
+					e.preventDefault();
+					e.stopPropagation();
+					this.context.toggleBlockComment();
+					break;
 			}
-			return false;
 		} else if (e.ctrlKey && e.altKey) {
 			switch (e.code) {
 				case 'ArrowUp': //ctrl+alt+up
@@ -142,15 +146,20 @@ export default class {
 					this.context.deleteWord('left');
 					this.editor.autocomplete.search();
 					break;
-				case 'BracketRight':
+				case 'BracketRight': //ctrl+]
 					e.preventDefault();
 					e.stopPropagation();
 					this.context.addAnIndent();
 					break;
-				case 'BracketLeft':
+				case 'BracketLeft': //ctrl+[
 					e.preventDefault();
 					e.stopPropagation();
 					this.context.removeAnIndent();
+					break;
+				case 'Slash': //ctrl+/
+					e.preventDefault();
+					e.stopPropagation();
+					this.context.toggleLineComment();
 					break;
 			}
 		} else if (e.shiftKey) {

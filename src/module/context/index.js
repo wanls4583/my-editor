@@ -10,7 +10,9 @@ import expand from 'emmet';
 import globalData from '@/data/globalData';
 
 const regs = {
-	endTag: /(?=\<\/)/
+	endTag: /(?=\<\/)/,
+	line_comment: /comment\.line/,
+	block_comment: /comment\.block/
 };
 
 class Context {
@@ -1428,6 +1430,80 @@ class Context {
 			return charSize;
 		}
 	}
+	toggleLineComment() {
+		let token = null;
+		let language = null;
+		let grammarData = null;
+		let sourceConfigMap = null;
+		let sourceConfigData = null;
+		let scopeNames = null;
+		let nowCursorPos = this.editor.nowCursorPos;
+		if (!this.editor.language) {
+			return;
+		}
+		language = Util.getLanguageById(this.editor.language);
+		grammarData = globalData.grammars[language.scopeName];
+		if (!grammarData || !grammarData.sourceConfigMap) {
+			return;
+		}
+		token = this.getTokenByCursorPos(nowCursorPos);
+		if (!token) {
+			return;
+		}
+		sourceConfigMap = grammarData.sourceConfigMap;
+		scopeNames = token.scope.match(grammarData.scopeNamesReg);
+		if (scopeNames) {
+			// 一种语言中可能包含多种内嵌语言，优先处理内嵌语言
+			for (let i = scopeNames.length - 1; i >= 0; i--) {
+				if (sourceConfigMap[scopeNames[i]]) {
+					sourceConfigData = sourceConfigMap[scopeNames[i]];
+					break;
+				}
+			}
+		}
+		if (!sourceConfigData
+			|| !sourceConfigData.__comments__
+			|| !sourceConfigData.__comments__.blockComment) {
+			return;
+		}
+		if (regs.block_comment.test(token.scope)) {
+
+		} else if (regs.line_comment.test(token.scope)) {
+
+		} else {
+
+		}
+	}
+	toggleBlockComment() {
+
+	}
+	findPreBlockComment(cursorPos, blockComment) {
+		let line = cursorPos.line;
+		let lineObj = this.htmls[line - 1];
+		let tokens = lineObj.tokens;
+		let text = lineObj.text.slice(0, cursorPos.column);
+		while (line >= 1) {
+			lineObj = this.htmls[line - 1];
+			tokens = lineObj.tokens;
+			text = lineObj.text;
+			for (let i = tokens.length - 1; i >= 0; i--) {
+				let token = tokens[i];
+				let _text = lineObj.text.slice(token.startIndex, token.endIndex);
+				if (line === cursorPos.line && token.endIndex > cursorPos.column) {
+					continue;
+				}
+				if (!regs.block_comment.test(token.scope)) {
+					return;
+				}
+				if (_text === blockComment[0]) {
+					return {
+						start: { line: line, column: token.startIndex },
+						end: { line: line, column: token.endIndex }
+					}
+				}
+			}
+		}
+	}
 	contentChanged() {
 		this.allText = '';
 		EventBus.$emit('editor-content-change', { id: this.editor.editorId, path: this.editor.tabData.path });
@@ -1526,6 +1602,15 @@ class Context {
 			}
 		});
 		return originCursorPosList;
+	}
+	getTokenByCursorPos(cursorPos) {
+		let tokens = this.htmls[cursorPos.line - 1].tokens || [];
+		for (let i = 0; i < tokens.length; i++) {
+			if (tokens[i].startIndex < cursorPos.column
+				&& tokens[i].endIndex >= cursorPos.column) {
+				return tokens[i];
+			}
+		}
 	}
 	// 获取选中范围内的文本
 	getRangeText(start, end) {
