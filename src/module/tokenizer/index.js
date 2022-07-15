@@ -452,10 +452,6 @@ export default class {
 		}
 		while ((res = reg.exec(text))) {
 			let type = Util.CONST_DATA.BRACKET;
-			// 跳过标签开始/结束标记
-			if (res[0] === '<' || res[0] === '>') {
-				continue;
-			}
 			if (foldMap.__comments__.lineComment === res[0]) {
 				type = Util.CONST_DATA.LINE_COMMENT;
 			} else if (foldMap.__comments__.blockComment[0] === res[0]
