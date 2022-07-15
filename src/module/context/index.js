@@ -1521,15 +1521,15 @@ class Context {
 					} else { //添加单行注释
 						let start = { line: range.start.line, column: range.start.column };
 						let end = { line: range.end.line, column: range.end.column };
-						let column = -1;
+						let column = Infinity;
 						for (let line = startLine; line <= range.end.line; line++) {
 							let text = this.htmls[line - 1].text;
 							let _text = text.trimLeft();
 							let spaceLength = text.length - _text.length;
 							// 和第一行注释对齐
-							column = column > -1 ? column : spaceLength;
+							column = spaceLength < column ? spaceLength : column;
 							if (!_text.startsWith(lineComment)) {
-								addPosList.push({ line: line, column: column });
+								addPosList.push({ line: line, column: 0 });
 								comments.push(lineComment);
 								if (line === start.line) {
 									start.column += lineComment.length;
@@ -1545,6 +1545,7 @@ class Context {
 								}
 							}
 						}
+						addPosList.forEach((item) => { item.column = column });
 						afterCursorPosList.push({ start, end });
 					}
 				}
@@ -1861,7 +1862,7 @@ class Context {
 		let tokens = this.htmls[cursorPos.line - 1].tokens || [];
 		for (let i = 0; i < tokens.length; i++) {
 			if (tokens[i].startIndex < cursorPos.column
-				&& tokens[i].endIndex > cursorPos.column) {
+				&& tokens[i].endIndex >= cursorPos.column) {
 				return tokens[i];
 			}
 		}
