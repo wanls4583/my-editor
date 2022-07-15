@@ -1431,47 +1431,204 @@ class Context {
 		}
 	}
 	toggleLineComment() {
-		let token = null;
-		let language = null;
-		let grammarData = null;
-		let sourceConfigMap = null;
-		let sourceConfigData = null;
-		let scopeNames = null;
-		let nowCursorPos = this.editor.nowCursorPos;
-		if (!this.editor.language) {
-			return;
+		let serial = this.serial++;
+		let historyArr = null;
+		let nowIndex = 0;
+		let preLine = -1;
+		let afterCursorPosList = [];
+		let delPosList = [];
+		let addPosList = [];
+		let comments = [];
+		let allCurosrPosList = this.editor.cursor.multiCursorPos.toArray();
+		let originCursorPosList = this.getOriginCursorPosList();
+		while (nowIndex < allCurosrPosList.length) {
+			let result = _toggleLineComment.call(this);
+			_moveCursor.call(this, result);
 		}
-		language = Util.getLanguageById(this.editor.language);
-		grammarData = globalData.grammars[language.scopeName];
-		if (!grammarData || !grammarData.sourceConfigMap) {
-			return;
+		if (delPosList.length) {
+			historyArr = this._deleteMultiContent({ rangeOrCursorList: delPosList, justDeleteRange: true });
+			historyArr.serial = serial;
+			historyArr.originCursorPosList = originCursorPosList;
+			originCursorPosList = null;
+			this.editor.history.pushHistory(historyArr);
 		}
-		token = this.getTokenByCursorPos(nowCursorPos);
-		if (!token) {
-			return;
+		if (addPosList.length) {
+			historyArr = this._insertMultiContent({ text: comments, cursorPosList: addPosList });
+			historyArr.serial = serial;
+			if (originCursorPosList) {
+				historyArr.originCursorPosList = originCursorPosList;
+			}
+			this.editor.history.pushHistory(historyArr);
 		}
-		sourceConfigMap = grammarData.sourceConfigMap;
-		scopeNames = token.scope.match(grammarData.scopeNamesReg);
-		if (scopeNames) {
-			// 一种语言中可能包含多种内嵌语言，优先处理内嵌语言
-			for (let i = scopeNames.length - 1; i >= 0; i--) {
-				if (sourceConfigMap[scopeNames[i]]) {
-					sourceConfigData = sourceConfigMap[scopeNames[i]];
-					break;
+		if (historyArr) {
+			historyArr.afterCursorPosList = afterCursorPosList;
+			this.addCursorList(afterCursorPosList);
+		}
+
+		function _toggleLineComment() {
+			let token = null;
+			let lastToken = null;
+			let range = null;
+			let startRange = null;
+			let endRange = null;
+			let added = false;
+			let deled = false;
+			let sourceConfigData = null;
+			let blockComment = null;;
+			let lineComment = '';
+			let comment = '';
+			let ending = '';
+			let cursorPos = allCurosrPosList[nowIndex++];
+			range = this.editor.selecter.getRangeByCursorPos(cursorPos);
+			if (range) {
+				ending = Util.comparePos(range.start, cursorPos) === 0 ? 'left' : 'right';
+				cursorPos = range.start;
+			}
+			token = this.getTokenByCursorPos(cursorPos);
+			if (!token) {
+				return;
+			}
+			lastToken = this.htmls[cursorPos.line - 1].tokens;
+			lastToken = lastToken && lastToken.peek();
+			sourceConfigData = this.getConfigData(token);
+			if (!sourceConfigData || !sourceConfigData.__comments__) {
+				return;
+			}
+			blockComment = sourceConfigData.__comments__.blockComment;
+			lineComment = sourceConfigData.__comments__.lineComment;
+			if (range) {
+				let allComent = true;
+				let startLine = preLine === range.start.line ? preLine + 1 : range.start.line;
+				for (let line = startLine; line <= range.end.line; line++) {
+					if (!this.htmls[line - 1].text.trimLeft().startsWith(lineComment)) {
+						allComent = false;
+						break;
+					}
+				}
+				if (allComent) { //删除单行注释
+					for (let line = startLine; line <= range.end.line; line++) {
+						let text = this.htmls[line - 1].text;
+						let spaceLength = text.length - text.trimLeft().length;
+						delPosList.push({
+							start: { line: line, column: spaceLength },
+							end: { line: line, column: spaceLength + lineComment.length }
+						});
+					}
+					afterCursorPosList.push({
+						start: { line: range.start.line, column: range.start.column - lineComment.length },
+						end: { line: range.end.line, column: range.end.column - lineComment.length },
+						ending: ending
+					});
+					deled = true;
+					comment = lineComment;
+				} else { //添加单行注释
+					let start = { line: range.start.line, column: range.start.column };
+					let end = { line: range.end.line, column: range.end.column };
+					let column = -1;
+					for (let line = startLine; line <= range.end.line; line++) {
+						let text = this.htmls[line - 1].text;
+						let _text = text.trimLeft();
+						let spaceLength = text.length - _text.length;
+						// 和第一行注释对齐
+						column = column > -1 ? column : spaceLength;
+						if (!_text.startsWith(lineComment)) {
+							addPosList.push({ line: line, column: column });
+							comments.push(lineComment);
+							if (line === start.line) {
+								start.column += lineComment.length;
+							}
+							if (line === end.line) {
+								end.column += lineComment.length;
+								added = true;
+								comment = lineComment;
+							}
+						}
+					}
+					afterCursorPosList.push({ start, end });
+				}
+				preLine = range.end.line;
+			} else {
+				let text = this.htmls[cursorPos.line - 1].text;
+				let _text = text.trimLeft();
+				let spaceLength = text.length - _text.length;
+				let afterPos = { line: cursorPos.line, column: cursorPos.column };
+				if (regs.block_comment.test(token.scope) && blockComment) { //光标在多行注释中，删除多行注释
+					startRange = blockComment[0] && this.findPreBlockComment(cursorPos, blockComment[0]);
+					endRange = blockComment[1] && this.findNextBlockComment(cursorPos, blockComment[1]);
+					if (startRange) {
+						delPosList.push(startRange);
+						endRange && delPosList.push(endRange);
+						if (startRange.start.line === cursorPos.line) {
+							afterPos.column -= blockComment[0].length;
+						} else if (endRange && endRange.start.line === cursorPos.line) {
+							afterPos.column -= blockComment[1].length;
+							deled = true;
+							comment = blockComment[1];
+						}
+					}
+				} else if (_text.startsWith(lineComment)) { //删除单行注释
+					delPosList.push({
+						start: { line: cursorPos.line, column: spaceLength },
+						end: { line: cursorPos.line, column: spaceLength + lineComment.length },
+					});
+					afterPos.column -= lineComment.length;
+					deled = true;
+					comment = lineComment;
+				} else { //添加单行注释
+					addPosList.push({ line: cursorPos.line, column: spaceLength });
+					comments.push(lineComment);
+					afterPos.column += lineComment.length;
+					added = true;
+					comment = lineComment;
+				}
+				afterCursorPosList.push(afterPos);
+				preLine = cursorPos.line;
+			}
+			return { added, deled, comment };
+		}
+
+		//同一行的选区或光标需要同步移动
+		function _moveCursor(result) {
+			if (result.added || result.deled) {
+				let cursorPos = allCurosrPosList[nowIndex];
+				while (cursorPos) {
+					let range = this.editor.selecter.getRangeByCursorPos(cursorPos);
+					if (preLine === cursorPos.line) {
+						if (result.added) {
+							cursorPos.column += result.comment.length;
+						} else {
+							cursorPos.column -= result.comment.length;
+						}
+					}
+					if (range) {
+						let ending = Util.comparePos(range.start, cursorPos) === 0 ? 'left' : 'right';
+						if (preLine === range.start.line) {
+							let delta = result.added ? result.comment.length : -result.comment.length;
+							range.start.column += delta;
+							if (range.start.line === range.end.line) {
+								range.end.column += delta;
+								afterCursorPosList.push({
+									start: { line: range.start.line, column: range.start.column },
+									end: { line: range.end.line, column: range.end.column },
+									ending: ending
+								});
+							} else {
+								break;
+							}
+							nowIndex++;
+							cursorPos = allCurosrPosList[nowIndex];
+						} else {
+							break;
+						}
+					} else if (preLine === cursorPos.line) {
+						afterCursorPosList.push({ line: cursorPos.line, column: cursorPos.column });
+						nowIndex++;
+						cursorPos = allCurosrPosList[nowIndex];
+					} else {
+						break;
+					}
 				}
 			}
-		}
-		if (!sourceConfigData
-			|| !sourceConfigData.__comments__
-			|| !sourceConfigData.__comments__.blockComment) {
-			return;
-		}
-		if (regs.block_comment.test(token.scope)) {
-
-		} else if (regs.line_comment.test(token.scope)) {
-
-		} else {
-
 		}
 	}
 	toggleBlockComment() {
@@ -1479,27 +1636,17 @@ class Context {
 	}
 	findPreBlockComment(cursorPos, blockComment) {
 		let line = cursorPos.line;
-		let lineObj = this.htmls[line - 1];
-		let tokens = lineObj.tokens;
-		let text = lineObj.text.slice(0, cursorPos.column);
 		while (line >= 1) {
-			lineObj = this.htmls[line - 1];
-			tokens = lineObj.tokens;
-			text = lineObj.text;
-			for (let i = tokens.length - 1; i >= 0; i--) {
-				let token = tokens[i];
-				let _text = lineObj.text.slice(token.startIndex, token.endIndex);
-				if (line === cursorPos.line && token.endIndex > cursorPos.column) {
+			let text = this.htmls[line - 1].text;
+			let index = text.indexOf(blockComment);
+			if (index > -1) {
+				if (line === cursorPos.line && index >= cursorPos.column) {
+					line--;
 					continue;
 				}
-				if (!regs.block_comment.test(token.scope)) {
-					return;
-				}
-				if (_text === blockComment[0]) {
-					return {
-						start: { line: line, column: token.startIndex },
-						end: { line: line, column: token.endIndex }
-					}
+				return {
+					start: { line: line, column: index },
+					end: { line: line, column: index + blockComment.length }
 				}
 			}
 			line--;
@@ -1507,27 +1654,17 @@ class Context {
 	}
 	findNextBlockComment(cursorPos, blockComment) {
 		let line = cursorPos.line;
-		let lineObj = this.htmls[line - 1];
-		let tokens = lineObj.tokens;
-		let text = lineObj.text.slice(cursorPos.column);
 		while (line <= this.editor.maxLine) {
-			lineObj = this.htmls[line - 1];
-			tokens = lineObj.tokens;
-			text = lineObj.text;
-			for (let i = 0; i < tokens.length; i++) {
-				let token = tokens[i];
-				let _text = lineObj.text.slice(token.startIndex, token.endIndex);
-				if (line === cursorPos.line && token.endIndex < cursorPos.column) {
+			let text = this.htmls[line - 1].text;
+			let index = text.indexOf(blockComment);
+			if (index > -1) {
+				if (line === cursorPos.line && index + blockComment.length < cursorPos.column) {
+					line++;
 					continue;
 				}
-				if (!regs.block_comment.test(token.scope)) {
-					return;
-				}
-				if (_text === blockComment[1]) {
-					return {
-						start: { line: line, column: token.startIndex },
-						end: { line: line, column: token.endIndex }
-					}
+				return {
+					start: { line: line, column: index },
+					end: { line: line, column: index + blockComment.length }
 				}
 			}
 			line++;
@@ -1638,6 +1775,21 @@ class Context {
 			if (tokens[i].startIndex < cursorPos.column
 				&& tokens[i].endIndex >= cursorPos.column) {
 				return tokens[i];
+			}
+		}
+	}
+	getConfigData(token) {
+		let language = Util.getLanguageById(this.editor.language);
+		let grammarData = language && globalData.grammars[language.scopeName];
+		if (grammarData) {
+			let scopeNames = token.scope.match(grammarData.scopeNamesReg);
+			if (scopeNames) {
+				// 一种语言中可能包含多种内嵌语言，优先处理内嵌语言
+				for (let i = scopeNames.length - 1; i >= 0; i--) {
+					if (grammarData.sourceConfigMap[scopeNames[i]]) {
+						return grammarData.sourceConfigMap[scopeNames[i]];
+					}
+				}
 			}
 		}
 	}
