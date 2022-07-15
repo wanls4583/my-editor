@@ -1484,10 +1484,7 @@ class Context {
 				cursorPos = range.start;
 			}
 			token = this.getTokenByCursorPos(cursorPos);
-			if (!token) {
-				return;
-			}
-			sourceConfigData = this.getConfigData(token);
+			sourceConfigData = this.getConfigData(cursorPos);
 			if (!sourceConfigData || !sourceConfigData.__comments__) {
 				return;
 			}
@@ -1557,7 +1554,7 @@ class Context {
 				let _text = text.trimLeft();
 				let spaceLength = text.length - _text.length;
 				let afterPos = null;;
-				if (regs.block_comment.test(token.scope) && blockComment) { //光标在多行注释中，删除多行注释
+				if (token && blockComment && regs.block_comment.test(token.scope)) { //光标在多行注释中，删除多行注释
 					startRange = blockComment[0] && this.findPreBlockComment(cursorPos, blockComment[0]);
 					endRange = blockComment[1] && this.findNextBlockComment(cursorPos, blockComment[1]);
 					if (startRange) {
@@ -1864,22 +1861,55 @@ class Context {
 		let tokens = this.htmls[cursorPos.line - 1].tokens || [];
 		for (let i = 0; i < tokens.length; i++) {
 			if (tokens[i].startIndex < cursorPos.column
-				&& tokens[i].endIndex >= cursorPos.column) {
+				&& tokens[i].endIndex > cursorPos.column) {
 				return tokens[i];
 			}
 		}
 	}
-	getConfigData(token) {
-		let language = Util.getLanguageById(this.editor.language);
-		let grammarData = language && globalData.grammars[language.scopeName];
-		if (grammarData) {
-			let scopeNames = token.scope.match(grammarData.scopeNamesReg);
-			if (scopeNames) {
-				// 一种语言中可能包含多种内嵌语言，优先处理内嵌语言
-				for (let i = scopeNames.length - 1; i >= 0; i--) {
-					if (grammarData.sourceConfigMap[scopeNames[i]]) {
-						return grammarData.sourceConfigMap[scopeNames[i]];
+	getConfigData(cursorPos) {
+		let token = _getNearToken.call(this, cursorPos);
+		if (token) {
+			let language = Util.getLanguageById(this.editor.language);
+			let grammarData = language && globalData.grammars[language.scopeName];
+			if (grammarData) {
+				let scopeNames = token.scope.match(grammarData.scopeNamesReg);
+				if (scopeNames) {
+					// 一种语言中可能包含多种内嵌语言，优先处理内嵌语言
+					for (let i = scopeNames.length - 1; i >= 0; i--) {
+						if (grammarData.sourceConfigMap[scopeNames[i]]) {
+							return grammarData.sourceConfigMap[scopeNames[i]];
+						}
 					}
+				}
+			}
+		}
+
+		function _getNearToken(cursorPos) {
+			let line = cursorPos.line;
+			let tokens = this.htmls[line - 1].tokens || [];
+			for (let i = 0; i < tokens.length; i++) {
+				if (tokens[i].startIndex <= cursorPos.column
+					&& tokens[i].endIndex >= cursorPos.column) {
+					return tokens[i];
+				}
+			}
+			while (--line >= 1) {
+				tokens = this.htmls[line - 1].tokens;
+				if (!tokens) {
+					break;
+				}
+				if (tokens.length) {
+					return tokens.peek();
+				}
+			}
+			line = cursorPos.line;
+			while (++line >= 1) {
+				tokens = this.htmls[line - 1].tokens;
+				if (!tokens) {
+					break;
+				}
+				if (tokens.length) {
+					return tokens[0];
 				}
 			}
 		}
