@@ -1502,6 +1502,35 @@ class Context {
 					}
 				}
 			}
+			line--;
+		}
+	}
+	findNextBlockComment(cursorPos, blockComment) {
+		let line = cursorPos.line;
+		let lineObj = this.htmls[line - 1];
+		let tokens = lineObj.tokens;
+		let text = lineObj.text.slice(cursorPos.column);
+		while (line <= this.editor.maxLine) {
+			lineObj = this.htmls[line - 1];
+			tokens = lineObj.tokens;
+			text = lineObj.text;
+			for (let i = 0; i < tokens.length; i++) {
+				let token = tokens[i];
+				let _text = lineObj.text.slice(token.startIndex, token.endIndex);
+				if (line === cursorPos.line && token.endIndex < cursorPos.column) {
+					continue;
+				}
+				if (!regs.block_comment.test(token.scope)) {
+					return;
+				}
+				if (_text === blockComment[1]) {
+					return {
+						start: { line: line, column: token.startIndex },
+						end: { line: line, column: token.endIndex }
+					}
+				}
+			}
+			line++;
 		}
 	}
 	contentChanged() {
