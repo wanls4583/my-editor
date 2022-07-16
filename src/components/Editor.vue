@@ -335,9 +335,6 @@ export default {
 		space() {
 			return Util.space(this.tabSize);
 		},
-		myContext() {
-			return contexts[this.tabData.id];
-		},
 		editAble() {
 			return this.type !== 'diff';
 		},
@@ -473,8 +470,10 @@ export default {
 	methods: {
 		// 初始化数据
 		initData() {
+			contexts[this.tabData.id] = new Context(this);
+			this.renderedCb = [];
 			this.editorId = this.tabData.id;
-			contexts[this.editorId] = new Context(this);
+			this.myContext = contexts[this.tabData.id];
 			this.maxWidthObj.lineId = this.myContext.htmls[0].lineId;
 			this.tokenizer = new Tokenizer(this, this.myContext);
 			this.lint = new Lint(this, this.myContext);
@@ -704,7 +703,7 @@ export default {
 			if (this.tabData.cursorPos) {
 				//点击左侧文件内容搜索结果，跳转到相应位置
 				this.cursor.setCursorPos(this.tabData.cursorPos);
-				this.scrollToLine(this.tabData.cursorPos.line);
+				this.scrollToLine(this.tabData.cursorPos.line, this.tabData.cursorPos.column);
 				delete this.tabData.cursorPos;
 			}
 			if (this.type !== 'diff') {
@@ -794,6 +793,10 @@ export default {
 				this.renderCursor(scrollToCursor);
 				this.renderBracketMatch();
 				this.$refs.minimap && this.$refs.minimap.render();
+				this.renderedCb.forEach((cb) => {
+					cb();
+				});
+				this.renderedCb.empty();
 			});
 		},
 		// 渲染代码
@@ -1396,10 +1399,22 @@ export default {
 				});
 			}
 		},
-		scrollToLine(line) {
+		scrollToLine(line, column) {
 			let scrollTop = (line - 1) * this.charObj.charHight - this.scrollerArea.height / 2;
 			scrollTop = scrollTop > 0 ? scrollTop : 0;
 			this.setStartLine(scrollTop);
+			if (column !== undefined) {
+				this.renderedCb.push(() => {
+					this.$nextTick(() => {
+						this.scrollToCol(line, column);
+					});
+				});
+			}
+		},
+		scrollToCol(line, column) {
+			let scrollLeft = this.getExactLeft({ line: line, column: column }) - this.scrollerArea.width / 2;
+			scrollLeft = scrollLeft > 0 ? scrollLeft : 0;
+			this.scrollLeft = scrollLeft;
 		},
 		setData(prop, value) {
 			if (typeof this[prop] === 'function') {

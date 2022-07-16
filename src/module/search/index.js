@@ -199,12 +199,24 @@ export default class {
         }
     }
     scrollToResult(result) {
-        let line = result.end.line;
+        let line = result.start.line;
+        let column = result.start.column;
         let height = this.editor.folder.getRelativeLine(line + 1) * this.editor.charObj.charHight;
         if (height > this.editor.scrollTop + this.editor.scrollerArea.height) {
-            this.editor.scrollToLine(line)
+            this.editor.scrollToLine(line, column)
         } else if (line <= this.editor.startLine) {
-            this.editor.scrollToLine(line);
+            this.editor.scrollToLine(line, column);
+        } else {
+            let left = this.editor.getExactLeft(result.start);
+            let right = result.start.line === result.end.line ? this.editor.getExactLeft(result.end) : left;
+            // 强制滚动使光标处于可见区域
+            if (this.editor.scrollToCursor) {
+                if (right > this.editor.scrollerArea.width + this.editor.scrollLeft) {
+                    this.editor.scrollToCol(line, column);
+                } else if (left < this.editor.scrollLeft) {
+                    this.editor.scrollToCol(line, column);
+                }
+            }
         }
     }
     // 搜索框移动到上一个区域

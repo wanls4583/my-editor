@@ -75,7 +75,7 @@ export default class {
 					//点击左侧文件内容搜索结果，跳转到相应位置
 					let editor = globalData.$mainWin.getNowEditor();
 					editor.cursor.setCursorPos(tab.cursorPos);
-					editor.scrollToLine(tab.cursorPos.line);
+					editor.scrollToLine(tab.cursorPos.line, tab.cursorPos.column);
 					delete tab.cursorPos;
 				}
 				this.focusNowEditor();
