@@ -1435,15 +1435,15 @@ class Context {
 		let historyArr = null;
 		let nowIndex = 0;
 		let preLine = 0;
-		let afterCursorPosList = [];
 		let delPosList = [];
 		let addPosList = [];
 		let comments = [];
+		let afterCursorPosList = [];
 		let allCurosrPosList = this.editor.cursor.multiCursorPos.toArray();
 		let originCursorPosList = this.getOriginCursorPosList();
 		while (nowIndex < allCurosrPosList.length) {
 			let result = _toggleLineComment.call(this);
-			_moveCursor.call(this, result);
+			nowIndex = this.moveComentCursor({ result, nowIndex, afterCursorPosList, allCurosrPosList });
 		}
 		if (delPosList.length) {
 			historyArr = this._deleteMultiContent({ rangeOrCursorList: delPosList, justDeleteRange: true });
@@ -1584,7 +1584,7 @@ class Context {
 						} else {
 							comment = { start: startRange.start, comment: blockComment[0] }
 						}
-						afterPos = _getAfterCursor(cursorPos, comment);
+						afterPos = this.getAfterCommentCursor(cursorPos, comment);
 						deled = true;
 					}
 				} else if (lineComment && _text.startsWith(lineComment)) { //删除单行注释
@@ -1593,7 +1593,7 @@ class Context {
 						end: { line: cursorPos.line, column: spaceLength + lineComment.length },
 					});
 					comment = { start: { line: cursorPos.line, column: spaceLength }, comment: lineComment };
-					afterPos = _getAfterCursor(cursorPos, comment);
+					afterPos = this.getAfterCommentCursor(cursorPos, comment);
 					deled = true;
 				} else if (lineComment) { //添加单行注释
 					addPosList.push({ line: cursorPos.line, column: spaceLength });
@@ -1603,7 +1603,7 @@ class Context {
 						comment: lineComment,
 						op: 'add'
 					};
-					afterPos = _getAfterCursor(cursorPos, comment);
+					afterPos = this.getAfterCommentCursor(cursorPos, comment);
 					added = true;
 				} else if (blockComment) { //添加单行块注释
 					if (blockComment[0] && blockComment[1]) {
@@ -1616,7 +1616,7 @@ class Context {
 							comment: blockComment[0],
 							op: 'add'
 						};
-						afterPos = _getAfterCursor(cursorPos, comment);
+						afterPos = this.getAfterCommentCursor(cursorPos, comment);
 						added = true;
 					}
 				}
@@ -1625,122 +1625,126 @@ class Context {
 			}
 			return { added, deled, comment };
 		}
-
-		//同一行的选区或光标需要同步移动
-		function _moveCursor(result) {
-			if (result.added || result.deled) {
-				let cursorPos = allCurosrPosList[nowIndex];
-				let line = result.comment.start.line;
-				let endLine = result.comment.end && result.comment.end.line || line;
-				while (cursorPos) {
-					let range = this.editor.selecter.getRangeByCursorPos(cursorPos);
-					if (range) {
-						if (range.start.line >= line && range.start.line <= endLine) {
-							let afterPos = _getAfterCursor(range.start, result.comment);
-							if (range.start.line === range.end.line) {
-								afterCursorPosList.push({
-									start: afterPos,
-									end: _getAfterCursor(range.end, result.comment),
-									ending: Util.comparePos(range.start, cursorPos) === 0 ? 'left' : 'right'
-								});
-								cursorPos = allCurosrPosList[++nowIndex];
-							} else {
-								range.start = _getAfterCursor(range.start, result.comment);
-								break;
-							}
-						} else {
-							break;
-						}
-					} else if (line === cursorPos.line) {
-						let afterPos = _getAfterCursor(cursorPos, result.comment);
-						afterCursorPosList.push(afterPos);
-						cursorPos = allCurosrPosList[++nowIndex];
-					} else {
-						break;
-					}
-				}
-			}
-		}
-
-		// 删除/添加注释后，获取新的光标位置
-		function _getAfterCursor(cursorPos, comment) {
-			let op = comment.op;
-			let start = comment.start;
-			let end = comment.end;
-			let afterPos = { line: cursorPos.line, column: cursorPos.column };
-			comment = comment.comment;
-			if (end) {
-				if (op === 'add') {
-					if (start.line === end.line) {
-						if (cursorPos.line === start.line && cursorPos.column > start.column) {
-							if (cursorPos.column < start.column + comment[0].length) {
-								afterPos.column += comment[0].length;
-							} else {
-								afterPos.column += comment[0].length + comment[1].length;
-							}
-						}
-					} else if (start.line === cursorPos.line) {
-						if (cursorPos.column > start.column) {
-							afterPos.column += comment[0].length;
-						}
-					} else if (end.line === cursorPos.line) {
-						if (cursorPos.column > end.column) {
-							afterPos.column += comment[1].length;
-						}
-					}
-				} else {
-					if (start.line === end.line) {
-						if (cursorPos.line === start.line && cursorPos.column > start.column) {
-							if (cursorPos.column < start.column + comment[0].length) {
-								afterPos.column -= cursorPos.column - start.column;
-							} else if (cursorPos.column < end.column) {
-								afterPos.column -= comment[0].length;
-							} else if (cursorPos.column < end.column + comment[1].length) {
-								afterPos.column -= comment[0].length;
-								afterPos.column -= cursorPos.column - end.column;
-							} else {
-								afterPos.column -= comment[0].length;
-								afterPos.column -= comment[1].length;
-							}
-						}
-					} else if (start.line === cursorPos.line) {
-						if (cursorPos.column > start.column) {
-							if (cursorPos.column < start.column + comment[0].length) {
-								afterPos.column -= cursorPos.column - start.column;
-							} else {
-								afterPos.column -= comment[0].length;
-							}
-						}
-					} else if (end.line === cursorPos.line) {
-						if (cursorPos.column > end.column) {
-							if (cursorPos.column < end.column + comment[1].length) {
-								afterPos.column -= cursorPos.column - end.column;
-							} else {
-								afterPos.column -= comment[1].length;
-							}
-						}
-					}
-				}
-			} else {
-				if (op === 'add') {
-					if (start.line === cursorPos.line && cursorPos.column > start.column) {
-						afterPos.column += comment.length;
-					}
-				} else {
-					if (start.line === cursorPos.line && cursorPos.column > start.column) {
-						if (cursorPos.column < start.column + comment.length) {
-							afterPos.column -= cursorPos.column - start.column;
-						} else {
-							afterPos.column -= comment.length;
-						}
-					}
-				}
-			}
-			return afterPos;
-		}
 	}
 	toggleBlockComment() {
 
+	}
+	//同一行的选区或光标需要同步移动
+	moveComentCursor({
+		result,
+		nowIndex,
+		allCurosrPosList,
+		afterCursorPosList
+	}) {
+		if (result.added || result.deled) {
+			let cursorPos = allCurosrPosList[nowIndex];
+			let line = result.comment.start.line;
+			let endLine = result.comment.end && result.comment.end.line || line;
+			while (cursorPos) {
+				let range = this.editor.selecter.getRangeByCursorPos(cursorPos);
+				if (range) {
+					if (range.start.line >= line && range.start.line <= endLine) {
+						let afterPos = this.getAfterCommentCursor(range.start, result.comment);
+						if (range.start.line === range.end.line) {
+							afterCursorPosList.push({
+								start: afterPos,
+								end: this.getAfterCommentCursor(range.end, result.comment),
+								ending: Util.comparePos(range.start, cursorPos) === 0 ? 'left' : 'right'
+							});
+							cursorPos = allCurosrPosList[++nowIndex];
+						} else {
+							range.start = this.getAfterCommentCursor(range.start, result.comment);
+							break;
+						}
+					} else {
+						break;
+					}
+				} else if (line === cursorPos.line) {
+					let afterPos = this.getAfterCommentCursor(cursorPos, result.comment);
+					afterCursorPosList.push(afterPos);
+					cursorPos = allCurosrPosList[++nowIndex];
+				} else {
+					break;
+				}
+			}
+		}
+		return nowIndex
+	}
+	// 删除/添加注释后，获取新的光标位置
+	getAfterCommentCursor(cursorPos, comment) {
+		let op = comment.op;
+		let start = comment.start;
+		let end = comment.end;
+		let afterPos = { line: cursorPos.line, column: cursorPos.column };
+		comment = comment.comment;
+		if (end) {
+			if (op === 'add') {
+				if (start.line === end.line) {
+					if (cursorPos.line === start.line && cursorPos.column > start.column) {
+						if (cursorPos.column < start.column + comment[0].length) {
+							afterPos.column += comment[0].length;
+						} else {
+							afterPos.column += comment[0].length + comment[1].length;
+						}
+					}
+				} else if (start.line === cursorPos.line) {
+					if (cursorPos.column > start.column) {
+						afterPos.column += comment[0].length;
+					}
+				} else if (end.line === cursorPos.line) {
+					if (cursorPos.column > end.column) {
+						afterPos.column += comment[1].length;
+					}
+				}
+			} else {
+				if (start.line === end.line) {
+					if (cursorPos.line === start.line && cursorPos.column > start.column) {
+						if (cursorPos.column < start.column + comment[0].length) {
+							afterPos.column -= cursorPos.column - start.column;
+						} else if (cursorPos.column < end.column) {
+							afterPos.column -= comment[0].length;
+						} else if (cursorPos.column < end.column + comment[1].length) {
+							afterPos.column -= comment[0].length;
+							afterPos.column -= cursorPos.column - end.column;
+						} else {
+							afterPos.column -= comment[0].length;
+							afterPos.column -= comment[1].length;
+						}
+					}
+				} else if (start.line === cursorPos.line) {
+					if (cursorPos.column > start.column) {
+						if (cursorPos.column < start.column + comment[0].length) {
+							afterPos.column -= cursorPos.column - start.column;
+						} else {
+							afterPos.column -= comment[0].length;
+						}
+					}
+				} else if (end.line === cursorPos.line) {
+					if (cursorPos.column > end.column) {
+						if (cursorPos.column < end.column + comment[1].length) {
+							afterPos.column -= cursorPos.column - end.column;
+						} else {
+							afterPos.column -= comment[1].length;
+						}
+					}
+				}
+			}
+		} else {
+			if (op === 'add') {
+				if (start.line === cursorPos.line && cursorPos.column > start.column) {
+					afterPos.column += comment.length;
+				}
+			} else {
+				if (start.line === cursorPos.line && cursorPos.column > start.column) {
+					if (cursorPos.column < start.column + comment.length) {
+						afterPos.column -= cursorPos.column - start.column;
+					} else {
+						afterPos.column -= comment.length;
+					}
+				}
+			}
+		}
+		return afterPos;
 	}
 	findPreBlockComment(cursorPos, blockComment) {
 		let line = cursorPos.line;
