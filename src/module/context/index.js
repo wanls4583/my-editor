@@ -1546,7 +1546,7 @@ class Context {
 							}
 						}
 						addPosList.forEach((item) => { item.column = column });
-						afterCursorPosList.push({ start, end });
+						afterCursorPosList.push({ start, end, ending });
 					}
 				} else { //添加多行块注释
 					let start = { line: range.start.line, column: range.start.column };
@@ -1562,7 +1562,7 @@ class Context {
 					if (start.line === end.line) {
 						end.column += blockComment[0].length;
 					}
-					afterCursorPosList.push({ start, end });
+					afterCursorPosList.push({ start, end, ending });
 					comments.push(blockComment[0]);
 					comments.push(blockComment[1]);
 					added = true;
@@ -1627,7 +1627,133 @@ class Context {
 		}
 	}
 	toggleBlockComment() {
+		let serial = this.serial++;
+		let historyArr = null;
+		let nowIndex = 0;
+		let preLine = 0;
+		let delPosList = [];
+		let addPosList = [];
+		let comments = [];
+		let afterCursorPosList = [];
+		let allCurosrPosList = this.editor.cursor.multiCursorPos.toArray();
+		let originCursorPosList = this.getOriginCursorPosList();
+		while (nowIndex < allCurosrPosList.length) {
+			let result = _toggleBlcokComment.call(this);
+			nowIndex = this.moveComentCursor({ result, nowIndex, afterCursorPosList, allCurosrPosList });
+		}
+		if (delPosList.length) {
+			historyArr = this._deleteMultiContent({ rangeOrCursorList: delPosList, justDeleteRange: true });
+			historyArr.serial = serial;
+			historyArr.originCursorPosList = originCursorPosList;
+			originCursorPosList = null;
+			this.editor.history.pushHistory(historyArr);
+		}
+		if (addPosList.length) {
+			historyArr = this._insertMultiContent({ text: comments, cursorPosList: addPosList });
+			historyArr.serial = serial;
+			if (originCursorPosList) {
+				historyArr.originCursorPosList = originCursorPosList;
+			}
+			this.editor.history.pushHistory(historyArr);
+		}
+		if (historyArr) {
+			historyArr.afterCursorPosList = afterCursorPosList;
+			this.addCursorList(afterCursorPosList);
+		}
 
+		function _toggleBlcokComment() {
+			let token = null;
+			let range = null;
+			let startRange = null;
+			let endRange = null;
+			let added = false;
+			let deled = false;
+			let sourceConfigData = null;
+			let blockComment = null;;
+			let comment = '';
+			let ending = '';
+			let cursorPos = allCurosrPosList[nowIndex++];
+			range = this.editor.selecter.getRangeByCursorPos(cursorPos);
+			if (range) {
+				ending = Util.comparePos(range.start, cursorPos) === 0 ? 'left' : 'right';
+				cursorPos = range.start;
+			}
+			token = this.getTokenByCursorPos(cursorPos);
+			sourceConfigData = this.getConfigData(cursorPos);
+			if (!sourceConfigData || !sourceConfigData.__comments__) {
+				return;
+			}
+			blockComment = sourceConfigData.__comments__.blockComment;
+			if (!blockComment || blockComment.length < 2) {
+				return;
+			}
+			if (token && blockComment && regs.block_comment.test(token.scope)) { //选区在多行注释中，删除多行注释
+				startRange = blockComment[0] && this.findPreBlockComment(cursorPos, blockComment[0]);
+				endRange = blockComment[1] && this.findNextBlockComment(cursorPos, blockComment[1]);
+			}
+			if (range) {
+				if (startRange && endRange
+					&& Util.comparePos(range.start, startRange.start) >= 0
+					&& Util.comparePos(range.end, endRange.end) <= 0
+				) { //删除多行快注释
+					comment = { start: startRange.start, end: endRange.start, comment: blockComment };
+					delPosList.push(startRange);
+					delPosList.push(endRange);
+					afterCursorPosList.push({
+						start: this.getAfterCommentCursor(range.start, comment),
+						end: this.getAfterCommentCursor(range.end, comment),
+						ending: ending
+					});
+					deled = true;
+				} else { //添加多行块注释
+					let start = Object.assign({}, range.start);
+					let end = Object.assign({}, range.end);
+					addPosList.push(range.start);
+					addPosList.push(range.end);
+					comments.push(blockComment[0]);
+					comments.push(blockComment[1]);
+					comment = { start: range.start, end: range.end, comment: blockComment, op: 'add' };
+					added = true;
+					start.column += blockComment[0].length;
+					if (start.line === end.line) {
+						end.column += blockComment[0].length;
+					}
+					afterCursorPosList.push({ start, end, ending });
+				}
+				preLine = range.end.line;
+			} else {
+				let afterPos = null;
+				let text = this.htmls[cursorPos.line - 1].text;
+				let _text = text.trimLeft();
+				let spaceLength = text.length - _text.length;
+				if (startRange) { //光标在多行注释中，删除多行注释
+					delPosList.push(startRange);
+					endRange && delPosList.push(endRange);
+					if (endRange) {
+						comment = { start: startRange.start, end: endRange.start, comment: blockComment };
+					} else {
+						comment = { start: startRange.start, comment: blockComment[0] }
+					}
+					afterPos = this.getAfterCommentCursor(cursorPos, comment);
+					deled = true;
+				} else { //添加单行注释块
+					addPosList.push({ line: cursorPos.line, column: spaceLength });
+					comments.push(blockComment[0]);
+					addPosList.push({ line: cursorPos.line, column: this.htmls[cursorPos.line - 1].text.length });
+					comments.push(blockComment[1]);
+					comment = {
+						start: { line: cursorPos.line, column: spaceLength },
+						comment: blockComment[0],
+						op: 'add'
+					};
+					afterPos = this.getAfterCommentCursor(cursorPos, comment);
+					added = true;
+				}
+				afterCursorPosList.push(afterPos);
+				preLine = cursorPos.line;
+			}
+			return { added, deled, comment };
+		}
 	}
 	//同一行的选区或光标需要同步移动
 	moveComentCursor({
@@ -1645,14 +1771,14 @@ class Context {
 				if (range) {
 					if (range.start.line >= line && range.start.line <= endLine) {
 						let afterPos = this.getAfterCommentCursor(range.start, result.comment);
-						if (range.start.line === range.end.line) {
+						if (range.start.line === range.end.line) { //该选区不需进行下一次处理
 							afterCursorPosList.push({
 								start: afterPos,
 								end: this.getAfterCommentCursor(range.end, result.comment),
 								ending: Util.comparePos(range.start, cursorPos) === 0 ? 'left' : 'right'
 							});
 							cursorPos = allCurosrPosList[++nowIndex];
-						} else {
+						} else { //该选区还需进行下一次处理
 							range.start = this.getAfterCommentCursor(range.start, result.comment);
 							break;
 						}
@@ -1680,19 +1806,15 @@ class Context {
 		if (end) {
 			if (op === 'add') {
 				if (start.line === end.line) {
-					if (cursorPos.line === start.line && cursorPos.column > start.column) {
-						if (cursorPos.column < start.column + comment[0].length) {
-							afterPos.column += comment[0].length;
-						} else {
-							afterPos.column += comment[0].length + comment[1].length;
-						}
+					if (cursorPos.line === start.line && cursorPos.column >= start.column) {
+						afterPos.column += comment[0].length + comment[1].length;
 					}
 				} else if (start.line === cursorPos.line) {
-					if (cursorPos.column > start.column) {
+					if (cursorPos.column >= start.column) {
 						afterPos.column += comment[0].length;
 					}
 				} else if (end.line === cursorPos.line) {
-					if (cursorPos.column > end.column) {
+					if (cursorPos.column >= end.column) {
 						afterPos.column += comment[1].length;
 					}
 				}
@@ -1731,7 +1853,7 @@ class Context {
 			}
 		} else {
 			if (op === 'add') {
-				if (start.line === cursorPos.line && cursorPos.column > start.column) {
+				if (start.line === cursorPos.line && cursorPos.column >= start.column) {
 					afterPos.column += comment.length;
 				}
 			} else {
