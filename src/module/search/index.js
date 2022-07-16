@@ -306,12 +306,17 @@ export default class {
     getNowWord() {
         let str = '';
         let res = null;
+        let delta = 0;
         let index = this.editor.nowCursorPos.column;
         let startColumn = index;
         let endColumn = index;
         let text = this.context.htmls[this.editor.nowCursorPos.line - 1].text;
         // 单词头部离当前光标最多50个字符的距离
-        text = index > 50 ? text.slice(index - 50) : text;
+        if (index > 50) {
+            text = text.slice(index - 50);
+            index = 50;
+            delta = index - 50;
+        }
         while ((res = this.wordPattern.exec(text))) {
             if (res.index <= index && res.index + res[0].length >= index) {
                 startColumn = res.index;
@@ -327,8 +332,8 @@ export default class {
         return {
             text: str,
             range: {
-                start: { line: this.editor.nowCursorPos.line, column: startColumn, },
-                end: { line: this.editor.nowCursorPos.line, column: endColumn, },
+                start: { line: this.editor.nowCursorPos.line, column: startColumn + delta, },
+                end: { line: this.editor.nowCursorPos.line, column: endColumn + delta, },
             },
         };
     }
