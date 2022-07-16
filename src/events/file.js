@@ -197,24 +197,27 @@ export default class {
 				if (fs.existsSync(filePath)) {
 					tab.loaded = true;
 					Util.readFile(filePath).then(data => {
-						contexts[tab.id].reload(data);
-						EventBus.$emit('file-opened', filePath);
-						if (!tab.tempPath) {
-							EventBus.$emit('file-saved', tab.path);
-							tab.saved = true;
+						if (contexts[tab.id]) { //此时tab可能已经关闭
+							contexts[tab.id].reload(data);
+							EventBus.$emit('file-opened', filePath);
+							if (!tab.tempPath) {
+								EventBus.$emit('file-saved', tab.path);
+								tab.saved = true;
+							}
+							//点击搜索结果
+							if (fileObj && fileObj.range) {
+								globalData.$mainWin.getEditor(tab.id).cursor.setCursorPos(Object.assign({}, fileObj.range.start));
+							}
+							tab.mtimeMs = fs.statSync(filePath).mtimeMs;
+							EventBus.$emit('editor-change', tab.id);
+							EventBus.$emit('language-check', tab.id);
 						}
-						//点击搜索结果
-						if (fileObj && fileObj.range) {
-							globalData.$mainWin.getEditor(tab.id).cursor.setCursorPos(Object.assign({}, fileObj.range.start));
-						}
-						tab.mtimeMs = fs.statSync(filePath).mtimeMs;
 					});
 				}
 			} else if (fileObj && fileObj.range) {
 				globalData.$mainWin.getEditor(tab.id).cursor.setCursorPos(Object.assign({}, fileObj.range.start));
+				EventBus.$emit('editor-change', tab.id);
 			}
-			EventBus.$emit('editor-change', tab.id);
-			EventBus.$emit('language-check');
 		}
 	}
 	choseFile() {

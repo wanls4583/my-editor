@@ -698,6 +698,9 @@ export default {
 			this.setContentHeight();
 			this.render();
 			this.focus();
+			if (this._nowCursorPos) {
+				this.setNowCursorPos(this._nowCursorPos);
+			}
 			if (this.type !== 'diff') {
 				// 获取文件git修改记录
 				this.differ.run();
@@ -1415,6 +1418,11 @@ export default {
 			});
 		},
 		setNowCursorPos(nowCursorPos) {
+			if (!this.scrollerArea.height) {
+				//DOM还未初始化
+				this._nowCursorPos = nowCursorPos;
+				return;
+			}
 			this.nowCursorPos = nowCursorPos || { line: 1, column: 0 };
 			if (nowCursorPos) {
 				let setNowCursorPosId = this.setNowCursorPosId + 1 || 1;

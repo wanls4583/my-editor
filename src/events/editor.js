@@ -46,8 +46,8 @@ export default class {
 				this.editorList.splice();
 			}
 		});
-		EventBus.$on('language-check', () => {
-			this.checkLanguage();
+		EventBus.$on('language-check', (id) => {
+			this.checkLanguage(id);
 		});
 		EventBus.$on('folder-opened', () => {
 			this.editorList.empty();
@@ -55,22 +55,25 @@ export default class {
 		});
 	}
 	changeTab(id) {
-		let tab = Util.getTabById(this.editorList, id);
-		if (tab && !tab.active) {
-			if (tab.path && !tab.loaded) {
-				//tab对应的文件内容还未加载
-				EventBus.$emit('file-open', tab);
+		cancelAnimationFrame(this.changeTabTimer);
+		this.changeTabTimer = requestAnimationFrame(() => {
+			let tab = Util.getTabById(this.editorList, id);
+			if (tab && !tab.active) {
+				if (tab.path && !tab.loaded) {
+					//tab对应的文件内容还未加载
+					EventBus.$emit('file-open', tab);
+				} else {
+					this.editorList.forEach(item => {
+						item.active = false;
+					});
+					tab.active = true;
+					globalData.nowEditorId = id;
+					this.changeStatus();
+				}
 			} else {
-				this.editorList.forEach(item => {
-					item.active = false;
-				});
-				tab.active = true;
-				globalData.nowEditorId = id;
-				this.changeStatus();
+				this.focusNowEditor();
 			}
-		} else {
-			this.focusNowEditor();
-		}
+		})
 	}
 	saveTab(id) {
 		let tab = Util.getTabById(this.editorList, id);
@@ -97,9 +100,10 @@ export default class {
 		});
 	}
 	// 检查当前打开的文件的语言
-	checkLanguage() {
-		if (globalData.nowEditorId) {
-			let tab = Util.getTabById(this.editorList, globalData.nowEditorId);
+	checkLanguage(id) {
+		id = id || globalData.nowEditorId;
+		if (id) {
+			let tab = Util.getTabById(this.editorList, id);
 			let suffix = /\.[^\.]+$/.exec(tab.name);
 			if (!suffix) {
 				return;
