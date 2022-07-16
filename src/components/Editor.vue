@@ -1106,7 +1106,9 @@ export default {
 					let lineObj = null;
 					let startPos = null;
 					let endPos = null;
-					if (bracketMatch && !this.selecter.getRangeByCursorPos({ line: bracketMatch.start.line, column: bracketMatch.start.startIndex })) {
+					let range = bracketMatch && this.selecter.getRangeByCursorPos({ line: bracketMatch.start.line, column: bracketMatch.start.startIndex });
+					range = range || (bracketMatch && this.selecter.getRangeByCursorPos({ line: bracketMatch.end.line, column: bracketMatch.end.startIndex }));
+					if (bracketMatch && !range) {
 						this.bracketMatch = bracketMatch;
 						lineObj = this.myContext.htmls[this.bracketMatch.start.line - 1];
 						startPos = this.bracketMatch.start;

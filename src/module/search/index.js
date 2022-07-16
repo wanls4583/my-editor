@@ -22,7 +22,7 @@ export default class {
         let config = null;
         searchObj = searchObj || {};
         if (hasCache) {
-            resultObj = this.getFromCache(searchObj.direct, searchObj.increase);
+            resultObj = this.getFromCache(searchObj.direct, searchObj.active);
         } else {
             config = (searchObj && searchObj.config) || this.getSearchConfig();
             if (!config || !config.text) {
@@ -31,7 +31,7 @@ export default class {
             resultObj = this.execSearch(config);
         }
         if (resultObj && resultObj.result) {
-            if (this.editor.searcher === this || searchObj.increase) {
+            if (this.editor.searcher === this || searchObj.active) {
                 if (hasCache) {
                     this.editor.cursor.addCursorPos(resultObj.result.end);
                     this.selecter.addActive(resultObj.result.end);
@@ -232,11 +232,11 @@ export default class {
     getNowRange() {
         return this.cacheData.results[this.cacheData.index];
     }
-    getFromCache(direct, increase) {
+    getFromCache(direct, active) {
         let results = this.cacheData.results;
         let result = null;
         let index = 0;
-        if (this.editor.fSearcher === this && !increase) {
+        if (this.editor.fSearcher === this && !active) {
             // 搜索框移动活动区域，可循环移动
             if (direct === 'up') {
                 index = this.setPrevActive(this.editor.nowCursorPos);

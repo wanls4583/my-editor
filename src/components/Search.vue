@@ -11,7 +11,17 @@
 		<div style="flex-grow: 1">
 			<div class="my-search-top">
 				<div :class="{ 'my-active': input1Focus }" class="my-search-input">
-					<textarea :style="{ height: input1Height + 'px' }" @blur="input1Focus = false" @focus="input1Focus = true" @keydown="onKeydown" ref="input1" spellcheck="false" type="text" v-model="text"></textarea>
+					<textarea
+						:style="{ height: input1Height + 'px' }"
+						@blur="input1Focus = false"
+						@focus="input1Focus = true"
+						@input="onInput"
+						@keydown="onKeydown"
+						ref="input1"
+						spellcheck="false"
+						type="text"
+						v-model="text"
+					></textarea>
 					<span :class="{ 'my-active': matchCase }" @click="changeCase" class="my-search-suffix" title="Match Case(Alt+C)">Aa</span>
 					<span :class="{ 'my-active': wholeWord }" @click="changeWhole" class="my-search-suffix iconfont icon-whole-word" title="Match Whole Word(Alt+W)"></span>
 				</div>
@@ -96,7 +106,6 @@ export default {
 		text() {
 			let lines = this.text.split(/\n/);
 			this.input1Height = lines.length * 20 + 10;
-			this.search();
 		},
 		replaceText() {
 			let lines = this.replaceText.split(/\n/);
@@ -166,10 +175,10 @@ export default {
 					this.text = searchConfig.text;
 					this.wholeWord = searchConfig.wholeWord;
 					this.matchCase = searchConfig.matchCase;
-					resultObj = this.editor.fSearcher.search({ direct: direct, increase: true });
+					resultObj = this.editor.fSearcher.search({ direct: direct, active: true });
 				}
 			} else {
-				resultObj = this.editor.fSearcher.search({ direct: direct, increase: true });
+				resultObj = this.editor.fSearcher.search({ direct: direct, active: true });
 			}
 			if (resultObj) {
 				this.now = resultObj.now;
@@ -255,6 +264,9 @@ export default {
 					}
 				}
 			}
+		},
+		onInput() {
+			this.search();
 		},
 	},
 };
