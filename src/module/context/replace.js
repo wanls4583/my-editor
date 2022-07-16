@@ -49,12 +49,6 @@ export default class {
         };
         this.editor.searcher.clearSearch();
         this.replace(text, [range]);
-        // 格式化内容时，延迟渲染，等待高亮
-        cancelAnimationFrame(this.renderTimer);
-        this.renderTimer = setTimeout(() => {
-            this.renderTimer = null;
-            this.context.render();
-        }, 200);
     }
     // 点击自动提示替换输入的内容
     replaceTip(tip) {

@@ -9,6 +9,7 @@ import CopyLine from './copy-line';
 import DeleteLine from './delete-line';
 import Replace from './replace';
 import Indent from './indent';
+import InsertLine from './insert-line';
 import EventBus from '@/event';
 import Util from '@/common/util';
 import globalData from '@/data/globalData';
@@ -24,6 +25,7 @@ class Context {
 		this.deleteLineObj = new DeleteLine(editor, this);
 		this.replaceObj = new Replace(editor, this);
 		this.indentObj = new Indent(editor, this);
+		this.insertLineObj = new InsertLine(editor, this);
 		this.reset();
 	}
 	reset() {
@@ -55,7 +57,6 @@ class Context {
 		this.allText = '';
 		cancelIdleCallback(this.setLineWidthTimer);
 		cancelAnimationFrame(this.renderTimer);
-		clearTimeout(this.renderTimer);
 	}
 	render(scrollToCursor) {
 		this.scrollToCursor = scrollToCursor;
@@ -108,6 +109,12 @@ class Context {
 	}
 	removeAnIndent() {
 		this.indentObj.removeAnIndent();
+	}
+	insertEmptyLineUp() {
+		this.insertLineObj.insertEmptyLineUp();
+	}
+	insertEmptyLineDown() {
+		this.insertLineObj.insertEmptyLineDown();
 	}
 	insertContent(text, command) {
 		let historyArr = null;
@@ -576,82 +583,6 @@ class Context {
 				this.editor.cursor.addCursorPos(item);
 			}
 		}
-	}
-	insertEmptyLineUp() {
-		let cursorPosList = [];
-		let preItem = {};
-		let lineOne = false;
-		let historyArr = null;
-		let originCursorPosList = [];
-		this.editor.cursor.multiCursorPos.forEach((item) => {
-			let range = this.editor.selecter.getRangeByCursorPos(item);
-			if (preItem.line !== item.line) {
-				if (item.line === 1) {
-					cursorPosList.push({
-						line: item.line,
-						column: 0
-					});
-					lineOne = true;
-				} else {
-					cursorPosList.push({
-						line: item.line - 1,
-						column: this.htmls[item.line - 2].text.length
-					});
-				}
-			}
-			if (range) {
-				originCursorPosList.push({
-					start: { line: range.start.line, column: range.start.column },
-					end: { line: range.end.line, column: range.end.column },
-					ending: Util.comparePos(range.start, range) === 0 ? 'left' : 'right'
-				});
-			} else {
-				originCursorPosList.push({
-					line: item.line,
-					column: item.column
-				});
-			}
-			preItem = item;
-		});
-		historyArr = this._insertMultiContent({ text: '\n', cursorPosList });
-		historyArr.originCursorPosList = originCursorPosList;
-		this.addCursorList(historyArr.map((item) => { return item.cursorPos }));
-		this.editor.history.pushHistory(historyArr);
-		if (lineOne) {
-			this.editor.cursor.updateCursorPos(this.editor.cursor.multiCursorPos.get(0), 1, 0);
-		}
-	}
-	insertEmptyLineDown() {
-		let cursorPosList = [];
-		let preItem = {};
-		let historyArr = null;
-		let originCursorPosList = [];
-		this.editor.cursor.multiCursorPos.forEach((item) => {
-			let range = this.editor.selecter.getRangeByCursorPos(item);
-			if (preItem.line !== item.line) {
-				cursorPosList.push({
-					line: item.line,
-					column: this.htmls[item.line - 1].text.length
-				});
-			}
-			if (range) {
-				originCursorPosList.push({
-					start: { line: range.start.line, column: range.start.column },
-					end: { line: range.end.line, column: range.end.column },
-					ending: Util.comparePos(range.start, range) === 0 ? 'left' : 'right'
-				});
-			} else {
-				originCursorPosList.push({
-					line: item.line,
-					column: item.column
-				});
-			}
-			preItem = item;
-		});
-		historyArr = this._insertMultiContent({ text: '\n', cursorPosList });
-		historyArr.originCursorPosList = originCursorPosList;
-		this.addCursorList(historyArr.map((item) => { return item.cursorPos }));
-		this.editor.history.pushHistory(historyArr);
 	}
 	/**
 	 * 向前或者向后删除一个单词
