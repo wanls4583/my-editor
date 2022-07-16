@@ -1562,9 +1562,9 @@ class Context {
 						delPosList.push(startRange);
 						endRange && delPosList.push(endRange);
 						if (endRange) {
-							comment = { start: startRange, end: endRange, comment: blockComment };
+							comment = { start: startRange.start, end: endRange.start, comment: blockComment };
 						} else {
-							comment = { start: startRange, comment: blockComment[0] }
+							comment = { start: startRange.start, comment: blockComment[0] }
 						}
 						afterPos = _getAfterCursor(cursorPos, comment);
 						deled = true;
@@ -1599,6 +1599,7 @@ class Context {
 							op: 'add'
 						};
 						afterPos = _getAfterCursor(cursorPos, comment);
+						added = true;
 					}
 				}
 				afterCursorPosList.push(afterPos);
