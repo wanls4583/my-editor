@@ -1518,7 +1518,7 @@ class Context {
 							ending: ending
 						});
 						deled = true;
-					} else { //添加单行注释
+					} else if (lineComment) { //添加单行注释
 						let start = { line: range.start.line, column: range.start.column };
 						let end = { line: range.end.line, column: range.end.column };
 						let column = Infinity;
@@ -1548,6 +1548,24 @@ class Context {
 						addPosList.forEach((item) => { item.column = column });
 						afterCursorPosList.push({ start, end });
 					}
+				} else { //添加多行块注释
+					let start = { line: range.start.line, column: range.start.column };
+					let end = { line: range.end.line, column: range.end.column };
+					addPosList.push(Object.assign({}, start));
+					addPosList.push(Object.assign({}, end));
+					comment = {
+						start: Object.assign({}, end),
+						comment: blockComment,
+						op: 'add'
+					};
+					start.column += blockComment[0].length;
+					if (start.line === end.line) {
+						end.column += blockComment[0].length;
+					}
+					afterCursorPosList.push({ start, end });
+					comments.push(blockComment[0]);
+					comments.push(blockComment[1]);
+					added = true;
 				}
 				preLine = range.end.line;
 			} else {
