@@ -10,7 +10,7 @@ export default class {
         this.context = context;
     }
     toggleLineComment() {
-        let serial = this.serial++;
+        let serial = this.context.serial++;
         let historyArr = null;
         let nowIndex = 0;
         let preLine = 0;
@@ -206,7 +206,7 @@ export default class {
         }
     }
     toggleBlockComment() {
-        let serial = this.serial++;
+        let serial = this.context.serial++;
         let historyArr = null;
         let nowIndex = 0;
         let delPosList = [];

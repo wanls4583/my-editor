@@ -2,6 +2,10 @@ import Util from '@/common/util';
 import Enum from '@/data/enum';
 import expand from 'emmet';
 
+const regs = {
+	endTag: /(?=\<\/)/,
+};
+
 export default class {
     constructor(editor, context) {
         this.editor = editor;
@@ -9,7 +13,7 @@ export default class {
     }
     replace(texts, ranges) {
         let historyArr = null;
-        let serial = this.serial++;
+        let serial = this.context.serial++;
         let originCursorPosList = [];
         this.editor.cursor.multiCursorPos.forEach((item) => {
             let range = this.editor.selecter.getRangeByCursorPos(item);
