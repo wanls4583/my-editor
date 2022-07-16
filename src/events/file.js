@@ -206,7 +206,7 @@ export default class {
 							}
 							//点击搜索结果
 							if (fileObj && fileObj.range) {
-								globalData.$mainWin.getEditor(tab.id).cursor.setCursorPos(Object.assign({}, fileObj.range.start));
+								tab.cursorPos = Object.assign({}, fileObj.range.start);
 							}
 							tab.mtimeMs = fs.statSync(filePath).mtimeMs;
 							EventBus.$emit('editor-change', tab.id);
@@ -215,7 +215,7 @@ export default class {
 					});
 				}
 			} else if (fileObj && fileObj.range) {
-				globalData.$mainWin.getEditor(tab.id).cursor.setCursorPos(Object.assign({}, fileObj.range.start));
+				tab.cursorPos = Object.assign({}, fileObj.range.start);
 				EventBus.$emit('editor-change', tab.id);
 			}
 		}

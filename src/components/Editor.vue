@@ -701,6 +701,12 @@ export default {
 			if (this._nowCursorPos) {
 				this.setNowCursorPos(this._nowCursorPos);
 			}
+			if (this.tabData.cursorPos) {
+				//点击左侧文件内容搜索结果，跳转到相应位置
+				this.cursor.setCursorPos(this.tabData.cursorPos);
+				this.scrollToLine(this.tabData.cursorPos.line);
+				delete this.tabData.cursorPos;
+			}
 			if (this.type !== 'diff') {
 				// 获取文件git修改记录
 				this.differ.run();
@@ -1431,6 +1437,7 @@ export default {
 				this._nowCursorPos = nowCursorPos;
 				return;
 			}
+			this._nowCursorPos = null;
 			this.nowCursorPos = nowCursorPos || { line: 1, column: 0 };
 			if (nowCursorPos) {
 				let setNowCursorPosId = this.setNowCursorPosId + 1 || 1;

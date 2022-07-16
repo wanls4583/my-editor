@@ -35,6 +35,7 @@ export default class {
                 if (hasCache) {
                     this.editor.cursor.addCursorPos(resultObj.result.end);
                     this.selecter.addActive(resultObj.result.end);
+                    this.scrollToResult(resultObj.result);
                 } else {
                     //当前光标已处于选中区域边界，则不处理（历史记录后退时可能存在多个选中区域的情况）
                     if (this.selecter.activedRanges.size === 0) {
@@ -49,6 +50,7 @@ export default class {
                     this.selecter.setActive(resultObj.result.end);
                     this.editor.cursor.setCursorPos(resultObj.result.end);
                     this.editor.searcher.clearSearch(); //搜索框确认搜索后，删除按键搜索
+                    this.scrollToResult(resultObj.result);
                 } else {
                     this.selecter.addRange(resultObj.results);
                     this.clearActive();
@@ -194,6 +196,15 @@ export default class {
         this.cacheData = cacheData;
         if (cacheData) {
             this.selecter.addRange(cacheData.results);
+        }
+    }
+    scrollToResult(result) {
+        let line = result.end.line;
+        let height = this.editor.folder.getRelativeLine(line + 1) * this.editor.charObj.charHight;
+        if (height > this.editor.scrollTop + this.editor.scrollerArea.height) {
+            this.editor.scrollToLine(line)
+        } else if (line <= this.editor.startLine) {
+            this.editor.scrollToLine(line);
         }
     }
     // 搜索框移动到上一个区域
