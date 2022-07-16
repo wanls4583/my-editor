@@ -6,10 +6,10 @@
 import Comment from './comment';
 import MoveLine from './move-line';
 import CopyLine from './copy-line';
+import DeleteLine from './delete-line';
+import Replace from './replace';
 import EventBus from '@/event';
 import Util from '@/common/util';
-import Enum from '@/data/enum';
-import expand from 'emmet';
 import globalData from '@/data/globalData';
 
 const regs = {
@@ -24,6 +24,8 @@ class Context {
 		this.commentObj = new Comment(editor, this);
 		this.moveLineObj = new MoveLine(editor, this);
 		this.copyLineObj = new CopyLine(editor, this);
+		this.deleteLineObj = new DeleteLine(editor, this);
+		this.replaceObj = new Replace(editor, this);
 		this.reset();
 	}
 	reset() {
@@ -84,6 +86,18 @@ class Context {
 	}
 	copyLineDown() {
 		this.copyLineObj.copyLineDown();
+	}
+	deleteLine() {
+		this.deleteLineObj.deleteLine();
+	}
+	replace(texts, ranges) {
+		this.replaceObj.replace(texts, ranges);
+	}
+	reload(text) {
+		this.replaceObj.replace(text);
+	}
+	replaceTip(tip) {
+		this.replaceObj.replaceTip(tip);
 	}
 	insertContent(text, command) {
 		let historyArr = null;
@@ -679,199 +693,6 @@ class Context {
 			historyArr.originCursorPosList = originCursorPosList;
 			this.addCursorList(historyArr.map((item) => { return item.cursorPos }));
 			this.editor.history.pushHistory(historyArr);
-		}
-	}
-	// 删除当前行
-	deleteLine() {
-		let historyArr = null;
-		let list = this.editor.cursor.multiCursorPos.toArray();
-		let originCursorPosList = [];
-		let afterCursorPosList = [];
-		let cursorPosList = [];
-		let columns = [];
-		let preLine = -1;
-		for (let i = 0; i < list.length; i++) {
-			let item = list[i];
-			let range = this.editor.selecter.getRangeByCursorPos(item);
-			if (range) {
-				let end = { line: range.end.line + 1, column: 0 };
-				if (end.line > this.editor.maxLine) {
-					end = {
-						line: range.end.line,
-						column: this.htmls[range.end.line - 1].text.length
-					};
-				}
-				if (preLine + 1 >= range.start.line) {
-					cursorPosList.peek().end = end;
-				} else {
-					cursorPosList.push({ start: { line: range.start.line, column: 0 }, end: end });
-					columns.push(item.column);
-				}
-				originCursorPosList.push({
-					start: { line: range.start.line, column: range.start.column },
-					end: { line: range.end.line, column: range.end.column },
-					ending: Util.comparePos(range.start, item) === 0 ? 'left' : 'right'
-				});
-				preLine = range.end.line;
-			} else {
-				let end = { line: item.line + 1, column: 0 };
-				if (end.line > this.editor.maxLine) {
-					end = { line: item.line, column: this.htmls[item.line - 1].text.length };
-				}
-				if (preLine + 1 >= item.line) {
-					cursorPosList.peek().end = end;
-				} else {
-					cursorPosList.push({ start: { line: item.line, column: 0 }, end: end });
-					columns.push(item.column);
-				}
-				originCursorPosList.push({ line: item.line, column: item.column });
-				preLine = item.line;
-			}
-		}
-		historyArr = this._deleteMultiContent({ rangeOrCursorList: cursorPosList });
-		historyArr.forEach((item, index) => {
-			let column = columns[index];
-			if (column > this.htmls[item.cursorPos.line - 1].text.length) {
-				column = this.htmls[item.cursorPos.line - 1].text.length;
-			}
-			afterCursorPosList.push({ line: item.cursorPos.line, column: column });
-		});
-		historyArr.originCursorPosList = originCursorPosList;
-		historyArr.afterCursorPosList = afterCursorPosList;
-		this.addCursorList(afterCursorPosList);
-		this.editor.history.pushHistory(historyArr);
-	}
-	// 文件变动，重写加载文件内容
-	reload(text) {
-		let range = {
-			start: { line: 1, column: 0 },
-			end: { line: this.htmls.length, column: this.htmls.peek().text.length }
-		};
-		this.editor.searcher.clearSearch();
-		this.replace(text, [range]);
-		// 格式化内容时，延迟渲染，等待高亮
-		cancelAnimationFrame(this.renderTimer);
-		this.renderTimer = setTimeout(() => {
-			this.renderTimer = null;
-			this.render();
-		}, 200);
-	}
-	replace(texts, ranges) {
-		let historyArr = null;
-		let serial = this.serial++;
-		let originCursorPosList = [];
-		this.editor.cursor.multiCursorPos.forEach((item) => {
-			let range = this.editor.selecter.getRangeByCursorPos(item);
-			if (range) {
-				originCursorPosList.push({
-					start: { line: range.start.line, column: range.start.column },
-					end: { line: range.end.line, column: range.end.column },
-					ending: Util.comparePos(range.start, range) === 0 ? 'left' : 'right'
-				});
-			} else {
-				originCursorPosList.push({
-					line: item.line,
-					column: item.column
-				});
-			}
-		});
-		historyArr = this._deleteMultiContent({ rangeOrCursorList: ranges });
-		historyArr.serial = serial;
-		this.editor.history.pushHistory(historyArr);
-		historyArr = this._insertMultiContent({
-			text: texts,
-			cursorPosList: historyArr.map((item) => { return item.cursorPos })
-		});
-		historyArr.serial = serial;
-		this.addCursorList(historyArr.map((item) => { return item.cursorPos }));
-		this.editor.history.pushHistory(historyArr);
-	}
-	// 点击自动提示替换输入的内容
-	replaceTip(tip) {
-		let word = tip.word || '';
-		let after = tip.after || '';
-		let before = tip.before || '';
-		let result = before + _getResult(tip) + after;
-		let ranges = null;
-		if (result === word) {
-			//替换前后一致，不做操作
-			return;
-		}
-		ranges = _getRanges.call(this);
-		this.replace(result, ranges);
-		_updatePos.call(this);
-		if (tip.type === Enum.TOKEN_TYPE.CSS_PROPERTY) {
-			//选中css属性名后，自动弹出属性值列表
-			this.editor.autocomplete.search();
-		}
-
-		function _getResult(tip) {
-			let result = '';
-			if (tip.type === Enum.TOKEN_TYPE.EMMET_HTML || tip.type === Enum.TOKEN_TYPE.EMMET_CSS) {
-				try {
-					const config = {};
-					if (tip.type === Enum.TOKEN_TYPE.EMMET_CSS) {
-						config.type = 'stylesheet';
-					}
-					result = expand(tip.result, config);
-				} catch (e) {
-					result = tip.result;
-				}
-			} else if (tip.type === Enum.TOKEN_TYPE.TAG_NAME) {
-				result += tip.result + `></${tip.result}>`;
-			} else {
-				result = tip.result;
-			}
-			return result;
-		}
-
-		function _getRanges() {
-			let ranges = [];
-			this.editor.cursor.multiCursorPos.forEach(cursorPos => {
-				let range = null;
-				range = {
-					start: { line: cursorPos.line, column: cursorPos.column - word.length },
-					end: { line: cursorPos.line, column: cursorPos.column }
-				};
-				ranges.push(range);
-			});
-			return ranges;
-		}
-
-		function _updatePos() {
-			if (tip.type === Enum.TOKEN_TYPE.TAG_NAME || tip.type === Enum.TOKEN_TYPE.EMMET_HTML) {
-				//生成标签后，光标定位到标签中间的位置
-				let exec = regs.endTag.exec(result);
-				if (exec) {
-					let text = result.slice(exec.index);
-					let deltaArr = text.split('\n');
-					let multiCursorPos = this.editor.cursor.multiCursorPos.toArray();
-					for (let i = multiCursorPos.length - 1; i >= 0; i--) {
-						let cursorPos = _getDeltaPos.call(this, deltaArr, multiCursorPos[i]);
-						this.editor.cursor.updateCursorPos(multiCursorPos[i], cursorPos.line, cursorPos.column);
-					}
-				}
-			} else if (tip.type === Enum.TOKEN_TYPE.ATTR_NAME) {
-				//选中标签属性后，光标移动端""内
-				this.editor.cursor.multiCursorPos.forEach(item => {
-					this.editor.cursor.moveCursor(item, 'left');
-				});
-			}
-		}
-
-		function _getDeltaPos(deltaArr, cursorPos) {
-			let line = cursorPos.line;
-			let column = cursorPos.column;
-			if (deltaArr.length === 1) {
-				column -= deltaArr[0].length;
-			} else {
-				line -= deltaArr.length - 1;
-				column = this.htmls[line - 1].text.length - deltaArr[0].length;
-			}
-			return {
-				line: line,
-				column: column
-			};
 		}
 	}
 	convertTabToSpace(command) {
