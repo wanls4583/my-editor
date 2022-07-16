@@ -70,7 +70,7 @@ export default class {
 					globalData.nowEditorId = id;
 					this.changeStatus();
 				}
-			} else {
+			} else if(tab) {
 				if (tab.cursorPos) {
 					//点击左侧文件内容搜索结果，跳转到相应位置
 					let editor = globalData.$mainWin.getNowEditor();
