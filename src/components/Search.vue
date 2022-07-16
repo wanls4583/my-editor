@@ -158,6 +158,7 @@ export default {
 			}
 		},
 		searchWord(direct) {
+			let resultObj = null;
 			if (this.editor.fSelecter.activedRanges.size === 0) {
 				let searchConfig = this.editor.fSearcher.getSearchConfig();
 				if (searchConfig) {

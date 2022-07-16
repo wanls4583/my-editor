@@ -314,7 +314,7 @@ export default {
 			return this.bracketMatch && this.bracketMatch.start.line >= this.startLine && this.bracketMatch.start.line <= this.endLine;
 		},
 		_bracketEndVisible() {
-			return this.bracketMatch && this.bracketMatch.end.line >= this.startLine && this.bracketMatch.end.line <= this.endLine;
+			return this.bracketMatch && this.bracketMatch.end && this.bracketMatch.end.line >= this.startLine && this.bracketMatch.end.line <= this.endLine;
 		},
 		_bracketStartStyle() {
 			return {
@@ -1100,23 +1100,29 @@ export default {
 		},
 		renderBracketMatch() {
 			clearTimeout(this.bracketMatchTimer);
+			this.bracketMatch = null;
 			this.bracketMatchTimer = setTimeout(() => {
-				this.bracketMatch = null;
 				this.folder.getBracketMatch(this.nowCursorPos, (bracketMatch) => {
 					let lineObj = null;
-					let pos = null;
-					this.bracketMatch = bracketMatch;
-					if (this.bracketMatch) {
+					let startPos = null;
+					let endPos = null;
+					if (bracketMatch && !this.selecter.getRangeByCursorPos({ line: bracketMatch.start.line, column: bracketMatch.start.startIndex })) {
+						this.bracketMatch = bracketMatch;
 						lineObj = this.myContext.htmls[this.bracketMatch.start.line - 1];
-						pos = this.bracketMatch.start;
-						pos.width = this.getStrWidth(lineObj.text, pos.startIndex, pos.endIndex) + 'px';
-						pos.left = this.getStrWidth(lineObj.text, 0, pos.startIndex) + 'px';
-						pos.top = (this.folder.getRelativeLine(pos.line) - 1) * this.charObj.charHight - this.deltaTop + 'px';
-						lineObj = this.myContext.htmls[this.bracketMatch.end.line - 1];
-						pos = this.bracketMatch.end;
-						pos.width = this.getStrWidth(lineObj.text, pos.startIndex, pos.endIndex) + 'px';
-						pos.left = this.getStrWidth(lineObj.text, 0, pos.startIndex) + 'px';
-						pos.top = (this.folder.getRelativeLine(pos.line) - 1) * this.charObj.charHight - this.deltaTop + 'px';
+						startPos = this.bracketMatch.start;
+						endPos = this.bracketMatch.end;
+						startPos.left = this.getStrWidth(lineObj.text, 0, startPos.startIndex) + 'px';
+						startPos.top = (this.folder.getRelativeLine(startPos.line) - 1) * this.charObj.charHight - this.deltaTop + 'px';
+						if (this.bracketMatch.start.endIndex === this.bracketMatch.end.startIndex) {
+							startPos.width = this.getStrWidth(lineObj.text, startPos.startIndex, endPos.endIndex) + 'px';
+							this.bracketMatch.end = null;
+						} else {
+							startPos.width = this.getStrWidth(lineObj.text, startPos.startIndex, startPos.endIndex) + 'px';
+							lineObj = this.myContext.htmls[this.bracketMatch.end.line - 1];
+							endPos.width = this.getStrWidth(lineObj.text, endPos.startIndex, endPos.endIndex) + 'px';
+							endPos.left = this.getStrWidth(lineObj.text, 0, endPos.startIndex) + 'px';
+							endPos.top = (this.folder.getRelativeLine(endPos.line) - 1) * this.charObj.charHight - this.deltaTop + 'px';
+						}
 					}
 				});
 			}, 100);
@@ -1314,7 +1320,7 @@ export default {
 			let resultObj = null;
 			this.searcher.search({ direct: direct });
 			if (this.searchVisible) {
-				this.$searchDialog.searchWord(direct);
+				this.$refs.searchDialog.searchWord(direct);
 			}
 		},
 		// 上一个提示
