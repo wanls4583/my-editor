@@ -50,6 +50,10 @@
 		position: absolute;
 	}
 
+	&-line-bgs {
+		position: absolute;
+	}
+
 	&-bracket-match {
 		position: absolute;
 		border: 1px solid var(--my-editorBracketMatch-border);
