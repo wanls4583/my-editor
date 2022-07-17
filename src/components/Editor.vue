@@ -781,12 +781,10 @@ export default {
 		},
 		// 渲染
 		render(scrollToCursor) {
-			let renderId = this.renderId++ || 0;
-			this.renderId = renderId;
-			this.$nextTick(() => {
-				if (renderId !== this.renderId) {
-					return;
-				}
+			if (this.renderTimer) {
+				return;
+			}
+			this.renderTimer = requestAnimationFrame(() => {
 				this.renderLines();
 				this.renderSelectedBg();
 				this.renderError();
@@ -797,6 +795,7 @@ export default {
 					cb();
 				});
 				this.renderedCb.empty();
+				this.renderTimer = null;
 			});
 		},
 		// 渲染代码
@@ -970,23 +969,30 @@ export default {
 			let text = this.myContext.htmls[start.line - 1].text;
 			let endColumn = text.length;
 			if (this.renderedLineMap[start.line]) {
-				let renderObj = this.renderedLineMap[start.line];
-				start.left = this.getExactLeft(start);
-				if (start.line == end.line) {
-					start.width = this.getExactLeft(end) - start.left || 10;
-					start.width += 'px';
+				if (start.startRenderObj) {
+					start.startRenderObj.active = range.active;
+					start.startRenderObj.isFsearch = range.isFsearch;
 				} else {
-					start.width = this.getExactLeft({ line: start.line, column: text.length }) - start.left || 10;
-					start.width += 'px';
+					let renderObj = this.renderedLineMap[start.line];
+					start.left = this.getExactLeft(start);
+					if (start.line == end.line) {
+						start.width = this.getExactLeft(end) - start.left || 10;
+						start.width += 'px';
+					} else {
+						start.width = this.getExactLeft({ line: start.line, column: text.length }) - start.left || 10;
+						start.width += 'px';
+					}
+					start.left += 'px';
+					// 缓存结果对象
+					start.startRenderObj = {
+						left: start.left,
+						top: renderObj.top,
+						width: start.width,
+						active: range.active,
+						isFsearch: isFsearch,
+					};
 				}
-				start.left += 'px';
-				this.renderSelectionObjs.push({
-					left: start.left,
-					top: renderObj.top,
-					width: start.width,
-					active: range.active,
-					isFsearch: isFsearch,
-				});
+				this.renderSelectionObjs.push(start.startRenderObj);
 				if (end.line == start.line) {
 					endColumn = end.column;
 				}
@@ -994,18 +1000,25 @@ export default {
 				range.active && this._renderSelectionToken(start.line, start.column, endColumn);
 			}
 			if (end.line > start.line && this.renderedLineMap[end.line]) {
-				let renderObj = this.renderedLineMap[end.line];
-				end.left = '0px';
-				text = this.myContext.htmls[end.line - 1].text;
-				end.width = this.getExactLeft(end) || 10;
-				end.width += 'px';
-				this.renderSelectionObjs.push({
-					left: end.left,
-					top: renderObj.top,
-					width: end.width,
-					active: range.active,
-					isFsearch: isFsearch,
-				});
+				if (end.endRenderObj) {
+					end.endRenderObj.active = range.active;
+					end.endRenderObj.isFsearch = range.isFsearch;
+				} else {
+					let renderObj = this.renderedLineMap[end.line];
+					end.left = '0px';
+					text = this.myContext.htmls[end.line - 1].text;
+					end.width = this.getExactLeft(end) || 10;
+					end.width += 'px';
+					// 缓存结果对象
+					end.endRenderObj = {
+						left: end.left,
+						top: renderObj.top,
+						width: end.width,
+						active: range.active,
+						isFsearch: isFsearch,
+					};
+				}
+				this.renderSelectionObjs.push(end.endRenderObj);
 				// range.active为false时，样式可能只显示边框，不改变字体颜色和背景
 				range.active && this._renderSelectionToken(end.line, 0, end.column);
 			}
@@ -1466,12 +1479,21 @@ export default {
 					if (height > this.scrollTop + this.scrollerArea.height) {
 						height = height > this.contentHeight ? this.contentHeight : height;
 						this.setStartLine(height - this.scrollerArea.height);
+						_renderCursor.call(this);
 					} else if (nowCursorPos.line <= this.startLine) {
 						let scrollTop = (this.folder.getRelativeLine(nowCursorPos.line) - 1) * this.charObj.charHight;
 						this.setStartLine(scrollTop);
+						_renderCursor.call(this);
+					} else {
+						this.renderCursor(true);
 					}
+				});
+			}
+
+			function _renderCursor() {
+				this.renderedCb.push(() => {
 					this.$nextTick(() => {
-						this.active && this.renderCursor(true);
+						this.renderCursor(true);
 					});
 				});
 			}
