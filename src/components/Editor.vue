@@ -1541,7 +1541,7 @@ export default {
 				height: this.$refs.scroller.clientHeight,
 				width: this.$refs.scroller.clientWidth,
 			};
-			this.maxContentHeight = this.scrollerArea.height * 10;
+			this.maxContentHeight = this.scrollerArea.height * 100;
 		},
 		// 设置滚动区域真实高度
 		setContentHeight() {
