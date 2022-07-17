@@ -838,6 +838,7 @@ export default {
 						renderNums.push(num);
 					}
 				});
+				renderNums.reverse();
 				toRnederNums.forEach((num, index) => {
 					if (!this.renderObjs[index]) {
 						let renderObj = this.renderedLineMap[renderNums.pop()];
