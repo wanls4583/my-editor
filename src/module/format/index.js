@@ -18,8 +18,7 @@ export default class {
         this.context = context;
         EventBus.$on('format-worker-done', this.workerFn = (data) => {
             if (data.workerId === this.workerId) {
-                this.context.reload(data.text);
-                this.editor.cursor.setCursorPos(data.cursorPos);
+                this.context.reload(data.text, [data.cursorPos]);
                 this.workerId = '';
             }
         });

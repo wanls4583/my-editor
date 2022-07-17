@@ -3,7 +3,7 @@ import Enum from '@/data/enum';
 import expand from 'emmet';
 
 const regs = {
-	endTag: /(?=\<\/)/,
+    endTag: /(?=\<\/)/,
 };
 
 export default class {
@@ -11,7 +11,7 @@ export default class {
         this.editor = editor;
         this.context = context;
     }
-    replace(texts, ranges) {
+    replace(texts, ranges, afterCursorPosList) {
         let historyArr = null;
         let serial = this.context.serial++;
         let originCursorPosList = [];
@@ -40,17 +40,22 @@ export default class {
             cursorPosList: historyArr.map((item) => { return item.cursorPos })
         });
         historyArr.serial = serial;
-        this.context.addCursorList(historyArr.map((item) => { return item.cursorPos }));
+        historyArr.afterCursorPosList = afterCursorPosList;
         this.editor.history.pushHistory(historyArr);
+        if(afterCursorPosList) {
+            this.context.addCursorList(afterCursorPosList);
+        } else {
+            this.context.addCursorList(historyArr.map((item) => { return item.cursorPos }));
+        }
     }
     // 文件变动，重写加载文件内容
-    reload(text) {
+    reload(text, afterCursorPosList) {
         let range = {
             start: { line: 1, column: 0 },
             end: { line: this.context.htmls.length, column: this.context.htmls.peek().text.length }
         };
         this.editor.searcher.clearSearch();
-        this.replace(text, [range]);
+        this.replace(text, [range], afterCursorPosList);
     }
     // 点击自动提示替换输入的内容
     replaceTip(tip) {

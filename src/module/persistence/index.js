@@ -59,8 +59,9 @@ export default class {
 	storeTabData() {
 		let data = [];
 		let preItem = {};
+		let active = false;
 		globalData.editorList.forEach(item => {
-			if(item.id !== preItem.id) {
+			if (item.id !== preItem.id) {
 				data.push({
 					id: item.id,
 					name: item.name,
@@ -70,8 +71,12 @@ export default class {
 					saved: item.saved,
 				});
 				preItem = item;
+				active = item.active;
 			}
 		});
+		if (data && !active) {
+			active[0].active = true;
+		}
 		Util.writeFileSync(globalData.tabPath, JSON.stringify(data));
 	}
 	loadTabData() {

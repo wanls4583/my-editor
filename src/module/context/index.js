@@ -92,8 +92,8 @@ class Context {
 	replace(texts, ranges) {
 		this.replaceObj.replace(texts, ranges);
 	}
-	reload(text) {
-		this.replaceObj.reload(text);
+	reload(text, afterCursorPosList) {
+		this.replaceObj.reload(text, afterCursorPosList);
 	}
 	replaceTip(tip) {
 		this.replaceObj.replaceTip(tip);
