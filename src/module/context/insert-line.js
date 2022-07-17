@@ -43,6 +43,7 @@ export default class {
         });
         historyArr = this.context._insertMultiContent({ text: '\n', cursorPosList });
         historyArr.originCursorPosList = originCursorPosList;
+        historyArr.originScrollTop = this.editor.scrollTop;
         this.context.addCursorList(historyArr.map((item) => { return item.cursorPos }));
         this.editor.history.pushHistory(historyArr);
         if (lineOne) {
@@ -78,6 +79,7 @@ export default class {
         });
         historyArr = this.context._insertMultiContent({ text: '\n', cursorPosList });
         historyArr.originCursorPosList = originCursorPosList;
+        historyArr.originScrollTop = this.editor.scrollTop;
         this.context.addCursorList(historyArr.map((item) => { return item.cursorPos }));
         this.editor.history.pushHistory(historyArr);
     }

@@ -1,7 +1,7 @@
 import Util from '@/common/util';
 const regs = {
-	line_comment: /comment\.line/,
-	block_comment: /comment\.block/
+    line_comment: /comment\.line/,
+    block_comment: /comment\.block/
 };
 
 export default class {
@@ -28,6 +28,7 @@ export default class {
             historyArr = this.context._deleteMultiContent({ rangeOrCursorList: delPosList, justDeleteRange: true });
             historyArr.serial = serial;
             historyArr.originCursorPosList = originCursorPosList;
+            historyArr.originScrollTop = this.editor.scrollTop;
             originCursorPosList = null;
             this.editor.history.pushHistory(historyArr);
         }
@@ -36,6 +37,7 @@ export default class {
             historyArr.serial = serial;
             if (originCursorPosList) {
                 historyArr.originCursorPosList = originCursorPosList;
+                historyArr.originScrollTop = this.editor.scrollTop;
             }
             this.editor.history.pushHistory(historyArr);
         }
@@ -223,6 +225,7 @@ export default class {
             historyArr = this.context._deleteMultiContent({ rangeOrCursorList: delPosList, justDeleteRange: true });
             historyArr.serial = serial;
             historyArr.originCursorPosList = originCursorPosList;
+            historyArr.originScrollTop = this.editor.scrollTop;
             originCursorPosList = null;
             this.editor.history.pushHistory(historyArr);
         }
@@ -231,6 +234,7 @@ export default class {
             historyArr.serial = serial;
             if (originCursorPosList) {
                 historyArr.originCursorPosList = originCursorPosList;
+                historyArr.originScrollTop = this.editor.scrollTop;
             }
             this.editor.history.pushHistory(historyArr);
         }

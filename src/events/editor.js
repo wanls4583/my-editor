@@ -55,6 +55,7 @@ export default class {
 		});
 	}
 	changeTab(id) {
+		globalData.nowEditorId = id;
 		cancelAnimationFrame(this.changeTabTimer);
 		this.changeTabTimer = requestAnimationFrame(() => {
 			let tab = Util.getTabById(this.editorList, id);
@@ -67,7 +68,6 @@ export default class {
 						item.active = false;
 					});
 					tab.active = true;
-					globalData.nowEditorId = id;
 					this.changeStatus();
 				}
 			} else if(tab) {

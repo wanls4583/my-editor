@@ -139,34 +139,42 @@ class Context {
 			cursorPosList = this.editor.cursor.multiCursorPos.toArray();
 		}
 		historyArr = this._insertMultiContent({ text, cursorPosList, command });
-		if (command && command.originCursorPosList) {
-			this.addCursorList(command.originCursorPosList);
-		} else if (command && command.afterCursorPosList) {
-			this.addCursorList(command.afterCursorPosList);
-		} else {
-			this.addCursorList(
-				historyArr.map((item) => {
-					if (item.ending) {
-						return { start: item.preCursorPos, end: item.cursorPos, ending: item.ending }
-					} else if (delDirect === 'right') {
-						return item.preCursorPos;
-					}
-					return item.cursorPos
-				})
-			);
-		}
 		if (command) {
+			if (command.originCursorPosList) {
+				this.addCursorList(command.originCursorPosList);
+			} else if (command.afterCursorPosList) {
+				this.addCursorList(command.afterCursorPosList);
+			} else {
+				this.addCursorList(_getCursorList());
+			}
+			if (typeof command.originScrollTop === 'number') {
+				this.editor.setStartLine(command.originScrollTop);
+			}
 			historyArr.serial = command.serial;
 			historyArr.afterCursorPosList = command.afterCursorPosList;
 			historyArr.originCursorPosList = command._originCursorPosList;
 			historyArr._originCursorPosList = command.originCursorPosList;
+			historyArr.originScrollTop = command._originScrollTop;
+			historyArr._originScrollTop = command.originScrollTop;
 			this.editor.history.updateHistory(historyArr);
 		} else {
 			historyArr.serial = serial;
 			this.editor.history.pushHistory(historyArr, historyJoinAble);
+			this.addCursorList(_getCursorList());
 		}
 		this.editor.setNowCursorPos(this.editor.cursor.multiCursorPos.get(0));
 		return historyArr;
+
+		function _getCursorList() {
+			return historyArr.map((item) => {
+				if (item.ending) {
+					return { start: item.preCursorPos, end: item.cursorPos, ending: item.ending }
+				} else if (delDirect === 'right') {
+					return item.preCursorPos;
+				}
+				return item.cursorPos
+			});
+		}
 	}
 	_insertMultiContent({
 		text,
@@ -341,21 +349,27 @@ class Context {
 			justDeleteRange,
 			command
 		});
-		if (command && command.originCursorPosList) {
-			this.addCursorList(command.originCursorPosList);
-		} else if (command && command.afterCursorPosList) {
-			this.addCursorList(command.afterCursorPosList);
-		} else {
-			this.addCursorList(historyArr.map((item) => { return item.cursorPos }));
-		}
 		if (command) {
+			if (command.originCursorPosList) {
+				this.addCursorList(command.originCursorPosList);
+			} else if (command.afterCursorPosList) {
+				this.addCursorList(command.afterCursorPosList);
+			} else {
+				this.addCursorList(historyArr.map((item) => { return item.cursorPos }));
+			}
+			if (typeof command.originScrollTop === 'number') {
+				this.editor.setStartLine(command.originScrollTop);
+			}
 			historyArr.serial = command.serial;
 			historyArr.afterCursorPosList = command.afterCursorPosList;
 			historyArr.originCursorPosList = command._originCursorPosList;
 			historyArr._originCursorPosList = command.originCursorPosList;
+			historyArr.originScrollTop = command._originScrollTop;
+			historyArr._originScrollTop = command.originScrollTop;
 			this.editor.history.updateHistory(historyArr);
 		} else {
 			this.editor.history.pushHistory(historyArr, historyJoinAble);
+			this.addCursorList(historyArr.map((item) => { return item.cursorPos }));
 		}
 		this.editor.setNowCursorPos(this.editor.cursor.multiCursorPos.get(0));
 		return historyArr;
@@ -632,6 +646,7 @@ class Context {
 		if (rangeList.length) {
 			historyArr = this._deleteMultiContent({ rangeOrCursorList: rangeList, delDirect });
 			historyArr.originCursorPosList = originCursorPosList;
+			historyArr.originScrollTop = this.editor.scrollTop;
 			this.addCursorList(historyArr.map((item) => { return item.cursorPos }));
 			this.editor.history.pushHistory(historyArr);
 		}
