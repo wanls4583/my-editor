@@ -901,11 +901,13 @@ export default {
 				});
 			}
 			this.fSelecter.ranges.forEach((range) => {
-				this._renderWholeLineBg(range, true);
+				if (range.end.line > range.start.line + 1) {
+					this._renderWholeLineBg(range, true);
+				}
 			});
 			this.selecter.ranges.forEach((range) => {
-				let _range = this.fSelecter.getRangeByCursorPos(range.start);
-				if (range.end.line > range.start.line) {
+				if (range.end.line > range.start.line + 1) {
+					let _range = this.fSelecter.getRangeByCursorPos(range.start);
 					if (this.searchVisible) {
 						// 优先渲染搜索框的选中范围
 						if (!_range && range.active) {
