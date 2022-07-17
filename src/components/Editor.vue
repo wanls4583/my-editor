@@ -889,6 +889,7 @@ export default {
 			}, 15);
 		},
 		renderSelectedBg(isAsync) {
+			let preRenderSelectionObjs = this.renderSelectionObjs;
 			clearTimeout(this.renderSelectedBgTimer);
 			this.renderSelectedBgTimer = null;
 			this.activeLineBg = true;
@@ -904,13 +905,15 @@ export default {
 			});
 			this.selecter.ranges.forEach((range) => {
 				let _range = this.fSelecter.getRangeByCursorPos(range.start);
-				if (this.searchVisible) {
-					// 优先渲染搜索框的选中范围
-					if (!_range && range.active) {
+				if (range.end.line > range.start.line) {
+					if (this.searchVisible) {
+						// 优先渲染搜索框的选中范围
+						if (!_range && range.active) {
+							this._renderWholeLineBg(range);
+						}
+					} else {
 						this._renderWholeLineBg(range);
 					}
-				} else {
-					this._renderWholeLineBg(range);
 				}
 			});
 			this.$nextTick(() => {
@@ -929,7 +932,34 @@ export default {
 						this._renderSelectedBg(range);
 					}
 				});
+				if (this.renderSelectionObjs.length && preRenderSelectionObjs.length) {
+					_setRenderSelectionObjs.call(this);
+				}
 			});
+
+			function _setRenderSelectionObjs() {
+				let toRenderItems = [];
+				let preRenderKeyMap = {};
+				let results = new Array(this.renderSelectionObjs.length);
+				preRenderSelectionObjs.forEach((item, index) => {
+					preRenderKeyMap[item.key] = index;
+				});
+				this.renderSelectionObjs.forEach((item) => {
+					let index = preRenderKeyMap[item.key];
+					if (index >= 0 && index < results.length) {
+						results[index] = item;
+					} else {
+						toRenderItems.push(item);
+					}
+				});
+				toRenderItems.reverse();
+				for (let i = 0; i < results.length; i++) {
+					if (!results[i]) {
+						results[i] = toRenderItems.pop();
+					}
+				}
+				this.renderSelectionObjs = results;
+			}
 		},
 		// 渲染整行选中的背景
 		_renderWholeLineBg(range, isFsearch) {
@@ -943,7 +973,7 @@ export default {
 			cross = firstLine <= this.startLine && lastLine >= this.startLine;
 			cross = cross || (firstLine >= this.startLine && lastLine <= this.endLine);
 			cross = cross || (firstLine <= this.endLine && lastLine >= this.endLine);
-			if (cross) {
+			if (cross && firstLine <= lastLine) {
 				for (let i = 0; i < this.renderObjs.length; i++) {
 					let renderObj = this.renderObjs[i];
 					if (renderObj.num >= firstLine && renderObj.num <= lastLine) {
@@ -991,6 +1021,7 @@ export default {
 						width: start.width,
 						active: range.active,
 						isFsearch: isFsearch,
+						key: renderObj.top + ',' + start.left,
 					};
 				}
 				this.renderSelectionObjs.push(start.startRenderObj);
@@ -1017,6 +1048,7 @@ export default {
 						width: end.width,
 						active: range.active,
 						isFsearch: isFsearch,
+						key: renderObj.top + ',' + end.left,
 					};
 				}
 				this.renderSelectionObjs.push(end.endRenderObj);
