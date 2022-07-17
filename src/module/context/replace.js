@@ -54,7 +54,6 @@ export default class {
             start: { line: 1, column: 0 },
             end: { line: this.context.htmls.length, column: this.context.htmls.peek().text.length }
         };
-        this.editor.searcher.clearSearch();
         this.replace(text, [range], afterCursorPosList);
     }
     // 点击自动提示替换输入的内容
