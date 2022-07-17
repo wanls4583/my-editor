@@ -889,7 +889,7 @@ export default {
 			}, 15);
 		},
 		renderSelectedBg(isAsync) {
-			let preRenderSelectionObjs = this.renderSelectionObjs;
+			let preRenderSelectionObjs = null;
 			clearTimeout(this.renderSelectedBgTimer);
 			clearTimeout(this.renderSelectionTimer);
 			this.renderSelectedBgTimer = null;
@@ -919,6 +919,7 @@ export default {
 			});
 			this.renderSelectionTimer = setTimeout(() => {
 				this.$nextTick(() => {
+					preRenderSelectionObjs = this.renderSelectionObjs;
 					this.renderSelectionObjs = [];
 					this.fSelecter.ranges.forEach((range) => {
 						this._renderSelectedBg(range, true);
