@@ -274,6 +274,9 @@ export default class {
         target.start.column = start.column;
         target.end.line = end.line;
         target.end.column = end.column;
+        //清除渲染缓存
+        target.start.startRenderObj = null;
+        target.end.endRenderObj = null;
         this.ranges.insert(target);
         target.active && this.activedRanges.insert(target);
         this.filterRange(target);

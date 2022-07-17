@@ -236,7 +236,6 @@ export default {
 			}
 		},
 		renderSelectedBg() {
-			return;
 			let results = [];
 			let fResults = [];
 			let tabSize = this.$parent.tabSize;
