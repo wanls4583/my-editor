@@ -251,13 +251,25 @@ class Util {
 		});
 	}
 	static writeFile(path, data) {
+		const os = window.require('os');
 		return new Promise((resolve, reject) => {
 			fse.ensureFile(path).then(() => {
+				if (os.platform() === 'win32') {
+					data = data.replace(/(?<!\r)\n/g, '\r\n');
+				} else {
+					data = data.replace(/\r\n/g, '\n');
+				}
 				fs.writeFile(path, data, { encoding: 'utf8' }, error => (error ? reject(error) : resolve()));
 			});
 		});
 	}
 	static writeFileSync(path, data) {
+		const os = window.require('os');
+		if (os.platform() === 'win32') {
+			data = data.replace(/(?<!\r)\n/g, '\r\n');
+		} else {
+			data = data.replace(/\r\n/g, '\n');
+		}
 		fse.ensureFileSync(path);
 		fs.writeFileSync(path, data, { encoding: 'utf8' });
 	}

@@ -115,7 +115,7 @@ export default class {
                 let exec = regs.endTag.exec(result);
                 if (exec) {
                     let text = result.slice(exec.index);
-                    let deltaArr = text.split('\n');
+                    let deltaArr = text.split(/\r\n|\n/);
                     let multiCursorPos = this.editor.cursor.multiCursorPos.toArray();
                     for (let i = multiCursorPos.length - 1; i >= 0; i--) {
                         let cursorPos = _getDeltaPos.call(this, deltaArr, multiCursorPos[i]);

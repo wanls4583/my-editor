@@ -78,7 +78,7 @@ export default class {
         let column = 0;
         let index = 0;
         let text = this.context.getAllText();
-        let lines = config.text.split(/\n/);
+        let lines = config.text.split(/\r\n|\n/);
         let source = config.text.replace(/\\|\.|\*|\+|\-|\?|\(|\)|\[|\]|\{|\}|\^|\$|\~|\!|\&|\|/g, '\\$&');
         //完整匹配
         if (this.wholeWordPattern.test(config.text) && config.wholeWord) {
