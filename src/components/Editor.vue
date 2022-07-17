@@ -1161,7 +1161,11 @@ export default {
 		renderBracketMatch() {
 			clearTimeout(this.bracketMatchTimer);
 			this.bracketMatchTimer = setTimeout(() => {
+				let endPos = { line: this.maxLine, column: this.myContext.htmls[this.maxLine - 1].text.length };
 				this.bracketMatch = null;
+				if (Util.comparePos(this.nowCursorPos, endPos) === 0) {
+					return;
+				}
 				this.folder.getBracketMatch(this.nowCursorPos, (bracketMatch) => {
 					let lineObj = null;
 					let startPos = null;
