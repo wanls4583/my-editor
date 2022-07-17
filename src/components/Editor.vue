@@ -887,11 +887,8 @@ export default {
 			}, 15);
 		},
 		renderSelectedBg(isAsync) {
-			let preRenderSelectionObjs = this.renderSelectionObjs;
-			let selectionNumMap = {};
 			clearTimeout(this.renderSelectedBgTimer);
 			this.renderSelectedBgTimer = null;
-			this.renderSelectionObjs = [];
 			this.activeLineBg = true;
 			this.clearSelectionToken();
 			this.renderObjs.forEach((renderObj, index) => {
@@ -917,6 +914,8 @@ export default {
 			});
 			this.renderObjs.splice();
 			this.$nextTick(() => {
+				let selectionNumMap = {};
+				this.renderSelectionObjs = [];
 				this.renderObjs.forEach((renderObj, index) => {
 					selectionNumMap[renderObj.num] = { line: renderObj.num, top: renderObj.top, selections: [] };
 					this.renderSelectionObjs.push(selectionNumMap[renderObj.num]);
