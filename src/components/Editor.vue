@@ -891,6 +891,7 @@ export default {
 		renderSelectedBg(isAsync) {
 			let preRenderSelectionObjs = this.renderSelectionObjs;
 			clearTimeout(this.renderSelectedBgTimer);
+			clearTimeout(this.renderSelectionTimer);
 			this.renderSelectedBgTimer = null;
 			this.activeLineBg = true;
 			this.clearSelectionToken();
@@ -916,26 +917,28 @@ export default {
 					}
 				}
 			});
-			this.$nextTick(() => {
-				this.renderSelectionObjs = [];
-				this.fSelecter.ranges.forEach((range) => {
-					this._renderSelectedBg(range, true);
-				});
-				this.selecter.ranges.forEach((range) => {
-					let _range = this.fSelecter.getRangeByCursorPos(range.start);
-					if (this.searchVisible) {
-						// 优先渲染搜索框的选中范围
-						if (!_range && range.active) {
+			this.renderSelectionTimer = setTimeout(() => {
+				this.$nextTick(() => {
+					this.renderSelectionObjs = [];
+					this.fSelecter.ranges.forEach((range) => {
+						this._renderSelectedBg(range, true);
+					});
+					this.selecter.ranges.forEach((range) => {
+						let _range = this.fSelecter.getRangeByCursorPos(range.start);
+						if (this.searchVisible) {
+							// 优先渲染搜索框的选中范围
+							if (!_range && range.active) {
+								this._renderSelectedBg(range);
+							}
+						} else {
 							this._renderSelectedBg(range);
 						}
-					} else {
-						this._renderSelectedBg(range);
+					});
+					if (this.renderSelectionObjs.length && preRenderSelectionObjs.length) {
+						_setRenderSelectionObjs.call(this);
 					}
 				});
-				if (this.renderSelectionObjs.length && preRenderSelectionObjs.length) {
-					_setRenderSelectionObjs.call(this);
-				}
-			});
+			}, 30);
 
 			function _setRenderSelectionObjs() {
 				let toRenderItems = [];
