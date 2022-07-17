@@ -898,7 +898,6 @@ export default {
 			if (isAsync) {
 				this.renderObjs.forEach((renderObj, index) => {
 					renderObj.bgClass = '';
-					this.$set(this.renderObjs, index, renderObj);
 				});
 			}
 			this.fSelecter.ranges.forEach((range) => {
@@ -917,6 +916,7 @@ export default {
 					}
 				}
 			});
+			this.renderObjs.splice();
 			this.renderSelectionTimer = setTimeout(() => {
 				this.$nextTick(() => {
 					preRenderSelectionObjs = this.renderSelectionObjs;
@@ -978,9 +978,9 @@ export default {
 			cross = cross || (firstLine >= this.startLine && lastLine <= this.endLine);
 			cross = cross || (firstLine <= this.endLine && lastLine >= this.endLine);
 			if (cross && firstLine <= lastLine) {
-				for (let i = 0; i < this.renderObjs.length; i++) {
-					let renderObj = this.renderObjs[i];
-					if (renderObj.num >= firstLine && renderObj.num <= lastLine) {
+				for (let line = firstLine; line <= lastLine; line++) {
+					let renderObj = this.renderedLineMap[line];
+					if (renderObj) {
 						renderObj.bgClass = 'my-select-bg';
 						if (range.active) {
 							renderObj.bgClass += ' my-active';
@@ -989,7 +989,6 @@ export default {
 						if (range.active && range.isFsearch && this.selectedFg) {
 							renderObj.bgClass += ' my-select-fg';
 						}
-						this.$set(this.renderObjs, i, renderObj);
 					}
 				}
 			}
