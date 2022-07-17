@@ -319,7 +319,7 @@ export default {
 		_bracketStartStyle() {
 			return {
 				left: this.bracketMatch.start.left,
-				top: this.bracketMatch.start.top,
+				top: this.bracketMatch.start.top - this.deltaTop + 'px',
 				width: this.bracketMatch.start.width,
 				height: this._lineHeight,
 			};
@@ -327,7 +327,7 @@ export default {
 		_bracketEndStyle() {
 			return {
 				left: this.bracketMatch.end.left,
-				top: this.bracketMatch.end.top,
+				top: this.bracketMatch.end.top - this.deltaTop + 'px',
 				width: this.bracketMatch.end.width,
 				height: this._lineHeight,
 			};
@@ -640,6 +640,7 @@ export default {
 				(this.initEventBusFn['editor-content-change'] = (data) => {
 					if (data.id === this.tabData.id) {
 						this.searchVisible && this.$refs.searchDialog.search();
+						this.bracketMatch = null;
 					}
 				})
 			);
@@ -1002,11 +1003,12 @@ export default {
 			let text = this.myContext.htmls[start.line - 1].text;
 			let endColumn = text.length;
 			if (this.renderedLineMap[start.line]) {
+				let renderObj = this.renderedLineMap[start.line];
 				if (start.startRenderObj) {
 					start.startRenderObj.active = range.active;
 					start.startRenderObj.isFsearch = range.isFsearch;
+					start.startRenderObj.top = renderObj.top;
 				} else {
-					let renderObj = this.renderedLineMap[start.line];
 					start.left = this.getExactLeft(start);
 					if (start.line == end.line) {
 						start.width = this.getExactLeft(end) - start.left || 10;
@@ -1034,11 +1036,12 @@ export default {
 				range.active && this._renderSelectionToken(start.line, start.column, endColumn);
 			}
 			if (end.line > start.line && this.renderedLineMap[end.line]) {
+				let renderObj = this.renderedLineMap[end.line];
 				if (end.endRenderObj) {
 					end.endRenderObj.active = range.active;
 					end.endRenderObj.isFsearch = range.isFsearch;
+					end.endRenderObj.top = renderObj.top;
 				} else {
-					let renderObj = this.renderedLineMap[end.line];
 					end.left = '0px';
 					text = this.myContext.htmls[end.line - 1].text;
 					end.width = this.getExactLeft(end) || 10;
@@ -1157,8 +1160,8 @@ export default {
 		},
 		renderBracketMatch() {
 			clearTimeout(this.bracketMatchTimer);
-			this.bracketMatch = null;
 			this.bracketMatchTimer = setTimeout(() => {
+				this.bracketMatch = null;
 				this.folder.getBracketMatch(this.nowCursorPos, (bracketMatch) => {
 					let lineObj = null;
 					let startPos = null;
@@ -1171,7 +1174,7 @@ export default {
 						startPos = this.bracketMatch.start;
 						endPos = this.bracketMatch.end;
 						startPos.left = this.getStrWidth(lineObj.text, 0, startPos.startIndex) + 'px';
-						startPos.top = (this.folder.getRelativeLine(startPos.line) - 1) * this.charObj.charHight - this.deltaTop + 'px';
+						startPos.top = (this.folder.getRelativeLine(startPos.line) - 1) * this.charObj.charHight;
 						if (this.bracketMatch.start.endIndex === this.bracketMatch.end.startIndex) {
 							startPos.width = this.getStrWidth(lineObj.text, startPos.startIndex, endPos.endIndex) + 'px';
 							this.bracketMatch.end = null;
@@ -1180,7 +1183,7 @@ export default {
 							lineObj = this.myContext.htmls[this.bracketMatch.end.line - 1];
 							endPos.width = this.getStrWidth(lineObj.text, endPos.startIndex, endPos.endIndex) + 'px';
 							endPos.left = this.getStrWidth(lineObj.text, 0, endPos.startIndex) + 'px';
-							endPos.top = (this.folder.getRelativeLine(endPos.line) - 1) * this.charObj.charHight - this.deltaTop + 'px';
+							endPos.top = (this.folder.getRelativeLine(endPos.line) - 1) * this.charObj.charHight;
 						}
 					}
 				});
@@ -1768,19 +1771,24 @@ export default {
 			let spans = document.getElementById(this._lineId(cursorPos.line));
 			let startIndex = 0;
 			let span = null;
+			let left = 0;
+			let right = 0;
 			spans = (spans && spans.querySelector('div.my-code').children) || [];
-			for (let i = 0; i < spans.length; i++) {
-				let column = spans[i].getAttribute('data-column');
-				if (column <= cursorPos.column) {
-					startIndex = column;
-					span = spans[i];
+			right = spans.length - 1;
+			while (left < right) {
+				let mid = Math.ceil(left + right);
+				let column = spans[mid].getAttribute('data-column');
+				if (column > cursorPos.column) {
+					right = mid - 1;
 				} else {
-					break;
+					left = mid;
 				}
 			}
+			span = spans[left];
 			if (!span) {
 				return 0;
 			}
+			startIndex = span.getAttribute('data-column');
 			return span.offsetLeft + this.getStrWidth(lineObj.text.slice(startIndex, cursorPos.column));
 		},
 		getPrevDiff(diffRanges, line) {
