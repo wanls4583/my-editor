@@ -55,14 +55,14 @@
 					</div>
 					<div class="my-bg-view">
 						<div :style="{top: item.top, height: _lineHeight}" class="my-line-bgs" v-for="item in renderSelectionObjs">
-							<div :class="{ 'my-active': range.active, 'my-search-bg': range.isFsearch }" :style="{ left: range.left, width: range.width }" class="my-select-bg" v-for="range in item.selections"></div>
+							<div :class="{ 'my-active': range.active, 'my-search-bg': range.isFsearch }" :style="{ left: range.left, width: range.width, height: _lineHeight }" class="my-select-bg" v-for="range in item.selections"></div>
 						</div>
 						<div :style="{height: _lineHeight, top: _activeLineTop}" class="my-line-bg" v-if="activeLineBg"></div>
 						<div :style="_bracketStartStyle" class="my-bracket-match" v-if="_bracketStartVisible"></div>
 						<div :style="_bracketEndStyle" class="my-bracket-match" v-if="_bracketEndVisible"></div>
 					</div>
 					<div class="my-indent-view">
-						<div :style="{height: _lineHeight, top: line.top}" class="my-indent-line" v-for="line in renderObjs" v-html="_tabLines(line.tabNum)"></div>
+						<div :style="{height: _lineHeight, top: line.top}" class="my-indent-line" v-for="line in renderObjs" v-html="line.tabLines"></div>
 					</div>
 					<auto-tip :styles="autoTipStyle" :tipList="autoTipList" @change="onClickAuto" ref="autoTip" v-show="autoTipList && autoTipList.length"></auto-tip>
 				</div>
@@ -135,6 +135,7 @@ import globalData from '@/data/globalData';
 import Enum from '@/data/enum';
 
 const contexts = Context.contexts;
+const tabLinesMap = {};
 const gitTypeMap = {
 	A: 'add',
 	M: 'modify',
@@ -295,16 +296,6 @@ export default {
 			return {
 				top: top + 'px',
 				left: left + 'px',
-			};
-		},
-		_tabLines() {
-			return (tabNum) => {
-				let html = '';
-				for (let tab = 1; tab <= tabNum; tab++) {
-					let left = (tab - 1) * this.tabSize * this.charObj.charWidth + 'px';
-					html += `<span style="left:${left}" class="my-indent"></span>`;
-				}
-				return html;
 			};
 		},
 		_bracketStartVisible() {
@@ -1614,6 +1605,7 @@ export default {
 		},
 		getRenderObj(lineObj, line) {
 			let tabNum = this.getTabNum(line);
+			let tabLines = this.getTabLines(tabNum);
 			let fold = '';
 			let top = (this.folder.getRelativeLine(line) - 1) * this.charObj.charHight - this.deltaTop + 'px';
 			if (this.folder.getFoldByLine(line)) {
@@ -1638,6 +1630,7 @@ export default {
 				num: line,
 				top: top,
 				tabNum: tabNum,
+				tabLines: tabLines,
 				fold: fold,
 				bgClass: '',
 				isFsearch: false,
@@ -1678,6 +1671,18 @@ export default {
 			}
 			lineObj.tabNum = tabNum;
 			return tabNum;
+		},
+		getTabLines(tabNum) {
+			if (tabLinesMap[tabNum]) {
+				return tabLinesMap[tabNum];
+			}
+			let html = '';
+			for (let tab = 1; tab <= tabNum; tab++) {
+				let left = (tab - 1) * this.tabSize * this.charObj.charWidth + 'px';
+				html += `<span style="left:${left}" class="my-indent"></span>`;
+			}
+			tabLinesMap[tabNum] = html;
+			return html;
 		},
 		// 获取文本在浏览器中的宽度
 		getStrWidth(str, start, end) {
