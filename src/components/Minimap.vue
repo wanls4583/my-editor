@@ -243,9 +243,9 @@ export default {
 				let fold = this.$parent.folder.getFoldByLine(line);
 				let text = this.$parent.myContext.htmls[line - 1].text;
 				let top = i * this.$parent.charObj.charHight * this.scale;
-				if (this.$parent.fSelecter.getRangeByLine(line).length || this.$parent.selecter.getRangeWithCursorPos({ line: line, column: 0 })) {
+				if (this.$parent.fSelecter.getRangeWithCursorPos({ line: line, column: 0 })) {
 					fResults.push(top);
-				} else if (this.$parent.fSelecter.getRangeByLine(line).length || this.$parent.selecter.getRangeWithCursorPos({ line: line, column: 0 })) {
+				} else if (this.$parent.selecter.getActiveRangeWithCursorPos({ line: line, column: 0 })) {
 					results.push(top);
 				}
 				if (fold) {

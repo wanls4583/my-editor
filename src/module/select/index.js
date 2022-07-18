@@ -85,6 +85,28 @@ export default class {
         }
         return false;
     }
+    // 检查光标是否在选中范围内
+    getActiveRangeWithCursorPos(cursorPos) {
+        let it = this.activedRanges.search(
+            cursorPos,
+            (value, item) => {
+                return Util.comparePos(value, item.start);
+            },
+            true
+        );
+        if (it) {
+            let value = it.prev();
+            if (value && Util.comparePos(value.end, cursorPos) >= 0) {
+                return value;
+            }
+            it.reset();
+            value = it.next();
+            if (value && Util.comparePos(value.start, cursorPos) == 0) {
+                return value;
+            }
+        }
+        return false;
+    }
     select(direct, wholeWord) {
         this.editor.cursor.multiCursorPos.forEach((cursorPos) => {
             let range = this.getRangeByCursorPos(cursorPos);
