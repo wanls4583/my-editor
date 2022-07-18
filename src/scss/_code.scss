@@ -53,7 +53,6 @@
 	&-line-bgs {
 		position: absolute;
 		width: 100%;
-		overflow: hidden;
 	}
 
 	&-bracket-match {
@@ -65,7 +64,6 @@
 	&-indents {
 		position: absolute;
 		width: 100%;
-		overflow: hidden;
 	}
 
 	&-indent {
@@ -131,25 +129,48 @@
 		position: absolute;
 		height: 100%;
 		background-color: var(--my-editor-selectionHighlightBackground);
-		border: 1px solid var(--my-editor-selectionHighlightBorder);
 
 		&.my-active {
 			background-color: var(--my-editor-selectionBackground);
-			border-color: transparent;
 			color: var(--my-editor-selectionForeground);
+
+			&::after {
+				border-color: transparent;
+			}
 		}
 
+		&::after {
+			content: '';
+			position: absolute;
+			top: 0;
+			bottom: 0;
+			left: 0;
+			right: 0;
+			border: 1px solid var(--my-editor-selectionHighlightBorder);
+		}
 	}
 
 	&-search-bg {
 		position: absolute;
 		height: 100%;
 		background-color: var(--my-editor-findMatchHighlightBackground);
-		border: 1px solid var(--my-editor-findMatchHighlightBorder);
 
 		&.my-active {
 			background-color: var(--my-editor-findMatchBackground);
-			border-color: var(--my-editor-findMatchBorder);
+
+			&::after {
+				border-color: var(--my-editor-findMatchBorder);
+			}
+		}
+
+		&::after {
+			content: '';
+			position: absolute;
+			top: 0;
+			bottom: 0;
+			left: 0;
+			right: 0;
+			border: 1px solid var(--my-editor-findMatchHighlightBorder);
 		}
 	}
 }
