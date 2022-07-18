@@ -191,9 +191,6 @@ export default {
 			renderNums: [],
 			renderCursorObjs: [],
 			renderSelectionObjs: [],
-			renderedLineMap: {},
-			renderedIdMap: {},
-			renderNumsIdMap: {},
 			diffRanges: null,
 			diffTabData: null,
 			tipContent: null,
@@ -405,8 +402,6 @@ export default {
 		this.autocomplete = null;
 		this.folder = null;
 
-		this.renderedLineMap = null;
-		this.renderedIdMap = null;
 		this.errorMap = null;
 		this.errors = null;
 		this.autoTipList = null;
@@ -437,6 +432,9 @@ export default {
 		initData() {
 			contexts[this.tabData.id] = new Context(this);
 			this.renderedCb = [];
+			this.renderedLineMap = Object.freeze({});
+			this.renderedIdMap = Object.freeze({});
+			this.renderNumsIdMap = Object.freeze({});
 			this.editorId = this.tabData.id;
 			this.myContext = contexts[this.tabData.id];
 			this.maxWidthObj.lineId = this.myContext.htmls[0].lineId;
@@ -893,18 +891,22 @@ export default {
 					selectionNumMap[renderObj.num] = { line: renderObj.num, top: renderObj.top, selections: [] };
 					this.renderSelectionObjs.push(selectionNumMap[renderObj.num]);
 				}
-				for (let i = 0; i < fSelections.length; i++) {
-					this._renderSelectedBg(fSelections[i], selectionNumMap, true);
-				}
-				for (let i = 0; i < selections.length; i++) {
+				for (let i = 0; i < this.renderObjs.length; i++) {
+					let renderObj = this.renderObjs[i];
 					if (this.searchVisible) {
-						let _range = this.fSelecter.getRangeByCursorPos(selections[i].start);
-						// 优先渲染搜索框的选中范围
-						if (!_range && selections[i].active) {
-							this._renderSelectedBg(selections[i], selectionNumMap);
+						let fSelections = this.fSelecter.getRangeByLine(renderObj.num);
+						let selections = this.selecter.getActiveRangeWithCursorPos(renderObj.num);
+						for (let i = 0; i < fSelections.length; i++) {
+							this._renderSelectedBg(fSelections[i], selectionNumMap, true);
+						}
+						for (let i = 0; i < selections.length; i++) {
+							this._renderSelectedBg(selections[i], selectionNumMap, true);
 						}
 					} else {
-						this._renderSelectedBg(selections[i], selectionNumMap);
+						let selections = this.selecter.getRangeByLine(renderObj.num);
+						for (let i = 0; i < selections.length; i++) {
+							this._renderSelectedBg(selections[i], selectionNumMap, true);
+						}
 					}
 				}
 			});
