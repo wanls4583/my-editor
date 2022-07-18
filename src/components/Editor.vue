@@ -14,7 +14,7 @@
 			<!-- 占位行号，避免行号宽度滚动时变化 -->
 			<div class="my-num" style="position: relative; visibility: hidden;">{{ diffObj.maxLine || maxLine }}</div>
 			<div class="my-num-scroller" ref="numScroller">
-				<div :style="{ height: _maxContentHeight, top: _top }" class="my-num-content" ref="numContent">
+				<div :style="{ top: _top }" class="my-num-content" ref="numContent">
 					<div :class="{ 'my-active': nowCursorPos.line === numItem.num }" :style="{ top: numItem.top }" class="my-num" v-for="numItem in renderNums">
 						<span class="num">{{ numItem._num }}</span>
 						<span
@@ -34,26 +34,18 @@
 			<!-- 可滚动区域 -->
 			<div @scroll="onScroll" class="my-scroller" ref="scroller">
 				<!-- 内如区域 -->
-				<div
-					:style="{ width: _contentMinWidth + 'px', height: _maxContentHeight, left: _left, top: _top }"
-					@mousedown="onContentMdown"
-					@mouseleave="onContentMLeave"
-					@mousemove="onContentMmove"
-					@selectend.prevent="onSelectend"
-					class="my-content"
-					ref="content"
-				>
-					<div class="my-lines-view" ref="lineView">
-						<div :class="[_diffBg(line.num)]" :data-line="line.num" :id="_lineId(line.num)" :style="{top: line.top}" class="my-line" v-for="line in renderObjs">
+				<div :style="{ left: _left, top: _top }" @mousedown="onContentMdown" @mouseleave="onContentMLeave" @mousemove="onContentMmove" @selectend.prevent="onSelectend" class="my-content" ref="content">
+					<div :style="{width: _contentMinWidth+'px'}" class="my-lines-view" ref="lineView">
+						<div :class="[line.diffClass]" :data-line="line.num" :id="_lineId(line.num)" :style="{top: line.top}" class="my-line" v-for="line in renderObjs">
 							<div :class="[line.fold == 'close' ? 'fold-close' : '', line.bgClass]" :data-line="line.num" class="my-code" v-html="line.html"></div>
 						</div>
 					</div>
-					<div class="my-cursor-view" ref="cursorView">
+					<div :style="{width: _contentMinWidth+'px'}" class="my-cursor-view" ref="cursorView">
 						<template v-for="posList in renderCursorObjs">
 							<span :style="{ height: _lineHeight, left: pos.left, top: pos.top, visibility: _cursorVisible }" class="my-cursor" v-for="pos in posList"></span>
 						</template>
 					</div>
-					<div class="my-bg-view">
+					<div :style="{width: _contentMinWidth+'px'}" class="my-bg-view">
 						<div :style="{top: item.top, height: _lineHeight}" class="my-line-bgs" v-for="item in renderSelectionObjs">
 							<div :class="[range.bgClass]" :style="range.bgStyle" class="my-select-bg" v-for="range in item.selections"></div>
 						</div>
@@ -61,7 +53,7 @@
 						<div :style="_bracketStartStyle" class="my-bracket-match" v-if="_bracketStartVisible"></div>
 						<div :style="_bracketEndStyle" class="my-bracket-match" v-if="_bracketEndVisible"></div>
 					</div>
-					<div class="my-indent-view">
+					<div :style="{width: _contentMinWidth+'px'}" class="my-indent-view">
 						<div :style="{height: _lineHeight, top: line.top}" class="my-indents" v-for="line in renderObjs" v-html="line.tabLines"></div>
 					</div>
 					<auto-tip :styles="autoTipStyle" :tipList="autoTipList" @change="onClickAuto" ref="autoTip" v-show="autoTipList && autoTipList.length"></auto-tip>
@@ -190,7 +182,7 @@ export default {
 			deltaTop: 0,
 			maxVisibleLines: 1,
 			maxLine: 1,
-			maxContentHeight: 0,
+			maxContentHeight: 1000000,
 			contentHeight: 0,
 			errorMap: {},
 			errors: [],
@@ -236,18 +228,6 @@ export default {
 		_left() {
 			return -this.scrollLeft + 'px';
 		},
-		_diffBg() {
-			return (line) => {
-				if (this.type === 'diff') {
-					if (line > this.diffObj.deletedLength) {
-						return 'my-diff-inserted';
-					} else {
-						return 'my-diff-removed';
-					}
-				}
-				return '';
-			};
-		},
 		_leftShadow() {
 			return this.scrollLeft > 0;
 		},
@@ -274,9 +254,6 @@ export default {
 		},
 		_contentHeight() {
 			return this.contentHeight + 'px';
-		},
-		_maxContentHeight() {
-			return this.maxContentHeight * 2 + 'px';
 		},
 		_textAreaPos() {
 			let left = this.cursorLeft;
@@ -1184,12 +1161,13 @@ export default {
 			if (this.renderCursorTimer) {
 				return;
 			}
+			this.cursorVisible = false;
 			this.renderCursorTimer = requestAnimationFrame(() => {
 				this.renderCursorTimer = null;
 				this.renderCursorObjs = [];
-				this.renderObjs.forEach((item) => {
-					_setLine(item);
-				});
+				for (let i = 0; i < this.renderObjs.length; i++) {
+					_setLine(this.renderObjs[i]);
+				}
 				this.cursorVisible = true;
 				if (this.$refs.minimap) {
 					this.$refs.minimap.renderCursor();
@@ -1507,7 +1485,6 @@ export default {
 				height: this.$refs.scroller.clientHeight,
 				width: this.$refs.scroller.clientWidth,
 			};
-			this.maxContentHeight = this.scrollerArea.height * 100;
 		},
 		// 设置滚动区域真实高度
 		setContentHeight() {
@@ -1611,6 +1588,7 @@ export default {
 			let tabNum = this.getTabNum(line);
 			let tabLines = this.getTabLines(tabNum);
 			let fold = '';
+			let diffClass = '';
 			let top = (this.folder.getRelativeLine(line) - 1) * this.charObj.charHight - this.deltaTop + 'px';
 			if (this.folder.getFoldByLine(line)) {
 				//该行已经折叠
@@ -1618,6 +1596,13 @@ export default {
 			} else if (this.folder.getRangeFold(line, true)) {
 				//可折叠
 				fold = 'open';
+			}
+			if (this.type === 'diff') {
+				if (line > this.diffObj.deletedLength) {
+					diffClass = 'my-diff-inserted';
+				} else {
+					diffClass = 'my-diff-removed';
+				}
 			}
 			let html = lineObj.html;
 			if (!html) {
@@ -1637,6 +1622,7 @@ export default {
 				tabLines: tabLines,
 				fold: fold,
 				bgClass: '',
+				diffClass: diffClass,
 				isFsearch: false,
 				selected: false,
 				selection: [],
@@ -1775,24 +1761,35 @@ export default {
 			if (!diffRanges) {
 				return null;
 			}
+			diffRanges.cache = diffRanges.cache || {};
+			if (diffRanges.cache[line]) {
+				return diffRanges.cache[line];
+			}
+			let result = null;
 			for (let i = 0; i < diffRanges.length; i++) {
 				let item = diffRanges[i];
 				if (item.line <= line) {
 					if (item.type === 'D') {
 						if (item.line === line) {
-							return item;
+							result = item;
+							break;
 						}
 					} else if (item.line + item.added.length > line) {
-						return item;
+						result = item;
+						break;
 					}
 				} else {
 					// 尾部的删除块
 					if (item.line === line + 1 && line === this.maxLine) {
-						return item;
+						result = item;
+					} else {
+						result = null;
 					}
-					return null;
+					break;
 				}
 			}
+			diffRanges.cache[line] = result;
+			return result;
 		},
 		// 右键菜单事件
 		onContextmenu(e) {
@@ -1981,8 +1978,9 @@ export default {
 		},
 		// 滚动滚轮
 		onWheel(e) {
-			this.scrollDeltaY = e.deltaY / 2;
+			this.scrollDeltaY = e.deltaY;
 			this.scrollDeltaX = e.deltaX;
+			this.wheelTime = Date.now();
 			if ((this.scrollDeltaY || this.scrollDeltaX) && !this.wheelTask) {
 				this.wheelTask = globalData.scheduler.addUiTask(() => {
 					if (this.scrollDeltaY) {
@@ -2000,7 +1998,7 @@ export default {
 						scrollLeft = scrollLeft < 0 ? 0 : scrollLeft;
 						this.scrollLeft = scrollLeft;
 						this.scrollDeltaX = 0;
-					} else {
+					} else if (Date.now() - this.wheelTime > 2000) {
 						globalData.scheduler.removeUiTask(this.wheelTask);
 						this.wheelTask = null;
 					}

@@ -196,7 +196,7 @@ export default {
 		renderLines() {
 			let lines = [];
 			let renderedIdMap = {};
-			for (let line = this.startLine, i = 0; line <= this.$parent.myContext.htmls.length && i < this.maxVisibleLines; i++) {
+			for (let line = this.startLine, i = 0; line <= this.$parent.maxLine && i < this.maxVisibleLines; i++) {
 				let fold = this.$parent.folder.getFoldByLine(line);
 				let lineObj = this.$parent.myContext.htmls[line - 1];
 				let preLineObj = this.$parent.myContext.htmls[line - 2];
@@ -239,7 +239,7 @@ export default {
 			let results = [];
 			let fResults = [];
 			let tabSize = this.$parent.tabSize;
-			for (let line = this.startLine, i = 0; line <= this.$parent.myContext.htmls.length && i < this.maxVisibleLines; i++) {
+			for (let line = this.startLine, i = 0; line <= this.$parent.maxLine && i < this.maxVisibleLines; i++) {
 				let fold = this.$parent.folder.getFoldByLine(line);
 				let text = this.$parent.myContext.htmls[line - 1].text;
 				let top = i * this.$parent.charObj.charHight * this.scale;
@@ -255,12 +255,6 @@ export default {
 				}
 			}
 			this.worker.postMessage({ event: 'render-selected-bg', data: { results, fResults } });
-
-			function _getLength(text) {
-				let tabNum = text.match(/\t/);
-				tabNum = (tabNum && tabNum.length) || 0;
-				return text.length + (tabSize - 1) * tabNum;
-			}
 		},
 		renderAllSearchdBg() {
 			let list = this.$parent.fSelecter.ranges.toArray();
