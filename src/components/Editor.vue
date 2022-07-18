@@ -1588,11 +1588,13 @@ export default {
 			let tabNum = this.getTabNum(line);
 			let tabLines = this.getTabLines(tabNum);
 			let fold = '';
+			let foldClass = '';
 			let diffClass = '';
 			let top = (this.folder.getRelativeLine(line) - 1) * this.charObj.charHight - this.deltaTop + 'px';
 			if (this.folder.getFoldByLine(line)) {
 				//该行已经折叠
 				fold = 'close';
+				foldClass = 'fold-close';
 			} else if (this.folder.getRangeFold(line, true)) {
 				//可折叠
 				fold = 'open';
@@ -1622,6 +1624,7 @@ export default {
 				tabLines: tabLines,
 				fold: fold,
 				bgClass: '',
+				foldClass: foldClass,
 				diffClass: diffClass,
 				isFsearch: false,
 				selected: false,
