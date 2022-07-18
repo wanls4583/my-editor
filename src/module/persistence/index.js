@@ -74,8 +74,8 @@ export default class {
 				active = item.active;
 			}
 		});
-		if (data && !active) {
-			active[0].active = true;
+		if (data.length && !active) {
+			data[0].active = true;
 		}
 		Util.writeFileSync(globalData.tabPath, JSON.stringify(data));
 	}
