@@ -53,6 +53,28 @@ export default class {
         }
         return results;
     }
+    getActiveRangeByLine(line) {
+        let results = [];
+        let it = this.activedRanges.search(
+            { line: line, column: 0 },
+            (value, item) => {
+                return Util.comparePos(value, item.end);
+            },
+            true
+        );
+        if (it) {
+            let value = it.next();
+            while (value) {
+                if (value.start.line === line || value.end.line === line) {
+                    results.push(value);
+                } else if (value.start.line > line) {
+                    break;
+                }
+                value = it.next();
+            }
+        }
+        return results;
+    }
     // 检测光标是否在选中区域范围的边界
     getRangeByCursorPos(cursorPos) {
         let result = this.ranges.search(cursorPos, (value, item) => {

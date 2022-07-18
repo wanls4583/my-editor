@@ -885,27 +885,44 @@ export default {
 			this.renderObjs.splice();
 			this.$nextTick(() => {
 				let selectionNumMap = {};
+				let renderedRangeMap = new Map();
+				let renderObj = null;
+				let selections = null;
+				let fSelections = null;
+				let rang = null;
 				this.renderSelectionObjs = [];
 				for (let i = 0; i < this.renderObjs.length; i++) {
-					let renderObj = this.renderObjs[i];
+					renderObj = this.renderObjs[i];
 					selectionNumMap[renderObj.num] = { line: renderObj.num, top: renderObj.top, selections: [] };
 					this.renderSelectionObjs.push(selectionNumMap[renderObj.num]);
 				}
 				for (let i = 0; i < this.renderObjs.length; i++) {
-					let renderObj = this.renderObjs[i];
+					renderObj = this.renderObjs[i];
 					if (this.searchVisible) {
-						let fSelections = this.fSelecter.getRangeByLine(renderObj.num);
-						let selections = this.selecter.getActiveRangeWithCursorPos(renderObj.num);
+						fSelections = this.fSelecter.getRangeByLine(renderObj.num);
+						selections = this.selecter.getActiveRangeByLine(renderObj.num);
 						for (let i = 0; i < fSelections.length; i++) {
-							this._renderSelectedBg(fSelections[i], selectionNumMap, true);
+							rang = fSelections[i];
+							if (!renderedRangeMap.has(rang)) {
+								this._renderSelectedBg(rang, selectionNumMap, true);
+								renderedRangeMap.set(rang, true);
+							}
 						}
 						for (let i = 0; i < selections.length; i++) {
-							this._renderSelectedBg(selections[i], selectionNumMap, true);
+							rang = selections[i];
+							if (!renderedRangeMap.has(rang)) {
+								this._renderSelectedBg(rang, selectionNumMap, true);
+								renderedRangeMap.set(rang, true);
+							}
 						}
 					} else {
-						let selections = this.selecter.getRangeByLine(renderObj.num);
+						selections = this.selecter.getRangeByLine(renderObj.num);
 						for (let i = 0; i < selections.length; i++) {
-							this._renderSelectedBg(selections[i], selectionNumMap, true);
+							rang = selections[i];
+							if (!renderedRangeMap.has(rang)) {
+								this._renderSelectedBg(rang, selectionNumMap, true);
+								renderedRangeMap.set(rang, true);
+							}
 						}
 					}
 				}
