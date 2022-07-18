@@ -1981,7 +1981,7 @@ export default {
 		},
 		// 滚动滚轮
 		onWheel(e) {
-			this.scrollDeltaY = e.deltaY;
+			this.scrollDeltaY = e.deltaY / 2;
 			this.scrollDeltaX = e.deltaX;
 			if ((this.scrollDeltaY || this.scrollDeltaX) && !this.wheelTask) {
 				this.wheelTask = globalData.scheduler.addUiTask(() => {
