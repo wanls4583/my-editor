@@ -55,14 +55,14 @@
 					</div>
 					<div class="my-bg-view">
 						<div :style="{top: item.top, height: _lineHeight}" class="my-line-bgs" v-for="item in renderSelectionObjs">
-							<div :class="{ 'my-active': range.active, 'my-search-bg': range.isFsearch }" :style="{ left: range.left, width: range.width, height: _lineHeight }" class="my-select-bg" v-for="range in item.selections"></div>
+							<div :class="[range.bgClass]" :style="range.bgStyle" class="my-select-bg" v-for="range in item.selections"></div>
 						</div>
 						<div :style="{height: _lineHeight, top: _activeLineTop}" class="my-line-bg" v-if="activeLineBg"></div>
 						<div :style="_bracketStartStyle" class="my-bracket-match" v-if="_bracketStartVisible"></div>
 						<div :style="_bracketEndStyle" class="my-bracket-match" v-if="_bracketEndVisible"></div>
 					</div>
 					<div class="my-indent-view">
-						<div :style="{height: _lineHeight, top: line.top}" class="my-indent-line" v-for="line in renderObjs" v-html="line.tabLines"></div>
+						<div :style="{height: _lineHeight, top: line.top}" class="my-indents" v-for="line in renderObjs" v-html="line.tabLines"></div>
 					</div>
 					<auto-tip :styles="autoTipStyle" :tipList="autoTipList" @change="onClickAuto" ref="autoTip" v-show="autoTipList && autoTipList.length"></auto-tip>
 				</div>
@@ -878,19 +878,23 @@ export default {
 			}, 15);
 		},
 		renderSelectedBg(isAsync) {
+			let selections = this.selecter.ranges.toArray();
+			let fSelections = this.fSelecter.ranges.toArray();
 			clearTimeout(this.renderSelectedBgTimer);
 			this.renderSelectedBgTimer = null;
 			this.activeLineBg = true;
 			this.clearSelectionToken();
-			this.renderObjs.forEach((renderObj, index) => {
-				renderObj.bgClass = '';
-			});
-			this.fSelecter.ranges.forEach((range) => {
+			for (let i = 0; i < this.renderObjs.length; i++) {
+				this.renderObjs[i].bgClass = '';
+			}
+			for (let i = 0; i < fSelections.length; i++) {
+				let range = fSelections[i];
 				if (range.end.line > range.start.line + 1) {
 					this._renderWholeLineBg(range, true);
 				}
-			});
-			this.selecter.ranges.forEach((range) => {
+			}
+			for (let i = 0; i < selections.length; i++) {
+				let range = selections[i];
 				if (range.end.line > range.start.line + 1) {
 					let _range = this.fSelecter.getRangeByCursorPos(range.start);
 					if (this.searchVisible) {
@@ -902,29 +906,30 @@ export default {
 						this._renderWholeLineBg(range);
 					}
 				}
-			});
+			}
 			this.renderObjs.splice();
 			this.$nextTick(() => {
 				let selectionNumMap = {};
 				this.renderSelectionObjs = [];
-				this.renderObjs.forEach((renderObj, index) => {
+				for (let i = 0; i < this.renderObjs.length; i++) {
+					let renderObj = this.renderObjs[i];
 					selectionNumMap[renderObj.num] = { line: renderObj.num, top: renderObj.top, selections: [] };
 					this.renderSelectionObjs.push(selectionNumMap[renderObj.num]);
-				});
-				this.fSelecter.ranges.forEach((range) => {
-					this._renderSelectedBg(range, selectionNumMap, true);
-				});
-				this.selecter.ranges.forEach((range) => {
-					let _range = this.fSelecter.getRangeByCursorPos(range.start);
+				}
+				for (let i = 0; i < fSelections.length; i++) {
+					this._renderSelectedBg(fSelections[i], selectionNumMap, true);
+				}
+				for (let i = 0; i < selections.length; i++) {
 					if (this.searchVisible) {
+						let _range = this.fSelecter.getRangeByCursorPos(selections[i].start);
 						// 优先渲染搜索框的选中范围
-						if (!_range && range.active) {
-							this._renderSelectedBg(range, selectionNumMap);
+						if (!_range && selections[i].active) {
+							this._renderSelectedBg(selections[i], selectionNumMap);
 						}
 					} else {
-						this._renderSelectedBg(range, selectionNumMap);
+						this._renderSelectedBg(selections[i], selectionNumMap);
 					}
-				});
+				}
 			});
 		},
 		// 渲染整行选中的背景
@@ -962,30 +967,30 @@ export default {
 		_renderSelectedBg(range, selectionNumMap, isFsearch) {
 			let start = range.start;
 			let end = range.end;
-			let text = this.myContext.htmls[start.line - 1].text;
-			let endColumn = text.length;
 			if (this.renderedLineMap[start.line]) {
+				let text = this.myContext.htmls[start.line - 1].text;
+				let endColumn = text.length;
 				let renderObj = this.renderedLineMap[start.line];
+				let bgClass = [];
+				range.active && bgClass.push('my-active');
+				isFsearch && bgClass.push('my-search-bg');
 				if (start.startRenderObj) {
-					start.startRenderObj.active = range.active;
-					start.startRenderObj.isFsearch = range.isFsearch;
-					start.startRenderObj.top = renderObj.top;
+					start.startRenderObj.bgClass = bgClass;
 				} else {
-					start.left = this.getExactLeft(start);
+					let width = '';
+					let left = this.getExactLeft(start);
 					if (start.line == end.line) {
-						start.width = this.getExactLeft(end) - start.left || 10;
-						start.width += 'px';
+						width = this.getExactLeft(end) - left || 10;
+						width += 'px';
 					} else {
-						start.width = this.getExactLeft({ line: start.line, column: text.length }) - start.left || 10;
-						start.width += 'px';
+						width = this.getExactLeft({ line: start.line, column: text.length }) - left || 10;
+						width += 'px';
 					}
-					start.left += 'px';
+					left += 'px';
 					// 缓存结果对象
 					start.startRenderObj = {
-						left: start.left,
-						width: start.width,
-						active: range.active,
-						isFsearch: isFsearch,
+						bgClass: bgClass,
+						bgStyle: { left: left, width: width, height: this._lineHeight },
 					};
 				}
 				selectionNumMap[start.line].selections.push(start.startRenderObj);
@@ -997,21 +1002,20 @@ export default {
 			}
 			if (end.line > start.line && this.renderedLineMap[end.line]) {
 				let renderObj = this.renderedLineMap[end.line];
+				let bgClass = [];
+				range.active && bgClass.push('my-active');
+				isFsearch && bgClass.push('my-search-bg');
 				if (end.endRenderObj) {
-					end.endRenderObj.active = range.active;
-					end.endRenderObj.isFsearch = range.isFsearch;
-					end.endRenderObj.top = renderObj.top;
+					end.endRenderObj.bgClass = bgClass;
 				} else {
-					end.left = '0px';
-					text = this.myContext.htmls[end.line - 1].text;
-					end.width = this.getExactLeft(end) || 10;
-					end.width += 'px';
+					let width = '';
+					let text = this.myContext.htmls[end.line - 1].text;
+					width = this.getExactLeft(end) || 10;
+					width += 'px';
 					// 缓存结果对象
 					end.endRenderObj = {
-						left: end.left,
-						width: end.width,
-						active: range.active,
-						isFsearch: isFsearch,
+						bgClass: bgClass,
+						bgStyle: { left: '0px', width: width, height: this._lineHeight },
 					};
 				}
 				selectionNumMap[end.line].selections.push(end.endRenderObj);

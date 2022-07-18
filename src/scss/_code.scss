@@ -61,13 +61,14 @@
 		background-color: var(--my-editorBracketMatch-background);
 	}
 
-	&-indent-line {
+	&-indents {
 		position: absolute;
 		width: 100%;
 	}
 
 	&-indent {
 		position: absolute;
+		top: 0;
 		width: 0px;
 		height: 100%;
 		border-left: 1px solid var(--my-editorIndentGuide-background);
