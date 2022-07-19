@@ -53,6 +53,7 @@
 	&-line-bgs {
 		position: absolute;
 		width: 100%;
+		overflow: hidden;
 	}
 
 	&-bracket-match {
@@ -64,6 +65,7 @@
 	&-indents {
 		position: absolute;
 		width: 100%;
+		overflow: hidden;
 	}
 
 	&-indent {

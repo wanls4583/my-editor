@@ -17,14 +17,9 @@
 				<div :style="{ top: _top }" class="my-num-content" ref="numContent">
 					<div :class="{ 'my-active': nowCursorPos.line === numItem.num }" :style="{ top: numItem.top }" class="my-num" v-for="numItem in renderNums">
 						<span class="num">{{ numItem._num }}</span>
-						<span
-							:class="['iconfont', numItem.fold == 'open' ? 'my-fold-open icon-down1' : 'my-fold-close icon-right']"
-							@click="onToggleFold(numItem.num)"
-							class="my-fold my-center-center"
-							v-if="numItem.fold"
-						></span>
+						<span :class="numItem.fold == 'open' ? 'my-fold-open icon-down1' : 'my-fold-close icon-right'" @click="onToggleFold(numItem.num)" class="my-fold my-center-center iconfont" v-if="numItem.fold"></span>
 						<template v-if="type !== 'diff'">
-							<span :class="[numItem.diffType]" @click="onShowDiff(numItem.num)" class="my-diff-num" v-if="numItem.diffType"></span>
+							<span :class="numItem.diffType" @click="onShowDiff(numItem.num)" class="my-diff-num" v-if="numItem.diffType"></span>
 						</template>
 					</div>
 				</div>
@@ -36,7 +31,7 @@
 				<!-- 内如区域 -->
 				<div :style="{ left: _left, top: _top }" @mousedown="onContentMdown" @mouseleave="onContentMLeave" @mousemove="onContentMmove" @selectend.prevent="onSelectend" class="my-content" ref="content">
 					<div :style="{width: _contentMinWidth+'px'}" class="my-lines-view" ref="lineView">
-						<div :class="[line.diffClass]" :data-line="line.num" :id="_lineId(line.num)" :style="{top: line.top}" class="my-line" v-for="line in renderObjs">
+						<div :class="line.diffClass" :data-line="line.num" :id="_lineId(line.num)" :style="{top: line.top}" class="my-line" v-for="line in renderObjs">
 							<div :class="[line.fold == 'close' ? 'fold-close' : '', line.bgClass]" :data-line="line.num" class="my-code" v-html="line.html"></div>
 						</div>
 					</div>
@@ -47,7 +42,7 @@
 					</div>
 					<div :style="{width: _contentMinWidth+'px'}" class="my-bg-view">
 						<div :style="{top: item.top, height: _lineHeight}" class="my-line-bgs" v-for="item in renderSelectionObjs">
-							<div :class="[range.bgClass]" :style="range.bgStyle" class="my-select-bg" v-for="range in item.selections"></div>
+							<div :class="range.bgClass" :style="range.bgStyle" class="my-select-bg" v-for="range in item.selections"></div>
 						</div>
 						<div :style="{height: _lineHeight, top: _activeLineTop}" class="my-line-bg" v-if="activeLineBg"></div>
 						<div :style="_bracketStartStyle" class="my-bracket-match" v-if="_bracketStartVisible"></div>
@@ -416,6 +411,7 @@ export default {
 		cancelAnimationFrame(this.focusTimer);
 		cancelAnimationFrame(this.renderTimer);
 		cancelAnimationFrame(this.renderCursorTimer);
+		cancelAnimationFrame(this.checkErrorOverTimer);
 		clearTimeout(this.curserTimer);
 		clearTimeout(this.renderSelectedBgTimer);
 		clearTimeout(this.bracketMatchTimer);
@@ -429,9 +425,9 @@ export default {
 		initData() {
 			contexts[this.tabData.id] = new Context(this);
 			this.renderedCb = [];
-			this.renderedLineMap = Object.freeze({});
-			this.renderedIdMap = Object.freeze({});
-			this.renderNumsIdMap = Object.freeze({});
+			this.renderedLineMap = {};
+			this.renderedIdMap = {};
+			this.renderNumsIdMap = {};
 			this.editorId = this.tabData.id;
 			this.myContext = contexts[this.tabData.id];
 			this.maxWidthObj.lineId = this.myContext.htmls[0].lineId;
@@ -759,9 +755,9 @@ export default {
 		renderLines() {
 			let toRnederNums = [];
 			this.endLine = 0;
-			this.renderedLineMap = [];
-			this.renderedIdMap = [];
-			this.renderNumsIdMap = [];
+			this.renderedLineMap = {};
+			this.renderedIdMap = {};
+			this.renderNumsIdMap = {};
 			for (let i = 0, startLine = this.startLine; i < this.maxVisibleLines && startLine <= this.myContext.htmls.length; i++) {
 				let lineObj = this.myContext.htmls[startLine - 1];
 				let obj = this.getRenderObj(lineObj, startLine);
@@ -1217,9 +1213,11 @@ export default {
 			}
 		},
 		renderError(line) {
-			this.$nextTick(() => {
-				_renderError.call(this);
-			});
+			if (this.errors && this.errors.length) {
+				this.$nextTick(() => {
+					_renderError.call(this);
+				});
+			}
 
 			function _renderError() {
 				let $content = $(this.$refs.content);
@@ -1919,10 +1917,15 @@ export default {
 			_checkErrorOver.call(this, e);
 
 			function _checkErrorOver(e) {
-				let $target = $(e.target);
-				let line = $target.parent().attr('data-line');
-				this.tipContent = '';
-				line && this.onErrorMousemove(e, line);
+				cancelAnimationFrame(this.checkErrorOverTimer);
+				this.checkErrorOverTimer = requestAnimationFrame(() => {
+					if (this.errors && this.errors.length) {
+						let $target = $(e.target);
+						let line = $target.parent().attr('data-line');
+						this.tipContent = '';
+						line && this.onErrorMousemove(e, line);
+					}
+				});
 			}
 		},
 		onContentMLeave() {
@@ -1930,9 +1933,8 @@ export default {
 		},
 		// 鼠标移动事件
 		onDocumentMmove(e) {
-			let that = this;
-			let offset = $(this.$refs.scroller).offset();
 			if (this.mouseStartObj && Date.now() - this.mouseStartObj.time > 100) {
+				let offset = $(this.$refs.scroller).offset();
 				let line = Math.ceil((this.scrollTop + e.clientY - offset.top) / this.charObj.charHight);
 				line = line < 1 ? 1 : line;
 				line = line > this.maxLine ? this.maxLine : line;

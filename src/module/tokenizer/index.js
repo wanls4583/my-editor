@@ -153,6 +153,7 @@ export default class {
 		this.editor = null;
 		this.context = null;
 		cancelIdleCallback(this.tokenizeLinesTimer);
+		cancelAnimationFrame(this.tokenizeVisibleLinsTimer);
 		globalData.scheduler.removeTask(this.tokenizeLinesTask);
 	}
 	onInsertContentAfter(nowLine, newLine) {
