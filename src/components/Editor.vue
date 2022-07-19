@@ -1461,18 +1461,21 @@ export default {
 			this._nowCursorPos = null;
 			this.nowCursorPos = nowCursorPos || { line: 1, column: 0 };
 			if (nowCursorPos) {
-				let height = this.folder.getRelativeLine(nowCursorPos.line + 1) * this.charObj.charHight;
-				if (height > this.scrollTop + this.scrollerArea.height) {
-					height = height > this.contentHeight ? this.contentHeight : height;
-					this.setStartLine(height - this.scrollerArea.height);
-					_renderCursor.call(this);
-				} else if (nowCursorPos.line <= this.startLine) {
-					let scrollTop = (this.folder.getRelativeLine(nowCursorPos.line) - 1) * this.charObj.charHight;
-					this.setStartLine(scrollTop);
-					_renderCursor.call(this);
-				} else {
-					this.renderCursor(true);
-				}
+				// 延时处理，等待设置contentHeight
+				this.$nextTick(() => {
+					let height = this.folder.getRelativeLine(nowCursorPos.line + 1) * this.charObj.charHight;
+					if (height > this.scrollTop + this.scrollerArea.height) {
+						height = height > this.contentHeight ? this.contentHeight : height;
+						this.setStartLine(height - this.scrollerArea.height);
+						_renderCursor.call(this);
+					} else if (nowCursorPos.line <= this.startLine) {
+						let scrollTop = (this.folder.getRelativeLine(nowCursorPos.line) - 1) * this.charObj.charHight;
+						this.setStartLine(scrollTop);
+						_renderCursor.call(this);
+					} else {
+						this.renderCursor(true);
+					}
+				});
 			}
 
 			function _renderCursor() {
