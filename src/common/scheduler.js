@@ -28,17 +28,17 @@ export default class {
 		});
 	}
 	uiRun() {
-		this.uiQueue.forEach(task => {
-			task.__task__();
-		});
-		this.uiTimestamp = Date.now();
-		setTimeout(() => {
-			this.uiRun();
-		}, this.frameTime);
+		for (let i = 0; i < this.uiQueue.length; i++) {
+			this.uiQueue[i].__task__();
+		}
 		if (this.pending) {
 			this.pending = false;
 			this.channel.port1.postMessage('run');
 		}
+		this.uiTimestamp = Date.now();
+		setTimeout(() => {
+			this.uiRun();
+		}, this.frameTime);
 	}
 	addTask(task, { level = 1, delay = 0, loop = false } = {}) {
 		let taskId = this.taskId++;
