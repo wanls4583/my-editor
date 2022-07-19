@@ -262,6 +262,10 @@ export default {
 			this.worker.postMessage({ event: 'render-selected-bg', data: { results, fResults } });
 		},
 		renderAllSearchdBg() {
+			// 大于10000个结果时，不再处理
+			if(this.$parent.fSelecter.ranges.size > 10000) {
+				return;
+			}
 			let list = this.$parent.fSelecter.ranges.toArray();
 			let results = [];
 			let preCursorPos = {};
