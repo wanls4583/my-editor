@@ -119,8 +119,11 @@
 		top: 0;
 		left: 0;
 		right: 0;
+		bottom: 0;
 		z-index: 1;
 		pointer-events: none;
+		contain: strict;
+		transform: translate3d(0px, 0px, 0px);
 	}
 
 	&-lines-view {
@@ -128,7 +131,10 @@
 		top: 0;
 		left: 0;
 		right: 0;
+		bottom: 0;
 		z-index: 2;
+		contain: strict;
+		transform: translate3d(0px, 0px, 0px);
 	}
 
 	&-indent-view {
@@ -136,8 +142,11 @@
 		top: 0;
 		left: 0;
 		right: 0;
+		bottom: 0;
 		z-index: 3;
 		pointer-events: none;
+		contain: strict;
+		transform: translate3d(0px, 0px, 0px);
 	}
 
 	&-cursor-view {
@@ -145,8 +154,11 @@
 		top: 0;
 		left: 0;
 		right: 0;
+		bottom: 0;
 		z-index: 4;
 		pointer-events: none;
+		contain: strict;
+		transform: translate3d(0px, 0px, 0px);
 	}
 
 	&-cursor {

@@ -190,10 +190,13 @@ export default {
 				return;
 			}
 			this.renderTimer = setTimeout(() => {
-				this.renderLines();
-				this.renderDiff();
-				this.renderSelectedBg();
-				this.renderTimer = null;
+				cancelAnimationFrame(this.renderTimer);
+				this.renderTimer = requestAnimationFrame(() => {
+					this.renderLines();
+					this.renderDiff();
+					this.renderSelectedBg();
+					this.renderTimer = null;
+				});
 			}, 15);
 		},
 		renderLines() {
@@ -262,7 +265,7 @@ export default {
 		},
 		renderAllSearchdBg() {
 			// 大于10000个结果时，不再处理
-			if(this.$parent.fSelecter.ranges.size > 10000) {
+			if (this.$parent.fSelecter.ranges.size > 10000) {
 				return;
 			}
 			let list = this.$parent.fSelecter.ranges.toArray();
