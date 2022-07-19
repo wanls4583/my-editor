@@ -86,6 +86,7 @@ export default {
 		this.worker.terminate();
 		this.unbindEvent();
 		clearTimeout(this.renderTimer);
+		cancelAnimationFrame(this.renderTimer);
 		globalData.scheduler.removeUiTask(this.moveTask);
 	},
 	methods: {
@@ -189,12 +190,10 @@ export default {
 				return;
 			}
 			this.renderTimer = setTimeout(() => {
-				this.renderTimer = requestAnimationFrame(() => {
-					this.renderLines();
-					this.renderDiff();
-					this.renderSelectedBg();
-					this.renderTimer = null;
-				});
+				this.renderLines();
+				this.renderDiff();
+				this.renderSelectedBg();
+				this.renderTimer = null;
 			}, 15);
 		},
 		renderLines() {
