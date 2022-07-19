@@ -198,6 +198,7 @@ export default class {
 	closeAll() {
 		let editorList = this.editorList.slice();
 		this.closeMultiple(editorList);
+		globalData.nowEditorId = null;
 	}
 	closeSaved() {
 		let editorList = this.editorList.filter(item => {
