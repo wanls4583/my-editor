@@ -779,36 +779,37 @@ export default {
 				let renderNums = [];
 				let preRenderObjs = this.renderObjs;
 				this.renderObjs = [];
-				preRenderObjs.forEach((item, index) => {
+				this.renderNums = [];
+				for (let index = 0; index < preRenderObjs.length; index++) {
+					let item = preRenderObjs[index];
 					if (this.renderedLineMap[item.num] && index < toRnederNums.length) {
 						this.renderObjs[index] = this.renderedLineMap[item.num];
 						this.renderedLineMap[item.num].index = index;
 						renderNumMap[item.num] = true;
 					}
-				});
-				toRnederNums.forEach((num) => {
-					if (!renderNumMap[num]) {
-						renderNums.push(num);
+				}
+				for (let i = 0; i < toRnederNums.length; i++) {
+					if (!renderNumMap[toRnederNums[i]]) {
+						renderNums.push(toRnederNums[i]);
 					}
-				});
+				}
 				renderNums.reverse();
-				toRnederNums.forEach((num, index) => {
-					if (!this.renderObjs[index]) {
-						let renderObj = this.renderedLineMap[renderNums.pop()];
+				for (let index = 0; index < toRnederNums.length; index++) {
+					let renderObj = this.renderObjs[index];
+					if (!renderObj) {
+						renderObj = this.renderedLineMap[renderNums.pop()];
 						this.renderObjs[index] = renderObj;
 						renderObj.index = index;
 					}
-				});
-				this.renderNums = this.renderObjs.map((item) => {
 					let numObj = {
-						lineId: item.lineId,
-						num: item.num,
-						top: item.top,
-						fold: item.fold,
+						lineId: renderObj.lineId,
+						num: renderObj.num,
+						top: renderObj.top,
+						fold: renderObj.fold,
 					};
-					this.renderNumsIdMap[item.lineId] = numObj;
-					return numObj;
-				});
+					this.renderNumsIdMap[renderObj.lineId] = numObj;
+					this.renderNums.push(numObj)
+				}
 				this.setNumExtraData();
 			}
 		},
