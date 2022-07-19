@@ -900,7 +900,7 @@ export default {
 						for (let i = 0; i < selections.length; i++) {
 							rang = selections[i];
 							if (!renderedRangeMap.has(rang)) {
-								this._renderSelectedBg(rang, selectionNumMap, true);
+								this._renderSelectedBg(rang, selectionNumMap);
 								renderedRangeMap.set(rang, true);
 							}
 						}
@@ -909,7 +909,7 @@ export default {
 						for (let i = 0; i < selections.length; i++) {
 							rang = selections[i];
 							if (!renderedRangeMap.has(rang)) {
-								this._renderSelectedBg(rang, selectionNumMap, true);
+								this._renderSelectedBg(rang, selectionNumMap);
 								renderedRangeMap.set(rang, true);
 							}
 						}
@@ -1334,10 +1334,10 @@ export default {
 		},
 		// 搜索完整单词
 		searchWord(direct) {
-			let resultObj = null;
-			this.searcher.search({ direct: direct });
 			if (this.searchVisible) {
 				this.$refs.searchDialog.searchWord(direct);
+			} else {
+				this.searcher.search({ direct: direct });
 			}
 		},
 		// 上一个提示
