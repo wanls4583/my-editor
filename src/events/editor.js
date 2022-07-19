@@ -55,11 +55,11 @@ export default class {
 		});
 	}
 	changeTab(id) {
-		globalData.nowEditorId = id;
 		cancelAnimationFrame(this.changeTabTimer);
 		this.changeTabTimer = requestAnimationFrame(() => {
 			let tab = Util.getTabById(this.editorList, id);
 			if (tab && !tab.active) {
+				globalData.nowEditorId = id;
 				if (tab.path && !tab.loaded) {
 					//tab对应的文件内容还未加载
 					EventBus.$emit('file-open', tab);
@@ -198,7 +198,10 @@ export default class {
 	closeAll() {
 		let editorList = this.editorList.slice();
 		this.closeMultiple(editorList);
-		globalData.nowEditorId = null;
+		Promise.resolve().then(()=>{
+			globalData.nowEditorId = null;
+			EventBus.$emit('editor-changed', null);
+		});
 	}
 	closeSaved() {
 		let editorList = this.editorList.filter(item => {
