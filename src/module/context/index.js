@@ -64,8 +64,8 @@ class Context {
 			return;
 		}
 		this.renderTimer = requestAnimationFrame(() => {
-			this.editor.render(this.scrollToCursor);
 			this.renderTimer = null;
+			this.editor.render(this.scrollToCursor);
 		});
 	}
 	toggleLineComment() {

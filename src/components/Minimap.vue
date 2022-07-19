@@ -192,10 +192,10 @@ export default {
 			this.renderTimer = setTimeout(() => {
 				cancelAnimationFrame(this.renderTimer);
 				this.renderTimer = requestAnimationFrame(() => {
+					this.renderTimer = null;
 					this.renderLines();
 					this.renderDiff();
 					this.renderSelectedBg();
-					this.renderTimer = null;
 				});
 			}, 15);
 		},

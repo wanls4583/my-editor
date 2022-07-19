@@ -738,6 +738,7 @@ export default {
 				return;
 			}
 			this.renderTimer = requestAnimationFrame(() => {
+				this.renderTimer = null;
 				this.renderLines();
 				this.renderSelectedBg();
 				this.renderError();
@@ -748,7 +749,6 @@ export default {
 					cb();
 				});
 				this.renderedCb.empty();
-				this.renderTimer = null;
 			});
 		},
 		// 渲染代码
@@ -836,10 +836,10 @@ export default {
 				return;
 			}
 			this.renderSelectedBgTimer = setTimeout(() => {
+				this.renderSelectedBgTimer = null;
 				this.renderSelectedBg(true);
 				this.$refs.minimap && this.$refs.minimap.renderSelectedBg();
 				this.$refs.minimap && this.$refs.minimap.renderAllSearchdBg();
-				this.renderSelectedBgTimer = null;
 			}, 15);
 		},
 		renderSelectedBg(isAsync) {
