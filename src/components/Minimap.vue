@@ -245,11 +245,12 @@ export default {
 			let tabSize = this.$parent.tabSize;
 			for (let line = this.startLine, i = 0; line <= this.$parent.maxLine && i < this.maxVisibleLines; i++) {
 				let fold = this.$parent.folder.getFoldByLine(line);
-				let text = this.$parent.myContext.htmls[line - 1].text;
 				let top = i * this.$parent.charObj.charHight * this.scale;
-				if (this.$parent.fSelecter.getRangeByLine(line).length) {
+				if (this.$parent.fSelecter.getRangeByLine(line).length ||
+					this.$parent.fSelecter.getRangeWithCursorPos({ line: line, column: 0 })) {
 					fResults.push(top);
-				} else if (this.$parent.selecter.getActiveRangeByLine(line).length) {
+				} else if (this.$parent.selecter.getActiveRangeByLine(line).length ||
+					this.$parent.selecter.getActiveRangeWithCursorPos({ line: line, column: 0 })) {
 					results.push(top);
 				}
 				if (fold) {
@@ -265,7 +266,6 @@ export default {
 			let results = [];
 			let preCursorPos = {};
 			let preTop = -1;
-			let endLine = this.getEndLine();
 			for (let i = 0; i < list.length; i++) {
 				let cursorPos = list[i].start;
 				if (cursorPos.line !== preCursorPos.line && !this.$parent.folder.getLineInFold(cursorPos.line)) {
@@ -369,15 +369,20 @@ export default {
 			let preCursorPos = {};
 			let endLine = this.getEndLine();
 			for (let line = this.startLine, i = 0; line <= this.$parent.maxLine && i < this.maxVisibleLines; i++) {
+				let fold = this.$parent.folder.getFoldByLine(line);
 				let cursorList = this.$parent.cursor.getCursorsByLine(line);
-				for (let i = 0; i < cursorList.length; i++) {
-					let cursorPos = cursorList[i];
+				for (let j = 0; j < cursorList.length; j++) {
+					let cursorPos = cursorList[j];
 					if (cursorPos.line !== preCursorPos.line) {
-						let line = this.$parent.folder.getRelativeLine(cursorPos.line);
-						let top = (line - this.relStartLine) * this.$parent.charObj.charHight * this.scale;
+						let top = i * this.$parent.charObj.charHight * this.scale;
 						results.push(top);
 					}
 					preCursorPos = cursorPos;
+				}
+				if (fold) {
+					line = fold.end.line;
+				} else {
+					line++;
 				}
 			}
 			if (this.preCursorResult + '' !== results + '') {
