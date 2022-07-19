@@ -10,6 +10,9 @@ export default class {
         this.editorBar = editorBar;
     }
     onKeydown(e) {
+		if(globalData.compositionstart) { //正在输中文，此时不做处理
+			return;
+		}
         if (e.ctrlKey) {
             if (this.pressK) {
                 this.pressK = false;

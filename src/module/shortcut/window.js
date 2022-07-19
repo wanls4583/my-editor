@@ -11,6 +11,9 @@ const remote = window.require('@electron/remote');
 export default class {
 	constructor() { }
 	onKeydown(e) {
+		if(globalData.compositionstart) { //正在输中文，此时不做处理
+			return;
+		}
 		if (e.ctrlKey && e.shiftKey) {
 			switch (e.code) {
 				case 'KeyS':

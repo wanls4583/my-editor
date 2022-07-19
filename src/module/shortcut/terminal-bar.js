@@ -8,6 +8,9 @@ import Util from '@/common/util';
 export default class {
 	constructor() { }
 	onKeydown(e) {
+		if(globalData.compositionstart) { //正在输中文，此时不做处理
+			return;
+		}
 		if (e.ctrlKey) {
 			if (this.pressK) {
 				this.pressK = false;

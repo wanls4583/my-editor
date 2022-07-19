@@ -13,6 +13,9 @@ export default class {
 		this.context = context;
 	}
 	onKeydown(e) {
+		if(globalData.compositionstart) { //正在输中文，此时不做处理
+			return;
+		}
 		if (e.ctrlKey && e.shiftKey) {
 			switch (e.code) {
 				case 'Enter':

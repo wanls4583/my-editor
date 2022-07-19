@@ -173,6 +173,13 @@ export default class {
         this.cacheData = cacheData;
         if (cacheData) {
             this.selecter.addRange(cacheData.results);
+			let index = cacheData.index;
+			let result = cacheData.results[index];
+			return {
+				now: index + 1,
+	            result: result,
+	            results: cacheData.results,
+			}
         }
     }
     scrollToResult(result) {

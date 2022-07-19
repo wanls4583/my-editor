@@ -1300,15 +1300,23 @@ export default {
 		openSearch(replaceMode) {
 			let searchDialog = this.$refs.searchDialog;
 			let data = { replaceVisible: !!replaceMode, matchCase: false, wholeWord: false };
-			this.searchVisible = true;
-			if (this.cursorFocus) {
-				let searchConfig = this.fSearcher.getSearchConfig();
-				if (searchConfig && searchConfig.text !== searchDialog.text) {
-					data.text = searchConfig.text;
+			if(!this.searchVisible && this.searcher.hasCache()) { //复制已有结果到搜索框上下文
+				let nowResult = this.fSearcher.clone(this.searcher.getCacheData());
+				data.now = nowResult.now;
+				data.count = nowResult.results.length;
+				Object.assign(data, this.fSearcher.getSearchConfig());
+				this.searcher.clearSearch();
+			} else {
+				if (this.cursorFocus) {
+					let searchConfig = this.fSearcher.getSearchConfig();
+					if (searchConfig && searchConfig.text !== searchDialog.text) {
+						data.text = searchConfig.text;
+					}
 				}
+				searchDialog.search();
 			}
+			this.searchVisible = true;
 			searchDialog.initData(data);
-			searchDialog.search();
 			searchDialog.focus();
 		},
 		// 搜索完整单词
@@ -2011,6 +2019,7 @@ export default {
 			}
 			clearTimeout(this.compositionendTimer);
 			this.compositionstart = true;
+			globalData.compositionstart = true;
 		},
 		// 中文输入结束
 		onCompositionend() {
@@ -2025,6 +2034,7 @@ export default {
 			//避免有些浏览器compositionend在input事件之前触发的bug
 			this.compositionendTimer = setTimeout(() => {
 				this.compositionstart = false;
+				globalData.compositionstart = false;
 			}, 100);
 		},
 		// 输入事件
