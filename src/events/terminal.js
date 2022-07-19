@@ -61,6 +61,9 @@ export default class {
 		tab.id = Util.getUUID();
 		this.terminalList.push(tab);
 		EventBus.$emit('terminal-change', tab.id);
+		if(!globalData.views.terminal) {
+			EventBus.$emit('terminal-toggle');
+		}
 	}
 	changeTerminalTab(id) {
 		this.terminalList.forEach(item => {
