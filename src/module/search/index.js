@@ -16,6 +16,7 @@ export default class {
     }
     search(searchObj) {
         let resultObj = null;
+        let result = null;
         let now = 0;
         let count = 0;
         let hasCache = this.hasCache();
@@ -58,11 +59,13 @@ export default class {
             }
             now = resultObj.now;
             count = resultObj.results.length;
+            result = resultObj.result;
         }
 
         return {
             now: now,
             count: count,
+            result: result,
         };
     }
     execSearch(config) {
@@ -124,7 +127,7 @@ export default class {
         };
         return {
             now: this.cacheData.index + 1,
-            result: result || results,
+            result: result || results[0],
             results: results,
         };
     }

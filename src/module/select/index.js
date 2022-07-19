@@ -85,6 +85,16 @@ export default class {
         });
         return result && result.next();
     }
+    // 检测光标是否在选中区域范围的边界
+    getActiveRangeByCursorPos(cursorPos) {
+        let result = this.activedRanges.search(cursorPos, (value, item) => {
+            if (Util.comparePos(value, item.start) === 0 || Util.comparePos(value, item.end) === 0) {
+                return 0;
+            }
+            return Util.comparePos(value, item.start);
+        });
+        return result && result.next();
+    }
     // 检查光标是否在选中范围内
     getRangeWithCursorPos(cursorPos) {
         let it = this.ranges.search(

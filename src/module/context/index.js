@@ -775,7 +775,8 @@ class Context {
 		let prePos = null;
 		let ranges = [];
 		this.editor.cursor.multiCursorPos.forEach(item => {
-			let range = this.editor.selecter.getRangeByCursorPos(item);
+			let range = this.editor.selecter.getActiveRangeByCursorPos(item) ||
+				this.editor.fSelecter.getActiveRangeByCursorPos(item);
 			let start = null;
 			if (range) {
 				ranges.push(range);
@@ -810,7 +811,9 @@ class Context {
 			text = str[0] === '\n' ? (text += str) : (text += '\n' + str);
 		});
 		if (cut && text.length) {
+			let originCursorPosList = this.getOriginCursorPosList();
 			let historyArr = this._deleteMultiContent({ rangeOrCursorList: ranges });
+			historyArr.originCursorPosList = originCursorPosList;
 			this.editor.history.pushHistory(historyArr);
 			this.addCursorList(historyArr.map((item) => { return item.cursorPos }));
 		}
