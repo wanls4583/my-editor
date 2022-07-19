@@ -214,8 +214,10 @@ export default class {
 						}
 					});
 				}
-			} else if (fileObj && fileObj.range) {
-				tab.cursorPos = Object.assign({}, fileObj.range.start);
+			} else {
+				if (fileObj && fileObj.range) {
+					tab.cursorPos = Object.assign({}, fileObj.range.start);
+				}
 				EventBus.$emit('editor-change', tab.id);
 			}
 		}

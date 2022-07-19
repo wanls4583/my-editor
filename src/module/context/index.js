@@ -809,10 +809,10 @@ class Context {
 			let str = this.getRangeText(item.start, item.end);
 			text = str[0] === '\n' ? (text += str) : (text += '\n' + str);
 		});
-		if (cut) {
+		if (cut && text.length) {
 			let historyArr = this._deleteMultiContent({ rangeOrCursorList: ranges });
-			historyArr.length && this.editor.history.pushHistory(historyArr);
-			this.editor.searcher.clearSearch();
+			this.editor.history.pushHistory(historyArr);
+			this.addCursorList(historyArr.map((item) => { return item.cursorPos }));
 		}
 		return text.slice(1);
 	}
