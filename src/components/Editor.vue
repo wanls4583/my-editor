@@ -1195,11 +1195,9 @@ export default {
 			}
 		},
 		renderError(line) {
-			if (this.errors && this.errors.length) {
-				this.$nextTick(() => {
-					_renderError.call(this);
-				});
-			}
+			this.$nextTick(() => {
+				_renderError.call(this);
+			});
 
 			function _renderError() {
 				let $content = $(this.$refs.content);
