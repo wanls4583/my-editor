@@ -65,6 +65,7 @@ export default class {
 				data.push({
 					id: item.id,
 					name: item.name,
+					icon: item.icon,
 					path: item.path,
 					tempPath: (!item.saved && path.join(globalData.cachePath, item.id)) || '',
 					active: item.active,
