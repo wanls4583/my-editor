@@ -614,7 +614,7 @@ export default {
 					try {
 						this.lint.worker && this.lint.worker.kill();
 						this.formatter.worker && this.formatter.worker.kill();
-					} catch (e) {}
+					} catch (e) { }
 				})
 			);
 		},
@@ -1185,9 +1185,10 @@ export default {
 
 			function _setLine(item) {
 				let cursorList = [];
-				that.cursor.getCursorsByLine(item.num).forEach((cursorPos) => {
-					cursorList.push({ top: item.top, left: _setCursorRealPos(cursorPos) });
-				});
+				let list = that.cursor.getCursorsByLine(item.num);
+				for (let i = 0; i < list.length; i++) {
+					cursorList.push({ top: item.top, left: _setCursorRealPos(list[i]) });
+				}
 				that.renderCursorObjs.push(cursorList);
 			}
 
