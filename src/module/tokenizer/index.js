@@ -160,26 +160,18 @@ export default class {
 		if (nowLine <= this.currentLine) {
 			this.currentLine = nowLine;
 		}
-		this.editor.$nextTick(() => {
-			this.tokenizeVisibleLins();
-		});
+		this.tokenizeVisibleLins();
 	}
 	onDeleteContentAfter(nowLine, newLine) {
 		globalData.scheduler.removeTask(this.tokenizeLinesTask);
 		if (newLine <= this.currentLine) {
 			this.currentLine = newLine;
 		}
-		this.editor.$nextTick(() => {
-			this.tokenizeVisibleLins();
-		});
+		this.tokenizeVisibleLins();
 	}
 	tokenizeVisibleLins() {
-		let tokenizeVisibleLinsId = this.tokenizeVisibleLinsId + 1 || 1;
-		this.tokenizeVisibleLinsId = tokenizeVisibleLinsId;
-		this.editor.$nextTick(() => {
-			if (this.tokenizeVisibleLinsId !== tokenizeVisibleLinsId) {
-				return;
-			}
+		cancelAnimationFrame(this.tokenizeVisibleLinsTimer);
+		this.tokenizeVisibleLinsTimer = requestAnimationFrame(() => {
 			let startLine = this.editor.startLine;
 			let endLine = this.editor.startLine + this.editor.maxVisibleLines;
 			endLine = this.editor.folder.getRealLine(endLine);

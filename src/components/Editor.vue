@@ -338,9 +338,6 @@ export default {
 		},
 		maxLine: function (newVal) {
 			this.setContentHeight();
-			this.$nextTick(() => {
-				this.setScrollerArea();
-			});
 		},
 		active: function (newVal) {
 			if (newVal) {
@@ -474,12 +471,8 @@ export default {
 		},
 		initResizeEvent() {
 			this.resizeObserver = new ResizeObserver((entries) => {
-				if (this.active) {
-					this.$nextTick(() => {
-						if (this.$refs.scroller) {
-							this.showEditor();
-						}
-					});
+				if (this.$refs.scroller && this.$refs.scroller.clientHeight) {
+					this.showEditor();
 				}
 			});
 			this.resizeObserver.observe(this.$refs.editor);
@@ -1469,26 +1462,18 @@ export default {
 			this._nowCursorPos = null;
 			this.nowCursorPos = nowCursorPos || { line: 1, column: 0 };
 			if (nowCursorPos) {
-				let setNowCursorPosId = this.setNowCursorPosId + 1 || 1;
-				this.setNowCursorPosId = setNowCursorPosId;
-				// 强制滚动使光标处于可见区域
-				this.$nextTick(() => {
-					if (this.setNowCursorPosId != setNowCursorPosId) {
-						return;
-					}
-					let height = this.folder.getRelativeLine(nowCursorPos.line + 1) * this.charObj.charHight;
-					if (height > this.scrollTop + this.scrollerArea.height) {
-						height = height > this.contentHeight ? this.contentHeight : height;
-						this.setStartLine(height - this.scrollerArea.height);
-						_renderCursor.call(this);
-					} else if (nowCursorPos.line <= this.startLine) {
-						let scrollTop = (this.folder.getRelativeLine(nowCursorPos.line) - 1) * this.charObj.charHight;
-						this.setStartLine(scrollTop);
-						_renderCursor.call(this);
-					} else {
-						this.renderCursor(true);
-					}
-				});
+				let height = this.folder.getRelativeLine(nowCursorPos.line + 1) * this.charObj.charHight;
+				if (height > this.scrollTop + this.scrollerArea.height) {
+					height = height > this.contentHeight ? this.contentHeight : height;
+					this.setStartLine(height - this.scrollerArea.height);
+					_renderCursor.call(this);
+				} else if (nowCursorPos.line <= this.startLine) {
+					let scrollTop = (this.folder.getRelativeLine(nowCursorPos.line) - 1) * this.charObj.charHight;
+					this.setStartLine(scrollTop);
+					_renderCursor.call(this);
+				} else {
+					this.renderCursor(true);
+				}
 			}
 
 			function _renderCursor() {

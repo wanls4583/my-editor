@@ -70,7 +70,7 @@ export default class {
 					tab.active = true;
 					this.changeStatus();
 				}
-			} else if(tab) {
+			} else if (tab) {
 				if (tab.cursorPos) {
 					//点击左侧文件内容搜索结果，跳转到相应位置
 					let editor = globalData.$mainWin.getNowEditor();
@@ -87,12 +87,8 @@ export default class {
 		tab.saved = true;
 	}
 	changeStatus() {
-		let changStatusId = this.changeStatus.id || 1;
-		this.changeStatus.id = changStatusId;
-		Vue.prototype.$nextTick(() => {
-			if (this.changeStatus.id !== changStatusId) {
-				return;
-			}
+		clearTimeout(this.changeStatusTimer);
+		this.changeStatusTimer = setTimeout(() => {
 			let editor = globalData.$mainWin.getNowEditor();
 			let tab = Util.getTabById(this.editorList, globalData.nowEditorId);
 			EventBus.$emit(`editor-changed`, {
@@ -118,9 +114,7 @@ export default class {
 			for (let i = 0; i < globalData.languageList.length; i++) {
 				let language = globalData.languageList[i];
 				if (language.extensions && language.extensions.indexOf(suffix[0]) > -1) {
-					Vue.prototype.$nextTick(() => {
-						EventBus.$emit('language-change', { id: tab.id, language: language.value });
-					});
+					EventBus.$emit('language-change', { id: tab.id, language: language.value });
 					break;
 				}
 			}

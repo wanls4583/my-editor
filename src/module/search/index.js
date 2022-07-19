@@ -142,29 +142,6 @@ export default class {
             }
         });
     }
-    // 重新搜索
-    refreshSearch(config) {
-        if (!this.hasCache() && !config) {
-            return;
-        }
-        return new Promise((resolve) => {
-            let refreshSearchId = this.refreshSearch.id + 1 || 1;
-            this.refreshSearch.id = refreshSearchId;
-            this.editor.$nextTick(() => {
-                if (this.refreshSearch.id !== refreshSearchId) {
-                    return;
-                }
-                if (this.hasCache() || config) {
-                    config = config || this.cacheData.config;
-                    this.clearSearch();
-                    this.search({
-                        config: config,
-                    });
-                }
-                resolve();
-            });
-        });
-    }
     hasCache() {
         return !!this.cacheData;
     }
