@@ -30,16 +30,14 @@
 					<editor :active="item.active" :key="item.id" :ref="'editor' + item.id" :tab-data="item" v-show="item.active"></editor>
 				</template>
 			</div>
-			<template v-if="terminalVisible && terminalList.length">
-				<div @mousedown="onTerminalSashBegin" class="my-sash-h"></div>
-				<!-- tab栏 -->
-				<div :style="{height: terminalHeight+'px'}" class="my-terminal-groups">
-					<terminal-bar :terminalList="terminalList"></terminal-bar>
-					<template v-for="item in terminalList">
-						<terminal :active="item.active" :id="item.id" :key="item.id" :path="item.path" :ref="'terminal' + item.id" v-show="item.active"></terminal>
-					</template>
-				</div>
-			</template>
+			<div @mousedown="onTerminalSashBegin" class="my-sash-h" v-show="_terminalVisible"></div>
+			<!-- tab栏 -->
+			<div :style="{height: terminalHeight+'px'}" class="my-terminal-groups" v-show="_terminalVisible">
+				<terminal-bar :terminalList="terminalList"></terminal-bar>
+				<template v-for="item in terminalList">
+					<terminal :active="item.active" :id="item.id" :key="item.id" :path="item.path" :ref="'terminal' + item.id" v-show="item.active"></terminal>
+				</template>
+			</div>
 		</div>
 		<!-- 顶部菜单栏 -->
 		<title-bar :height="topBarHeight" ref="titleBar"></title-bar>
@@ -121,6 +119,9 @@ export default {
 				return this.statusHeight + 'px';
 			}
 		},
+		_terminalVisible() {
+			return this.terminalVisible && this.terminalList.length
+		}
 	},
 	created() {
 		const currentWindow = remote.getCurrentWindow();
