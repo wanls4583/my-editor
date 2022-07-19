@@ -6,7 +6,7 @@
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
-    "rebuild": "electron-rebuild",
+    "rebuild": "electron-rebuild --version 19.0.8",
     "client": "electron electron/main.js development"
   },
   "dependencies": {

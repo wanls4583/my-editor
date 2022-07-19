@@ -5,7 +5,8 @@
     "main": "main.js",
     "scripts": {
         "start": "electron . --trace-warnings",
-        "build": "electron-builder"
+        "build": "electron-builder",
+        "rebuild": "electron-rebuild --version 19.0.8"
     },
     "build": {
         "appId": "my-editor.lisong.hn.cn",
