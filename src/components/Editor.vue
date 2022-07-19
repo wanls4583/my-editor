@@ -1706,7 +1706,7 @@ export default {
 			let column = $target.attr('data-column');
 			let endColumn = $target.attr('data-end');
 			if (!line) {
-				if (e.target === this.$refs.content) {
+				if (e.target === this.$refs.content || e.target.parentNode === this.$refs.content) {
 					line = this.myContext.htmls.length;
 				} else {
 					//移动到了区域外
