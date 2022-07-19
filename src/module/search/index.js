@@ -243,7 +243,6 @@ export default class {
             } else {
                 index = this.setNextActive(this.editor.nowCursorPos);
             }
-            result = this.cacheData.results[index];
             this.cacheData.indexMap.clear();
         } else {
             //Ctrl+D/Shfit+D移动活动区域，只看移动一个轮回
@@ -255,13 +254,13 @@ export default class {
                 }
                 index = index === results.length ? 0 : index;
                 index = index < 0 ? 0 : index;
-                result = results[index];
                 this.cacheData.indexMap.set(index, true);
                 this.cacheData.index = index;
             } else {
                 index = this.cacheData.index;
             }
         }
+		result = results[index];
 
         return {
             now: index + 1,
