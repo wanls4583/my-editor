@@ -842,43 +842,44 @@ export default {
 			}, 15);
 		},
 		renderSelectedBg(isAsync) {
-			let selections = this.selecter.ranges.toArray();
-			let fSelections = this.fSelecter.ranges.toArray();
 			clearTimeout(this.renderSelectedBgTimer);
 			this.renderSelectedBgTimer = null;
 			this.activeLineBg = true;
 			this.clearSelectionToken();
 			for (let i = 0; i < this.renderObjs.length; i++) {
-				this.renderObjs[i].bgClass = '';
-			}
-			for (let i = 0; i < fSelections.length; i++) {
-				let range = fSelections[i];
-				if (range.end.line > range.start.line + 1) {
-					this._renderWholeLineBg(range, true);
+				let range = null;
+				let renderObj = this.renderObjs[i];
+				renderObj.bgClass = '';
+				if (this.searchVisible) {
+					range = this.fSelecter.getRangeWithCursorPos({ line: renderObj.num, column: 0 });
+					range = range || this.selecter.getActiveRangeWithCursorPos({ line: renderObj.num, column: 0 });
+				} else {
+					range = this.selecter.getRangeWithCursorPos({ line: renderObj.num, column: 0 });
 				}
-			}
-			for (let i = 0; i < selections.length; i++) {
-				let range = selections[i];
-				if (range.end.line > range.start.line + 1) {
-					let _range = this.fSelecter.getRangeByCursorPos(range.start);
+				if (range && range.start.line < renderObj.num && range.end.line > renderObj.num) {
+					renderObj.bgClass += 'my-select-bg';
+					if (range.active) {
+						renderObj.bgClass += ' my-active';
+					}
 					if (this.searchVisible) {
-						// 优先渲染搜索框的选中范围
-						if (!_range && range.active) {
-							this._renderWholeLineBg(range);
-						}
-					} else {
-						this._renderWholeLineBg(range);
+						renderObj.bgClass += ' my-select-fg';
+					}
+					if (this.nowCursorPos.line === renderObj.num) {
+						this.activeLineBg = false;
 					}
 				}
 			}
 			this.renderObjs.splice();
+			this._renderHighlight();
+		},
+		_renderHighlight() {
 			this.$nextTick(() => {
 				let selectionNumMap = {};
 				let renderedRangeMap = new Map();
 				let renderObj = null;
 				let selections = null;
 				let fSelections = null;
-				let rang = null;
+				let range = null;
 				this.renderSelectionObjs = [];
 				for (let i = 0; i < this.renderObjs.length; i++) {
 					renderObj = this.renderObjs[i];
@@ -891,65 +892,34 @@ export default {
 						fSelections = this.fSelecter.getRangeByLine(renderObj.num);
 						selections = this.selecter.getActiveRangeByLine(renderObj.num);
 						for (let i = 0; i < fSelections.length; i++) {
-							rang = fSelections[i];
-							if (!renderedRangeMap.has(rang)) {
-								this._renderSelectedBg(rang, selectionNumMap, true);
-								renderedRangeMap.set(rang, true);
+							range = fSelections[i];
+							if (!renderedRangeMap.has(range)) {
+								this._renderRangeStartAndEnd(range, selectionNumMap, true);
+								renderedRangeMap.set(range, true);
 							}
 						}
 						for (let i = 0; i < selections.length; i++) {
-							rang = selections[i];
-							if (!renderedRangeMap.has(rang)) {
-								this._renderSelectedBg(rang, selectionNumMap);
-								renderedRangeMap.set(rang, true);
+							range = selections[i];
+							if (!renderedRangeMap.has(range)) {
+								this._renderRangeStartAndEnd(range, selectionNumMap);
+								renderedRangeMap.set(range, true);
 							}
 						}
 					} else {
 						selections = this.selecter.getRangeByLine(renderObj.num);
 						for (let i = 0; i < selections.length; i++) {
-							rang = selections[i];
-							if (!renderedRangeMap.has(rang)) {
-								this._renderSelectedBg(rang, selectionNumMap);
-								renderedRangeMap.set(rang, true);
+							range = selections[i];
+							if (!renderedRangeMap.has(range)) {
+								this._renderRangeStartAndEnd(range, selectionNumMap);
+								renderedRangeMap.set(range, true);
 							}
 						}
 					}
 				}
 			});
 		},
-		// 渲染整行选中的背景
-		_renderWholeLineBg(range, isFsearch) {
-			let firstLine = this.startLine;
-			let lastLine = this.endLine;
-			let start = range.start;
-			let end = range.end;
-			let cross = false;
-			firstLine = firstLine > start.line + 1 ? firstLine : start.line + 1;
-			lastLine = lastLine < end.line - 1 ? lastLine : end.line - 1;
-			cross = firstLine <= this.startLine && lastLine >= this.startLine;
-			cross = cross || (firstLine >= this.startLine && lastLine <= this.endLine);
-			cross = cross || (firstLine <= this.endLine && lastLine >= this.endLine);
-			if (cross && firstLine <= lastLine) {
-				for (let line = firstLine; line <= lastLine; line++) {
-					let renderObj = this.renderedLineMap[line];
-					if (renderObj) {
-						renderObj.bgClass = 'my-select-bg';
-						if (range.active) {
-							renderObj.bgClass += ' my-active';
-						}
-						// range.active为false时，样式可能只显示边框，不改变字体颜色和背景
-						if (range.active && range.isFsearch && this.selectedFg) {
-							renderObj.bgClass += ' my-select-fg';
-						}
-					}
-				}
-			}
-			if (start.line === this.nowCursorPos.line || end.line === this.nowCursorPos.line) {
-				this.activeLineBg = false;
-			}
-		},
 		// 渲染首尾行选中的背景
-		_renderSelectedBg(range, selectionNumMap, isFsearch) {
+		_renderRangeStartAndEnd(range, selectionNumMap, isFsearch) {
 			let start = range.start;
 			let end = range.end;
 			if (this.renderedLineMap[start.line]) {
@@ -978,12 +948,17 @@ export default {
 						bgStyle: { left: left, width: width, height: this._lineHeight },
 					};
 				}
-				selectionNumMap[start.line].selections.push(start.startRenderObj);
-				if (end.line == start.line) {
-					endColumn = end.column;
+				if (range.active) {
+					if (this.nowCursorPos.line === start.line) {
+						this.activeLineBg = false;
+					}
+					if (end.line == start.line) {
+						endColumn = end.column;
+						// range.active为false时，样式可能只显示边框，不改变字体颜色和背景
+						this._renderSelectionToken(start.line, start.column, endColumn);
+					}
 				}
-				// range.active为false时，样式可能只显示边框，不改变字体颜色和背景
-				range.active && this._renderSelectionToken(start.line, start.column, endColumn);
+				selectionNumMap[start.line].selections.push(start.startRenderObj);
 			}
 			if (end.line > start.line && this.renderedLineMap[end.line]) {
 				let renderObj = this.renderedLineMap[end.line];
@@ -1003,9 +978,14 @@ export default {
 						bgStyle: { left: '0px', width: width, height: this._lineHeight },
 					};
 				}
+				if (range.active) {
+					if (this.nowCursorPos.line === end.line) {
+						this.activeLineBg = false;
+					}
+					// range.active为false时，样式可能只显示边框，不改变字体颜色和背景
+					this._renderSelectionToken(end.line, 0, end.column);
+				}
 				selectionNumMap[end.line].selections.push(end.endRenderObj);
-				// range.active为false时，样式可能只显示边框，不改变字体颜色和背景
-				range.active && this._renderSelectionToken(end.line, 0, end.column);
 			}
 		},
 		renderSelectionToken(line) {
