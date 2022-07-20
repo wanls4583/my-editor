@@ -162,11 +162,6 @@ export default {
 			if (resultObj) {
 				this.now = resultObj.now;
 				this.count = resultObj.count;
-				if(resultObj.result) {
-					this.editor.selecter.setRange(resultObj.result);
-				} else {
-					this.editor.selecter.clearRange();
-				}
 			} else {
 				this.count = 0;
 			}
@@ -188,11 +183,6 @@ export default {
 			if (resultObj) {
 				this.now = resultObj.now;
 				this.count = resultObj.count;
-				if(resultObj.result) {
-					this.editor.selecter.addRange(resultObj.result);
-				} else {
-					this.editor.selecter.clearRange();
-				}
 			}
 		},
 		changeCase() {

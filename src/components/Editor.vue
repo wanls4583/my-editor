@@ -881,6 +881,7 @@ export default {
 				let selections = null;
 				let fSelections = null;
 				let range = null;
+				let rangeKey = '';
 				this.renderSelectionObjs = [];
 				for (let i = 0; i < this.renderObjs.length; i++) {
 					renderObj = this.renderObjs[i];
@@ -890,29 +891,35 @@ export default {
 				for (let i = 0; i < this.renderObjs.length; i++) {
 					renderObj = this.renderObjs[i];
 					if (this.searchVisible) {
-						fSelections = this.fSelecter.getRangeByLine(renderObj.num);
 						selections = this.selecter.getActiveRangeByLine(renderObj.num);
-						for (let i = 0; i < fSelections.length; i++) {
-							range = fSelections[i];
-							if (!renderedRangeMap.has(range)) {
-								this._renderRangeStartAndEnd(range, selectionNumMap, true);
-								renderedRangeMap.set(range, true);
-							}
-						}
+						fSelections = this.fSelecter.getRangeByLine(renderObj.num);
 						for (let i = 0; i < selections.length; i++) {
 							range = selections[i];
-							if (!renderedRangeMap.has(range)) {
+							rangeKey = range.start.line + ',' + range.start.column + ',' +
+								range.end.line + ',' + range.end.column;
+							if (!renderedRangeMap.has(rangeKey)) {
 								this._renderRangeStartAndEnd(range, selectionNumMap);
-								renderedRangeMap.set(range, true);
+								renderedRangeMap.set(rangeKey, true);
+							}
+						}
+						for (let i = 0; i < fSelections.length; i++) {
+							range = fSelections[i];
+							rangeKey = range.start.line + ',' + range.start.column + ',' +
+								range.end.line + ',' + range.end.column;
+							if (!renderedRangeMap.has(rangeKey)) {
+								this._renderRangeStartAndEnd(range, selectionNumMap, true);
+								renderedRangeMap.set(rangeKey, true);
 							}
 						}
 					} else {
 						selections = this.selecter.getRangeByLine(renderObj.num);
 						for (let i = 0; i < selections.length; i++) {
 							range = selections[i];
-							if (!renderedRangeMap.has(range)) {
+							rangeKey = range.start.line + ',' + range.start.column + ',' +
+								range.end.line + ',' + range.end.column;
+							if (!renderedRangeMap.has(rangeKey)) {
 								this._renderRangeStartAndEnd(range, selectionNumMap);
-								renderedRangeMap.set(range, true);
+								renderedRangeMap.set(rangeKey, true);
 							}
 						}
 					}
@@ -1300,7 +1307,7 @@ export default {
 		openSearch(replaceMode) {
 			let searchDialog = this.$refs.searchDialog;
 			let data = { replaceVisible: !!replaceMode, matchCase: false, wholeWord: false };
-			if(!this.searchVisible && this.searcher.hasCache()) { //复制已有结果到搜索框上下文
+			if (!this.searchVisible && this.searcher.hasCache()) { //复制已有结果到搜索框上下文
 				let nowResult = this.fSearcher.clone(this.searcher.getCacheData());
 				data.now = nowResult.now;
 				data.count = nowResult.results.length;
@@ -1386,9 +1393,10 @@ export default {
 					line: line,
 					column: column,
 				});
-				that.mouseStartObj.preRange = that.selecter.setRange(that.mouseStartObj.start, {
-					line: line,
-					column: column,
+				that.mouseStartObj.preRange = that.selecter.setRange({
+					start: that.mouseStartObj.start,
+					end: { line: line, column: column },
+					active: true
 				});
 			}
 		},
@@ -1899,6 +1907,7 @@ export default {
 						this.mouseStartObj.preRange = this.selecter.addRange({
 							start: this.mouseStartObj.start,
 							end: end,
+							active: true
 						});
 					}
 					// 删除区域范围内的光标

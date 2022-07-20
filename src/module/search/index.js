@@ -38,23 +38,26 @@ export default class {
                     this.selecter.addActive(resultObj.result.end);
                     this.scrollToResult(resultObj.result);
                 } else {
-                    //当前光标已处于选中区域边界，则不处理（历史记录后退时可能存在多个选中区域的情况）
-                    if (this.selecter.activedRanges.size === 0) {
-                        this.editor.cursor.setCursorPos(resultObj.result.end);
-                    } else {
+                    if (this.selecter.activedRanges.size > 0) { //搜索前已经存在活动区域
                         this.initIndexs();
+                    } else {
+                        this.editor.cursor.setCursorPos(resultObj.result.end);
+                        this.selecter.addRange(resultObj.results);
+                        this.selecter.addActive(resultObj.result.end);
                     }
-                    this.selecter.addRange(resultObj.results);
+                }
+                if (this.editor.fSearcher === this) { //记录当前可编辑的活动区域
+                    this.editor.selecter.addRange(Object.assign({ active: true }, resultObj.result));
                 }
             } else {
                 if (hasCache) {
                     this.selecter.setActive(resultObj.result.end);
                     this.editor.cursor.setCursorPos(resultObj.result.end);
-                    this.editor.searcher.clearSearch(); //搜索框确认搜索后，删除按键搜索
+                    //记录当前可编辑的活动区域
+                    this.editor.selecter.setRange(Object.assign({ active: true }, resultObj.result));
                     this.scrollToResult(resultObj.result);
                 } else {
                     this.selecter.addRange(resultObj.results);
-                    this.clearActive();
                 }
             }
             now = resultObj.now;
@@ -175,14 +178,20 @@ export default class {
     clone(cacheData) {
         this.cacheData = cacheData;
         if (cacheData) {
-            this.selecter.addRange(cacheData.results);
-			let index = cacheData.index;
-			let result = cacheData.results[index];
-			return {
-				now: index + 1,
-	            result: result,
-	            results: cacheData.results,
-			}
+            let index = cacheData.index;
+            let result = cacheData.results[index];
+            this.selecter.addRange(cacheData.results.map((item, index) => {
+                return {
+                    start: item.start,
+                    end: item.end,
+                    active: cacheData.indexMap.has(index)
+                }
+            }));
+            return {
+                now: index + 1,
+                result: result,
+                results: cacheData.results,
+            }
         }
     }
     scrollToResult(result) {
@@ -270,7 +279,7 @@ export default class {
                 index = this.cacheData.index;
             }
         }
-		result = results[index];
+        result = results[index];
 
         return {
             now: index + 1,

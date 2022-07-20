@@ -168,10 +168,7 @@ export default class {
                 let end = this.editor.cursor.moveCursor(cursorPos, direct, wholeWord);
                 range = this.createRange(start, end);
                 if (range) {
-                    this.addRange({
-                        start: start,
-                        end: end,
-                    });
+                    this.addRange({ start: start, end: end, active: true });
                 }
             }
         });
@@ -184,13 +181,7 @@ export default class {
         };
         this.editor.setData('forceCursorView', false);
         this.editor.cursor.setCursorPos(end);
-        this.setRange(
-            {
-                line: 1,
-                column: 0,
-            },
-            end
-        );
+        this.setRange({ start: { line: 1, column: 0, }, end, active: true });
         this.editor.renderSelectedBgAsync();
     }
     selectAllOccurence() {
@@ -219,20 +210,14 @@ export default class {
         list.forEach((range) => {
             let start = range.start;
             let end = range.end;
+            let active = !!range.active;
             let same = Util.comparePos(start, end);
-            let active = false;
             if (same > 0) {
                 let tmp = start;
                 start = end;
                 end = tmp;
             } else if (!same) {
                 return;
-            }
-            if (range.active !== undefined) {
-                active = range.active
-            } else {
-                active = this.editor.cursor.getCursorsByLineColumn(start.line, start.column)
-                    || this.editor.cursor.getCursorsByLineColumn(end.line, end.column);
             }
             range = {
                 start: {
@@ -243,7 +228,7 @@ export default class {
                     line: end.line,
                     column: end.column,
                 },
-                active: !!active,
+                active: active,
             };
             let _range = this.getRange(range);
             if (_range) {
@@ -278,7 +263,7 @@ export default class {
      * @param {Object} start
      * @param {Object} end
      */
-    setRange(start, end) {
+    setRange({ start, end, active }) {
         let same = Util.comparePos(start, end);
         if (same > 0) {
             let tmp = start;
@@ -287,7 +272,6 @@ export default class {
         } else if (!same) {
             return;
         }
-        let active = this.editor.cursor.getCursorsByLineColumn(start.line, start.column) || this.editor.cursor.getCursorsByLineColumn(end.line, end.column);
         let range = {
             start: Object.assign({}, start),
             end: Object.assign({}, end),
