@@ -105,7 +105,21 @@ export default class {
 		data.comments.lineComment = data.comments.lineComment || '';
 		data.comments.blockComment = data.comments.blockComment || [];
 		data.__foldMap__ = foldMap;
+		data.__autoClosingPairsMap__ = {};
+		data.__surroundingPairsMap__ = {};
 		globalData.sourceConfigMap[scopeName] = data;
+		if (data.autoClosingPairs) {
+			for (let i = 0; i < data.autoClosingPairs.length; i++) {
+				let item = data.autoClosingPairs[i];
+				data.__autoClosingPairsMap__[item.open] = item;
+			}
+		}
+		if (data.surroundingPairs) {
+			for (let i = 0; i < data.surroundingPairs.length; i++) {
+				let item = data.surroundingPairs[i];
+				data.__surroundingPairsMap__[item.open] = item;
+			}
+		}
 		if (data.comments) {
 			if (data.comments.lineComment) {
 				source.push(data.comments.lineComment);

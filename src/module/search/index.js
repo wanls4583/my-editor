@@ -323,14 +323,15 @@ export default class {
         }
         return result;
     }
-    getNowWord() {
+    getNowWord(cursorPos) {
+        cursorPos = cursorPos || this.editor.nowCursorPos;
         let str = '';
         let res = null;
         let delta = 0;
-        let index = this.editor.nowCursorPos.column;
+        let index = cursorPos.column;
         let startColumn = index;
         let endColumn = index;
-        let text = this.context.htmls[this.editor.nowCursorPos.line - 1].text;
+        let text = this.context.htmls[cursorPos.line - 1].text;
         // 单词头部离当前光标最多50个字符的距离
         if (index > 50) {
             text = text.slice(index - 50);
@@ -352,8 +353,8 @@ export default class {
         return {
             text: str,
             range: {
-                start: { line: this.editor.nowCursorPos.line, column: startColumn + delta, },
-                end: { line: this.editor.nowCursorPos.line, column: endColumn + delta, },
+                start: { line: cursorPos.line, column: startColumn + delta, },
+                end: { line: cursorPos.line, column: endColumn + delta, },
             },
         };
     }

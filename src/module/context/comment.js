@@ -1,4 +1,6 @@
 import Util from '@/common/util';
+import globalData from '@/data/globalData';
+
 const regs = {
     line_comment: /comment\.line/,
     block_comment: /comment\.block/
@@ -65,7 +67,7 @@ export default class {
                 cursorPos = range.start;
             }
             token = this.getTokenByCursorPos(cursorPos);
-            sourceConfigData = this.getConfigData(cursorPos);
+            sourceConfigData = this.context.getConfigData(cursorPos);
             if (!sourceConfigData || !sourceConfigData.comments) {
                 return;
             }
@@ -261,7 +263,7 @@ export default class {
                 cursorPos = range.start;
             }
             token = this.getTokenByCursorPos(cursorPos);
-            sourceConfigData = this.getConfigData(cursorPos);
+            sourceConfigData = this.context.getConfigData(cursorPos);
             if (!sourceConfigData || !sourceConfigData.comments) {
                 return;
             }
@@ -490,54 +492,6 @@ export default class {
             if (tokens[i].startIndex < cursorPos.column
                 && tokens[i].endIndex >= cursorPos.column) {
                 return tokens[i];
-            }
-        }
-    }
-    getConfigData(cursorPos) {
-        let token = _getNearToken.call(this, cursorPos);
-        if (token) {
-            let language = Util.getLanguageById(this.editor.language);
-            let grammarData = language && globalData.grammars[language.scopeName];
-            if (grammarData) {
-                let scopeNames = token.scope.match(grammarData.scopeNamesReg);
-                if (scopeNames) {
-                    // 一种语言中可能包含多种内嵌语言，优先处理内嵌语言
-                    for (let i = scopeNames.length - 1; i >= 0; i--) {
-                        if (globalData.sourceConfigMap[scopeNames[i]]) {
-                            return globalData.sourceConfigMap[scopeNames[i]];
-                        }
-                    }
-                }
-            }
-        }
-
-        function _getNearToken(cursorPos) {
-            let line = cursorPos.line;
-            let tokens = this.context.htmls[line - 1].tokens || [];
-            for (let i = 0; i < tokens.length; i++) {
-                if (tokens[i].startIndex <= cursorPos.column
-                    && tokens[i].endIndex >= cursorPos.column) {
-                    return tokens[i];
-                }
-            }
-            while (--line >= 1) {
-                tokens = this.context.htmls[line - 1].tokens;
-                if (!tokens) {
-                    break;
-                }
-                if (tokens.length) {
-                    return tokens.peek();
-                }
-            }
-            line = cursorPos.line;
-            while (++line >= 1) {
-                tokens = this.context.htmls[line - 1].tokens;
-                if (!tokens) {
-                    break;
-                }
-                if (tokens.length) {
-                    return tokens[0];
-                }
             }
         }
     }

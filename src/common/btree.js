@@ -292,15 +292,20 @@ class Btree {
     iterator(result, value, compare) {
         let index = result.num;
         let orginIndex = result.num;
-        let originResult = result.num;
-        compare = compare || this.compare;
-        for (let i = 0; i < result.num; i++) {
-            let item = result.dataList[i];
-            let res = compare(value, item);
-            if(res <= 0) { //确保next一定大于等于当前值value
-                orginIndex = i;
-                index = i;
-                break;
+        let originResult = result;
+        if (value === undefined) {
+            index = 0;
+            orginIndex = 0;
+        } else {
+            compare = compare || this.compare;
+            for (let i = 0; i < result.num; i++) {
+                let item = result.dataList[i];
+                let res = compare(value, item);
+                if (res <= 0) { //确保next一定大于等于当前值value
+                    orginIndex = i;
+                    index = i;
+                    break;
+                }
             }
         }
 
@@ -415,6 +420,12 @@ class Btree {
                 }
             }
         }
+    }
+    getHead() {
+        if (this.head) {
+            return this.iterator(this.head);
+        }
+        return null;
     }
 }
 

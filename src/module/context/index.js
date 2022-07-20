@@ -10,6 +10,7 @@ import DeleteLine from './delete-line';
 import Replace from './replace';
 import Indent from './indent';
 import InsertLine from './insert-line';
+import AutoClose from './auto-close';
 import EventBus from '@/event';
 import Util from '@/common/util';
 import globalData from '@/data/globalData';
@@ -26,6 +27,7 @@ class Context {
 		this.replaceObj = new Replace(editor, this);
 		this.indentObj = new Indent(editor, this);
 		this.insertLineObj = new InsertLine(editor, this);
+		this.autoCloseObj = new AutoClose(editor, this);
 		this.reset();
 	}
 	reset() {
@@ -129,6 +131,9 @@ class Context {
 				delDirect = item.delDirect;
 			});
 		} else {
+			if (this.autoCloseObj.check(text)) { //检测自动闭合符号
+				return;
+			}
 			serial = this.serial++;
 			// 如果有选中区域，需要先删除选中区域
 			if (this.editor.selecter.activedRanges.size) {
@@ -749,6 +754,54 @@ class Context {
 			}
 		});
 		return originCursorPosList;
+	}
+	getConfigData(cursorPos) {
+		let token = _getNearToken.call(this, cursorPos);
+		if (token) {
+			let language = Util.getLanguageById(this.editor.language);
+			let grammarData = language && globalData.grammars[language.scopeName];
+			if (grammarData) {
+				let scopeNames = token.scope.match(grammarData.scopeNamesReg);
+				if (scopeNames) {
+					// 一种语言中可能包含多种内嵌语言，优先处理内嵌语言
+					for (let i = scopeNames.length - 1; i >= 0; i--) {
+						if (globalData.sourceConfigMap[scopeNames[i]]) {
+							return globalData.sourceConfigMap[scopeNames[i]];
+						}
+					}
+				}
+			}
+		}
+
+		function _getNearToken(cursorPos) {
+			let line = cursorPos.line;
+			let tokens = this.htmls[line - 1].tokens || [];
+			for (let i = 0; i < tokens.length; i++) {
+				if (tokens[i].startIndex <= cursorPos.column
+					&& tokens[i].endIndex >= cursorPos.column) {
+					return tokens[i];
+				}
+			}
+			while (--line >= 1) {
+				tokens = this.htmls[line - 1].tokens;
+				if (!tokens) {
+					break;
+				}
+				if (tokens.length) {
+					return tokens.peek();
+				}
+			}
+			line = cursorPos.line;
+			while (++line >= 1) {
+				tokens = this.htmls[line - 1].tokens;
+				if (!tokens) {
+					break;
+				}
+				if (tokens.length) {
+					return tokens[0];
+				}
+			}
+		}
 	}
 	// 获取选中范围内的文本
 	getRangeText(start, end) {
