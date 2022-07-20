@@ -288,6 +288,7 @@ export default class {
 			return {
 				folds: [],
 				states: vsctm.INITIAL,
+				scope: 'plain',
 				tokens: [{ scopes: ['plain'], startIndex: 0, endIndex: lineText.length, },],
 			};
 		}

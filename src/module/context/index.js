@@ -766,6 +766,9 @@ class Context {
 			let language = Util.getLanguageById(this.editor.language);
 			let grammarData = language && globalData.grammars[language.scopeName];
 			if (grammarData) {
+				if(token.scope === 'plain') {
+					return globalData.sourceConfigMap[language.scopeName];
+				}
 				let scopeNames = token.scope.match(grammarData.scopeNamesReg);
 				if (scopeNames) {
 					// 一种语言中可能包含多种内嵌语言，优先处理内嵌语言
