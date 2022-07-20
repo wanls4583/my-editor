@@ -766,7 +766,7 @@ class Context {
 			let language = Util.getLanguageById(this.editor.language);
 			let grammarData = language && globalData.grammars[language.scopeName];
 			if (grammarData) {
-				if(token.scope === 'plain') {
+				if(token.scope === 'plain' || !token.scope) {
 					return globalData.sourceConfigMap[language.scopeName];
 				}
 				let scopeNames = token.scope.match(grammarData.scopeNamesReg);
