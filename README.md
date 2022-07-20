@@ -5,7 +5,8 @@
 ## 内容
 
 - [**`功能特性`**](#功能特性)
-- [**`案例`**](#案例)
+- [**`编译步骤`**](#编译步骤)
+- [**`下载链接`**](#下载链接)
 - [**`贡献`**](#贡献)
 
 ## 功能特性
@@ -15,15 +16,13 @@
 
 ## 编译步骤
 
-编译前请先安装 electron 和 electron-builder：
-npm i electron -g
-npm i electron-builder -g
-
-- 1、进入 my-editor 根目录，运行 npm run build，编译 render 部分
-- 2、进入 my-editor/electron 目录，运行 npm run build，编译成可执行文件，最终生成的安装包在 my-editor/electron/dist 目录下
+1. npm i electron -g
+2. npm i electron-builder -g
+3. 进入 my-editor 根目录，运行 npm run build，编译 render 部分
+4. 进入 my-editor/electron 目录，运行 npm run build，编译成可执行文件，最终生成的安装包在 my-editor/electron/dist 目录下
 
 ## 下载链接
-[**`Realease`**](https://github.com/wanls4583/my-editor/releases/)
+[**`Download Realease`**](https://github.com/wanls4583/my-editor/releases/)
 
 ![](https://wanls4583.github.io/images/code/my-editor.png)
 
