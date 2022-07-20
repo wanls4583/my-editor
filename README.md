@@ -1,6 +1,6 @@
 # my-editor
 
-> A simple code editor developed with JavaScript
+> A simple code editor developed with Electron + Vue2 + JavaScript.
 
 ## 内容
 
@@ -9,14 +9,21 @@
 - [**`贡献`**](#贡献)
 
 ## 功能特性
-* [x] 使用 JavaScript 开发，可在浏览器中运行
-* [x] 支持编辑器的常用功能（编辑、多点编辑、折叠、历史记录、代码高亮）
-* [x] 支持代码的常见语法错误检查
-* [x] 支持百万行级别的代码
-* [x] 可扩展其他语言
+* [x] 使用 Electron + Vue2 + JavaScript 开发
+* [x] 界面参考 vscode，使用习惯和 vscode 几乎一致，但是更加轻巧简洁
+* [x] 跨平台，下载版本只编译了 windows ，如需在 linux 和 mac 上运行，请自行编译
 
-## 案例
-[**`online demo`**](https://blog.lisong.hn.cn/code/example/my-editor/dist/index.html)
+## 编译步骤
+
+编译前请先安装 electron 和 electron-builder：
+npm i electron -g
+npm i electron-builder -g
+
+- 1、进入 my-editor 根目录，运行 npm run build，编译 render 部分
+- 2、进入 my-editor/electron 目录，运行 npm run build，编译成可执行文件，最终生成的安装包在 my-editor/electron/dist 目录下
+
+## 下载链接
+[**`Realease`**](https://github.com/wanls4583/my-editor/releases/)
 
 ![](https://wanls4583.github.io/images/code/my-editor.png)
 
