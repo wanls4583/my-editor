@@ -66,11 +66,11 @@ export default class {
             }
             token = this.getTokenByCursorPos(cursorPos);
             sourceConfigData = this.getConfigData(cursorPos);
-            if (!sourceConfigData || !sourceConfigData.__comments__) {
+            if (!sourceConfigData || !sourceConfigData.comments) {
                 return;
             }
-            blockComment = sourceConfigData.__comments__.blockComment;
-            lineComment = sourceConfigData.__comments__.lineComment;
+            blockComment = sourceConfigData.comments.blockComment;
+            lineComment = sourceConfigData.comments.lineComment;
             if (range) {
                 let allComent = true;
                 let startLine = preLine === range.start.line ? preLine + 1 : range.start.line;
@@ -262,10 +262,10 @@ export default class {
             }
             token = this.getTokenByCursorPos(cursorPos);
             sourceConfigData = this.getConfigData(cursorPos);
-            if (!sourceConfigData || !sourceConfigData.__comments__) {
+            if (!sourceConfigData || !sourceConfigData.comments) {
                 return;
             }
-            blockComment = sourceConfigData.__comments__.blockComment;
+            blockComment = sourceConfigData.comments.blockComment;
             if (!blockComment || blockComment.length < 2) {
                 return;
             }
@@ -503,8 +503,8 @@ export default class {
                 if (scopeNames) {
                     // 一种语言中可能包含多种内嵌语言，优先处理内嵌语言
                     for (let i = scopeNames.length - 1; i >= 0; i--) {
-                        if (grammarData.sourceConfigMap[scopeNames[i]]) {
-                            return grammarData.sourceConfigMap[scopeNames[i]];
+                        if (globalData.sourceConfigMap[scopeNames[i]]) {
+                            return globalData.sourceConfigMap[scopeNames[i]];
                         }
                     }
                 }

@@ -41,14 +41,13 @@ export default class {
 			loadGrammar: scopeName => {
 				let language = Util.getLanguageByScopeName(globalData.scopeFileList, scopeName);
 				if (language) {
-					if (language.configPath) {
+					this.scopeNames.push(language.scopeName);
+					if (language.configPath && !globalData.sourceConfigMap[language.scopeName]) {
 						return Util.loadJsonFile(language.configPath).then(data => {
-							// 每种语言都有对应的折叠标记
-							this.sourceConfigMap[language.scopeName] = {};
 							globalData.sourceWordMap[language.scopeName] = data.wordPattern;
 							// 是否存在标记性语言
 							this.hasTextGrammar = this.hasTextGrammar || language.scopeName.startsWith('text');
-							this.initLanguageConifg(this.sourceConfigMap[language.scopeName], data);
+							this.initLanguageConifg(language.scopeName, data);
 							return Util.readFile(language.path).then(data => vsctm.parseRawGrammar(data.toString(), language.path));
 						});
 					} else {
@@ -76,19 +75,18 @@ export default class {
 			if (globalData.grammars[this.scopeName]) {
 				let grammarData = globalData.grammars[this.scopeName];
 				this.grammar = grammarData.grammar;
-				this.sourceConfigMap = grammarData.sourceConfigMap;
 				this.scopeMap = grammarData.scopeIdMap;
 				this.hasTextGrammar = grammarData.hasTextGrammar;
 				this.scopeNamesReg = grammarData.scopeNamesReg;
 			} else {
+				this.scopeNames = [];
 				return this.registry.loadGrammar(this.scopeName).then(grammar => {
 					this.grammar = grammar;
 					// 该语言可能包含多种内嵌子语言
-					this.scopeNamesReg = Object.keys(this.sourceConfigMap).join('|').replace(/\./g, '\\.');
+					this.scopeNamesReg = this.scopeNames.join('|').replace(/\./g, '\\.');
 					this.scopeNamesReg = new RegExp(this.scopeNamesReg, 'ig');
 					globalData.grammars[this.scopeName] = {
 						grammar: grammar,
-						sourceConfigMap: this.sourceConfigMap,
 						scopeNamesReg: this.scopeNamesReg,
 						scopeIdMap: this.scopeMap,
 						hasTextGrammar: this.hasTextGrammar,
@@ -100,24 +98,24 @@ export default class {
 		this.tokenizeVisibleLins();
 		return Promise.resolve();
 	}
-	initLanguageConifg(foldMap, data) {
+	initLanguageConifg(scopeName, data) {
 		let source = [];
-		foldMap.__comments__ = {
-			lineComment: '',
-			blockComment: [],
-		};
+		let foldMap = {};
+		data.comments = data.comments || {};
+		data.comments.lineComment = data.comments.lineComment || '';
+		data.comments.blockComment = data.comments.blockComment || [];
+		data.__foldMap__ = foldMap;
+		globalData.sourceConfigMap[scopeName] = data;
 		if (data.comments) {
 			if (data.comments.lineComment) {
 				source.push(data.comments.lineComment);
 				foldMap[data.comments.lineComment] = 0;
-				foldMap.__comments__.lineComment = data.comments.lineComment;
 			}
 			if (data.comments.blockComment) {
 				source.push(data.comments.blockComment[0]);
 				source.push(data.comments.blockComment[1]);
 				foldMap[data.comments.blockComment[0]] = -this.foldType;
 				foldMap[data.comments.blockComment[1]] = this.foldType;
-				foldMap.__comments__.blockComment = data.comments.blockComment;
 				foldMap.__endCommentReg__ = new RegExp(data.comments.blockComment[1].replace(/[\{\}\(\)\[\]\&\?\+\*\\]/g, '\\$&'), 'g');
 				this.foldType++;
 			}
@@ -377,7 +375,7 @@ export default class {
 		});
 		for (let index = 0; index < tokens.length; index++) {
 			let token = tokens[index];
-			let foldMap = null;
+			let sourceConfigData = null;
 			let lastFold = null;
 			let scopeNames = null;
 			if (token.isString) {
@@ -387,19 +385,19 @@ export default class {
 			if (scopeNames) {
 				// 一种语言中可能包含多种内嵌语言，优先处理内嵌语言
 				for (let i = scopeNames.length - 1; i >= 0; i--) {
-					if (this.sourceConfigMap[scopeNames[i]]) {
-						foldMap = this.sourceConfigMap[scopeNames[i]];
+					if (globalData.sourceConfigMap[scopeNames[i]]) {
+						sourceConfigData = globalData.sourceConfigMap[scopeNames[i]];
 						break;
 					}
 				}
 			}
-			if (!foldMap) {
+			if (!sourceConfigData) {
 				break;
 			}
 			lastFold = this.addBracket({
 				line: line,
-				foldMap: foldMap,
 				folds: folds,
+				sourceConfigData: sourceConfigData,
 				startIndex: token.startIndex,
 				endIndex: token.endIndex,
 				stateFold: stateFold,
@@ -410,7 +408,7 @@ export default class {
 				break;
 			}
 			// 添加标签名标记
-			if (this.addTagFold({ token: token, foldMap: foldMap, folds: folds, lineText: lineText, })) {
+			if (this.addTagFold({ token: token, sourceConfigData: sourceConfigData, folds: folds, lineText: lineText, })) {
 				existTag = true;
 			}
 		}
@@ -426,7 +424,8 @@ export default class {
 		}
 	}
 	addBracket(option) {
-		let foldMap = option.foldMap;
+		let sourceConfigData = option.sourceConfigData;
+		let foldMap = sourceConfigData.__foldMap__;
 		let folds = option.folds;
 		let startIndex = option.startIndex;
 		let endIndex = option.endIndex;
@@ -445,10 +444,10 @@ export default class {
 		}
 		while ((res = reg.exec(text))) {
 			let type = Util.CONST_DATA.BRACKET;
-			if (foldMap.__comments__.lineComment === res[0]) {
+			if (sourceConfigData.comments.lineComment === res[0]) {
 				type = Util.CONST_DATA.LINE_COMMENT;
-			} else if (foldMap.__comments__.blockComment[0] === res[0]
-				|| foldMap.__comments__.blockComment[1] === res[0]) {
+			} else if (sourceConfigData.comments.blockComment[0] === res[0]
+				|| sourceConfigData.comments.blockComment[1] === res[0]) {
 				type = Util.CONST_DATA.BLOCK_COMMENT;
 			}
 			folds.push({
@@ -477,8 +476,8 @@ export default class {
 	addTagFold(option) {
 		let token = option.token;
 		let folds = option.folds;
-		let foldMap = option.foldMap;
 		let lineText = option.lineText;
+		let foldMap = option.sourceConfigData.__foldMap__;
 		if (this.hasTextGrammar && token.scopes.peek().startsWith('entity.name.tag')) {
 			//html、xml标签名称
 			let tag = lineText.slice(token.startIndex, token.endIndex);

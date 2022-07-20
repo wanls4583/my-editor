@@ -60,6 +60,7 @@ const globalData = {
 	scopeFileList: [],
 	scopeTokenList: [],
 	grammars: {},
+	sourceConfigMap: {},
 	sourceWordMap: {},
 	fileTree: [],
 	openedFileList: [],
