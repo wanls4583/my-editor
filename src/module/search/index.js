@@ -57,6 +57,8 @@ export default class {
                     this.editor.selecter.setRange(Object.assign({ active: true }, resultObj.result));
                     this.scrollToResult(resultObj.result);
                 } else {
+                    //使setPrevActive/setNextActive定位到当前光标位置
+                    this.cacheData.index = -1;
                     this.selecter.addRange(resultObj.results);
                 }
             }
