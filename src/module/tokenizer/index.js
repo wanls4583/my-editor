@@ -111,12 +111,26 @@ export default class {
 		if (data.autoClosingPairs) {
 			for (let i = 0; i < data.autoClosingPairs.length; i++) {
 				let item = data.autoClosingPairs[i];
+				if (item instanceof Array) {
+					item.open = item[0];
+					item.close = item[1];
+				}
+				//只支持单行
+				item.open = item.open.split(/\r\n|\n/)[0];
+				item.close = item.close.split(/\r\n|\n/)[0];
 				data.__autoClosingPairsMap__[item.open] = item;
 			}
 		}
 		if (data.surroundingPairs) {
 			for (let i = 0; i < data.surroundingPairs.length; i++) {
 				let item = data.surroundingPairs[i];
+				if (item instanceof Array) {
+					item.open = item[0];
+					item.close = item[1];
+				}
+				//只支持单行
+				item.open = item.open.split(/\r\n|\n/)[0];
+				item.close = item.close.split(/\r\n|\n/)[0];
 				data.__surroundingPairsMap__[item.open] = item;
 			}
 		}

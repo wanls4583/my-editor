@@ -11,6 +11,7 @@ import Replace from './replace';
 import Indent from './indent';
 import InsertLine from './insert-line';
 import AutoClose from './auto-close';
+import Surrounding from './surrounding';
 import EventBus from '@/event';
 import Util from '@/common/util';
 import globalData from '@/data/globalData';
@@ -28,6 +29,7 @@ class Context {
 		this.indentObj = new Indent(editor, this);
 		this.insertLineObj = new InsertLine(editor, this);
 		this.autoCloseObj = new AutoClose(editor, this);
+		this.surroundingObj = new Surrounding(editor, this);
 		this.reset();
 	}
 	reset() {
@@ -132,6 +134,9 @@ class Context {
 			});
 		} else {
 			if (this.autoCloseObj.check(text)) { //检测自动闭合符号
+				return;
+			}
+			if (this.surroundingObj.check(text)) { //检测区域自动闭合符号
 				return;
 			}
 			serial = this.serial++;
