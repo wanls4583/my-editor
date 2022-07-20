@@ -11,6 +11,10 @@
 
 ## 功能特性
 * [x] 使用 Electron + Vue2 + JavaScript 开发
+* [x] 内置多主题
+* [x] 支持 git 状态追踪和内容更改
+* [x] 支持多终端
+* [x] 支持小地图
 * [x] 界面参考 vscode，使用习惯和 vscode 几乎一致，但是更加轻巧简洁
 * [x] 跨平台，下载版本只编译了 windows ，如需在 linux 和 mac 上运行，请自行编译
 
