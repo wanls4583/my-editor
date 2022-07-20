@@ -762,24 +762,22 @@ class Context {
 	}
 	getConfigData(cursorPos) {
 		let token = _getNearToken.call(this, cursorPos);
-		if (token) {
-			let language = Util.getLanguageById(this.editor.language);
-			let grammarData = language && globalData.grammars[language.scopeName];
-			if (grammarData) {
-				if(token.scope === 'plain' || !token.scope) {
-					return globalData.sourceConfigMap[language.scopeName];
-				}
-				let scopeNames = token.scope.match(grammarData.scopeNamesReg);
-				if (scopeNames) {
-					// 一种语言中可能包含多种内嵌语言，优先处理内嵌语言
-					for (let i = scopeNames.length - 1; i >= 0; i--) {
-						if (globalData.sourceConfigMap[scopeNames[i]]) {
-							return globalData.sourceConfigMap[scopeNames[i]];
-						}
+		let language = Util.getLanguageById(this.editor.language);
+		let grammarData = language && globalData.grammars[language.scopeName];
+		let sourceConfigData = language && globalData.sourceConfigMap[language.scopeName];
+		if(token && grammarData && token.scope) {
+			let scopeNames = token.scope.match(grammarData.scopeNamesReg);
+			if (scopeNames) {
+				// 一种语言中可能包含多种内嵌语言，优先处理内嵌语言
+				for (let i = scopeNames.length - 1; i >= 0; i--) {
+					if (globalData.sourceConfigMap[scopeNames[i]]) {
+						sourceConfigData = globalData.sourceConfigMap[scopeNames[i]];
+						break;
 					}
 				}
 			}
 		}
+		return sourceConfigData;
 
 		function _getNearToken(cursorPos) {
 			let line = cursorPos.line;
