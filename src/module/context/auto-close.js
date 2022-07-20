@@ -41,8 +41,12 @@ export default class {
         }
         let originCursorPosList = this.context.getOriginCursorPosList();
         let historyArr = this.context._insertMultiContent({ text: texts, cursorPosList });
+        let afterCursorPosList = historyArr.map((item, index) => {
+            return { line: item.cursorPos.line, column: item.cursorPos.column - texts[index].length + 1 };
+        });
         historyArr.originCursorPosList = originCursorPosList;
-        this.context.addCursorList(historyArr.map((item) => { return item.cursorPos }));
+        historyArr.afterCursorPosList = afterCursorPosList;
+        this.context.addCursorList(afterCursorPosList);
         this.editor.history.pushHistory(historyArr);
         return true;
     }
