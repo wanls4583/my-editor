@@ -1463,7 +1463,7 @@ export default {
 						height = height > this.contentHeight ? this.contentHeight : height;
 						this.setStartLine(height - this.scrollerArea.height);
 						_renderCursor.call(this);
-					} else if (nowCursorPos.line <= this.startLine) {
+					} else if (height < this.scrollTop + this.charObj.charHight) {
 						let scrollTop = (this.folder.getRelativeLine(nowCursorPos.line) - 1) * this.charObj.charHight;
 						this.setStartLine(scrollTop);
 						_renderCursor.call(this);

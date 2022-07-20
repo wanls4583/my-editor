@@ -33,8 +33,8 @@ export default class {
             if (!pass) {
                 return false;
             }
-            nowWord = this.editor.searcher.getNowWord(head.value);
-            if (nowWord.text && Util.compairPos(nowWord.range.end, head.value) !== 0) {
+            nowWord = this.editor.searcher.getNowWord(cursorPos);
+            if (nowWord.text && Util.comparePos(nowWord.range.end, cursorPos) !== 0) {
                 return false;
             }
             cursorPosList.push(cursorPos);
