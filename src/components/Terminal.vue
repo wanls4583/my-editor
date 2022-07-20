@@ -45,11 +45,11 @@ export default {
 	mounted() {
 		this.terminal = new Terminal({
 			windowsMode: true,
-			fontSize: 16,
 			fontFamily: 'Consolas',
+			fontSize: 16,
+			lineHeight: 1.2,
 			cursorBlink: true,
 			theme: {
-				lineHeight: 20,
 				foreground: globalData.colors['terminal.foreground'],
 				background: globalData.colors['terminal.background'],
 				selection: globalData.colors['terminal.selectionBackground'],
