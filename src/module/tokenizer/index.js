@@ -139,7 +139,7 @@ export default class {
 				source.push(data.comments.lineComment);
 				foldMap[data.comments.lineComment] = 0;
 			}
-			if (data.comments.blockComment) {
+			if (data.comments.blockComment && data.comments.blockComment.length) {
 				source.push(data.comments.blockComment[0]);
 				source.push(data.comments.blockComment[1]);
 				foldMap[data.comments.blockComment[0]] = -this.foldType;
