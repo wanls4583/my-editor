@@ -47,7 +47,7 @@ export default {
 			windowsMode: true,
 			fontFamily: 'Consolas',
 			fontSize: 16,
-			lineHeight: 1.2,
+			lineHeight: 1,
 			cursorBlink: true,
 			theme: {
 				foreground: globalData.colors['terminal.foreground'],
