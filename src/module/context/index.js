@@ -800,7 +800,7 @@ class Context {
 				}
 			}
 			line = cursorPos.line;
-			while (++line >= 1) {
+			while (++line <= this.htmls.length) {
 				tokens = this.htmls[line - 1].tokens;
 				if (!tokens) {
 					break;
