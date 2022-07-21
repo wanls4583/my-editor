@@ -79,7 +79,10 @@
 						></textarea>
 					</div>
 					<div class="my-center-between" style="height: 30px; line-height: 30px">
-						<span v-if="count">{{ count }} results in {{ results.length }} files</span>
+						<span class="count-search" v-if="count">{{ count }} results in {{ results.length }} files</span>
+						<span class="count-search" v-else-if="text&&includePath">
+							<span>No results found in "{{includePath}}"</span>
+						</span>
 						<span @click="stopSeach" class="stop-search" v-if="count&&searching">stop</span>
 					</div>
 				</div>
@@ -158,6 +161,7 @@ export default {
 				}
 				requestAnimationFrame(() => {
 					this.$refs.input1.focus();
+					this.$refs.input1.select();
 				});
 			});
 		},

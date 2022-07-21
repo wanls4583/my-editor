@@ -234,9 +234,9 @@ export default {
 			this.editor.searchVisible = false;
 		},
 		focus() {
-			this.$refs.input1.focus();
 			requestAnimationFrame(() => {
 				this.$refs.input1.focus();
+				this.$refs.input1.select();
 			});
 		},
 		directBlur() {

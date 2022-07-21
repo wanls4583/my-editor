@@ -38,12 +38,11 @@ export default class {
                     this.editor.cursor.addCursorPos(resultObj.result.end);
                     this.scrollToResult(resultObj.result);
                 } else {
-                    if (this.selecter.activedRanges.size > 0) { //搜索前已经存在活动区域
+                    this.selecter.addRange(resultObj.results);
+                    this.selecter.addActive(resultObj.result.end);
+                    this.editor.cursor.setCursorPos(resultObj.result.end);
+                    if (this.selecter.activedRanges.size > 1) { //搜索前已经存在活动区域
                         this.initIndexs();
-                    } else {
-                        this.selecter.addRange(resultObj.results);
-                        this.selecter.addActive(resultObj.result.end);
-                        this.editor.cursor.setCursorPos(resultObj.result.end);
                     }
                 }
                 if (this.editor.fSearcher === this) { //记录当前可编辑的活动区域
