@@ -10,11 +10,11 @@
 		ref="editor"
 	>
 		<!-- 行号 -->
-		<div class="my-num-wrap">
+		<div class="my-num-wrap" ref="numWrap">
 			<!-- 占位行号，避免行号宽度滚动时变化 -->
 			<div class="my-num" style="position: relative; visibility: hidden;">{{ diffObj.maxLine || maxLine }}</div>
 			<div class="my-num-scroller" ref="numScroller">
-				<div :style="{ top: _top }" class="my-num-content" ref="numContent">
+				<div :style="{ transform: 'translate3d(0,'+_top+',0)' }" class="my-num-content" ref="numContent">
 					<div :class="{ 'my-active': nowCursorPos.line === numItem.num }" :style="{ top: numItem.top }" class="my-num" v-for="numItem in renderNums">
 						<span class="num">{{ numItem._num }}</span>
 						<span :class="numItem.fold == 'open' ? 'my-fold-open icon-down1' : 'my-fold-close icon-right'" @click="onToggleFold(numItem.num)" class="my-fold my-center-center iconfont" v-if="numItem.fold"></span>
@@ -25,11 +25,11 @@
 				</div>
 			</div>
 		</div>
-		<div class="my-content-wrap">
+		<div class="my-content-wrap" ref="contentWrap">
 			<!-- 可滚动区域 -->
 			<div @scroll="onScroll" class="my-scroller" ref="scroller">
 				<!-- 内如区域 -->
-				<div :style="{ left: _left, top: _top }" @mousedown="onContentMdown" @mouseleave="onContentMLeave" @mousemove="onContentMmove" @selectend.prevent="onSelectend" class="my-content" ref="content">
+				<div :style="{ transform: 'translate3d('+_left+','+_top+',0)' }" @mousedown="onContentMdown" @mouseleave="onContentMLeave" @mousemove="onContentMmove" @selectend.prevent="onSelectend" class="my-content" ref="content">
 					<div :style="{width: _contentMinWidth+'px'}" class="my-lines-view" ref="lineView">
 						<div :class="line.diffClass" :data-line="line.num" :id="_lineId(line.num)" :style="{top: line.top}" class="my-line" v-for="line in renderObjs">
 							<div :class="[line.fold == 'close' ? 'fold-close' : '', line.bgClass]" :data-line="line.num" class="my-code" v-html="line.html"></div>
@@ -75,7 +75,7 @@
 			<!-- 搜索框 -->
 			<search-dialog ref="searchDialog" v-show="searchVisible"></search-dialog>
 		</div>
-		<div class="my-minimap-wrap" v-if="minimapVisible">
+		<div class="my-minimap-wrap" ref="minimapWrap" v-if="minimapVisible">
 			<minimap :content-height="contentHeight" :now-line="startLine" :scroll-top="scrollTop" ref="minimap"></minimap>
 		</div>
 		<v-scroll-bar :class="{'my-scroll-visible': scrollVisible}" :height="contentHeight" :scroll-top="scrollTop" @scroll="onVBarScroll" class="my-editor-scrollbar-v"></v-scroll-bar>
@@ -211,7 +211,7 @@ export default {
 				charWidth: 8.796875,
 				fontSize: 16,
 				fullCharScale: 1,
-				fullCharWidth: 16 
+				fullCharWidth: 16
 			},
 		};
 	},
@@ -339,7 +339,7 @@ export default {
 		},
 		active: function (newVal) {
 			if (newVal) {
-				this.showEditor();
+				this.setPosition();
 			} else {
 				this.autocomplete.stop();
 			}
@@ -364,16 +364,11 @@ export default {
 		this.initEventBus();
 	},
 	mounted() {
-		this.initResizeEvent();
 		if (this.active) {
-			this.showEditor();
-			if (this.type === 'diff') {
-				this.showDiff();
-			}
+			this.setPosition();
 		}
 	},
 	beforeDestroy() {
-		this.resizeObserver.unobserve(this.$refs.editor);
 	},
 	destroyed() {
 		this.unbindEvent();
@@ -467,14 +462,6 @@ export default {
 			};
 			$(document).on('mousemove', this.initEventFn1);
 			$(document).on('mouseup', this.initEventFn2);
-		},
-		initResizeEvent() {
-			this.resizeObserver = new ResizeObserver((entries) => {
-				if (this.$refs.scroller && this.$refs.scroller.clientHeight) {
-					this.showEditor();
-				}
-			});
-			this.resizeObserver.observe(this.$refs.editor);
 		},
 		initEventBus() {
 			this.initEventBusFn = {};
@@ -599,6 +586,11 @@ export default {
 					}
 				})
 			);
+			EventBus.$on('editor-size-change', this.initEventBusFn['editor-size-change'] = () => {
+				if (this.$refs.scroller && this.$refs.scroller.clientHeight) {
+					this.setPosition();
+				}
+			});
 			EventBus.$on(
 				'minimap-toggle',
 				(this.initEventBusFn['minimap-toggle'] = () => {
@@ -638,6 +630,7 @@ export default {
 			EventBus.$off('file-opened', this.initEventBusFn['file-opened']);
 			EventBus.$off('editor-format', this.initEventBusFn['editor-format']);
 			EventBus.$off('editor-content-change', this.initEventBusFn['editor-content-change']);
+			EventBus.$off('editor-size-change', this.initEventBusFn['editor-size-change']);
 			EventBus.$off('minimap-toggle', this.initEventBusFn['minimap-toggle']);
 			EventBus.$off('window-close', this.initEventBusFn['window-close']);
 		},
@@ -662,7 +655,9 @@ export default {
 				this.scrollToLine(this.tabData.cursorPos.line, this.tabData.cursorPos.column);
 				delete this.tabData.cursorPos;
 			}
-			if (this.type !== 'diff') {
+			if (this.type === 'diff') {
+				this.showDiff();
+			} else {
 				// 获取文件git修改记录
 				this.differ.run();
 				this.preStatus = this.tabData.status;
@@ -1482,6 +1477,34 @@ export default {
 				});
 			}
 		},
+		setPosition() {
+			let $editorGroup = $(this.$parent.$refs.editorGroup);
+			let $editor = $(this.$refs.editor);
+			let $contentWrap = $(this.$refs.contentWrap);
+			let $numWrap = $(this.$refs.numWrap);
+			let $minimapWrap = $(this.$refs.minimapWrap);
+			let offset = $editorGroup.offset();
+			let groupWidth = $editorGroup[0].clientWidth;
+			let groupHeight = $editorGroup[0].clientHeight;
+			$editor.css({
+				left: offset.left + 'px',
+				top: offset.top + 'px',
+				width: groupWidth + 'px',
+				height: groupHeight + 'px',
+			});
+			$numWrap.css({
+				height: groupHeight + 'px',
+			});
+			$minimapWrap.css({
+				height: groupHeight + 'px',
+			});
+			$contentWrap.css({
+				left: $numWrap[0].clientWidth,
+				width: groupWidth - $numWrap[0].clientWidth - $minimapWrap[0].clientWidth + 'px',
+				height: groupHeight + 'px',
+			});
+			this.showEditor();
+		},
 		setScrollerArea() {
 			this.scrollerArea = {
 				height: this.$refs.scroller.clientHeight,
@@ -1681,7 +1704,7 @@ export default {
 		},
 		// 获取文本在浏览器中的宽度
 		getStrWidth(str, start, end) {
-			return Util.getStrWidth({str, start, end, tabSize: this.tabSize, ...this.charObj});
+			return Util.getStrWidth({ str, start, end, tabSize: this.tabSize, ...this.charObj });
 		},
 		// 获取行对应的文本在浏览器中的宽度
 		getStrWidthByLine(line, start, end) {

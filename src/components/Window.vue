@@ -25,7 +25,7 @@
 			<!-- tab栏 -->
 			<editor-bar :editorList="editorList" v-show="editorList.length"></editor-bar>
 			<!-- 编辑区 -->
-			<div class="my-editor-groups">
+			<div class="my-editor-groups" ref="editorGroup">
 				<template v-for="item in editorList">
 					<editor :active="item.active" :key="item.id" :ref="'editor' + item.id" :tab-data="item" v-show="item.active"></editor>
 				</template>
@@ -182,6 +182,7 @@ export default {
 			theme.loadIconTheme(globalData.nowIconTheme); // loadIconTheme需要用到globalData.languageList
 			EventBus.$emit('language-check');
 		});
+		this.initResizeEvent();
 	},
 	methods: {
 		initEvent() {
@@ -207,6 +208,14 @@ export default {
 				.on('keydown', (e) => {
 					this.winShorcut.onKeydown(e);
 				});
+		},
+		initResizeEvent() {
+			this.resizeObserver = new ResizeObserver((entries) => {
+				if (this.$refs.editorGroup && this.$refs.editorGroup.clientHeight) {
+					EventBus.$emit('editor-size-change');
+				}
+			});
+			this.resizeObserver.observe(this.$refs.editorGroup);
 		},
 		initEventBus() {
 			EventBus.$on('theme-changed', (value) => {

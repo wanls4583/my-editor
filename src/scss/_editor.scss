@@ -6,10 +6,7 @@
 	}
 
 	&-editor-wrap {
-		display: flex;
-		position: relative;
-		width: 100%;
-		height: 100%;
+		position: fixed;
 		overflow: hidden;
 		font-style: normal;
 		font-variant-ligatures: normal;
@@ -33,12 +30,11 @@
 		right: 0;
 		padding: 0 25px 0 20px;
 		text-align: right;
-		transform: translate3d(0px, 0px, 0px);
 
 		&-wrap {
-			flex-shrink: 0;
-			position: relative;
-			height: 100%;
+			position: absolute;
+			top: 0;
+			left: 0;
 		}
 
 		&-scroller {
@@ -51,6 +47,8 @@
 
 		&-content {
 			position: absolute;
+			top: 0;
+			left: 0;
 			width: 100%;
 			height: 1000000px;
 			overflow: hidden;
@@ -100,17 +98,17 @@
 
 	&-content {
 		position: absolute;
+		top: 0;
 		width: 1000000px;
 		height: 1000000px;
 		overflow: hidden;
+		cursor: text;
 		contain: strict;
 		transform: translate3d(0px, 0px, 0px);
-		cursor: text;
 
 		&-wrap {
-			flex-grow: 1;
-			position: relative;
-			height: 100%;
+			position: absolute;
+			top: 0;
 			overflow: hidden;
 		}
 	}
@@ -119,47 +117,31 @@
 		position: absolute;
 		top: 0;
 		left: 0;
-		right: 0;
-		bottom: 0;
 		z-index: 1;
 		pointer-events: none;
-		contain: strict;
-		transform: translate3d(0px, 0px, 0px);
 	}
 
 	&-lines-view {
 		position: absolute;
 		top: 0;
 		left: 0;
-		right: 0;
-		bottom: 0;
 		z-index: 2;
-		contain: strict;
-		transform: translate3d(0px, 0px, 0px);
 	}
 
 	&-indent-view {
 		position: absolute;
 		top: 0;
 		left: 0;
-		right: 0;
-		bottom: 0;
 		z-index: 3;
 		pointer-events: none;
-		contain: strict;
-		transform: translate3d(0px, 0px, 0px);
 	}
 
 	&-cursor-view {
 		position: absolute;
 		top: 0;
 		left: 0;
-		right: 0;
-		bottom: 0;
 		z-index: 4;
 		pointer-events: none;
-		contain: strict;
-		transform: translate3d(0px, 0px, 0px);
 	}
 
 	&-cursor {
@@ -169,7 +151,6 @@
 		width: 2px;
 		overflow: hidden;
 		background-color: var(--my-editorCursor-foreground);
-		pointer-events: none;
 	}
 
 	&-textarea {
@@ -205,8 +186,11 @@
 	}
 
 	&-minimap-wrap {
-		flex-shrink: 0;
+		position: absolute;
+		top: 0;
+		right: 0;
 		width: 10%;
-		height: 100%;
+		contain: strict;
+		transform: translate3d(0px, 0px, 0px);
 	}
 }
