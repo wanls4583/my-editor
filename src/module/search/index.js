@@ -34,16 +34,16 @@ export default class {
         if (resultObj && resultObj.result) {
             if (this.editor.searcher === this || searchObj.active) {
                 if (hasCache) {
+                    this.editor.selecter.addRange(Object.assign({ active: true }, resultObj.result));
                     this.editor.cursor.addCursorPos(resultObj.result.end);
-                    this.selecter.addActive(resultObj.result.end);
                     this.scrollToResult(resultObj.result);
                 } else {
                     if (this.selecter.activedRanges.size > 0) { //搜索前已经存在活动区域
                         this.initIndexs();
                     } else {
-                        this.editor.cursor.setCursorPos(resultObj.result.end);
                         this.selecter.addRange(resultObj.results);
                         this.selecter.addActive(resultObj.result.end);
+                        this.editor.cursor.setCursorPos(resultObj.result.end);
                     }
                 }
                 if (this.editor.fSearcher === this) { //记录当前可编辑的活动区域
@@ -51,10 +51,9 @@ export default class {
                 }
             } else {
                 if (hasCache) {
-                    this.selecter.setActive(resultObj.result.end);
-                    this.editor.cursor.setCursorPos(resultObj.result.end);
                     //记录当前可编辑的活动区域
                     this.editor.selecter.setRange(Object.assign({ active: true }, resultObj.result));
+                    this.editor.cursor.setCursorPos(resultObj.result.end);
                     this.scrollToResult(resultObj.result);
                 } else {
                     //使setPrevActive/setNextActive定位到当前光标位置

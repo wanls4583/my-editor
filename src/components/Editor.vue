@@ -243,11 +243,7 @@ export default {
 			return this.cursorVisible && this.cursorFocus ? 'visible' : 'hidden';
 		},
 		_contentMinWidth() {
-			let width = 0;
-			if (this.$refs.content) {
-				width = Util.getStrExactWidth(this.maxWidthObj.text, this.tabSize, this.$refs.content);
-				width += this.charObj.fullCharWidth;
-			}
+			let width = this.maxWidthObj.width + this.charObj.fullCharWidth;
 			width = this.scrollerArea.width > width ? this.scrollerArea.width : width;
 			return width;
 		},

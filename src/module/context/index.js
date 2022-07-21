@@ -722,7 +722,6 @@ class Context {
 					if (width > maxWidthObj.width) {
 						maxWidthObj = {
 							lineId: lineObj.lineId,
-							text: lineObj.text,
 							width: width
 						};
 					}
