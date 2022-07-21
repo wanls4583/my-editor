@@ -751,6 +751,7 @@ export default {
 		},
 		// 渲染
 		render(scrollToCursor) {
+			this.scrollToCursor = scrollToCursor;
 			if (this.renderTimer) {
 				return;
 			}
@@ -759,7 +760,7 @@ export default {
 				this.renderLines();
 				this.renderSelectedBg();
 				this.renderError();
-				this.renderCursor(scrollToCursor, true);
+				this.renderCursor(this.scrollToCursor);
 				this.renderBracketMatch();
 				this.$refs.minimap && this.$refs.minimap.render();
 				this.renderedCb.forEach((cb) => {
@@ -1169,6 +1170,7 @@ export default {
 		renderCursor(scrollToCursor, isSync) {
 			let cursorCount = 0;
 			this.scrollToCursor = scrollToCursor;
+			this.cursorVisible = false;
 			if (isSync) {
 				if (this.renderCursorTimer) {
 					cancelAnimationFrame(this.renderCursorTimer);
@@ -1186,6 +1188,7 @@ export default {
 			function _renderCursor() {
 				this.renderCursorTimer = null;
 				this.renderCursorObjs = [];
+				this.cursorVisible = true;
 				for (let i = 0; i < this.renderObjs.length; i++) {
 					_setLine.call(this, this.renderObjs[i]);
 					if (cursorCount >= this.cursor.multiCursorPos.size) {
@@ -1379,6 +1382,7 @@ export default {
 			let originLine = line || this.folder.getRelativeLine(this.nowCursorPos.line);
 			let originColumn = this.nowCursorPos.column;
 			let count = 0; // 累计滚动距离
+			speed = speed * 2;
 			globalData.scheduler.removeUiTask(this.moveTask);
 			this.moveTask = globalData.scheduler.addUiTask(() => {
 				_run(autoDirect, speed);
@@ -1481,31 +1485,26 @@ export default {
 				this._nowCursorPos = nowCursorPos;
 				return;
 			}
+			if (this.setNowCursorPosing) {
+				return;
+			}
 			this._nowCursorPos = null;
 			this.nowCursorPos = nowCursorPos || { line: 1, column: 0 };
 			if (nowCursorPos) {
+				this.setNowCursorPosing = true;
 				// 延时处理，等待设置contentHeight
 				this.$nextTick(() => {
+					this.setNowCursorPosing = false;
 					let height = this.folder.getRelativeLine(nowCursorPos.line + 1) * this.charObj.charHight;
 					if (height > this.scrollTop + this.scrollerArea.height) {
 						height = height > this.contentHeight ? this.contentHeight : height;
-						this.setStartLine(height - this.scrollerArea.height);
-						_renderCursor.call(this);
+						this.setStartLine(height - this.scrollerArea.height, true);
 					} else if (height < this.scrollTop + this.charObj.charHight) {
 						let scrollTop = (this.folder.getRelativeLine(nowCursorPos.line) - 1) * this.charObj.charHight;
-						this.setStartLine(scrollTop);
-						_renderCursor.call(this);
+						this.setStartLine(scrollTop, true);
 					} else {
 						this.renderCursor(true);
 					}
-				});
-			}
-
-			function _renderCursor() {
-				this.renderedCb.push(() => {
-					this.$nextTick(() => {
-						this.renderCursor(true);
-					});
 				});
 			}
 		},
@@ -1574,7 +1573,7 @@ export default {
 				this.diffTop = -this.scrollTop + 30;
 			}
 		},
-		setStartLine(scrollTop, force) {
+		setStartLine(scrollTop, scrollToCursor) {
 			let startLine = 1;
 			let maxScrollTop = this.contentHeight - this.scrollerArea.height;
 			scrollTop = scrollTop < 0 ? 0 : scrollTop;
@@ -1582,7 +1581,7 @@ export default {
 			if (scrollTop > maxScrollTop) {
 				scrollTop = maxScrollTop;
 			}
-			if (!force && Math.abs(scrollTop - this.scrollTop) < 1) {
+			if (Math.abs(scrollTop - this.scrollTop) < 1) {
 				return;
 			}
 			startLine = Math.floor(scrollTop / this.charObj.charHight);
@@ -1592,7 +1591,7 @@ export default {
 			this.scrollTop = scrollTop;
 			this.diffLine && this.setDiffTop();
 			this.tokenizer.tokenizeVisibleLins();
-			this.render();
+			this.render(scrollToCursor);
 		},
 		setErrors(errors) {
 			this.errorMap = {};
