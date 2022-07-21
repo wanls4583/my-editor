@@ -29,7 +29,15 @@
 			<!-- 可滚动区域 -->
 			<div @scroll="onScroll" class="my-scroller" ref="scroller">
 				<!-- 内如区域 -->
-				<div :style="{ transform: 'translate3d('+_left+','+_top+',0)' }" @mousedown="onContentMdown" @mouseleave="onContentMLeave" @mousemove="onContentMmove" @selectend.prevent="onSelectend" class="my-content" ref="content">
+				<div
+					:style="{ transform: 'translate3d('+_left+','+_top+',0)' }"
+					@mousedown="onContentMdown"
+					@mouseleave="onContentMLeave"
+					@mousemove="onContentMmove"
+					@selectend.prevent="onSelectend"
+					class="my-content"
+					ref="content"
+				>
 					<div :style="{width: _contentMinWidth+'px'}" class="my-lines-view" ref="lineView">
 						<div :class="line.diffClass" :data-line="line.num" :id="_lineId(line.num)" :style="{top: line.top}" class="my-line" v-for="line in renderObjs">
 							<div :class="[line.fold == 'close' ? 'fold-close' : '', line.bgClass]" :data-line="line.num" class="my-code" v-html="line.html"></div>
@@ -367,6 +375,7 @@ export default {
 		if (this.active) {
 			this.setPosition();
 		}
+		this.initResizeEvent();
 	},
 	beforeDestroy() {
 	},
@@ -462,6 +471,14 @@ export default {
 			};
 			$(document).on('mousemove', this.initEventFn1);
 			$(document).on('mouseup', this.initEventFn2);
+		},
+		initResizeEvent() {
+			this.resizeObserver = new ResizeObserver(() => {
+				if (this.$refs.editor && this.$refs.editor.clientHeight) {
+					this.setContentDomSize();
+				}
+			});
+			this.resizeObserver.observe(this.$refs.numWrap);
 		},
 		initEventBus() {
 			this.initEventBusFn = {};
@@ -642,7 +659,6 @@ export default {
 			this.language = this._language || '';
 			this.theme = this._theme || '';
 			this.initRenderData();
-			this.setScrollerArea();
 			this.setContentHeight();
 			this.render();
 			this.focus();
@@ -656,7 +672,10 @@ export default {
 				delete this.tabData.cursorPos;
 			}
 			if (this.type === 'diff') {
-				this.showDiff();
+				if (!this.showDiffed) {
+					this.showDiff();
+					this.showDiffed = false;
+				}
 			} else {
 				// 获取文件git修改记录
 				this.differ.run();
@@ -1480,7 +1499,6 @@ export default {
 		setPosition() {
 			let $editorGroup = $(this.$parent.$refs.editorGroup);
 			let $editor = $(this.$refs.editor);
-			let $contentWrap = $(this.$refs.contentWrap);
 			let $numWrap = $(this.$refs.numWrap);
 			let $minimapWrap = $(this.$refs.minimapWrap);
 			let offset = $editorGroup.offset();
@@ -1498,12 +1516,22 @@ export default {
 			$minimapWrap.css({
 				height: groupHeight + 'px',
 			});
+			this.setContentDomSize();
+			this.showEditor();
+		},
+		setContentDomSize() {
+			let $editorGroup = $(this.$parent.$refs.editorGroup);
+			let $contentWrap = $(this.$refs.contentWrap);
+			let numWrap = this.$refs.numWrap;
+			let minimapWrap = this.$refs.minimapWrap;
+			let groupWidth = $editorGroup[0].clientWidth;
+			let groupHeight = $editorGroup[0].clientHeight;
 			$contentWrap.css({
-				left: $numWrap[0].clientWidth,
-				width: groupWidth - $numWrap[0].clientWidth - $minimapWrap[0].clientWidth + 'px',
+				left: numWrap.clientWidth,
+				width: groupWidth - numWrap.clientWidth - minimapWrap.clientWidth + 'px',
 				height: groupHeight + 'px',
 			});
-			this.showEditor();
+			this.setScrollerArea();
 		},
 		setScrollerArea() {
 			this.scrollerArea = {
