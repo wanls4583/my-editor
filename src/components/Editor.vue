@@ -759,7 +759,7 @@ export default {
 				this.renderLines();
 				this.renderSelectedBg();
 				this.renderError();
-				this.renderCursor(scrollToCursor);
+				this.renderCursor(scrollToCursor, true);
 				this.renderBracketMatch();
 				this.$refs.minimap && this.$refs.minimap.render();
 				this.renderedCb.forEach((cb) => {
@@ -1166,33 +1166,46 @@ export default {
 			lineObj.html = '';
 		},
 		// 渲染光标
-		renderCursor(scrollToCursor) {
-			let that = this;
+		renderCursor(scrollToCursor, isSync) {
+			let cursorCount = 0;
 			this.scrollToCursor = scrollToCursor;
-			if (this.renderCursorTimer) {
-				return;
+			if (isSync) {
+				if (this.renderCursorTimer) {
+					cancelAnimationFrame(this.renderCursorTimer);
+				}
+				_renderCursor.call(this);
+			} else {
+				if (this.renderCursorTimer) {
+					return;
+				}
+				this.renderCursorTimer = requestAnimationFrame(() => {
+					_renderCursor.call(this);
+				});
 			}
-			this.cursorVisible = false;
-			this.renderCursorTimer = requestAnimationFrame(() => {
+
+			function _renderCursor() {
 				this.renderCursorTimer = null;
 				this.renderCursorObjs = [];
 				for (let i = 0; i < this.renderObjs.length; i++) {
-					_setLine(this.renderObjs[i]);
+					_setLine.call(this, this.renderObjs[i]);
+					if (cursorCount >= this.cursor.multiCursorPos.size) {
+						break;
+					}
 				}
-				this.cursorVisible = true;
 				if (this.$refs.minimap) {
 					this.$refs.minimap.renderCursor();
 					this.$refs.minimap.renderAllCursor();
 				}
-			});
+			}
 
 			function _setLine(item) {
 				let cursorList = [];
-				let list = that.cursor.getCursorsByLine(item.num);
+				let list = this.cursor.getCursorsByLine(item.num);
 				for (let i = 0; i < list.length; i++) {
-					cursorList.push({ top: item.top, left: _setCursorRealPos(list[i]) });
+					cursorList.push({ top: item.top, left: _setCursorRealPos.call(this, list[i]) });
+					cursorCount++;
 				}
-				that.renderCursorObjs.push(cursorList);
+				this.renderCursorObjs.push(cursorList);
 			}
 
 			function _setCursorRealPos(cursorPos) {
@@ -1200,18 +1213,18 @@ export default {
 				if (cursorPos.del) {
 					return;
 				}
-				left = that.getStrWidthByLine(cursorPos.line, 0, cursorPos.column);
+				left = this.getStrWidthByLine(cursorPos.line, 0, cursorPos.column);
 				// 强制滚动使光标处于可见区域
-				if (that.scrollToCursor && cursorPos === that.nowCursorPos) {
-					if (left > that.scrollerArea.width + that.scrollLeft - that.charObj.fullCharWidth) {
-						that.scrollLeft = left + that.charObj.fullCharWidth - that.scrollerArea.width;
-					} else if (left < that.scrollLeft + that.charObj.fullCharWidth) {
-						that.scrollLeft = left - that.charObj.fullCharWidth;
-						that.scrollLeft = that.scrollLeft < 0 ? 0 : that.scrollLeft;
+				if (this.scrollToCursor && cursorPos === this.nowCursorPos) {
+					if (left > this.scrollerArea.width + this.scrollLeft - this.charObj.fullCharWidth) {
+						this.scrollLeft = left + this.charObj.fullCharWidth - this.scrollerArea.width;
+					} else if (left < this.scrollLeft + this.charObj.fullCharWidth) {
+						this.scrollLeft = left - this.charObj.fullCharWidth;
+						this.scrollLeft = this.scrollLeft < 0 ? 0 : this.scrollLeft;
 					}
 				}
-				if (cursorPos === that.nowCursorPos) {
-					that.cursorLeft = left - that.scrollLeft;
+				if (cursorPos === this.nowCursorPos) {
+					this.cursorLeft = left - this.scrollLeft;
 				}
 				return left + 'px';
 			}
