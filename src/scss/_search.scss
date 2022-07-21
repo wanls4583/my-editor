@@ -111,10 +111,11 @@
 	}
 
 	&-search-input {
+		flex-grow: 1;
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		width: 280px;
+		max-width: 280px;
 		margin-right: 5px;
 		background-color: var(--my-input-background);
 		color: var(--my-input-foreground);
