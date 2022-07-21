@@ -4,6 +4,7 @@
  * @Description: 工具类
  */
 import stripJsonComments from 'strip-json-comments';
+import stringWidth from 'string-width';
 import $ from 'jquery';
 
 const fs = window.require('fs');
@@ -49,24 +50,24 @@ class Util {
 	}
 	//数组数字排序
 	static sortNum(arr) {
-		arr.sort(function (arg1, arg2) {
+		arr.sort(function(arg1, arg2) {
 			return Number(arg1) - Number(arg2);
 		});
 	}
 	static debounce(cb, delay) {
 		var timer = null;
-		return function () {
+		return function() {
 			clearTimeout(timer);
-			timer = setTimeout(function () {
+			timer = setTimeout(function() {
 				cb();
 			}, delay);
 		};
 	}
 	static throttle(cb, delay) {
 		var timer = null;
-		return function () {
+		return function() {
 			if (!timer) {
-				timer = setTimeout(function () {
+				timer = setTimeout(function() {
 					cb();
 				}, delay);
 			}
@@ -74,22 +75,35 @@ class Util {
 	}
 	//获取字符宽度
 	static getCharWidth(wrap, template) {
-		var str1 = '------------------------------------------------------------------------------------';
-		var str2 = '一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一一';
-		var id1 = 'char-width-' + Util.getUUID();
-		var id2 = 'char-width-' + Util.getUUID();
-		var $tempDom1 = $(template.replace('[dom]', `<span style="display:inline-block" id="${id1}">${str1}</span>`));
-		var $tempDom2 = $(template.replace('[dom]', `<span style="display:inline-block" id="${id2}">${str2}</span>`));
+		let str1 = '';
+		let str2 = '';
+		for (let i = 0; i < 100; i++) {
+			str1 += '1';
+			str2 += '啊';
+		}
+		let fontSize = 0;
+		let id1 = 'char-width-' + Util.getUUID();
+		let id2 = 'char-width-' + Util.getUUID();
+		let $tempDom1 = $(template.replace('[dom]', `<span style="display:inline-block" id="${id1}">${str1}</span>`));
+		let $tempDom2 = $(template.replace('[dom]', `<span style="display:inline-block" id="${id2}">${str2}</span>`));
 		$(wrap).append($tempDom1).append($tempDom2);
-		var charWidth = $(`#${id1}`)[0].scrollWidth / str1.length;
-		var charHight = $(`#${id1}`)[0].clientHeight;
-		var fontSize = window.getComputedStyle ? window.getComputedStyle($(`#${id1}`)[0], null).fontSize : $tempDom1[0].currentStyle.fontSize;
-		var fullAngleCharWidth = $(`#${id2}`)[0].scrollWidth / str2.length;
+		id1 = $('#' + id1);
+		id2 = $('#' + id2);
+		if (window.getComputedStyle) {
+			fontSize = parseFloat(window.getComputedStyle(id1[0], null).fontSize);
+		} else {
+			fontSize = parseFloat(id1[0].currentStyle.fontSize);
+		}
+		let charWidth = id1[0].getBoundingClientRect().width / str1.length;
+		let fullCharWidth = id2[0].getBoundingClientRect().width / str2.length;
+		let charHight = id1[0].clientHeight;
 		$tempDom1.remove();
 		$tempDom2.remove();
 		return {
 			charWidth: charWidth,
-			fullAngleCharWidth: fullAngleCharWidth,
+			charScale: charWidth / fontSize,
+			fullCharWidth: fullCharWidth,
+			fullCharScale: fullCharWidth / fontSize,
 			charHight: charHight,
 			fontSize: fontSize
 		};
@@ -104,7 +118,15 @@ class Util {
 	 * @param  {number} end       文本结束索引
 	 * @return {number}           文本真实宽度
 	 */
-	static getStrWidth(str, charW, fullCharW, tabSize, start, end) {
+	static getStrWidth({
+		str,
+		fontSize,
+		charScale,
+		fullCharScale,
+		tabSize,
+		start,
+		end
+	}) {
 		tabSize = tabSize || 4;
 		if (typeof start != 'undefined') {
 			str = str.substr(start);
@@ -112,17 +134,13 @@ class Util {
 		if (typeof end != 'undefined') {
 			str = str.substring(0, end - start);
 		}
-		var match = str.match(Util.FULL_ANGLE_REG);
-		var width = str.length * charW;
-		var tabNum = str.match(/\t/g);
+		let charNum = stringWidth(str);
+		let fullCharNum = charNum - str.length;
+		let tabNum = 0;
+		tabNum = str.match(/\t/g);
 		tabNum = (tabNum && tabNum.length) || 0;
-		match = (match && match.length) || 0;
-		if (match) {
-			match = match - tabNum;
-			width = match * fullCharW + (str.length - match) * charW;
-			width += tabNum * charW * (tabSize - 1);
-		}
-		return width;
+		charNum = str.length - fullCharNum + (tabSize - 1) * tabNum;
+		return charNum * fontSize * charScale + fullCharNum * fontSize * fullCharScale;
 	}
 	/**
 	 * 获取文本在浏览器中的真实宽度
@@ -234,7 +252,7 @@ class Util {
 		let result = {};
 		properties.forEach(property => {
 			result[property] = {
-				get: function () {
+				get: function() {
 					if (typeof context[property] == 'function') {
 						return context[property].bind(context);
 					} else {
@@ -247,7 +265,9 @@ class Util {
 	}
 	static readFile(path) {
 		return new Promise((resolve, reject) => {
-			fs.readFile(path, { encoding: 'utf8' }, (error, data) => (error ? reject(error) : resolve(data)));
+			fs.readFile(path, {
+				encoding: 'utf8'
+			}, (error, data) => (error ? reject(error) : resolve(data)));
 		});
 	}
 	static writeFile(path, data) {
@@ -259,7 +279,9 @@ class Util {
 				} else {
 					data = data.replace(/\r\n/g, '\n');
 				}
-				fs.writeFile(path, data, { encoding: 'utf8' }, error => (error ? reject(error) : resolve()));
+				fs.writeFile(path, data, {
+					encoding: 'utf8'
+				}, error => (error ? reject(error) : resolve()));
 			});
 		});
 	}
@@ -271,7 +293,9 @@ class Util {
 			data = data.replace(/\r\n/g, '\n');
 		}
 		fse.ensureFileSync(path);
-		fs.writeFileSync(path, data, { encoding: 'utf8' });
+		fs.writeFileSync(path, data, {
+			encoding: 'utf8'
+		});
 	}
 	static loadJsonFile(fullPath) {
 		return Util.readFile(fullPath).then(data => {
@@ -283,7 +307,9 @@ class Util {
 		});
 	}
 	static loadJsonFileSync(fullPath) {
-		let data = fs.readFileSync(fullPath, { encoding: 'utf8' });
+		let data = fs.readFileSync(fullPath, {
+			encoding: 'utf8'
+		});
 		data = data.toString();
 		data = stripJsonComments(data);
 		data = data.replaceAll(/\,(?=\s*(?:(?:\r\n|\n|\r))*\s*[\]\}])/g, '');
@@ -325,7 +351,10 @@ class Util {
 		let result = null;
 		let _target = target.toLowerCase();
 		if (word === target) {
-			return fullMatch ? { score: 100, indexs: [] } : null;
+			return fullMatch ? {
+				score: 100,
+				indexs: []
+			} : null;
 		}
 		_setMap();
 		for (let i = 0; i < target.length; i++) {
@@ -461,7 +490,12 @@ class Util {
 		}
 		return new RegExp(wordPattern);
 	}
-	static getIconByPath({ fileType, filePath, opened, isRoot }) {
+	static getIconByPath({
+		fileType,
+		filePath,
+		opened,
+		isRoot
+	}) {
 		let fileName = /[^\\\/]+$/.exec(filePath);
 		let suffix1 = '';
 		let suffix2 = '';
@@ -693,17 +727,17 @@ class Util {
 		return html;
 	}
 }
-Array.prototype.peek = function (index) {
+Array.prototype.peek = function(index) {
 	if (this.length) {
 		return this[this.length - (index || 1)];
 	}
 };
-Array.prototype.empty = function () {
+Array.prototype.empty = function() {
 	this.length = 0;
 	this.splice();
 	return this;
 };
-Array.prototype.insert = function (item, sort) {
+Array.prototype.insert = function(item, sort) {
 	if (sort && this.length) {
 		let left = 0,
 			right = this.length - 1;
@@ -723,7 +757,7 @@ Array.prototype.insert = function (item, sort) {
 		this.push(item);
 	}
 };
-String.prototype.peek = function (index) {
+String.prototype.peek = function(index) {
 	if (this.length) {
 		return this[this.length - (index || 1)];
 	}
@@ -747,6 +781,12 @@ Util.CONST_DATA = {
 	BRACKET: 'bracket',
 	TAG: 'tag'
 };
-Util.STATUS_LEVEMAP = { A: 1, M: 2, D: 3, '?': 4, R: 5 };
+Util.STATUS_LEVEMAP = {
+	A: 1,
+	M: 2,
+	D: 3,
+	'?': 4,
+	R: 5
+};
 
 export default Util;

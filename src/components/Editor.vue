@@ -205,7 +205,14 @@ export default {
 			tipStyle: { top: '0px', left: '0px' },
 			autoTipStyle: { top: '50%', left: '50%' },
 			maxWidthObj: { lineId: null, text: '', width: 0 },
-			charObj: { charWidth: 7.15, fullAngleCharWidth: 15, charHight: 20 },
+			charObj: {
+				charHight: 20,
+				charScale: 0.5498046875,
+				charWidth: 8.796875,
+				fontSize: 16,
+				fullCharScale: 1,
+				fullCharWidth: 16 
+			},
 		};
 	},
 	computed: {
@@ -239,7 +246,7 @@ export default {
 			let width = 0;
 			if (this.$refs.content) {
 				width = Util.getStrExactWidth(this.maxWidthObj.text, this.tabSize, this.$refs.content);
-				width += this.charObj.fullAngleCharWidth;
+				width += this.charObj.fullCharWidth;
 			}
 			width = this.scrollerArea.width > width ? this.scrollerArea.width : width;
 			return width;
@@ -257,10 +264,10 @@ export default {
 					top = this.scrollerArea.height - 2 * this.charObj.charHight;
 				}
 			}
-			if (left > this.scrollerArea.width - this.charObj.fullAngleCharWidth) {
-				left = this.scrollerArea.width - this.charObj.fullAngleCharWidth;
-			} else if (left < this.charObj.fullAngleCharWidth) {
-				left = this.charObj.fullAngleCharWidth;
+			if (left > this.scrollerArea.width - this.charObj.fullCharWidth) {
+				left = this.scrollerArea.width - this.charObj.fullCharWidth;
+			} else if (left < this.charObj.fullCharWidth) {
+				left = this.charObj.fullCharWidth;
 			}
 			return {
 				top: top + 'px',
@@ -451,7 +458,7 @@ export default {
 			this.minimapVisible = this.type !== 'diff' && globalData.views.minimap;
 		},
 		initRenderData() {
-			this.charObj = Util.getCharWidth(this.$refs.content, '<div class="my-line"><div class="my-code">[dom]</div></div>');
+			this.charObj = Util.getCharWidth(this.$refs.lineView, '<div class="my-line"><div class="my-code">[dom]</div></div>');
 			this.maxVisibleLines = Math.ceil(this.$refs.scroller.clientHeight / this.charObj.charHight) + 1;
 		},
 		// 初始化文档事件
@@ -1188,10 +1195,10 @@ export default {
 				left = that.getExactLeft(cursorPos);
 				// 强制滚动使光标处于可见区域
 				if (that.scrollToCursor && cursorPos === that.nowCursorPos) {
-					if (left > that.scrollerArea.width + that.scrollLeft - that.charObj.fullAngleCharWidth) {
-						that.scrollLeft = left + that.charObj.fullAngleCharWidth - that.scrollerArea.width;
-					} else if (left < that.scrollLeft + that.charObj.fullAngleCharWidth) {
-						that.scrollLeft = left - that.charObj.fullAngleCharWidth;
+					if (left > that.scrollerArea.width + that.scrollLeft - that.charObj.fullCharWidth) {
+						that.scrollLeft = left + that.charObj.fullCharWidth - that.scrollerArea.width;
+					} else if (left < that.scrollLeft + that.charObj.fullCharWidth) {
+						that.scrollLeft = left - that.charObj.fullCharWidth;
 						that.scrollLeft = that.scrollLeft < 0 ? 0 : that.scrollLeft;
 					}
 				}
@@ -1672,7 +1679,7 @@ export default {
 			}
 			let html = '';
 			for (let tab = 1; tab <= tabNum; tab++) {
-				let left = (tab - 1) * this.tabSize * this.charObj.charWidth + 'px';
+				let left = (tab - 1) * this.tabSize * this.charObj.fontSize * this.charObj.charScale + 'px';
 				html += `<span style="left:${left}" class="my-indent"></span>`;
 			}
 			tabLinesMap[tabNum] = html;
@@ -1680,7 +1687,7 @@ export default {
 		},
 		// 获取文本在浏览器中的宽度
 		getStrWidth(str, start, end) {
-			return Util.getStrWidth(str, this.charObj.charWidth, this.charObj.fullAngleCharWidth, this.tabSize, start, end);
+			return Util.getStrWidth({str, start, end, tabSize: this.tabSize, ...this.charObj});
 		},
 		// 获取行对应的文本在浏览器中的宽度
 		getStrWidthByLine(line, start, end) {
