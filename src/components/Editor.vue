@@ -1195,10 +1195,10 @@ export default {
 					}
 				}
 				if (this.$refs.minimap) {
-					if(this.renderMiniMapCursorTimer) {
+					if (this.renderMiniMapCursorTimer) {
 						return;
 					}
-					this.renderMiniMapCursorTimer = setTimeout(()=>{
+					this.renderMiniMapCursorTimer = setTimeout(() => {
 						this.renderMiniMapCursorTimer = null;
 						this.$refs.minimap.renderCursor();
 						this.$refs.minimap.renderAllCursor();
@@ -1490,29 +1490,27 @@ export default {
 				this._nowCursorPos = nowCursorPos;
 				return;
 			}
+			this._nowCursorPos = null;
+			this.nowCursorPos = nowCursorPos || { line: 1, column: 0 };
 			if (this.setNowCursorPosing) {
 				return;
 			}
-			this._nowCursorPos = null;
-			this.nowCursorPos = nowCursorPos || { line: 1, column: 0 };
-			if (nowCursorPos) {
-				this.setNowCursorPosing = true;
-				// 延时处理，等待设置contentHeight
-				this.$nextTick(() => {
-					this.setNowCursorPosing = false;
-					this.cursorVisible = false;
-					let height = this.folder.getRelativeLine(nowCursorPos.line + 1) * this.charObj.charHight;
-					if (height > this.scrollTop + this.scrollerArea.height) {
-						height = height > this.contentHeight ? this.contentHeight : height;
-						this.setStartLine(height - this.scrollerArea.height, true);
-					} else if (height < this.scrollTop + this.charObj.charHight) {
-						let scrollTop = (this.folder.getRelativeLine(nowCursorPos.line) - 1) * this.charObj.charHight;
-						this.setStartLine(scrollTop, true);
-					} else {
-						this.renderCursor(true);
-					}
-				});
-			}
+			this.setNowCursorPosing = true;
+			// 延时处理，等待设置contentHeight
+			this.$nextTick(() => {
+				this.setNowCursorPosing = false;
+				this.cursorVisible = false;
+				let height = this.folder.getRelativeLine(this.nowCursorPos.line + 1) * this.charObj.charHight;
+				if (height > this.scrollTop + this.scrollerArea.height) {
+					height = height > this.contentHeight ? this.contentHeight : height;
+					this.setStartLine(height - this.scrollerArea.height, true);
+				} else if (height < this.scrollTop + this.charObj.charHight) {
+					let scrollTop = (this.folder.getRelativeLine(this.nowCursorPos.line) - 1) * this.charObj.charHight;
+					this.setStartLine(scrollTop, true);
+				} else {
+					this.renderCursor(true);
+				}
+			});
 		},
 		setPosition() {
 			let $editorGroup = $(this.$parent.$refs.editorGroup);
