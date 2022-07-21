@@ -66,5 +66,8 @@ export default class {
         worker.on('message', data => {
             EventBus.$emit('diff-worker-done', data);
         });
+		worker.on('close', () => {
+            this.createProcess();
+        });
     }
 }
