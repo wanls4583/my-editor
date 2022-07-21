@@ -877,61 +877,59 @@ export default {
 					}
 				}
 			}
-			this.renderObjs.splice();
 			this._renderHighlight();
+			this.renderObjs.splice();
 		},
 		_renderHighlight() {
-			this.$nextTick(() => {
-				let selectionNumMap = {};
-				let renderedRangeMap = new Map();
-				let renderObj = null;
-				let selections = null;
-				let fSelections = null;
-				let range = null;
-				let rangeKey = '';
-				this.renderSelectionObjs = [];
-				for (let i = 0; i < this.renderObjs.length; i++) {
-					renderObj = this.renderObjs[i];
-					selectionNumMap[renderObj.num] = { line: renderObj.num, top: renderObj.top, selections: [] };
-					this.renderSelectionObjs.push(selectionNumMap[renderObj.num]);
-				}
-				for (let i = 0; i < this.renderObjs.length; i++) {
-					renderObj = this.renderObjs[i];
-					if (this.searchVisible) {
-						selections = this.selecter.getActiveRangeByLine(renderObj.num);
-						fSelections = this.fSelecter.getRangeByLine(renderObj.num);
-						for (let i = 0; i < selections.length; i++) {
-							range = selections[i];
-							rangeKey = range.start.line + ',' + range.start.column + ',' +
-								range.end.line + ',' + range.end.column;
-							if (!renderedRangeMap.has(rangeKey)) {
-								this._renderRangeStartAndEnd(range, selectionNumMap);
-								renderedRangeMap.set(rangeKey, true);
-							}
+			let selectionNumMap = {};
+			let renderedRangeMap = new Map();
+			let renderObj = null;
+			let selections = null;
+			let fSelections = null;
+			let range = null;
+			let rangeKey = '';
+			this.renderSelectionObjs = [];
+			for (let i = 0; i < this.renderObjs.length; i++) {
+				renderObj = this.renderObjs[i];
+				selectionNumMap[renderObj.num] = { line: renderObj.num, top: renderObj.top, selections: [] };
+				this.renderSelectionObjs.push(selectionNumMap[renderObj.num]);
+			}
+			for (let i = 0; i < this.renderObjs.length; i++) {
+				renderObj = this.renderObjs[i];
+				if (this.searchVisible) {
+					selections = this.selecter.getActiveRangeByLine(renderObj.num);
+					fSelections = this.fSelecter.getRangeByLine(renderObj.num);
+					for (let i = 0; i < selections.length; i++) {
+						range = selections[i];
+						rangeKey = range.start.line + ',' + range.start.column + ',' +
+							range.end.line + ',' + range.end.column;
+						if (!renderedRangeMap.has(rangeKey)) {
+							this._renderRangeStartAndEnd(range, selectionNumMap);
+							renderedRangeMap.set(rangeKey, true);
 						}
-						for (let i = 0; i < fSelections.length; i++) {
-							range = fSelections[i];
-							rangeKey = range.start.line + ',' + range.start.column + ',' +
-								range.end.line + ',' + range.end.column;
-							if (!renderedRangeMap.has(rangeKey)) {
-								this._renderRangeStartAndEnd(range, selectionNumMap, true);
-								renderedRangeMap.set(rangeKey, true);
-							}
+					}
+					for (let i = 0; i < fSelections.length; i++) {
+						range = fSelections[i];
+						rangeKey = range.start.line + ',' + range.start.column + ',' +
+							range.end.line + ',' + range.end.column;
+						if (!renderedRangeMap.has(rangeKey)) {
+							this._renderRangeStartAndEnd(range, selectionNumMap, true);
+							renderedRangeMap.set(rangeKey, true);
 						}
-					} else {
-						selections = this.selecter.getRangeByLine(renderObj.num);
-						for (let i = 0; i < selections.length; i++) {
-							range = selections[i];
-							rangeKey = range.start.line + ',' + range.start.column + ',' +
-								range.end.line + ',' + range.end.column;
-							if (!renderedRangeMap.has(rangeKey)) {
-								this._renderRangeStartAndEnd(range, selectionNumMap);
-								renderedRangeMap.set(rangeKey, true);
-							}
+					}
+				} else {
+					selections = this.selecter.getRangeByLine(renderObj.num);
+					for (let i = 0; i < selections.length; i++) {
+						range = selections[i];
+						rangeKey = range.start.line + ',' + range.start.column + ',' +
+							range.end.line + ',' + range.end.column;
+						if (!renderedRangeMap.has(rangeKey)) {
+							this._renderRangeStartAndEnd(range, selectionNumMap);
+							renderedRangeMap.set(rangeKey, true);
 						}
 					}
 				}
-			});
+			}
 		},
 		// 渲染首尾行选中的背景
 		_renderRangeStartAndEnd(range, selectionNumMap, isFsearch) {
@@ -948,12 +946,12 @@ export default {
 					start.startRenderObj.bgClass = bgClass;
 				} else {
 					let width = '';
-					let left = this.getExactLeft(start);
+					let left = this.getStrWidth(text, 0, start.column);
 					if (start.line == end.line) {
-						width = this.getExactLeft(end) - left || 10;
+						width = this.getStrWidth(text, start.column, end.column) || 10;
 						width += 'px';
 					} else {
-						width = this.getExactLeft({ line: start.line, column: text.length }) - left || 10;
+						width = this.getStrWidth(text, start.column) || 10;
 						width += 'px';
 					}
 					left += 'px';
@@ -985,7 +983,7 @@ export default {
 				} else {
 					let width = '';
 					let text = this.myContext.htmls[end.line - 1].text;
-					width = this.getExactLeft(end) || 10;
+					width = this.getStrWidth(text, 0, end.column) || 10;
 					width += 'px';
 					// 缓存结果对象
 					end.endRenderObj = {
@@ -1192,7 +1190,7 @@ export default {
 				if (cursorPos.del) {
 					return;
 				}
-				left = that.getExactLeft(cursorPos);
+				left = that.getStrWidthByLine(cursorPos.line, 0, cursorPos.column);
 				// 强制滚动使光标处于可见区域
 				if (that.scrollToCursor && cursorPos === that.nowCursorPos) {
 					if (left > that.scrollerArea.width + that.scrollLeft - that.charObj.fullCharWidth) {
@@ -1420,7 +1418,7 @@ export default {
 			}
 		},
 		scrollToCol(line, column) {
-			let scrollLeft = this.getExactLeft({ line: line, column: column }) - this.scrollerArea.width / 2;
+			let scrollLeft = this.getStrWidthByLine(line, 0, column) - this.scrollerArea.width / 2;
 			scrollLeft = scrollLeft > 0 ? scrollLeft : 0;
 			this.scrollLeft = scrollLeft;
 		},
@@ -1575,7 +1573,7 @@ export default {
 					let width = this.$refs.autoTip.$el.clientWidth;
 					let height = this.$refs.autoTip.$el.clientHeight;
 					this.autoTipStyle.top = this.folder.getRelativeLine(this.nowCursorPos.line) * this.charObj.charHight - this.deltaTop;
-					this.autoTipStyle.left = this.getExactLeft(this.nowCursorPos);
+					this.autoTipStyle.left = this.getStrWidthByLine(this.nowCursorPos.line, 0, this.nowCursorPos.column);
 					if (this.autoTipStyle.top + height > this.deltaTop + this.$refs.scroller.clientHeight) {
 						this.autoTipStyle.top -= height + this.charObj.charHight;
 					}
