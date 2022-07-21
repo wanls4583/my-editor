@@ -760,7 +760,7 @@ export default {
 				this.renderLines();
 				this.renderSelectedBg();
 				this.renderError();
-				this.renderCursor(this.scrollToCursor);
+				this.renderCursor(this.scrollToCursor, false);
 				this.renderBracketMatch();
 				this.$refs.minimap && this.$refs.minimap.render();
 				this.renderedCb.forEach((cb) => {
@@ -1170,7 +1170,6 @@ export default {
 		renderCursor(scrollToCursor, isSync) {
 			let cursorCount = 0;
 			this.scrollToCursor = scrollToCursor;
-			this.cursorVisible = false;
 			if (isSync) {
 				if (this.renderCursorTimer) {
 					cancelAnimationFrame(this.renderCursorTimer);
@@ -1196,8 +1195,14 @@ export default {
 					}
 				}
 				if (this.$refs.minimap) {
-					this.$refs.minimap.renderCursor();
-					this.$refs.minimap.renderAllCursor();
+					if(this.renderMiniMapCursorTimer) {
+						return;
+					}
+					this.renderMiniMapCursorTimer = setTimeout(()=>{
+						this.renderMiniMapCursorTimer = null;
+						this.$refs.minimap.renderCursor();
+						this.$refs.minimap.renderAllCursor();
+					}, 30);
 				}
 			}
 
@@ -1495,6 +1500,7 @@ export default {
 				// 延时处理，等待设置contentHeight
 				this.$nextTick(() => {
 					this.setNowCursorPosing = false;
+					this.cursorVisible = false;
 					let height = this.folder.getRelativeLine(nowCursorPos.line + 1) * this.charObj.charHight;
 					if (height > this.scrollTop + this.scrollerArea.height) {
 						height = height > this.contentHeight ? this.contentHeight : height;
