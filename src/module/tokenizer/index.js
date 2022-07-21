@@ -102,75 +102,70 @@ export default class {
 		let source = [];
 		let foldMap = {};
 		data.comments = data.comments || {};
+		data.brackets = data.brackets || [];
 		data.comments.lineComment = data.comments.lineComment || '';
 		data.comments.blockComment = data.comments.blockComment || [];
+		data.autoClosingPairs = data.autoClosingPairs || [];
+		data.surroundingPairs = data.surroundingPairs || [];
 		data.__foldMap__ = foldMap;
 		data.__autoClosingPairsMap__ = {};
 		data.__surroundingPairsMap__ = {};
 		globalData.sourceConfigMap[scopeName] = data;
-		if (data.autoClosingPairs) {
-			for (let i = 0; i < data.autoClosingPairs.length; i++) {
-				let item = data.autoClosingPairs[i];
-				if (item instanceof Array) {
-					item.open = item[0];
-					item.close = item[1];
-				}
-				//只支持单行
-				item.open = item.open.split(/\r\n|\n/)[0];
-				item.close = item.close.split(/\r\n|\n/)[0];
-				data.__autoClosingPairsMap__[item.open] = item;
+		for (let i = 0; i < data.autoClosingPairs.length; i++) {
+			let item = data.autoClosingPairs[i];
+			if (item instanceof Array) {
+				item.open = item[0];
+				item.close = item[1];
 			}
+			//只支持单行
+			item.open = item.open.split(/\r\n|\n/)[0];
+			item.close = item.close.split(/\r\n|\n/)[0];
+			data.__autoClosingPairsMap__[item.open] = item;
 		}
-		if (data.surroundingPairs) {
-			for (let i = 0; i < data.surroundingPairs.length; i++) {
-				let item = data.surroundingPairs[i];
-				if (item instanceof Array) {
-					item.open = item[0];
-					item.close = item[1];
-				}
-				//只支持单行
-				item.open = item.open.split(/\r\n|\n/)[0];
-				item.close = item.close.split(/\r\n|\n/)[0];
-				data.__surroundingPairsMap__[item.open] = item;
+		for (let i = 0; i < data.surroundingPairs.length; i++) {
+			let item = data.surroundingPairs[i];
+			if (item instanceof Array) {
+				item.open = item[0];
+				item.close = item[1];
 			}
+			//只支持单行
+			item.open = item.open.split(/\r\n|\n/)[0];
+			item.close = item.close.split(/\r\n|\n/)[0];
+			data.__surroundingPairsMap__[item.open] = item;
 		}
-		if (data.comments) {
-			if (data.comments.lineComment) {
-				source.push(data.comments.lineComment);
-				foldMap[data.comments.lineComment] = 0;
-			}
-			if (data.comments.blockComment && data.comments.blockComment.length) {
-				source.push(data.comments.blockComment[0]);
-				source.push(data.comments.blockComment[1]);
-				foldMap[data.comments.blockComment[0]] = -this.foldType;
-				foldMap[data.comments.blockComment[1]] = this.foldType;
-				foldMap.__endCommentReg__ = new RegExp(data.comments.blockComment[1].replace(/[\{\}\(\)\[\]\&\?\+\*\\]/g, '\\$&'), 'g');
+		if (data.comments.lineComment) {
+			source.push(data.comments.lineComment);
+			foldMap[data.comments.lineComment] = 0;
+		}
+		if (data.comments.blockComment && data.comments.blockComment.length) {
+			source.push(data.comments.blockComment[0]);
+			source.push(data.comments.blockComment[1]);
+			foldMap[data.comments.blockComment[0]] = -this.foldType;
+			foldMap[data.comments.blockComment[1]] = this.foldType;
+			foldMap.__endCommentReg__ = new RegExp(data.comments.blockComment[1].replace(/[\{\}\(\)\[\]\&\?\+\*\\]/g, '\\$&'), 'g');
+			this.foldType++;
+		}
+		data.brackets.forEach(item => {
+			if (foldMap[item[0]]) {
+				//相同的前缀
+				if (!foldMap[item[1]]) {
+					source.push(item[1]);
+					foldMap[item[1]] = -foldMap[item[0]];
+				}
+			} else if (foldMap[item[1]]) {
+				//相同的后缀
+				if (!foldMap[item[0]]) {
+					source.push(item[0]);
+					foldMap[item[0]] = -foldMap[item[1]];
+				}
+			} else {
+				source.push(item[0]);
+				source.push(item[1]);
+				foldMap[item[0]] = -this.foldType;
+				foldMap[item[1]] = this.foldType;
 				this.foldType++;
 			}
-		}
-		if (data.brackets) {
-			data.brackets.forEach(item => {
-				if (foldMap[item[0]]) {
-					//相同的前缀
-					if (!foldMap[item[1]]) {
-						source.push(item[1]);
-						foldMap[item[1]] = -foldMap[item[0]];
-					}
-				} else if (foldMap[item[1]]) {
-					//相同的后缀
-					if (!foldMap[item[0]]) {
-						source.push(item[0]);
-						foldMap[item[0]] = -foldMap[item[1]];
-					}
-				} else {
-					source.push(item[0]);
-					source.push(item[1]);
-					foldMap[item[0]] = -this.foldType;
-					foldMap[item[1]] = this.foldType;
-					this.foldType++;
-				}
-			});
-		}
+		});
 		source = source.join('|');
 		source = source.replace(/[\{\}\(\)\[\]\&\?\+\*\\]/g, '\\$&');
 		foldMap.__foldReg__ = new RegExp(source, 'g');
