@@ -547,6 +547,7 @@ export default function () {
 		return rgb;
 	}
 
+	let _lines = [];
 	self.onmessage = function (e) {
 		let data = e.data;
 		let event = data.event;
@@ -558,6 +559,9 @@ export default function () {
 			case 'set-data':
 				setData(data);
 				break;
+			case 'render-data': //分批传输待渲染数据
+				_lines = _lines.concat(data);
+				break;
 			case 'render-line':
 				let line = data;
 				let lineObj = getLineObj(line);
@@ -567,12 +571,13 @@ export default function () {
 				cacheLineObj(line);
 				break;
 			case 'render':
-				lines = data;
+				lines = _lines;
 				lines.map(item => {
 					item.lineObj = getLineObj(item);
 				});
-				cacheLineObj();
+				_lines = [];
 				singleLines = null;
+				cacheLineObj();
 				break;
 			case 'render-diff':
 				diffRanges = data;

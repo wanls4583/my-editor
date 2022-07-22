@@ -189,7 +189,7 @@
 		position: absolute;
 		top: 0;
 		right: 0;
-		width: 10%;
+		overflow: hidden;
 		contain: strict;
 		transform: translate3d(0px, 0px, 0px);
 	}

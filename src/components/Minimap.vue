@@ -87,7 +87,9 @@ export default {
 		this.unbindEvent();
 		clearTimeout(this.renderTimer);
 		cancelAnimationFrame(this.renderTimer);
+		cancelAnimationFrame(this.renderLinesTimer);
 		globalData.scheduler.removeUiTask(this.moveTask);
+		globalData.scheduler.removeTask(this.renderLinesTask);
 	},
 	methods: {
 		initWorkerData(type) {
@@ -200,44 +202,73 @@ export default {
 			}, 15);
 		},
 		renderLines() {
-			let lines = [];
-			let renderedIdMap = {};
-			for (let line = this.startLine, i = 0; line <= this.$parent.maxLine && i < this.maxVisibleLines; i++) {
-				let fold = this.$parent.folder.getFoldByLine(line);
-				let lineObj = this.$parent.myContext.htmls[line - 1];
-				let preLineObj = this.$parent.myContext.htmls[line - 2];
-				let preRuleId = (preLineObj && preLineObj.states && preLineObj.states.ruleId) || null;
-				let cache = this.renderedIdMap[lineObj.lineId];
-				let renderObj = null;
-				if (this.compairCache(cache, lineObj.text, preRuleId)) {
-					renderObj = {
-						top: (this.$parent.folder.getRelativeLine(line) - this.relStartLine) * this.$parent.charObj.charHight * this.scale,
-						lineId: lineObj.lineId,
-					};
-				} else {
-					renderObj = this.getRenderObj(line);
+			if (this.renderLinesing) {
+				this.renderLinesCount = 1;
+				return;
+			}
+			this.renderLinesing = true;
+			this.renderLinesCount = 0;
+			this.renderedIdMap = {};
+			let line = this.startLine;
+			let count = 0;
+			let limit = 50;
+			let maxLine = this.$parent.maxLine;
+			this.renderLinesTask = globalData.scheduler.addTask(() => {
+				_renderLines.call(this);
+			});
+
+			function _renderLines() {
+				let i = 0;
+				let lines = [];
+				while (line <= maxLine && count < this.maxVisibleLines && i < limit) {
+					let fold = this.$parent.folder.getFoldByLine(line);
+					let lineObj = this.$parent.myContext.htmls[line - 1];
+					let preLineObj = this.$parent.myContext.htmls[line - 2];
+					let preRuleId = (preLineObj && preLineObj.states && preLineObj.states.ruleId) || null;
+					let cache = this.renderedIdMap[lineObj.lineId];
+					let renderObj = null;
+					if (this.compairCache(cache, lineObj.text, preRuleId)) {
+						renderObj = {
+							top: (this.$parent.folder.getRelativeLine(line) - this.relStartLine) * this.$parent.charObj.charHight * this.scale,
+							lineId: lineObj.lineId,
+						};
+					} else {
+						renderObj = this.getRenderObj(line);
+						this.renderedIdMap[lineObj.lineId] = renderObj;
+					}
+					lines.push(renderObj);
+					if (fold) {
+						line = fold.end.line;
+					} else {
+						line++;
+					}
+					i++;
+					count++;
 				}
-				renderedIdMap[lineObj.lineId] = { num: line, text: lineObj.text, preRuleId };
-				lines.push(renderObj);
-				if (fold) {
-					line = fold.end.line;
+				this.worker.postMessage({ event: 'render-data', data: lines });
+				if (line > maxLine || count === this.maxVisibleLines) {
+					this.worker.postMessage({ event: 'render' });
+					this.renderLinesing = false;
+					if (this.renderLinesCount) {
+						this.renderLinesTimer = requestAnimationFrame(() => {
+							this.renderLines();
+						});
+					}
 				} else {
-					line++;
+					this.renderLinesTask = globalData.scheduler.addTask(() => {
+						_renderLines.call(this);
+					});
 				}
 			}
-			this.renderedIdMap = renderedIdMap;
-			this.worker.postMessage({ event: 'render', data: lines });
 		},
 		renderLine(lineId) {
 			let cache = this.renderedIdMap[lineId];
 			if (cache) {
-				let lineObj = this.$parent.myContext.htmls[cache.num - 1];
-				let preLineObj = this.$parent.myContext.htmls[cache.num - 2];
-				let preRuleId = (preLineObj && preLineObj.states && preLineObj.states.ruleId) || null;
+				let lineObj = this.$parent.myContext.htmls[cache.line - 1];
 				if (lineObj && lineObj.lineId === lineId) {
-					let renderObj = this.getRenderObj(cache.num);
+					let renderObj = this.getRenderObj(cache.line);
+					this.renderedIdMap[lineObj.lineId] = renderObj;
 					this.worker.postMessage({ event: 'render-line', data: renderObj });
-					this.renderedIdMap[lineObj.lineId] = { num: cache.num, text: lineObj.text, preRuleId };
 				}
 			}
 		},
@@ -444,6 +475,7 @@ export default {
 			}
 			return {
 				top,
+				line,
 				lineObj: {
 					lineId: lineObj.lineId,
 					text: lineObj.text,

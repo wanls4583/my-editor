@@ -755,7 +755,8 @@ export default {
 			if (this.renderTimer) {
 				return;
 			}
-			this.renderTimer = requestAnimationFrame(() => {
+			this.renderTimer = 1;
+			this.$nextTick(() => {
 				this.renderTimer = null;
 				this.renderLines();
 				this.renderSelectedBg();
@@ -1530,6 +1531,7 @@ export default {
 				height: groupHeight + 'px',
 			});
 			$minimapWrap.css({
+				width: groupHeight * 0.1 + 'px',
 				height: groupHeight + 'px',
 			});
 			this.setContentDomSize();
