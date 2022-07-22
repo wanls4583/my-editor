@@ -89,9 +89,11 @@ export default {
 		cancelAnimationFrame(this.renderTimer);
 		cancelAnimationFrame(this.renderLinesTimer);
 		cancelAnimationFrame(this.renderSelectedBgTimer);
+		cancelAnimationFrame(this.renderAllSearchdBgTimer);
 		globalData.scheduler.removeUiTask(this.moveTask);
 		globalData.scheduler.removeTask(this.renderLinesTask);
 		globalData.scheduler.removeTask(this.renderSelectedBgTask);
+		globalData.scheduler.removeTask(this.renderAllSearchdBgTask);
 	},
 	methods: {
 		initWorkerData(type) {
@@ -331,25 +333,57 @@ export default {
 			if (this.$parent.fSelecter.ranges.size > 10000) {
 				return;
 			}
-			let list = this.$parent.fSelecter.ranges.toArray();
+			if (this.renderAllSearchdBging) {
+				this.renderAllSearchdBgCount = 1;
+				return;
+			}
+			this.renderAllSearchdBging = true;
+			this.renderAllSearchdBgCount = 0;
 			let results = [];
 			let preCursorPos = {};
 			let preTop = -1;
-			for (let i = 0; i < list.length; i++) {
-				let cursorPos = list[i].start;
-				if (cursorPos.line !== preCursorPos.line && !this.$parent.folder.getLineInFold(cursorPos.line)) {
-					let line = this.$parent.folder.getRelativeLine(cursorPos.line);
-					let top = Math.round((((line - 1) * this.$parent.charObj.charHight) / this.contentHeight) * this.height);
-					if (top - preTop >= 4) {
-						preTop = top;
-						results.push(top);
-					}
-				}
-				preCursorPos = cursorPos;
+			let limit = 100;
+			let head = this.$parent.fSelecter.ranges.getHead();
+			if (head) {
+				this.renderAllSearchdBgTask = globalData.scheduler.addTask(() => {
+					_renderAllSearchdBg.call(this);
+				});
+			} else {
+				this.renderAllSearchdBging = false;
 			}
-			if (this.preAllSearchResult + '' !== results + '') {
-				this.preAllSearchResult = results;
-				this.worker.postMessage({ event: 'render-selected-all', data: results });
+
+			function _renderAllSearchdBg() {
+				let range = null;
+				let i = 0;
+				while ((range = head.next()) && i < limit) {
+					let cursorPos = range.start;
+					if (cursorPos.line !== preCursorPos.line && !this.$parent.folder.getLineInFold(cursorPos.line)) {
+						let line = this.$parent.folder.getRelativeLine(cursorPos.line);
+						let top = Math.round((((line - 1) * this.$parent.charObj.charHight) / this.contentHeight) * this.height);
+						if (top - preTop >= 4) {
+							preTop = top;
+							results.push(top);
+						}
+					}
+					preCursorPos = cursorPos;
+					i++;
+				}
+				if (!range) {
+					this.renderAllSearchdBging = false;
+					if (this.preAllSearchResult + '' !== results + '') {
+						this.preAllSearchResult = results;
+						this.worker.postMessage({ event: 'render-selected-all', data: results });
+					}
+					if (this.renderAllSearchdBgCount) {
+						this.renderAllSearchdBgTimer = requestAnimationFrame(() => {
+							this.renderAllSearchdBg();
+						});
+					}
+				} else {
+					this.renderAllSearchdBgTask = globalData.scheduler.addTask(() => {
+						_renderAllSearchdBg.call(this);
+					});
+				}
 			}
 		},
 		renderDiff() {
