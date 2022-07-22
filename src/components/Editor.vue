@@ -752,12 +752,12 @@ export default {
 		// 渲染
 		render(scrollToCursor) {
 			this.scrollToCursor = scrollToCursor;
-			if (this.renderTimer) {
+			if (this.rendering) {
 				return;
 			}
-			this.renderTimer = 1;
+			this.rendering = true;
 			this.$nextTick(() => {
-				this.renderTimer = null;
+				this.rendering = null;
 				this.renderLines();
 				this.renderSelectedBg();
 				this.renderError();

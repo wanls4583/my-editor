@@ -211,7 +211,7 @@ export default {
 			this.renderedIdMap = {};
 			let line = this.startLine;
 			let count = 0;
-			let limit = 50;
+			let limit = 100;
 			let maxLine = this.$parent.maxLine;
 			this.renderLinesTask = globalData.scheduler.addTask(() => {
 				_renderLines.call(this);
