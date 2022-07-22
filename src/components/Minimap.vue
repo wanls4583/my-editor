@@ -90,10 +90,14 @@ export default {
 		cancelAnimationFrame(this.renderLinesTimer);
 		cancelAnimationFrame(this.renderSelectedBgTimer);
 		cancelAnimationFrame(this.renderAllSearchdBgTimer);
+		cancelAnimationFrame(this.renderDiffTimer);
+		cancelAnimationFrame(this.renderAllDiffTimer);
 		globalData.scheduler.removeUiTask(this.moveTask);
 		globalData.scheduler.removeTask(this.renderLinesTask);
 		globalData.scheduler.removeTask(this.renderSelectedBgTask);
 		globalData.scheduler.removeTask(this.renderAllSearchdBgTask);
+		globalData.scheduler.removeTask(this.renderDiffTask);
+		globalData.scheduler.removeTask(this.renderAllDiffTask);
 	},
 	methods: {
 		initWorkerData(type) {
@@ -217,6 +221,7 @@ export default {
 			let count = 0;
 			let limit = 100;
 			let maxLine = this.$parent.maxLine;
+			cancelAnimationFrame(this.renderLinesTimer);
 			this.renderLinesTask = globalData.scheduler.addTask(() => {
 				_renderLines.call(this);
 			});
@@ -289,6 +294,7 @@ export default {
 			let count = 0;
 			let limit = 100;
 			let maxLine = this.$parent.maxLine;
+			cancelAnimationFrame(this.renderSelectedBgTimer);
 			this.renderSelectedBgTask = globalData.scheduler.addTask(() => {
 				_renderSelectedBg.call(this);
 			});
@@ -345,6 +351,7 @@ export default {
 			let limit = 100;
 			let head = this.$parent.fSelecter.ranges.getHead();
 			if (head) {
+				cancelAnimationFrame(this.renderAllSearchdBgTimer);
 				this.renderAllSearchdBgTask = globalData.scheduler.addTask(() => {
 					_renderAllSearchdBg.call(this);
 				});
@@ -387,12 +394,31 @@ export default {
 			}
 		},
 		renderDiff() {
+			if (this.renderDiffing) {
+				this.renderDiffCount = 1;
+				return;
+			}
+			this.renderDiffing = true;
+			this.renderDiffCount = 0;
 			let diffRanges = [];
 			let endLine = 0;
-			if (this.$parent.diffRanges) {
+			let index = 0;
+			let limit = 100;
+			let allDiffRanges = this.$parent.diffRanges;
+			if (allDiffRanges) {
+				cancelAnimationFrame(this.renderDiffTimer);
 				endLine = this.getEndLine();
-				for (let i = 0; i < this.$parent.diffRanges.length; i++) {
-					let item = this.$parent.diffRanges[i];
+				this.renderDiffTask = globalData.scheduler.addTask(() => {
+					_renderDiff.call(this);
+				});
+			} else {
+				this.renderDiffing = false;
+			}
+
+			function _renderDiff() {
+				let i = 0;
+				while (index < allDiffRanges.length && i < limit) {
+					let item = allDiffRanges[index];
 					item = Object.assign({}, item);
 					item.length = item.type === 'D' ? 1 : item.added.length;
 					if (item.line < this.startLine) {
@@ -411,11 +437,26 @@ export default {
 							diffRanges.push(_getDiffObj.call(this, item));
 						}
 					} else if (item.line > endLine) {
+						index = allDiffRanges.length;
 						break;
 					}
+					index++;
+					i++;
+				}
+				if (index >= allDiffRanges.length) {
+					this.worker.postMessage({ event: 'render-diff', data: diffRanges });
+					this.renderDiffing = false;
+					if (this.renderDiffCount) {
+						this.renderDiffTimer = requestAnimationFrame(() => {
+							this.renderDiff();
+						});
+					}
+				} else {
+					this.renderDiffTask = globalData.scheduler.addTask(() => {
+						_renderDiff.call(this);
+					});
 				}
 			}
-			this.worker.postMessage({ event: 'render-diff', data: diffRanges });
 
 			function _getDiffObj(item) {
 				let resultObj = {};
@@ -432,10 +473,23 @@ export default {
 		renderAllDiff(renderDiff) {
 			let diffRanges = [];
 			let sliderHeight = (this.height / this.contentHeight) * this.height;
-			sliderHeight = sliderHeight > 20 ? sliderHeight : 20;
-			if (this.$parent.diffRanges) {
-				for (let i = 0; i < this.$parent.diffRanges.length; i++) {
-					let item = this.$parent.diffRanges[i];
+			let allDiffRanges = this.$parent.diffRanges;
+			let index = 0;
+			let limit = 100;
+			if (allDiffRanges) {
+				cancelAnimationFrame(this.renderAllDiffTimer);
+				sliderHeight = sliderHeight > 20 ? sliderHeight : 20;
+				this.renderAllDiffTask = globalData.scheduler.addTask(() => {
+					_renderAllDiff.call(this);
+				});
+			} else {
+				this.renderAllDiffing = false;
+			}
+
+			function _renderAllDiff() {
+				let i = 0;
+				while (index < allDiffRanges.length && i < limit) {
+					let item = allDiffRanges[i];
 					let fold = this.$parent.folder.getLineInFold(item.line);
 					item = Object.assign({}, item);
 					item.length = item.type === 'D' ? 1 : item.added.length;
@@ -448,10 +502,24 @@ export default {
 					} else {
 						diffRanges.push(_getDiffObj.call(this, item));
 					}
+					index++;
+					i++;
+				}
+				if (index >= allDiffRanges.length) {
+					this.worker.postMessage({ event: 'render-diff-all', data: diffRanges });
+					renderDiff && this.renderDiff();
+					this.renderAllDiffing = false;
+					if (this.renderAllDiffCount) {
+						this.renderAllDiffTimer = requestAnimationFrame(() => {
+							this.renderAllDiff();
+						});
+					}
+				} else {
+					this.renderAllDiffTask = globalData.scheduler.addTask(() => {
+						_renderAllDiff.call(this);
+					});
 				}
 			}
-			this.worker.postMessage({ event: 'render-diff-all', data: diffRanges });
-			renderDiff && this.renderDiff();
 
 			function _getDiffObj(item) {
 				let resultObj = {};
