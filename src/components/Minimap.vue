@@ -88,8 +88,10 @@ export default {
 		clearTimeout(this.renderTimer);
 		cancelAnimationFrame(this.renderTimer);
 		cancelAnimationFrame(this.renderLinesTimer);
+		cancelAnimationFrame(this.renderSelectedBgTimer);
 		globalData.scheduler.removeUiTask(this.moveTask);
 		globalData.scheduler.removeTask(this.renderLinesTask);
+		globalData.scheduler.removeTask(this.renderSelectedBgTask);
 	},
 	methods: {
 		initWorkerData(type) {
@@ -273,26 +275,56 @@ export default {
 			}
 		},
 		renderSelectedBg() {
+			if (this.renderSelectedBging) {
+				this.renderSelectedBgCount = 1;
+				return;
+			}
+			this.renderSelectedBging = true;
+			this.renderSelectedBgCount = 0;
 			let results = [];
 			let fResults = [];
-			let tabSize = this.$parent.tabSize;
-			for (let line = this.startLine, i = 0; line <= this.$parent.maxLine && i < this.maxVisibleLines; i++) {
-				let fold = this.$parent.folder.getFoldByLine(line);
-				let top = i * this.$parent.charObj.charHight * this.scale;
-				if (this.$parent.fSelecter.getRangeByLine(line).length ||
-					this.$parent.fSelecter.getRangeWithCursorPos({ line: line, column: 0 })) {
-					fResults.push(top);
-				} else if (this.$parent.selecter.getActiveRangeByLine(line).length ||
-					this.$parent.selecter.getActiveRangeWithCursorPos({ line: line, column: 0 })) {
-					results.push(top);
+			let line = this.startLine;
+			let count = 0;
+			let limit = 100;
+			let maxLine = this.$parent.maxLine;
+			this.renderSelectedBgTask = globalData.scheduler.addTask(() => {
+				_renderSelectedBg.call(this);
+			});
+
+			function _renderSelectedBg() {
+				let i = 0;
+				while (line <= maxLine && count < this.maxVisibleLines && i < limit) {
+					let fold = this.$parent.folder.getFoldByLine(line);
+					let top = count * this.$parent.charObj.charHight * this.scale;
+					if (this.$parent.fSelecter.getRangeByLine(line).length ||
+						this.$parent.fSelecter.getRangeWithCursorPos({ line: line, column: 0 })) {
+						fResults.push(top);
+					} else if (this.$parent.selecter.getActiveRangeByLine(line).length ||
+						this.$parent.selecter.getActiveRangeWithCursorPos({ line: line, column: 0 })) {
+						results.push(top);
+					}
+					if (fold) {
+						line = fold.end.line;
+					} else {
+						line++;
+					}
+					i++;
+					count++;
 				}
-				if (fold) {
-					line = fold.end.line;
+				if (line > maxLine || count === this.maxVisibleLines) {
+					this.worker.postMessage({ event: 'render-selected-bg', data: { results, fResults } });
+					this.renderSelectedBging = false;
+					if (this.renderSelectedBgCount) {
+						this.renderSelectedBgTimer = requestAnimationFrame(() => {
+							this.renderSelectedBg();
+						});
+					}
 				} else {
-					line++;
+					this.renderSelectedBgTask = globalData.scheduler.addTask(() => {
+						_renderSelectedBg.call(this);
+					});
 				}
 			}
-			this.worker.postMessage({ event: 'render-selected-bg', data: { results, fResults } });
 		},
 		renderAllSearchdBg() {
 			// 大于10000个结果时，不再处理
