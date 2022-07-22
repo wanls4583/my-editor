@@ -16,6 +16,7 @@ process.on('message', (data) => {
                 lintCss(data, language);
                 break;
             case 'html':
+            case 'vue':
                 lintHtml(data, language);
                 break;
             case 'javascript':

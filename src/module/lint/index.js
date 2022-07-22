@@ -9,7 +9,7 @@ import globalData from '@/data/globalData';
 
 const path = window.require('path');
 const child_process = window.require('child_process');
-const lintSupport = { css: true, scss: true, less: true, html: true, javascript: true };
+const lintSupport = { css: true, scss: true, less: true, html: true, vue: true, javascript: true };
 
 let worker = null;
 

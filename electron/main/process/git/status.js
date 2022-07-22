@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 const regs = {
-	indexLock: /^\.git$|^\.git[\\\/][\s\S]*index\.lock$/
+	indexLock: /^\.git$|^\.git[\\\/]index\.lock$|^\.git[\\\/]modules[\\\/]/
 }
 
 class StatusWatcher {
