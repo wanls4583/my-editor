@@ -2,6 +2,10 @@ const spawn = require('child_process').spawn;
 const fs = require('fs');
 const path = require('path');
 
+const regs = {
+	indexLock: /^\.git$|^\.git[\\\/][\s\S]*index\.lock$/
+}
+
 class StatusWatcher {
 	constructor() {
 		this.gitDirMap = {};
@@ -71,7 +75,7 @@ class StatusWatcher {
 			} else {
 				let watcher = fs.watch(gitDir, { recursive: true }, (event, filename) => {
 					if (filename) {
-						if (!filename.endsWith(path.join('.git/index.lock')) && !filename.endsWith('.git')) {
+						if (!regs.indexLock.test(filename)) {
 							this.gitStatus(gitDir, this.gitDirMap[gitDir].paths);
 						}
 					}
