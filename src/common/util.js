@@ -135,12 +135,12 @@ class Util {
 			str = str.substring(0, end - start);
 		}
 		let charNum = stringWidth(str); //\t将被忽略
-		let fullCharNum = charNum - str.length;
+		let fullCharNum = 0;
 		let tabNum = 0;
-		fullCharNum = fullCharNum < 0 ? 0 : fullCharNum;
 		tabNum = str.match(/\t/g);
 		tabNum = (tabNum && tabNum.length) || 0;
-		charNum = str.length - fullCharNum + (tabSize - 1) * tabNum;
+		fullCharNum = charNum - (str.length - tabNum);
+		charNum = charNum - fullCharNum * 2 + tabSize * tabNum;
 		return charNum * fontSize * charScale + fullCharNum * fontSize * fullCharScale;
 	}
 	/**

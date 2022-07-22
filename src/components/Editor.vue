@@ -1541,12 +1541,13 @@ export default {
 			let $editorGroup = $(this.$parent.$refs.editorGroup);
 			let $contentWrap = $(this.$refs.contentWrap);
 			let numWrap = this.$refs.numWrap;
-			let minimapWrap = this.$refs.minimapWrap;
 			let groupWidth = $editorGroup[0].clientWidth;
 			let groupHeight = $editorGroup[0].clientHeight;
+			let minimapWidth = this.$refs.minimapWrap;
+			minimapWidth = minimapWidth && minimapWidth.clientWidth || 0;
 			$contentWrap.css({
 				left: numWrap.clientWidth,
-				width: groupWidth - numWrap.clientWidth - minimapWrap.clientWidth + 'px',
+				width: groupWidth - numWrap.clientWidth - minimapWidth + 'px',
 				height: groupHeight + 'px',
 			});
 			this.setScrollerArea();
