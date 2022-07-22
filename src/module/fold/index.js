@@ -239,9 +239,11 @@ export default class {
 	 * @param {Function} callback
 	 */
 	getBracketMatch(cursorPos, callback) {
+		let task = {};
 		cursorPos = { line: cursorPos.line, column: cursorPos.column };
-		globalData.scheduler.removeTask(this.getBracketMatchTask);
+		globalData.scheduler.removeTask(task.task);
 		_getBracket.call(this, cursorPos, [], cursorPos.line, callback);
+		return task;
 
 		function _getBracket(cursorPos, stack, line, callback) {
 			let startFold = null;
@@ -278,13 +280,13 @@ export default class {
 				}
 				line--;
 				count++;
-				if (count >= 50 || Date.now() - startTime > 2) {
+				if (count >= 10 || Date.now() - startTime > 1) {
 					break;
 				}
 			}
 			// 最多向上检查5000行
 			if (line >= 1 && cursorPos.line - line < 5000) {
-				this.getBracketMatchTask = globalData.scheduler.addTask(() => {
+				task.task = globalData.scheduler.addTask(() => {
 					_getBracket.call(this, cursorPos, stack, line, callback);
 				});
 			}

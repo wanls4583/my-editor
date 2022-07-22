@@ -763,7 +763,6 @@ export default {
 				this.renderSelectedBg();
 				this.renderError();
 				this.renderCursor(this.scrollToCursor, false);
-				this.renderBracketMatch();
 				this.$refs.minimap && this.$refs.minimap.render();
 				this.renderedCb.forEach((cb) => {
 					cb();
@@ -1116,14 +1115,19 @@ export default {
 			});
 		},
 		renderBracketMatch() {
-			clearTimeout(this.bracketMatchTimer);
-			this.bracketMatchTimer = setTimeout(() => {
+			// 光标位于选区边界，不做处理
+			if (this.fSelecter.getActiveRangeByCursorPos(this.nowCursorPos) ||
+				this.selecter.getActiveRangeByCursorPos(this.nowCursorPos)) {
+				return;
+			}
+			cancelAnimationFrame(this.bracketMatchTimer);
+			this.renderBracketMatchTask && globalData.scheduler.removeTask(this.renderBracketMatchTask.task);
+			this.bracketMatchTimer = requestAnimationFrame(() => {
 				let endPos = { line: this.maxLine, column: this.myContext.htmls[this.maxLine - 1].text.length };
-				this.bracketMatch = null;
 				if (Util.comparePos(this.nowCursorPos, endPos) === 0) {
 					return;
 				}
-				this.folder.getBracketMatch(this.nowCursorPos, (bracketMatch) => {
+				this.renderBracketMatchTask = this.folder.getBracketMatch(this.nowCursorPos, (bracketMatch) => {
 					let lineObj = null;
 					let startPos = null;
 					let endPos = null;
@@ -1148,7 +1152,7 @@ export default {
 						}
 					}
 				});
-			}, 100);
+			});
 		},
 		// 清除选中前景色
 		clearSelectionToken() {
