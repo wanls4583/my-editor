@@ -40,7 +40,7 @@
 				>
 					<div :style="{width: _contentMinWidth+'px'}" class="my-lines-view" ref="lineView">
 						<div :class="line.diffClass" :data-line="line.num" :id="_lineId(line.num)" :style="{top: line.top}" class="my-line" v-for="line in renderObjs">
-							<div :class="[line.fold == 'close' ? 'fold-close' : '', line.bgClass]" :data-line="line.num" class="my-code" v-html="line.html"></div>
+							<div :class="[line.foldClass]" :data-line="line.num" class="my-code" v-html="line.html"></div>
 						</div>
 					</div>
 					<div :style="{width: _contentMinWidth+'px'}" class="my-cursor-view" ref="cursorView">
@@ -659,6 +659,7 @@ export default {
 			this.language = this._language || '';
 			this.theme = this._theme || '';
 			this.initRenderData();
+			this.setScrollerArea();
 			this.setContentHeight();
 			this.render();
 			this.focus();
@@ -839,9 +840,7 @@ export default {
 			if (renderObj) {
 				let lineObj = this.myContext.htmls[renderObj.num - 1];
 				if (lineObj && lineObj.lineId === lineId) {
-					let bgClass = renderObj.bgClass;
 					Object.assign(renderObj, this.getRenderObj(lineObj, renderObj.num));
-					renderObj.bgClass = bgClass;
 					numObj.fold = renderObj.fold;
 					this.$set(this.renderObjs, renderObj.index, renderObj);
 					this.$set(this.renderNums, renderObj.index, numObj);
@@ -866,35 +865,12 @@ export default {
 			this.renderSelectedBgTimer = null;
 			this.activeLineBg = true;
 			this.clearSelectionToken();
-			for (let i = 0; i < this.renderObjs.length; i++) {
-				let range = null;
-				let renderObj = this.renderObjs[i];
-				renderObj.bgClass = '';
-				if (this.searchVisible) {
-					range = this.fSelecter.getRangeWithCursorPos({ line: renderObj.num, column: 0 });
-					range = range || this.selecter.getActiveRangeWithCursorPos({ line: renderObj.num, column: 0 });
-				} else {
-					range = this.selecter.getRangeWithCursorPos({ line: renderObj.num, column: 0 });
-				}
-				if (range && range.start.line < renderObj.num && range.end.line > renderObj.num) {
-					renderObj.bgClass += 'my-select-bg';
-					if (range.active) {
-						renderObj.bgClass += ' my-active';
-					}
-					if (this.searchVisible) {
-						renderObj.bgClass += ' my-select-fg';
-					}
-					if (this.nowCursorPos.line === renderObj.num) {
-						this.activeLineBg = false;
-					}
-				}
-			}
 			this._renderHighlight();
-			this.renderObjs.splice();
 		},
 		_renderHighlight() {
 			let selectionNumMap = {};
 			let renderedRangeMap = new Map();
+			let lineObj = null;
 			let renderObj = null;
 			let selections = null;
 			let fSelections = null;
@@ -908,6 +884,7 @@ export default {
 			}
 			for (let i = 0; i < this.renderObjs.length; i++) {
 				renderObj = this.renderObjs[i];
+				lineObj = this.myContext.htmls[renderObj.num - 1];
 				if (this.searchVisible) {
 					selections = this.selecter.getActiveRangeByLine(renderObj.num);
 					fSelections = this.fSelecter.getRangeByLine(renderObj.num);
@@ -929,17 +906,45 @@ export default {
 							renderedRangeMap.set(rangeKey, true);
 						}
 					}
+					if (!selections.length && !fSelections.length) {
+						_renderLineSelection.call(this, renderObj.num);
+					}
 				} else {
 					selections = this.selecter.getRangeByLine(renderObj.num);
-					for (let i = 0; i < selections.length; i++) {
-						range = selections[i];
-						rangeKey = range.start.line + ',' + range.start.column + ',' +
-							range.end.line + ',' + range.end.column;
-						if (!renderedRangeMap.has(rangeKey)) {
-							this._renderRangeStartAndEnd(range, selectionNumMap);
-							renderedRangeMap.set(rangeKey, true);
+					if (selections.length) {
+						for (let i = 0; i < selections.length; i++) {
+							range = selections[i];
+							rangeKey = range.start.line + ',' + range.start.column + ',' +
+								range.end.line + ',' + range.end.column;
+							if (!renderedRangeMap.has(rangeKey)) {
+								this._renderRangeStartAndEnd(range, selectionNumMap);
+								renderedRangeMap.set(rangeKey, true);
+							}
 						}
+					} else {
+						_renderLineSelection.call(this, renderObj.num);
 					}
+				}
+			}
+
+			function _renderLineSelection(line) {
+				let range = null;
+				let lineObj = this.myContext.htmls[line - 1];
+				range = this.selecter.getRangeWithCursorPos({ line: line, column: 0 });
+				if (!range && this.searchVisible) {
+					range = this.fSelecter.getRangeWithCursorPos({ line: line, column: 0 });
+				}
+				if (range) {
+					let bgClass = [];
+					range.active && bgClass.push('my-active');
+					this.searchVisible && bgClass.push('my-search-bg');
+					if (lineObj.width === undefined) {
+						lineObj.width = this.getStrWidth(lineObj.text);
+					}
+					selectionNumMap[line].selections.push({
+						bgClass: bgClass,
+						bgStyle: { left: '0px', width: lineObj.width + 'px', height: this._lineHeight },
+					});
 				}
 			}
 		},
@@ -1514,43 +1519,42 @@ export default {
 			});
 		},
 		setPosition() {
-			let $editorGroup = $(this.$parent.$refs.editorGroup);
+			let $parent = $(this.$refs.editor).parent();
 			let $editor = $(this.$refs.editor);
 			let $numWrap = $(this.$refs.numWrap);
 			let $minimapWrap = $(this.$refs.minimapWrap);
-			let offset = $editorGroup.offset();
-			let groupWidth = $editorGroup[0].clientWidth;
-			let groupHeight = $editorGroup[0].clientHeight;
+			let offset = $parent.offset();
+			let width = $parent[0].clientWidth;
+			let height = $parent[0].clientHeight;
 			$editor.css({
 				left: offset.left + 'px',
 				top: offset.top + 'px',
-				width: groupWidth + 'px',
-				height: groupHeight + 'px',
+				width: width + 'px',
+				height: height + 'px',
 			});
 			$numWrap.css({
-				height: groupHeight + 'px',
+				height: height + 'px',
 			});
 			$minimapWrap.css({
-				width: groupWidth * 0.1 + 'px',
-				height: groupHeight + 'px',
+				width: width * 0.1 + 'px',
+				height: height + 'px',
 			});
 			this.setContentDomSize();
 			this.showEditor();
 		},
 		setContentDomSize() {
-			let $editorGroup = $(this.$parent.$refs.editorGroup);
+			let $parent = $(this.$refs.editor).parent();
 			let $contentWrap = $(this.$refs.contentWrap);
 			let numWrap = this.$refs.numWrap;
-			let groupWidth = $editorGroup[0].clientWidth;
-			let groupHeight = $editorGroup[0].clientHeight;
+			let width = $parent[0].clientWidth;
+			let height = $parent[0].clientHeight;
 			let minimapWidth = this.$refs.minimapWrap;
 			minimapWidth = minimapWidth && minimapWidth.clientWidth || 0;
 			$contentWrap.css({
 				left: numWrap.clientWidth,
-				width: groupWidth - numWrap.clientWidth - minimapWidth + 'px',
-				height: groupHeight + 'px',
+				width: width - numWrap.clientWidth - minimapWidth + 'px',
+				height: height + 'px',
 			});
-			this.setScrollerArea();
 		},
 		setScrollerArea() {
 			this.scrollerArea = {
@@ -1695,7 +1699,6 @@ export default {
 				tabNum: tabNum,
 				tabLines: tabLines,
 				fold: fold,
-				bgClass: '',
 				foldClass: foldClass,
 				diffClass: diffClass,
 				isFsearch: false,
