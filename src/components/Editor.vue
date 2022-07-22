@@ -1531,7 +1531,7 @@ export default {
 				height: groupHeight + 'px',
 			});
 			$minimapWrap.css({
-				width: groupHeight * 0.1 + 'px',
+				width: groupWidth * 0.1 + 'px',
 				height: groupHeight + 'px',
 			});
 			this.setContentDomSize();

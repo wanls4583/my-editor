@@ -340,7 +340,7 @@ export default {
 			let results = [];
 			let preCursorPos = {};
 			let preTop = -1;
-			let limit = 100;
+			let limit = 10;
 			let head = this.$parent.fSelecter.ranges.getHead();
 			cancelAnimationFrame(this.renderAllSearchdBgTimer);
 			if (head) {
@@ -467,7 +467,7 @@ export default {
 			let sliderHeight = (this.height / this.contentHeight) * this.height;
 			let allDiffRanges = this.$parent.diffRanges;
 			let index = 0;
-			let limit = 100;
+			let limit = 10;
 			cancelAnimationFrame(this.renderAllDiffTimer);
 			if (allDiffRanges) {
 				sliderHeight = sliderHeight > 20 ? sliderHeight : 20;
@@ -595,7 +595,7 @@ export default {
 			this.renderAllCursoring = true;
 			this.renderAllCursorCount = 0;
 			let count = 0;
-			let limit = 100;
+			let limit = 10;
 			let results = [];
 			let preTop = -1;
 			let preCursorPos = {};
