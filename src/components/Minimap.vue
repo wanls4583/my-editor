@@ -192,22 +192,14 @@ export default {
 			this.setTop();
 		},
 		setTop() {
-			let top = (this.$parent.folder.getRelativeLine(this.nowLine) - this.relStartLine) * this.$parent.charObj.charHight - this.top;
+			let top = (this.$parent.folder.getRelativeLine(this.nowLine) - this.relStartLine) *
+				this.$parent.charObj.charHight - this.top;
 			this.blockTop = top * this.scale;
 		},
 		render() {
-			if (this.renderTimer) {
-				return;
-			}
-			this.renderTimer = setTimeout(() => {
-				cancelAnimationFrame(this.renderTimer);
-				this.renderTimer = requestAnimationFrame(() => {
-					this.renderTimer = null;
-					this.renderLines();
-					this.renderDiff();
-					this.renderSelectedBg();
-				});
-			}, 15);
+			this.renderLines();
+			this.renderDiff();
+			this.renderSelectedBg();
 		},
 		renderLines() {
 			if (this.renderLinesing) {
@@ -350,8 +342,8 @@ export default {
 			let preTop = -1;
 			let limit = 100;
 			let head = this.$parent.fSelecter.ranges.getHead();
+			cancelAnimationFrame(this.renderAllSearchdBgTimer);
 			if (head) {
-				cancelAnimationFrame(this.renderAllSearchdBgTimer);
 				this.renderAllSearchdBgTask = globalData.scheduler.addTask(() => {
 					_renderAllSearchdBg.call(this);
 				});
@@ -405,8 +397,8 @@ export default {
 			let index = 0;
 			let limit = 100;
 			let allDiffRanges = this.$parent.diffRanges;
+			cancelAnimationFrame(this.renderDiffTimer);
 			if (allDiffRanges) {
-				cancelAnimationFrame(this.renderDiffTimer);
 				endLine = this.getEndLine();
 				this.renderDiffTask = globalData.scheduler.addTask(() => {
 					_renderDiff.call(this);
@@ -476,8 +468,8 @@ export default {
 			let allDiffRanges = this.$parent.diffRanges;
 			let index = 0;
 			let limit = 100;
+			cancelAnimationFrame(this.renderAllDiffTimer);
 			if (allDiffRanges) {
-				cancelAnimationFrame(this.renderAllDiffTimer);
 				sliderHeight = sliderHeight > 20 ? sliderHeight : 20;
 				this.renderAllDiffTask = globalData.scheduler.addTask(() => {
 					_renderAllDiff.call(this);
@@ -535,53 +527,120 @@ export default {
 			}
 		},
 		renderCursor() {
-			let list = this.$parent.cursor.multiCursorPos.toArray();
+			if (this.renderCursoring) {
+				this.renderCursorCount = 1;
+				return;
+			}
+			this.renderCursoring = true;
+			this.renderCursorCount = 0;
+			let count = 0;
+			let limit = 100;
 			let results = [];
 			let preCursorPos = {};
-			let endLine = this.getEndLine();
-			for (let line = this.startLine, i = 0; line <= this.$parent.maxLine && i < this.maxVisibleLines; i++) {
-				let fold = this.$parent.folder.getFoldByLine(line);
-				let cursorList = this.$parent.cursor.getCursorsByLine(line);
-				for (let j = 0; j < cursorList.length; j++) {
-					let cursorPos = cursorList[j];
-					if (cursorPos.line !== preCursorPos.line) {
-						let top = i * this.$parent.charObj.charHight * this.scale;
-						results.push(top);
-					}
-					preCursorPos = cursorPos;
-				}
-				if (fold) {
-					line = fold.end.line;
-				} else {
-					line++;
-				}
+			let line = this.startLine;
+			let maxLine = this.$parent.maxLine;
+			cancelAnimationFrame(this.renderCursorTimer);
+			if (this.$parent.cursor.multiCursorPos.size) {
+				this.renderCursorTask = globalData.scheduler.addTask(() => {
+					_renderCursor.call(this);
+				});
+			} else {
+				this.renderCursoring = false;
 			}
-			if (this.preCursorResult + '' !== results + '') {
-				this.preCursorResult = results;
-				this.worker.postMessage({ event: 'render-cursor', data: results });
+
+			function _renderCursor() {
+				let i = 0;
+				while (line <= maxLine && count < this.maxVisibleLines && i < limit) {
+					let fold = this.$parent.folder.getFoldByLine(line);
+					let cursorList = this.$parent.cursor.getCursorsByLine(line);
+					for (let j = 0; j < cursorList.length; j++) {
+						let cursorPos = cursorList[j];
+						if (cursorPos.line !== preCursorPos.line) {
+							let top = count * this.$parent.charObj.charHight * this.scale;
+							results.push(top);
+						}
+						preCursorPos = cursorPos;
+					}
+					if (fold) {
+						line = fold.end.line;
+					} else {
+						line++;
+					}
+					i++;
+					count++;
+				}
+				if (line > maxLine || count === this.maxVisibleLines) {
+					this.renderCursoring = false;
+					if (this.preCursorResult + '' !== results + '') {
+						this.preCursorResult = results;
+						this.worker.postMessage({ event: 'render-cursor', data: results });
+					}
+					if (this.renderCursorCount) {
+						this.renderCursorTimer = requestAnimationFrame(() => {
+							this.renderCursor();
+						});
+					}
+				} else {
+					this.renderCursorTask = globalData.scheduler.addTask(() => {
+						_renderCursor.call(this);
+					});
+				}
 			}
 		},
 		renderAllCursor() {
-			let list = this.$parent.cursor.multiCursorPos.toArray();
+			if (this.renderAllCursoring) {
+				this.renderAllCursorCount = 1;
+				return;
+			}
+			this.renderAllCursoring = true;
+			this.renderAllCursorCount = 0;
+			let count = 0;
+			let limit = 100;
 			let results = [];
 			let preTop = -1;
 			let preCursorPos = {};
-			let endLine = this.getEndLine();
-			for (let i = 0; i < list.length; i++) {
-				let cursorPos = list[i];
-				if (cursorPos.line !== preCursorPos.line && !this.$parent.folder.getLineInFold(cursorPos.line)) {
-					let line = this.$parent.folder.getRelativeLine(cursorPos.line);
-					let top = Math.round((((line - 1) * this.$parent.charObj.charHight) / this.contentHeight) * this.height);
-					if (preTop !== top) {
-						preTop = top;
-						results.push(top);
-					}
-				}
-				preCursorPos = cursorPos;
+			let line = this.startLine;
+			let maxLine = this.$parent.maxLine;
+			let head = this.$parent.cursor.multiCursorPos.getHead();
+			cancelAnimationFrame(this.renderAllCursorTimer);
+			if (head) {
+				this.renderAllCursorTask = globalData.scheduler.addTask(() => {
+					_renderAllCursor.call(this);
+				});
+			} else {
+				this.renderAllCursoring = false;
 			}
-			if (this.preAllCursorResult + '' !== results + '') {
-				this.preAllCursorResult = results;
-				this.worker.postMessage({ event: 'render-cursor-all', data: results });
+
+			function _renderAllCursor() {
+				let i = 0;
+				let cursorPos = null;
+				while ((cursorPos = head.next()) && i < limit) {
+					if (cursorPos.line !== preCursorPos.line && !this.$parent.folder.getLineInFold(cursorPos.line)) {
+						let line = this.$parent.folder.getRelativeLine(cursorPos.line);
+						let top = Math.round((((line - 1) * this.$parent.charObj.charHight) / this.contentHeight) * this.height);
+						if (preTop !== top) {
+							preTop = top;
+							results.push(top);
+						}
+					}
+					preCursorPos = cursorPos;
+				}
+				if (!cursorPos) {
+					this.renderAllCursoring = false;
+					if (this.preAllCursorResult + '' !== results + '') {
+						this.preAllCursorResult = results;
+						this.worker.postMessage({ event: 'render-cursor-all', data: results });
+					}
+					if (this.renderAllCursorCount) {
+						this.renderAllCursorTimer = requestAnimationFrame(() => {
+							this.renderAllCursor();
+						});
+					}
+				} else {
+					this.renderAllCursorTask = globalData.scheduler.addTask(() => {
+						_renderAllCursor.call(this);
+					});
+				}
 			}
 		},
 		getEndLine() {
