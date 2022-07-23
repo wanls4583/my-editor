@@ -214,7 +214,7 @@ export default {
 			autoTipStyle: { top: '50%', left: '50%' },
 			maxWidthObj: { lineId: null, text: '', width: 0 },
 			charObj: {
-				charHight: 20,
+				charHight: 23,
 				charScale: 0.5498046875,
 				charWidth: 8.796875,
 				fontSize: 16,

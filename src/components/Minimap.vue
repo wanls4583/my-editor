@@ -39,8 +39,8 @@ export default {
 			leftWidth: 8,
 			rightWidth: 14,
 			height: 0,
+			miniMapCharHight: 2,
 			blockHeight: 0,
-			scale: 0.1,
 			top: 0,
 			blockTop: 0,
 			blockClicked: false,
@@ -104,13 +104,12 @@ export default {
 			let data = {};
 			if (type === 'size' || !type) {
 				Object.assign(data, {
-					charHight: this.$parent.charObj.charHight * this.scale,
+					charHight: this.miniMapCharHight,
 					space: this.$parent.space,
 					width: this.width,
 					height: this.height,
 					leftWidth: this.leftWidth,
 					rightWidth: this.rightWidth,
-					scale: this.scale,
 				});
 			}
 			if (type === 'theme' || !type) {
@@ -206,7 +205,7 @@ export default {
 					let renderObj = null;
 					if (this.compairCache(cache, lineObj.text, preRuleId)) {
 						renderObj = {
-							top: (this.$parent.folder.getRelativeLine(line) - this.relStartLine) * this.$parent.charObj.charHight * this.scale,
+							top: (this.$parent.folder.getRelativeLine(line) - this.relStartLine) * this.miniMapCharHight,
 							lineId: lineObj.lineId,
 						};
 					} else {
@@ -274,7 +273,7 @@ export default {
 				let i = 0;
 				while (line <= maxLine && count < this.maxVisibleLines && i < limit) {
 					let fold = this.$parent.folder.getFoldByLine(line);
-					let top = count * this.$parent.charObj.charHight * this.scale;
+					let top = count * this.miniMapCharHight;
 					if (this.$parent.fSelecter.getRangeByLine(line).length ||
 						this.$parent.fSelecter.getRangeWithCursorPos({ line: line, column: 0 })) {
 						fResults.push(top);
@@ -443,8 +442,8 @@ export default {
 				item.length = item.line + item.length - 1 > endLine ? endLine - item.line + 1 : item.length;
 				item = this.getDiffObj(item);
 				resultObj.type = item.type;
-				resultObj.top = (item.line - this.relStartLine) * this.$parent.charObj.charHight * this.scale;
-				resultObj.height = this.$parent.charObj.charHight * item.length * this.scale;
+				resultObj.top = (item.line - this.relStartLine) * this.miniMapCharHight;
+				resultObj.height = item.length * this.miniMapCharHight;
 				resultObj.top = Math.ceil(resultObj.top);
 				resultObj.height = Math.ceil(resultObj.height);
 				return resultObj;
@@ -559,7 +558,7 @@ export default {
 					for (let j = 0; j < cursorList.length; j++) {
 						let cursorPos = cursorList[j];
 						if (cursorPos.line !== preCursorPos.line) {
-							let top = count * this.$parent.charObj.charHight * this.scale;
+							let top = count * this.miniMapCharHight;
 							results.push(top);
 						}
 						preCursorPos = cursorPos;
@@ -679,7 +678,7 @@ export default {
 			return endLine;
 		},
 		getRenderObj(line) {
-			let top = (this.$parent.folder.getRelativeLine(line) - this.relStartLine) * this.$parent.charObj.charHight * this.scale;
+			let top = (this.$parent.folder.getRelativeLine(line) - this.relStartLine) * this.miniMapCharHight;
 			let lineObj = this.$parent.myContext.htmls[line - 1];
 			let preLineObj = this.$parent.myContext.htmls[line - 2];
 			let preRuleId = (preLineObj && preLineObj.states && preLineObj.states.ruleId) || null;
@@ -740,15 +739,16 @@ export default {
 		setTop() {
 			let top = (this.$parent.folder.getRelativeLine(this.nowLine) - this.relStartLine) *
 				this.$parent.charObj.charHight - this.top;
-			this.blockTop = top * this.scale;
+			this.blockTop = top * this.miniMapCharHight / this.$parent.charObj.charHight;
 		},
 		setSize() {
+			let scale = this.miniMapCharHight / this.$parent.charObj.charHight;
 			this.width = this.$refs.wrap.clientWidth - 22;
 			this.height = this.$refs.wrap.clientHeight;
 			this.width = this.width < 0 ? 0 : this.width;
 			this.height = this.height < 0 ? 0 : this.height;
-			this.blockHeight = this.height * this.scale;
-			this.canvasHeight = this.height / this.scale;
+			this.blockHeight = this.height * scale;
+			this.canvasHeight = this.height / scale;
 			this.maxVisibleLines = Math.ceil(this.canvasHeight / this.$parent.charObj.charHight) + 1;
 			this.initWorkerData('size');
 		},
@@ -771,7 +771,7 @@ export default {
 				return;
 			}
 			let maxScrollTop = this.contentHeight - this.height;
-			let scrollTop = Math.floor(e.offsetY / (this.$parent.charObj.charHight * this.scale));
+			let scrollTop = Math.floor(e.offsetY / this.miniMapCharHight);
 			scrollTop = (this.startLine + scrollTop - 1) * this.$parent.charObj.charHight - this.height / 2;
 			scrollTop = scrollTop > maxScrollTop ? maxScrollTop : scrollTop;
 			scrollTop = scrollTop < 0 ? 0 : scrollTop;
@@ -784,12 +784,13 @@ export default {
 		},
 		onDocumentMmove(e) {
 			if (this.startBlockMouseObj) {
+				let scale = this.miniMapCharHight / this.$parent.charObj.charHight;
 				let maxScrollTop1 = this.contentHeight - this.height;
 				let maxScrollTop2 = this.height - this.blockHeight;
 				let delta = e.clientY - this.startBlockMouseObj.clientY;
 				let top = this.bTop;
-				if (maxScrollTop2 > this.contentHeight * this.scale - this.blockHeight) {
-					maxScrollTop2 = this.contentHeight * this.scale - this.blockHeight;
+				if (maxScrollTop2 > this.contentHeight * scale - this.blockHeight) {
+					maxScrollTop2 = this.contentHeight * scale - this.blockHeight;
 				}
 				top += delta;
 				top = top < 0 ? 0 : top;
