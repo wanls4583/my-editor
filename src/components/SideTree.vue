@@ -43,6 +43,7 @@ const path = window.require('path');
 const spawnSync = window.require('child_process').spawnSync;
 
 let preActiveItem = null;
+let preActiveScrollTop = null;
 let openedList = [];
 let gitIgnoreMap = {};
 
@@ -215,15 +216,16 @@ export default {
 						item.statusColor = item.status.statusColor;
 						item.status = item.status.status;
 					}
-					if(item.type === 'file') {
-						if(preItem.type === 'file') {
+					if (item.type === 'file') {
+						if (preItem.type === 'file') {
 							item.marginLeft = preItem.marginLeft;
-						} else if(preItem.path === item.parentPath) {
+						} else if (preItem.path === item.parentPath) {
 							item.marginLeft = '10px';
 						}
 					}
 					preItem = item;
 				});
+				this._scrollTop = 0; //清除刷新目录时记录的滚动位置
 			});
 		},
 		preLoadFolder() {
@@ -328,8 +330,11 @@ export default {
 			});
 		},
 		refreshDir(item) {
+			this._scrollTop = this._scrollTop || this.scrollTop;
 			this.refreshFolderTimer = this.refreshFolderTimer || {};
-			clearTimeout(this.refreshFolderTimer[item.id]);
+			if (this.refreshFolderTimer[item.id]) {
+				clearTimeout(this.refreshFolderTimer[item.id]);
+			}
 			this.refreshFolderTimer[item.id] = setTimeout(() => {
 				if (fs.existsSync(item.path)) {
 					_refresh.call(this);
@@ -353,6 +358,11 @@ export default {
 							}
 							return obj;
 						}
+						if (preActiveItem && preActiveItem.path === item.path) {
+							globalData.nowFileItem = item;
+							preActiveItem = item;
+							preActiveItem.active = true;
+						}
 						return item;
 					});
 					if (item.open) {
@@ -362,7 +372,13 @@ export default {
 					if (!item.gitRootPath) {
 						this.watchFileStatus(item.children);
 					}
-					this.render();
+					if (preActiveItem && preActiveItem.path === item.path) {
+						globalData.nowFileItem = item;
+						preActiveItem = item;
+						preActiveItem.active = true;
+					}
+					this.setTreeHeight();
+					this.setStartLine(this.checkScrollTop(this._scrollTop));
 				});
 			}
 		},
