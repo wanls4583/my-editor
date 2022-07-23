@@ -384,7 +384,7 @@ export default {
 				cancelAnimationFrame(this.renderDiffTimer);
 				this.renderDiffTimer = null;
 			}
-			if (allDiffRanges) {
+			if (allDiffRanges && allDiffRanges.length) {
 				endLine = this.getEndLine();
 				this.renderDiffTask = globalData.scheduler.addTask(() => {
 					_renderDiff.call(this);
@@ -465,7 +465,7 @@ export default {
 				cancelAnimationFrame(this.renderAllDiffTimer);
 				this.renderAllDiffTimer = null;
 			}
-			if (allDiffRanges) {
+			if (allDiffRanges && allDiffRanges.length) {
 				sliderHeight = sliderHeight > 20 ? sliderHeight : 20;
 				this.renderAllDiffTask = globalData.scheduler.addTask(() => {
 					_renderAllDiff.call(this);
