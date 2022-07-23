@@ -115,8 +115,8 @@ class Context {
 		let serial = ''; // 历史记录连续操作标识
 		let historyJoinAble = true;
 		let delDirect = '';
+		let originCursorPosList = null;
 		let afterCursorPosList = null;
-		let originCursorPosList = this.getOriginCursorPosList();
 		if (command) {
 			command.forEach(item => {
 				// 多个插入的光标可能相同，这里不能先添加光标
@@ -130,6 +130,7 @@ class Context {
 			if (this.surroundingObj.check(text)) { //检测区域自动闭合符号
 				return;
 			}
+			originCursorPosList = this.getOriginCursorPosList();
 			serial = this.serial++;
 			// 如果有选中区域，需要先删除选中区域
 			if (this.editor.selecter.activedRanges.size) {
@@ -149,8 +150,6 @@ class Context {
 				this.addCursorList(command.originCursorPosList);
 			} else if (command.afterCursorPosList) {
 				this.addCursorList(command.afterCursorPosList);
-			} else {
-				this.addCursorList(_getCursorList());
 			}
 			if (typeof command.originScrollTop === 'number') {
 				this.editor.setStartLine(command.originScrollTop);
@@ -175,22 +174,14 @@ class Context {
 
 		function _getCursorList() {
 			return historyArr.map((item) => {
-				if (item.ending) {
-					return {
-						start: item.preCursorPos,
-						end: item.cursorPos,
-						ending: item.ending
-					}
-				} else if (delDirect === 'right') {
-					return item.preCursorPos;
-				} else if (text === '\n' && item.cursorPos.line - item.preCursorPos.line > 1) {
+				if (text === '\n' && item.cursorPos.line - item.preCursorPos.line > 1) {
 					//括号中间换行，多插入了一行
 					return {
 						line: item.cursorPos.line - 1,
 						column: this.htmls[item.cursorPos.line - 2].tabNum
 					}
 				}
-				return item.cursorPos
+				return { ...item.cursorPos };
 			});
 		}
 	}
@@ -367,6 +358,8 @@ class Context {
 	deleteContent(delDirect, command, justDeleteRange) {
 		let historyArr = [];
 		let rangeList = [];
+		let originCursorPosList = [];
+		let afterCursorPosList = null;
 		let historyJoinAble = true;
 		if (command) {
 			rangeList = command.map(item => {
@@ -387,9 +380,11 @@ class Context {
 						range.ending = 'right';
 					}
 					rangeList.push(range);
+					originCursorPosList.push(range);
 					historyJoinAble = false;
 				} else {
 					rangeList.push(item);
+					originCursorPosList.push(item);
 				}
 			});
 		}
@@ -404,10 +399,6 @@ class Context {
 				this.addCursorList(command.originCursorPosList);
 			} else if (command.afterCursorPosList) {
 				this.addCursorList(command.afterCursorPosList);
-			} else {
-				this.addCursorList(historyArr.map((item) => {
-					return item.cursorPos
-				}));
 			}
 			if (typeof command.originScrollTop === 'number') {
 				this.editor.setStartLine(command.originScrollTop);
@@ -421,16 +412,17 @@ class Context {
 			this.editor.history.updateHistory(historyArr);
 		} else {
 			if (historyArr.length > 0) {
+				afterCursorPosList = historyArr.map((item) => { return {...item.cursorPos}; });
+				historyArr.originCursorPosList = originCursorPosList;
+				historyArr.afterCursorPosList = afterCursorPosList;
 				this.editor.history.pushHistory(historyArr, historyJoinAble);
-				this.addCursorList(historyArr.map((item) => {
-					return item.cursorPos
-				}));
+				this.addCursorList(afterCursorPosList);
 			} else {
 				this.editor.cursor.setCursorPos(rangeList[0]);
 			}
 		}
 		this.editor.setNowCursorPos(this.editor.cursor.multiCursorPos.get(0));
-		return historyArr;
+		return historyArr;	
 	}
 	/**
 	 * 同时删除多处
