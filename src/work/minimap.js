@@ -3,9 +3,11 @@ export default function () {
 	let renderedIdMap = {};
 	let dataObj = {};
 	let canvas = null;
+	let overlayCanvas = null;
 	let leftDiffCanvas = null;
 	let rightDiffCanvas = null;
 	let ctx = null;
+	let overlayCtx = null;
 	let leftDiffCtx = null;
 	let rightDiffCtx = null;
 	let lines = null;
@@ -16,11 +18,12 @@ export default function () {
 	let allSelectedData = null;
 	let cursors = null;
 	let allCursors = null;
-	let cursorsImg = null;
 	let allCursorImg = null;
-	let canvasImgData = null;
-	let selectedImg = null;
 	let allSelectedImg = null;
+	let canvasImgData = null;
+	let overlayImgData = null;
+	let cursorsImgData = null;
+	let selectedImgData = null;
 	let leftDiffCanvasImgData = null;
 	let rightDiffCanvasImgData = null;
 
@@ -117,17 +120,13 @@ export default function () {
 	function drawLines(lines) {
 		canvasImgData.index = 0;
 		ctx.clearRect(0, 0, dataObj.width, dataObj.height);
+		clearImgData(canvasImgData);
 		lines.forEach(line => {
 			drawLine(line);
 		});
-		for (let i = canvasImgData.index; i < canvasImgData.data.length; i++) {
-			canvasImgData.data[i] = 0;
-		}
 		ctx.putImageData(canvasImgData, 0, 0);
 		// 在现有的画布内容后面绘制新的图形
-		ctx.globalCompositeOperation = 'destination-over';
-		cursorsImg && ctx.drawImage(cursorsImg, 0, 0);
-		selectedImg && ctx.drawImage(selectedImg, 0, 0);
+		// ctx.globalCompositeOperation = 'destination-over';
 		cacheCanvas();
 	}
 
@@ -139,8 +138,6 @@ export default function () {
 			drawLine(singleLines[key]);
 		}
 		ctx.putImageData(canvasImgData, 0, 0);
-		cursorsImg && ctx.drawImage(cursorsImg, 0, 0);
-		selectedImg && ctx.drawImage(selectedImg, 0, 0);
 	}
 
 	function drawLeftDiff() {
@@ -188,25 +185,18 @@ export default function () {
 				top: item
 			};
 		});
+		clearImgData(selectedImgData);
 		results = results.concat(fResults);
 		if (results.length) {
-			let slectedImgData = new ImageData(dataObj.width, dataObj.height);
+			clearImgData(overlayImgData);
 			for (let i = 0; i < results.length; i++) {
 				let item = results[i];
-				putRectPixl({ imgData: slectedImgData, left: 0, top: item.top, width: dataObj.width, height: dataObj.charHight, rgb: item.rgb });
+				putRectPixl({ imgData: selectedImgData, left: 0, top: item.top, width: dataObj.width, height: dataObj.charHight, rgb: item.rgb });
 			}
-			createImageBitmap(slectedImgData).then(img => {
-				ctx.clearRect(0, 0, dataObj.width, dataObj.height);
-				ctx.putImageData(canvasImgData, 0, 0);
-				ctx.drawImage(img, 0, 0);
-				cursorsImg && ctx.drawImage(cursorsImg, 0, 0);
-				selectedImg = img;
-			});
-		} else if (selectedImg) {
-			ctx.clearRect(0, 0, dataObj.width, dataObj.height);
-			ctx.putImageData(canvasImgData, 0, 0);
-			cursorsImg && ctx.drawImage(cursorsImg, 0, 0);
-			selectedImg = null;
+			setOverLayImgData();
+			overlayCtx.putImageData(overlayImgData, 0, 0);
+		} else {
+			overlayCtx.putImageData(cursorsImgData, 0, 0);
 		}
 		selectedData = null;
 	}
@@ -236,22 +226,22 @@ export default function () {
 
 	function drawCursor() {
 		let rgb = getCursorColor();
-		let imgData = new ImageData(dataObj.width, dataObj.height);
 		if (rgb[3]) {
 			rgb = rgb.slice();
 			rgb[3] += Math.floor(255 * 0.4);
 			rgb[3] = rgb[3] > 255 ? 255 : rgb[3];
 		}
-		for (let i = 0; i < cursors.length; i++) {
-			putRectPixl({ imgData: imgData, left: 0, top: cursors[i], width: dataObj.width, height: dataObj.charHight, rgb });
+		clearImgData(cursorsImgData);
+		if (cursors.length) {
+			clearImgData(overlayImgData);
+			for (let i = 0; i < cursors.length; i++) {
+				putRectPixl({ imgData: cursorsImgData, left: 0, top: cursors[i], width: dataObj.width, height: dataObj.charHight, rgb });
+			}
+			setOverLayImgData();
+			overlayCtx.putImageData(overlayImgData, 0, 0);
+		} else {
+			overlayCtx.putImageData(selectedImgData, 0, 0);
 		}
-		createImageBitmap(imgData).then(img => {
-			ctx.clearRect(0, 0, dataObj.width, dataObj.height);
-			ctx.putImageData(canvasImgData, 0, 0);
-			selectedImg && ctx.drawImage(selectedImg, 0, 0);
-			ctx.drawImage(img, 0, 0);
-			cursorsImg = img;
-		});
 		cursors = null;
 	}
 
@@ -290,6 +280,12 @@ export default function () {
 				imgData.data[index + 2] = rgb[2];
 				imgData.data[index + 3] = rgb[3] || 255;
 			}
+		}
+	}
+
+	function clearImgData(imgData) {
+		for (let i = 0; i < imgData.data.length; i++) {
+			imgData.data[i] = 0;
 		}
 	}
 
@@ -361,6 +357,10 @@ export default function () {
 			canvas = data.canvas;
 			ctx = canvas.getContext('2d');
 		}
+		if (data.overlayCanvas) {
+			overlayCanvas = data.overlayCanvas;
+			overlayCtx = overlayCanvas.getContext('2d');
+		}
 		if (data.leftDiffCanvas) {
 			leftDiffCanvas = data.leftDiffCanvas;
 			leftDiffCtx = leftDiffCanvas.getContext('2d');
@@ -374,11 +374,13 @@ export default function () {
 	function setData(data) {
 		if (data.height !== undefined && data.height !== dataObj.height) {
 			canvas.height = data.height;
+			overlayCanvas.height = data.height;
 			leftDiffCanvas.height = data.height;
 			rightDiffCanvas.height = data.height;
 		}
 		if (data.width !== undefined && data.width !== dataObj.width) {
 			canvas.width = data.width;
+			overlayCanvas.width = data.width;
 		}
 		if (data.leftWidth !== undefined && data.leftWidth !== dataObj.leftWidth) {
 			leftDiffCanvas.width = data.leftWidth;
@@ -397,6 +399,9 @@ export default function () {
 			singleLines = null;
 			if (dataObj.width && dataObj.height) {
 				canvasImgData = new ImageData(dataObj.width, dataObj.height);
+				cursorsImgData = new ImageData(dataObj.width, dataObj.height);
+				selectedImgData = new ImageData(dataObj.width, dataObj.height);
+				overlayImgData = new ImageData(dataObj.width, dataObj.height);
 			}
 			if (dataObj.leftWidth && dataObj.height) {
 				leftDiffCanvasImgData = new ImageData(dataObj.leftWidth, dataObj.height);
@@ -407,9 +412,19 @@ export default function () {
 		}
 	}
 
-	function setFillStyle(ctx, fillStyle) {
-		if (ctx.fillStyle !== fillStyle) {
-			ctx.fillStyle = fillStyle;
+	function setOverLayImgData() {
+		for (let i = 0; i < overlayImgData.data.length; i += 4) {
+			if (selectedImgData.data[i + 4]) {
+				overlayImgData.data[i] = selectedImgData.data[i];
+				overlayImgData.data[i + 1] = selectedImgData.data[i + 1];
+				overlayImgData.data[i + 2] = selectedImgData.data[i + 2];
+				overlayImgData.data[i + 3] = selectedImgData.data[i + 3];
+			} else if (cursorsImgData.data[i + 4]) {
+				overlayImgData.data[i] = cursorsImgData.data[i];
+				overlayImgData.data[i + 1] = cursorsImgData.data[i + 1];
+				overlayImgData.data[i + 2] = cursorsImgData.data[i + 2];
+				overlayImgData.data[i + 3] = cursorsImgData.data[i + 3];
+			}
 		}
 	}
 

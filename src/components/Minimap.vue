@@ -6,6 +6,7 @@
 <template>
 	<div @mousedown="onMinimapDown" class="my-minimap" ref="wrap">
 		<canvas :height="height" :width="leftWidth" class="my-minimap-canvas-left" ref="leftDiffCanvas"></canvas>
+		<canvas :height="height" :width="width" class="my-minimap-canvas-center" ref="ovarlay"></canvas>
 		<canvas :height="height" :width="width" class="my-minimap-canvas-center" ref="canvas"></canvas>
 		<canvas :height="height" :width="rightWidth" class="my-minimap-canvas-right" ref="rightDiffCanvas"></canvas>
 		<div :style="{top: blockTop + 'px', height: blockHeight + 'px', opacity: blockClicked ? '0.8' : ''}" @mousedown="onBlockMDown" class="my-minimap-block" ref="block"></div>
@@ -61,19 +62,21 @@ export default {
 		this.renderedIdMap = {};
 	},
 	mounted() {
-		let offscreen = this.$refs.canvas.transferControlToOffscreen();
+		let centerScreen = this.$refs.canvas.transferControlToOffscreen();
+		let overlayScreen = this.$refs.ovarlay.transferControlToOffscreen();
 		let leftOffscreen = this.$refs.leftDiffCanvas.transferControlToOffscreen();
 		let rightOffscreen = this.$refs.rightDiffCanvas.transferControlToOffscreen();
 		this.worker.postMessage(
 			{
 				event: 'init',
 				data: {
-					canvas: offscreen,
+					canvas: centerScreen,
+					overlayCanvas: overlayScreen,
 					leftDiffCanvas: leftOffscreen,
 					rightDiffCanvas: rightOffscreen,
 				},
 			},
-			[offscreen, leftOffscreen, rightOffscreen]
+			[centerScreen, overlayScreen, leftOffscreen, rightOffscreen]
 		);
 		this.setSize();
 		this.initWorkerData('theme');
