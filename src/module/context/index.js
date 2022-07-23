@@ -60,17 +60,6 @@ class Context {
 		this.editor = null;
 		this.allText = '';
 		cancelIdleCallback(this.setLineWidthTimer);
-		cancelAnimationFrame(this.renderTimer);
-	}
-	render(scrollToCursor) {
-		this.scrollToCursor = scrollToCursor;
-		if (this.renderTimer) {
-			return;
-		}
-		this.renderTimer = requestAnimationFrame(() => {
-			this.renderTimer = null;
-			this.editor.render(this.scrollToCursor);
-		});
 	}
 	toggleLineComment() {
 		this.commentObj.toggleLineComment();
@@ -286,9 +275,6 @@ class Context {
 		this.editor.lint.onInsertContentAfter(cursorPos.line, newPos.line);
 		this.editor.tokenizer.onInsertContentAfter(cursorPos.line, newPos.line);
 		this.editor.folder.onInsertContentAfter(Object.assign({}, cursorPos), Object.assign({}, newPos));
-		this.editor.setErrors([]);
-		this.editor.setAutoTip(null);
-		this.render(true);
 		this.setLineWidth(text);
 		this.contentChanged();
 		this.editor.tabData.status !== '!!' && this.editor.differ.run();
@@ -378,8 +364,12 @@ class Context {
 			historyArr._originScrollTop = command.originScrollTop;
 			this.editor.history.updateHistory(historyArr);
 		} else {
-			this.editor.history.pushHistory(historyArr, historyJoinAble);
-			this.addCursorList(historyArr.map((item) => { return item.cursorPos }));
+			if(historyArr.length > 0) {
+				this.editor.history.pushHistory(historyArr, historyJoinAble);
+				this.addCursorList(historyArr.map((item) => { return item.cursorPos }));
+			} else {
+				this.editor.cursor.setCursorPos(rangeList[0]);
+			}
 		}
 		this.editor.setNowCursorPos(this.editor.cursor.multiCursorPos.get(0));
 		return historyArr;
@@ -423,18 +413,23 @@ class Context {
 			} else {
 				columnDelta = 0;
 			}
-			if (justDeleteRange || pos.line === 1 && pos.column === 0) {
-				historyObj = {
-					type: Util.HISTORY_COMMAND.INSERT,
-					cursorPos: { line: pos.line, column: pos.column }
+			if (justDeleteRange ||
+				delDirect === 'left' && pos.line === 1 && pos.column === 0 ||
+				delDirect === 'right' && pos.line === this.htmls.length && pos.column === this.htmls.peek().text.length) {
+				// 在只有一个光标的情况下，在编辑器头部向左删除或者在编辑器尾部向右删除时，操作无效
+				if (rangeOrCursorList.length > 1) {
+					historyArr.push({
+						type: Util.HISTORY_COMMAND.INSERT,
+						cursorPos: { line: pos.line, column: pos.column }
+					});
 				}
 			} else {
 				historyObj = this._deleteContent(pos, delDirect);
 				lineDelta += historyObj.preCursorPos.line - historyObj.cursorPos.line;
 				columnDelta += historyObj.preCursorPos.column - historyObj.cursorPos.column;
 				prePos = historyObj.cursorPos;
+				historyArr.push(historyObj);
 			}
-			historyArr.push(historyObj);
 		}
 
 		function _deleteRangePos(rangePos) {
@@ -572,9 +567,6 @@ class Context {
 		this.editor.lint.onDeleteContentAfter(originPos.line, newPos.line);
 		this.editor.tokenizer.onDeleteContentAfter(originPos.line, newPos.line);
 		this.editor.folder.onDeleteContentAfter(Object.assign({}, originPos), Object.assign({}, newPos));
-		this.editor.setErrors([]);
-		this.editor.setAutoTip(null);
-		this.render(true);
 		this.contentChanged();
 		this.editor.tabData.status !== '!!' && this.editor.differ.run();
 		// 更新最大文本宽度
@@ -764,7 +756,7 @@ class Context {
 		let language = Util.getLanguageById(this.editor.language);
 		let grammarData = language && globalData.grammars[language.scopeName];
 		let sourceConfigData = language && globalData.sourceConfigMap[language.scopeName];
-		if(token && grammarData && token.scope) {
+		if (token && grammarData && token.scope) {
 			let scopeNames = token.scope.match(grammarData.scopeNamesReg);
 			if (scopeNames) {
 				// 一种语言中可能包含多种内嵌语言，优先处理内嵌语言

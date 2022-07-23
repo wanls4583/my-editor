@@ -100,7 +100,7 @@ class Autocomplete {
 	_search() {
 		let lineObj = this.context.htmls[this.editor.nowCursorPos.line - 1];
 		let tokenIndex = this.getTokenIndex(this.editor.nowCursorPos);
-		let nowToken = lineObj.tokens[tokenIndex];
+		let nowToken = lineObj.tokens && lineObj.tokens[tokenIndex];
 		let word = nowToken && lineObj.text.slice(nowToken.startIndex, this.editor.nowCursorPos.column);
 		this.reset();
 		this.editor.setAutoTip(null);

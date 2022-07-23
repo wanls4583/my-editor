@@ -599,7 +599,11 @@ export default {
 				(this.initEventBusFn['editor-content-change'] = (data) => {
 					if (data.id === this.tabData.id) {
 						this.searchVisible && this.$refs.searchDialog.search();
+						this.$refs.minimap && this.$refs.minimap.clearRenderTask();
 						this.bracketMatch = null;
+						this.setErrors([]);
+						this.setAutoTip(null);
+						this.render(true);
 					}
 				})
 			);

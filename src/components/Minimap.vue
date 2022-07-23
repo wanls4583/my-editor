@@ -85,19 +85,16 @@ export default {
 	destroyed() {
 		this.worker.terminate();
 		this.unbindEvent();
-		clearTimeout(this.renderTimer);
-		cancelAnimationFrame(this.renderTimer);
+		this.clearRenderTask();
+		globalData.scheduler.removeUiTask(this.moveTask);
+		cancelAnimationFrame(this.resizeTimer);
 		cancelAnimationFrame(this.renderLinesTimer);
 		cancelAnimationFrame(this.renderSelectedBgTimer);
 		cancelAnimationFrame(this.renderAllSearchdBgTimer);
 		cancelAnimationFrame(this.renderDiffTimer);
 		cancelAnimationFrame(this.renderAllDiffTimer);
-		globalData.scheduler.removeUiTask(this.moveTask);
-		globalData.scheduler.removeTask(this.renderLinesTask);
-		globalData.scheduler.removeTask(this.renderSelectedBgTask);
-		globalData.scheduler.removeTask(this.renderAllSearchdBgTask);
-		globalData.scheduler.removeTask(this.renderDiffTask);
-		globalData.scheduler.removeTask(this.renderAllDiffTask);
+		cancelAnimationFrame(this.renderCursorTimer);
+		cancelAnimationFrame(this.renderAllCursorTimer);
 	},
 	methods: {
 		initWorkerData(type) {
@@ -153,7 +150,9 @@ export default {
 		initResizeEvent() {
 			this.resizeObserver = new ResizeObserver((entries) => {
 				if (this.$refs.wrap && this.$refs.wrap.clientHeight) {
-					requestAnimationFrame(() => {
+					this.resizeTimer && cancelAnimationFrame(this.resizeTimer);
+					this.resizeTimer = requestAnimationFrame(() => {
+						this.resizeTimer = null;
 						this.setSize();
 						this.setStartLine();
 						this.render();
@@ -166,35 +165,6 @@ export default {
 			$(document).unbind('mousemove', this.initEvent.fn1);
 			$(document).unbind('mouseup', this.initEvent.fn2);
 			EventBus.$off('render-line', this.initEventBus.fn1);
-		},
-		setSize() {
-			this.width = this.$refs.wrap.clientWidth - 22;
-			this.height = this.$refs.wrap.clientHeight;
-			this.width = this.width < 0 ? 0 : this.width;
-			this.height = this.height < 0 ? 0 : this.height;
-			this.blockHeight = this.height * this.scale;
-			this.canvasHeight = this.height / this.scale;
-			this.maxVisibleLines = Math.ceil(this.canvasHeight / this.$parent.charObj.charHight) + 1;
-			this.initWorkerData('size');
-		},
-		setStartLine() {
-			let maxScrollTop1 = this.contentHeight - this.canvasHeight;
-			let maxScrollTop2 = this.contentHeight - this.height;
-			let scrollTop = 0;
-			maxScrollTop1 = maxScrollTop1 < 0 ? 0 : maxScrollTop1;
-			scrollTop = maxScrollTop2 ? this.scrollTop * (maxScrollTop1 / maxScrollTop2) : 0;
-			scrollTop = scrollTop > maxScrollTop1 ? maxScrollTop1 : scrollTop;
-			this.startLine = Math.floor(scrollTop / this.$parent.charObj.charHight);
-			this.startLine++;
-			this.relStartLine = this.startLine;
-			this.startLine = this.$parent.folder.getRealLine(this.startLine);
-			this.top = scrollTop % this.$parent.charObj.charHight;
-			this.setTop();
-		},
-		setTop() {
-			let top = (this.$parent.folder.getRelativeLine(this.nowLine) - this.relStartLine) *
-				this.$parent.charObj.charHight - this.top;
-			this.blockTop = top * this.scale;
 		},
 		render() {
 			this.renderLines();
@@ -213,7 +183,10 @@ export default {
 			let count = 0;
 			let limit = 100;
 			let maxLine = this.$parent.maxLine;
-			cancelAnimationFrame(this.renderLinesTimer);
+			if (this.renderLinesTimer) {
+				cancelAnimationFrame(this.renderLinesTimer);
+				this.renderLinesTimer = null;
+			}
 			this.renderLinesTask = globalData.scheduler.addTask(() => {
 				_renderLines.call(this);
 			});
@@ -286,7 +259,10 @@ export default {
 			let count = 0;
 			let limit = 100;
 			let maxLine = this.$parent.maxLine;
-			cancelAnimationFrame(this.renderSelectedBgTimer);
+			if (this.renderSelectedBgTimer) {
+				cancelAnimationFrame(this.renderSelectedBgTimer);
+				this.renderSelectedBgTimer = null;
+			}
 			this.renderSelectedBgTask = globalData.scheduler.addTask(() => {
 				_renderSelectedBg.call(this);
 			});
@@ -342,7 +318,10 @@ export default {
 			let preTop = -1;
 			let limit = 10;
 			let head = this.$parent.fSelecter.ranges.getHead();
-			cancelAnimationFrame(this.renderAllSearchdBgTimer);
+			if (this.renderAllSearchdBgTimer) {
+				cancelAnimationFrame(this.renderAllSearchdBgTimer);
+				this.renderAllSearchdBgTimer = null;
+			}
 			if (head) {
 				this.renderAllSearchdBgTask = globalData.scheduler.addTask(() => {
 					_renderAllSearchdBg.call(this);
@@ -397,7 +376,10 @@ export default {
 			let index = 0;
 			let limit = 100;
 			let allDiffRanges = this.$parent.diffRanges;
-			cancelAnimationFrame(this.renderDiffTimer);
+			if (this.renderDiffTimer) {
+				cancelAnimationFrame(this.renderDiffTimer);
+				this.renderDiffTimer = null;
+			}
 			if (allDiffRanges) {
 				endLine = this.getEndLine();
 				this.renderDiffTask = globalData.scheduler.addTask(() => {
@@ -468,7 +450,10 @@ export default {
 			let allDiffRanges = this.$parent.diffRanges;
 			let index = 0;
 			let limit = 10;
-			cancelAnimationFrame(this.renderAllDiffTimer);
+			if (this.renderAllDiffTimer) {
+				cancelAnimationFrame(this.renderAllDiffTimer);
+				this.renderAllDiffTimer = null;
+			}
 			if (allDiffRanges) {
 				sliderHeight = sliderHeight > 20 ? sliderHeight : 20;
 				this.renderAllDiffTask = globalData.scheduler.addTask(() => {
@@ -539,7 +524,10 @@ export default {
 			let preCursorPos = {};
 			let line = this.startLine;
 			let maxLine = this.$parent.maxLine;
-			cancelAnimationFrame(this.renderCursorTimer);
+			if (this.renderCursorTimer) {
+				cancelAnimationFrame(this.renderCursorTimer);
+				this.renderCursorTimer = null;
+			}
 			if (this.$parent.cursor.multiCursorPos.size) {
 				this.renderCursorTask = globalData.scheduler.addTask(() => {
 					_renderCursor.call(this);
@@ -602,7 +590,10 @@ export default {
 			let line = this.startLine;
 			let maxLine = this.$parent.maxLine;
 			let head = this.$parent.cursor.multiCursorPos.getHead();
-			cancelAnimationFrame(this.renderAllCursorTimer);
+			if (this.renderAllCursorTimer) {
+				cancelAnimationFrame(this.renderAllCursorTimer);
+				this.renderAllCursorTimer = null;
+			}
 			if (head) {
 				this.renderAllCursorTask = globalData.scheduler.addTask(() => {
 					_renderAllCursor.call(this);
@@ -641,6 +632,20 @@ export default {
 						_renderAllCursor.call(this);
 					});
 				}
+			}
+		},
+		clearRenderTask() {
+			globalData.scheduler.removeTask(this.renderLinesTask);
+			globalData.scheduler.removeTask(this.renderSelectedBgTask);
+			globalData.scheduler.removeTask(this.renderAllSearchdBgTask);
+			globalData.scheduler.removeTask(this.renderDiffTask);
+			globalData.scheduler.removeTask(this.renderAllDiffTask);
+			globalData.scheduler.removeTask(this.renderCursorTask);
+			globalData.scheduler.removeTask(this.renderAllCursorTask);
+		},
+		compairCache(cache, text, preRuleId) {
+			if (cache && cache.text === text && cache.preRuleId === preRuleId) {
+				return true;
 			}
 		},
 		getEndLine() {
@@ -715,10 +720,34 @@ export default {
 				length: length,
 			};
 		},
-		compairCache(cache, text, preRuleId) {
-			if (cache && cache.text === text && cache.preRuleId === preRuleId) {
-				return true;
-			}
+		setTop() {
+			let top = (this.$parent.folder.getRelativeLine(this.nowLine) - this.relStartLine) *
+				this.$parent.charObj.charHight - this.top;
+			this.blockTop = top * this.scale;
+		},
+		setSize() {
+			this.width = this.$refs.wrap.clientWidth - 22;
+			this.height = this.$refs.wrap.clientHeight;
+			this.width = this.width < 0 ? 0 : this.width;
+			this.height = this.height < 0 ? 0 : this.height;
+			this.blockHeight = this.height * this.scale;
+			this.canvasHeight = this.height / this.scale;
+			this.maxVisibleLines = Math.ceil(this.canvasHeight / this.$parent.charObj.charHight) + 1;
+			this.initWorkerData('size');
+		},
+		setStartLine() {
+			let maxScrollTop1 = this.contentHeight - this.canvasHeight;
+			let maxScrollTop2 = this.contentHeight - this.height;
+			let scrollTop = 0;
+			maxScrollTop1 = maxScrollTop1 < 0 ? 0 : maxScrollTop1;
+			scrollTop = maxScrollTop2 ? this.scrollTop * (maxScrollTop1 / maxScrollTop2) : 0;
+			scrollTop = scrollTop > maxScrollTop1 ? maxScrollTop1 : scrollTop;
+			this.startLine = Math.floor(scrollTop / this.$parent.charObj.charHight);
+			this.startLine++;
+			this.relStartLine = this.startLine;
+			this.startLine = this.$parent.folder.getRealLine(this.startLine);
+			this.top = scrollTop % this.$parent.charObj.charHight;
+			this.setTop();
 		},
 		onMinimapDown(e) {
 			if (e.target === this.$refs.block) {

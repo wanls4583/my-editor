@@ -129,14 +129,15 @@ export default class {
 			// 检测是否为连续插入或连续删除
 			if (
 				(
-					command.type === Util.HISTORY_COMMAND.DELETE
-					|| command.type === Util.HISTORY_COMMAND.INSERT
-				)
-				&& lastCommand
-				&& lastCommand.type === command.type
-				&& lastCommand.delDirect === command.delDirect
-				&& lastCommand.preCursorPos.line === command.cursorPos.line
-				&& Date.now() - this.pushHistoryTime < 2000
+					command.type === Util.HISTORY_COMMAND.DELETE ||
+					command.type === Util.HISTORY_COMMAND.INSERT
+				) &&
+				lastCommand &&
+				lastCommand.type === command.type &&
+				lastCommand.delDirect === command.delDirect &&
+				lastCommand.preCursorPos &&
+				lastCommand.preCursorPos.line === command.cursorPos.line &&
+				Date.now() - this.pushHistoryTime < 2000
 			) {
 				if (lastCommand.type == Util.HISTORY_COMMAND.DELETE) {
 					if (Util.comparePos(lastCommand.cursorPos, command.preCursorPos) == 0) {
@@ -144,8 +145,8 @@ export default class {
 					}
 				}
 				if (lastCommand.type == Util.HISTORY_COMMAND.INSERT) {
-					if (Util.comparePos(lastCommand.cursorPos, command.preCursorPos) == 0
-						|| Util.comparePos(lastCommand.cursorPos, command.cursorPos) == 0) {
+					if (Util.comparePos(lastCommand.cursorPos, command.preCursorPos) == 0 ||
+						Util.comparePos(lastCommand.cursorPos, command.cursorPos) == 0) {
 						return true;
 					}
 				}

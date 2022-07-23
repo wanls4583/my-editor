@@ -192,8 +192,12 @@ export default class {
 		this.tokenizeVisibleLins();
 	}
 	tokenizeVisibleLins() {
-		cancelAnimationFrame(this.tokenizeVisibleLinsTimer);
-		this.tokenizeVisibleLinsTimer = requestAnimationFrame(() => {
+		let tokenizeVisibleLinsId = this.tokenizeVisibleLinsId + 1 || 0;
+		this.tokenizeVisibleLinsId = tokenizeVisibleLinsId;
+		this.editor.$nextTick(() => {
+			if (tokenizeVisibleLinsId !== this.tokenizeVisibleLinsId) {
+				return;
+			}
 			let startLine = this.editor.startLine;
 			let endLine = this.editor.startLine + this.editor.maxVisibleLines;
 			endLine = this.editor.folder.getRealLine(endLine);
@@ -252,7 +256,7 @@ export default class {
 				}
 				processedLines++;
 				// 避免卡顿
-				if (processedLines >= limit || Date.now() - startTime >= 5) {
+				if (processedLines >= limit || Date.now() - startTime >= 2) {
 					startLine++;
 					break;
 				}
