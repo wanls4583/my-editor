@@ -162,6 +162,8 @@ export default {
 						this.setSize();
 						this.setStartLine();
 						this.render();
+						this.renderAllDiff();
+						this.renderAllSearchdBg();
 					});
 				}
 			});
