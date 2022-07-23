@@ -13,7 +13,7 @@ export default class {
 		this.context = context;
 	}
 	onKeydown(e) {
-		if(globalData.compositionstart) { //正在输中文，此时不做处理
+		if (globalData.compositionstart) { //正在输中文，此时不做处理
 			return;
 		}
 		if (e.ctrlKey && e.shiftKey) {
@@ -167,6 +167,13 @@ export default class {
 			}
 		} else if (e.shiftKey) {
 			switch (e.code) {
+				case 'Tab': //tab键
+					e.preventDefault();
+					e.stopPropagation();
+					if (this.editor.selecter.getActiveRangeByCursorPos(this.editor.nowCursorPos)) {
+						this.context.removeAnIndent();
+					}
+					break;
 				case 'ArrowLeft': //left arrow
 					e.preventDefault();
 					e.stopPropagation();
@@ -198,7 +205,7 @@ export default class {
 				case 'Tab': //tab键
 					e.preventDefault();
 					e.stopPropagation();
-					this.editor.autocomplete.emmet();
+					_insertTab.call(this);
 					break;
 				case 'ArrowLeft': //left arrow
 					e.preventDefault();
@@ -270,6 +277,18 @@ export default class {
 			this.editor.setAutoTip(null); //取消自动提示
 			this.editor.searcher.clearSearch();
 			this.editor.fSearcher.clearActive();
+		}
+
+		function _insertTab() {
+			if (this.editor.autoTipList && this.editor.autoTipList.length) {
+				this.editor.selectAutoTip();
+			} else if (this.editor.selecter.getActiveRangeByCursorPos(this.editor.nowCursorPos)) {
+				this.context.addAnIndent();
+			} else if (this.editor.indent === 'space' && /^\s*$/.exec(lineObj.text.slice(0, this.editor.nowCursorPos.column))) {
+				this.context.insertContent(this.editor.space);
+			} else {
+				this.context.insertContent('\t');
+			}
 		}
 	}
 }
