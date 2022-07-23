@@ -617,8 +617,8 @@ export default {
 					this.minimapVisible = !this.minimapVisible;
 					if (this.active) {
 						this.$nextTick(() => {
-							this.$refs.minimap && this.$refs.minimap.renderAllDiff(true);
 							this.render();
+							this.$refs.minimap && this.$refs.minimap.renderAllDiff();
 						});
 					}
 				})
@@ -1477,7 +1477,8 @@ export default {
 		},
 		setDiffObjs(diffRanges) {
 			this.diffRanges = diffRanges;
-			this.$refs.minimap && this.$refs.minimap.renderAllDiff(true);
+			this.$refs.minimap && this.$refs.minimap.renderDiff();
+			this.$refs.minimap && this.$refs.minimap.renderAllDiff();
 		},
 		setNumExtraData() {
 			this.renderNums = this.renderNums.map((item) => {

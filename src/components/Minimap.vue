@@ -454,7 +454,7 @@ export default {
 				return resultObj;
 			}
 		},
-		renderAllDiff(renderDiff) {
+		renderAllDiff() {
 			if (this.renderAllDiffing) {
 				this.renderAllDiffCount = 1;
 				return;
@@ -501,7 +501,6 @@ export default {
 				}
 				if (index >= allDiffRanges.length) {
 					this.worker.postMessage({ id: this.workerId, event: 'render-diff-all', data: diffRanges });
-					renderDiff && this.renderDiff();
 					this.renderAllDiffing = false;
 					if (this.renderAllDiffCount) {
 						this.renderAllDiffTimer = requestAnimationFrame(() => {
