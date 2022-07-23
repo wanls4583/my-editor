@@ -120,8 +120,8 @@ export default function () {
 
 	function drawLines(lines) {
 		canvasImgData.index = 0;
+		canvasImgData.data.fill(0);
 		ctx.clearRect(0, 0, dataObj.width, dataObj.height);
-		clearImgData(canvasImgData);
 		lines.forEach(line => {
 			drawLine(line);
 		});
@@ -171,7 +171,7 @@ export default function () {
 				top: item
 			};
 		});
-		clearImgData(selectedImgData);
+		selectedImgData.data.fill(0);
 		results = results.concat(fResults);
 		if (results.length) {
 			for (let i = 0; i < results.length; i++) {
@@ -193,7 +193,7 @@ export default function () {
 			rgb[3] += Math.floor(255 * 0.4);
 			rgb[3] = rgb[3] > 255 ? 255 : rgb[3];
 		}
-		clearImgData(cursorsImgData);
+		cursorsImgData.data.fill(0);
 		if (cursors.length) {
 			for (let i = 0; i < cursors.length; i++) {
 				putRectPixl({ imgData: cursorsImgData, left: 0, top: cursors[i], width: dataObj.width, height: dataObj.charHight, rgb });
@@ -259,12 +259,6 @@ export default function () {
 				imgData.data[index + 2] = rgb[2];
 				imgData.data[index + 3] = rgb[3] || 255;
 			}
-		}
-	}
-
-	function clearImgData(imgData) {
-		for (let i = 0; i < imgData.data.length; i++) {
-			imgData.data[i] = 0;
 		}
 	}
 
