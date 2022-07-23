@@ -516,7 +516,7 @@ export default {
 				item = this.getDiffObj(item);
 				resultObj.type = item.type;
 				resultObj.top = (item.line - 1) * this.$parent.charObj.charHight * scale;
-				resultObj.height = this.$parent.charObj.charHight * item.length * scale;
+				resultObj.height = item.length * this.miniMapCharHight;
 				resultObj.height = resultObj.height < 4 ? 4 : resultObj.height;
 				resultObj.top = Math.ceil(resultObj.top);
 				resultObj.height = Math.ceil(resultObj.height);
