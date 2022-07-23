@@ -5,10 +5,10 @@
 -->
 <template>
 	<div @mousedown="onMinimapDown" class="my-minimap" ref="wrap">
-		<canvas :height="height" :width="leftWidth" class="my-minimap-canvas-left" ref="leftDiffCanvas"></canvas>
+		<canvas :height="height" :width="leftWidth" class="my-minimap-canvas-left" ref="leftCanvas"></canvas>
 		<canvas :height="height" :width="width" class="my-minimap-canvas-center" ref="ovarlay"></canvas>
 		<canvas :height="height" :width="width" class="my-minimap-canvas-center" ref="canvas"></canvas>
-		<canvas :height="height" :width="rightWidth" class="my-minimap-canvas-right" ref="rightDiffCanvas"></canvas>
+		<canvas :height="height" :width="rightWidth" class="my-minimap-canvas-right" ref="rightCanvas"></canvas>
 		<div :style="{top: blockTop + 'px', height: blockHeight + 'px', opacity: blockClicked ? '0.8' : ''}" @mousedown="onBlockMDown" class="my-minimap-block" ref="block"></div>
 	</div>
 </template>
@@ -64,16 +64,16 @@ export default {
 	mounted() {
 		let centerScreen = this.$refs.canvas.transferControlToOffscreen();
 		let overlayScreen = this.$refs.ovarlay.transferControlToOffscreen();
-		let leftOffscreen = this.$refs.leftDiffCanvas.transferControlToOffscreen();
-		let rightOffscreen = this.$refs.rightDiffCanvas.transferControlToOffscreen();
+		let leftOffscreen = this.$refs.leftCanvas.transferControlToOffscreen();
+		let rightOffscreen = this.$refs.rightCanvas.transferControlToOffscreen();
 		this.worker.postMessage(
 			{
 				event: 'init',
 				data: {
 					canvas: centerScreen,
 					overlayCanvas: overlayScreen,
-					leftDiffCanvas: leftOffscreen,
-					rightDiffCanvas: rightOffscreen,
+					leftCanvas: leftOffscreen,
+					rightCanvas: rightOffscreen,
 				},
 			},
 			[centerScreen, overlayScreen, leftOffscreen, rightOffscreen]
@@ -330,7 +330,9 @@ export default {
 					_renderAllSearchdBg.call(this);
 				});
 			} else {
+				this.worker.postMessage({ event: 'render-selected-all', data: [] });
 				this.renderAllSearchdBging = false;
+				this.preAllSearchResult = [];
 			}
 
 			function _renderAllSearchdBg() {
@@ -390,6 +392,7 @@ export default {
 				});
 			} else {
 				this.renderDiffing = false;
+				this.worker.postMessage({ event: 'render-diff', data: [] });
 			}
 
 			function _renderDiff() {
@@ -448,11 +451,17 @@ export default {
 			}
 		},
 		renderAllDiff(renderDiff) {
+			if (this.renderAllDiffing) {
+				this.renderAllDiffCount = 1;
+				return;
+			}
+			this.renderAllDiffing = true;
+			this.renderAllDiffCount = 0;
+			let index = 0;
+			let limit = 10;
 			let diffRanges = [];
 			let sliderHeight = (this.height / this.contentHeight) * this.height;
 			let allDiffRanges = this.$parent.diffRanges;
-			let index = 0;
-			let limit = 10;
 			if (this.renderAllDiffTimer) {
 				cancelAnimationFrame(this.renderAllDiffTimer);
 				this.renderAllDiffTimer = null;
@@ -463,6 +472,7 @@ export default {
 					_renderAllDiff.call(this);
 				});
 			} else {
+				this.worker.postMessage({ event: 'render-diff-all', data: [] });
 				this.renderAllDiffing = false;
 			}
 
@@ -536,7 +546,9 @@ export default {
 					_renderCursor.call(this);
 				});
 			} else {
+				this.worker.postMessage({ event: 'render-cursor', data: [] });
 				this.renderCursoring = false;
+				this.preCursorResult = [];
 			}
 
 			function _renderCursor() {
@@ -602,7 +614,9 @@ export default {
 					_renderAllCursor.call(this);
 				});
 			} else {
+				this.worker.postMessage({ event: 'render-cursor-all', data: [] });
 				this.renderAllCursoring = false;
+				this.preAllCursorResult = [];
 			}
 
 			function _renderAllCursor() {

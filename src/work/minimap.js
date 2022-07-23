@@ -4,12 +4,12 @@ export default function () {
 	let dataObj = {};
 	let canvas = null;
 	let overlayCanvas = null;
-	let leftDiffCanvas = null;
-	let rightDiffCanvas = null;
+	let leftCanvas = null;
+	let rightCanvas = null;
 	let ctx = null;
 	let overlayCtx = null;
 	let leftDiffCtx = null;
-	let rightDiffCtx = null;
+	let rightCtx = null;
 	let lines = null;
 	let singleLines = null;
 	let diffRanges = null;
@@ -18,14 +18,15 @@ export default function () {
 	let allSelectedData = null;
 	let cursors = null;
 	let allCursors = null;
-	let allCursorImg = null;
-	let allSelectedImg = null;
 	let canvasImgData = null;
 	let overlayImgData = null;
 	let cursorsImgData = null;
 	let selectedImgData = null;
 	let leftDiffCanvasImgData = null;
-	let rightDiffCanvasImgData = null;
+	let rightImgData = null;
+	let allCursorImgData = null;
+	let allSelectedImgData = null;
+	let allDiffImgData = null;
 
 	function drawLine({ top, lineObj }) {
 		let cache = cacheMap[lineObj.lineId];
@@ -140,7 +141,7 @@ export default function () {
 		ctx.putImageData(canvasImgData, 0, 0);
 	}
 
-	function drawLeftDiff() {
+	function drawDiff() {
 		leftDiffCanvasImgData.data.fill(0);
 		leftDiffCtx.clearRect(0, 0, dataObj.leftWidth, dataObj.height);
 		if (diffRanges.length) {
@@ -155,21 +156,6 @@ export default function () {
 			leftDiffCtx.putImageData(leftDiffCanvasImgData, 0, 0);
 		}
 		diffRanges = null;
-	}
-
-	function drawRightDiff() {
-		rightDiffCanvasImgData.data.fill(0);
-		rightDiffCtx.clearRect(0, 0, dataObj.rightWidth, dataObj.height);
-		if (allDiffRanges) {
-			allDiffRanges.forEach(item => {
-				let rgb = getDiffColor(item.type);
-				putRectPixl({ imgData: rightDiffCanvasImgData, left: 0, top: item.top, width: 5, height: item.height, rgb });
-			});
-			rightDiffCtx.putImageData(rightDiffCanvasImgData, 0, 0);
-			allCursorImg && rightDiffCtx.drawImage(allCursorImg, 0, 0);
-			allSelectedImg && rightDiffCtx.drawImage(allSelectedImg, 0, 0);
-		}
-		allDiffRanges = null;
 	}
 
 	function drawSelectedBg() {
@@ -188,7 +174,6 @@ export default function () {
 		clearImgData(selectedImgData);
 		results = results.concat(fResults);
 		if (results.length) {
-			clearImgData(overlayImgData);
 			for (let i = 0; i < results.length; i++) {
 				let item = results[i];
 				putRectPixl({ imgData: selectedImgData, left: 0, top: item.top, width: dataObj.width, height: dataObj.charHight, rgb: item.rgb });
@@ -201,29 +186,6 @@ export default function () {
 		selectedData = null;
 	}
 
-	function drawAllSelected() {
-		if (allSelectedData.length) {
-			let rgb = getRgb(dataObj.colors['minimap.findMatchHighlight']);
-			let imgData = new ImageData(dataObj.width, dataObj.height);
-			for (let i = 0; i < allSelectedData.length; i++) {
-				putRectPixl({ imgData: imgData, left: 5, top: allSelectedData[i], width: 5, height: dataObj.charHight * 2, rgb });
-			}
-			createImageBitmap(imgData).then(img => {
-				rightDiffCtx.clearRect(0, 0, dataObj.rightWidth, dataObj.height);
-				rightDiffCtx.putImageData(rightDiffCanvasImgData, 0, 0);
-				rightDiffCtx.drawImage(img, 0, 0);
-				allCursorImg && rightDiffCtx.drawImage(allCursorImg, 0, 0);
-				allSelectedImg = img;
-			});
-		} else if (allSelectedImg) {
-			rightDiffCtx.clearRect(0, 0, dataObj.rightWidth, dataObj.height);
-			rightDiffCtx.putImageData(rightDiffCanvasImgData, 0, 0);
-			allCursorImg && rightDiffCtx.drawImage(allCursorImg, 0, 0);
-			allSelectedImg = null;
-		}
-		allSelectedData = null;
-	}
-
 	function drawCursor() {
 		let rgb = getCursorColor();
 		if (rgb[3]) {
@@ -233,7 +195,6 @@ export default function () {
 		}
 		clearImgData(cursorsImgData);
 		if (cursors.length) {
-			clearImgData(overlayImgData);
 			for (let i = 0; i < cursors.length; i++) {
 				putRectPixl({ imgData: cursorsImgData, left: 0, top: cursors[i], width: dataObj.width, height: dataObj.charHight, rgb });
 			}
@@ -245,19 +206,37 @@ export default function () {
 		cursors = null;
 	}
 
+	function drawAllDiff() {
+		allDiffImgData.data.fill(0);
+		for (let i = 0; i < allDiffRanges.length; i++) {
+			let item = allDiffRanges[i];
+			let rgb = getDiffColor(item.type);
+			putRectPixl({ imgData: allDiffImgData, left: 0, top: item.top, width: 5, height: item.height, rgb });
+		}
+		setRightImgData();
+		rightCtx.putImageData(rightImgData, 0, 0);
+		allDiffRanges = null;
+	}
+
+	function drawAllSelected() {
+		let rgb = getRgb(dataObj.colors['minimap.findMatchHighlight']);
+		allSelectedImgData.data.fill(0);
+		for (let i = 0; i < allSelectedData.length; i++) {
+			putRectPixl({ imgData: allSelectedImgData, left: 5, top: allSelectedData[i], width: 5, height: dataObj.charHight * 2, rgb });
+		}
+		setRightImgData();
+		rightCtx.putImageData(rightImgData, 0, 0);
+		allSelectedData = null;
+	}
+
 	function drawAllCursor() {
 		let rgb = getCursorColor(true);
-		let imgData = new ImageData(dataObj.width, dataObj.height);
+		allCursorImgData.data.fill(0);
 		for (let i = 0; i < allCursors.length; i++) {
-			putRectPixl({ imgData: imgData, left: 0, top: allCursors[i], width: dataObj.width, height: dataObj.charHight, rgb });
+			putRectPixl({ imgData: allCursorImgData, left: 0, top: allCursors[i], width: dataObj.rightWidth, height: dataObj.charHight, rgb });
 		}
-		createImageBitmap(imgData).then(img => {
-			rightDiffCtx.clearRect(0, 0, dataObj.rightWidth, dataObj.height);
-			rightDiffCtx.putImageData(rightDiffCanvasImgData, 0, 0);
-			rightDiffCtx.drawImage(img, 0, 0);
-			allSelectedImg && rightDiffCtx.drawImage(allSelectedImg, 0, 0);
-			allCursorImg = img;
-		});
+		setRightImgData();
+		rightCtx.putImageData(rightImgData, 0, 0);
 		allCursors = null;
 	}
 
@@ -315,10 +294,10 @@ export default function () {
 						drawAllSelected();
 					}
 					if (diffRanges) {
-						drawLeftDiff();
+						drawDiff();
 					}
 					if (allDiffRanges) {
-						drawRightDiff();
+						drawAllDiff();
 					}
 				}
 			} catch (e) {
@@ -361,13 +340,13 @@ export default function () {
 			overlayCanvas = data.overlayCanvas;
 			overlayCtx = overlayCanvas.getContext('2d');
 		}
-		if (data.leftDiffCanvas) {
-			leftDiffCanvas = data.leftDiffCanvas;
-			leftDiffCtx = leftDiffCanvas.getContext('2d');
+		if (data.leftCanvas) {
+			leftCanvas = data.leftCanvas;
+			leftDiffCtx = leftCanvas.getContext('2d');
 		}
-		if (data.rightDiffCanvas) {
-			rightDiffCanvas = data.rightDiffCanvas;
-			rightDiffCtx = rightDiffCanvas.getContext('2d');
+		if (data.rightCanvas) {
+			rightCanvas = data.rightCanvas;
+			rightCtx = rightCanvas.getContext('2d');
 		}
 	}
 
@@ -375,18 +354,18 @@ export default function () {
 		if (data.height !== undefined && data.height !== dataObj.height) {
 			canvas.height = data.height;
 			overlayCanvas.height = data.height;
-			leftDiffCanvas.height = data.height;
-			rightDiffCanvas.height = data.height;
+			leftCanvas.height = data.height;
+			rightCanvas.height = data.height;
 		}
 		if (data.width !== undefined && data.width !== dataObj.width) {
 			canvas.width = data.width;
 			overlayCanvas.width = data.width;
 		}
 		if (data.leftWidth !== undefined && data.leftWidth !== dataObj.leftWidth) {
-			leftDiffCanvas.width = data.leftWidth;
+			leftCanvas.width = data.leftWidth;
 		}
 		if (data.rightWidth !== undefined && data.rightWidth !== dataObj.rightWidth) {
-			rightDiffCanvas.width = data.rightWidth;
+			rightCanvas.width = data.rightWidth;
 		}
 		Object.assign(dataObj, data);
 		_clearCache();
@@ -407,13 +386,20 @@ export default function () {
 				leftDiffCanvasImgData = new ImageData(dataObj.leftWidth, dataObj.height);
 			}
 			if (dataObj.rightWidth && dataObj.height) {
-				rightDiffCanvasImgData = new ImageData(dataObj.rightWidth, dataObj.height);
+				rightImgData = new ImageData(dataObj.rightWidth, dataObj.height);
+				allDiffImgData = new ImageData(dataObj.rightWidth, dataObj.height);
+				allSelectedImgData = new ImageData(dataObj.rightWidth, dataObj.height);
+				allCursorImgData = new ImageData(dataObj.rightWidth, dataObj.height);
 			}
 		}
 	}
 
 	function setOverLayImgData() {
 		for (let i = 0; i < overlayImgData.data.length; i += 4) {
+			overlayImgData.data[i] = 0;
+			overlayImgData.data[i + 1] = 0;
+			overlayImgData.data[i + 2] = 0;
+			overlayImgData.data[i + 3] = 0;
 			if (selectedImgData.data[i + 4]) {
 				overlayImgData.data[i] = selectedImgData.data[i];
 				overlayImgData.data[i + 1] = selectedImgData.data[i + 1];
@@ -424,6 +410,33 @@ export default function () {
 				overlayImgData.data[i + 1] = cursorsImgData.data[i + 1];
 				overlayImgData.data[i + 2] = cursorsImgData.data[i + 2];
 				overlayImgData.data[i + 3] = cursorsImgData.data[i + 3];
+			}
+		}
+	}
+
+	function setRightImgData() {
+		for (let i = 0; i < rightImgData.data.length; i += 4) {
+			rightImgData.data[i] = 0;
+			rightImgData.data[i + 1] = 0;
+			rightImgData.data[i + 2] = 0;
+			rightImgData.data[i + 3] = 0;
+			if (allSelectedImgData.data[i + 4]) {
+				rightImgData.data[i] = allSelectedImgData.data[i];
+				rightImgData.data[i + 1] = allSelectedImgData.data[i + 1];
+				rightImgData.data[i + 2] = allSelectedImgData.data[i + 2];
+				rightImgData.data[i + 3] = allSelectedImgData.data[i + 3];
+			}
+			if (allDiffImgData.data[i + 4]) {
+				rightImgData.data[i] = allDiffImgData.data[i];
+				rightImgData.data[i + 1] = allDiffImgData.data[i + 1];
+				rightImgData.data[i + 2] = allDiffImgData.data[i + 2];
+				rightImgData.data[i + 3] = allDiffImgData.data[i + 3];
+			}
+			if (allCursorImgData.data[i + 4]) {
+				rightImgData.data[i] = allCursorImgData.data[i];
+				rightImgData.data[i + 1] = allCursorImgData.data[i + 1];
+				rightImgData.data[i + 2] = allCursorImgData.data[i + 2];
+				rightImgData.data[i + 3] = allCursorImgData.data[i + 3];
 			}
 		}
 	}
