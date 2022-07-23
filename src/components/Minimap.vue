@@ -93,7 +93,6 @@ export default {
 		this.resizeObserver.unobserve(this.$refs.wrap);
 	},
 	destroyed() {
-		this.worker.terminate();
 		this.unbindEvent();
 		this.clearRenderTask();
 		globalData.scheduler.removeUiTask(this.moveTask);
