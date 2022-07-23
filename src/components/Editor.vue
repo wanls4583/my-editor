@@ -600,7 +600,6 @@ export default {
 					if (data.id === this.tabData.id) {
 						this.searchVisible && this.$refs.searchDialog.search();
 						this.$refs.minimap && this.$refs.minimap.clearRenderTask();
-						this.bracketMatch = null;
 						this.setErrors([]);
 						this.setAutoTip(null);
 						this.render(true);
@@ -1122,6 +1121,7 @@ export default {
 			// 光标位于选区边界，不做处理
 			if (this.fSelecter.getActiveRangeByCursorPos(this.nowCursorPos) ||
 				this.selecter.getActiveRangeByCursorPos(this.nowCursorPos)) {
+				this.bracketMatch = null;
 				return;
 			}
 			cancelAnimationFrame(this.bracketMatchTimer);
@@ -1137,6 +1137,7 @@ export default {
 					let endPos = null;
 					let range = bracketMatch && this.selecter.getRangeByCursorPos({ line: bracketMatch.start.line, column: bracketMatch.start.startIndex });
 					range = range || (bracketMatch && this.selecter.getRangeByCursorPos({ line: bracketMatch.end.line, column: bracketMatch.end.startIndex }));
+					this.bracketMatch = null;
 					if (bracketMatch && !range) {
 						this.bracketMatch = bracketMatch;
 						lineObj = this.myContext.htmls[this.bracketMatch.start.line - 1];
