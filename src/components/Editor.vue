@@ -908,8 +908,8 @@ export default {
 							renderedRangeMap.set(rangeKey, true);
 						}
 					}
-					if (!selections.length && !fSelections.length) {
-						_renderLineSelection.call(this, renderObj.num);
+					if (!selections.length) {
+						_renderLineSelection.call(this, renderObj.num, fSelections.length);
 					}
 				} else {
 					selections = this.selecter.getRangeByLine(renderObj.num);
@@ -929,11 +929,11 @@ export default {
 				}
 			}
 
-			function _renderLineSelection(line) {
+			function _renderLineSelection(line, skipFselecter) {
 				let range = null;
 				let lineObj = this.myContext.htmls[line - 1];
 				range = this.selecter.getRangeWithCursorPos({ line: line, column: 0 });
-				if (!range && this.searchVisible) {
+				if (!range && !skipFselecter && this.searchVisible) {
 					range = this.fSelecter.getRangeWithCursorPos({ line: line, column: 0 });
 				}
 				if (range) {
