@@ -146,17 +146,15 @@ export default function () {
 		drawDiff() {
 			this.leftDiffCanvasImgData.data.fill(0);
 			this.leftDiffCtx.clearRect(0, 0, this.dataObj.leftWidth, this.dataObj.height);
-			if (this.diffRanges.length) {
-				this.diffRanges.forEach(item => {
-					let rgb = this.getDiffColor(item.type);
-					if (item.type === 'D') {
-						this.putRectPixl({ imgData: this.leftDiffCanvasImgData, left: 2, top: item.top, width: 4, height: item.height, rgb });
-					} else {
-						this.putRectPixl({ imgData: this.leftDiffCanvasImgData, left: 3, top: item.top, width: 2, height: item.height, rgb });
-					}
-				});
-				this.leftDiffCtx.putImageData(this.leftDiffCanvasImgData, 0, 0);
-			}
+			this.diffRanges.forEach(item => {
+				let rgb = this.getDiffColor(item.type);
+				if (item.type === 'D') {
+					this.putRectPixl({ imgData: this.leftDiffCanvasImgData, left: 2, top: item.top, width: 4, height: item.height, rgb });
+				} else {
+					this.putRectPixl({ imgData: this.leftDiffCanvasImgData, left: 3, top: item.top, width: 2, height: item.height, rgb });
+				}
+			});
+			this.leftDiffCtx.putImageData(this.leftDiffCanvasImgData, 0, 0);
 			this.diffRanges = null;
 		}
 		drawSelectedBg() {
