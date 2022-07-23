@@ -946,7 +946,7 @@ export default {
 					}
 					selectionNumMap[line].selections.push({
 						bgClass: bgClass,
-						bgStyle: { left: '0px', width: lineObj.width + 'px', height: this._lineHeight },
+						bgStyle: { left: '0px', width: (lineObj.width || 10) + 'px', height: this._lineHeight },
 					});
 				}
 			}
@@ -1595,6 +1595,7 @@ export default {
 		setStartLine(scrollTop, scrollToCursor) {
 			let startLine = 1;
 			let maxScrollTop = this.contentHeight - this.scrollerArea.height;
+			scrollTop = Math.round(scrollTop);
 			scrollTop = scrollTop < 0 ? 0 : scrollTop;
 			maxScrollTop = maxScrollTop < 0 ? 0 : maxScrollTop;
 			if (scrollTop > maxScrollTop) {

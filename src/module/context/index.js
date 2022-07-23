@@ -115,6 +115,8 @@ class Context {
 		let serial = ''; // 历史记录连续操作标识
 		let historyJoinAble = true;
 		let delDirect = '';
+		let afterCursorPosList = null;
+		let originCursorPosList = this.getOriginCursorPosList();
 		if (command) {
 			command.forEach(item => {
 				// 多个插入的光标可能相同，这里不能先添加光标
@@ -137,7 +139,11 @@ class Context {
 			}
 			cursorPosList = this.editor.cursor.multiCursorPos.toArray();
 		}
-		historyArr = this._insertMultiContent({ text, cursorPosList, command });
+		historyArr = this._insertMultiContent({
+			text,
+			cursorPosList,
+			command
+		});
 		if (command) {
 			if (command.originCursorPosList) {
 				this.addCursorList(command.originCursorPosList);
@@ -157,9 +163,12 @@ class Context {
 			historyArr._originScrollTop = command.originScrollTop;
 			this.editor.history.updateHistory(historyArr);
 		} else {
+			afterCursorPosList = _getCursorList.call(this);
 			historyArr.serial = serial;
+			historyArr.originCursorPosList = originCursorPosList;
+			historyArr.afterCursorPosList = afterCursorPosList;
 			this.editor.history.pushHistory(historyArr, historyJoinAble);
-			this.addCursorList(_getCursorList());
+			this.addCursorList(afterCursorPosList);
 		}
 		this.editor.setNowCursorPos(this.editor.cursor.multiCursorPos.get(0));
 		return historyArr;
@@ -167,9 +176,19 @@ class Context {
 		function _getCursorList() {
 			return historyArr.map((item) => {
 				if (item.ending) {
-					return { start: item.preCursorPos, end: item.cursorPos, ending: item.ending }
+					return {
+						start: item.preCursorPos,
+						end: item.cursorPos,
+						ending: item.ending
+					}
 				} else if (delDirect === 'right') {
 					return item.preCursorPos;
+				} else if (text === '\n' && item.cursorPos.line - item.preCursorPos.line > 1) {
+					//括号中间换行，多插入了一行
+					return {
+						line: item.cursorPos.line - 1,
+						column: this.htmls[item.cursorPos.line - 2].tabNum
+					}
 				}
 				return item.cursorPos
 			});
@@ -212,8 +231,14 @@ class Context {
 			} else {
 				historyObj = {
 					type: Util.HISTORY_COMMAND.DELETE,
-					cursorPos: { line: pos.line, column: pos.column },
-					preCursorPos: { line: pos.line, column: pos.column }
+					cursorPos: {
+						line: pos.line,
+						column: pos.column
+					},
+					preCursorPos: {
+						line: pos.line,
+						column: pos.column
+					}
 				};
 			}
 			historyArr.push(historyObj);
@@ -247,13 +272,26 @@ class Context {
 		if (text.length > 1) {
 			// 换行对齐
 			if (isLineFeed && alignmentTab) {
-				let tabStr = _getTabStr.call(
-					this,
-					nowLineText,
-					nowLineText.length === cursorPos.column && this.editor.folder.getRangeFold(cursorPos.line, true)
-				);
-				if (tabStr) {
-					text[1].text = tabStr + text[1].text.trimLeft();
+				let bracket = _getBracket.call(this);
+				let tab = _getTab.call(this, nowLineText, bracket);
+				if (tab) {
+					text[1].text = tab.tabStr + text[1].text.trimLeft();
+					text[1].tabNum = tab.tabNum;
+					if (bracket && lineObj.text[cursorPos.column] === bracket[1]) { //括号中间换行
+						let item = {
+							lineId: this.lineId++,
+							text: '',
+							html: '',
+							width: 0,
+							tabNum: -1,
+							tokens: null,
+							folds: null,
+							states: null,
+							stateFold: null
+						}
+						this.lineIdMap.set(item.lineId, item);
+						text.push(item);
+					}
 				}
 			}
 			// 插入多行
@@ -285,7 +323,7 @@ class Context {
 		};
 		return historyObj;
 
-		function _getTabStr(text, plus) {
+		function _getTab(text, plus) {
 			let tabNum = 0;
 			let tabStr = '';
 			//该行有内容
@@ -303,7 +341,20 @@ class Context {
 					tabStr += this.editor.space;
 				}
 			}
-			return tabStr;
+			return {
+				tabNum,
+				tabStr
+			};
+		}
+
+		function _getBracket() {
+			let sourceConfigData = this.getConfigData(cursorPos);
+			let brackets = sourceConfigData && sourceConfigData.brackets || [];
+			for (let i = 0; i < brackets.length; i++) {
+				if (brackets[i][0] === lineObj.text[cursorPos.column - 1]) {
+					return brackets[i];
+				}
+			}
 		}
 	}
 	/**
@@ -319,7 +370,10 @@ class Context {
 		let historyJoinAble = true;
 		if (command) {
 			rangeList = command.map(item => {
-				let obj = { start: item.preCursorPos, end: item.cursorPos, };
+				let obj = {
+					start: item.preCursorPos,
+					end: item.cursorPos,
+				};
 				item.ending && (obj.ending = item.ending);
 				return obj;
 			});
@@ -351,7 +405,9 @@ class Context {
 			} else if (command.afterCursorPosList) {
 				this.addCursorList(command.afterCursorPosList);
 			} else {
-				this.addCursorList(historyArr.map((item) => { return item.cursorPos }));
+				this.addCursorList(historyArr.map((item) => {
+					return item.cursorPos
+				}));
 			}
 			if (typeof command.originScrollTop === 'number') {
 				this.editor.setStartLine(command.originScrollTop);
@@ -364,9 +420,11 @@ class Context {
 			historyArr._originScrollTop = command.originScrollTop;
 			this.editor.history.updateHistory(historyArr);
 		} else {
-			if(historyArr.length > 0) {
+			if (historyArr.length > 0) {
 				this.editor.history.pushHistory(historyArr, historyJoinAble);
-				this.addCursorList(historyArr.map((item) => { return item.cursorPos }));
+				this.addCursorList(historyArr.map((item) => {
+					return item.cursorPos
+				}));
 			} else {
 				this.editor.cursor.setCursorPos(rangeList[0]);
 			}
@@ -420,7 +478,10 @@ class Context {
 				if (rangeOrCursorList.length > 1) {
 					historyArr.push({
 						type: Util.HISTORY_COMMAND.INSERT,
-						cursorPos: { line: pos.line, column: pos.column }
+						cursorPos: {
+							line: pos.line,
+							column: pos.column
+						}
 					});
 				}
 			} else {
@@ -450,7 +511,10 @@ class Context {
 			if (Util.comparePos(start, end) === 0) {
 				historyObj = {
 					type: Util.HISTORY_COMMAND.INSERT,
-					cursorPos: { line: start.line, column: start.column }
+					cursorPos: {
+						line: start.line,
+						column: start.column
+					}
 				}
 			} else {
 				historyObj = this._deleteContent(rangePos, delDirect);
@@ -593,7 +657,11 @@ class Context {
 		for (let i = 0; i < cursorPosList.length; i++) {
 			let item = cursorPosList[i];
 			if (item.start && item.end) {
-				this.editor.selecter.addRange({ start: item.start, end: item.end, active: true });
+				this.editor.selecter.addRange({
+					start: item.start,
+					end: item.end,
+					active: true
+				});
 				this.editor.cursor.addCursorPos(item.ending === 'left' ? item.start : item.end);
 			} else {
 				this.editor.cursor.addCursorPos(item);
@@ -611,7 +679,8 @@ class Context {
 		let originCursorPosList = [];
 		this.editor.cursor.multiCursorPos.forEach(item => {
 			let range = this.editor.selecter.getRangeByCursorPos(item);
-			let start = null, end = null;
+			let start = null,
+				end = null;
 			if (range) {
 				if (preRange && Util.comparePos(range.start, preRange.end) < 0) {
 					rangeList.pop();
@@ -625,10 +694,16 @@ class Context {
 				rangeList.push(preRange);
 			} else {
 				if (delDirect === 'left') {
-					end = { line: item.line, column: item.column };
+					end = {
+						line: item.line,
+						column: item.column
+					};
 					start = this.editor.cursor.moveCursor(item, delDirect, true, true);
 				} else {
-					start = { line: item.line, column: item.column };
+					start = {
+						line: item.line,
+						column: item.column
+					};
 					end = this.editor.cursor.moveCursor(item, delDirect, true, true);
 				}
 				if (preRange && Util.comparePos(preRange.end, start) >= 0) {
@@ -636,7 +711,10 @@ class Context {
 						preRange.end = end;
 					}
 				} else if (Util.comparePos(end, start) > 0) {
-					preRange = { start: start, end: end };
+					preRange = {
+						start: start,
+						end: end
+					};
 					rangeList.push(preRange);
 				}
 			}
@@ -646,16 +724,24 @@ class Context {
 			});
 		});
 		if (rangeList.length) {
-			historyArr = this._deleteMultiContent({ rangeOrCursorList: rangeList, delDirect });
+			historyArr = this._deleteMultiContent({
+				rangeOrCursorList: rangeList,
+				delDirect
+			});
 			historyArr.originCursorPosList = originCursorPosList;
 			historyArr.originScrollTop = this.editor.scrollTop;
-			this.addCursorList(historyArr.map((item) => { return item.cursorPos }));
+			this.addCursorList(historyArr.map((item) => {
+				return item.cursorPos
+			}));
 			this.editor.history.pushHistory(historyArr);
 		}
 	}
 	contentChanged() {
 		this.allText = '';
-		EventBus.$emit('editor-content-change', { id: this.editor.editorId, path: this.editor.tabData.path });
+		EventBus.$emit('editor-content-change', {
+			id: this.editor.editorId,
+			path: this.editor.tabData.path
+		});
 	}
 	// 获取最大宽度
 	setMaxWidth() {
@@ -738,8 +824,14 @@ class Context {
 			let range = this.editor.selecter.getRangeByCursorPos(item);
 			if (range) {
 				originCursorPosList.push({
-					start: { line: range.start.line, column: range.start.column },
-					end: { line: range.end.line, column: range.end.column },
+					start: {
+						line: range.start.line,
+						column: range.start.column
+					},
+					end: {
+						line: range.end.line,
+						column: range.end.column
+					},
 					ending: Util.comparePos(range.start, range) === 0 ? 'left' : 'right'
 				});
 			} else {
@@ -774,8 +866,8 @@ class Context {
 			let line = cursorPos.line;
 			let tokens = this.htmls[line - 1].tokens || [];
 			for (let i = 0; i < tokens.length; i++) {
-				if (tokens[i].startIndex <= cursorPos.column
-					&& tokens[i].endIndex >= cursorPos.column) {
+				if (tokens[i].startIndex <= cursorPos.column &&
+					tokens[i].endIndex >= cursorPos.column) {
 					return tokens[i];
 				}
 			}
@@ -862,10 +954,14 @@ class Context {
 		});
 		if (cut && text.length) {
 			let originCursorPosList = this.getOriginCursorPosList();
-			let historyArr = this._deleteMultiContent({ rangeOrCursorList: ranges });
+			let historyArr = this._deleteMultiContent({
+				rangeOrCursorList: ranges
+			});
 			historyArr.originCursorPosList = originCursorPosList;
 			this.editor.history.pushHistory(historyArr);
-			this.addCursorList(historyArr.map((item) => { return item.cursorPos }));
+			this.addCursorList(historyArr.map((item) => {
+				return item.cursorPos
+			}));
 		}
 		return text.slice(1);
 	}
