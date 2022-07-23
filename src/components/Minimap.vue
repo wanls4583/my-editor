@@ -58,8 +58,14 @@ export default {
 		},
 	},
 	created() {
-		this.worker = Util.createWorker(minimapWorker);
+		if (globalData.miniMapWorker) {
+			this.worker = globalData.miniMapWorker;
+		} else {
+			this.worker = Util.createWorker(minimapWorker);
+			globalData.miniMapWorker = this.worker;
+		}
 		this.renderedIdMap = {};
+		this.workerId = Util.getUUID();
 	},
 	mounted() {
 		let centerScreen = this.$refs.canvas.transferControlToOffscreen();
@@ -68,6 +74,7 @@ export default {
 		let rightOffscreen = this.$refs.rightCanvas.transferControlToOffscreen();
 		this.worker.postMessage(
 			{
+				id: this.workerId,
 				event: 'init',
 				data: {
 					canvas: centerScreen,
@@ -113,19 +120,16 @@ export default {
 				});
 			}
 			if (type === 'theme' || !type) {
-				this.preCursorResult = null;
-				this.preAllCursorResult = null;
-				this.preAllSearchResult = null;
 				Object.assign(data, {
 					colors: globalData.colors,
 					scopeIdMap: globalData.scopeIdMap,
 				});
 			}
+			this.preCursorResult = null;
+			this.preAllCursorResult = null;
+			this.preAllSearchResult = null;
 			this.renderedIdMap = {};
-			this.worker.postMessage({
-				event: 'set-data',
-				data: data,
-			});
+			this.worker.postMessage({ id: this.workerId, event: 'set-data', data: data, });
 		},
 		initEvent() {
 			this.initEvent.fn1 = (e) => {
@@ -221,9 +225,9 @@ export default {
 					i++;
 					count++;
 				}
-				this.worker.postMessage({ event: 'render-data', data: lines });
+				this.worker.postMessage({ id: this.workerId, event: 'render-data', data: lines });
 				if (line > maxLine || count === this.maxVisibleLines) {
-					this.worker.postMessage({ event: 'render' });
+					this.worker.postMessage({ id: this.workerId, event: 'render' });
 					this.renderLinesing = false;
 					if (this.renderLinesCount) {
 						this.renderLinesTimer = requestAnimationFrame(() => {
@@ -244,7 +248,7 @@ export default {
 				if (lineObj && lineObj.lineId === lineId) {
 					let renderObj = this.getRenderObj(cache.line);
 					this.renderedIdMap[lineObj.lineId] = renderObj;
-					this.worker.postMessage({ event: 'render-line', data: renderObj });
+					this.worker.postMessage({ id: this.workerId, event: 'render-line', data: renderObj });
 				}
 			}
 		},
@@ -290,7 +294,7 @@ export default {
 					count++;
 				}
 				if (line > maxLine || count === this.maxVisibleLines) {
-					this.worker.postMessage({ event: 'render-selected-bg', data: { results, fResults } });
+					this.worker.postMessage({ id: this.workerId, event: 'render-selected-bg', data: { results, fResults } });
 					this.renderSelectedBging = false;
 					if (this.renderSelectedBgCount) {
 						this.renderSelectedBgTimer = requestAnimationFrame(() => {
@@ -329,7 +333,7 @@ export default {
 					_renderAllSearchdBg.call(this);
 				});
 			} else {
-				this.worker.postMessage({ event: 'render-selected-all', data: [] });
+				this.worker.postMessage({ id: this.workerId, event: 'render-selected-all', data: [] });
 				this.renderAllSearchdBging = false;
 				this.preAllSearchResult = [];
 			}
@@ -354,7 +358,7 @@ export default {
 					this.renderAllSearchdBging = false;
 					if (this.preAllSearchResult + '' !== results + '') {
 						this.preAllSearchResult = results;
-						this.worker.postMessage({ event: 'render-selected-all', data: results });
+						this.worker.postMessage({ id: this.workerId, event: 'render-selected-all', data: results });
 					}
 					if (this.renderAllSearchdBgCount) {
 						this.renderAllSearchdBgTimer = requestAnimationFrame(() => {
@@ -391,7 +395,7 @@ export default {
 				});
 			} else {
 				this.renderDiffing = false;
-				this.worker.postMessage({ event: 'render-diff', data: [] });
+				this.worker.postMessage({ id: this.workerId, event: 'render-diff', data: [] });
 			}
 
 			function _renderDiff() {
@@ -423,7 +427,7 @@ export default {
 					i++;
 				}
 				if (index >= allDiffRanges.length) {
-					this.worker.postMessage({ event: 'render-diff', data: diffRanges });
+					this.worker.postMessage({ id: this.workerId, event: 'render-diff', data: diffRanges });
 					this.renderDiffing = false;
 					if (this.renderDiffCount) {
 						this.renderDiffTimer = requestAnimationFrame(() => {
@@ -471,7 +475,7 @@ export default {
 					_renderAllDiff.call(this);
 				});
 			} else {
-				this.worker.postMessage({ event: 'render-diff-all', data: [] });
+				this.worker.postMessage({ id: this.workerId, event: 'render-diff-all', data: [] });
 				this.renderAllDiffing = false;
 			}
 
@@ -495,7 +499,7 @@ export default {
 					i++;
 				}
 				if (index >= allDiffRanges.length) {
-					this.worker.postMessage({ event: 'render-diff-all', data: diffRanges });
+					this.worker.postMessage({ id: this.workerId, event: 'render-diff-all', data: diffRanges });
 					renderDiff && this.renderDiff();
 					this.renderAllDiffing = false;
 					if (this.renderAllDiffCount) {
@@ -545,7 +549,7 @@ export default {
 					_renderCursor.call(this);
 				});
 			} else {
-				this.worker.postMessage({ event: 'render-cursor', data: [] });
+				this.worker.postMessage({ id: this.workerId, event: 'render-cursor', data: [] });
 				this.renderCursoring = false;
 				this.preCursorResult = [];
 			}
@@ -575,7 +579,7 @@ export default {
 					this.renderCursoring = false;
 					if (this.preCursorResult + '' !== results + '') {
 						this.preCursorResult = results;
-						this.worker.postMessage({ event: 'render-cursor', data: results });
+						this.worker.postMessage({ id: this.workerId, event: 'render-cursor', data: results });
 					}
 					if (this.renderCursorCount) {
 						this.renderCursorTimer = requestAnimationFrame(() => {
@@ -613,7 +617,7 @@ export default {
 					_renderAllCursor.call(this);
 				});
 			} else {
-				this.worker.postMessage({ event: 'render-cursor-all', data: [] });
+				this.worker.postMessage({ id: this.workerId, event: 'render-cursor-all', data: [] });
 				this.renderAllCursoring = false;
 				this.preAllCursorResult = [];
 			}
@@ -636,7 +640,7 @@ export default {
 					this.renderAllCursoring = false;
 					if (this.preAllCursorResult + '' !== results + '') {
 						this.preAllCursorResult = results;
-						this.worker.postMessage({ event: 'render-cursor-all', data: results });
+						this.worker.postMessage({ id: this.workerId, event: 'render-cursor-all', data: results });
 					}
 					if (this.renderAllCursorCount) {
 						this.renderAllCursorTimer = requestAnimationFrame(() => {
