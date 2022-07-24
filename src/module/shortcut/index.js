@@ -132,8 +132,6 @@ export default class {
         return key;
     }
     doComand(command) {
-        let editor = globalData.$mainWin.getNowEditor();
-        let context = globalData.$mainWin.getNowContext();
         let commandObj = command.commandObj;
         if (command.commandObj) {
             commandObj = command.commandObj;
@@ -141,12 +139,18 @@ export default class {
             command = this.findCommandByName(command.command);
             commandObj = command && command.commandObj;
         }
-        if (commandObj && commandObj[command.command] && editor && context) {
+        if (commandObj && commandObj[command.command]) {
             if (this.editorComand === commandObj) {
-                commandObj.editor = editor;
-                commandObj.context = context;
+                let editor = globalData.$mainWin.getNowEditor();
+                let context = globalData.$mainWin.getNowContext();
+                if(editor && context) {
+                    commandObj.editor = editor;
+                    commandObj.context = context;
+                    commandObj[command.command]();
+                }
+            } else {
+                commandObj[command.command]();
             }
-            commandObj[command.command]();
         }
     }
     onKeydown(e) {
