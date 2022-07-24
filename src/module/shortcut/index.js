@@ -186,4 +186,9 @@ export default class {
             }
         }
     }
+    onKeyup(e) {
+        if (!e.ctrlKey && !e.altKey && !e.shiftKey) {
+            this.prevKey = '';
+        }
+    }
 }
