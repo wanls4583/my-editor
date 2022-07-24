@@ -1,10 +1,10 @@
 import EventBus from '@/event';
 
 export const editorBarKeyMap = {
-    'Ctrl+KeyK Ctrl+KeyU': {
+    'Ctrl+K Ctrl+U': {
         command: 'closeSavedTab'
     },
-    'Ctrl+KeyK Ctrl+KeyW': {
+    'Ctrl+K Ctrl+W': {
         command: 'closeAllTab'
     },
     'Ctrl+F4': {

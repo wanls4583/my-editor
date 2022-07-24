@@ -136,6 +136,7 @@ export default {
 		this.persistence.loadFileTree();
 		this.persistence.loadTabData();
 		this.persistence.loadTerminalTabData();
+		this.persistence.loadShortcutData();
 		currentWindow.webContents.setZoomLevel(globalData.zoomLevel);
 		currentWindow.on(
 			'blur',

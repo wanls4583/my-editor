@@ -6,13 +6,13 @@
 import EventBus from '@/event';
 
 export const menuBarKeyMap = {
-	'Ctrl+KeyK Ctrl+KeyO': {
+	'Ctrl+K Ctrl+O': {
 		command: 'openFolder'
 	},
-	'Ctrl+KeyN': {
+	'Ctrl+N': {
 		command: 'newFile'
 	},
-	'Ctrl+KeyO': {
+	'Ctrl+O': {
 		command: 'openFile'
 	},
 }

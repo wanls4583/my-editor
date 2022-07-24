@@ -9,52 +9,52 @@ import globalData from '@/data/globalData';
 const remote = window.require('@electron/remote');
 
 export const windowKeyMap = {
-	'Ctrl+Shift+KeyS': {
+	'Ctrl+Shift+S': {
 		command: 'saveFileAs'
 	},
-	'Ctrl+Shift+KeyB': {
-		command: 'toggleSatusbar'
+	'Ctrl+Shift+B': {
+		command: 'toggleStatusbar'
 	},
-	'Ctrl+Shift+KeyM': {
+	'Ctrl+Shift+M': {
 		command: 'toggleMinimap'
 	},
-	'Ctrl+Shift+KeyF': {
+	'Ctrl+Shift+F': {
 		command: 'findInFiles'
 	},
-	'Ctrl+Shift+KeyH': {
+	'Ctrl+Shift+H': {
 		command: 'replaceInFiles'
 	},
-	'Ctrl+KeyR': {
+	'Ctrl+R': {
 		command: 'reloadWindow'
+	},
+	'Ctrl+=': {
+		command: 'zoomLevelPlus'
 	},
 	'Ctrl+Add': {
 		command: 'zoomLevelPlus'
 	},
-	'Ctrl+NumpadAdd': {
+	'Ctrl+NumAdd': {
 		command: 'zoomLevelPlus'
 	},
-	'Ctrl+Equal': {
-		command: 'zoomLevelPlus'
-	},
-	'Ctrl+Minus': {
+	'Ctrl+-': {
 		command: 'zoomLevelMinus'
 	},
-	'Ctrl+NumpadSubtract': {
+	'Ctrl+Num-': {
 		command: 'zoomLevelMinus'
 	},
-	'Ctrl+KeyS': {
+	'Ctrl+S': {
 		command: 'saveFile'
 	},
-	'Ctrl+KeyG': {
+	'Ctrl+G': {
 		command: 'gotoLine'
 	},
-	'Ctrl+KeyP': {
+	'Ctrl+P': {
 		command: 'openCmdPanel'
 	},
 	'Ctrl+L': {
 		command: 'toggleSidebar'
 	},
-	'Ctrl+Backquote': {
+	'Ctrl+`': {
 		command: 'toggleTerminal'
 	},
 	'F12': {
@@ -67,7 +67,7 @@ export class WindowCommand {
 	saveFileAs() {
 		EventBus.$emit('file-save-as', { id: globalData.nowEditorId });
 	}
-	toggleSatusbar() {
+	toggleStatusbar() {
 		EventBus.$emit('statusbar-toggle');
 	}
 	toggleMinimap() {

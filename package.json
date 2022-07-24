@@ -23,6 +23,7 @@
     "node-pty": "^0.11.0-beta11",
     "string-width": "^5.1.2",
     "strip-json-comments": "^4.0.0",
+    "vkeys": "^1.2.0",
     "vscode-oniguruma": "^1.6.2",
     "vscode-textmate": "^6.0.0",
     "vue": "^2.6.14",

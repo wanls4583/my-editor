@@ -32,6 +32,7 @@ const configPath = path.join(userPath, 'userData/config.my');
 const cachePath = path.join(userPath, 'userData/cache');
 const tabPath = path.join(userPath, 'userData/tab.my');
 const terminalTabPath = path.join(userPath, 'userData/tab_terminal.my');
+const shortcutPath = path.join(userPath, 'userData/shortcut.my');
 
 const globalData = {
 	scheduler: new Scheduler(),
@@ -43,6 +44,7 @@ const globalData = {
 	cachePath: cachePath,
 	tabPath: tabPath,
 	terminalTabPath: terminalTabPath,
+	shortcutPath: shortcutPath,
 	skipSearchDirs: skipSearchDirs,
 	skipSearchFiles: skipSearchFiles,
 	defaultWordPattern: defaultWordPattern,

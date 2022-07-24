@@ -138,4 +138,13 @@ export default class {
 			}, 5000);
 		}
 	}
+	loadShortcutData() {
+		if (fs.existsSync(globalData.shortcutPath)) {
+			Util.loadJsonFile(globalData.shortcutPath).then(data => {
+				if (data && data.length) {
+					EventBus.$emit('shortcut-loaded', data);
+				}
+			});
+		}
+	}
 }
