@@ -8,75 +8,94 @@ import globalData from '@/data/globalData';
 
 const remote = window.require('@electron/remote');
 
-export default class {
+export const windowKeyMap = {
+	'control+shift+KeyS': {
+		command: 'saveFileAs'
+	},
+	'control+shift+KeyB': {
+		command: 'toggleSatusbar'
+	},
+	'control+shift+KeyM': {
+		command: 'toggleMinimap'
+	},
+	'control+KeyR': {
+		command: 'reloadWindow'
+	},
+	'control+Add': {
+		command: 'zoomLevelPlus'
+	},
+	'control+NumpadAdd': {
+		command: 'zoomLevelPlus'
+	},
+	'control+Equal': {
+		command: 'zoomLevelPlus'
+	},
+	'control+Minus': {
+		command: 'zoomLevelMinus'
+	},
+	'control+NumpadSubtract': {
+		command: 'zoomLevelMinus'
+	},
+	'control+KeyS': {
+		command: 'saveFile'
+	},
+	'control+KeyG': {
+		command: 'gotoLine'
+	},
+	'control+KeyP': {
+		command: 'openCmdPanel'
+	},
+	'control+L': {
+		command: 'toggleSidebar'
+	},
+	'control+Backquote': {
+		command: 'toggleTerminal'
+	},
+	'F12': {
+		command: 'openDevTools'
+	}
+}
+
+export class WindowCommand {
 	constructor() { }
-	onKeydown(e) {
-		if(globalData.compositionstart) { //正在输中文，此时不做处理
-			return;
-		}
-		if (e.ctrlKey && e.shiftKey) {
-			switch (e.code) {
-				case 'KeyS':
-					e.preventDefault();
-					EventBus.$emit('file-save-as', { id: globalData.nowEditorId });
-					break;
-				case 'KeyL':
-					e.preventDefault();
-					EventBus.$emit('sidebar-toggle');
-					break;
-				case 'KeyB':
-					e.preventDefault();
-					EventBus.$emit('statusbar-toggle');
-					break;
-				case 'KeyM':
-					e.preventDefault();
-					EventBus.$emit('minimap-toggle');
-					break;
-			}
-		} else if (e.ctrlKey) {
-			switch (e.code) {
-				case 'KeyR':
-					e.preventDefault();
-					remote.getCurrentWindow().reload();
-					break;
-				case 'Add':
-				case 'NumpadAdd':
-				case 'Equal':
-					e.preventDefault();
-					globalData.zoomLevel += 1;
-					remote.getCurrentWindow().webContents.setZoomLevel(globalData.zoomLevel);
-					break;
-				case 'Minus':
-				case 'NumpadSubtract':
-					e.preventDefault();
-					globalData.zoomLevel -= 1;
-					remote.getCurrentWindow().webContents.setZoomLevel(globalData.zoomLevel);
-					break;
-				case 'KeyS':
-					e.preventDefault();
-					EventBus.$emit('file-save', { id: globalData.nowEditorId });
-					break;
-				case 'KeyG': //ctrl+g，跳转
-					e.preventDefault();
-					EventBus.$emit('menu-close');
-					EventBus.$emit('cmd-search-open', { input: ':' });
-					break;
-				case 'KeyP': //ctrl+p，命令面板
-					e.preventDefault();
-					EventBus.$emit('menu-close');
-					EventBus.$emit('cmd-search-open');
-					break;
-				case 'Backquote': //ctrl+`
-					e.preventDefault();
-					EventBus.$emit('terminal-toggle');
-					break;
-			}
-		} else {
-			switch (e.code) {
-				case 'F12':
-					remote.getCurrentWindow().openDevTools();
-					break;
-			}
-		}
+	saveFileAs() {
+		EventBus.$emit('file-save-as', { id: globalData.nowEditorId });
+	}
+	toggleSatusbar() {
+		EventBus.$emit('statusbar-toggle');
+	}
+	toggleMinimap() {
+		EventBus.$emit('minimap-toggle');
+	}
+	toggleSidebar() {
+		EventBus.$emit('sidebar-toggle');
+	}
+	toggleTerminal() {
+		EventBus.$emit('terminal-toggle');
+	}
+	reloadWindow() {
+		remote.getCurrentWindow().reload();
+	}
+	zoomLevelPlus() {
+		globalData.zoomLevel += 1;
+		remote.getCurrentWindow().webContents.setZoomLevel(globalData.zoomLevel);
+	}
+	zoomLevelMinus() {
+		globalData.zoomLevel -= 1;
+		remote.getCurrentWindow().webContents.setZoomLevel(globalData.zoomLevel);
+	}
+	saveFile() {
+		EventBus.$emit('file-save', { id: globalData.nowEditorId });
+	}
+	gotoLine() {
+		EventBus.$emit('menu-close');
+		EventBus.$emit('cmd-search-open', { input: ':' });
+	}
+	openCmdPanel() {
+		EventBus.$emit('menu-close');
+		EventBus.$emit('cmd-search-open');
+	}
+	openDevTools() {
+		remote.getCurrentWindow().openDevTools();
 	}
 }

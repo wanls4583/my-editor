@@ -71,7 +71,6 @@
 					@cut.prevent="onCut"
 					@focus="onFocus"
 					@input="onInput"
-					@keydown="onKeydown"
 					@paste.prevent="onPaste"
 					class="my-textarea"
 					ref="textarea"
@@ -114,7 +113,6 @@ import Select from '@/module/select/index';
 import Cursor from '@/module/cursor/index';
 import History from '@/module/history/index';
 import Context from '@/module/context/index';
-import ShortCut from '@/module/shortcut/editor';
 import EditorMenu from './EditorMenu.vue';
 import SearchDialog from './Search';
 import Menu from './Menu';
@@ -449,7 +447,6 @@ export default {
 			this.searcher = new Search(this, this.myContext, this.selecter);
 			this.fSelecter = new Select(this, this.myContext);
 			this.fSearcher = new Search(this, this.myContext, this.fSelecter);
-			this.shortcut = new ShortCut(this, this.myContext);
 			this.cursor = new Cursor(this, this.myContext);
 			this.cursor.addCursorPos(this.nowCursorPos);
 			this.wordPattern = Util.getWordPattern(this.language);
@@ -2174,13 +2171,6 @@ export default {
 		// 失去焦点
 		onBlur() {
 			this.hideCursor();
-		},
-		// 键盘按下事件
-		onKeydown(e) {
-			if (!this.editAble) {
-				return;
-			}
-			this.shortcut.onKeydown(e);
 		},
 		onShowDiff(line) {
 			let preDiff = this.getPrevDiff(this.diffRanges, line);

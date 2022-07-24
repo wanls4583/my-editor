@@ -42,7 +42,6 @@
 </template>
 <script>
 import TerminalBarMenu from './TerminalBarMenu';
-import ShortCut from '@/module/shortcut/terminal-bar';
 import EventBus from '@/event';
 import $ from 'jquery';
 
@@ -62,11 +61,7 @@ export default {
 		};
 	},
 	created() {
-		this.shortcut = new ShortCut(this);
 		this.initEventBus();
-		$(window).on('keydown', (e) => {
-			this.shortcut.onKeydown(e);
-		});
 	},
 	methods: {
 		initEventBus() {

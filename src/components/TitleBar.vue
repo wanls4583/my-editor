@@ -58,7 +58,6 @@
 <script>
 import Util from '@/common/util';
 import Menu from './Menu';
-import ShortCut from '@/module/shortcut/menu-bar';
 import EventBus from '@/event';
 import $ from 'jquery';
 const remote = window.require('@electron/remote');
@@ -339,11 +338,7 @@ export default {
 				op: 'openWorkspace',
 			},
 		]);
-		this.shortcut = new ShortCut(this);
 		this.initEventBus();
-		$(window).on('keydown', (e) => {
-			this.shortcut.onKeydown(e);
-		});
 	},
 	mounted() {
 		this.maximize = currentWindow.isMaximized();

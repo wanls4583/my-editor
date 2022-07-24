@@ -33,7 +33,6 @@
 </template>
 <script>
 import EditorBarMenu from './EditorBarMenu';
-import ShortCut from '@/module/shortcut/editor-bar';
 import EventBus from '@/event';
 import Util from '@/common/util';
 import $ from 'jquery';
@@ -57,11 +56,7 @@ export default {
 		};
 	},
 	created() {
-		this.shortcut = new ShortCut(this);
 		this.initEventBus();
-		$(window).on('keydown', (e) => {
-			this.shortcut.onKeydown(e);
-		});
 	},
 	methods: {
 		initEventBus() {

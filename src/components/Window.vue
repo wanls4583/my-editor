@@ -64,7 +64,7 @@ import Theme from '@/module/theme';
 import EventBus from '@/event';
 import Util from '@/common/util';
 import CommonEvent from '@/events';
-import WinShorcut from '@/module/shortcut/window';
+import Shortcut from '@/module/shortcut';
 import Persistence from '@/module/persistence';
 import $ from 'jquery';
 import globalData from '@/data/globalData';
@@ -128,7 +128,7 @@ export default {
 		window.globalData = globalData;
 		globalData.$mainWin = this;
 		this.commonEvent = new CommonEvent(this);
-		this.winShorcut = new WinShorcut(this);
+		this.shortcut = new Shortcut(this);
 		this.persistence = new Persistence();
 		this.initEvent();
 		this.initEventBus();
@@ -206,7 +206,7 @@ export default {
 					this.terminaSashMouseObj = null;
 				})
 				.on('keydown', (e) => {
-					this.winShorcut.onKeydown(e);
+					this.shortcut.onKeydown(e);
 				});
 		},
 		initResizeEvent() {
