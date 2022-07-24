@@ -9,46 +9,52 @@ import globalData from '@/data/globalData';
 const remote = window.require('@electron/remote');
 
 export const windowKeyMap = {
-	'control+shift+KeyS': {
+	'Ctrl+Shift+KeyS': {
 		command: 'saveFileAs'
 	},
-	'control+shift+KeyB': {
+	'Ctrl+Shift+KeyB': {
 		command: 'toggleSatusbar'
 	},
-	'control+shift+KeyM': {
+	'Ctrl+Shift+KeyM': {
 		command: 'toggleMinimap'
 	},
-	'control+KeyR': {
+	'Ctrl+Shift+KeyF': {
+		command: 'findInFiles'
+	},
+	'Ctrl+Shift+KeyH': {
+		command: 'replaceInFiles'
+	},
+	'Ctrl+KeyR': {
 		command: 'reloadWindow'
 	},
-	'control+Add': {
+	'Ctrl+Add': {
 		command: 'zoomLevelPlus'
 	},
-	'control+NumpadAdd': {
+	'Ctrl+NumpadAdd': {
 		command: 'zoomLevelPlus'
 	},
-	'control+Equal': {
+	'Ctrl+Equal': {
 		command: 'zoomLevelPlus'
 	},
-	'control+Minus': {
+	'Ctrl+Minus': {
 		command: 'zoomLevelMinus'
 	},
-	'control+NumpadSubtract': {
+	'Ctrl+NumpadSubtract': {
 		command: 'zoomLevelMinus'
 	},
-	'control+KeyS': {
+	'Ctrl+KeyS': {
 		command: 'saveFile'
 	},
-	'control+KeyG': {
+	'Ctrl+KeyG': {
 		command: 'gotoLine'
 	},
-	'control+KeyP': {
+	'Ctrl+KeyP': {
 		command: 'openCmdPanel'
 	},
-	'control+L': {
+	'Ctrl+L': {
 		command: 'toggleSidebar'
 	},
-	'control+Backquote': {
+	'Ctrl+Backquote': {
 		command: 'toggleTerminal'
 	},
 	'F12': {
@@ -72,6 +78,12 @@ export class WindowCommand {
 	}
 	toggleTerminal() {
 		EventBus.$emit('terminal-toggle');
+	}
+	findInFiles() {
+		EventBus.$emit('find-in-folder');
+	}
+	replaceInFiles() {
+		EventBus.$emit('find-in-folder', { replace: true });
 	}
 	reloadWindow() {
 		remote.getCurrentWindow().reload();

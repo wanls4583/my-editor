@@ -2,135 +2,135 @@ import EventBus from '@/event';
 import globalData from '../../data/globalData';
 
 export const editorKeyMap = {
-	'control+shift+Enter': {
+	'Ctrl+Shift+Enter': {
 		command: 'insertEmptyLineUp',
 		when: 'editorFocus'
 	},
-	'control+shift+ArrowLeft': {
+	'Ctrl+Shift+ArrowLeft': {
 		command: 'selectWordLeft',
 		when: 'editorFocus'
 	},
-	'control+shift+ArrowRight': {
+	'Ctrl+Shift+ArrowRight': {
 		command: 'selectWordRight',
 		when: 'editorFocus'
 	},
-	'control+shift+ArrowUp': {
+	'Ctrl+Shift+ArrowUp': {
 		command: 'moveLineUp',
 		when: 'editorFocus'
 	},
-	'control+shift+ArrowDown': {
+	'Ctrl+Shift+ArrowDown': {
 		command: 'moveLineDown',
 		when: 'editorFocus'
 	},
-	'control+shift+KeyD': {
+	'Ctrl+Shift+KeyD': {
 		command: 'copyLineUp',
 		when: 'editorFocus'
 	},
-	'control+shift+KeyH': {
+	'Ctrl+Shift+KeyH': {
 		command: 'formatCode',
 		when: 'editorFocus'
 	},
-	'control+shift+KeyK': {
+	'Ctrl+Shift+KeyK': {
 		command: 'deleteLine',
 		when: 'editorFocus'
 	},
-	'control+shift+KeyL': {
+	'Ctrl+Shift+KeyL': {
 		command: 'addCursorLineEnds',
 		when: 'editorFocus'
 	},
-	'control+shift+Slash': {
+	'Ctrl+Shift+Slash': {
 		command: 'toggleBlockComment',
 		when: 'editorFocus'
 	},
-	'alt+control+ArrowUp': {
+	'Ctrl+Alt+ArrowUp': {
 		command: 'addCursorAbove',
 		when: 'editorFocus'
 	},
-	'alt+control+ArrowDown': {
+	'Ctrl+Alt+ArrowDown': {
 		command: 'addCursorBelow',
 		when: 'editorFocus'
 	},
-	'alt+shift+ArrowDown': {
+	'Alt+Shift+ArrowDown': {
 		command: 'copyLineDown',
 		when: 'editorFocus'
 	},
-	'control+Enter': {
+	'Ctrl+Enter': {
 		command: 'insertEmptyLineDown',
 		when: 'editorFocus'
 	},
-	'control+ArrowLeft': {
+	'Ctrl+ArrowLeft': {
 		command: 'moveCursorWordLeft',
 		when: 'editorFocus'
 	},
-	'control+ArrowRight': {
+	'Ctrl+ArrowRight': {
 		command: 'moveCursorWordRight',
 		when: 'editorFocus'
 	},
-	'control+KeyA': {
+	'Ctrl+KeyA': {
 		command: 'selectAll',
 		when: 'editorFocus'
 	},
-	'control+KeyD': {
+	'Ctrl+KeyD': {
 		command: 'searchWordDown',
 		when: 'editorFocus'
 	},
-	'control+KeyF': {
+	'Ctrl+KeyF': {
 		command: 'openSearch',
 		when: 'editorFocus'
 	},
-	'control+KeyH': {
+	'Ctrl+KeyH': {
 		command: 'openReplace',
 		when: 'editorFocus'
 	},
-	'control+KeyZ': {
+	'Ctrl+KeyZ': {
 		command: 'undo',
 		when: 'editorFocus'
 	},
-	'control+KeyY': {
+	'Ctrl+KeyY': {
 		command: 'redo',
 		when: 'editorFocus'
 	},
-	'control+Delete': {
+	'Ctrl+Delete': {
 		command: 'deleteRightWord',
 		when: 'editorFocus'
 	},
-	'control+Backspace': {
+	'Ctrl+Backspace': {
 		command: 'deleteLeftWord',
 		when: 'editorFocus'
 	},
-	'control+BracketRight': {
+	'Ctrl+BracketRight': {
 		command: 'addAnIndent',
 		when: 'editorFocus'
 	},
-	'control+BracketLeft': {
+	'Ctrl+BracketLeft': {
 		command: 'removeAnIndent',
 		when: 'editorFocus'
 	},
-	'control+Slash': {
+	'Ctrl+Slash': {
 		command: 'toggleLineComment',
 		when: 'editorFocus'
 	},
-	'shift+Tab': {
+	'Shift+Tab': {
 		command: 'tabRemoveAnIndent',
 		when: 'editorFocus'
 	},
-	'shift+ArrowLeft': {
+	'Shift+ArrowLeft': {
 		command: 'selectLeft',
 		when: 'editorFocus'
 	},
-	'shift+ArrowRight': {
+	'Shift+ArrowRight': {
 		command: 'selectRight',
 		when: 'editorFocus'
 	},
-	'shift+ArrowUp': {
+	'Shift+ArrowUp': {
 		command: 'selectUp',
 		when: 'editorFocus'
 	},
-	'shift+ArrowDown': {
+	'Shift+ArrowDown': {
 		command: 'selectDown',
 		when: 'editorFocus'
 	},
-	'shift+KeyD': {
+	'Shift+KeyD': {
 		command: 'searchWordUp',
 		when: 'editorFocus'
 	},

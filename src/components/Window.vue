@@ -127,8 +127,9 @@ export default {
 		const currentWindow = remote.getCurrentWindow();
 		window.globalData = globalData;
 		globalData.$mainWin = this;
+		globalData.shortcut = new Shortcut(this);
+		this.shortcut = globalData.shortcut;
 		this.commonEvent = new CommonEvent(this);
-		this.shortcut = new Shortcut(this);
 		this.persistence = new Persistence();
 		this.initEvent();
 		this.initEventBus();

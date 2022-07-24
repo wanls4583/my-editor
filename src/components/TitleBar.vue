@@ -87,8 +87,9 @@ export default {
 				[
 					{
 						name: 'New File',
-						op: 'newFile',
-						shortcut: 'Ctrl+N',
+						value: 'newFile',
+						op: 'command',
+						shortcut: globalData.shortcut.findLabelByNmae('newFile'),
 					},
 				],
 				[
@@ -104,20 +105,23 @@ export default {
 				[
 					{
 						name: 'Save',
-						op: 'saveFile',
-						shortcut: 'Ctrl+S',
+						value: 'saveFile',
+						op: 'command',
+						shortcut: globalData.shortcut.findLabelByNmae('saveFile'),
 					},
 					{
 						name: 'Save As',
-						op: 'saveFileAs',
-						shortcut: 'Ctrl+Shift+S',
+						value: 'saveFileAs',
+						op: 'command',
+						shortcut: globalData.shortcut.findLabelByNmae('saveFileAs'),
 					},
 				],
 				[
 					{
 						name: 'Reload',
-						op: 'reload',
-						shortcut: 'Ctrl+R',
+						value: 'reloadWindow',
+						op: 'command',
+						shortcut: globalData.shortcut.findLabelByNmae('reloadWindow'),
 					},
 					{
 						name: 'Exit',
@@ -129,13 +133,15 @@ export default {
 				[
 					{
 						name: 'Undo',
-						op: 'undo',
-						shortcut: 'Ctrl+Z',
+						value: 'undo',
+						op: 'command',
+						shortcut: globalData.shortcut.findLabelByNmae('undo'),
 					},
 					{
 						name: 'Redo',
-						op: 'redo',
-						shortcut: 'Ctrl+Y',
+						value: 'redo',
+						op: 'command',
+						shortcut: globalData.shortcut.findLabelByNmae('redo'),
 					},
 				],
 				[
@@ -158,32 +164,37 @@ export default {
 				[
 					{
 						name: 'Delete Line',
-						op: 'deleteLine',
-						shortcut: 'Ctrl+Shift+K',
+						value: 'deleteLine',
+						op: 'command',
+						shortcut: globalData.shortcut.findLabelByNmae('deleteLine'),
 					},
 				],
 				[
 					{
 						name: 'Find',
-						op: 'find',
-						shortcut: 'Ctrl+F',
+						value: 'openSearch',
+						op: 'command',
+						shortcut: globalData.shortcut.findLabelByNmae('openSearch'),
 					},
 					{
 						name: 'Replace',
-						op: 'replace',
-						shortcut: 'Ctrl+H',
+						value: 'openReplace',
+						op: 'command',
+						shortcut: globalData.shortcut.findLabelByNmae('openReplace'),
 					},
 				],
 				[
 					{
 						name: 'Find in Files',
-						op: 'findInFiles',
-						shortcut: 'Ctrl+Shift+F',
+						value: 'findInFiles',
+						op: 'command',
+						shortcut: globalData.shortcut.findLabelByNmae('findInFiles'),
 					},
 					{
 						name: 'Replace in Files',
-						op: 'replaceInFiles',
-						shortcut: 'Ctrl+Shift+H',
+						value: 'replaceInFiles',
+						op: 'command',
+						shortcut: globalData.shortcut.findLabelByNmae('replaceInFiles'),
 					},
 				],
 			],
@@ -191,62 +202,73 @@ export default {
 				[
 					{
 						name: 'Select All',
-						op: 'selectAll',
-						shortcut: 'Ctrl+A',
+						value: 'selectAll',
+						op: 'command',
+						shortcut: globalData.shortcut.findLabelByNmae('selectAll'),
 					},
 				],
 				[
 					{
 						name: 'Copy Line Up',
-						op: 'copyLineUp',
-						shortcut: 'Ctrl+Shift+D',
+						value: 'copyLineUp',
+						op: 'command',
+						shortcut: globalData.shortcut.findLabelByNmae('copyLineUp'),
 					},
 					{
 						name: 'Copy Line Down',
-						op: 'copyLineDown',
-						shortcut: 'Alt+Shift+Down',
+						value: 'copyLineDown',
+						op: 'command',
+						shortcut: globalData.shortcut.findLabelByNmae('copyLineDown'),
 					},
 					{
 						name: 'Move Line Up',
-						op: 'moveLineUp',
-						shortcut: 'Ctrl+Shift+Up',
+						value: 'moveLineUp',
+						op: 'command',
+						shortcut: globalData.shortcut.findLabelByNmae('moveLineUp'),
 					},
 					{
 						name: 'Move Line Down',
-						op: 'moveLineDown',
-						shortcut: 'Ctrl+Shift+Down',
+						value: 'moveLineDown',
+						op: 'command',
+						shortcut: globalData.shortcut.findLabelByNmae('moveLineDown'),
 					},
 					{
 						name: 'Go to Line',
-						op: 'gotoLine',
-						shortcut: 'Ctrl+G',
+						value: 'gotoLine',
+						op: 'command',
+						shortcut: globalData.shortcut.findLabelByNmae('gotoLine'),
 					},
 				],
 				[
 					{
 						name: 'Add Cursor Above',
-						op: 'addCursorAbove',
-						shortcut: 'Ctrl+Alt+Up',
+						value: 'addCursorAbove',
+						op: 'command',
+						shortcut: globalData.shortcut.findLabelByNmae('addCursorAbove'),
 					},
 					{
 						name: 'Add Cursor Below',
-						op: 'addCursorBelow',
-						shortcut: 'Ctrl+Alt+Down',
+						value: 'addCursorBelow',
+						op: 'command',
+						shortcut: globalData.shortcut.findLabelByNmae('addCursorBelow'),
 					},
 					{
 						name: 'Add Cursor to Line Ends',
-						op: 'addCursorLineEnds',
-						shortcut: 'Ctrl+Shift+L',
+						value: 'addCursorLineEnds',
+						op: 'command',
+						shortcut: globalData.shortcut.findLabelByNmae('addCursorLineEnds'),
 					},
 					{
 						name: 'Add Next Occurence',
-						op: 'addNextOccurence',
-						shortcut: 'Ctrl+D',
+						value: 'searchWordDown',
+						op: 'command',
+						shortcut: globalData.shortcut.findLabelByNmae('searchWordDown'),
 					},
 					{
 						name: 'Add Previous Occurence',
-						op: 'addPrevOccurence',
-						shortcut: 'Shift+D',
+						value: 'searchWordUp',
+						op: 'command',
+						shortcut: globalData.shortcut.findLabelByNmae('searchWordUp'),
 					},
 					{
 						name: 'Select All Occurence',
@@ -265,31 +287,36 @@ export default {
 				[
 					{
 						name: 'Command Palette',
-						op: 'commandPanel',
-						shortcut: 'Ctrl+P',
+						value: 'openCmdPanel',
+						op: 'command',
+						shortcut: globalData.shortcut.findLabelByNmae('openCmdPanel'),
 					},
 					{
 						name: 'Terminal',
-						op: 'toggleTerminal',
-						shortcut: 'Ctrl+`',
+						value: 'toggleTerminal',
+						op: 'command',
+						shortcut: globalData.shortcut.findLabelByNmae('toggleTerminal'),
 						selected: globalData.views.terminal,
 					},
 					{
 						name: 'Minimap',
-						op: 'toggleMinimap',
-						shortcut: 'Ctrl+Shift+M',
+						value: 'toggleMinimap',
+						op: 'command',
+						shortcut: globalData.shortcut.findLabelByNmae('toggleMinimap'),
 						selected: globalData.views.minimap,
 					},
 					{
 						name: 'Sidebar',
-						op: 'toggleSidebar',
-						shortcut: 'Ctrl+Shift+L',
+						value: 'toggleSidebar',
+						op: 'command',
+						shortcut: globalData.shortcut.findLabelByNmae('toggleSidebar'),
 						selected: globalData.views.sidebar,
 					},
 					{
 						name: 'Statusbar',
-						op: 'toggleStatusbar',
-						shortcut: 'Ctrl+Shift+B',
+						value: 'toggleStatusbar',
+						op: 'command',
+						shortcut: globalData.shortcut.findLabelByNmae('toggleStatusbar'),
 						selected: globalData.views.statusbar,
 					},
 				],
@@ -325,13 +352,15 @@ export default {
 		this.fileMenuList.splice(1, 0, [
 			{
 				name: 'Open File',
-				op: 'openFile',
-				shortcut: 'Ctrl+O',
+				value: 'openFile',
+				op: 'command',
+				shortcut: globalData.shortcut.findLabelByNmae('openFile'),
 			},
 			{
 				name: 'Open Folder',
-				op: 'openFolder',
-				shortcut: 'Ctrl+K Ctrl+O',
+				value: 'openFolder',
+				op: 'command',
+				shortcut: globalData.shortcut.findLabelByNmae('openFolder'),
 			},
 			{
 				name: 'Open Workspace',
@@ -394,35 +423,20 @@ export default {
 		},
 		onFileMenuChange(item) {
 			switch (item.op) {
-				case 'newFile':
-					EventBus.$emit('file-open');
-					break;
 				case 'addFolder':
 					EventBus.$emit('folder-add');
 					break;
 				case 'saveWorkspaceAs':
 					EventBus.$emit('workspace-save-as');
 					break;
-				case 'saveFile':
-					EventBus.$emit('file-save', { id: globalData.nowEditorId });
-					break;
-				case 'saveFileAs':
-					EventBus.$emit('file-save-as', { id: globalData.nowEditorId });
-					break;
-				case 'openFile':
-					EventBus.$emit('file-open', null, true);
-					break;
-				case 'openFolder':
-					EventBus.$emit('folder-open');
-					break;
 				case 'openWorkspace':
 					EventBus.$emit('workspace-open');
 					break;
-				case 'reload':
-					currentWindow.reload();
-					break;
 				case 'exit':
 					currentWindow.close();
+					break;
+				case 'command':
+					globalData.shortcut.doComand({ command: item.value });
 					break;
 			}
 			requestAnimationFrame(() => {
@@ -432,27 +446,21 @@ export default {
 		onEditMenuChange(item) {
 			let editor = globalData.$mainWin.getNowEditor();
 			let context = globalData.$mainWin.getNowContext();
+			let hit = false;
 			switch (item.op) {
-				case 'findInFiles':
-					EventBus.$emit('find-in-folder');
+				case 'command':
+					globalData.shortcut.doComand({ command: item.value });
+					hit = true;
 					break;
-				case 'replaceInFiles':
-					EventBus.$emit('find-in-folder', { replace: true });
-					break;
+
 			}
-			if (!editor) {
-				this.editMenuVisible = false;
+			if (!editor || hit) {
+				requestAnimationFrame(() => {
+					this.editMenuVisible = false;
+				});
 				return;
 			}
 			switch (item.op) {
-				case 'undo':
-					editor.history.undo();
-					editor.focus();
-					break;
-				case 'redo':
-					editor.history.redo();
-					editor.focus();
-					break;
 				case 'cut':
 					Util.writeClipboard(context.getCopyText(true));
 					editor.focus();
@@ -467,17 +475,8 @@ export default {
 					});
 					editor.focus();
 					break;
-				case 'deleteLine':
-					context.deleteLine();
-					editor.focus();
-					break;
-				case 'find':
-					editor.openSearch();
-					editor.focus();
-					break;
-				case 'replace':
-					editor.openSearch(true);
-					editor.focus();
+				case 'command':
+					globalData.shortcut.doComand({ command: item.value });
 					break;
 			}
 			requestAnimationFrame(() => {
@@ -487,47 +486,20 @@ export default {
 		onSelectionMenuChange(item) {
 			let editor = globalData.$mainWin.getNowEditor();
 			let context = globalData.$mainWin.getNowContext();
+			let hit = false;
 			switch (item.op) {
-				case 'gotoLine':
-					EventBus.$emit('menu-close');
-					EventBus.$emit('cmd-search-open', { input: ':' });
+				case 'command':
+					globalData.shortcut.doComand({ command: item.value });
+					hit = true;
 					break;
 			}
-			if (!editor) {
-				this.selectionMenuVisible = false;
+			if (!editor || hit) {
+				requestAnimationFrame(() => {
+					this.selectionMenuVisible = false;
+				});
 				return;
 			}
 			switch (item.op) {
-				case 'selectAll':
-					editor.selecter.selectAll();
-					break;
-				case 'copyLineUp':
-					context.copyLineUp();
-					break;
-				case 'copyLineDown':
-					context.copyLineDown();
-					break;
-				case 'moveLineUp':
-					context.moveLineUp();
-					break;
-				case 'moveLineDown':
-					context.moveLineDown();
-					break;
-				case 'addCursorAbove':
-					editor.cursor.addCursorAbove();
-					break;
-				case 'addCursorBelow':
-					editor.cursor.addCursorBelow();
-					break;
-				case 'addCursorLineEnds':
-					editor.cursor.addCursorLineEnds();
-					break;
-				case 'addNextOccurence':
-					editor.searchWord('down');
-					break;
-				case 'addPrevOccurence':
-					editor.searchWord('up');
-					break;
 				case 'selectAllOccurence':
 					editor.selecter.selectAllOccurence();
 					break;
@@ -535,6 +507,9 @@ export default {
 					editor.cursor.switchMultiKeyCode();
 					item.keyCode = editor.cursor.multiKeyCode;
 					item.name = `Switch ${item.keyCode === 'alt' ? 'Ctrl' : 'Alt'}+Click to Multi-Cursor`;
+					break;
+				case 'command':
+					globalData.shortcut.doComand({ command: item.value });
 					break;
 			}
 			editor.focus();
@@ -556,20 +531,8 @@ export default {
 		},
 		onViewMenuChange(item) {
 			switch (item.op) {
-				case 'commandPanel':
-					EventBus.$emit('cmd-search-open');
-					break;
-				case 'toggleTerminal':
-					EventBus.$emit('terminal-toggle');
-					break;
-				case 'toggleMinimap':
-					EventBus.$emit('minimap-toggle');
-					break;
-				case 'toggleSidebar':
-					EventBus.$emit('sidebar-toggle');
-					break;
-				case 'toggleStatusbar':
-					EventBus.$emit('statusbar-toggle');
+				case 'command':
+					globalData.shortcut.doComand({ command: item.value });
 					break;
 			}
 			requestAnimationFrame(() => {

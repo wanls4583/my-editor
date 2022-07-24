@@ -21,6 +21,7 @@ export default class {
             this.keyMap[key] = this.keyMap[key] || [];
             this.keyMap[key].push(item);
             this.commandMap[item.command] = item;
+            item.key = key;
             item.commandObj = this.editorComand;
         }
         for (let key in editorBarKeyMap) {
@@ -28,6 +29,7 @@ export default class {
             this.keyMap[key] = this.keyMap[key] || [];
             this.keyMap[key].push(item);
             this.commandMap[item.command] = item;
+            item.key = key;
             item.commandObj = this.editorBarComand;
         }
         for (let key in menuBarKeyMap) {
@@ -35,6 +37,7 @@ export default class {
             this.keyMap[key] = this.keyMap[key] || [];
             this.keyMap[key].push(item);
             this.commandMap[item.command] = item;
+            item.key = key;
             item.commandObj = this.menuBarCommand;
         }
         for (let key in windowKeyMap) {
@@ -42,10 +45,11 @@ export default class {
             this.keyMap[key] = this.keyMap[key] || [];
             this.keyMap[key].push(item);
             this.commandMap[item.command] = item;
+            item.key = key;
             item.commandObj = this.windowCommand;
         }
     }
-    findCommand(key) {
+    findCommandByKey(key) {
         let arr = this.keyMap[key];
         if (arr) {
             let editor = globalData.$mainWin.getNowEditor();
@@ -61,6 +65,26 @@ export default class {
             }
         }
     }
+    findCommandByName(command) {
+        return this.commandMap[command];
+    }
+    findLabelByNmae(command) {
+        let key = '';
+        command = this.commandMap[command];
+        if(command) {
+            key = command.key;
+        }
+        if(key.indexOf(' ') > -1) {
+            let i=0
+            key = key.split(' ');
+            while(key[0][i]===key[1][i]) {
+                i++;
+            }
+            key = key[0] + ' ' + key[1].slice(i);
+        }
+        key = key.replace(/Key/, '');
+        return key;
+    }
     doComand(command) {
         let editor = globalData.$mainWin.getNowEditor();
         let context = globalData.$mainWin.getNowContext();
@@ -68,7 +92,8 @@ export default class {
         if (command.commandObj) {
             commandObj = command.commandObj;
         } else {
-            commandObj = this.commandMap[command.command];
+            command = this.findCommandByName(command.command);
+            commandObj = command && command.commandObj;
         }
         if (commandObj && commandObj[command.command] && editor && context) {
             if (this.editorComand === commandObj) {
@@ -85,21 +110,21 @@ export default class {
         let keys = [];
         let key = e.code;
         let command = '';
-        if (e.altKey) {
-            keys.push('alt');
-        }
         if (e.ctrlKey) {
-            keys.push('control');
+            keys.push('Ctrl');
+        }
+        if (e.altKey) {
+            keys.push('Alt');
         }
         if (e.shiftKey) {
-            keys.push('shift');
+            keys.push('Shift');
         }
         if (keys.indexOf(key) == -1) {
             keys.push(key);
             key = keys.join('+');
-            command = this.findCommand(key);
+            command = this.findCommandByKey(key);
             if (!command && this.prevKey) {
-                command = this.findCommand(this.prevKey + ' ' + key)
+                command = this.findCommandByKey(this.prevKey + ' ' + key)
             }
             if (command) {
                 this.doComand(command);

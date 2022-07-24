@@ -1,13 +1,13 @@
 import EventBus from '@/event';
 
 export const editorBarKeyMap = {
-    'control+KeyK control+KeyU': {
+    'Ctrl+KeyK Ctrl+KeyU': {
         command: 'closeSavedTab'
     },
-    'control+KeyK control+KeyW': {
+    'Ctrl+KeyK Ctrl+KeyW': {
         command: 'closeAllTab'
     },
-    'control+F4': {
+    'Ctrl+F4': {
         command: 'closeTab'
     },
 }
@@ -15,10 +15,10 @@ export const editorBarKeyMap = {
 export class EditorBarComand {
     constructor() { }
     closeSavedTab() {
-        EventBus.$on('editor-close-saved');
+        EventBus.$emit('editor-close-saved');
     }
     closeAllTab() {
-        EventBus.$on('editor-close-all');
+        EventBus.$emit('editor-close-all');
     }
     closeTab() {
         EventBus.$emit('editor-close');

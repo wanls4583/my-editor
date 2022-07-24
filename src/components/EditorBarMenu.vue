@@ -12,6 +12,7 @@
 import $ from 'jquery';
 import Menu from './Menu';
 import EventBus from '@/event';
+import globalData from '@/data/globalData';
 
 export default {
 	name: 'EditorBarMenu',
@@ -25,7 +26,7 @@ export default {
 					{
 						name: 'Close',
 						op: 'close',
-						shortcut: 'Ctrl+F4',
+						shortcut: globalData.shortcut.findLabelByNmae('closeTab'),
 					},
 					{
 						name: 'Close to the Left',
@@ -37,8 +38,9 @@ export default {
 					},
 					{
 						name: 'Close Saved',
-						op: 'closeSaved',
-						shortcut: 'Ctrl+K U',
+						value: 'closeSavedTab',
+						op: 'command',
+						shortcut: globalData.shortcut.findLabelByNmae('closeSavedTab'),
 					},
 					{
 						name: 'Close Other',
@@ -46,8 +48,9 @@ export default {
 					},
 					{
 						name: 'Close All',
-						op: 'closeAll',
-						shortcut: 'Ctrl+K W',
+						value: 'closeAllTab',
+						op: 'command',
+						shortcut: globalData.shortcut.findLabelByNmae('closeAllTab'),
 					},
 				],
 			],
@@ -93,14 +96,11 @@ export default {
 				case 'closeToRight':
 					EventBus.$emit('editor-close-to-right', this.tabId);
 					break;
-				case 'closeSaved':
-					EventBus.$emit('editor-close-saved', this.tabId);
-					break;
 				case 'closeOther':
 					EventBus.$emit('editor-close-other', this.tabId);
 					break;
-				case 'closeAll':
-					EventBus.$emit('editor-close-all', this.tabId);
+				case 'command':
+					globalData.shortcut.doComand({ command: item.value });
 					break;
 			}
 			this.menuVisible = false;
