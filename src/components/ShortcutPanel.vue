@@ -31,7 +31,7 @@
 		</div>
 		<div class="my-shortcut-edit" v-if="editVisible">
 			<div class="edit-tip">Press desired key combination and then press ENTER</div>
-			<input @keydown="onKeydown" @keyup="onKeyup" ref="input" spellcheck="false" type="text" v-model="key" />
+			<input @keydown="onKeydown" @keyup="onKeyup" @blur="onBlur" ref="input" spellcheck="false" type="text" v-model="key" />
 		</div>
 	</div>
 </template>
@@ -226,6 +226,9 @@ export default {
 			e.stopPropagation();
 			index = this.keys.indexOf(key);
 			this.keys.splice(index, 1);
+		},
+		onBlur() {
+			this.editVisible = false;
 		},
 		onWheel(e) {
 			this.scrollDeltaY = e.deltaY;

@@ -151,15 +151,10 @@ class Context {
 			} else if (command.afterCursorPosList) {
 				this.addCursorList(command.afterCursorPosList);
 			}
-			if (typeof command.originScrollTop === 'number') {
-				this.editor.setStartLine(command.originScrollTop);
-			}
 			historyArr.serial = command.serial;
 			historyArr.afterCursorPosList = command.afterCursorPosList;
 			historyArr.originCursorPosList = command._originCursorPosList;
 			historyArr._originCursorPosList = command.originCursorPosList;
-			historyArr.originScrollTop = command._originScrollTop;
-			historyArr._originScrollTop = command.originScrollTop;
 			this.editor.history.updateHistory(historyArr);
 		} else {
 			afterCursorPosList = _getCursorList.call(this);
@@ -169,7 +164,9 @@ class Context {
 			this.editor.history.pushHistory(historyArr, historyJoinAble);
 			this.addCursorList(afterCursorPosList);
 		}
-		this.editor.setNowCursorPos(this.editor.cursor.multiCursorPos.get(0));
+		let nowCursorPos = this.editor.cursor.multiCursorPos.get(0);
+		this.editor.scrollToLine(nowCursorPos.line, nowCursorPos.column, true);
+		this.editor.setNowCursorPos(nowCursorPos);
 		return historyArr;
 
 		function _getCursorList() {
@@ -400,15 +397,10 @@ class Context {
 			} else if (command.afterCursorPosList) {
 				this.addCursorList(command.afterCursorPosList);
 			}
-			if (typeof command.originScrollTop === 'number') {
-				this.editor.setStartLine(command.originScrollTop);
-			}
 			historyArr.serial = command.serial;
 			historyArr.afterCursorPosList = command.afterCursorPosList;
 			historyArr.originCursorPosList = command._originCursorPosList;
 			historyArr._originCursorPosList = command.originCursorPosList;
-			historyArr.originScrollTop = command._originScrollTop;
-			historyArr._originScrollTop = command.originScrollTop;
 			this.editor.history.updateHistory(historyArr);
 		} else {
 			if (historyArr.length > 0) {
@@ -421,7 +413,9 @@ class Context {
 				this.editor.cursor.setCursorPos(rangeList[0]);
 			}
 		}
-		this.editor.setNowCursorPos(this.editor.cursor.multiCursorPos.get(0));
+		let nowCursorPos = this.editor.cursor.multiCursorPos.get(0);
+		this.editor.scrollToLine(nowCursorPos.line, nowCursorPos.column, true);
+		this.editor.setNowCursorPos(nowCursorPos);
 		return historyArr;	
 	}
 	/**
@@ -721,7 +715,6 @@ class Context {
 				delDirect
 			});
 			historyArr.originCursorPosList = originCursorPosList;
-			historyArr.originScrollTop = this.editor.scrollTop;
 			this.addCursorList(historyArr.map((item) => {
 				return item.cursorPos
 			}));

@@ -599,7 +599,7 @@ export default {
 						this.$refs.minimap && this.$refs.minimap.clearRenderTask();
 						this.setErrors([]);
 						this.setAutoTip(null);
-						this.render(true);
+						this.render();
 					}
 				})
 			);
@@ -1449,9 +1449,19 @@ export default {
 				});
 			}
 		},
-		scrollToLine(line, column) {
+		scrollToLine(line, column, weackScroll) {
 			let scrollTop = (line - 1) * this.charObj.charHight - this.scrollerArea.height / 2;
 			scrollTop = scrollTop > 0 ? scrollTop : 0;
+			if (weackScroll) {
+				let height = this.folder.getRelativeLine(line) * this.charObj.charHight;
+				if (height + this.charObj.charHight > this.scrollTop + this.scrollerArea.height ||
+					height < this.scrollTop + this.charObj.charHight) {
+					weackScroll = false;
+				}
+			}
+			if (weackScroll) {
+				return false;
+			}
 			this.setStartLine(scrollTop);
 			if (column !== undefined) {
 				this.renderedCb.push(() => {
@@ -1460,6 +1470,7 @@ export default {
 					});
 				});
 			}
+			return true;
 		},
 		scrollToCol(line, column) {
 			let scrollLeft = this.getStrWidthByLine(line, 0, column) - this.scrollerArea.width / 2;
@@ -1513,8 +1524,9 @@ export default {
 			this.$nextTick(() => {
 				this.setNowCursorPosing = false;
 				this.cursorVisible = false;
-				let height = this.folder.getRelativeLine(this.nowCursorPos.line + 1) * this.charObj.charHight;
-				if (height > this.scrollTop + this.scrollerArea.height) {
+				let height = this.folder.getRelativeLine(this.nowCursorPos.line) * this.charObj.charHight;
+				if (height + this.charObj.charHight > this.scrollTop + this.scrollerArea.height) {
+					height += this.charObj.charHight;
 					height = height > this.contentHeight ? this.contentHeight : height;
 					this.setStartLine(height - this.scrollerArea.height, true);
 				} else if (height < this.scrollTop + this.charObj.charHight) {
@@ -1599,9 +1611,6 @@ export default {
 			maxScrollTop = maxScrollTop < 0 ? 0 : maxScrollTop;
 			if (scrollTop > maxScrollTop) {
 				scrollTop = maxScrollTop;
-			}
-			if (Math.abs(scrollTop - this.scrollTop) < 1) {
-				return;
 			}
 			startLine = Math.floor(scrollTop / this.charObj.charHight);
 			startLine++;
