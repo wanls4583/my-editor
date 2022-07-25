@@ -10,7 +10,8 @@ export default class {
     constructor() {
         this.prevKeyStr = '';
         this.keys = [];
-        this.cKeys = ['ctrl', 'alt', 'shift'];
+        this.userShortcut = [];
+        this.cKeys = ['Ctrl', 'Alt', 'Shift'];
         this.keyMap = {};
         this.commandMap = {};
         this.editorComand = new EditorComand();
@@ -19,7 +20,15 @@ export default class {
         this.windowCommand = new WindowCommand();
         this.initKeyMap();
         EventBus.$on('shortcut-loaded', (data) => {
+            this.userShortcut = data;
             this.initUserKeyMap(data);
+        });
+        EventBus.$on('shortcut-change', (data) => {
+            this.userShortcut = this.userShortcut.filter((item) => {
+                return data.command !== item.command;
+            });
+            this.userShortcut.push(data);
+            globalData.$mainWin.persistence.storeShortcutData(this.userShortcut);
         });
     }
     initKeyMap() {
@@ -30,6 +39,7 @@ export default class {
             this.keyMap[_key].push(item);
             this.commandMap[item.command] = item;
             item.key = key;
+            item.label = this.getLabel(key);
             item.commandObj = this.editorComand;
         }
         for (let key in editorBarKeyMap) {
@@ -39,6 +49,7 @@ export default class {
             this.keyMap[_key].push(item);
             this.commandMap[item.command] = item;
             item.key = key;
+            item.label = this.getLabel(key);
             item.commandObj = this.editorBarComand;
         }
         for (let key in menuBarKeyMap) {
@@ -48,6 +59,7 @@ export default class {
             this.keyMap[_key].push(item);
             this.commandMap[item.command] = item;
             item.key = key;
+            item.label = this.getLabel(key);
             item.commandObj = this.menuBarCommand;
         }
         for (let key in windowKeyMap) {
@@ -57,6 +69,7 @@ export default class {
             this.keyMap[_key].push(item);
             this.commandMap[item.command] = item;
             item.key = key;
+            item.label = this.getLabel(key);
             item.commandObj = this.windowCommand;
         }
     }
@@ -67,12 +80,6 @@ export default class {
             let key = item.key || '';
             let command = this.findCommandByName(item.command);
             if (command && /^(?:ctrl\+|alt\+|shift\+){0,3}(?:[^\s\n] [^\s\n]|(?:[^\s\n]\+)?[^\s\n])$/i.test(key)) {
-                if (key.indexOf(' ') > -1) {
-                    key = key.split(' ');
-                    // ctrl+k w 需要转换成成 ctrl+k ctrl+w
-                    key[1] = key[0].slice(0, -key[1].length) + key[1];
-                    key = key[0] + key[1];
-                }
                 let _key = key.toLowerCase();
                 let _oKey = command.key.toLowerCase();
                 let arr = this.keyMap[_oKey];
@@ -83,6 +90,7 @@ export default class {
                 this.keyMap[_key] = this.keyMap[_key] || [];
                 this.keyMap[_key].push(command);
                 command.key = key;
+                command.label = this.getLabel(key);
                 command.source = 'USER';
             }
         }
@@ -106,34 +114,6 @@ export default class {
     findCommandByName(command) {
         return this.commandMap[command];
     }
-    findLabelByNmae(command) {
-        let key = '';
-        command = this.commandMap[command];
-        if (command) {
-            key = command.key;
-        }
-        if (key.indexOf(' ') > -1) {
-            let i = 0
-            key = key.split(' ');
-            while (key[0][i] === key[1][i]) {
-                i++;
-            }
-            key = key[0] + ' ' + key[1].slice(i);
-        }
-        if (key) {
-            key = key.split(' ');
-            key.forEach((item, index) => {
-                let arr = item.split('+');
-                for (let i = 0; i < arr.length; i++) {
-                    arr[i] = arr[i][0].toUpperCase() + arr[i].slice(1);
-                }
-                item = arr.join('+');
-                key[index] = item;
-            });
-            key = key.join(' ');
-        }
-        return key;
-    }
     doComand(command) {
         let commandObj = command.commandObj;
         if (command.commandObj) {
@@ -156,11 +136,27 @@ export default class {
             }
         }
     }
+    formatKey(key) {
+        key = key.replace('+', 'Add');
+        key = key[0].toUpperCase() + key.slice(1);
+        return key;
+    }
+    getLabel(key) {
+        // if (key.indexOf(' ') > -1) {
+        //     let i = 0
+        //     key = key.split(' ');
+        //     while (key[0][i] === key[1][i]) {
+        //         i++;
+        //     }
+        //     key = key[0] + ' ' + key[1].slice(i);
+        // }
+        return key;
+    }
     getAllKeys() {
         let list = [];
-        for(let key in this.keyMap) {
+        for (let key in this.keyMap) {
             let arr = this.keyMap[key];
-            for(let i=0; i<arr.length; i++) {
+            for (let i = 0; i < arr.length; i++) {
                 let item = arr[i];
                 list.push({
                     key: item.key,
@@ -170,43 +166,40 @@ export default class {
                 });
             }
         }
-        return list.sort((a, b)=>{
-            if(a.command > b.command) {
+        return list.sort((a, b) => {
+            if (a.command > b.command) {
                 return 1;
-            } else if(a.command < b.command) {
+            } else if (a.command < b.command) {
                 return -1;
             }
             return 0;
         });
     }
     onKeydown(e) {
-        if (globalData.compositionstart) { //正在输中文，此时不做处理
-            return;
-        }
-        let key = vkeys.getKey(e.keyCode);
+        let key = this.formatKey(vkeys.getKey(e.keyCode));
         let command = '';
         let keyStr = '';
         if (this.preKeyTimer) {
             clearTimeout(this.preKeyTimer);
         }
-        if (this.cKeys.indexOf(key) == -1) {
-            key = key.replace('+', 'Add');
-            keyStr = this.keys.join('+');
-            keyStr = keyStr ? keyStr + '+' + key : key;
+        keyStr = this.keys.join('+');
+        keyStr = keyStr ? keyStr + '+' + key : key;
+        if (this.prevKeyStr) {
+            command = this.findCommandByKey(this.prevKeyStr + ' ' + keyStr)
+        }
+        if(!command) {
             command = this.findCommandByKey(keyStr);
-            if (!command && this.prevKeyStr) {
-                command = this.findCommandByKey(this.prevKeyStr + ' ' + keyStr)
-            }
-            if (command) {
-                e.stopPropagation();
-                e.preventDefault();
-                this.doComand(command);
-                this.keys = [];
-                this.prevKeyStr = '';
-                return;
-            } else {
-                this.prevKeyStr = keyStr;
-            }
+        }
+        if (command) {
+            e.stopPropagation();
+            e.preventDefault();
+            this.doComand(command);
+            this.prevKeyStr = '';
+            return;
+        } else if (this.cKeys.indexOf(key) === -1) {
+            this.prevKeyStr = keyStr;
+        } else {
+            this.prevKeyStr = '';
         }
         if (this.keys.indexOf(key) === -1) {
             this.keys.push(key);
@@ -214,9 +207,11 @@ export default class {
     }
     onKeyup(e) {
         if (this.keys.length) {
-            let key = vkeys.getKey(e.keyCode);
+            let key = this.formatKey(vkeys.getKey(e.keyCode));
             let index = this.keys.indexOf(key);
-            this.keys.splice(index, 1);
+            if(index > -1) {
+                this.keys.splice(index, 1);
+            }
         }
         if (this.prevKeyStr) {
             // prevKeyStr 两秒后失效

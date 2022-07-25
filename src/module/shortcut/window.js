@@ -10,7 +10,8 @@ const remote = window.require('@electron/remote');
 
 export const windowKeyMap = {
 	'Ctrl+Shift+S': {
-		command: 'saveFileAs'
+		command: 'saveFileAs',
+		when: 'editorFocus'
 	},
 	'Ctrl+Shift+B': {
 		command: 'toggleStatusbar'
@@ -43,7 +44,8 @@ export const windowKeyMap = {
 		command: 'zoomLevelMinus'
 	},
 	'Ctrl+S': {
-		command: 'saveFile'
+		command: 'saveFile',
+		when: 'editorFocus'
 	},
 	'Ctrl+G': {
 		command: 'gotoLine'
@@ -57,7 +59,7 @@ export const windowKeyMap = {
 	'Ctrl+`': {
 		command: 'toggleTerminal'
 	},
-	'Ctrl+K S': {
+	'Ctrl+K Ctrl+S': {
 		command: 'openShortcut'
 	},
 	'F12': {

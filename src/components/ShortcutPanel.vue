@@ -6,7 +6,7 @@
 <template>
 	<div @mousedown.stop @mouseenter="showScrollBar" @mouseleave="hideScrollBar" @mousemove="showScrollBar" @wheel.stop="onWheel" class="my-shortcut-panel" ref="wrap">
 		<div class="my-shortcut-search">
-			<input @input="search" @keydown.enter="search" ref="input" spellcheck="false" type="text" v-model="searchText" />
+			<input @input="search" ref="searchInput" spellcheck="false" type="text" v-model="searchText" />
 		</div>
 		<div class="my-shortcut-title">
 			<span class="edit-col"></span>
@@ -19,7 +19,7 @@
 			<div :style="{ top: -deltaTop + 'px' }" class="my-shortcut-content">
 				<div :class="[item.active?'my-active':'']" :id="item.id" @click.stop="onClickItem(item)" class="my-shortcut-item" v-for="item in renderList">
 					<span class="edit-col">
-						<i class="my-icon my-icon-edit"></i>
+						<i @click="onEdit(item)" class="my-icon my-icon-edit"></i>
 					</span>
 					<span class="command-col">{{item.command}}</span>
 					<span class="key-col">{{item.key}}</span>
@@ -29,9 +29,14 @@
 			</div>
 			<v-scroll-bar :class="{'my-scroll-visible': scrollVisible}" :height="contentHeight" :scroll-top="scrollTop" @scroll="onScroll"></v-scroll-bar>
 		</div>
+		<div class="my-shortcut-edit" v-if="editVisible">
+			<div class="edit-tip">Press desired key combination and then press ENTER</div>
+			<input @keydown="onKeydown" @keyup="onKeyup" ref="input" spellcheck="false" type="text" v-model="key" />
+		</div>
 	</div>
 </template>
 <script>
+import vkeys from 'vkeys';
 import VScrollBar from './VScrollBar.vue';
 import Util from '@/common/util';
 import EventBus from '@/event';
@@ -47,12 +52,13 @@ export default {
 			itemHeight: 30,
 			scrollTop: 0,
 			scrollVisible: false,
+			editVisible: false,
 			startLine: 1,
 			maxVisibleLines: 100,
 			domHeight: 0,
 			deltaTop: 0,
 			searchText: '',
-			value: '',
+			key: '',
 			list: [],
 			renderList: [],
 		};
@@ -63,6 +69,13 @@ export default {
 		}
 	},
 	created() {
+		this.keys = [];
+		this.cKeys = ['Ctrl', 'Alt', 'Shift'];
+		this.prevKeyStr = '';
+		EventBus.$on('shortcut-loaded', (data) => {
+			this.list = globalData.shortcut.getAllKeys();
+			this.setStartLine(this.checkScrollTop(this.scrollTop));
+		});
 	},
 	mounted() {
 		this.domHeight = this.$refs.wrap.clientHeight;
@@ -70,8 +83,10 @@ export default {
 		this.list = globalData.shortcut.getAllKeys();
 		this.initResizeEvent();
 		this.render();
+		this.focus();
 	},
 	destroyed() {
+		cancelAnimationFrame(this.focusTimer);
 		globalData.scheduler.removeUiTask(this.wheelTask);
 	},
 	methods: {
@@ -81,6 +96,7 @@ export default {
 					this.domHeight = this.$refs.scroller.clientHeight;
 					this.maxVisibleLines = Math.ceil(this.domHeight / this.itemHeight) + 1;
 					this.setStartLine(this.checkScrollTop(this.scrollTop));
+					this.focus();
 				}
 			});
 			resizeObserver.observe(this.$refs.scroller);
@@ -89,6 +105,12 @@ export default {
 			cancelAnimationFrame(this.renderTimer);
 			this.renderTimer = requestAnimationFrame(() => {
 				this.renderList = this.list.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines);
+			});
+		},
+		focus() {
+			cancelAnimationFrame(this.focusTimer);
+			this.focusTimer = requestAnimationFrame(() => {
+				this.$refs.searchInput.focus();
 			});
 		},
 		showScrollBar() {
@@ -111,13 +133,99 @@ export default {
 			this.render();
 		},
 		search() {
-
+			let list = globalData.shortcut.getAllKeys();
+			if (this.searchText) {
+				let results = [];
+				list.forEach((item) => {
+					let m = Util.fuzzyMatch(this.searchText, item.command, true) ||
+						Util.fuzzyMatch(this.searchText, item.key, true);
+					if (m) {
+						results.push({ item: item, score: m.score });
+					}
+				});
+				results.sort((a, b) => {
+					return b.score - a.score;
+				});
+				this.list = results.map((item) => {
+					return item.item;
+				});
+			} else {
+				this.list = list;
+			}
+			this.setStartLine(0);
+		},
+		confirmEdit() {
+			let obj = {
+				key: this.key,
+				command: this.editItem.command
+			};
+			this.editItem.key = this.key;
+			this.editVisible = false;
+			this.render();
+			globalData.shortcut.initUserKeyMap([obj]);
+			EventBus.$emit('shortcut-change', obj);
+		},
+		formatKey(key) {
+			key = key.replace('+', 'Add');
+			key = key[0].toUpperCase() + key.slice(1);
+			return key;
 		},
 		onClickItem(item) {
 			for (let i = 0; i < this.list.length; i++) {
-				this.list[i].active = this.list[i].command === item.command;
+				this.list[i].active = false;
 			}
+			item.active = true;
 			this.render();
+		},
+		onEdit(item) {
+			this.editItem = item;
+			this.key = '';
+			this.prevKeyStr = '';
+			this.editVisible = true;
+			this.$nextTick(() => {
+				this.$refs.input.focus();
+			});
+		},
+		onKeydown(e) {
+			let key = this.formatKey(vkeys.getKey(e.keyCode));
+			let command = '';
+			let keyStr = '';
+			e.preventDefault();
+			e.stopPropagation();
+			if (key === 'Escape') { //退出编辑
+				this.editVisible = false;
+				return;
+			}
+			if (key === 'Enter' || key === 'Numenter') {
+				if (this.keys.length === 0) { //编辑完成
+					this.confirmEdit();
+					return;
+				}
+			}
+			keyStr = this.keys.join('+');
+			keyStr = keyStr ? keyStr + '+' + key : key;
+			if (this.prevKeyStr) {
+				this.key = this.prevKeyStr + ' ' + keyStr;
+				this.prevKeyStr = '';
+			} else {
+				this.key = keyStr;
+				if (this.cKeys.indexOf(key) === -1) {
+					this.prevKeyStr = keyStr;
+				} else {
+					this.prevKeyStr = '';
+				}
+			}
+			if (this.keys.indexOf(key) === -1) {
+				this.keys.push(key);
+			}
+		},
+		onKeyup(e) {
+			let index = -1;
+			let key = this.formatKey(vkeys.getKey(e.keyCode));
+			e.preventDefault();
+			e.stopPropagation();
+			index = this.keys.indexOf(key);
+			this.keys.splice(index, 1);
 		},
 		onWheel(e) {
 			this.scrollDeltaY = e.deltaY;

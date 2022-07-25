@@ -26,7 +26,6 @@ export default {
 					{
 						name: 'Close',
 						op: 'close',
-						shortcut: globalData.shortcut.findLabelByNmae('closeTab'),
 					},
 					{
 						name: 'Close to the Left',
@@ -40,7 +39,6 @@ export default {
 						name: 'Close Saved',
 						value: 'closeSavedTab',
 						op: 'command',
-						shortcut: globalData.shortcut.findLabelByNmae('closeSavedTab'),
 					},
 					{
 						name: 'Close Other',
@@ -50,7 +48,6 @@ export default {
 						name: 'Close All',
 						value: 'closeAllTab',
 						op: 'command',
-						shortcut: globalData.shortcut.findLabelByNmae('closeAllTab'),
 					},
 				],
 			],
@@ -63,12 +60,33 @@ export default {
 	},
 	created() {
 		this.initEventBus();
+		this.initShortcut();
 	},
 	methods: {
 		initEventBus() {
 			EventBus.$on('close-menu', () => {
 				this.menuVisible = false;
 			});
+			EventBus.$on('shortcut-change', () => {
+				this.initShortcut();
+			});
+		},
+		initShortcut() {
+			_check(this.menuList);
+
+			function _check(list) {
+				if (list instanceof Array) {
+					list.forEach((item) => {
+						_check(item);
+					});
+				} else if (list.op === 'command') {
+					let command = globalData.shortcut.findCommandByName(list.value);
+					if (command) {
+						list.shortcut = command.label || '';
+						list.name = list.name || command.name || '';
+					}
+				}
+			}
 		},
 		show(e, id) {
 			this.tabId = id;

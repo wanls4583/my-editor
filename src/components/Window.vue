@@ -212,7 +212,8 @@ export default {
 				})
 				.on('keydown', (e) => {
 					this.shortcut.onKeydown(e);
-				}).on('keyup', (e) => {
+				})
+				.on('keyup', (e) => {
 					this.shortcut.onKeyup(e);
 				});
 		},

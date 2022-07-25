@@ -140,6 +140,11 @@ export default class {
 			}, 5000);
 		}
 	}
+	storeShortcutData(data) {
+		Util.writeFile(globalData.shortcutPath, JSON.stringify(data)).then(() => {
+			EventBus.$emit('shortcut-stored');
+		});
+	}
 	loadShortcutData() {
 		if (fs.existsSync(globalData.shortcutPath)) {
 			Util.loadJsonFile(globalData.shortcutPath).then(data => {

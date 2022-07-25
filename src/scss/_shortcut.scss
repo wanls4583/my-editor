@@ -5,12 +5,12 @@
 		left: 0;
 		width: 100%;
 		height: 100%;
-		padding: 0 15px;
+		padding: 15px;
 		user-select: none;
 
 		.edit-col {
-            display: flex;
-            justify-content: center;
+			display: flex;
+			justify-content: center;
 			width: 50px;
 		}
 
@@ -34,11 +34,11 @@
 	&-shortcut-search {
 		display: flex;
 		align-items: center;
-		height: 50px;
-		padding: 10px 0;
+
 		input {
 			width: 100%;
-			height: 100%;
+			height: 35px;
+			padding: 0 15px;
 			background-color: var(--my-input-background);
 			color: var(--my-input-foreground);
 			border: 1px solid transparent;
@@ -55,13 +55,13 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		height: 35px;
-        border-bottom: 1px solid var(--my-focusBorder);
+		height: 45px;
+		border-bottom: 1px solid var(--my-focusBorder);
 	}
 
 	&-shortcut-scoller {
 		position: absolute;
-		top: 85px;
+		top: 95px;
 		bottom: 0;
 		left: 15px;
 		right: 15px;
@@ -86,10 +86,10 @@
 		height: 30px;
 		border: 1px solid transparent;
 
-        .my-icon-edit {
-            display: none;
-            cursor: pointer;
-        }
+		.my-icon-edit {
+			display: none;
+			cursor: pointer;
+		}
 
 		&:hover {
 			border-style: dotted;
@@ -97,9 +97,9 @@
 			background-color: var(--my-list-hoverBackground);
 			color: var(--my-list-hoverForeground);
 
-            .my-icon-edit {
-                display: block;
-            }
+			.my-icon-edit {
+				display: block;
+			}
 		}
 
 		&.my-active {
@@ -107,9 +107,42 @@
 			background-color: var(--my-list-activeSelectionBackground);
 			color: var(--my-list-activeSelectionForeground);
 
-            .my-icon-edit {
-                display: block;
-            }
+			.my-icon-edit {
+				display: block;
+			}
+		}
+	}
+
+	&-shortcut-edit {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		width: 500px;
+		height: 155px;
+		padding: 0 15px;
+		transform: translate(-50%, -50%);
+		background-color: var(--my-sideBar-background);
+		box-shadow: 0px 0px 8px 2px var(--my-widget-shadow);
+
+		.edit-tip {
+			text-align: center;
+			line-height: 40px;
+		}
+
+		input {
+			width: 100%;
+			height: 35px;
+			padding: 0 20px;
+			background-color: var(--my-input-background);
+			color: var(--my-input-foreground);
+			border: 1px solid transparent;
+			border-color: var(--my-input-border);
+			text-align: center;
+			outline: none;
+
+			&:focus {
+				border-color: var(--my-focusBorder);
+			}
 		}
 	}
 }

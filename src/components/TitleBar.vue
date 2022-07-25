@@ -89,7 +89,6 @@ export default {
 						name: 'New File',
 						value: 'newFile',
 						op: 'command',
-						shortcut: globalData.shortcut.findLabelByNmae('newFile'),
 					},
 				],
 				[
@@ -107,13 +106,11 @@ export default {
 						name: 'Save',
 						value: 'saveFile',
 						op: 'command',
-						shortcut: globalData.shortcut.findLabelByNmae('saveFile'),
 					},
 					{
 						name: 'Save As',
 						value: 'saveFileAs',
 						op: 'command',
-						shortcut: globalData.shortcut.findLabelByNmae('saveFileAs'),
 					},
 				],
 				[
@@ -121,7 +118,6 @@ export default {
 						name: 'Reload',
 						value: 'reloadWindow',
 						op: 'command',
-						shortcut: globalData.shortcut.findLabelByNmae('reloadWindow'),
 					},
 					{
 						name: 'Exit',
@@ -135,13 +131,11 @@ export default {
 						name: 'Undo',
 						value: 'undo',
 						op: 'command',
-						shortcut: globalData.shortcut.findLabelByNmae('undo'),
 					},
 					{
 						name: 'Redo',
 						value: 'redo',
 						op: 'command',
-						shortcut: globalData.shortcut.findLabelByNmae('redo'),
 					},
 				],
 				[
@@ -166,7 +160,6 @@ export default {
 						name: 'Delete Line',
 						value: 'deleteLine',
 						op: 'command',
-						shortcut: globalData.shortcut.findLabelByNmae('deleteLine'),
 					},
 				],
 				[
@@ -174,13 +167,11 @@ export default {
 						name: 'Find',
 						value: 'openSearch',
 						op: 'command',
-						shortcut: globalData.shortcut.findLabelByNmae('openSearch'),
 					},
 					{
 						name: 'Replace',
 						value: 'openReplace',
 						op: 'command',
-						shortcut: globalData.shortcut.findLabelByNmae('openReplace'),
 					},
 				],
 				[
@@ -188,13 +179,11 @@ export default {
 						name: 'Find in Files',
 						value: 'findInFiles',
 						op: 'command',
-						shortcut: globalData.shortcut.findLabelByNmae('findInFiles'),
 					},
 					{
 						name: 'Replace in Files',
 						value: 'replaceInFiles',
 						op: 'command',
-						shortcut: globalData.shortcut.findLabelByNmae('replaceInFiles'),
 					},
 				],
 			],
@@ -204,7 +193,6 @@ export default {
 						name: 'Select All',
 						value: 'selectAll',
 						op: 'command',
-						shortcut: globalData.shortcut.findLabelByNmae('selectAll'),
 					},
 				],
 				[
@@ -212,31 +200,26 @@ export default {
 						name: 'Copy Line Up',
 						value: 'copyLineUp',
 						op: 'command',
-						shortcut: globalData.shortcut.findLabelByNmae('copyLineUp'),
 					},
 					{
 						name: 'Copy Line Down',
 						value: 'copyLineDown',
 						op: 'command',
-						shortcut: globalData.shortcut.findLabelByNmae('copyLineDown'),
 					},
 					{
 						name: 'Move Line Up',
 						value: 'moveLineUp',
 						op: 'command',
-						shortcut: globalData.shortcut.findLabelByNmae('moveLineUp'),
 					},
 					{
 						name: 'Move Line Down',
 						value: 'moveLineDown',
 						op: 'command',
-						shortcut: globalData.shortcut.findLabelByNmae('moveLineDown'),
 					},
 					{
 						name: 'Go to Line',
 						value: 'gotoLine',
 						op: 'command',
-						shortcut: globalData.shortcut.findLabelByNmae('gotoLine'),
 					},
 				],
 				[
@@ -244,31 +227,26 @@ export default {
 						name: 'Add Cursor Above',
 						value: 'addCursorAbove',
 						op: 'command',
-						shortcut: globalData.shortcut.findLabelByNmae('addCursorAbove'),
 					},
 					{
 						name: 'Add Cursor Below',
 						value: 'addCursorBelow',
 						op: 'command',
-						shortcut: globalData.shortcut.findLabelByNmae('addCursorBelow'),
 					},
 					{
 						name: 'Add Cursor to Line Ends',
 						value: 'addCursorLineEnds',
 						op: 'command',
-						shortcut: globalData.shortcut.findLabelByNmae('addCursorLineEnds'),
 					},
 					{
 						name: 'Add Next Occurence',
 						value: 'searchWordDown',
 						op: 'command',
-						shortcut: globalData.shortcut.findLabelByNmae('searchWordDown'),
 					},
 					{
 						name: 'Add Previous Occurence',
 						value: 'searchWordUp',
 						op: 'command',
-						shortcut: globalData.shortcut.findLabelByNmae('searchWordUp'),
 					},
 					{
 						name: 'Select All Occurence',
@@ -289,34 +267,29 @@ export default {
 						name: 'Command Palette',
 						value: 'openCmdPanel',
 						op: 'command',
-						shortcut: globalData.shortcut.findLabelByNmae('openCmdPanel'),
 					},
 					{
 						name: 'Terminal',
 						value: 'toggleTerminal',
 						op: 'command',
-						shortcut: globalData.shortcut.findLabelByNmae('toggleTerminal'),
 						selected: globalData.views.terminal,
 					},
 					{
 						name: 'Minimap',
 						value: 'toggleMinimap',
 						op: 'command',
-						shortcut: globalData.shortcut.findLabelByNmae('toggleMinimap'),
 						selected: globalData.views.minimap,
 					},
 					{
 						name: 'Sidebar',
 						value: 'toggleSidebar',
 						op: 'command',
-						shortcut: globalData.shortcut.findLabelByNmae('toggleSidebar'),
 						selected: globalData.views.sidebar,
 					},
 					{
 						name: 'Statusbar',
 						value: 'toggleStatusbar',
 						op: 'command',
-						shortcut: globalData.shortcut.findLabelByNmae('toggleStatusbar'),
 						selected: globalData.views.statusbar,
 					},
 				],
@@ -343,7 +316,6 @@ export default {
 						name: 'Keyboard Shortcuts',
 						value: 'openShortcut',
 						op: 'command',
-						shortcut: globalData.shortcut.findLabelByNmae('openShortcut'),
 					},
 				],
 			],
@@ -360,13 +332,11 @@ export default {
 				name: 'Open File',
 				value: 'openFile',
 				op: 'command',
-				shortcut: globalData.shortcut.findLabelByNmae('openFile'),
 			},
 			{
 				name: 'Open Folder',
 				value: 'openFolder',
 				op: 'command',
-				shortcut: globalData.shortcut.findLabelByNmae('openFolder'),
 			},
 			{
 				name: 'Open Workspace',
@@ -374,6 +344,7 @@ export default {
 			},
 		]);
 		this.initEventBus();
+		this.initShortcut();
 	},
 	mounted() {
 		this.maximize = currentWindow.isMaximized();
@@ -404,6 +375,30 @@ export default {
 				this.viewMenuList[0][4].selected = !this.viewMenuList[0][4].selected;
 				globalData.views.statusbar = !globalData.views.statusbar;
 			});
+			EventBus.$on('shortcut-change', () => {
+				this.initShortcut();
+			});
+		},
+		initShortcut() {
+			_check(this.fileMenuList);
+			_check(this.editMenuList);
+			_check(this.selectionMenuList);
+			_check(this.viewMenuList);
+			_check(this.preferenceMenuList);
+
+			function _check(list) {
+				if (list instanceof Array) {
+					list.forEach((item) => {
+						_check(item);
+					});
+				} else if (list.op === 'command') {
+					let command = globalData.shortcut.findCommandByName(list.value);
+					if (command) {
+						list.shortcut = command.label || '';
+						list.name = list.name || command.name || '';
+					}
+				}
+			}
 		},
 		showMemu(prop) {
 			EventBus.$emit('close-menu');
