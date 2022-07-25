@@ -28,6 +28,9 @@ export default class {
             this.userShortcut.push(data);
             globalData.$mainWin.persistence.storeShortcutData(this.userShortcut);
         });
+        window.addEventListener('blur', ()=>{
+            this.keys = [];
+        });
     }
     initKeyMap() {
         for (let key in editorKeyMap) {
@@ -183,7 +186,6 @@ export default class {
             e.preventDefault();
             this.doComand(command);
             this.prevKeyStr = '';
-            return;
         } else if (this.cKeys.indexOf(key) === -1) {
             this.prevKeyStr = keyStr;
         } else {
