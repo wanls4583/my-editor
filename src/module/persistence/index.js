@@ -61,7 +61,7 @@ export default class {
 		let preItem = {};
 		let active = false;
 		globalData.editorList.forEach(item => {
-			if (item.id !== preItem.id) {
+			if (item.id !== preItem.id && !item.isSetting) {
 				data.push({
 					id: item.id,
 					name: item.name,

@@ -53,6 +53,9 @@ export default class {
 			this.editorList.empty();
 			globalData.nowEditorId = null;
 		});
+		EventBus.$on('shortcut-open', () => {
+			this.openShortCut();
+		});
 	}
 	changeTab(id) {
 		cancelAnimationFrame(this.changeTabTimer);
@@ -91,15 +94,17 @@ export default class {
 		this.changeStatusTimer = setTimeout(() => {
 			let editor = globalData.$mainWin.getNowEditor();
 			let tab = Util.getTabById(this.editorList, globalData.nowEditorId);
-			EventBus.$emit(`editor-changed`, {
-				id: tab.id,
-				path: tab.path,
-				language: editor.language,
-				tabSize: editor.tabSize,
-				indent: editor.indent,
-				line: editor.nowCursorPos ? editor.nowCursorPos.line : '?',
-				column: editor.nowCursorPos ? editor.nowCursorPos.column : '?'
-			});
+			if (editor) {
+				EventBus.$emit(`editor-changed`, {
+					id: tab.id,
+					path: tab.path,
+					language: editor.language,
+					tabSize: editor.tabSize,
+					indent: editor.indent,
+					line: editor.nowCursorPos ? editor.nowCursorPos.line : '?',
+					column: editor.nowCursorPos ? editor.nowCursorPos.column : '?'
+				});
+			}
 		});
 	}
 	// 检查当前打开的文件的语言
@@ -198,7 +203,7 @@ export default class {
 	closeAll() {
 		let editorList = this.editorList.slice();
 		this.closeMultiple(editorList);
-		Promise.resolve().then(()=>{
+		Promise.resolve().then(() => {
 			globalData.nowEditorId = null;
 			EventBus.$emit('editor-changed', null);
 		});
@@ -253,9 +258,37 @@ export default class {
 	focusNowEditor() {
 		cancelAnimationFrame(this.closeTabTimer);
 		this.closeTabTimer = requestAnimationFrame(() => {
-			if (globalData.nowEditorId) {
-				globalData.$mainWin.getNowEditor().focus();
+			let editor = globalData.$mainWin.getNowEditor();
+			if (editor) {
+				editor.focus();
 			}
 		});
+	}
+	openShortCut() {
+		let shortcutTab = this.findShortcutTab();
+		if (shortcutTab) {
+			this.changeTab(shortcutTab.id);
+			return;
+		}
+		let tab = Util.getTabById(this.editorList, globalData.nowEditorId);
+		let index = this.editorList.indexOf(tab);
+		tab = {
+			id: 'shortcut-' + Util.getUUID(),
+			name: 'Keyboard Shortcuts',
+			icon: 'my-file-icon my-file-icon-file',
+			isShortcut: true,
+			isSetting: true,
+			saved: true,
+			active: false
+		};
+		this.editorList.splice(index + 1, 0, tab);
+		this.changeTab(tab.id);
+	}
+	findShortcutTab() {
+		for (let i = 0; i < this.editorList.length; i++) {
+			if (this.editorList[i].isShortcut) {
+				return this.editorList[i];
+			}
+		}
 	}
 }

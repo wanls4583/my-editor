@@ -27,7 +27,8 @@
 			<!-- 编辑区 -->
 			<div class="my-editor-groups" ref="editorGroup">
 				<template v-for="item in editorList">
-					<editor :active="item.active" :key="item.id" :ref="'editor' + item.id" :tab-data="item" v-show="item.active"></editor>
+					<shortcut-panel :key="item.id" v-if="item.isShortcut" v-show="item.active"></shortcut-panel>
+					<editor :active="item.active" :key="item.id" :ref="'editor' + item.id" :tab-data="item" v-else v-show="item.active"></editor>
 				</template>
 			</div>
 			<div @mousedown="onTerminalSashBegin" class="my-sash-h" v-show="_terminalVisible"></div>
@@ -59,6 +60,7 @@ import Dialog from './Dialog.vue';
 import CmdPanel from './CmdPanel.vue';
 import Terminal from './Terminal.vue';
 import TerminalBar from './TerminalBar.vue';
+import ShortcutPanel from './ShortcutPanel.vue';
 import Context from '@/module/context/index';
 import Theme from '@/module/theme';
 import EventBus from '@/event';
@@ -87,6 +89,7 @@ export default {
 		CmdPanel,
 		Terminal,
 		TerminalBar,
+		ShortcutPanel,
 	},
 	data() {
 		return {

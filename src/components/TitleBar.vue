@@ -339,6 +339,12 @@ export default {
 						name: 'Icon Theme',
 						op: 'changeIconTheme',
 					},
+					{
+						name: 'Keyboard Shortcuts',
+						value: 'openShortcut',
+						op: 'command',
+						shortcut: globalData.shortcut.findLabelByNmae('openShortcut'),
+					},
 				],
 			],
 		};
@@ -519,6 +525,9 @@ export default {
 		},
 		onPreferenceMenuChange(item) {
 			switch (item.op) {
+				case 'command':
+					globalData.shortcut.doComand({ command: item.value });
+					break;
 				case 'changeTheme':
 					EventBus.$emit('cmd-menu-theme-open');
 					break;

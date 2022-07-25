@@ -57,6 +57,9 @@ export const windowKeyMap = {
 	'Ctrl+`': {
 		command: 'toggleTerminal'
 	},
+	'Ctrl+K S': {
+		command: 'openShortcut'
+	},
 	'F12': {
 		command: 'openDevTools'
 	}
@@ -109,5 +112,8 @@ export class WindowCommand {
 	}
 	openDevTools() {
 		remote.getCurrentWindow().openDevTools();
+	}
+	openShortcut() {
+		EventBus.$emit('shortcut-open');
 	}
 }
