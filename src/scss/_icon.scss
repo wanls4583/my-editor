@@ -35,6 +35,10 @@
     &-icon-down {
         background-image: url(@/assets/icons/dark/chevron-down.svg);
     }
+
+    &-icon-edit {
+        background-image: url(@/assets/icons/dark/edit.svg);
+    }
 }
 .my-theme-light {
     .my {
@@ -64,6 +68,10 @@
 
         &-icon-down {
             background-image: url(@/assets/icons/light/chevron-down.svg);
+        }
+
+        &-icon-edit {
+            background-image: url(@/assets/icons/light/edit.svg);
         }
     }
 }

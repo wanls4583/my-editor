@@ -8,9 +8,24 @@
 		<div class="my-shortcut-search">
 			<input @input="search" @keydown.enter="search" ref="input" spellcheck="false" type="text" v-model="searchText" />
 		</div>
+		<div class="my-shortcut-title">
+			<span class="edit-col"></span>
+			<span class="command-col">Command</span>
+			<span class="key-col">Keybinding</span>
+			<span class="when-col">When</span>
+			<span class="source-col">Source</span>
+		</div>
 		<div class="my-shortcut-scoller" ref="scroller">
 			<div :style="{ top: -deltaTop + 'px' }" class="my-shortcut-content">
-				<div :id="item.id" @click.stop="onClickItem(item)" class="my-shortcut-item" v-for="item in renderList">{{item.key}}</div>
+				<div :class="[item.active?'my-active':'']" :id="item.id" @click.stop="onClickItem(item)" class="my-shortcut-item" v-for="item in renderList">
+					<span class="edit-col">
+						<i class="my-icon my-icon-edit"></i>
+					</span>
+					<span class="command-col">{{item.command}}</span>
+					<span class="key-col">{{item.key}}</span>
+					<span class="when-col">{{item.when}}</span>
+					<span class="source-col">{{item.source}}</span>
+				</div>
 			</div>
 			<v-scroll-bar :class="{'my-scroll-visible': scrollVisible}" :height="contentHeight" :scroll-top="scrollTop" @scroll="onScroll"></v-scroll-bar>
 		</div>
@@ -48,13 +63,11 @@ export default {
 		}
 	},
 	created() {
-		for (let i = 0; i < 500; i++) {
-			this.list.push({ key: i });
-		}
 	},
 	mounted() {
 		this.domHeight = this.$refs.wrap.clientHeight;
 		this.maxVisibleLines = Math.ceil(this.domHeight / this.itemHeight) + 1;
+		this.list = globalData.shortcut.getAllKeys();
 		this.initResizeEvent();
 		this.render();
 	},
@@ -101,7 +114,10 @@ export default {
 
 		},
 		onClickItem(item) {
-
+			for (let i = 0; i < this.list.length; i++) {
+				this.list[i].active = this.list[i].command === item.command;
+			}
+			this.render();
 		},
 		onWheel(e) {
 			this.scrollDeltaY = e.deltaY;

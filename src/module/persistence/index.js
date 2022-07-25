@@ -61,7 +61,7 @@ export default class {
 		let preItem = {};
 		let active = false;
 		globalData.editorList.forEach(item => {
-			if (item.id !== preItem.id && !item.isSetting) {
+			if (item.id !== preItem.id) {
 				data.push({
 					id: item.id,
 					name: item.name,
@@ -70,6 +70,8 @@ export default class {
 					tempPath: (!item.saved && path.join(globalData.cachePath, item.id)) || '',
 					active: item.active,
 					saved: item.saved,
+					isSetting: item.isSetting,
+					isShortcut: item.isShortcut,
 				});
 				preItem = item;
 				active = item.active;

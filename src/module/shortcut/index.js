@@ -83,6 +83,7 @@ export default class {
                 this.keyMap[_key] = this.keyMap[_key] || [];
                 this.keyMap[_key].push(command);
                 command.key = key;
+                command.source = 'USER';
             }
         }
     }
@@ -154,6 +155,29 @@ export default class {
                 commandObj[command.command]();
             }
         }
+    }
+    getAllKeys() {
+        let list = [];
+        for(let key in this.keyMap) {
+            let arr = this.keyMap[key];
+            for(let i=0; i<arr.length; i++) {
+                let item = arr[i];
+                list.push({
+                    key: item.key,
+                    when: item.when,
+                    command: item.command,
+                    source: item.source || 'Default'
+                });
+            }
+        }
+        return list.sort((a, b)=>{
+            if(a.command > b.command) {
+                return 1;
+            } else if(a.command < b.command) {
+                return -1;
+            }
+            return 0;
+        });
     }
     onKeydown(e) {
         if (globalData.compositionstart) { //正在输中文，此时不做处理
