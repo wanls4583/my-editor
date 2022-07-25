@@ -382,6 +382,9 @@ export default {
 			EventBus.$on('shortcut-change', () => {
 				this.initShortcut();
 			});
+			EventBus.$on('shortcut-loaded', () => {
+				this.initShortcut();
+			});
 		},
 		initShortcut() {
 			_check(this.fileMenuList);
