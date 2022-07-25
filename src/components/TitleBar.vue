@@ -98,7 +98,8 @@ export default {
 					},
 					{
 						name: 'Save Workspace As',
-						op: 'saveWorkspaceAs',
+						value: 'saveWorkspaceAs',
+						op: 'command',
 					},
 				],
 				[
@@ -306,11 +307,13 @@ export default {
 				[
 					{
 						name: 'Color Theme',
-						op: 'changeTheme',
+						value: 'changeTheme',
+						op: 'command',
 					},
 					{
 						name: 'Icon Theme',
-						op: 'changeIconTheme',
+						value: 'changeIconTheme',
+						op: 'command',
 					},
 					{
 						name: 'Keyboard Shortcuts',
@@ -340,7 +343,8 @@ export default {
 			},
 			{
 				name: 'Open Workspace',
-				op: 'openWorkspace',
+				value: 'openWorkspace',
+				op: 'command',
 			},
 		]);
 		this.initEventBus();
@@ -426,12 +430,6 @@ export default {
 			switch (item.op) {
 				case 'addFolder':
 					EventBus.$emit('folder-add');
-					break;
-				case 'saveWorkspaceAs':
-					EventBus.$emit('workspace-save-as');
-					break;
-				case 'openWorkspace':
-					EventBus.$emit('workspace-open');
 					break;
 				case 'exit':
 					currentWindow.close();
@@ -523,11 +521,6 @@ export default {
 				case 'command':
 					globalData.shortcut.doComand({ command: item.value });
 					break;
-				case 'changeTheme':
-					EventBus.$emit('cmd-menu-theme-open');
-					break;
-				case 'changeIconTheme':
-					EventBus.$emit('cmd-menu-icon-theme-open');
 			}
 			requestAnimationFrame(() => {
 				this.preferenceMenuVisible = false;

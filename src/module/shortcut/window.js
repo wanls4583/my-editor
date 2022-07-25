@@ -25,6 +25,12 @@ export const windowKeyMap = {
 	'Ctrl+Shift+H': {
 		command: 'replaceInFiles'
 	},
+	'Ctrl+Shift+W': {
+		command: 'saveWorkspaceAs'
+	},
+	'Ctrl+W': {
+		command: 'openWorkspace'
+	},
 	'Ctrl+R': {
 		command: 'reloadWindow'
 	},
@@ -43,6 +49,12 @@ export const windowKeyMap = {
 	'Ctrl+Num-': {
 		command: 'zoomLevelMinus'
 	},
+	'Ctrl+N': {
+		command: 'newFile'
+	},
+	'Ctrl+O': {
+		command: 'openFile'
+	},
 	'Ctrl+S': {
 		command: 'saveFile',
 		when: 'editorFocus'
@@ -58,6 +70,15 @@ export const windowKeyMap = {
 	},
 	'Ctrl+`': {
 		command: 'toggleTerminal'
+	},
+	'Ctrl+K Ctrl+T': {
+		command: 'changeTheme'
+	},
+	'Ctrl+K Ctrl+I': {
+		command: 'changeIconTheme'
+	},
+	'Ctrl+K Ctrl+O': {
+		command: 'openFolder'
 	},
 	'Ctrl+K Ctrl+S': {
 		command: 'openShortcut'
@@ -78,17 +99,17 @@ export class WindowCommand {
 	toggleMinimap() {
 		EventBus.$emit('minimap-toggle');
 	}
-	toggleSidebar() {
-		EventBus.$emit('sidebar-toggle');
-	}
-	toggleTerminal() {
-		EventBus.$emit('terminal-toggle');
-	}
 	findInFiles() {
 		EventBus.$emit('find-in-folder');
 	}
 	replaceInFiles() {
 		EventBus.$emit('find-in-folder', { replace: true });
+	}
+	saveWorkspaceAs() {
+		EventBus.$emit('workspace-save-as');
+	}
+	openWorkspace() {
+		EventBus.$emit('workspace-open');
 	}
 	reloadWindow() {
 		remote.getCurrentWindow().reload();
@@ -101,6 +122,12 @@ export class WindowCommand {
 		globalData.zoomLevel -= 1;
 		remote.getCurrentWindow().webContents.setZoomLevel(globalData.zoomLevel);
 	}
+	newFile() {
+		EventBus.$emit('file-open');
+	}
+	openFile() {
+		EventBus.$emit('file-open', null, true);
+	}
 	saveFile() {
 		EventBus.$emit('file-save', { id: globalData.nowEditorId });
 	}
@@ -112,10 +139,25 @@ export class WindowCommand {
 		EventBus.$emit('menu-close');
 		EventBus.$emit('cmd-search-open');
 	}
-	openDevTools() {
-		remote.getCurrentWindow().openDevTools();
+	toggleSidebar() {
+		EventBus.$emit('sidebar-toggle');
+	}
+	toggleTerminal() {
+		EventBus.$emit('terminal-toggle');
+	}
+	changeTheme() {
+		EventBus.$emit('cmd-menu-theme-open');
+	}
+	changeIconTheme() {
+		EventBus.$emit('cmd-menu-icon-theme-open');
+	}
+	openFolder() {
+		EventBus.$emit('folder-open');
 	}
 	openShortcut() {
 		EventBus.$emit('shortcut-open');
+	}
+	openDevTools() {
+		remote.getCurrentWindow().openDevTools();
 	}
 }

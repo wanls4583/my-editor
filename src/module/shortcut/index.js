@@ -1,6 +1,5 @@
 import { editorKeyMap, EditorComand } from './editor';
 import { editorBarKeyMap, EditorBarComand } from './editor-bar';
-import { menuBarKeyMap, MenuBarCommand } from './menu-bar';
 import { windowKeyMap, WindowCommand } from './window';
 import vkeys from 'vkeys';
 import EventBus from '@/event';
@@ -16,7 +15,6 @@ export default class {
         this.commandMap = {};
         this.editorComand = new EditorComand();
         this.editorBarComand = new EditorBarComand();
-        this.menuBarCommand = new MenuBarCommand();
         this.windowCommand = new WindowCommand();
         this.initKeyMap();
         EventBus.$on('shortcut-loaded', (data) => {
@@ -51,16 +49,6 @@ export default class {
             item.key = key;
             item.label = this.getLabel(key);
             item.commandObj = this.editorBarComand;
-        }
-        for (let key in menuBarKeyMap) {
-            let item = { ...menuBarKeyMap[key] };
-            let _key = key.toLowerCase();
-            this.keyMap[_key] = this.keyMap[_key] || [];
-            this.keyMap[_key].push(item);
-            this.commandMap[item.command] = item;
-            item.key = key;
-            item.label = this.getLabel(key);
-            item.commandObj = this.menuBarCommand;
         }
         for (let key in windowKeyMap) {
             let item = { ...windowKeyMap[key] };
