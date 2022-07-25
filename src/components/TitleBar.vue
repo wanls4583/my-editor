@@ -94,7 +94,8 @@ export default {
 				[
 					{
 						name: 'Add Folder to Workspace',
-						op: 'addFolder',
+						value: 'addFolder',
+						op: 'command'
 					},
 					{
 						name: 'Save Workspace As',
@@ -431,9 +432,6 @@ export default {
 		},
 		onFileMenuChange(item) {
 			switch (item.op) {
-				case 'addFolder':
-					EventBus.$emit('folder-add');
-					break;
 				case 'exit':
 					currentWindow.close();
 					break;

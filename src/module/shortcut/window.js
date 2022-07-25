@@ -83,6 +83,9 @@ export const windowKeyMap = {
 	'Ctrl+K Ctrl+S': {
 		command: 'openShortcut'
 	},
+	'Ctrl+K Ctrl+O': {
+		command: 'addFolder'
+	},
 	'F12': {
 		command: 'openDevTools'
 	}
@@ -156,6 +159,9 @@ export class WindowCommand {
 	}
 	openShortcut() {
 		EventBus.$emit('shortcut-open');
+	}
+	addFolder() {
+		EventBus.$emit('folder-add');
 	}
 	openDevTools() {
 		remote.getCurrentWindow().openDevTools();
