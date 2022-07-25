@@ -110,7 +110,7 @@ export const editorKeyMap = {
 		command: 'toggleLineComment',
 		when: 'editorFocus'
 	},
-	'Shift+Tab': {
+	'Shift+Capslock': {
 		command: 'tabRemoveAnIndent',
 		when: 'editorFocus'
 	},
@@ -134,7 +134,7 @@ export const editorKeyMap = {
 		command: 'searchWordUp',
 		when: 'editorFocus'
 	},
-	'Tab': {
+	'Capslock': {
 		command: 'insertTab',
 		when: 'editorFocus'
 	},

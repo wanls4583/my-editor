@@ -8,7 +8,9 @@ import globalData from '../../data/globalData';
 
 export default class {
     constructor() {
-        this.prevKey = '';
+        this.prevKeyStr = '';
+        this.keys = [];
+        this.cKeys = ['ctrl', 'alt', 'shift'];
         this.keyMap = {};
         this.commandMap = {};
         this.editorComand = new EditorComand();
@@ -143,7 +145,7 @@ export default class {
             if (this.editorComand === commandObj) {
                 let editor = globalData.$mainWin.getNowEditor();
                 let context = globalData.$mainWin.getNowContext();
-                if(editor && context) {
+                if (editor && context) {
                     commandObj.editor = editor;
                     commandObj.context = context;
                     commandObj[command.command]();
@@ -157,38 +159,46 @@ export default class {
         if (globalData.compositionstart) { //正在输中文，此时不做处理
             return;
         }
-        let keys = [];
         let key = vkeys.getKey(e.keyCode);
         let command = '';
-        if (e.ctrlKey) {
-            keys.push('ctrl');
+        let keyStr = '';
+        if (this.preKeyTimer) {
+            clearTimeout(this.preKeyTimer);
         }
-        if (e.altKey) {
-            keys.push('alt');
-        }
-        if (e.shiftKey) {
-            keys.push('shift');
-        }
-        if (keys.indexOf(key) == -1) {
+        if (this.cKeys.indexOf(key) == -1) {
             key = key.replace('+', 'Add');
-            keys.push(key);
-            key = keys.join('+');
-            command = this.findCommandByKey(key);
-            if (!command && this.prevKey) {
-                command = this.findCommandByKey(this.prevKey + ' ' + key)
+            keyStr = this.keys.join('+');
+            keyStr = keyStr ? keyStr + '+' + key : key;
+            command = this.findCommandByKey(keyStr);
+            if (!command && this.prevKeyStr) {
+                command = this.findCommandByKey(this.prevKeyStr + ' ' + keyStr)
             }
             if (command) {
-                this.doComand(command);
                 e.stopPropagation();
                 e.preventDefault();
+                this.doComand(command);
+                this.keys = [];
+                this.prevKeyStr = '';
+                return;
             } else {
-                this.prevKey = key;
+                this.prevKeyStr = keyStr;
             }
+        }
+        if (this.keys.indexOf(key) === -1) {
+            this.keys.push(key);
         }
     }
     onKeyup(e) {
-        if (!e.ctrlKey && !e.altKey && !e.shiftKey) {
-            this.prevKey = '';
+        if (this.keys.length) {
+            let key = vkeys.getKey(e.keyCode);
+            let index = this.keys.indexOf(key);
+            this.keys.splice(index, 1);
+        }
+        if (this.prevKeyStr) {
+            // prevKeyStr 两秒后失效
+            this.preKeyTimer = setTimeout(() => {
+                this.prevKeyStr = '';
+            }, 2000);
         }
     }
 }
