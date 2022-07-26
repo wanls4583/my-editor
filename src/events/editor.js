@@ -231,7 +231,7 @@ export default class {
 	closeToRight(id) {
 		let editorList = [];
 		id = id || globalData.nowEditorId;
-		for (let i = this.editorList.length - 1; i >= 0; i++) {
+		for (let i = this.editorList.length - 1; i >= 0; i--) {
 			let tab = this.editorList[i];
 			if (tab.id !== id) {
 				editorList.push(tab);

@@ -36,32 +36,26 @@ export const terminalBarComands = [
 
 export class TerminalBarComand {
     constructor() { }
-    execComand(command) {
-		if(this[command.command]) {
-			this[command.command](command);
-		}
-	}
+    execComand(command, args) {
+        args = args || {};
+        this.termianlTabId = args.termianlTabId || globalData.nowTerminalId;
+        if (this[command.command] && this.termianlTabId) {
+            this[command.command](command);
+        }
+    }
     closeAllTerminalTab() {
         EventBus.$emit('terminal-close-all');
     }
     closeTerminalTab() {
-        if(globalData.nowTerminalId) {
-            EventBus.$emit('terminal-close', globalData.nowTerminalId);
-        }
+        EventBus.$emit('terminal-close', this.termianlTabId);
     }
     closeOhterTerminalTab() {
-        if(globalData.nowTerminalId) {
-            EventBus.$emit('terminal-close-other', globalData.nowTerminalId);
-        }
+        EventBus.$emit('terminal-close-other', this.termianlTabId);
     }
     closeLeftTerminalTab() {
-        if(globalData.nowTerminalId) {
-            EventBus.$emit('terminal-close-to-left', globalData.nowTerminalId);
-        }
+        EventBus.$emit('terminal-close-to-left', this.termianlTabId);
     }
     closeRightTerminalTab() {
-        if(globalData.nowTerminalId) {
-            EventBus.$emit('terminal-close-to-right', globalData.nowTerminalId);
-        }
+        EventBus.$emit('terminal-close-to-right', this.termianlTabId);
     }
 }

@@ -23,20 +23,20 @@ export default {
 			menuList: [
 				[
 					{
-						name: 'Close',
-						op: 'close',
+						value: 'closeTerminalTab',
+						op: 'command'
 					},
 					{
-						name: 'Close to the Left',
-						op: 'closeToLeft',
+						value: 'closeLeftTerminalTab',
+						op: 'command'
 					},
 					{
-						name: 'Close to the Right',
-						op: 'closeToRight',
+						value: 'closeRightTerminalTab',
+						op: 'command'
 					},
 					{
-						name: 'Close Ohter',
-						op: 'closeOther',
+						value: 'closeOhterTerminalTab',
+						op: 'command'
 					},
 					{
 						value: 'closeAllTerminalTab',
@@ -93,20 +93,8 @@ export default {
 		},
 		onMenuChange(item) {
 			switch (item.op) {
-				case 'close':
-					EventBus.$emit('terminal-close', this.tabId);
-					break;
-				case 'closeToLeft':
-					EventBus.$emit('terminal-close-to-left', this.tabId);
-					break;
-				case 'closeToRight':
-					EventBus.$emit('terminal-close-to-right', this.tabId);
-					break;
-				case 'closeOther':
-					EventBus.$emit('terminal-close-other', this.tabId);
-					break;
 				case 'command':
-					globalData.shortcut.doComand({ command: item.value });
+					globalData.shortcut.doComand({ command: item.value }, { termianlTabId: this.tabId });
 					break;
 			}
 			this.menuVisible = false;

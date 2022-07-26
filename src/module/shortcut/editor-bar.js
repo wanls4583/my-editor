@@ -42,11 +42,13 @@ export const editorBarComands = [
 
 export class EditorBarComand {
     constructor() { }
-    execComand(command) {
-		if(this[command.command]) {
-			this[command.command](command);
-		}
-	}
+    execComand(command, args) {
+        args = args || {};
+        this.tabId = args.tabId || globalData.nowEditorId;
+        if (this[command.command] && this.tabId) {
+            this[command.command](command);
+        }
+    }
     closeSavedTab() {
         EventBus.$emit('editor-close-saved');
     }
@@ -54,23 +56,15 @@ export class EditorBarComand {
         EventBus.$emit('editor-close-all');
     }
     closeTab() {
-        if(globalData.nowEditorId) {
-            EventBus.$emit('editor-close', globalData.nowEditorId);
-        }
+        EventBus.$emit('editor-close', this.tabId);
     }
     closeOhterTab() {
-        if(globalData.nowEditorId) {
-            EventBus.$emit('editor-close-other', globalData.nowEditorId);
-        }
+        EventBus.$emit('editor-close-other', this.tabId);
     }
     closeLeftTab() {
-        if(globalData.nowEditorId) {
-            EventBus.$emit('editor-close-to-left', globalData.nowEditorId);
-        }
+        EventBus.$emit('editor-close-to-left', this.tabId);
     }
     closeRightTab() {
-        if(globalData.nowEditorId) {
-            EventBus.$emit('editor-close-to-right', globalData.nowEditorId);
-        }
+        EventBus.$emit('editor-close-to-right', this.tabId);
     }
 }

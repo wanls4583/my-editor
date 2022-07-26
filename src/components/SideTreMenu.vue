@@ -194,6 +194,12 @@ export default {
 			EventBus.$on('close-menu', () => {
 				this.menuVisible = false;
 			});
+			EventBus.$on('shortcut-change', () => {
+				this.initShortcut();
+			});
+			EventBus.$on('shortcut-loaded', () => {
+				this.initShortcut();
+			});
 		},
 		initShortcut() {
 			_check(this.rootMenu);

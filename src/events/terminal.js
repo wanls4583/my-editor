@@ -100,6 +100,7 @@ export default class {
 				break;
 			}
 		}
+		this.changeTerminalTab(id);
 	}
 	closeTerminalToRight(id) {
 		for (let i = this.terminalList.length - 1; i >= 0; i--) {
@@ -110,12 +111,13 @@ export default class {
 				break;
 			}
 		}
+		this.changeTerminalTab(id);
 	}
 	closeTerminalOther(id) {
 		let tab = this.getTerminalTabById(id);
 		this.terminalList.empty();
 		this.terminalList.push(tab);
-		EventBus.$emit('terminal-change', tab.id);
+		this.changeTerminalTab(id);
 	}
 	loadTerminal(list) {
 		list.forEach((item) => {
