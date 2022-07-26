@@ -1,5 +1,6 @@
 import { editorComands, EditorComand } from './editor';
 import { editorBarComands, EditorBarComand } from './editor-bar';
+import { terminalBarComands, TerminalBarComand } from './terminal-bar';
 import { windowComands, WindowCommand } from './window';
 import vkeys from 'vkeys';
 import EventBus from '@/event';
@@ -15,6 +16,7 @@ export default class {
         this.commandMap = {};
         this.editorComand = new EditorComand();
         this.editorBarComand = new EditorBarComand();
+        this.terminalBarComand = new TerminalBarComand();
         this.windowCommand = new WindowCommand();
         this.initKeyMap();
         EventBus.$on('shortcut-loaded', (data) => {
@@ -39,7 +41,7 @@ export default class {
             this.keyMap[_key] = this.keyMap[_key] || [];
             this.keyMap[_key].push(item);
             this.commandMap[item.command] = item;
-            item.label = this.getLabel(item.key);
+            item.label = item.label || item.name;
             item.commandObj = this.editorComand;
         });
         editorBarComands.forEach(item => {
@@ -48,8 +50,17 @@ export default class {
             this.keyMap[_key] = this.keyMap[_key] || [];
             this.keyMap[_key].push(item);
             this.commandMap[item.command] = item;
-            item.label = this.getLabel(item.key);
+            item.label = item.label || item.name;
             item.commandObj = this.editorBarComand;
+        });
+        terminalBarComands.forEach(item => {
+            let _key = item.key.toLowerCase();
+            item = { ...item };
+            this.keyMap[_key] = this.keyMap[_key] || [];
+            this.keyMap[_key].push(item);
+            this.commandMap[item.command] = item;
+            item.label = item.label || item.name;
+            item.commandObj = this.terminalBarComand;
         });
         windowComands.forEach(item => {
             let _key = item.key.toLowerCase();
@@ -57,7 +68,7 @@ export default class {
             this.keyMap[_key] = this.keyMap[_key] || [];
             this.keyMap[_key].push(item);
             this.commandMap[item.command] = item;
-            item.label = this.getLabel(item.key);
+            item.label = item.label || item.name;
             item.commandObj = this.windowCommand;
         });
     }
@@ -78,7 +89,6 @@ export default class {
                 this.keyMap[_key] = this.keyMap[_key] || [];
                 this.keyMap[_key].push(command);
                 command.key = key;
-                command.label = this.getLabel(key);
                 command.source = 'USER';
             }
         }
@@ -117,27 +127,16 @@ export default class {
                 if (editor && context) {
                     commandObj.editor = editor;
                     commandObj.context = context;
-                    commandObj[command.command]();
+                    commandObj.execComand(command);
                 }
             } else {
-                commandObj[command.command]();
+                commandObj.execComand(command);
             }
         }
     }
     formatKey(key) {
         key = key.replace('+', 'Add');
         key = key[0].toUpperCase() + key.slice(1);
-        return key;
-    }
-    getLabel(key) {
-        // if (key.indexOf(' ') > -1) {
-        //     let i = 0
-        //     key = key.split(' ');
-        //     while (key[0][i] === key[1][i]) {
-        //         i++;
-        //     }
-        //     key = key[0] + ' ' + key[1].slice(i);
-        // }
         return key;
     }
     getAllKeys() {
@@ -149,7 +148,7 @@ export default class {
                 list.push({
                     key: item.key,
                     when: item.when,
-                    command: item.command,
+                    label: item.label,
                     source: item.source || 'Default'
                 });
             }

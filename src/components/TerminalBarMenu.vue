@@ -11,6 +11,7 @@ import $ from 'jquery';
 import Util from '@/common/util';
 import Menu from './Menu';
 import EventBus from '@/event';
+import globalData from '@/data/globalData';
 
 export default {
 	name: 'TerminalBarMenu',
@@ -38,8 +39,8 @@ export default {
 						op: 'closeOther',
 					},
 					{
-						name: 'Close All',
-						op: 'closeAll',
+						value: 'closeAllTerminalTab',
+						op: 'command'
 					},
 				],
 			],
@@ -52,12 +53,36 @@ export default {
 	},
 	created() {
 		this.initEventBus();
+		this.initShortcut();
 	},
 	methods: {
 		initEventBus() {
 			EventBus.$on('close-menu', () => {
 				this.menuVisible = false;
 			});
+			EventBus.$on('shortcut-change', () => {
+				this.initShortcut();
+			});
+			EventBus.$on('shortcut-loaded', () => {
+				this.initShortcut();
+			});
+		},
+		initShortcut() {
+			_check(this.menuList);
+
+			function _check(list) {
+				if (list instanceof Array) {
+					list.forEach((item) => {
+						_check(item);
+					});
+				} else if (list.op === 'command') {
+					let command = globalData.shortcut.findCommandByName(list.value);
+					if (command) {
+						list.shortcut = command.key || '';
+						list.name = list.name || command.name || '';
+					}
+				}
+			}
 		},
 		show(e, id) {
 			this.tabId = id;
@@ -80,8 +105,8 @@ export default {
 				case 'closeOther':
 					EventBus.$emit('terminal-close-other', this.tabId);
 					break;
-				case 'closeAll':
-					EventBus.$emit('terminal-close-all', this.tabId);
+				case 'command':
+					globalData.shortcut.doComand({ command: item.value });
 					break;
 			}
 			this.menuVisible = false;

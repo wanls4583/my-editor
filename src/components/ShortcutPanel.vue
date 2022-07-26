@@ -21,7 +21,7 @@
 					<span class="edit-col">
 						<i @click="onEdit(item)" class="my-icon my-icon-edit"></i>
 					</span>
-					<span class="command-col">{{item.command}}</span>
+					<span class="command-col">{{item.label}}</span>
 					<span class="key-col">{{item.key}}</span>
 					<span class="when-col">{{item.when}}</span>
 					<span class="source-col">{{item.source}}</span>

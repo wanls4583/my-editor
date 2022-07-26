@@ -70,6 +70,7 @@ export default class {
 			item.active = item.id === id;
 		});
 		this.terminalList.splice();
+		globalData.nowTerminalId = id;
 	}
 	closeTerminal(id) {
 		for (let i = 0; i < this.terminalList.length; i++) {
@@ -82,6 +83,9 @@ export default class {
 				}
 				break;
 			}
+		}
+		if(id === globalData.nowTerminalId) {
+			globalData.nowTerminalId = null;
 		}
 		if (this.terminalList.length === 0 && globalData.views.terminal) {
 			EventBus.$emit('terminal-toggle');
@@ -115,6 +119,9 @@ export default class {
 	}
 	loadTerminal(list) {
 		list.forEach((item) => {
+			if(item.active) {
+				globalData.nowTerminalId = item.id;
+			}
 			this.terminalList.push(item);
 		});
 	}

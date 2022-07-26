@@ -621,6 +621,12 @@ export default {
 				})
 			);
 			EventBus.$on(
+				'multiKeyCode-change',
+				(this.initEventBusFn['multiKeyCode-change'] = () => {
+					this.cursor.multiKeyCode = globalData.multiKeyCode;
+				})
+			);
+			EventBus.$on(
 				'window-close',
 				(this.initEventBusFn['window-close'] = () => {
 					try {
@@ -649,6 +655,7 @@ export default {
 			EventBus.$off('editor-content-change', this.initEventBusFn['editor-content-change']);
 			EventBus.$off('editor-size-change', this.initEventBusFn['editor-size-change']);
 			EventBus.$off('minimap-toggle', this.initEventBusFn['minimap-toggle']);
+			EventBus.$off('multiKeyCode-change', this.initEventBusFn['multiKeyCode-change']);
 			EventBus.$off('window-close', this.initEventBusFn['window-close']);
 		},
 		showEditor() {

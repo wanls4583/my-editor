@@ -26,7 +26,8 @@ export default class {
 			nowTheme: globalData.nowTheme,
 			nowIconTheme: globalData.nowIconTheme,
 			views: globalData.views,
-			zoomLevel: globalData.zoomLevel
+			zoomLevel: globalData.zoomLevel,
+			multiKeyCode: globalData.multiKeyCode
 		};
 		Util.writeFileSync(globalData.configPath, JSON.stringify(data));
 	}

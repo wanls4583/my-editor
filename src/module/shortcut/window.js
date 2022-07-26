@@ -41,6 +41,7 @@ export const windowComands = [
 		command: 'saveWorkspaceAs'
 	},
 	{
+		name: 'OpenWorkspace',
 		key: 'Ctrl+W',
 		command: 'openWorkspace'
 	},
@@ -50,22 +51,27 @@ export const windowComands = [
 		command: 'reloadWindow'
 	},
 	{
+		name: 'Zoom In',
 		key: 'Ctrl+=',
 		command: 'zoomLevelPlus'
 	},
 	{
+		name: 'Zoom In',
 		key: 'Ctrl+Add',
 		command: 'zoomLevelPlus'
 	},
 	{
+		name: 'Zoom In',
 		key: 'Ctrl+NumAdd',
 		command: 'zoomLevelPlus'
 	},
 	{
+		name: 'Zoom Out',
 		key: 'Ctrl+-',
 		command: 'zoomLevelMinus'
 	},
 	{
+		name: 'Zoom Out',
 		key: 'Ctrl+Num-',
 		command: 'zoomLevelMinus'
 	},
@@ -75,6 +81,7 @@ export const windowComands = [
 		command: 'newFile'
 	},
 	{
+		name: 'Open File',
 		key: 'Ctrl+O',
 		command: 'openFile'
 	},
@@ -115,6 +122,7 @@ export const windowComands = [
 		command: 'changeIconTheme'
 	},
 	{
+		name: 'Open Folder',
 		key: 'Ctrl+K Ctrl+O',
 		command: 'openFolder'
 	},
@@ -129,13 +137,31 @@ export const windowComands = [
 		command: 'addFolder'
 	},
 	{
+		name: `Switch ${globalData.multiKeyCode === 'alt' ? 'Ctrl' : 'Alt'}+Click to Multi-Cursor`,
+		key: '',
+		command: 'switchMultiKeyCode',
+		keyCode: 'ctrl',
+	},
+	{
+		name: 'Open DevTools',
 		key: 'F12',
 		command: 'openDevTools'
+	}
+	,
+	{
+		name: 'Exit',
+		key: '',
+		command: 'exit'
 	}
 ]
 
 export class WindowCommand {
 	constructor() { }
+	execComand(command) {
+		if (this[command.command]) {
+			this[command.command](command);
+		}
+	}
 	saveFileAs() {
 		EventBus.$emit('file-save-as', { id: globalData.nowEditorId });
 	}
@@ -208,5 +234,15 @@ export class WindowCommand {
 	}
 	openDevTools() {
 		remote.getCurrentWindow().openDevTools();
+	}
+	switchMultiKeyCode(command) {
+		globalData.multiKeyCode = globalData.multiKeyCode === 'ctrl' ? 'alt' : 'ctrl';
+		command.keyCode = globalData.multiKeyCode;
+		command.name = `Switch ${command.keyCode === 'alt' ? 'Ctrl' : 'Alt'}+Click to Multi-Cursor`;
+		EventBus.$emit('shortcut-refresh');
+		EventBus.$emit('multiKeyCode-change');
+	}
+	exit() {
+		remote.getCurrentWindow().close();
 	}
 }

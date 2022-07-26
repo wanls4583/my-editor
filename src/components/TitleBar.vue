@@ -116,8 +116,8 @@ export default {
 						op: 'command',
 					},
 					{
-						name: 'Exit',
-						op: 'exit',
+						value: 'exit',
+						op: 'command',
 					},
 				],
 			],
@@ -227,15 +227,14 @@ export default {
 						op: 'command',
 					},
 					{
-						name: 'Select All Occurence',
-						op: 'selectAllOccurence',
+						value: 'selectAllOccurence',
+						op: 'command',
 					},
 				],
 				[
 					{
-						name: 'Switch Alt+Click to Multi-Cursor',
-						op: 'switchMultiKeyCode',
-						keyCode: 'ctrl',
+						value: 'switchMultiKeyCode',
+						op: 'command',
 					},
 				],
 			],
@@ -301,17 +300,14 @@ export default {
 	created() {
 		this.fileMenuList.splice(1, 0, [
 			{
-				name: 'Open File',
 				value: 'openFile',
 				op: 'command',
 			},
 			{
-				name: 'Open Folder',
 				value: 'openFolder',
 				op: 'command',
 			},
 			{
-				name: 'Open Workspace',
 				value: 'openWorkspace',
 				op: 'command',
 			},
@@ -348,6 +344,9 @@ export default {
 				this.viewMenuList[0][4].selected = !this.viewMenuList[0][4].selected;
 				globalData.views.statusbar = !globalData.views.statusbar;
 			});
+			EventBus.$on('shortcut-refresh', () => {
+				this.initShortcut();
+			});
 			EventBus.$on('shortcut-change', () => {
 				this.initShortcut();
 			});
@@ -370,8 +369,8 @@ export default {
 				} else if (list.op === 'command') {
 					let command = globalData.shortcut.findCommandByName(list.value);
 					if (command) {
-						list.shortcut = command.label || '';
-						list.name = list.name || command.name || '';
+						list.shortcut = command.key || '';
+						list.name = command.name || list.name || '';
 					}
 				}
 			}
@@ -400,9 +399,6 @@ export default {
 		},
 		onFileMenuChange(item) {
 			switch (item.op) {
-				case 'exit':
-					currentWindow.close();
-					break;
 				case 'command':
 					globalData.shortcut.doComand({ command: item.value });
 					break;
@@ -461,26 +457,6 @@ export default {
 					hit = true;
 					break;
 			}
-			if (!editor || hit) {
-				requestAnimationFrame(() => {
-					this.selectionMenuVisible = false;
-				});
-				return;
-			}
-			switch (item.op) {
-				case 'selectAllOccurence':
-					editor.selecter.selectAllOccurence();
-					break;
-				case 'switchMultiKeyCode':
-					editor.cursor.switchMultiKeyCode();
-					item.keyCode = editor.cursor.multiKeyCode;
-					item.name = `Switch ${item.keyCode === 'alt' ? 'Ctrl' : 'Alt'}+Click to Multi-Cursor`;
-					break;
-				case 'command':
-					globalData.shortcut.doComand({ command: item.value });
-					break;
-			}
-			editor.focus();
 			requestAnimationFrame(() => {
 				this.selectionMenuVisible = false;
 			});

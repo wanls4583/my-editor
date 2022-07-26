@@ -50,6 +50,7 @@ const globalData = {
 	defaultWordPattern: defaultWordPattern,
 	nowTheme: nowTheme,
 	nowIconTheme: nowIconTheme,
+	multiKeyCode: 'ctrl',
 	views: views,
 	zoomLevel: 0,
 	scopeIdMap: {},

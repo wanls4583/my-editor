@@ -83,7 +83,7 @@ export default {
 				} else if (list.op === 'command') {
 					let command = globalData.shortcut.findCommandByName(list.value);
 					if (command) {
-						list.shortcut = command.label || '';
+						list.shortcut = command.key || '';
 						list.name = list.name || command.name || '';
 					}
 				}

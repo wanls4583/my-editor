@@ -13,7 +13,7 @@ export default class {
     constructor(editor, context) {
         this.editor = editor;
         this.context = context;
-        this.multiKeyCode = 'ctrl';
+        this.multiKeyCode = globalData.multiKeyCode;
         this.reset();
     }
     reset() {
@@ -281,8 +281,5 @@ export default class {
             line: line,
             column: column,
         };
-    }
-    switchMultiKeyCode() {
-        this.multiKeyCode = this.multiKeyCode === 'ctrl' ? 'alt' : 'ctrl';
     }
 }

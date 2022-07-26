@@ -3,16 +3,19 @@ import globalData from '@/data/globalData';
 
 export const editorComands = [
 	{
+		name: 'Insert Empty Line Up',
 		key: 'Ctrl+Shift+Enter',
 		command: 'insertEmptyLineUp',
 		when: 'editorFocus'
 	},
 	{
+		name: 'Select Left Word',
 		key: 'Ctrl+Shift+Left',
 		command: 'selectWordLeft',
 		when: 'editorFocus'
 	},
 	{
+		name: 'Select Right Word',
 		key: 'Ctrl+Shift+Right',
 		command: 'selectWordRight',
 		when: 'editorFocus'
@@ -36,6 +39,7 @@ export const editorComands = [
 		when: 'editorFocus'
 	},
 	{
+		name: 'Format Document',
 		key: 'Ctrl+Shift+H',
 		command: 'formatCode',
 		when: 'editorFocus'
@@ -53,6 +57,7 @@ export const editorComands = [
 		when: 'editorFocus'
 	},
 	{
+		name: 'Toggle Block Comment',
 		key: 'Ctrl+Shift+/',
 		command: 'toggleBlockComment',
 		when: 'editorFocus'
@@ -76,16 +81,19 @@ export const editorComands = [
 		when: 'editorFocus'
 	},
 	{
+		name: 'Insert Empty Line Down',
 		key: 'Ctrl+Enter',
 		command: 'insertEmptyLineDown',
 		when: 'editorFocus'
 	},
 	{
+		name: 'Move Cursor to Left Word',
 		key: 'Ctrl+Left',
 		command: 'moveCursorWordLeft',
 		when: 'editorFocus'
 	},
 	{
+		name: 'Move Cursor to Right Word',
 		key: 'Ctrl+Right',
 		command: 'moveCursorWordRight',
 		when: 'editorFocus'
@@ -127,51 +135,61 @@ export const editorComands = [
 		when: 'editorFocus'
 	},
 	{
+		name: 'Delete Right Word',
 		key: 'Ctrl+Delete',
 		command: 'deleteRightWord',
 		when: 'editorFocus'
 	},
 	{
+		name: 'Delete Left Word',
 		key: 'Ctrl+Backspace',
 		command: 'deleteLeftWord',
 		when: 'editorFocus'
 	},
 	{
+		name: 'Add Indent',
 		key: 'Ctrl+]',
 		command: 'addAnIndent',
 		when: 'editorFocus'
 	},
 	{
+		name: 'Remove Indent',
 		key: 'Ctrl+[',
 		command: 'removeAnIndent',
 		when: 'editorFocus'
 	},
 	{
+		name: 'Toggle Line Comment',
 		key: 'Ctrl+/',
 		command: 'toggleLineComment',
 		when: 'editorFocus'
 	},
 	{
+		name: 'Remove Indent',
 		key: 'Shift+Capslock',
-		command: 'tabRemoveAnIndent',
+		command: 'removeAnIndent',
 		when: 'editorFocus'
 	},
 	{
+		name: 'Select to Left',
 		key: 'Shift+Left',
 		command: 'selectLeft',
 		when: 'editorFocus'
 	},
 	{
+		name: 'Select to Right',
 		key: 'Shift+Right',
 		command: 'selectRight',
 		when: 'editorFocus'
 	},
 	{
+		name: 'Select to Up',
 		key: 'Shift+Up',
 		command: 'selectUp',
 		when: 'editorFocus'
 	},
 	{
+		name: 'Select to Down',
 		key: 'Shift+Down',
 		command: 'selectDown',
 		when: 'editorFocus'
@@ -183,59 +201,81 @@ export const editorComands = [
 		when: 'editorFocus'
 	},
 	{
+		name: 'Insert Tab',
 		key: 'Capslock',
 		command: 'insertTab',
 		when: 'editorFocus'
 	},
 	{
+		name: 'Move Cursor to Left',
 		key: 'Left',
 		command: 'moveCursorLeft',
 		when: 'editorFocus'
 	},
 	{
+		name: 'Move Cursor to Right',
 		key: 'Right',
 		command: 'moveCursorRight',
 		when: 'editorFocus'
 	},
 	{
+		name: 'Move Cursor to Up',
 		key: 'Up',
 		command: 'moveCursorUp',
 		when: 'editorFocus'
 	},
 	{
+		name: 'Move Cursor to Down',
 		key: 'Down',
 		command: 'moveCursorDown',
 		when: 'editorFocus'
 	},
 	{
+		name: 'Move Cursor to End',
 		key: 'End',
 		command: 'moveCursorEnd',
 		when: 'editorFocus'
 	},
 	{
+		name: 'Move Cursor to Home',
 		key: 'Home',
 		command: 'moveCursorHome',
 		when: 'editorFocus'
 	},
 	{
+		name: 'Insert Enter',
 		key: 'Enter',
 		command: 'insertEnter',
 		when: 'editorFocus'
 	},
 	{
+		name: 'Delete Content to Right',
 		key: 'Delete',
 		command: 'deleteContentRight',
 		when: 'editorFocus'
 	},
 	{
+		name: 'Delete Content to Left',
 		key: 'Backspace',
 		command: 'deleteContentLeft',
+		when: 'editorFocus'
+	},
+	{
+		name: 'Select All Occurence',
+		key: '',
+		command: 'selectAllOccurence',
 		when: 'editorFocus'
 	},
 ]
 
 export class EditorComand {
 	constructor() { }
+	execComand(command) {
+		if(this[command.command]) {
+			this[command.command](command);
+			this.editor.focus();
+		}
+	}
 	insertEmptyLineUp() {
 		this.context.insertEmptyLineUp();
 	}
@@ -396,5 +436,8 @@ export class EditorComand {
 	deleteContentLeft() {
 		this.context.deleteContent('left');
 		this.editor.autocomplete.search();
+	}
+	selectAllOccurence() {
+		this.editor.selecter.selectAllOccurence();
 	}
 }
