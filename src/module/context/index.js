@@ -114,14 +114,12 @@ class Context {
 		let cursorPosList = [];
 		let serial = ''; // 历史记录连续操作标识
 		let historyJoinAble = true;
-		let delDirect = '';
 		let originCursorPosList = null;
 		let afterCursorPosList = null;
 		if (command) {
 			command.forEach(item => {
 				// 多个插入的光标可能相同，这里不能先添加光标
 				cursorPosList.push(item.cursorPos);
-				delDirect = item.delDirect;
 			});
 		} else {
 			if (this.autoCloseObj.check(text)) { //检测自动闭合符号
@@ -161,12 +159,16 @@ class Context {
 			historyArr.serial = serial;
 			historyArr.originCursorPosList = originCursorPosList;
 			historyArr.afterCursorPosList = afterCursorPosList;
-			this.editor.history.pushHistory(historyArr, historyJoinAble);
+			historyArr.historyJoinAble = historyJoinAble;
+			this.editor.history.pushHistory(historyArr);
 			this.addCursorList(afterCursorPosList);
 		}
-		let nowCursorPos = this.editor.cursor.multiCursorPos.get(0);
-		this.editor.scrollToLine(nowCursorPos.line, nowCursorPos.column, true);
-		this.editor.setNowCursorPos(nowCursorPos);
+		// 历史记录连续操作时，中间过程可能没有光标记录
+		if (this.editor.cursor.multiCursorPos.size) {
+			let nowCursorPos = this.editor.cursor.multiCursorPos.get(0);
+			this.editor.scrollToLine(nowCursorPos.line, nowCursorPos.column, true);
+			this.editor.setNowCursorPos(nowCursorPos);
+		}
 		return historyArr;
 
 		function _getCursorList() {
@@ -404,19 +406,23 @@ class Context {
 			this.editor.history.updateHistory(historyArr);
 		} else {
 			if (historyArr.length > 0) {
-				afterCursorPosList = historyArr.map((item) => { return {...item.cursorPos}; });
+				afterCursorPosList = historyArr.map((item) => { return { ...item.cursorPos }; });
 				historyArr.originCursorPosList = originCursorPosList;
 				historyArr.afterCursorPosList = afterCursorPosList;
-				this.editor.history.pushHistory(historyArr, historyJoinAble);
+				historyArr.historyJoinAble = historyJoinAble;
+				this.editor.history.pushHistory(historyArr);
 				this.addCursorList(afterCursorPosList);
 			} else {
 				this.editor.cursor.setCursorPos(rangeList[0]);
 			}
 		}
-		let nowCursorPos = this.editor.cursor.multiCursorPos.get(0);
-		this.editor.scrollToLine(nowCursorPos.line, nowCursorPos.column, true);
-		this.editor.setNowCursorPos(nowCursorPos);
-		return historyArr;	
+		// 历史记录连续操作时，中间过程可能没有光标记录
+		if (this.editor.cursor.multiCursorPos.size) {
+			let nowCursorPos = this.editor.cursor.multiCursorPos.get(0);
+			this.editor.scrollToLine(nowCursorPos.line, nowCursorPos.column, true);
+			this.editor.setNowCursorPos(nowCursorPos);
+		}
+		return historyArr;
 	}
 	/**
 	 * 同时删除多处

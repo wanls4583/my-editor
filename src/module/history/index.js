@@ -78,85 +78,58 @@ export default class {
 		}
 	}
 	// 添加历史记录
-	pushHistory(command, historyJoinAble) {
+	pushHistory(commandList) {
 		while (this.history.length > this.history.index) {
 			this.history.pop();
 		}
-		let lastCommand = this.history[this.history.index - 1];
-		command = this.sortComand(command);
-		if (command instanceof Array && !command.length) {
+		let lastCommands = this.history[this.history.index - 1];
+		commandList = this.sortComand(commandList);
+		if (!commandList.length) {
 			return;
 		}
-		if (historyJoinAble) {
-			if (
-				lastCommand instanceof Array
-				&& command instanceof Array
-				&& lastCommand.length === command.length
-				&& Date.now() - this.pushHistoryTime < 2000
-			) {
-				if (
-					_checkSameOp(lastCommand)
-					&& _checkSameOp(command)
-					&& _combCheck.call(this, lastCommand[0], command[0])
-				) {
-					for (let i = 0; i < lastCommand.length; i++) {
-						_combCommand(lastCommand[i], command[i]);
-					}
-				} else {
-					this.history.push(command);
-				}
-			} else if (_combCheck.call(this, lastCommand, command)) {
-				_combCommand(lastCommand, command);
-			} else {
-				this.history.push(command);
+		if (
+			lastCommands &&
+			lastCommands.historyJoinAble &&
+			commandList.historyJoinAble &&
+			commandList.length === lastCommands.length &&
+			Date.now() - this.pushHistoryTime < 2000 &&
+			_combCheck.call(this, lastCommands[0], commandList[0])
+		) {
+			for (let i = 0; i < lastCommands.length; i++) {
+				_combCommand(lastCommands[i], commandList[i]);
 			}
 		} else {
-			this.history.push(command);
+			this.history.push(commandList);
 		}
 		this.history.index = this.history.length;
 		this.pushHistoryTime = Date.now();
 
-		function _checkSameOp(commandList) {
-			for (let i = 1; i < commandList.length; i++) {
-				if (commandList[i].type !== commandList[i - 1].type) {
-					return false;
-				}
-			}
-			return true;
-		}
-
+		// 检测是否为连续插入或连续删除
 		function _combCheck(lastCommand, command) {
-			// 检测是否为连续插入或连续删除
 			if (
-				(
-					command.type === Util.HISTORY_COMMAND.DELETE ||
-					command.type === Util.HISTORY_COMMAND.INSERT
-				) &&
-				lastCommand &&
 				lastCommand.type === command.type &&
-				lastCommand.delDirect === command.delDirect &&
 				lastCommand.preCursorPos &&
-				lastCommand.preCursorPos.line === command.cursorPos.line &&
-				Date.now() - this.pushHistoryTime < 2000
+				lastCommand.preCursorPos.line === command.cursorPos.line
 			) {
 				if (lastCommand.type == Util.HISTORY_COMMAND.DELETE) {
-					if (Util.comparePos(lastCommand.cursorPos, command.preCursorPos) == 0) {
+					if (Util.comparePos(lastCommand.cursorPos, command.preCursorPos) === 0) {
 						return true;
 					}
-				}
-				if (lastCommand.type == Util.HISTORY_COMMAND.INSERT) {
-					if (Util.comparePos(lastCommand.cursorPos, command.preCursorPos) == 0 ||
-						Util.comparePos(lastCommand.cursorPos, command.cursorPos) == 0) {
-						return true;
+				} else if (lastCommand.type == Util.HISTORY_COMMAND.INSERT) {
+					if (lastCommand.delDirect === command.delDirect) {
+						if (Util.comparePos(lastCommand.cursorPos, command.preCursorPos) === 0 ||
+							Util.comparePos(lastCommand.cursorPos, command.cursorPos) === 0) {
+							return true;
+						}
 					}
 				}
 			}
 		}
 
-		// 检查两次操作是否可以合并
+		// 合并两次操作
 		function _combCommand(lastCommand, command) {
 			if (lastCommand.type === Util.HISTORY_COMMAND.DELETE) {
-				command.preCursorPos.column -= lastCommand.cursorPos.column - lastCommand.preCursorPos.column;
+				command.preCursorPos.column = lastCommand.preCursorPos.column;
 				lastCommand.preCursorPos = command.preCursorPos;
 				lastCommand.cursorPos = command.cursorPos;
 			} else {
@@ -182,16 +155,14 @@ export default class {
 		this.history[index - 1] = this.sortComand(command);
 	}
 	sortComand(command) {
-		if (command instanceof Array) {
-			command.sort((a, b) => {
-				a = a.cursorPos;
-				b = b.cursorPos;
-				if (a.line === b.line) {
-					return a.column - b.column;
-				}
-				return a.line - b.line;
-			});
-		}
+		command.sort((a, b) => {
+			a = a.cursorPos;
+			b = b.cursorPos;
+			if (a.line === b.line) {
+				return a.column - b.column;
+			}
+			return a.line - b.line;
+		});
 		return command;
 	}
 	save() {

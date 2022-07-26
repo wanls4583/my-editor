@@ -198,6 +198,8 @@ export default class {
             e.preventDefault();
             this.doComand(command);
             this.prevKeyStr = '';
+            // 停止添加key到keys，已便按住键盘时可以连续相应某一个命令
+            return;
         } else if (this.cKeys.indexOf(key) === -1) {
             this.prevKeyStr = keyStr;
         } else {
