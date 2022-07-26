@@ -78,7 +78,7 @@ export default class {
             let item = data[i] || {};
             let key = item.key || '';
             let command = this.findCommandByName(item.command);
-            if (command && key) {
+            if (command) {
                 let _key = key.toLowerCase();
                 let _oKey = command.key.toLowerCase();
                 let arr = this.keyMap[_oKey];
@@ -149,14 +149,15 @@ export default class {
                     key: item.key,
                     when: item.when,
                     label: item.label,
+                    command: item.command,
                     source: item.source || 'Default'
                 });
             }
         }
         return list.sort((a, b) => {
-            if (a.command > b.command) {
+            if (a.label > b.label) {
                 return 1;
-            } else if (a.command < b.command) {
+            } else if (a.label < b.label) {
                 return -1;
             }
             return 0;
