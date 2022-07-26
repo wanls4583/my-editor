@@ -1,6 +1,6 @@
-import { editorKeyMap, EditorComand } from './editor';
-import { editorBarKeyMap, EditorBarComand } from './editor-bar';
-import { windowKeyMap, WindowCommand } from './window';
+import { editorComands, EditorComand } from './editor';
+import { editorBarComands, EditorBarComand } from './editor-bar';
+import { windowComands, WindowCommand } from './window';
 import vkeys from 'vkeys';
 import EventBus from '@/event';
 import globalData from '../../data/globalData';
@@ -28,41 +28,38 @@ export default class {
             this.userShortcut.push(data);
             globalData.$mainWin.persistence.storeShortcutData(this.userShortcut);
         });
-        window.addEventListener('blur', ()=>{
+        window.addEventListener('blur', () => {
             this.keys = [];
         });
     }
     initKeyMap() {
-        for (let key in editorKeyMap) {
-            let item = { ...editorKeyMap[key] };
-            let _key = key.toLowerCase();
+        editorComands.forEach(item => {
+            let _key = item.key.toLowerCase();
+            item = { ...item };
             this.keyMap[_key] = this.keyMap[_key] || [];
             this.keyMap[_key].push(item);
             this.commandMap[item.command] = item;
-            item.key = key;
-            item.label = this.getLabel(key);
+            item.label = this.getLabel(item.key);
             item.commandObj = this.editorComand;
-        }
-        for (let key in editorBarKeyMap) {
-            let item = { ...editorBarKeyMap[key] };
-            let _key = key.toLowerCase();
+        });
+        editorBarComands.forEach(item => {
+            let _key = item.key.toLowerCase();
+            item = { ...item };
             this.keyMap[_key] = this.keyMap[_key] || [];
             this.keyMap[_key].push(item);
             this.commandMap[item.command] = item;
-            item.key = key;
-            item.label = this.getLabel(key);
+            item.label = this.getLabel(item.key);
             item.commandObj = this.editorBarComand;
-        }
-        for (let key in windowKeyMap) {
-            let item = { ...windowKeyMap[key] };
-            let _key = key.toLowerCase();
+        });
+        windowComands.forEach(item => {
+            let _key = item.key.toLowerCase();
+            item = { ...item };
             this.keyMap[_key] = this.keyMap[_key] || [];
             this.keyMap[_key].push(item);
             this.commandMap[item.command] = item;
-            item.key = key;
-            item.label = this.getLabel(key);
+            item.label = this.getLabel(item.key);
             item.commandObj = this.windowCommand;
-        }
+        });
     }
     initUserKeyMap(data) {
         data = data || [];
@@ -70,7 +67,7 @@ export default class {
             let item = data[i] || {};
             let key = item.key || '';
             let command = this.findCommandByName(item.command);
-            if (command && /^(?:ctrl\+|alt\+|shift\+){0,3}(?:[^\s\n] [^\s\n]|(?:[^\s\n]\+)?[^\s\n])$/i.test(key)) {
+            if (command && key) {
                 let _key = key.toLowerCase();
                 let _oKey = command.key.toLowerCase();
                 let arr = this.keyMap[_oKey];
@@ -178,7 +175,7 @@ export default class {
         if (this.prevKeyStr) {
             command = this.findCommandByKey(this.prevKeyStr + ' ' + keyStr)
         }
-        if(!command) {
+        if (!command) {
             command = this.findCommandByKey(keyStr);
         }
         if (command) {
@@ -199,7 +196,7 @@ export default class {
         if (this.keys.length) {
             let key = this.formatKey(vkeys.getKey(e.keyCode));
             let index = this.keys.indexOf(key);
-            if(index > -1) {
+            if (index > -1) {
                 this.keys.splice(index, 1);
             }
         }

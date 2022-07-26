@@ -36,7 +36,6 @@ export default {
 						op: 'closeToRight',
 					},
 					{
-						name: 'Close Saved',
 						value: 'closeSavedTab',
 						op: 'command',
 					},
@@ -45,7 +44,6 @@ export default {
 						op: 'closeOther',
 					},
 					{
-						name: 'Close All',
 						value: 'closeAllTab',
 						op: 'command',
 					},

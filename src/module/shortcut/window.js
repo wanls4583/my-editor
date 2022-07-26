@@ -8,88 +8,131 @@ import globalData from '@/data/globalData';
 
 const remote = window.require('@electron/remote');
 
-export const windowKeyMap = {
-	'Ctrl+Shift+S': {
+export const windowComands = [
+	{
+		name: 'Save As',
+		key: 'Ctrl+Shift+S',
 		command: 'saveFileAs',
 		when: 'editorFocus'
 	},
-	'Ctrl+Shift+B': {
+	{
+		name: 'Statusbar',
+		key: 'Ctrl+Shift+B',
 		command: 'toggleStatusbar'
 	},
-	'Ctrl+Shift+M': {
+	{
+		name: 'Minimap',
+		key: 'Ctrl+Shift+M',
 		command: 'toggleMinimap'
 	},
-	'Ctrl+Shift+F': {
+	{
+		name: 'Find in Files',
+		key: 'Ctrl+Shift+F',
 		command: 'findInFiles'
 	},
-	'Ctrl+Shift+H': {
+	{
+		name: 'Replace in Files',
+		key: 'Ctrl+Shift+H',
 		command: 'replaceInFiles'
 	},
-	'Ctrl+Shift+W': {
+	{
+		name: 'Save Workspace As',
+		key: 'Ctrl+Shift+W',
 		command: 'saveWorkspaceAs'
 	},
-	'Ctrl+W': {
+	{
+		key: 'Ctrl+W',
 		command: 'openWorkspace'
 	},
-	'Ctrl+R': {
+	{
+		name: 'Reload',
+		key: 'Ctrl+R',
 		command: 'reloadWindow'
 	},
-	'Ctrl+=': {
+	{
+		key: 'Ctrl+=',
 		command: 'zoomLevelPlus'
 	},
-	'Ctrl+Add': {
+	{
+		key: 'Ctrl+Add',
 		command: 'zoomLevelPlus'
 	},
-	'Ctrl+NumAdd': {
+	{
+		key: 'Ctrl+NumAdd',
 		command: 'zoomLevelPlus'
 	},
-	'Ctrl+-': {
+	{
+		key: 'Ctrl+-',
 		command: 'zoomLevelMinus'
 	},
-	'Ctrl+Num-': {
+	{
+		key: 'Ctrl+Num-',
 		command: 'zoomLevelMinus'
 	},
-	'Ctrl+N': {
+	{
+		name: 'New File',
+		key: 'Ctrl+N',
 		command: 'newFile'
 	},
-	'Ctrl+O': {
+	{
+		key: 'Ctrl+O',
 		command: 'openFile'
 	},
-	'Ctrl+S': {
+	{
+		name: 'Save',
+		key: 'Ctrl+S',
 		command: 'saveFile',
 		when: 'editorFocus'
 	},
-	'Ctrl+G': {
+	{
+		name: 'Go to Line',
+		key: 'Ctrl+G',
 		command: 'gotoLine'
 	},
-	'Ctrl+P': {
+	{
+		name: 'Command Palette',
+		key: 'Ctrl+P',
 		command: 'openCmdPanel'
 	},
-	'Ctrl+L': {
+	{
+		name: 'Sidebar',
+		key: 'Ctrl+L',
 		command: 'toggleSidebar'
 	},
-	'Ctrl+`': {
+	{
+		name: 'Terminal',
+		key: 'Ctrl+`',
 		command: 'toggleTerminal'
 	},
-	'Ctrl+K Ctrl+T': {
+	{
+		name: 'Color Theme',
+		key: 'Ctrl+K Ctrl+T',
 		command: 'changeTheme'
 	},
-	'Ctrl+K Ctrl+I': {
+	{
+		name: 'Icon Theme',
+		key: 'Ctrl+K Ctrl+I',
 		command: 'changeIconTheme'
 	},
-	'Ctrl+K Ctrl+O': {
+	{
+		key: 'Ctrl+K Ctrl+O',
 		command: 'openFolder'
 	},
-	'Ctrl+K Ctrl+S': {
+	{
+		name: 'Keyboard Shortcuts',
+		key: 'Ctrl+K Ctrl+S',
 		command: 'openShortcut'
 	},
-	'Ctrl+K Ctrl+O': {
+	{
+		name: 'Add Folder to Workspace',
+		key: 'Ctrl+K Ctrl+O',
 		command: 'addFolder'
 	},
-	'F12': {
+	{
+		key: 'F12',
 		command: 'openDevTools'
 	}
-}
+]
 
 export class WindowCommand {
 	constructor() { }

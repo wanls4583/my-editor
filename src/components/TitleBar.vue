@@ -86,38 +86,32 @@ export default {
 			fileMenuList: [
 				[
 					{
-						name: 'New File',
 						value: 'newFile',
 						op: 'command',
 					},
 				],
 				[
 					{
-						name: 'Add Folder to Workspace',
 						value: 'addFolder',
 						op: 'command'
 					},
 					{
-						name: 'Save Workspace As',
 						value: 'saveWorkspaceAs',
 						op: 'command',
 					},
 				],
 				[
 					{
-						name: 'Save',
 						value: 'saveFile',
 						op: 'command',
 					},
 					{
-						name: 'Save As',
 						value: 'saveFileAs',
 						op: 'command',
 					},
 				],
 				[
 					{
-						name: 'Reload',
 						value: 'reloadWindow',
 						op: 'command',
 					},
@@ -130,12 +124,10 @@ export default {
 			editMenuList: [
 				[
 					{
-						name: 'Undo',
 						value: 'undo',
 						op: 'command',
 					},
 					{
-						name: 'Redo',
 						value: 'redo',
 						op: 'command',
 					},
@@ -159,31 +151,26 @@ export default {
 				],
 				[
 					{
-						name: 'Delete Line',
 						value: 'deleteLine',
 						op: 'command',
 					},
 				],
 				[
 					{
-						name: 'Find',
 						value: 'openSearch',
 						op: 'command',
 					},
 					{
-						name: 'Replace',
 						value: 'openReplace',
 						op: 'command',
 					},
 				],
 				[
 					{
-						name: 'Find in Files',
 						value: 'findInFiles',
 						op: 'command',
 					},
 					{
-						name: 'Replace in Files',
 						value: 'replaceInFiles',
 						op: 'command',
 					},
@@ -192,61 +179,50 @@ export default {
 			selectionMenuList: [
 				[
 					{
-						name: 'Select All',
 						value: 'selectAll',
 						op: 'command',
 					},
 				],
 				[
 					{
-						name: 'Copy Line Up',
 						value: 'copyLineUp',
 						op: 'command',
 					},
 					{
-						name: 'Copy Line Down',
 						value: 'copyLineDown',
 						op: 'command',
 					},
 					{
-						name: 'Move Line Up',
 						value: 'moveLineUp',
 						op: 'command',
 					},
 					{
-						name: 'Move Line Down',
 						value: 'moveLineDown',
 						op: 'command',
 					},
 					{
-						name: 'Go to Line',
 						value: 'gotoLine',
 						op: 'command',
 					},
 				],
 				[
 					{
-						name: 'Add Cursor Above',
 						value: 'addCursorAbove',
 						op: 'command',
 					},
 					{
-						name: 'Add Cursor Below',
 						value: 'addCursorBelow',
 						op: 'command',
 					},
 					{
-						name: 'Add Cursor to Line Ends',
 						value: 'addCursorLineEnds',
 						op: 'command',
 					},
 					{
-						name: 'Add Next Occurence',
 						value: 'searchWordDown',
 						op: 'command',
 					},
 					{
-						name: 'Add Previous Occurence',
 						value: 'searchWordUp',
 						op: 'command',
 					},
@@ -266,30 +242,25 @@ export default {
 			viewMenuList: [
 				[
 					{
-						name: 'Command Palette',
 						value: 'openCmdPanel',
 						op: 'command',
 					},
 					{
-						name: 'Terminal',
 						value: 'toggleTerminal',
 						op: 'command',
 						selected: globalData.views.terminal,
 					},
 					{
-						name: 'Minimap',
 						value: 'toggleMinimap',
 						op: 'command',
 						selected: globalData.views.minimap,
 					},
 					{
-						name: 'Sidebar',
 						value: 'toggleSidebar',
 						op: 'command',
 						selected: globalData.views.sidebar,
 					},
 					{
-						name: 'Statusbar',
 						value: 'toggleStatusbar',
 						op: 'command',
 						selected: globalData.views.statusbar,
@@ -307,17 +278,14 @@ export default {
 			preferenceMenuList: [
 				[
 					{
-						name: 'Color Theme',
 						value: 'changeTheme',
 						op: 'command',
 					},
 					{
-						name: 'Icon Theme',
 						value: 'changeIconTheme',
 						op: 'command',
 					},
 					{
-						name: 'Keyboard Shortcuts',
 						value: 'openShortcut',
 						op: 'command',
 					},

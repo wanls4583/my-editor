@@ -1,180 +1,238 @@
 import EventBus from '@/event';
 import globalData from '@/data/globalData';
 
-export const editorKeyMap = {
-	'Ctrl+Shift+Enter': {
+export const editorComands = [
+	{
+		key: 'Ctrl+Shift+Enter',
 		command: 'insertEmptyLineUp',
 		when: 'editorFocus'
 	},
-	'Ctrl+Shift+Left': {
+	{
+		key: 'Ctrl+Shift+Left',
 		command: 'selectWordLeft',
 		when: 'editorFocus'
 	},
-	'Ctrl+Shift+Right': {
+	{
+		key: 'Ctrl+Shift+Right',
 		command: 'selectWordRight',
 		when: 'editorFocus'
 	},
-	'Ctrl+Shift+Up': {
+	{
+		name: 'Move Line Up',
+		key: 'Ctrl+Shift+Up',
 		command: 'moveLineUp',
 		when: 'editorFocus'
 	},
-	'Ctrl+Shift+Down': {
+	{
+		name: 'Move Line Down',
+		key: 'Ctrl+Shift+Down',
 		command: 'moveLineDown',
 		when: 'editorFocus'
 	},
-	'Ctrl+Shift+D': {
+	{
+		name: 'Copy Line Up',
+		key: 'Ctrl+Shift+D',
 		command: 'copyLineUp',
 		when: 'editorFocus'
 	},
-	'Ctrl+Shift+H': {
+	{
+		key: 'Ctrl+Shift+H',
 		command: 'formatCode',
 		when: 'editorFocus'
 	},
-	'Ctrl+Shift+K': {
+	{
+		name: 'Delete Line',
+		key: 'Ctrl+Shift+K',
 		command: 'deleteLine',
 		when: 'editorFocus'
 	},
-	'Ctrl+Shift+L': {
+	{
+		name: 'Add Cursor to Line Ends',
+		key: 'Ctrl+Shift+L',
 		command: 'addCursorLineEnds',
 		when: 'editorFocus'
 	},
-	'Ctrl+Shift+/': {
+	{
+		key: 'Ctrl+Shift+/',
 		command: 'toggleBlockComment',
 		when: 'editorFocus'
 	},
-	'Ctrl+Alt+Up': {
+	{
+		name: 'Add Cursor Above',
+		key: 'Ctrl+Alt+Up',
 		command: 'addCursorAbove',
 		when: 'editorFocus'
 	},
-	'Ctrl+Alt+Down': {
+	{
+		name: 'Add Cursor Below',
+		key: 'Ctrl+Alt+Down',
 		command: 'addCursorBelow',
 		when: 'editorFocus'
 	},
-	'Alt+Shift+Down': {
+	{
+		name: 'Copy Line Down',
+		key: 'Alt+Shift+Down',
 		command: 'copyLineDown',
 		when: 'editorFocus'
 	},
-	'Ctrl+Enter': {
+	{
+		key: 'Ctrl+Enter',
 		command: 'insertEmptyLineDown',
 		when: 'editorFocus'
 	},
-	'Ctrl+Left': {
+	{
+		key: 'Ctrl+Left',
 		command: 'moveCursorWordLeft',
 		when: 'editorFocus'
 	},
-	'Ctrl+Right': {
+	{
+		key: 'Ctrl+Right',
 		command: 'moveCursorWordRight',
 		when: 'editorFocus'
 	},
-	'Ctrl+A': {
+	{
+		name: 'Select All',
+		key: 'Ctrl+A',
 		command: 'selectAll',
 		when: 'editorFocus'
 	},
-	'Ctrl+D': {
+	{
+		name: 'Add Next Occurence',
+		key: 'Ctrl+D',
 		command: 'searchWordDown',
 		when: 'editorFocus'
 	},
-	'Ctrl+F': {
+	{
+		name: 'Find',
+		key: 'Ctrl+F',
 		command: 'openSearch',
 		when: 'editorFocus'
 	},
-	'Ctrl+H': {
+	{
+		name: 'Replace',
+		key: 'Ctrl+H',
 		command: 'openReplace',
 		when: 'editorFocus'
 	},
-	'Ctrl+Z': {
+	{
+		name: 'Undo',
+		key: 'Ctrl+Z',
 		command: 'undo',
 		when: 'editorFocus'
 	},
-	'Ctrl+Y': {
+	{
+		name: 'Redo',
+		key: 'Ctrl+Y',
 		command: 'redo',
 		when: 'editorFocus'
 	},
-	'Ctrl+Delete': {
+	{
+		key: 'Ctrl+Delete',
 		command: 'deleteRightWord',
 		when: 'editorFocus'
 	},
-	'Ctrl+Backspace': {
+	{
+		key: 'Ctrl+Backspace',
 		command: 'deleteLeftWord',
 		when: 'editorFocus'
 	},
-	'Ctrl+]': {
+	{
+		key: 'Ctrl+]',
 		command: 'addAnIndent',
 		when: 'editorFocus'
 	},
-	'Ctrl+[': {
+	{
+		key: 'Ctrl+[',
 		command: 'removeAnIndent',
 		when: 'editorFocus'
 	},
-	'Ctrl+/': {
+	{
+		key: 'Ctrl+/',
 		command: 'toggleLineComment',
 		when: 'editorFocus'
 	},
-	'Shift+Capslock': {
+	{
+		key: 'Shift+Capslock',
 		command: 'tabRemoveAnIndent',
 		when: 'editorFocus'
 	},
-	'Shift+Left': {
+	{
+		key: 'Shift+Left',
 		command: 'selectLeft',
 		when: 'editorFocus'
 	},
-	'Shift+Right': {
+	{
+		key: 'Shift+Right',
 		command: 'selectRight',
 		when: 'editorFocus'
 	},
-	'Shift+Up': {
+	{
+		key: 'Shift+Up',
 		command: 'selectUp',
 		when: 'editorFocus'
 	},
-	'Shift+Down': {
+	{
+		key: 'Shift+Down',
 		command: 'selectDown',
 		when: 'editorFocus'
 	},
-	'Shift+D': {
+	{
+		name: 'Add Previous Occurence',
+		key: 'Shift+D',
 		command: 'searchWordUp',
 		when: 'editorFocus'
 	},
-	'Capslock': {
+	{
+		key: 'Capslock',
 		command: 'insertTab',
 		when: 'editorFocus'
 	},
-	'Left': {
+	{
+		key: 'Left',
 		command: 'moveCursorLeft',
 		when: 'editorFocus'
 	},
-	'Right': {
+	{
+		key: 'Right',
 		command: 'moveCursorRight',
 		when: 'editorFocus'
 	},
-	'Up': {
+	{
+		key: 'Up',
 		command: 'moveCursorUp',
 		when: 'editorFocus'
 	},
-	'Down': {
+	{
+		key: 'Down',
 		command: 'moveCursorDown',
 		when: 'editorFocus'
 	},
-	'End': {
+	{
+		key: 'End',
 		command: 'moveCursorEnd',
 		when: 'editorFocus'
 	},
-	'Home': {
+	{
+		key: 'Home',
 		command: 'moveCursorHome',
 		when: 'editorFocus'
 	},
-	'Enter': {
+	{
+		key: 'Enter',
 		command: 'insertEnter',
 		when: 'editorFocus'
 	},
-	'Delete': {
+	{
+		key: 'Delete',
 		command: 'deleteContentRight',
 		when: 'editorFocus'
 	},
-	'Backspace': {
+	{
+		key: 'Backspace',
 		command: 'deleteContentLeft',
 		when: 'editorFocus'
 	},
-}
+]
 
 export class EditorComand {
 	constructor() { }
