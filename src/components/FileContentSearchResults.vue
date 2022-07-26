@@ -77,7 +77,7 @@ export default {
 				if (this.$refs.wrap && this.$refs.wrap.clientHeight) {
 					this.domHeight = this.$refs.wrap.clientHeight;
 					this.maxVisibleLines = Math.ceil(this.domHeight / this.itemHeight) + 1;
-					this.render();
+					this.setStartLine(this.checkScrollTop(this.scrollTop));
 				}
 			});
 			resizeObserver.observe(this.$refs.wrap);
@@ -140,12 +140,12 @@ export default {
 			});
 			openedList = openedList.concat(this.getRenderList(results, 0));
 			this.setTreeHeight();
-			this.render();
+			this.setStartLine(this.checkScrollTop(this.scrollTop));
 		},
 		clear() {
 			openedList = [];
 			this.setTreeHeight();
-			this.render();
+			this.setStartLine(this.checkScrollTop(this.scrollTop));
 		},
 		focusItem(path) {
 			let index = 0;
