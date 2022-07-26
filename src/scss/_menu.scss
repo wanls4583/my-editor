@@ -28,8 +28,6 @@
 			}
 
 			.my-menu-item {
-				height: 30px;
-
 				&.my-active {
 					border-style: solid;
 					border-color: var(--my-contrastActiveBorder);
@@ -57,12 +55,6 @@
 		border: 1px solid var(--my-dropdown-border);
 		background-color: var(--my-dropdown-background);
 		color: var(--my-dropdown-foreground);
-	}
-
-	&-title-bar {
-		.my-menu-item {
-			height: 30px !important;
-		}
 	}
 
 	&-menu {
