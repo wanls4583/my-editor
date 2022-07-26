@@ -169,8 +169,8 @@ export default {
 	},
 	data() {
 		return {
-			cursorVisible: true,
-			cursorFocus: true,
+			cursorVisible: false,
+			cursorFocus: false,
 			language: '',
 			theme: '',
 			indent: 'tab',
@@ -669,7 +669,6 @@ export default {
 			this.setScrollerArea();
 			this.setContentHeight();
 			this.render();
-			this.focus();
 			if (this._nowCursorPos) {
 				this.setNowCursorPos(this._nowCursorPos);
 			}

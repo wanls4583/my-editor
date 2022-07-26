@@ -209,7 +209,7 @@ export default class {
 								tab.cursorPos = Object.assign({}, fileObj.range.start);
 							}
 							tab.mtimeMs = fs.statSync(filePath).mtimeMs;
-							EventBus.$emit('editor-change', tab.id);
+							EventBus.$emit(tab.cursorPos ? 'editor-change' : 'editor-change-blur', tab.id);
 							EventBus.$emit('language-check', tab.id);
 						}
 					});

@@ -5,7 +5,7 @@
 -->
 <template>
 	<div @mouseenter="showScrollBar" @mouseleave="hideScrollBar" @mousemove="showScrollBar" @wheel.stop="onWheel" class="side-tree-warp" ref="wrap">
-		<div class="side-tree">
+		<div @blur="onBlur" @focus="onFocus" class="side-tree" tabindex="-1">
 			<div :style="{ top: -deltaTop + 'px' }" class="side-tree-content">
 				<div :id="item.id" @click.stop="onClickItem(item)" class="tree-item" v-for="item in renderList">
 					<div
@@ -44,7 +44,7 @@ const spawnSync = window.require('child_process').spawnSync;
 
 let preActiveItem = null;
 let preActiveScrollTop = null;
-let openedList = [];
+let openedFileList = [];
 let gitIgnoreMap = {};
 
 export default {
@@ -77,6 +77,7 @@ export default {
 		},
 	},
 	created() {
+		this.initEvent();
 		this.initEventBus();
 		this.watchFileStatus();
 		this.watchFolder();
@@ -89,6 +90,19 @@ export default {
 		this.render();
 	},
 	methods: {
+		initEvent() {
+			window.addEventListener('keydown', (e) => {
+				if (openedFileList.length && this.focus) {
+					if (e.keyCode === 38) {
+						this.setPrevChecked();
+					} else if (e.keyCode === 40) {
+						this.setNextChecked();
+					} else if (e.keyCode === 13 && preActiveItem) {
+						this.onClickItem(preActiveItem);
+					}
+				}
+			});
+		},
 		initResizeEvent() {
 			const resizeObserver = new ResizeObserver((entries) => {
 				if (this.$refs.wrap && this.$refs.wrap.clientHeight) {
@@ -100,13 +114,13 @@ export default {
 		},
 		initEventBus() {
 			EventBus.$on('icon-changed', () => {
-				openedList.forEach((item) => {
+				openedFileList.forEach((item) => {
 					item.icon = '';
 				});
 				this.render();
 			});
 			EventBus.$on('theme-changed', () => {
-				openedList.forEach((item) => {
+				openedFileList.forEach((item) => {
 					item.icon = '';
 				});
 				this.render();
@@ -197,7 +211,7 @@ export default {
 			this.renderTimer = requestAnimationFrame(() => {
 				let preItem = {};
 				this.maxVisibleLines = Math.ceil(this.domHeight / this.itemHeight) + 1;
-				this.renderList = openedList.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines);
+				this.renderList = openedFileList.slice(this.startLine - 1, this.startLine - 1 + this.maxVisibleLines);
 				this.renderList.forEach((item) => {
 					if (globalData.nowIconData) {
 						item.icon = Util.getIconByPath({
@@ -429,12 +443,12 @@ export default {
 			if (!item.open) {
 				return;
 			}
-			let index = openedList.indexOf(item) + 1;
+			let index = openedFileList.indexOf(item) + 1;
 			let endIn = index;
-			while (endIn < openedList.length && openedList[endIn].deep > item.deep) {
+			while (endIn < openedFileList.length && openedFileList[endIn].deep > item.deep) {
 				endIn++;
 			}
-			openedList.splice(index, endIn - index);
+			openedFileList.splice(index, endIn - index);
 			this.setTreeHeight();
 			item.open = false;
 			this.setStartLine(this.checkScrollTop(this.scrollTop));
@@ -454,12 +468,12 @@ export default {
 
 			function _open() {
 				if (!item.open) {
-					let index = openedList.indexOf(item);
-					openedList = openedList
+					let index = openedFileList.indexOf(item);
+					openedFileList = openedFileList
 						.slice(0, index + 1)
 						.concat(this.getRenderList(item.children, item.deep))
-						.concat(openedList.slice(index + 1));
-					globalData.openedFileList = openedList;
+						.concat(openedFileList.slice(index + 1));
+					globalData.openedFileList = openedFileList;
 					item.open = true;
 					this.setTreeHeight();
 				}
@@ -566,7 +580,7 @@ export default {
 				for (let i = 0; i < list.length; i++) {
 					let item = list[i];
 					if (item.path === path) {
-						let scrollTop = openedList.indexOf(item) * this.itemHeight - this.domHeight / 2;
+						let scrollTop = openedFileList.indexOf(item) * this.itemHeight - this.domHeight / 2;
 						if (preActiveItem) {
 							preActiveItem.active = false;
 						}
@@ -595,6 +609,14 @@ export default {
 			scrollTop = scrollTop < 0 ? 0 : scrollTop;
 			return scrollTop;
 		},
+		scrollToLine(line) {
+			let height = line * this.itemHeight;
+			if (height > this.scrollTop + this.domHeight) {
+				this.setStartLine(this.checkScrollTop(height - this.domHeight));
+			} else if (height < this.scrollTop + this.itemHeight) {
+				this.setStartLine(this.checkScrollTop(height - this.itemHeight));
+			}
+		},
 		setStartLine(scrollTop) {
 			this.startLine = Math.floor(scrollTop / this.itemHeight) + 1;
 			this.scrollTop = scrollTop;
@@ -602,12 +624,36 @@ export default {
 			this.render();
 		},
 		setTreeHeight() {
-			this.treeHeight = openedList.length * this.itemHeight;
+			this.treeHeight = openedFileList.length * this.itemHeight;
 		},
 		setOpendList() {
-			openedList = this.getRenderList(globalData.fileTree, 0);
-			globalData.openedFileList = openedList;
+			openedFileList = this.getRenderList(globalData.fileTree, 0);
+			globalData.openedFileList = openedFileList;
 			this.setTreeHeight();
+		},
+		setPrevChecked() {
+			let index = openedFileList.indexOf(preActiveItem);
+			index--;
+			index = index < 0 ? openedFileList.length - 1 : index;
+			if (preActiveItem) {
+				preActiveItem.active = false;
+			}
+			preActiveItem = openedFileList[index];
+			globalData.nowFileItem = preActiveItem;
+			preActiveItem.active = true;
+			this.scrollToLine(index + 1);
+		},
+		setNextChecked() {
+			let index = openedFileList.indexOf(preActiveItem);
+			index++;
+			index = index >= openedFileList.length ? 0 : index;
+			if (preActiveItem) {
+				preActiveItem.active = false;
+			}
+			preActiveItem = openedFileList[index];
+			globalData.nowFileItem = preActiveItem;
+			preActiveItem.active = true;
+			this.scrollToLine(index + 1);
 		},
 		getRenderList(list, deep) {
 			let results = [];
@@ -627,29 +673,31 @@ export default {
 		getNowHash(cwd) {
 			return spawnSync('git', ['log', '-1', '--format=%H'], { cwd: cwd }).stdout.toString();
 		},
+		onFocus() {
+			this.focus = true;
+		},
+		onBlur() {
+			this.focus = false;
+		},
 		onClickItem(item) {
-			if (!item.active) {
-				if (preActiveItem) {
-					preActiveItem.active = false;
-				}
-				item.active = true;
-				preActiveItem = item;
-				globalData.nowFileItem = item;
-				if (item.type === 'dir') {
-					if (!item.loaded) {
-						this.openFolder(item).then(() => {
-							if (!item.gitRootPath) {
-								this.watchFileStatus(item.children);
-							}
-						});
-					} else {
-						item.open ? this.closeFolder(item) : this.openFolder(item);
-					}
+			if (preActiveItem) {
+				preActiveItem.active = false;
+			}
+			item.active = true;
+			preActiveItem = item;
+			globalData.nowFileItem = item;
+			if (item.type === 'dir') {
+				if (!item.loaded) {
+					this.openFolder(item).then(() => {
+						if (!item.gitRootPath) {
+							this.watchFileStatus(item.children);
+						}
+					});
 				} else {
-					EventBus.$emit('file-open', item);
+					item.open ? this.closeFolder(item) : this.openFolder(item);
 				}
-			} else if (item.type === 'dir') {
-				item.open ? this.closeFolder(item) : this.openFolder(item);
+			} else {
+				EventBus.$emit('file-open', item);
 			}
 		},
 		onWheel(e) {
