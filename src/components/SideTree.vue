@@ -697,7 +697,7 @@ export default {
 					item.open ? this.closeFolder(item) : this.openFolder(item);
 				}
 			} else {
-				EventBus.$emit('file-open', item);
+				EventBus.$emit('file-open', item, false, true);
 			}
 		},
 		onWheel(e) {

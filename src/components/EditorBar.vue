@@ -105,7 +105,7 @@ export default {
 			}
 		},
 		onClickItem(id) {
-			EventBus.$emit('editor-change', id);
+			EventBus.$emit('editor-change', { id });
 		},
 		onClose(id) {
 			EventBus.$emit('editor-close', id);

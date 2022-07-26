@@ -18,8 +18,8 @@ export default class {
 		this.init();
 	}
 	init() {
-		EventBus.$on('file-open', (fileObj, choseFile) => {
-			this.openFile(fileObj, choseFile);
+		EventBus.$on('file-open', (fileObj, choseFile, blur) => {
+			this.openFile(fileObj, choseFile, blur);
 		});
 		EventBus.$on('file-save', option => {
 			this.saveFile(option.id).then(() => {
@@ -139,7 +139,7 @@ export default class {
 				console.log(err);
 			});
 	}
-	openFile(fileObj, choseFile) {
+	openFile(fileObj, choseFile, blur) {
 		let tab = fileObj && Util.getTabByPath(this.editorList, fileObj.path);
 		if (!tab) {
 			let index = -1;
@@ -209,7 +209,7 @@ export default class {
 								tab.cursorPos = Object.assign({}, fileObj.range.start);
 							}
 							tab.mtimeMs = fs.statSync(filePath).mtimeMs;
-							EventBus.$emit(tab.cursorPos ? 'editor-change' : 'editor-change-blur', tab.id);
+							EventBus.$emit('editor-change', { id: tab.id, blur });
 							EventBus.$emit('language-check', tab.id);
 						}
 					});
@@ -218,7 +218,7 @@ export default class {
 				if (fileObj && fileObj.range) {
 					tab.cursorPos = Object.assign({}, fileObj.range.start);
 				}
-				EventBus.$emit('editor-change', tab.id);
+				EventBus.$emit('editor-change', { id: tab.id, blur });
 			}
 		}
 	}

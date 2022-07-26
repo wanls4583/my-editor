@@ -15,11 +15,8 @@ export default class {
 		EventBus.$on('editor-close', id => {
 			this.closeTab(id);
 		});
-		EventBus.$on('editor-change', id => {
-			this.changeTab(id, true);
-		});
-		EventBus.$on('editor-change-blur', id => {
-			this.changeTab(id, false);
+		EventBus.$on('editor-change', ({ id, blur }) => {
+			this.changeTab(id, blur);
 		});
 		EventBus.$on('editor-saved', id => {
 			this.saveTab(id);
@@ -60,7 +57,7 @@ export default class {
 			this.openShortCut();
 		});
 	}
-	changeTab(id, focus) {
+	changeTab(id, blur) {
 		cancelAnimationFrame(this.changeTabTimer);
 		this.changeTabTimer = requestAnimationFrame(() => {
 			let tab = Util.getTabById(this.editorList, id);
@@ -75,7 +72,7 @@ export default class {
 					});
 					tab.active = true;
 					this.changeStatus();
-					focus && this.focusNowEditor();
+					!blur && this.focusNowEditor();
 				}
 			} else if (tab) {
 				if (tab.cursorPos) {
@@ -85,7 +82,7 @@ export default class {
 					editor.scrollToLine(tab.cursorPos.line, tab.cursorPos.column);
 					delete tab.cursorPos;
 				}
-				focus && this.focusNowEditor();
+				!blur && this.focusNowEditor();
 			}
 		})
 	}
@@ -151,7 +148,7 @@ export default class {
 				globalData.nowEditorId = null;
 				tab.active = false;
 				if (_tab) {
-					this.changeTab(_tab.id, true);
+					this.changeTab(_tab.id);
 				} else {
 					EventBus.$emit('editor-changed', null);
 				}
@@ -257,7 +254,7 @@ export default class {
 				EventBus.$emit('git-status-start', tab.path);
 			}
 		});
-		activeTab && this.changeTab(activeTab.id, true);
+		activeTab && this.changeTab(activeTab.id);
 	}
 	focusNowEditor() {
 		cancelAnimationFrame(this.closeTabTimer);
