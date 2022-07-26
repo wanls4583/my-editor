@@ -22,33 +22,28 @@ export default {
 			menuList: [
 				[
 					{
-						name: 'Reveal in File Explorer',
-						op: 'revealInFileExplorer',
-						shortcut: 'ignore',
+						value: 'revealEditorInFileExplorer',
+						op: 'command'
 					},
 				],
 				[
 					{
-						name: 'Format Document',
-						op: 'format',
-						shortcut: 'Ctrl+Shift+H',
+						value: 'formatCode',
+						op: 'command'
 					},
 				],
 				[
 					{
-						name: 'Cut',
-						op: 'cut',
-						shortcut: 'Ctrl+X',
+						value: 'cutContent',
+						op: 'command'
 					},
 					{
-						name: 'Copy',
-						op: 'copy',
-						shortcut: 'Ctrl+C',
+						value: 'copyContent',
+						op: 'command'
 					},
 					{
-						name: 'Paste',
-						op: 'paste',
-						shortcut: 'Ctrl+V',
+						value: 'pasteContent',
+						op: 'command'
 					},
 				],
 			],
@@ -58,6 +53,7 @@ export default {
 	},
 	created() {
 		this.initEventBus();
+		this.initShortcut();
 	},
 	destroyed() {
 		this.unbindEvent();
@@ -71,6 +67,29 @@ export default {
 					this.menuVisible = false;
 				})
 			);
+			EventBus.$on('shortcut-change', () => {
+				this.initShortcut();
+			});
+			EventBus.$on('shortcut-loaded', () => {
+				this.initShortcut();
+			});
+		},
+		initShortcut() {
+			_check(this.menuList);
+
+			function _check(list) {
+				if (list instanceof Array) {
+					list.forEach((item) => {
+						_check(item);
+					});
+				} else if (list.op === 'command') {
+					let command = globalData.shortcut.findCommandByName(list.value);
+					if (command) {
+						list.shortcut = command.key || '';
+						list.name = command.name || list.name || '';
+					}
+				}
+			}
 		},
 		unbindEvent() {
 			EventBus.$off('close-menu', this.initEventBusFn['close-menu']);
@@ -84,21 +103,8 @@ export default {
 		onMenuChange(item) {
 			let editor = this.$parent;
 			switch (item.op) {
-				case 'revealInFileExplorer':
-					EventBus.$emit('reveal-in-file-explorer', editor.tabData.path);
-					break;
-				case 'cut':
-				case 'copy':
-					Util.writeClipboard(this.myContext.getCopyText(menu.op === 'cut'));
-					break;
-				case 'paste':
-					editor.$refs.textarea.focus();
-					Util.readClipboard().then((text) => {
-						editor.myContext.insertContent(text);
-					});
-					break;
-				case 'format':
-					EventBus.$emit('editor-format', editor.tabData.id);
+				case 'command':
+					globalData.shortcut.doComand({ command: item.value });
 					break;
 			}
 			this.menuVisible = false;

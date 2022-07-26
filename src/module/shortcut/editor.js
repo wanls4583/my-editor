@@ -1,3 +1,4 @@
+import Util from '@/common/util';
 import EventBus from '@/event';
 import globalData from '@/data/globalData';
 
@@ -147,6 +148,27 @@ export const editorComands = [
 		when: 'editorFocus'
 	},
 	{
+		name: 'Copy',
+		label: 'Copy Content',
+		key: 'Ctrl+C',
+		command: 'copyContent',
+		when: 'editorFocus'
+	},
+	{
+		name: 'Cut',
+		label: 'Cut Content',
+		key: 'Ctrl+X',
+		command: 'cutContent',
+		when: 'editorFocus'
+	},
+	{
+		name: 'Paste',
+		label: 'Paste Content',
+		key: 'Ctrl+V',
+		command: 'pasteContent',
+		when: 'editorFocus'
+	},
+	{
 		name: 'Add Indent',
 		key: 'Ctrl+]',
 		command: 'addAnIndent',
@@ -264,6 +286,13 @@ export const editorComands = [
 		name: 'Select All Occurence',
 		key: '',
 		command: 'selectAllOccurence',
+		when: 'editorFocus'
+	},
+	{
+		name: 'Reveal in File Explorer',
+		label: 'Reveal Editor in File Explorer',
+		key: '',
+		command: 'revealEditorInFileExplorer',
 		when: 'editorFocus'
 	},
 ]
@@ -402,6 +431,17 @@ export class EditorComand {
 		this.context.deleteWord('left');
 		this.editor.autocomplete.search();
 	}
+	copyContent() {
+		Util.writeClipboard(this.context.getCopyText());
+	}
+	cutContent() {
+		Util.writeClipboard(this.context.getCopyText(true));
+	}
+	pasteContent() {
+		Util.readClipboard().then((text) => {
+			this.context.insertContent(text);
+		});
+	}
 	addAnIndent() {
 		this.context.addAnIndent();
 	}
@@ -439,5 +479,8 @@ export class EditorComand {
 	}
 	selectAllOccurence() {
 		this.editor.selecter.selectAllOccurence();
+	}
+	revealEditorInFileExplorer() {
+		EventBus.$emit('reveal-in-file-explorer', this.editor.tabData.path);
 	}
 }
