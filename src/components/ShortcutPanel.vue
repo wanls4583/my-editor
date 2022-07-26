@@ -17,7 +17,7 @@
 		</div>
 		<div class="my-shortcut-scoller" ref="scroller">
 			<div :style="{ top: -deltaTop + 'px' }" class="my-shortcut-content">
-				<div :class="[item.active?'my-active':'']" :id="item.id" @click.stop="onClickItem(item)" class="my-shortcut-item" v-for="item in renderList">
+				<div :class="[item.active?'my-active':'']" :id="item.id" @click="onClickItem(item)" class="my-shortcut-item" v-for="item in renderList">
 					<span class="edit-col">
 						<i @click="onEdit(item)" class="my-icon my-icon-edit"></i>
 					</span>
