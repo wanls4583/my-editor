@@ -75,7 +75,6 @@ export default class {
             historyArr = this.context._deleteMultiContent({ rangeOrCursorList: cursorPosList });
             historyArr.serial = serial;
             historyArr.originCursorPosList = originCursorPosList;
-            historyArr.originScrollTop = this.editor.scrollTop;
             this.editor.history.pushHistory(historyArr);
             historyArr = this.context._insertMultiContent({
                 text: texts,
@@ -155,7 +154,6 @@ export default class {
             historyArr = this.context._deleteMultiContent({ rangeOrCursorList: cursorPosList });
             historyArr.serial = serial;
             historyArr.originCursorPosList = originCursorPosList;
-            historyArr.originScrollTop = this.editor.scrollTop;
             this.editor.history.pushHistory(historyArr);
             historyArr = this.context._insertMultiContent({
                 text: texts,

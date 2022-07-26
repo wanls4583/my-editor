@@ -61,7 +61,6 @@ export default class {
 			afterCursorPosList.push({ line: item.cursorPos.line, column: column });
 		});
 		historyArr.originCursorPosList = originCursorPosList;
-        historyArr.originScrollTop = this.editor.scrollTop;
 		historyArr.afterCursorPosList = afterCursorPosList;
 		this.context.addCursorList(afterCursorPosList);
 		this.editor.history.pushHistory(historyArr);

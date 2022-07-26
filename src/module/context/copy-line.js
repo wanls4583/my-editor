@@ -57,7 +57,6 @@ export default class {
         }
         historyArr = this.context._insertMultiContent({ text: texts, cursorPosList, afterCursorPosList });
         historyArr.originCursorPosList = originCursorPosList;
-        historyArr.originScrollTop = this.editor.scrollTop;
         historyArr.afterCursorPosList = afterCursorPosList;
         // 更正光标位置
         for (let i = 0; i < historyArr.length; i++) {

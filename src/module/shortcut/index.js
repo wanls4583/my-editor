@@ -97,13 +97,17 @@ export default class {
         let arr = this.keyMap[key.toLowerCase()];
         if (arr) {
             let editor = globalData.$mainWin.getNowEditor();
-            for (let i = 0; i < arr.length; i++) {
-                let command = arr[i];
-                if (command.when === 'editorFocus') {
-                    if (editor && editor.cursorFocus && editor.editAble) {
+            if (editor && editor.cursorFocus && editor.editAble) {
+                for (let i = 0; i < arr.length; i++) {
+                    let command = arr[i];
+                    if (command.when === 'editorFocus') {
                         return command;
                     }
-                } else {
+                }
+            }
+            for (let i = 0; i < arr.length; i++) {
+                let command = arr[i];
+                if (!command.when) {
                     return command;
                 }
             }

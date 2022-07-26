@@ -943,10 +943,11 @@ class Context {
 				rangeOrCursorList: ranges
 			});
 			historyArr.originCursorPosList = originCursorPosList;
-			this.editor.history.pushHistory(historyArr);
-			this.addCursorList(historyArr.map((item) => {
+			historyArr.afterCursorPosList = historyArr.map((item) => {
 				return item.cursorPos
-			}));
+			});
+			this.editor.history.pushHistory(historyArr);
+			this.addCursorList(historyArr.afterCursorPosList);
 		}
 		return text.slice(1);
 	}

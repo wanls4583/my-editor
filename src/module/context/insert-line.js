@@ -43,8 +43,8 @@ export default class {
         });
         historyArr = this.context._insertMultiContent({ text: '\n', cursorPosList });
         historyArr.originCursorPosList = originCursorPosList;
-        historyArr.originScrollTop = this.editor.scrollTop;
-        this.context.addCursorList(historyArr.map((item) => { return item.cursorPos }));
+        historyArr.afterCursorPosList = historyArr.map((item) => { return item.cursorPos });
+        this.context.addCursorList(historyArr.afterCursorPosList);
         this.editor.history.pushHistory(historyArr);
         if (lineOne) {
             this.editor.cursor.updateCursorPos(this.editor.cursor.multiCursorPos.get(0), 1, 0);
@@ -79,8 +79,8 @@ export default class {
         });
         historyArr = this.context._insertMultiContent({ text: '\n', cursorPosList });
         historyArr.originCursorPosList = originCursorPosList;
-        historyArr.originScrollTop = this.editor.scrollTop;
-        this.context.addCursorList(historyArr.map((item) => { return item.cursorPos }));
+        historyArr.afterCursorPosList = historyArr.map((item) => { return item.cursorPos });
+        this.context.addCursorList(historyArr.afterCursorPosList);
         this.editor.history.pushHistory(historyArr);
     }
 }
