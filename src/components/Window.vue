@@ -234,6 +234,7 @@ export default {
 			});
 			EventBus.$on('terminal-toggle', () => {
 				this.terminalVisible = !this.terminalVisible;
+				globalData.views.terminal = this.terminalVisible;
 				if (this.terminalVisible && !this.terminalList.length) {
 					EventBus.$emit('terminal-new');
 				}

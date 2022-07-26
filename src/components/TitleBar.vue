@@ -330,7 +330,6 @@ export default {
 			});
 			EventBus.$on('terminal-toggle', () => {
 				this.viewMenuList[0][1].selected = !this.viewMenuList[0][1].selected;
-				globalData.views.terminal = !globalData.views.terminal;
 			});
 			EventBus.$on('minimap-toggle', () => {
 				this.viewMenuList[0][2].selected = !this.viewMenuList[0][2].selected;
