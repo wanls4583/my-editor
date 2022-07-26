@@ -301,8 +301,8 @@ export class EditorComand {
 	constructor() { }
 	execComand(command) {
 		if(this[command.command]) {
-			this[command.command](command);
 			this.editor.focus();
+			this[command.command](command);
 		}
 	}
 	insertEmptyLineUp() {
