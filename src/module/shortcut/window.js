@@ -77,6 +77,7 @@ export const windowComands = [
 	},
 	{
 		name: 'New File',
+		label: 'Add Untitled Editor',
 		key: 'Ctrl+N',
 		command: 'newFile'
 	},

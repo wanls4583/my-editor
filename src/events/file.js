@@ -358,7 +358,6 @@ export default class {
 			active: false,
 			open: false,
 			deep: 0,
-			parent: null,
 			children: [],
 		};
 	}

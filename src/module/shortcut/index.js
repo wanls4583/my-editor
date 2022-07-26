@@ -2,6 +2,7 @@ import { editorComands, EditorComand } from './editor';
 import { editorBarComands, EditorBarComand } from './editor-bar';
 import { terminalBarComands, TerminalBarComand } from './terminal-bar';
 import { windowComands, WindowCommand } from './window';
+import { fileTreeComands, FileTreeComand } from './file-tree';
 import vkeys from 'vkeys';
 import EventBus from '@/event';
 import globalData from '../../data/globalData';
@@ -18,6 +19,7 @@ export default class {
         this.editorBarComand = new EditorBarComand();
         this.terminalBarComand = new TerminalBarComand();
         this.windowCommand = new WindowCommand();
+        this.fileTreeComand = new FileTreeComand();
         this.initKeyMap();
         EventBus.$on('shortcut-loaded', (data) => {
             this.userShortcut = data;
@@ -71,6 +73,15 @@ export default class {
             item.label = item.label || item.name;
             item.commandObj = this.windowCommand;
         });
+        fileTreeComands.forEach(item => {
+            let _key = item.key.toLowerCase();
+            item = { ...item };
+            this.keyMap[_key] = this.keyMap[_key] || [];
+            this.keyMap[_key].push(item);
+            this.commandMap[item.command] = item;
+            item.label = item.label || item.name;
+            item.commandObj = this.fileTreeComand;
+        });
     }
     initUserKeyMap(data) {
         data = data || [];
@@ -116,7 +127,7 @@ export default class {
     findCommandByName(command) {
         return this.commandMap[command];
     }
-    doComand(command) {
+    doComand(command, args) {
         let commandObj = command.commandObj;
         if (command.commandObj) {
             commandObj = command.commandObj;
@@ -131,10 +142,10 @@ export default class {
                 if (editor && context) {
                     commandObj.editor = editor;
                     commandObj.context = context;
-                    commandObj.execComand(command);
+                    commandObj.execComand(command, args);
                 }
             } else {
-                commandObj.execComand(command);
+                commandObj.execComand(command, args);
             }
         }
     }

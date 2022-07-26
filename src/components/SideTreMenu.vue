@@ -26,154 +26,154 @@ export default {
 			rootMenu: [
 				[
 					{
-						name: 'New File',
-						op: 'newFile',
+						value: 'createFile',
+						op: 'command'
 					},
 					{
-						name: 'New Folder',
-						op: 'newFolder',
+						value: 'createFolder',
+						op: 'command'
 					},
 					{
-						name: 'Reveal in File Explorer',
-						op: 'revealInFileExplorer',
+						value: 'revealInFileExplorer',
+						op: 'command'
 					},
 					{
-						name: 'Find in Folder',
-						op: 'findInFolder',
+						value: 'findInFolder',
+						op: 'command'
 					},
 					{
-						name: 'Open in Terminal',
-						op: 'openInTerminal',
-					},
-				],
-				[
-					{
-						name: 'Add Folder to Workspace',
-						op: 'addFolder',
-					},
-					{
-						name: 'Remove Folder from Workspace',
-						op: 'removeFolder',
+						value: 'openInTerminal',
+						op: 'command'
 					},
 				],
 				[
 					{
-						name: 'Copy',
-						op: 'copy',
+						value: 'addFolder',
+						op: 'command'
 					},
 					{
-						name: 'Paste',
-						op: 'paste',
+						value: 'removeFolder',
+						op: 'command'
 					},
 				],
 				[
 					{
-						name: 'Copy Path',
-						op: 'copyPath',
+						value: 'copyFile',
+						op: 'command'
 					},
 					{
-						name: 'Copy Relative Path',
-						op: 'copyRelativePath',
+						value: 'pasteFile',
+						op: 'command'
+					},
+				],
+				[
+					{
+						value: 'copyPath',
+						op: 'command'
+					},
+					{
+						value: 'copyRelativePath',
+						op: 'command'
 					},
 				],
 			],
 			dirMenu: [
 				[
 					{
-						name: 'New File',
-						op: 'newFile',
+						value: 'createFile',
+						op: 'command'
 					},
 					{
-						name: 'New Folder',
-						op: 'newFolder',
+						value: 'createFolder',
+						op: 'command'
 					},
 					{
-						name: 'Reveal in File Explorer',
-						op: 'revealInFileExplorer',
+						value: 'revealInFileExplorer',
+						op: 'command'
 					},
 					{
-						name: 'Find in Folder',
-						op: 'findInFolder',
+						value: 'findInFolder',
+						op: 'command'
 					},
 					{
-						name: 'Open in Terminal',
-						op: 'openInTerminal',
-					},
-				],
-				[
-					{
-						name: 'Cut',
-						op: 'cut',
-					},
-					{
-						name: 'Copy',
-						op: 'copy',
-					},
-					{
-						name: 'Paste',
-						op: 'paste',
+						value: 'openInTerminal',
+						op: 'command'
 					},
 				],
 				[
 					{
-						name: 'Copy Path',
-						op: 'copyPath',
+						value: 'cutFile',
+						op: 'command'
 					},
 					{
-						name: 'Copy Relative Path',
-						op: 'copyRelativePath',
+						value: 'copyFile',
+						op: 'command'
+					},
+					{
+						value: 'pasteFile',
+						op: 'command'
 					},
 				],
 				[
 					{
-						name: 'Reaname',
-						op: 'rename',
+						value: 'copyPath',
+						op: 'command'
 					},
 					{
-						name: 'Delete',
-						op: 'delete',
+						value: 'copyRelativePath',
+						op: 'command'
+					},
+				],
+				[
+					{
+						value: 'rename',
+						op: 'command'
+					},
+					{
+						value: 'deleteFile',
+						op: 'command'
 					},
 				],
 			],
 			fileMenu: [
 				[
 					{
-						name: 'Reveal in File Explorer',
-						op: 'revealInFileExplorer',
+						value: 'revealInFileExplorer',
+						op: 'command'
 					},
 					{
-						name: 'Open in Terminal',
-						op: 'openInTerminal',
-					},
-				],
-				[
-					{
-						name: 'Cut',
-						op: 'cut',
-					},
-					{
-						name: 'Copy',
-						op: 'copy',
+						value: 'openInTerminal',
+						op: 'command'
 					},
 				],
 				[
 					{
-						name: 'Copy Path',
-						op: 'copyPath',
+						value: 'cutFile',
+						op: 'command'
 					},
 					{
-						name: 'Copy Relative Path',
-						op: 'copyRelativePath',
+						value: 'copyFile',
+						op: 'command'
 					},
 				],
 				[
 					{
-						name: 'Reaname',
-						op: 'rename',
+						value: 'copyPath',
+						op: 'command'
 					},
 					{
-						name: 'Delete',
-						op: 'delete',
+						value: 'copyRelativePath',
+						op: 'command'
+					},
+				],
+				[
+					{
+						value: 'rename',
+						op: 'command'
+					},
+					{
+						value: 'deleteFile',
+						op: 'command'
 					},
 				],
 			],
@@ -187,12 +187,32 @@ export default {
 	},
 	created() {
 		this.initEventBus();
+		this.initShortcut();
 	},
 	methods: {
 		initEventBus() {
 			EventBus.$on('close-menu', () => {
 				this.menuVisible = false;
 			});
+		},
+		initShortcut() {
+			_check(this.rootMenu);
+			_check(this.dirMenu);
+			_check(this.fileMenu);
+
+			function _check(list) {
+				if (list instanceof Array) {
+					list.forEach((item) => {
+						_check(item);
+					});
+				} else if (list.op === 'command') {
+					let command = globalData.shortcut.findCommandByName(list.value);
+					if (command) {
+						list.shortcut = command.key || '';
+						list.name = list.name || command.name || '';
+					}
+				}
+			}
 		},
 		show(e, treeItem) {
 			let $parent = $(this.$refs.wrap).parent();
@@ -223,61 +243,8 @@ export default {
 			let dirPath = '';
 			let treeItem = Object.assign({}, this.treeItem);
 			switch (item.op) {
-				case 'newFile':
-					EventBus.$emit('file-create-tree', treeItem.path);
-					break;
-				case 'newFolder':
-					EventBus.$emit('folder-create-tree', treeItem.path);
-					break;
-				case 'revealInFileExplorer':
-					EventBus.$emit('reveal-in-file-explorer', treeItem.path);
-					break;
-				case 'findInFolder':
-					dirPath = path.relative(treeItem.rootPath, treeItem.path);
-					dirPath = path.join(path.basename(treeItem.rootPath), dirPath);
-					dirPath = '.' + path.sep + dirPath;
-					EventBus.$emit('find-in-folder', { path: dirPath });
-					break;
-				case 'openInTerminal':
-					dirPath = '';
-					if (this.treeItem.type === 'file') {
-						dirPath = path.dirname(this.treeItem.path);
-					} else {
-						dirPath = this.treeItem.path;
-					}
-					EventBus.$emit('terminal-new', dirPath);
-					break;
-				case 'addFolder':
-					EventBus.$emit('folder-add');
-					break;
-				case 'removeFolder':
-					EventBus.$emit('folder-remove', treeItem.path);
-					break;
-				case 'cut':
-					EventBus.$emit('file-cut', treeItem);
-					break;
-				case 'copy':
-					EventBus.$emit('file-copy', treeItem);
-					break;
-				case 'paste':
-					EventBus.$emit('file-paste', treeItem);
-					break;
-				case 'copyPath':
-					Util.writeClipboard(treeItem.path);
-					break;
-				case 'copyRelativePath':
-					dirPath = treeItem.name;
-					while (treeItem.parent && treeItem.parent.parent) {
-						dirPath = path.join(treeItem.parent.name, dirPath);
-						treeItem = treeItem.parent;
-					}
-					Util.writeClipboard(dirPath);
-					break;
-				case 'rename':
-					EventBus.$emit('file-rename-input', treeItem);
-					break;
-				case 'delete':
-					EventBus.$emit('file-delete', treeItem);
+				case 'command':
+					globalData.shortcut.doComand({ command: item.value }, { treeItem });
 					break;
 			}
 			this.menuVisible = false;
