@@ -29,9 +29,11 @@
 			</div>
 			<v-scroll-bar :class="{'my-scroll-visible': scrollVisible}" :height="contentHeight" :scroll-top="scrollTop" @scroll="onScroll"></v-scroll-bar>
 		</div>
-		<div class="my-shortcut-edit" v-if="editVisible">
-			<div class="edit-tip">Press desired key combination and then press ENTER</div>
-			<input @keydown="onKeydown" @keyup="onKeyup" @blur="onBlur" ref="input" spellcheck="false" type="text" v-model="key" />
+		<div class="my-shortcut-overlay" v-if="editVisible">
+			<div class="my-shortcut-edit">
+				<div class="edit-tip">Press desired key combination and then press ENTER</div>
+				<input @keydown="onKeydown" @keyup="onKeyup" @blur="onBlur" ref="input" spellcheck="false" type="text" v-model="key" />
+			</div>
 		</div>
 	</div>
 </template>
@@ -231,6 +233,9 @@ export default {
 			this.editVisible = false;
 		},
 		onWheel(e) {
+			if(this.editVisible) {
+				return;
+			}
 			this.scrollDeltaY = e.deltaY;
 			if (this.scrollDeltaY && !this.wheelTask) {
 				this.wheelTask = globalData.scheduler.addUiTask(() => {
