@@ -52,7 +52,9 @@ export default {
 		},
 		contentHeight() {
 			this.setStartLine();
+			// 折叠或者展开的时候需要更新
 			this.renderAllDiff();
+			this.renderAllSearchdBg();
 		},
 		nowLine() {
 			this.setTop();
