@@ -63,7 +63,7 @@
 				</div>
 				<!-- 输入框 -->
 				<textarea
-					:style="{ top: _textAreaPos.top, left: _textAreaPos.left, height: _lineHeight  }"
+					:style="{ top: textareaPos.top, left: textareaPos.left, height: _lineHeight  }"
 					@blur="onBlur"
 					@compositionend="onCompositionend"
 					@compositionstart="onCompositionstart"
@@ -209,6 +209,7 @@ export default {
 			scrollerArea: { width: 0, height: 0 },
 			nowCursorPos: { line: 1, column: 0 },
 			bracketMatch: { start: {}, end: {} },
+			textareaPos: { left: '0px', top: '0px' },
 			tipStyle: { top: '0px', left: '0px' },
 			autoTipStyle: { top: '50%', left: '50%' },
 			maxWidthObj: { lineId: null, text: '', width: 0 },
@@ -254,31 +255,15 @@ export default {
 		_contentHeight() {
 			return this.contentHeight + 'px';
 		},
-		_textAreaPos() {
-			let left = this.cursorLeft;
-			let top = 0;
-			if (this.nowCursorPos) {
-				let line = this.nowCursorPos.line < this.startLine ? this.startLine : this.nowCursorPos.line;
-				top = (this.folder.getRelativeLine(line) - this.startLine + 1) * this.charObj.charHight;
-				if (top > this.scrollerArea.height - 2 * this.charObj.charHight) {
-					top = this.scrollerArea.height - 2 * this.charObj.charHight;
-				}
-			}
-			if (left > this.scrollerArea.width - this.charObj.fullCharWidth) {
-				left = this.scrollerArea.width - this.charObj.fullCharWidth;
-			} else if (left < this.charObj.fullCharWidth) {
-				left = this.charObj.fullCharWidth;
-			}
-			return {
-				top: top + 'px',
-				left: left + 'px',
-			};
-		},
 		_bracketStartVisible() {
-			return this.bracketMatch && this.bracketMatch.start.line >= this.startLine && this.bracketMatch.start.line <= this.endLine;
+			return this.bracketMatch && this.bracketMatch.start &&
+				this.bracketMatch.start.line >= this.startLine &&
+				this.bracketMatch.start.line <= this.endLine;
 		},
 		_bracketEndVisible() {
-			return this.bracketMatch && this.bracketMatch.end && this.bracketMatch.end.line >= this.startLine && this.bracketMatch.end.line <= this.endLine;
+			return this.bracketMatch && this.bracketMatch.end &&
+				this.bracketMatch.end.line >= this.startLine &&
+				this.bracketMatch.end.line <= this.endLine;
 		},
 		_bracketStartStyle() {
 			return {
@@ -868,10 +853,6 @@ export default {
 			this.activeLineBg = true;
 			this.clearSelectionToken();
 			this._renderHighlight();
-			if (this.activeLineBg) {
-				this.activeLineTop = (this.folder.getRelativeLine(this.nowCursorPos.line) - 1) *
-					this.charObj.charHight - this.deltaTop + 'px';
-			}
 		},
 		_renderHighlight() {
 			let selectionNumMap = {};
@@ -1252,6 +1233,8 @@ export default {
 				}
 				if (cursorPos === this.nowCursorPos) {
 					this.cursorLeft = left - this.scrollLeft;
+					this.setTextareaPos();
+					this.setActiveLineTop();
 				}
 				return left + 'px';
 			}
@@ -1459,10 +1442,11 @@ export default {
 			}
 		},
 		scrollToLine(line, column, weackScroll) {
-			let scrollTop = (line - 1) * this.charObj.charHight - this.scrollerArea.height / 2;
+			let relLine = this.folder.getRelativeLine(line);
+			let scrollTop = (relLine - 1) * this.charObj.charHight - this.scrollerArea.height / 2;
 			scrollTop = scrollTop > 0 ? scrollTop : 0;
 			if (weackScroll) {
-				let height = this.folder.getRelativeLine(line) * this.charObj.charHight;
+				let height = relLine * this.charObj.charHight;
 				if (height + this.charObj.charHight > this.scrollTop + this.scrollerArea.height ||
 					height < this.scrollTop + this.charObj.charHight) {
 					weackScroll = false;
@@ -1491,6 +1475,33 @@ export default {
 				return;
 			}
 			this[prop] = value;
+		},
+		setActiveLineTop() {
+			if (this.activeLineBg) {
+				this.activeLineTop =
+					(this.folder.getRelativeLine(this.nowCursorPos.line) - 1) *
+					this.charObj.charHight - this.deltaTop + 'px';
+			}
+		},
+		setTextareaPos() {
+			let left = this.cursorLeft;
+			let top = 0;
+			if (this.nowCursorPos) {
+				let line = this.nowCursorPos.line < this.startLine ? this.startLine : this.nowCursorPos.line;
+				top = (this.folder.getRelativeLine(line) - this.folder.getRelativeLine(this.startLine)) * this.charObj.charHight;
+				if (top > this.scrollerArea.height - 2 * this.charObj.charHight) {
+					top = this.scrollerArea.height - 2 * this.charObj.charHight;
+				}
+			}
+			if (left > this.scrollerArea.width - this.charObj.fullCharWidth) {
+				left = this.scrollerArea.width - this.charObj.fullCharWidth;
+			} else if (left < this.charObj.fullCharWidth) {
+				left = this.charObj.fullCharWidth;
+			}
+			this.textareaPos = {
+				top: top + 'px',
+				left: left + 'px',
+			};
 		},
 		setDiffObjs(diffRanges) {
 			this.diffRanges = diffRanges;
