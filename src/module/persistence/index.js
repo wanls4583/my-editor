@@ -36,6 +36,7 @@ export default class {
 		let results = [];
 		for (let i = 0; i < openedFileList.length; i++) {
 			let item = openedFileList[i];
+			// 只记录根文件夹和打开的文件夹路径
 			if (item.type === 'dir' && (item.open || !item.parentPath)) {
 				results.push({
 					path: item.path,
@@ -50,11 +51,10 @@ export default class {
 	loadFileTree() {
 		if (fs.existsSync(globalData.fileTreePath)) {
 			Util.loadJsonFile(globalData.fileTreePath).then(data => {
-				data = data || [];
-				EventBus.$emit('file-tree-loaded', data);
+				if (data && data.length && data.__proto__.constructor === Array) {
+					EventBus.$emit('file-tree-loaded', data);
+				}
 			});
-		} else {
-			EventBus.$emit('file-tree-loaded', []);
 		}
 	}
 	storeTabData() {
@@ -86,7 +86,7 @@ export default class {
 	loadTabData() {
 		if (fs.existsSync(globalData.tabPath)) {
 			Util.loadJsonFile(globalData.tabPath).then(data => {
-				if (data && data.length) {
+				if (data && data.length && data.__proto__.constructor === Array) {
 					EventBus.$emit('editor-loaded', data);
 				}
 			});
@@ -112,7 +112,7 @@ export default class {
 	loadTerminalTabData() {
 		if (fs.existsSync(globalData.terminalTabPath)) {
 			Util.loadJsonFile(globalData.terminalTabPath).then(data => {
-				if (data && data.length) {
+				if (data && data.length && data.__proto__.constructor === Array) {
 					EventBus.$emit('terminal-loaded', data);
 				}
 			});
@@ -149,7 +149,7 @@ export default class {
 	loadShortcutData() {
 		if (fs.existsSync(globalData.shortcutPath)) {
 			Util.loadJsonFile(globalData.shortcutPath).then(data => {
-				if (data && data.length) {
+				if (data && data.length && data.__proto__.constructor === Array) {
 					EventBus.$emit('shortcut-loaded', data);
 				}
 			});

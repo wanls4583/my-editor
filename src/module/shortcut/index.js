@@ -22,7 +22,10 @@ export default class {
         this.fileTreeComand = new FileTreeComand();
         this.initKeyMap();
         EventBus.$on('shortcut-loaded', (data) => {
-            this.userShortcut = data;
+            this.userShortcut = data.filter((item) => {
+                item.key = item.key || '';
+                return item.command;
+            });
             this.initUserKeyMap(data);
         });
         EventBus.$on('shortcut-change', (data) => {

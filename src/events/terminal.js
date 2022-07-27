@@ -12,7 +12,7 @@ export default class {
 	}
 	init() {
 		EventBus.$on('terminal-new', dirPath => {
-			if(dirPath) {
+			if (dirPath) {
 				this.addTerminal(dirPath);
 			} else if (globalData.fileTree.length) {
 				this.selectTermialCwd();
@@ -61,7 +61,7 @@ export default class {
 		tab.id = Util.getUUID();
 		this.terminalList.push(tab);
 		EventBus.$emit('terminal-change', tab.id);
-		if(!globalData.views.terminal) {
+		if (!globalData.views.terminal) {
 			EventBus.$emit('terminal-toggle');
 		}
 	}
@@ -84,7 +84,7 @@ export default class {
 				break;
 			}
 		}
-		if(id === globalData.nowTerminalId) {
+		if (id === globalData.nowTerminalId) {
 			globalData.nowTerminalId = null;
 		}
 		if (this.terminalList.length === 0 && globalData.views.terminal) {
@@ -121,10 +121,12 @@ export default class {
 	}
 	loadTerminal(list) {
 		list.forEach((item) => {
-			if(item.active) {
-				globalData.nowTerminalId = item.id;
+			if (item && item.id && item.path) {
+				if (item.active) {
+					globalData.nowTerminalId = item.id;
+				}
+				this.terminalList.push(item);
 			}
-			this.terminalList.push(item);
 		});
 	}
 	selectTermialCwd() {

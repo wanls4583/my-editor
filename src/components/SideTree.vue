@@ -181,29 +181,43 @@ export default {
 		},
 		initOpendDirList(list) {
 			if (list.length) {
-				let fileObj = list.shift();
-				let item = fileObj.parentPath && Util.getFileItemByPath(globalData.fileTree, fileObj.path, fileObj.rootPath);
-				if (item) {
-					_readdir.call(this, item);
-				} else {
-					item = this.createRootItem(fileObj.path);
-					globalData.fileTree.push(item);
-					if (fileObj.open) {
-						_readdir.call(this, item);
+				let fileObj = list.shift() || {};
+				try {
+					if (fileObj.path && fs.existsSync(fileObj.path) && fs.statSync(fileObj.path).isDirectory()) {
+						let item = fileObj.parentPath && Util.getFileItemByPath(globalData.fileTree, fileObj.path, fileObj.rootPath);
+						if (item) {
+							_readdir.call(this, item);
+						} else if (fileObj.path) {
+							item = this.createRootItem(fileObj.path);
+							globalData.fileTree.push(item);
+							if (fileObj.open) {
+								_readdir.call(this, item);
+							} else {
+								this.initOpendDirList(list);
+							}
+						}
 					} else {
 						this.initOpendDirList(list);
 					}
+				} catch (e) {
+					this.initOpendDirList(list);
 				}
 			} else {
-				this.refreshWorkSpace();
-				this.preLoadFolder();
-				this.initOpendDiring = false;
+				_finish.call(this);
 			}
 
 			function _readdir(item) {
 				this.openFolder(item).then(() => {
 					this.initOpendDirList(list);
+				}).catch(() => {
+					_finish.call(this);
 				});
+			}
+
+			function _finish() {
+				this.refreshWorkSpace();
+				this.preLoadFolder();
+				this.initOpendDiring = false;
 			}
 		},
 		render() {
