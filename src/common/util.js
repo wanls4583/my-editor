@@ -50,24 +50,24 @@ class Util {
 	}
 	//数组数字排序
 	static sortNum(arr) {
-		arr.sort(function(arg1, arg2) {
+		arr.sort(function (arg1, arg2) {
 			return Number(arg1) - Number(arg2);
 		});
 	}
 	static debounce(cb, delay) {
 		var timer = null;
-		return function() {
+		return function () {
 			clearTimeout(timer);
-			timer = setTimeout(function() {
+			timer = setTimeout(function () {
 				cb();
 			}, delay);
 		};
 	}
 	static throttle(cb, delay) {
 		var timer = null;
-		return function() {
+		return function () {
 			if (!timer) {
-				timer = setTimeout(function() {
+				timer = setTimeout(function () {
 					cb();
 				}, delay);
 			}
@@ -188,8 +188,9 @@ class Util {
 	}
 	//<,>转义
 	static htmlTrans(cont) {
-		cont = cont.replace(/\&\#/g, '&amp;#');
-		return cont.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+		cont = cont.replace(/\&/g, '&amp;'); //防止‘&lt;’等纯文本被显示成转义符‘<’
+		cont = cont.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+		return cont;
 	}
 	// 深度克隆
 	static deepAssign(targetObj, originObj, noDeepKeys) {
@@ -253,7 +254,7 @@ class Util {
 		let result = {};
 		properties.forEach(property => {
 			result[property] = {
-				get: function() {
+				get: function () {
 					if (typeof context[property] == 'function') {
 						return context[property].bind(context);
 					} else {
@@ -728,17 +729,17 @@ class Util {
 		return html;
 	}
 }
-Array.prototype.peek = function(index) {
+Array.prototype.peek = function (index) {
 	if (this.length) {
 		return this[this.length - (index || 1)];
 	}
 };
-Array.prototype.empty = function() {
+Array.prototype.empty = function () {
 	this.length = 0;
 	this.splice();
 	return this;
 };
-Array.prototype.insert = function(item, sort) {
+Array.prototype.insert = function (item, sort) {
 	if (sort && this.length) {
 		let left = 0,
 			right = this.length - 1;
@@ -758,7 +759,7 @@ Array.prototype.insert = function(item, sort) {
 		this.push(item);
 	}
 };
-String.prototype.peek = function(index) {
+String.prototype.peek = function (index) {
 	if (this.length) {
 		return this[this.length - (index || 1)];
 	}
