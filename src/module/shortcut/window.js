@@ -17,11 +17,13 @@ export const windowComands = [
 	},
 	{
 		name: 'Statusbar',
+		label: 'Toggle Statusbar',
 		key: 'Ctrl+Shift+B',
 		command: 'toggleStatusbar'
 	},
 	{
 		name: 'Minimap',
+		label: 'Toggle Minimap',
 		key: 'Ctrl+Shift+M',
 		command: 'toggleMinimap'
 	},
@@ -104,11 +106,13 @@ export const windowComands = [
 	},
 	{
 		name: 'Sidebar',
+		label: 'Toggle Sidebar',
 		key: 'Ctrl+L',
 		command: 'toggleSidebar'
 	},
 	{
 		name: 'Terminal',
+		label: 'Toggle Terminal',
 		key: 'Ctrl+`',
 		command: 'toggleTerminal'
 	},
