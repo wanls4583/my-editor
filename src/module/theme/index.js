@@ -16,7 +16,7 @@ const settingMap = {
 };
 
 export default class {
-	constructor() {}
+	constructor() { }
 	loadTheme(option) {
 		let result = { tokenColors: [], colors: {} };
 		return _loadTheme.call(this, option.path).then(() => {
@@ -52,7 +52,7 @@ export default class {
 	loadIconTheme(option) {
 		if (!option.path) {
 			globalData.nowIconTheme = {
-				value: option.value
+				value: option.value,
 			};
 			globalData.nowIconData = null;
 			EventBus.$emit('icon-changed');
@@ -162,6 +162,31 @@ export default class {
 					});
 				}
 			}
+		}
+	}
+	// 验证当前主题的有效性
+	checkNowTheme() {
+		let nowTheme = globalData.nowTheme;
+		let list = globalData.themes.flat();
+		for (let i = 0; i < list.length; i++) {
+			if (list[i].path === nowTheme.path && list[i].value === nowTheme.value) {
+				return true;
+			}
+		}
+		this.loadTheme(list[0]);
+	}
+	// 验证当前Icon主题的有效性
+	checkNowIconTheme(refresh) {
+		let nowIconTheme = globalData.nowIconTheme;
+		if (nowIconTheme.path) {
+			let list = globalData.iconThemes.flat();
+			for (let i = 0; i < list.length; i++) {
+				if (list[i].path === nowIconTheme.path && list[i].value === nowIconTheme.value) {
+					refresh && this.loadIconTheme(list[i]);
+					return true;
+				}
+			}
+			this.loadIconTheme({ value: 'none' });
 		}
 	}
 	parseCss(data) {

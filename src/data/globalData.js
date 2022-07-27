@@ -79,7 +79,21 @@ const globalData = {
 
 try {
 	// 加载全局配置
-	fs.existsSync(configPath) && Object.assign(globalData, Util.loadJsonFileSync(configPath));
+	if (fs.existsSync(configPath)) {
+		let data = Util.loadJsonFileSync(configPath);
+		if (data.nowTheme && data.nowTheme.__proto__.constructor === Object) {
+			globalData.nowTheme = data.nowTheme;
+		}
+		if (data.nowIconTheme && data.nowIconTheme.__proto__.constructor === Object) {
+			globalData.nowIconTheme = data.nowIconTheme;
+		}
+		if (data.views && data.views.__proto__.constructor === Object) {
+			globalData.views = data.views;
+		}
+		globalData.zoomLevel = Number(data.zoomLevel) || 0;
+		globalData.multiKeyCode = data.multiKeyCode;
+		globalData.multiKeyCode = globalData.multiKeyCode === 'ctrl' ? 'ctrl' : 'alt';
+	}
 } catch (e) {
 	console.log(e);
 }

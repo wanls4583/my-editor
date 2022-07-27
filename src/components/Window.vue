@@ -184,7 +184,8 @@ export default {
 			globalData.scopeFileList.empty().push(...scopeFileList);
 			globalData.themes.empty().push(...themes);
 			globalData.iconThemes.empty().push(...iconThemes);
-			theme.loadIconTheme(globalData.nowIconTheme); // loadIconTheme需要用到globalData.languageList
+			theme.checkNowTheme();
+			theme.checkNowIconTheme(true); // loadIconTheme需要用到globalData.languageList
 			EventBus.$emit('language-check');
 		});
 		this.initResizeEvent();
