@@ -52,7 +52,7 @@
 						<div :style="{top: item.top, height: _lineHeight}" class="my-line-bgs" v-for="item in renderSelectionObjs">
 							<div :class="range.bgClass" :style="range.bgStyle" class="my-select-bg" v-for="range in item.selections"></div>
 						</div>
-						<div :style="{height: _lineHeight, top: _activeLineTop}" class="my-line-bg" v-if="activeLineBg"></div>
+						<div :style="{height: _lineHeight, top: activeLineTop}" class="my-line-bg" v-if="activeLineBg"></div>
 						<div :style="_bracketStartStyle" class="my-bracket-match" v-if="_bracketStartVisible"></div>
 						<div :style="_bracketEndStyle" class="my-bracket-match" v-if="_bracketEndVisible"></div>
 					</div>
@@ -185,6 +185,7 @@ export default {
 			maxLine: 1,
 			maxContentHeight: 1000000,
 			contentHeight: 0,
+			activeLineTop: 0,
 			errorMap: {},
 			errors: [],
 			autoTipList: [],
@@ -241,9 +242,6 @@ export default {
 		},
 		_lineHeight() {
 			return this.charObj.charHight + 'px';
-		},
-		_activeLineTop() {
-			return (this.folder.getRelativeLine(this.nowCursorPos.line) - 1) * this.charObj.charHight - this.deltaTop + 'px';
 		},
 		_cursorVisible() {
 			return this.cursorVisible && this.cursorFocus ? 'visible' : 'hidden';
@@ -870,6 +868,10 @@ export default {
 			this.activeLineBg = true;
 			this.clearSelectionToken();
 			this._renderHighlight();
+			if (this.activeLineBg) {
+				this.activeLineTop = (this.folder.getRelativeLine(this.nowCursorPos.line) - 1) *
+					this.charObj.charHight - this.deltaTop + 'px';
+			}
 		},
 		_renderHighlight() {
 			let selectionNumMap = {};
@@ -1343,6 +1345,7 @@ export default {
 					}
 				});
 				this.setContentHeight();
+				this.renderBracketMatch();
 				this.render();
 				this.$refs.minimap && this.$refs.minimap.renderAllDiff();
 			}
@@ -1352,6 +1355,7 @@ export default {
 			this.focus();
 			if (this.folder.unFold(line)) {
 				this.setContentHeight();
+				this.renderBracketMatch();
 				this.render();
 				this.$refs.minimap && this.$refs.minimap.renderAllDiff();
 			}
