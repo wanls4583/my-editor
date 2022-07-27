@@ -166,8 +166,10 @@ class Context {
 		// 历史记录连续操作时，中间过程可能没有光标记录
 		if (this.editor.cursor.multiCursorPos.size) {
 			let nowCursorPos = this.editor.cursor.multiCursorPos.get(0);
-			this.editor.scrollToLine(nowCursorPos.line, nowCursorPos.column, true);
 			this.editor.setNowCursorPos(nowCursorPos);
+			if(command) {
+				this.editor.scrollToLine(nowCursorPos.line, nowCursorPos.column, true);
+			}
 		}
 		return historyArr;
 
@@ -419,8 +421,10 @@ class Context {
 		// 历史记录连续操作时，中间过程可能没有光标记录
 		if (this.editor.cursor.multiCursorPos.size) {
 			let nowCursorPos = this.editor.cursor.multiCursorPos.get(0);
-			this.editor.scrollToLine(nowCursorPos.line, nowCursorPos.column, true);
 			this.editor.setNowCursorPos(nowCursorPos);
+			if(command) {
+				this.editor.scrollToLine(nowCursorPos.line, nowCursorPos.column, true);
+			}
 		}
 		return historyArr;
 	}
