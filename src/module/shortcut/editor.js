@@ -224,7 +224,7 @@ export const editorComands = [
 	},
 	{
 		name: 'Insert Tab',
-		key: 'Capslock',
+		key: 'Tab',
 		command: 'insertTab',
 		when: 'editorFocus'
 	},
