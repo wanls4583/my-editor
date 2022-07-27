@@ -108,6 +108,24 @@ export default class {
 		fold && this.folds.delete(fold);
 		return fold;
 	}
+	// 展开包裹了line的折叠
+	unFoldWithLine(line) {
+		let toDels = [];
+		let it = this.folds.search(line, (a, b) => {
+			return a - b.start.line;
+		}, true);
+		if (it) {
+			let fold = it.prev();
+			while(fold && fold.start.line < line && fold.end.line > line) {
+				toDels.push(fold);
+				fold = it.prev();
+			}
+			toDels.forEach((fold)=>{
+				this.folds.delete(fold);
+			});
+		}
+		return !!toDels.length;
+	}
 	getFoldByLine(line) {
 		let it = this.folds.search(line, (a, b) => {
 			return a - b.start.line;
@@ -119,20 +137,18 @@ export default class {
 	 * @param {Number} line 行号
 	 */
 	getLineInFold(line) {
-		let it = this.folds.search(
-			line,
-			(a, b) => {
-				return a - b.start.line;
-			},
-			true
-		);
+		let result = false;
+		let it = this.folds.search(line, (a, b) => {
+			return a - b.start.line;
+		}, true);
 		if (it) {
 			let fold = it.prev();
-			if (fold && fold.start.line < line && fold.end.line > line) {
-				return this.getLineInFold(fold.start.line) || fold;
+			while (fold && fold.start.line < line && fold.end.line > line) {
+				result = fold;
+				fold = it.prev();
 			}
 		}
-		return false;
+		return result;
 	}
 	/**
 	 * 获取折叠范围

@@ -36,10 +36,12 @@ export default class {
                 if (hasCache) {
                     this.editor.selecter.addRange(Object.assign({ active: true }, resultObj.result));
                     this.editor.cursor.addCursorPos(resultObj.result.end);
+                    _unFoldWithLine.call(this, resultObj.result);
                     this.scrollToResult(resultObj.result);
                 } else {
                     this.selecter.addRange(resultObj.results);
                     this.selecter.addActive(resultObj.result.end);
+                    _unFoldWithLine.call(this, resultObj.result);
                     this.editor.cursor.setCursorPos(resultObj.result.end);
                     if (this.selecter.activedRanges.size > 1) { //搜索前已经存在活动区域
                         this.initIndexs();
@@ -53,6 +55,7 @@ export default class {
                     //记录当前可编辑的活动区域
                     this.editor.selecter.setRange(Object.assign({ active: true }, resultObj.result));
                     this.editor.cursor.setCursorPos(resultObj.result.end);
+                    _unFoldWithLine.call(this, resultObj.result);
                     this.scrollToResult(resultObj.result);
                 } else {
                     //使setPrevActive/setNextActive定位到当前光标位置
@@ -70,6 +73,15 @@ export default class {
             count: count,
             result: result,
         };
+
+        function _unFoldWithLine(result) {
+            if (this.editor.folder.unFoldWithLine(result.start.line) ||
+                this.editor.folder.unFoldWithLine(result.start.line)) {
+                this.editor.setContentHeight();
+                this.editor.renderBracketMatch();
+                this.editor.render();
+            }
+        }
     }
     execSearch(config) {
         let reg = null;
