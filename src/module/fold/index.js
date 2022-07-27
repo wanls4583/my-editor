@@ -29,60 +29,64 @@ export default class {
 		this.folds.empty();
 	}
 	onInsertContentAfter(preCursorPos, cursorPos) {
-		let folds = this.folds.toArray();
-		let afterIndex = Infinity;
-		// 历史记录中操作光标在折叠区，需要先展开
-		for (let i = 0; i < folds.length; i++) {
-			let fold = folds[i];
-			if (fold.start.line < preCursorPos.line) {
-				if (fold.end.line > preCursorPos.line) {
-					this.editor.unFold(fold.start.line);
+		let it = this.folds.search(preCursorPos.line, (a, b) => {
+			return a - b.start.line;
+		}, true);
+		if (it) {
+			let delFolds = [];
+			let value = it.prev();
+			while (value && value.end.line > preCursorPos.line) {
+				delFolds.push(value);
+				value = it.prev();
+			}
+			if (cursorPos.line > preCursorPos.line) {
+				it.reset();
+				value = it.next();
+				if (value && value.start.line === preCursorPos.line) {
+					delFolds.push(value);
+					value = it.next();
 				}
-			} else {
-				afterIndex = i;
-				break;
+				while (value) {
+					// 更新后面的行号
+					value.start.line += cursorPos.line - preCursorPos.line;
+					value.end.line += cursorPos.line - preCursorPos.line;
+					value = it.next();
+				}
 			}
-		}
-		if (cursorPos.line > preCursorPos.line) {
-			if (folds[afterIndex] && folds[afterIndex].start.line === preCursorPos.line) {
-				this.editor.unFold(preCursorPos.line);
-				afterIndex++;
+			for (let i = 0; i < delFolds.length; i++) {
+				this.folds.delete(delFolds[i])
 			}
-			// 更新后面的行号
-			for (let i = afterIndex; i < folds.length; i++) {
-				folds[i].start.line += cursorPos.line - preCursorPos.line;
-				folds[i].end.line += cursorPos.line - preCursorPos.line;
-			}
+			delFolds.length && this.editor.setContentHeight();
 		}
 	}
 	onDeleteContentAfter(preCursorPos, cursorPos) {
-		let folds = this.folds.toArray();
-		let afterIndex = Infinity;
-		for (let i = 0; i < folds.length; i++) {
-			let fold = folds[i];
-			let starLine = fold.start.line;
-			let endLine = fold.end.line;
-			if (starLine <= preCursorPos.line) {
-				if (starLine < preCursorPos.line) {
-					if ((starLine >= cursorPos.line && starLine < preCursorPos.line) || (starLine < cursorPos.line && endLine > cursorPos.line)) {
-						this.editor.unFold(starLine);
-					}
-				} else {
-					if (preCursorPos.line > cursorPos.line) {
-						this.editor.unFold(starLine);
-					}
+		let it = this.folds.search(preCursorPos.line, (a, b) => {
+			return a - b.start.line;
+		}, true);
+		if (it) {
+			let delFolds = [];
+			let value = it.prev();
+			while (value && value.end.line > cursorPos.line) {
+				delFolds.push(value);
+				value = it.prev();
+			}
+			if (preCursorPos.line > cursorPos.line) {
+				it.reset();
+				value = it.next();
+				if (value && value.start.line === preCursorPos.line) {
+					value = it.next();
 				}
-			} else {
-				afterIndex = i;
-				break;
+				while (value) {
+					// 更新后面的行号
+					value.start.line += cursorPos.line - preCursorPos.line;
+					value.end.line += cursorPos.line - preCursorPos.line;
+					value = it.next();
+				}
 			}
-		}
-		if (preCursorPos.line > cursorPos.line) {
-			// 更新后面的行号
-			for (let i = afterIndex; i < folds.length; i++) {
-				folds[i].start.line += cursorPos.line - preCursorPos.line;
-				folds[i].end.line += cursorPos.line - preCursorPos.line;
+			for (let i = 0; i < delFolds.length; i++) {
+				this.folds.delete(delFolds[i])
 			}
+			delFolds.length && this.editor.setContentHeight();
 		}
 	}
 	// 折叠行
@@ -99,32 +103,37 @@ export default class {
 				}
 			}
 			this.folds.insert(resultFold);
+			this.editor.setContentHeight();
 		}
 		return resultFold;
 	}
 	// 展开折叠行
 	unFold(line) {
 		let fold = this.getFoldByLine(line);
-		fold && this.folds.delete(fold);
+		if (fold) {
+			this.folds.delete(fold);
+			this.editor.setContentHeight();
+		}
 		return fold;
 	}
 	// 展开包裹了line的折叠
 	unFoldWithLine(line) {
-		let toDels = [];
+		let delFolds = [];
 		let it = this.folds.search(line, (a, b) => {
 			return a - b.start.line;
 		}, true);
 		if (it) {
 			let fold = it.prev();
-			while(fold && fold.start.line < line && fold.end.line > line) {
-				toDels.push(fold);
+			while (fold && fold.start.line < line && fold.end.line > line) {
+				delFolds.push(fold);
 				fold = it.prev();
 			}
-			toDels.forEach((fold)=>{
-				this.folds.delete(fold);
-			});
+			for (let i = 0; i < delFolds.length; i++) {
+				this.folds.delete(delFolds[i])
+			}
+			delFolds.length && this.editor.setContentHeight();
 		}
-		return !!toDels.length;
+		return !!delFolds.length;
 	}
 	getFoldByLine(line) {
 		let it = this.folds.search(line, (a, b) => {

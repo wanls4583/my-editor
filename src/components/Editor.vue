@@ -326,6 +326,10 @@ export default {
 		maxLine: function (newVal) {
 			this.setContentHeight();
 		},
+		contentHeight: function() {
+			this.renderBracketMatch();
+			this.render();
+		},
 		active: function (newVal) {
 			if (newVal) {
 				this.setPosition();
@@ -1327,19 +1331,12 @@ export default {
 						cursorPos.column = lineObj.text.length;
 					}
 				});
-				this.setContentHeight();
-				this.renderBracketMatch();
-				this.render();
 			}
 		},
 		// 展开折叠行
 		unFold(line) {
 			this.focus();
-			if (this.folder.unFold(line)) {
-				this.setContentHeight();
-				this.renderBracketMatch();
-				this.render();
-			}
+			this.folder.unFold(line)
 		},
 		// ctrl+f打开搜索
 		openSearch(replaceMode) {
