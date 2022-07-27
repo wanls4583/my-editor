@@ -1330,7 +1330,6 @@ export default {
 				this.setContentHeight();
 				this.renderBracketMatch();
 				this.render();
-				this.$refs.minimap && this.$refs.minimap.renderAllDiff();
 			}
 		},
 		// 展开折叠行
@@ -1340,7 +1339,6 @@ export default {
 				this.setContentHeight();
 				this.renderBracketMatch();
 				this.render();
-				this.$refs.minimap && this.$refs.minimap.renderAllDiff();
 			}
 		},
 		// ctrl+f打开搜索

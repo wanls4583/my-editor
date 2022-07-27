@@ -52,6 +52,7 @@ export default {
 		},
 		contentHeight() {
 			this.setStartLine();
+			this.renderAllDiff();
 		},
 		nowLine() {
 			this.setTop();
