@@ -1,0 +1,75 @@
+{
+	"name": "vscode-wxml",
+	"displayName": "vscode wxml",
+	"description": "Wechat wxml support/snippets for vscode",
+	"version": "0.1.9",
+	"icon": "images/weapp.png",
+	"publisher": "coderfee",
+	"author": {
+		"email": "codefee@outlook.com",
+		"name": "coderfee",
+		"url": "http://coderfe.cn"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/coderfe/vscode-wxml"
+	},
+	"bugs": {
+		"url": "https://github.com/coderfe/vscode-wxml/issues",
+		"email": "coderfee@outlook.com"
+	},
+	"engines": {
+		"vscode": "^1.5.0"
+	},
+	"categories": [
+		"Languages",
+		"Snippets",
+		"Other"
+	],
+	"keywords": [
+		"weapp",
+		"wechat",
+		"weixin",
+		"微信",
+		"wxml"
+	],
+	"contributes": {
+		"languages": [
+			{
+				"id": "wxml",
+				"aliases": [
+					"wxml",
+					"wxml"
+				],
+				"extensions": [
+					".wxml"
+				],
+				"configuration": "./language-configuration.json"
+			}
+		],
+		"grammars": [
+			{
+				"language": "wxml",
+				"scopeName": "text.html.wxml",
+				"path": "./syntaxes/wxml.tmLanguage"
+			}
+		],
+		"snippets": [
+			{
+				"language": "wxml",
+				"path": "./snippets/wxml.json"
+			}
+		]
+	},
+	"__metadata": {
+		"id": "1daf68c7-0de4-4ca2-aa6f-51fb8eda40c0",
+		"publisherId": "473eaaad-ff6d-4b7d-ad4e-7650ac53f745",
+		"publisherDisplayName": "coderfee",
+		"targetPlatform": "undefined",
+		"isApplicationScoped": false,
+		"updated": false,
+		"isPreReleaseVersion": false,
+		"preRelease": false,
+		"installedTimestamp": 1659005306159
+	}
+}
