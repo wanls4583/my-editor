@@ -385,16 +385,18 @@ export default class {
 			let count = 0;
 			let startTime = Date.now();
 			while (line >= 1) {
-				let folds = this.context.htmls[line - 1].folds;
+				let lineObj = this.context.htmls[line - 1];
+				let folds = lineObj.folds;
 				if (!folds) {
 					return callback(null);
 				}
 				for (let i = folds.length - 1; i >= 0; i--) {
 					let fold = folds[i];
 					// 跳过标签名
-					// if (fold.type === Util.CONST_DATA.TAG) {
-					// 	continue;
-					// }
+					if (fold.type === Util.CONST_DATA.TAG &&
+						singleTagMap[lineObj.text.slice(fold.startIndex, fold.endIndex)]) {
+						continue;
+					}
 					if (fold.side > 0 && (line < cursorPos.line || fold.endIndex < cursorPos.column)) {
 						stack.push(fold);
 					} else if (fold.side < 0 && (line < cursorPos.line || fold.startIndex <= cursorPos.column)) {
