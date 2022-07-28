@@ -326,7 +326,7 @@ export default {
 		maxLine: function (newVal) {
 			this.setContentHeight();
 		},
-		contentHeight: function() {
+		contentHeight: function () {
 			this.renderBracketMatch();
 			this.render();
 		},
@@ -1235,7 +1235,7 @@ export default {
 						this.scrollLeft = this.scrollLeft < 0 ? 0 : this.scrollLeft;
 					}
 				}
-				if (cursorPos === this.nowCursorPos) {
+				if (Util.comparePos(cursorPos, this.nowCursorPos) === 0) {
 					this.cursorLeft = left - this.scrollLeft;
 					this.setTextareaPos();
 					this.setActiveLineTop();
@@ -1472,11 +1472,9 @@ export default {
 			this[prop] = value;
 		},
 		setActiveLineTop() {
-			if (this.activeLineBg) {
-				this.activeLineTop =
-					(this.folder.getRelativeLine(this.nowCursorPos.line) - 1) *
-					this.charObj.charHight - this.deltaTop + 'px';
-			}
+			this.activeLineTop =
+				(this.folder.getRelativeLine(this.nowCursorPos.line) - 1) *
+				this.charObj.charHight - this.deltaTop + 'px';
 		},
 		setTextareaPos() {
 			let left = this.cursorLeft;
