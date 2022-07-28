@@ -39,15 +39,15 @@ export default class {
 			let fold = it.prev();
 			if (fold && fold.end.line > preCursorPos.line) {
 				delFolds.push(fold);
-				fold.children && children.push(...fold.children);
+				children.push(...fold.children);
 				fold = it.prev();
 			}
-			if (cursorPos.line > preCursorPos.line) {
+			if (deltaLine) {
 				it.reset();
 				fold = it.next();
 				if (fold && fold.start.line === preCursorPos.line) {
 					delFolds.push(fold);
-					fold.children && children.push(...fold.children);
+					children.push(...fold.children);
 				} else {
 					it.reset();
 				}
@@ -60,10 +60,12 @@ export default class {
 						pass = false;
 					}
 				} else if (deltaLine) {
-					fold.start.line += deltaLine;
-					fold.end.line += deltaLine;
-					if (fold.childLen) {
-						fold.children == this.updateChildLine(fold.children, deltaLine);
+					if (fold.start.line === preCursorPos.line) {
+						pass = false;
+					} else {
+						fold.start.line += deltaLine;
+						fold.end.line += deltaLine;
+						fold.children = this.updateChildLine(fold.children, deltaLine);
 					}
 				}
 				return pass;
@@ -90,16 +92,16 @@ export default class {
 			let deltaLine = cursorPos.line - preCursorPos.line;
 			while (fold && fold.end.line > cursorPos.line) {
 				delFolds.push(fold);
-				fold.children && children.push(...fold.children);
+				children.push(...fold.children);
 				fold = it.prev();
 			}
-			if (preCursorPos.line > cursorPos.line) {
+			if (deltaLine) {
 				it.reset();
 				fold = it.next();
 				if (fold && fold.start.line > preCursorPos.line) {
 					it.reset();
 				}
-				this.updateAfterFoldLine(it, cursorPos.line - preCursorPos.line);
+				this.updateAfterFoldLine(it, deltaLine);
 			}
 			children = this.filterChildren(children, (fold) => {
 				let pass = true;
@@ -110,9 +112,7 @@ export default class {
 				} else if (deltaLine) {
 					fold.start.line += deltaLine;
 					fold.end.line += deltaLine;
-					if (fold.childLen) {
-						fold.children == this.updateChildLine(fold.children, deltaLine);
-					}
+					fold.children = this.updateChildLine(fold.children, deltaLine);
 				}
 				return pass;
 			});
@@ -215,7 +215,7 @@ export default class {
 		while (fold = it.next()) {
 			fold.start.line += deltaLine;
 			fold.end.line += deltaLine;
-			fold.children && this.updateChildLine(fold.children, deltaLine);
+			this.updateChildLine(fold.children, deltaLine);
 		}
 	}
 	updateChildLine(children, deltaLine) {
@@ -223,12 +223,12 @@ export default class {
 			let fold = children[i];
 			fold.start.line += deltaLine;
 			fold.end.line += deltaLine;
-			fold.children && this.updateChildLine(fold.children, deltaLine);
+			this.updateChildLine(fold.children, deltaLine);
 		}
 	}
 	filterChildren(children, filter) {
 		let list = children.filter((fold) => {
-			if (fold.children && fold.children.length) {
+			if (fold.children.length) {
 				fold.children = this.filterChildren(fold.children, filter);
 			}
 			return filter(fold);
