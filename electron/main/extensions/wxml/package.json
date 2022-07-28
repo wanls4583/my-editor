@@ -1,75 +1,386 @@
 {
-	"name": "vscode-wxml",
-	"displayName": "vscode wxml",
-	"description": "Wechat wxml support/snippets for vscode",
-	"version": "0.1.9",
-	"icon": "images/weapp.png",
-	"publisher": "coderfee",
-	"author": {
-		"email": "codefee@outlook.com",
-		"name": "coderfee",
-		"url": "http://coderfe.cn"
+	"name": "minapp-vscode",
+	"displayName": "WXML - Language Service",
+	"description": "WXML Language Support",
+	"version": "2.4.8",
+	"publisher": "qiu8310",
+	"extensionKind": [
+		"workspace"
+	],
+	"scripts": {
+		"build:vsix": "npx vsce package",
+		"vscode:prepublish": "npm run clear && webpack --mode production",
+		"webpack": "webpack --mode development",
+		"webpack-dev": "webpack --mode development --watch",
+		"test-compile": "npm run clear && tsc -p ./",
+		"watch": "tsc -watch -p ./",
+		"lint": "eslint --ext .ts,.tsx ./src",
+		"clear": "rm -rf ./dist"
 	},
+	"keywords": [
+		"微信",
+		"小程序",
+		"minapp",
+		"wxml",
+		"wxss",
+		"wxs",
+		"wechat",
+		"wexin"
+	],
+	"license": "MIT",
+	"sponsor": {
+		"url": "https://www.paypal.com/paypalme/iChenLei"
+	},
+	"author": "Mora <qiuzhongleiabc@126.com> (https://github.com/qiu8310)",
+	"maintainers": [
+		{
+			"name": "Lei Chen",
+			"email": "chenleicoder@foxmail.com",
+			"url": "https://github.com/iChenLei"
+		}
+	],
+	"bugs": "https://github.com/wx-minapp/minapp-vscode/issues",
+	"homepage": "https://github.com/wx-minapp/minapp-vscode",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/coderfe/vscode-wxml"
-	},
-	"bugs": {
-		"url": "https://github.com/coderfe/vscode-wxml/issues",
-		"email": "coderfee@outlook.com"
+		"url": "https://github.com/wx-minapp/minapp-vscode"
 	},
 	"engines": {
-		"vscode": "^1.5.0"
+		"vscode": "^1.59.1"
 	},
+	"icon": "res/icon.png",
 	"categories": [
-		"Languages",
-		"Snippets",
-		"Other"
+		"Programming Languages"
 	],
-	"keywords": [
-		"weapp",
-		"wechat",
-		"weixin",
-		"微信",
-		"wxml"
+	"activationEvents": [
+		"workspaceContains:**/project.config.json",
+		"workspaceContains:**/app.wxss",
+		"onLanguage:wxml-pug",
+		"onLanguage:wxml",
+		"onLanguage:vue"
 	],
+	"main": "./dist/extension",
 	"contributes": {
+		"configuration": {
+			"title": "minapp-vscode",
+			"properties": {
+				"minapp-vscode.disableCustomComponentAutocomponent": {
+					"type": "boolean",
+					"description": "禁止自定义组件的自动补全（自定义组件自动补全需要遍历组件文件，可能会影响性能）",
+					"default": false
+				},
+				"minapp-vscode.resolveRoots": {
+					"type": "array",
+					"description": "解析文件引用关系用的根目录",
+					"default": [
+						"node_modules",
+						"src"
+					],
+					"items": {
+						"type": "string"
+					}
+				},
+				"minapp-vscode.showSuggestionOnEnter": {
+					"type": "boolean",
+					"description": "是否在按下 Enter 键后出自动补全（更新此配置后需要重启 vscode 才能生效）",
+					"default": false
+				},
+				"minapp-vscode.linkAttributeNames": {
+					"type": "array",
+					"description": "指定 link 功能作用的标签属性，默认有 src，即 src 后面的路径会当作一个文件路径来解析；设置为空数组可以禁用 link 功能",
+					"default": [
+						"src"
+					],
+					"items": {
+						"type": "string"
+					}
+				},
+				"minapp-vscode.formatMaxLineCharacters": {
+					"type": "number",
+					"description": "格式化时，单行允许的最长的长度(只针对默认的格式化工具)",
+					"default": 100
+				},
+				"minapp-vscode.reserveTags": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					},
+					"description": "格式化时，不处理的标签，即保持标签中的内容和格式化前一模一样，不会出现多余的换行(只针对默认的格式化工具)",
+					"default": []
+				},
+				"minapp-vscode.disableDecorate": {
+					"type": "boolean",
+					"description": "禁用模板文件中 js 变量自定义样式的功能",
+					"default": true
+				},
+				"minapp-vscode.decorateComplexInterpolation": {
+					"type": "boolean",
+					"description": "如果设置为 true, 则如果 {{ }} 中是表达式，也添加指定的样式；否则只会匹配 {{ }} 中的为单个变量的情况",
+					"default": true
+				},
+				"minapp-vscode.decorateType": {
+					"type": "object",
+					"description": "指定模板文件中 js 变量装饰的样式。可配置的属性有 https://code.visualstudio.com/docs/extensionAPI/vscode-api#DecorationRenderOptions",
+					"default": {
+						"color": "#ba68c8"
+					}
+				},
+				"minapp-vscode.snippets": {
+					"type": "object",
+					"description": "自定义 snippets，与系统 snippets 配置类似（注意：如果 key 和默认提供的 snippet 重复，会覆盖掉默认的）",
+					"default": {
+						"wxml": {
+							"open-data": {
+								"body": "<open-data type=\"${1|groupName,userNickName,userAvatarUrl,userGender,userCity,userProvince,userCountry,userLanguage|}\" lang=\"${2|en,zh_CN,zh_TW|}\" />$0"
+							}
+						},
+						"pug": {
+							"open-data": {
+								"body": "open-data(type=\"${1|groupName,userNickName,userAvatarUrl,userGender,userCity,userProvince,userCountry,userLanguage|}\" lang=\"${2|en,zh_CN,zh_TW|}\")$0"
+							}
+						}
+					}
+				},
+				"minapp-vscode.disableAutoConfig": {
+					"type": "boolean",
+					"description": "默认在启动时会自动相关文件关联的配置项，配置成功后会将此配置自动设置成 true，避免下次启动再重新配置",
+					"default": false
+				},
+				"minapp-vscode.selfCloseTags": {
+					"type": "array",
+					"description": "指定自我闭合的标签，用于自动补全时生成代码",
+					"items": {
+						"type": "string"
+					},
+					"default": [
+						"icon",
+						"progress",
+						"checkbox",
+						"input",
+						"radio",
+						"slider",
+						"switch",
+						"audio",
+						"image",
+						"video",
+						"camera",
+						"live-player",
+						"live-pusher",
+						"map",
+						"canvas",
+						"web-view",
+						"open-data"
+					]
+				},
+				"minapp-vscode.wxmlQuoteStyle": {
+					"type": "string",
+					"default": "\"",
+					"description": "自定义 wxml 自动补全是生成的引号"
+				},
+				"minapp-vscode.pugQuoteStyle": {
+					"type": "string",
+					"default": "'",
+					"description": "自定义 pug 自动补全是生成的引号"
+				},
+				"minapp-vscode.globalStyleFiles": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					},
+					"description": "全局的样式文件，系统会自动从这些指定的文件中获取 className，用于模板中的 class 补全"
+				},
+				"minapp-vscode.wxmlExtname": {
+					"type": "string",
+					"default": "wxml",
+					"enum": [
+						"wxml",
+						"vue",
+						"wpy"
+					],
+					"description": "创建小程序组件时候wxml文件类型，默认为.wxml"
+				},
+				"minapp-vscode.jsExtname": {
+					"type": "string",
+					"default": "js",
+					"enum": [
+						"js",
+						"ts",
+						"coffee"
+					],
+					"description": "创建小程序组件时候js文件类型，默认为.js"
+				},
+				"minapp-vscode.cssExtname": {
+					"type": "string",
+					"default": "wxss",
+					"enum": [
+						"wxss",
+						"css",
+						"styl",
+						"less",
+						"sass",
+						"scss"
+					],
+					"description": "创建小程序组件时候css样式文件类型，默认为.wxss"
+				},
+				"minapp-vscode.styleExtensions": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					},
+					"default": [
+						"wxss",
+						"css",
+						"less",
+						"scss",
+						"sass",
+						"styl"
+					],
+					"description": "当前样式文件的后缀中，系统会自动查找和当前模板同名的样式文件，用于模板中的 class 补全"
+				},
+				"minapp-vscode.disableFormat": {
+					"type": "boolean",
+					"description": "禁止插件的format功能",
+					"default": false
+				},
+				"minapp-vscode.wxmlFormatter": {
+					"type": "string",
+					"default": "wxml",
+					"enum": [
+						"wxml",
+						"prettier",
+						"prettyHtml"
+					],
+					"description": "wxml 格式化工具"
+				},
+				"minapp-vscode.prettyHtml": {
+					"type": "object",
+					"default": {
+						"useTabs": false,
+						"tabWidth": 2,
+						"printWidth": 100,
+						"singleQuote": false,
+						"usePrettier": true,
+						"wrapAttributes": false,
+						"sortAttributes": false
+					},
+					"description": "prettyHtml 配置"
+				},
+				"minapp-vscode.prettier": {
+					"type": "object",
+					"default": {
+						"parser": "html",
+						"useTabs": false,
+						"tabWidth": 2,
+						"printWidth": 100,
+						"singleQuote": false
+					},
+					"description": "prettier 配置"
+				},
+				"minapp-vscode.documentSelector": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					},
+					"uniqueItems": true,
+					"default": [
+						"wxml"
+					],
+					"description": "关联的文件类型，默认关联 wxml，如可以加上 html，这样在 html 中也可以有 wxml 的功能"
+				},
+				"minapp-vscode.sass": {
+					"type": "object",
+					"description": "scss/sass 配置，用于解析 scss/sass 文件，方便样式名称在 wxml 模板中自动补全"
+				}
+			}
+		},
+		"menus": {
+			"explorer/context": [
+				{
+					"command": "minapp-vscode.createMiniprogramComponent",
+					"group": "navigation@10",
+					"when": "minapp-vscode:init && resourceExtname == '' && activeViewlet == 'workbench.view.explorer'"
+				}
+			]
+		},
+		"commands": [
+			{
+				"command": "minapp-vscode.createMiniprogramComponent",
+				"title": "New Miniprogram Component",
+				"category": "minapp-vscode"
+			}
+		],
+		"themes": [],
 		"languages": [
 			{
 				"id": "wxml",
-				"aliases": [
-					"wxml",
-					"wxml"
-				],
 				"extensions": [
 					".wxml"
 				],
-				"configuration": "./language-configuration.json"
+				"configuration": "./syntaxes/wxml.language-configuration.json"
+			},
+			{
+				"id": "wxml-pug",
+				"extensions": [
+					".wpug",
+					".pug"
+				],
+				"configuration": "./syntaxes/wxml-pug.language-configuration.json"
 			}
 		],
 		"grammars": [
 			{
 				"language": "wxml",
 				"scopeName": "text.html.wxml",
-				"path": "./syntaxes/wxml.tmLanguage"
-			}
-		],
-		"snippets": [
+				"path": "./syntaxes/wxml.tmLanguage.json",
+				"embeddedLanguages": {
+					"text.html": "html",
+					"source.js": "js"
+				}
+			},
 			{
-				"language": "wxml",
-				"path": "./snippets/wxml.json"
+				"language": "wxml-pug",
+				"scopeName": "text.jade.wxml",
+				"path": "./syntaxes/wxml-pug.tmLanguage.json",
+				"embeddedLanguages": {
+					"text.html": "html",
+					"source.js": "js"
+				}
 			}
 		]
 	},
+	"dependencies": {
+		"json5": "^2.2.0",
+		"prettier": "^1.19.1",
+		"read-pkg-up": "^7.0.1",
+		"resolve": "^1.20.0",
+		"tslib": "^2.3.1"
+	},
+	"devDependencies": {
+		"@types/mocha": "^9.1.1",
+		"@types/prettier": "^1.19.1",
+		"@types/resolve": "1.20.1",
+		"@types/sass": "~1.16.1",
+		"@types/vscode": "^1.59.0",
+		"@typescript-eslint/eslint-plugin": "^4.29.3",
+		"@typescript-eslint/parser": "^4.29.3",
+		"@vscode/test-electron": "^1.6.2",
+		"eslint": "7.32.0",
+		"mocha": "^10.0.0",
+		"ts-loader": "^9.2.6",
+		"typescript": "^4.4.4",
+		"vsce": "^2.9.2",
+		"webpack": "^5.51.1",
+		"webpack-cli": "^4.8.0"
+	},
 	"__metadata": {
-		"id": "1daf68c7-0de4-4ca2-aa6f-51fb8eda40c0",
-		"publisherId": "473eaaad-ff6d-4b7d-ad4e-7650ac53f745",
-		"publisherDisplayName": "coderfee",
+		"id": "9cbb1b8a-fc53-41f7-8ae4-56f9f2db02d5",
+		"publisherId": "15be2386-a6a1-47ac-a17d-535d00101f5c",
+		"publisherDisplayName": "Mora Qiu",
 		"targetPlatform": "undefined",
 		"isApplicationScoped": false,
 		"updated": false,
 		"isPreReleaseVersion": false,
 		"preRelease": false,
-		"installedTimestamp": 1659005306159
+		"installedTimestamp": 1659016708391
 	}
 }
