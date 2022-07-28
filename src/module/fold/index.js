@@ -33,6 +33,7 @@ export default class {
 			return a - b.start.line;
 		}, true);
 		if (it) {
+			let addFolds = [];
 			let delFolds = [];
 			let children = [];
 			let deltaLine = cursorPos.line - preCursorPos.line;
@@ -53,14 +54,16 @@ export default class {
 				}
 				this.updateAfterFoldLine(it, cursorPos.line - preCursorPos.line);
 			}
-			children = this.filterChildren(children, (fold) => {
+			let filter = (fold) => {
 				let pass = true;
 				if (fold.start.line < preCursorPos.line) {
 					if (fold.end.line > preCursorPos.line) {
+						addFolds.push(...this.filterChildren(fold.children, filter));
 						pass = false;
 					}
 				} else if (deltaLine) {
 					if (fold.start.line === preCursorPos.line) {
+						addFolds.push(...this.filterChildren(fold.children, filter));
 						pass = false;
 					} else {
 						fold.start.line += deltaLine;
@@ -69,13 +72,14 @@ export default class {
 					}
 				}
 				return pass;
-			});
+			}
+			addFolds.push(...this.filterChildren(children, filter));
 			if (delFolds.length) {
 				for (let i = 0; i < delFolds.length; i++) {
 					this.folds.delete(delFolds[i])
 				}
-				for (let i = 0; i < children.length; i++) {
-					this.folds.insert(children[i]);
+				for (let i = 0; i < addFolds.length; i++) {
+					this.folds.insert(addFolds[i]);
 				}
 				this.editor.setContentHeight();
 			}
@@ -86,6 +90,7 @@ export default class {
 			return a - b.start.line;
 		}, true);
 		if (it) {
+			let addFolds = [];
 			let delFolds = [];
 			let children = [];
 			let fold = it.prev();
@@ -103,10 +108,11 @@ export default class {
 				}
 				this.updateAfterFoldLine(it, deltaLine);
 			}
-			children = this.filterChildren(children, (fold) => {
+			let filter = (fold) => {
 				let pass = true;
 				if (fold.start.line < preCursorPos.line) {
 					if (fold.end.line > cursorPos.line) {
+						addFolds.push(...this.filterChildren(fold.children, filter));
 						pass = false;
 					}
 				} else if (deltaLine) {
@@ -115,13 +121,14 @@ export default class {
 					fold.children = this.updateChildLine(fold.children, deltaLine);
 				}
 				return pass;
-			});
+			}
+			addFolds.push(...this.filterChildren(children, filter));
 			if (delFolds.length) {
 				for (let i = 0; i < delFolds.length; i++) {
 					this.folds.delete(delFolds[i])
 				}
-				for (let i = 0; i < children.length; i++) {
-					this.folds.insert(children[i]);
+				for (let i = 0; i < addFolds.length; i++) {
+					this.folds.insert(addFolds[i]);
 				}
 				this.editor.setContentHeight();
 			}
