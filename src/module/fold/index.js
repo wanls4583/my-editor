@@ -192,24 +192,27 @@ export default class {
 		}, true);
 		if (it) {
 			let fold = it.prev();
+			let addFolds = [];
 			let children = [];
 			if (fold && fold.start.line < line && fold.end.line > line) {
 				delFolds.push(fold);
 				children.push(...fold.children);
 				fold = it.prev();
 			}
-			children = this.filterChildren(children, (fold) => {
+			let filter = (fold) => {
 				if (fold.start.line < line && fold.end.line > line) {
+					addFolds.push(...this.filterChildren(fold.children, filter));
 					return false;
 				}
 				return true;
-			});
+			}
+			addFolds.push(...this.filterChildren(children, filter));
 			if (delFolds.length) {
 				for (let i = 0; i < delFolds.length; i++) {
 					this.folds.delete(delFolds[i])
 				}
-				for (let i = 0; i < children.length; i++) {
-					this.folds.insert(children[i]);
+				for (let i = 0; i < addFolds.length; i++) {
+					this.folds.insert(addFolds[i]);
 				}
 				this.editor.setContentHeight();
 			}
