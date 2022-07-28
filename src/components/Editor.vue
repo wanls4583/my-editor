@@ -53,8 +53,8 @@
 							<div :class="range.bgClass" :style="range.bgStyle" class="my-select-bg" v-for="range in item.selections"></div>
 						</div>
 						<div :style="{height: _lineHeight, top: activeLineTop}" class="my-line-bg" v-if="activeLineBg"></div>
-						<div :style="_bracketStartStyle" class="my-bracket-match" v-if="_bracketStartVisible"></div>
-						<div :style="_bracketEndStyle" class="my-bracket-match" v-if="_bracketEndVisible"></div>
+						<div :class="_bracketType(bracketMatch.start.type)" :style="_bracketStartStyle" class="my-bracket-match my-bracket-start" v-if="_bracketStartVisible"></div>
+						<div :class="_bracketType(bracketMatch.start.type)" :style="_bracketEndStyle" class="my-bracket-match my-bracket-end" v-if="_bracketEndVisible"></div>
 					</div>
 					<div :style="{width: _contentMinWidth+'px'}" class="my-indent-view">
 						<div :style="{height: _lineHeight, top: line.top}" class="my-indents" v-for="line in renderObjs" v-html="line.tabLines"></div>
@@ -280,6 +280,11 @@ export default {
 				width: this.bracketMatch.end.width,
 				height: this._lineHeight,
 			};
+		},
+		_bracketType() {
+			return (type) => {
+				return 'bracket-' + type;
+			}
 		},
 		space() {
 			return Util.space(this.tabSize);

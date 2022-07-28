@@ -60,6 +60,11 @@
 		position: absolute;
 		border: 1px solid var(--my-editorBracketMatch-border);
 		background-color: var(--my-editorBracketMatch-background);
+
+		&.bracket-tag {
+			border-color: var(--my-editor-wordHighlightBorder);
+			background-color: var(--my-editor-wordHighlightBackground);
+		}
 	}
 
 	&-indents {

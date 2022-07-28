@@ -472,6 +472,9 @@ export default class {
 		}
 		while ((res = reg.exec(text))) {
 			let type = Util.CONST_DATA.BRACKET;
+			if('<' === res[0] || '>' === res[0]) {
+				continue;
+			}
 			if (sourceConfigData.comments.lineComment === res[0]) {
 				type = Util.CONST_DATA.LINE_COMMENT;
 			} else if (sourceConfigData.comments.blockComment[0] === res[0]

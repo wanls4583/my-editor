@@ -22,7 +22,7 @@
 		// "editor.selectionBackground": "#48473D",
 		"editor.selectionBackground": "#878b9180",
 		"minimap.selectionHighlight": "#878b9180",
-		"editor.wordHighlightBackground": "#3e3d32",
+		"editor.wordHighlightBackground": "#4a4a76aa",
 		"editor.wordHighlightStrongBackground": "#3e3d32",
 		"editor.lineHighlightBackground": "#3e3d32",
 		"editorLineNumber.foreground": "#90918B",

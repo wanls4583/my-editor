@@ -703,6 +703,12 @@ export default class {
 					result.colors['editorBracketMatch.border'] = transparent;
 				}
 			}
+			if (!result.colors['editor.wordHighlightBackground']) {
+				result.colors['editor.wordHighlightBackground'] = result.colors['editor.findMatchBackground'];
+			}
+			if (!result.colors['editor.wordHighlightBorder']) {
+				result.colors['editor.wordHighlightBorder'] = transparent;
+			}
 		}
 		// terminal
 		function _terminal() {
