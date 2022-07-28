@@ -34,29 +34,49 @@ export default class {
 		}, true);
 		if (it) {
 			let delFolds = [];
-			let value = it.prev();
-			while (value && value.end.line > preCursorPos.line) {
-				delFolds.push(value);
-				value = it.prev();
+			let children = [];
+			let deltaLine = cursorPos.line - preCursorPos.line;
+			let fold = it.prev();
+			if (fold && fold.end.line > preCursorPos.line) {
+				delFolds.push(fold);
+				fold.children && children.push(...fold.children);
+				fold = it.prev();
 			}
 			if (cursorPos.line > preCursorPos.line) {
 				it.reset();
-				value = it.next();
-				if (value && value.start.line === preCursorPos.line) {
-					delFolds.push(value);
-					value = it.next();
+				fold = it.next();
+				if (fold && fold.start.line === preCursorPos.line) {
+					delFolds.push(fold);
+					fold.children && children.push(...fold.children);
+				} else {
+					it.reset();
 				}
-				while (value) {
-					// 更新后面的行号
-					value.start.line += cursorPos.line - preCursorPos.line;
-					value.end.line += cursorPos.line - preCursorPos.line;
-					value = it.next();
+				this.updateAfterFoldLine(it, cursorPos.line - preCursorPos.line);
+			}
+			children = this.filterChildren(children, (fold) => {
+				let pass = true;
+				if (fold.start.line < preCursorPos.line) {
+					if (fold.end.line > preCursorPos.line) {
+						pass = false;
+					}
+				} else if (deltaLine) {
+					fold.start.line += deltaLine;
+					fold.end.line += deltaLine;
+					if (fold.childLen) {
+						fold.children == this.updateChildLine(fold.children, deltaLine);
+					}
 				}
+				return pass;
+			});
+			if (delFolds.length) {
+				for (let i = 0; i < delFolds.length; i++) {
+					this.folds.delete(delFolds[i])
+				}
+				for (let i = 0; i < children.length; i++) {
+					this.folds.insert(children[i]);
+				}
+				this.editor.setContentHeight();
 			}
-			for (let i = 0; i < delFolds.length; i++) {
-				this.folds.delete(delFolds[i])
-			}
-			delFolds.length && this.editor.setContentHeight();
 		}
 	}
 	onDeleteContentAfter(preCursorPos, cursorPos) {
@@ -65,42 +85,79 @@ export default class {
 		}, true);
 		if (it) {
 			let delFolds = [];
-			let value = it.prev();
-			while (value && value.end.line > cursorPos.line) {
-				delFolds.push(value);
-				value = it.prev();
+			let children = [];
+			let fold = it.prev();
+			let deltaLine = cursorPos.line - preCursorPos.line;
+			while (fold && fold.end.line > cursorPos.line) {
+				delFolds.push(fold);
+				fold.children && children.push(...fold.children);
+				fold = it.prev();
 			}
 			if (preCursorPos.line > cursorPos.line) {
 				it.reset();
-				value = it.next();
-				if (value && value.start.line === preCursorPos.line) {
-					value = it.next();
+				fold = it.next();
+				if (fold && fold.start.line > preCursorPos.line) {
+					it.reset();
 				}
-				while (value) {
-					// 更新后面的行号
-					value.start.line += cursorPos.line - preCursorPos.line;
-					value.end.line += cursorPos.line - preCursorPos.line;
-					value = it.next();
+				this.updateAfterFoldLine(it, cursorPos.line - preCursorPos.line);
+			}
+			children = this.filterChildren(children, (fold) => {
+				let pass = true;
+				if (fold.start.line < preCursorPos.line) {
+					if (fold.end.line > cursorPos.line) {
+						pass = false;
+					}
+				} else if (deltaLine) {
+					fold.start.line += deltaLine;
+					fold.end.line += deltaLine;
+					if (fold.childLen) {
+						fold.children == this.updateChildLine(fold.children, deltaLine);
+					}
 				}
+				return pass;
+			});
+			if (delFolds.length) {
+				for (let i = 0; i < delFolds.length; i++) {
+					this.folds.delete(delFolds[i])
+				}
+				for (let i = 0; i < children.length; i++) {
+					this.folds.insert(children[i]);
+				}
+				this.editor.setContentHeight();
 			}
-			for (let i = 0; i < delFolds.length; i++) {
-				this.folds.delete(delFolds[i])
-			}
-			delFolds.length && this.editor.setContentHeight();
 		}
 	}
 	// 折叠行
 	foldLine(line) {
 		let resultFold = this.getRangeFold(line);
 		if (resultFold) {
-			// 避免交叉折叠
-			for (let line = resultFold.start.line + 1; line < resultFold.end.line; line++) {
-				let fold = this.getFoldByLine(line);
-				if (fold) {
-					if (fold.end.line > resultFold.end.line) {
-						this.editor.unFold(line);
+			let it = this.folds.search(line + 1, (a, b) => {
+				return a - b.start.line;
+			}, true);
+			let delFolds = [];
+			let children = [];
+			let fold = null;
+			if (it) {
+				while (fold = it.next()) {
+					if (fold.start.line < resultFold.end.line) {
+						if (fold.end.line <= resultFold.end.line) {
+							// 存储子折叠，展开时重新insert
+							children.push(fold);
+						} else {
+							// 避免交叉折叠
+							delFolds.push(fold);
+						}
+					} else {
+						break;
 					}
 				}
+			}
+			resultFold.children = children;
+			for (let i = 0; i < delFolds.length; i++) {
+				this.folds.delete(delFolds[i]);
+			}
+			for (let i = 0; i < children.length; i++) {
+				this.folds.delete(children[i]);
 			}
 			this.folds.insert(resultFold);
 			this.editor.setContentHeight();
@@ -111,7 +168,11 @@ export default class {
 	unFold(line) {
 		let fold = this.getFoldByLine(line);
 		if (fold) {
+			let children = fold.children || [];
 			this.folds.delete(fold);
+			for (let i = 0; i < children.length; i++) {
+				this.folds.insert(children[i]);
+			}
 			this.editor.setContentHeight();
 		}
 		return fold;
@@ -124,16 +185,55 @@ export default class {
 		}, true);
 		if (it) {
 			let fold = it.prev();
-			while (fold && fold.start.line < line && fold.end.line > line) {
+			let children = [];
+			if (fold && fold.start.line < line && fold.end.line > line) {
 				delFolds.push(fold);
+				children.push(...fold.children);
 				fold = it.prev();
 			}
-			for (let i = 0; i < delFolds.length; i++) {
-				this.folds.delete(delFolds[i])
+			children = this.filterChildren(children, (fold) => {
+				if (fold.start.line < line && fold.end.line > line) {
+					return false;
+				}
+				return true;
+			});
+			if (delFolds.length) {
+				for (let i = 0; i < delFolds.length; i++) {
+					this.folds.delete(delFolds[i])
+				}
+				for (let i = 0; i < children.length; i++) {
+					this.folds.insert(children[i]);
+				}
+				this.editor.setContentHeight();
 			}
-			delFolds.length && this.editor.setContentHeight();
+
 		}
 		return !!delFolds.length;
+	}
+	updateAfterFoldLine(it, deltaLine) {
+		let fold = null;
+		while (fold = it.next()) {
+			fold.start.line += deltaLine;
+			fold.end.line += deltaLine;
+			fold.children && this.updateChildLine(fold.children, deltaLine);
+		}
+	}
+	updateChildLine(children, deltaLine) {
+		for (let i = 0; i < children.length; i++) {
+			let fold = children[i];
+			fold.start.line += deltaLine;
+			fold.end.line += deltaLine;
+			fold.children && this.updateChildLine(fold.children, deltaLine);
+		}
+	}
+	filterChildren(children, filter) {
+		let list = children.filter((fold) => {
+			if (fold.children && fold.children.length) {
+				fold.children = this.filterChildren(fold.children, filter);
+			}
+			return filter(fold);
+		});
+		return list;
 	}
 	getFoldByLine(line) {
 		let it = this.folds.search(line, (a, b) => {
