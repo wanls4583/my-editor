@@ -594,7 +594,7 @@ class Util {
 			} else {
 				if (item.path === filePath) {
 					results.push(item);
-				} else if (filePath.startsWith(item.path)) {
+				} else if (filePath.startsWith(item.path + path.sep)) {
 					let result = _findItem(item);
 					result && results.push(result);
 				}
@@ -610,7 +610,7 @@ class Util {
 				let item = list[i];
 				if (filePath === item.path) {
 					return item;
-				} else if (filePath.startsWith(item.path)) {
+				} else if (filePath.startsWith(item.path + path.sep)) {
 					return _findItem(item);
 				}
 			}
@@ -619,7 +619,7 @@ class Util {
 	static getFileStatus(filePath) {
 		let gitDir = '';
 		for (let key in globalData.fileStatus) {
-			if (filePath.startsWith(key)) {
+			if (filePath == key || filePath.startsWith(key + path.sep)) {
 				gitDir = key;
 				break;
 			}
@@ -632,7 +632,7 @@ class Util {
 		if (!status && globalData.dirStatus[gitDir]) {
 			let dirStatus = globalData.dirStatus[gitDir];
 			for (let i = 0; i < dirStatus.length; i++) {
-				if (filePath.startsWith(dirStatus[i].path)) {
+				if (filePath == dirStatus[i].path || filePath.startsWith(dirStatus[i].path + path.sep)) {
 					status = dirStatus[i].status;
 					break;
 				}
