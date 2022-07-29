@@ -324,7 +324,7 @@ class Btree {
             } else if (result.next) {
                 result = result.next;
                 index = 0;
-                return result.dataList[index];
+                return result.dataList[index++];
             }
             return null;
         }
