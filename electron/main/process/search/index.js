@@ -37,7 +37,7 @@ class Search {
 	}
 	search(searchObj) {
 		searchObj = Object.assign({}, searchObj);
-		searchObj.lines = searchObj.text.split('\n');
+		searchObj.lines = searchObj.text.split(/\r*\n/);
 		this.searchObj = searchObj;
 		if (!fs.existsSync(searchObj.path)) {
 			this.searchDone = true;

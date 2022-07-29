@@ -6,7 +6,7 @@ class Worker {
     }
     formatCode({ workerId, text, cursorPos, language, options }) {
         let parser = this.getFormatParser(language);
-        let charCount = this.getCharAndSpaceCount(text.split('\n'), cursorPos);
+        let charCount = this.getCharAndSpaceCount(text.split(/\r*\n/), cursorPos);
         let endSpaceCount = charCount.endSpaceCount;
         charCount = charCount.charCount;
         try {
@@ -14,7 +14,7 @@ class Worker {
             let result = parser(text, Object.assign(opt, options));
             if (result !== text) {
                 cursorPos = this.getCursorOffset(result, charCount, endSpaceCount);
-                cursorPos = result.slice(0, cursorPos).split('\n');
+                cursorPos = result.slice(0, cursorPos).split(/\r*\n/);
                 cursorPos = { line: cursorPos.length, column: cursorPos[cursorPos.length - 1].length };
                 process.send({
                     workerId,

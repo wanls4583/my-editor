@@ -46,7 +46,7 @@ class StatusWatcher {
 	}
 	parseStatus(gitDir, lines) {
 		let results = [];
-		lines = lines.split('\n');
+		lines = lines.split(/\r*\n/);
 		lines.forEach(line => {
 			if (line.length > 3) {
 				let status = line[0] + line[1];
