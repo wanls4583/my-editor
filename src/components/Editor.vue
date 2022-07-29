@@ -17,7 +17,7 @@
 				<div :style="{ transform: 'translate3d(0,'+_top+',0)' }" class="my-num-content" ref="numContent">
 					<div :class="{ 'my-active': nowCursorPos.line === numItem.num }" :style="{ top: numItem.top }" class="my-num" v-for="numItem in renderNums">
 						<span class="num">{{ numItem._num }}</span>
-						<span :class="numItem.fold == 'open' ? 'my-fold-open icon-chevron-down' : 'my-fold-close icon-chevron-right'" @click="onToggleFold(numItem.num)" class="my-fold my-center-center my-icon" v-if="numItem.fold"></span>
+						<span :class="numItem.fold == 'open' ? 'icon-chevron-down' : 'icon-chevron-right'" @click="onToggleFold(numItem.num)" class="my-fold my-center-center my-icon" v-if="numItem.fold"></span>
 						<template v-if="type !== 'diff'">
 							<span :class="numItem.diffType" @click="onShowDiff(numItem.num)" class="my-diff-num" v-if="numItem.diffType"></span>
 						</template>
