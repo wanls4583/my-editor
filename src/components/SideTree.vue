@@ -603,7 +603,7 @@ export default {
 						globalData.nowFileItem = item;
 						this.setStartLine(this.checkScrollTop(scrollTop));
 						break;
-					} else if (path.startsWith(item.path)) {
+					} else if (path.startsWith(item.path + path.sep)) {
 						if (!item.open) {
 							this.openFolder(item).then(() => {
 								_findItem.call(this, path, item.children);
