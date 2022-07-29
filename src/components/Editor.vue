@@ -333,7 +333,7 @@ export default {
 		},
 		contentHeight: function () {
 			this.renderBracketMatch();
-			this.render();
+			this.setStartLine(this.scrollTop);
 		},
 		active: function (newVal) {
 			if (newVal) {
