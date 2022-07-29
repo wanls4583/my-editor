@@ -167,7 +167,7 @@ class Context {
 		if (this.editor.cursor.multiCursorPos.size) {
 			let nowCursorPos = this.editor.cursor.multiCursorPos.get(0);
 			this.editor.setNowCursorPos(nowCursorPos);
-			if(command) {
+			if (command) {
 				this.editor.scrollToLine(nowCursorPos.line, nowCursorPos.column, true);
 			}
 		}
@@ -422,7 +422,7 @@ class Context {
 		if (this.editor.cursor.multiCursorPos.size) {
 			let nowCursorPos = this.editor.cursor.multiCursorPos.get(0);
 			this.editor.setNowCursorPos(nowCursorPos);
-			if(command) {
+			if (command) {
 				this.editor.scrollToLine(nowCursorPos.line, nowCursorPos.column, true);
 			}
 		}
@@ -490,8 +490,9 @@ class Context {
 		}
 
 		function _deleteRangePos(rangePos) {
-			let start = rangePos.start;
-			let end = rangePos.end;
+			let start = { ...rangePos.start };
+			let end = { ...rangePos.end };
+			rangePos = { start, end };
 			start.line -= lineDelta;
 			end.line -= lineDelta;
 			if (prePos && start.line === prePos.line) {

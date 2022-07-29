@@ -98,6 +98,7 @@ export default class {
 			for (let i = 0; i < lastCommands.length; i++) {
 				_combCommand(lastCommands[i], commandList[i]);
 			}
+			lastCommands.afterCursorPosList = commandList.afterCursorPosList;
 		} else {
 			this.history.push(commandList);
 		}
@@ -129,7 +130,7 @@ export default class {
 		// 合并两次操作
 		function _combCommand(lastCommand, command) {
 			if (lastCommand.type === Util.HISTORY_COMMAND.DELETE) {
-				command.preCursorPos.column = lastCommand.preCursorPos.column;
+				command.preCursorPos.column -=  lastCommand.cursorPos.column - lastCommand.preCursorPos.column;
 				lastCommand.preCursorPos = command.preCursorPos;
 				lastCommand.cursorPos = command.cursorPos;
 			} else {
