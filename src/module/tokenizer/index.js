@@ -118,8 +118,8 @@ export default class {
 				item.close = item[1];
 			}
 			//只支持单行
-			item.open = item.open.split(/\r\n|\n/)[0];
-			item.close = item.close.split(/\r\n|\n/)[0];
+			item.open = item.open.split(/\r*\n/)[0];
+			item.close = item.close.split(/\r*\n/)[0];
 			data.__autoClosingPairsMap__[item.open] = item;
 		}
 		for (let i = 0; i < data.surroundingPairs.length; i++) {
@@ -129,8 +129,8 @@ export default class {
 				item.close = item[1];
 			}
 			//只支持单行
-			item.open = item.open.split(/\r\n|\n/)[0];
-			item.close = item.close.split(/\r\n|\n/)[0];
+			item.open = item.open.split(/\r*\n/)[0];
+			item.close = item.close.split(/\r*\n/)[0];
 			data.__surroundingPairsMap__[item.open] = item;
 		}
 		if (data.comments.lineComment) {

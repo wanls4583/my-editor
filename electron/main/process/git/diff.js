@@ -12,7 +12,7 @@ class Differ {
         let nowCommit = this.getNowHash(filePath);
         let fileIndex = nowCommit + '-' + this.getCacheHash(filePath);
         let stagedContent = this.fileCacheMap[fileIndex];
-        let textArr = text.split('\n');
+        let textArr = text.split(/\r*\n/);
         if (!nowCommit) {
             return;
         }
@@ -30,7 +30,7 @@ class Differ {
 
         function _diff(text) {
             try {
-                let diffs = this.diff(text.split('\n'), textArr);
+                let diffs = this.diff(text.split(/\r*\n/), textArr);
                 process.send({ workerId, path: filePath, result: this.parseResult(diffs, textArr.length) });
             } catch (e) {
                 console.log(e);

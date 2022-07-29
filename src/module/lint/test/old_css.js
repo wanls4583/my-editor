@@ -370,7 +370,7 @@ export default function () {
     // 从缓存中恢复
     Parser.prototype.recovery = function (text) {
         let index = 0;
-        let texts = text.split(/\r\n|\n/) || [''];
+        let texts = text.split(/\r*\n/) || [''];
         let hasCache = false;
         while (index < texts.length && index < this.lexer.lines.length && texts[index] === this.lexer.lines[index]) {
             index++;

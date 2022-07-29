@@ -39,7 +39,7 @@ export default class {
 		try {
 			if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
 				Util.readFile(filePath).then(data => {
-					let lines = data.split(/\r\n|\n/);
+					let lines = data.split(/\r*\n/);
 					lines = lines.filter(line => {
 						return line && !/^\s*#/.test(line);
 					});

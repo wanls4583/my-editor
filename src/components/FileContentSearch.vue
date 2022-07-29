@@ -129,7 +129,7 @@ export default {
 	},
 	watch: {
 		text() {
-			let lines = this.text.split(/\r\n|\n/);
+			let lines = this.text.split(/\r*\n/);
 			this.input1Height = lines.length * 20 + 10;
 			this.search();
 		},
@@ -140,7 +140,7 @@ export default {
 			this.search();
 		},
 		replaceText() {
-			let lines = this.replaceText.split(/\r\n|\n/);
+			let lines = this.replaceText.split(/\r*\n/);
 			this.input2Height = lines.length * 20 + 10;
 		},
 	},

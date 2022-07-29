@@ -194,7 +194,7 @@ class Context {
 		let prePos = null;
 		let historyObj = null;
 		let historyArr = [];
-		let texts = text instanceof Array ? text : text.split(/\r\n|\n/);
+		let texts = text instanceof Array ? text : text.split(/\r*\n/);
 		let lineDelta = 0;
 		let columnDelta = 0;
 		this.editor.cursor.clearCursorPos();
@@ -245,7 +245,7 @@ class Context {
 		let newPos = Object.assign({}, cursorPos);
 		let isLineFeed = text === '\n' || text === '\r\n';
 		cursorPos.moveWidth = 0; //去除上下移动光标的初始宽度记录
-		text = text.split(/\r\n|\n/);
+		text = text.split(/\r*\n/);
 		text = text.map(item => {
 			item = {
 				lineId: this.lineId++,
