@@ -5,7 +5,8 @@ function lint(text, language) {
     const extend = [];
     if (language === 'css') {
         rules['max-nesting-depth'] = 0;
-        extend.push('stylelint-config-recommended');
+        rules['no-invalid-double-slash-comments'] = true;
+        // extend.push('stylelint-config-recommended');
     } else if(language === 'scss' || language === 'less') {
         extend.push('stylelint-config-recommended-scss');
     }
