@@ -5,7 +5,9 @@ function lint(text, language) {
     const extend = [];
     if (language === 'css') {
         rules['max-nesting-depth'] = 0;
-        extend.push('stylelint-config-css-modules');
+        extend.push('stylelint-config-recommended');
+    } else if(language === 'scss' || language === 'less') {
+        extend.push('stylelint-config-recommended-scss');
     }
     return new Promise((resolve) => {
         Stylelint.lint({ code: text, config: { rules: rules, extends: extend }, formatter: 'verbose' }).then(function (e) {
