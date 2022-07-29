@@ -1,17 +1,21 @@
 @font-face {
-	font-family: 'vscode-light';
-	src: url('../assets/font/vscode-icon-light.woff') format('woff');
+	font-family: 'vscode';
+	src: url('../assets/font/vscode-icon.woff') format('woff');
 	font-weight: normal;
 	font-style: normal;
 	font-display: block;
 }
 
-.my-theme-light .my-icon {
-	font-family: 'vscode-light' !important;
+.my-icon {
+	font-family: 'vscode' !important;
 	font-size: 16px;
 	font-style: normal;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
+	color: #c5c5c5;
+}
+
+.my-theme-light .my-icon{
 	color: #000000;
 }
 
@@ -240,7 +244,7 @@
 }
 .icon-debug-breakpoint-stackframe:before {
 	content: '\e948';
-	color: #ddb100;
+	color: #fc0;
 }
 .icon-debug-breakpoint-stackframe-active .path1:before {
 	content: '\e949';
@@ -249,7 +253,7 @@
 .icon-debug-breakpoint-stackframe-active .path2:before {
 	content: '\e94a';
 	margin-left: -1em;
-	color: rgb(221, 177, 0);
+	color: rgb(255, 204, 0);
 }
 .icon-debug-breakpoint-stackframe-dot:before {
 	content: '\e94b';
@@ -264,51 +268,51 @@
 }
 .icon-debug-continue:before {
 	content: '\e94e';
-	color: #007acc;
+	color: #75beff;
 }
 .icon-debug-disconnect:before {
 	content: '\e94f';
-	color: #a1260d;
+	color: #f48771;
 }
 .icon-debug-pause:before {
 	content: '\e950';
-	color: #007acc;
+	color: #75beff;
 }
 .icon-debug-restart:before {
 	content: '\e951';
-	color: #388a34;
+	color: #89d185;
 }
 .icon-debug-restart-frame:before {
 	content: '\e952';
-	color: #388a34;
+	color: #89d185;
 }
 .icon-debug-reverse-continue:before {
 	content: '\e953';
-	color: #007acc;
+	color: #75beff;
 }
 .icon-debug-start:before {
 	content: '\e954';
-	color: #388a34;
+	color: #89d185;
 }
 .icon-debug-step-back:before {
 	content: '\e955';
-	color: #007acc;
+	color: #75beff;
 }
 .icon-debug-step-into:before {
 	content: '\e956';
-	color: #007acc;
+	color: #75beff;
 }
 .icon-debug-step-out:before {
 	content: '\e957';
-	color: #007acc;
+	color: #75beff;
 }
 .icon-debug-step-over:before {
 	content: '\e958';
-	color: #007acc;
+	color: #75beff;
 }
 .icon-debug-stop:before {
 	content: '\e959';
-	color: #a1260d;
+	color: #f48771;
 }
 .icon-desktop-download:before {
 	content: '\e95a';
@@ -357,7 +361,7 @@
 }
 .icon-error:before {
 	content: '\e969';
-	color: #a1260d;
+	color: #f48771;
 }
 .icon-exclude:before {
 	content: '\e96a';
@@ -427,7 +431,7 @@
 }
 .icon-folder-active .path1:before {
 	content: '\e980';
-	color: rgb(66, 66, 66);
+	color: rgb(197, 197, 197);
 }
 .icon-folder-active .path2:before {
 	content: '\e981';
@@ -514,7 +518,7 @@
 }
 .icon-info:before {
 	content: '\e99c';
-	color: #007acc;
+	color: #75beff;
 }
 .icon-issue-closed:before {
 	content: '\e99d';
@@ -548,11 +552,11 @@
 }
 .icon-lightbulb:before {
 	content: '\e9a7';
-	color: #ddb100;
+	color: #fc0;
 }
 .icon-lightbulb-autofix:before {
 	content: '\e9a8';
-	color: #007acc;
+	color: #75beff;
 }
 .icon-link:before {
 	content: '\e9a9';
@@ -664,7 +668,7 @@
 }
 .icon-pass:before {
 	content: '\e9cd';
-	color: #388a34;
+	color: #89d185;
 }
 .icon-person:before {
 	content: '\e9ce';
@@ -713,7 +717,7 @@
 }
 .icon-record:before {
 	content: '\e9dd';
-	color: #a1260d;
+	color: #f48771;
 }
 .icon-record-keys:before {
 	content: '\e9de';
@@ -881,7 +885,7 @@
 }
 .icon-stop-circle:before {
 	content: '\ea14';
-	color: #a1260d;
+	color: #f48771;
 }
 .icon-symbol-array:before {
 	content: '\ea15';
@@ -891,7 +895,7 @@
 }
 .icon-symbol-class:before {
 	content: '\ea17';
-	color: #d67e00;
+	color: #ee9d28;
 }
 .icon-symbol-color:before {
 	content: '\ea18';
@@ -901,26 +905,26 @@
 }
 .icon-symbol-enum:before {
 	content: '\ea1a';
-	color: #d67e00;
+	color: #ee9d28;
 }
 .icon-symbol-enum-member:before {
 	content: '\ea1b';
-	color: #007acc;
+	color: #75beff;
 }
 .icon-symbol-event:before {
 	content: '\ea1c';
-	color: #d67e00;
+	color: #ee9d28;
 }
 .icon-symbol-field:before {
 	content: '\ea1d';
-	color: #007acc;
+	color: #75beff;
 }
 .icon-symbol-file:before {
 	content: '\ea1e';
 }
 .icon-symbol-interface:before {
 	content: '\ea1f';
-	color: #007acc;
+	color: #75beff;
 }
 .icon-symbol-key:before {
 	content: '\ea20';
@@ -930,7 +934,7 @@
 }
 .icon-symbol-method:before {
 	content: '\ea22';
-	color: #652d90;
+	color: #b180d7;
 }
 .icon-symbol-misc:before {
 	content: '\ea23';
@@ -964,7 +968,7 @@
 }
 .icon-symbol-variable:before {
 	content: '\ea2d';
-	color: #007acc;
+	color: #75beff;
 }
 .icon-sync:before {
 	content: '\ea2e';
@@ -1043,7 +1047,7 @@
 }
 .icon-vm-active .path1:before {
 	content: '\ea47';
-	color: rgb(66, 66, 66);
+	color: rgb(197, 197, 197);
 }
 .icon-vm-active .path2:before {
 	content: '\ea48';
@@ -1064,7 +1068,7 @@
 }
 .icon-warning:before {
 	content: '\ea4d';
-	color: #ddb100;
+	color: #fc0;
 }
 .icon-watch:before {
 	content: '\ea4e';
