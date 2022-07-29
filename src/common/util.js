@@ -513,36 +513,39 @@ class Util {
 		if (themType === 'light' || themType === 'contrast light') {
 			iconData = iconData.light;
 		}
-		if (fileType === 'dir') {
-			if (opened) {
-				if (iconData.folderNamesExpanded && iconData.folderNamesExpanded[fileName]) {
-					return iconData.folderNamesExpanded[fileName];
+		if (iconData) {
+			if (fileType === 'dir') {
+				if (opened) {
+					if (iconData.folderNamesExpanded && iconData.folderNamesExpanded[fileName]) {
+						return iconData.folderNamesExpanded[fileName];
+					}
+					if (isRoot && iconData.rootFolderExpanded) {
+						return iconData.rootFolderExpanded;
+					}
+					return iconData.folderExpanded || '';
+				} else {
+					if (iconData.folderNames && iconData.folderNames[fileName]) {
+						return iconData.folderNames[fileName];
+					}
+					if (isRoot && iconData.rootFolder) {
+						return iconData.rootFolder;
+					}
+					return iconData.folder || '';
 				}
-				if (isRoot && iconData.rootFolderExpanded) {
-					return iconData.rootFolderExpanded;
-				}
-				return iconData.folderExpanded || '';
 			} else {
-				if (iconData.folderNames && iconData.folderNames[fileName]) {
-					return iconData.folderNames[fileName];
+				if (iconData.fileNames && iconData.fileNames[fileName]) {
+					return iconData.fileNames[fileName];
 				}
-				if (isRoot && iconData.rootFolder) {
-					return iconData.rootFolder;
+				if (iconData.fileExtensions && iconData.fileExtensions[suffix2]) {
+					return iconData.fileExtensions[suffix2];
 				}
-				return iconData.folder || '';
+				if (iconData.fileExtensions && iconData.fileExtensions[suffix1]) {
+					return iconData.fileExtensions[suffix1];
+				}
+				return iconData.file || '';
 			}
-		} else {
-			if (iconData.fileNames && iconData.fileNames[fileName]) {
-				return iconData.fileNames[fileName];
-			}
-			if (iconData.fileExtensions && iconData.fileExtensions[suffix2]) {
-				return iconData.fileExtensions[suffix2];
-			}
-			if (iconData.fileExtensions && iconData.fileExtensions[suffix1]) {
-				return iconData.fileExtensions[suffix1];
-			}
-			return iconData.file || '';
 		}
+		return '';
 	}
 	static getIconByExtensions(extensions) {
 		let iconData = globalData.nowIconData;
