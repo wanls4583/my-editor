@@ -265,17 +265,18 @@ class Context {
 			// 换行对齐
 			if (isLineFeed && alignmentTab) {
 				let bracket = _getBracket.call(this);
-				let tab = _getTab.call(this, nowLineText, bracket);
-				if (tab) {
-					text[1].text = tab.tabStr + text[1].text.trimLeft();
-					text[1].tabNum = tab.tabNum;
+				let tabNum = _getTab.call(this, nowLineText, bracket);
+				if (tabNum) {
+					let tabStr = _getTabStr.call(this, tabNum);
+					text[1].text = tabStr + text[1].text.trimLeft();
+					text[1].tabNum = tabNum;
 					if (bracket && lineObj.text[cursorPos.column] === bracket[1]) { //括号中间换行
 						let item = {
 							lineId: this.lineId++,
-							text: '',
+							text: _getTabStr.call(this, tabNum - 1),
 							html: '',
 							width: 0,
-							tabNum: -1,
+							tabNum: tabNum - 1,
 							tokens: null,
 							folds: null,
 							states: null,
@@ -317,7 +318,6 @@ class Context {
 
 		function _getTab(text, plus) {
 			let tabNum = 0;
-			let tabStr = '';
 			//该行有内容
 			let spaceNum = /^\s+/.exec(text);
 			if (spaceNum) {
@@ -326,6 +326,11 @@ class Context {
 				tabNum = tabNum + Math.ceil((spaceNum[0].length - tabNum) / this.editor.tabSize);
 			}
 			tabNum += plus ? 1 : 0;
+			return tabNum;
+		}
+
+		function _getTabStr(tabNum) {
+			let tabStr = '';
 			for (let i = 0; i < tabNum; i++) {
 				if (this.editor.indent === 'tab') {
 					tabStr += '\t';
@@ -333,10 +338,7 @@ class Context {
 					tabStr += this.editor.space;
 				}
 			}
-			return {
-				tabNum,
-				tabStr
-			};
+			return tabStr;
 		}
 
 		function _getBracket() {
