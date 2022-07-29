@@ -575,25 +575,25 @@ export default {
 		hideScrollBar() {
 			this.scrollVisible = false;
 		},
-		focusItem(path) {
+		focusItem(filePath) {
 			clearTimeout(this.focusItemTimer);
 
 			this.focusItemTimer = setTimeout(() => {
 				if (this.initOpendDiring) {
-					this.focusItem(path);
+					this.focusItem(filePath);
 					return;
 				}
 				// root列表可能存在父子关系，优先从子列表中查找
 				let list = globalData.fileTree.slice().sort((a, b) => {
 					return b.path.length - a.path.length;
 				});
-				_findItem.call(this, path, list);
+				_findItem.call(this, filePath, list);
 			}, 15);
 
-			function _findItem(path, list) {
+			function _findItem(filePath, list) {
 				for (let i = 0; i < list.length; i++) {
 					let item = list[i];
-					if (item.path === path) {
+					if (item.path === filePath) {
 						let scrollTop = openedFileList.indexOf(item) * this.itemHeight - this.domHeight / 2;
 						if (preActiveItem) {
 							preActiveItem.active = false;
@@ -603,13 +603,13 @@ export default {
 						globalData.nowFileItem = item;
 						this.setStartLine(this.checkScrollTop(scrollTop));
 						break;
-					} else if (path.startsWith(item.path + path.sep)) {
+					} else if (filePath.startsWith(item.path + path.sep)) {
 						if (!item.open) {
 							this.openFolder(item).then(() => {
-								_findItem.call(this, path, item.children);
+								_findItem.call(this, filePath, item.children);
 							});
 						} else {
-							_findItem.call(this, path, item.children);
+							_findItem.call(this, filePath, item.children);
 						}
 						break;
 					}
