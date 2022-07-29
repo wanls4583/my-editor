@@ -86,7 +86,7 @@
 		height: 30px;
 		border: 1px solid transparent;
 
-		.my-icon-edit {
+		.icon-edit {
 			display: none;
 			cursor: pointer;
 		}
@@ -97,7 +97,7 @@
 			background-color: var(--my-list-hoverBackground);
 			color: var(--my-list-hoverForeground);
 
-			.my-icon-edit {
+			.icon-edit {
 				display: block;
 			}
 		}
@@ -107,7 +107,7 @@
 			background-color: var(--my-list-activeSelectionBackground);
 			color: var(--my-list-activeSelectionForeground);
 
-			.my-icon-edit {
+			.icon-edit {
 				display: block;
 			}
 		}

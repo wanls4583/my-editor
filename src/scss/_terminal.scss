@@ -100,7 +100,7 @@
 				background-color: var(--my-tab-hoverBackground);
 				color: var(--my-tab-hoverForeground);
 
-				.my-icon-close {
+				.icon-close {
 					display: flex;
 				}
 			}
@@ -116,7 +116,7 @@
 					border: 1px solid var(--my-contrastActiveBorder) !important;
 				}
 
-				.my-icon-close {
+				.icon-close {
 					display: flex;
 				}
 			}
@@ -142,7 +142,7 @@
 				height: 100%;
 			}
 
-			.my-icon-close {
+			.icon-close {
 				display: none;
 			}
 		}

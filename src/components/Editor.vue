@@ -17,7 +17,7 @@
 				<div :style="{ transform: 'translate3d(0,'+_top+',0)' }" class="my-num-content" ref="numContent">
 					<div :class="{ 'my-active': nowCursorPos.line === numItem.num }" :style="{ top: numItem.top }" class="my-num" v-for="numItem in renderNums">
 						<span class="num">{{ numItem._num }}</span>
-						<span :class="numItem.fold == 'open' ? 'my-fold-open icon-down1' : 'my-fold-close icon-right'" @click="onToggleFold(numItem.num)" class="my-fold my-center-center iconfont" v-if="numItem.fold"></span>
+						<span :class="numItem.fold == 'open' ? 'my-fold-open icon-chevron-down' : 'my-fold-close icon-chevron-right'" @click="onToggleFold(numItem.num)" class="my-fold my-center-center my-icon" v-if="numItem.fold"></span>
 						<template v-if="type !== 'diff'">
 							<span :class="numItem.diffType" @click="onShowDiff(numItem.num)" class="my-diff-num" v-if="numItem.diffType"></span>
 						</template>
@@ -92,7 +92,7 @@
 			<div class="my-diff-bar">
 				<span style="margin-right: 20px">{{tabData.name}}</span>
 				<div @click="onCloseDiff" class="bar-item my-hover-danger">
-					<span class="iconfont icon-close" style="font-size: 18px"></span>
+					<span class="my-icon icon-chrome-close" style="font-size: 18px"></span>
 				</div>
 			</div>
 			<editor :active="true" :diff-obj="toShowdiffObj" :tab-data="diffTabData" style="flex:1" type="diff"></editor>

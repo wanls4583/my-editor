@@ -37,19 +37,19 @@
 			<div class="bar-right">
 				<!-- 最小化 -->
 				<div @click="onMinimize" class="bar-item my-hover" style="width: 35px; height: 35px">
-					<span class="iconfont icon-zuixiaohua"></span>
+					<span class="my-icon icon-chrome-minimize" style="font-size: 18px"></span>
 				</div>
 				<!-- 还原最大化 -->
 				<div @click="onUnmaximize" class="bar-item my-hover" style="width: 35px; height: 35px" v-if="maximize">
-					<span class="iconfont icon-huanyuan"></span>
+					<span class="my-icon icon-chrome-restore" style="font-size: 18px"></span>
 				</div>
 				<!-- 最大化 -->
 				<div @click="onMaximize" class="bar-item my-hover" style="width: 35px; height: 35px" v-else>
-					<span class="iconfont icon-zuidahua"></span>
+					<span class="my-icon icon-chrome-maximize" style="font-size: 18px"></span>
 				</div>
 				<!-- 关闭 -->
 				<div @click="onClose" class="bar-item my-hover-danger" style="width: 35px; height: 35px">
-					<span class="iconfont icon-close" style="font-size: 18px"></span>
+					<span class="my-icon icon-chrome-close" style="font-size: 18px"></span>
 				</div>
 			</div>
 		</div>

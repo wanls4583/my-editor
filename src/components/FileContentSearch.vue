@@ -10,7 +10,7 @@
 				<div class="side-search-title my-shadow">SEARCH</div>
 				<div style="position: relative; padding: 0 10px 0 20px">
 					<div @click="replaceVisible = !replaceVisible" class="my-search-left active-click" style="border-radius: 0" tabindex="-1">
-						<span :class="{ 'my-icon-down': replaceVisible, 'my-icon-right': !replaceVisible }" class="my-icon" title="Toggle Replace mode"></span>
+						<span :class="{ 'icon-chevron-down': replaceVisible, 'icon-chevron-right': !replaceVisible }" class="my-icon" title="Toggle Replace mode"></span>
 					</div>
 					<div :class="{ 'my-active': input1Focus }" class="my-search-input">
 						<textarea
@@ -24,8 +24,8 @@
 							type="text"
 							v-model="text"
 						></textarea>
-						<span :class="{ 'my-active': matchCase }" @click="changeCase" class="my-search-suffix" title="Match Case(Alt+C)">Aa</span>
-						<span :class="{ 'my-active': wholeWord }" @click="changeWhole" class="my-search-suffix iconfont icon-whole-word" title="Match Whole Word(Alt+W)"></span>
+						<span :class="{ 'my-active': matchCase }" @click="changeCase" class="my-search-suffix my-icon icon-case-sensitive" title="Match Case(Alt+C)"></span>
+						<span :class="{ 'my-active': wholeWord }" @click="changeWhole" class="my-search-suffix my-icon icon-whole-word" title="Match Whole Word(Alt+W)"></span>
 					</div>
 					<div class="my-center-start" style="margin-top: 10px" v-show="replaceVisible">
 						<div :class="{ 'my-active': input2Focus }" class="my-search-input" style="flex-grow: 1">
@@ -44,7 +44,7 @@
 						<span
 							:class="{ 'enabled-color': results.length > 0, 'disabled-color': results.length == 0 }"
 							@click="replaceAll"
-							class="iconfont icon-replace-all active-click"
+							class="my-icon icon-replace-all active-click"
 							style="margin-left: 10px"
 							tabindex="-1"
 							title="Replace All(Ctrl+Alt+Enter)"

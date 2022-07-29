@@ -21,7 +21,7 @@
 					</span>
 					<div class="bar-icon">
 						<span @click.stop="onClose(item.id)" class="bar-close-icon" title="close" v-show="item.saved">
-							<i class="my-icon my-icon-close"></i>
+							<i class="my-icon icon-chrome-close"></i>
 						</span>
 						<span class="bar-dot" v-show="!item.saved"></span>
 					</div>

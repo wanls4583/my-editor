@@ -5,8 +5,8 @@
 -->
 <template>
     <div @contextmenu.prevent.stop class="my-activity-bar">
-        <div class="bar-item" :class="{ 'my-active': activity === 'files' }" @click="onChange('files')"><i class="my-icon my-icon-files"></i></div>
-        <div class="bar-item" :class="{ 'my-active': activity === 'search' }" @click="onChange('search')"><i class="my-icon my-icon-search"></i></div>
+        <div class="bar-item" :class="{ 'my-active': activity === 'files' }" @click="onChange('files')"><i class="my-icon icon-files"></i></div>
+        <div class="bar-item" :class="{ 'my-active': activity === 'search' }" @click="onChange('search')"><i class="my-icon icon-search"></i></div>
     </div>
 </template>
 <script>

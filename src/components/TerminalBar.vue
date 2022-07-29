@@ -18,7 +18,7 @@
 						<span class="bar-text">{{ item.title || item.name }}</span>
 						<div class="bar-icon-wrap">
 							<span @click.stop="onClose(item.id)" class="bar-icon" title="close">
-								<i class="my-icon my-icon-close"></i>
+								<i class="my-icon icon-chrome-close"></i>
 							</span>
 						</div>
 					</div>
@@ -27,12 +27,12 @@
 			<div class="my-terminal-btns">
 				<div class="bar-icon-wrap">
 					<span @click.stop="onAdd()" class="bar-icon" title="new">
-						<i class="my-icon my-icon-add"></i>
+						<i class="my-icon icon-add"></i>
 					</span>
 				</div>
 				<div class="bar-icon-wrap">
 					<span @click.stop="onToggle()" class="bar-icon" title="new">
-						<i class="my-icon my-icon-close"></i>
+						<i class="my-icon icon-chrome-close"></i>
 					</span>
 				</div>
 			</div>

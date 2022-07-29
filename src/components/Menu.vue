@@ -21,7 +21,7 @@
 					<div :class="{'my-active': checkable && item.active, disabled: item.disabled,}" @mousedown="onClick(item)" @mouseover="onHover(item)" class="my-menu-item my-center-between my-hover">
 						<div class="my-menu-left">
 							<span class="my-menu-left-select" v-if="leftSelect">
-								<span class="my-icon my-icon-check" v-if="item.selected"></span>
+								<span class="my-icon icon-check" v-if="item.selected"></span>
 							</span>
 							<span :class="[item.icon]"></span>
 							<span class="my-menu-title" v-html="item._name" v-if="item._name"></span>
@@ -33,7 +33,7 @@
 							<div class="my-menu-shortcut" v-if="item.shortcut">
 								<span v-if="item.shortcut != 'ignore'">{{ item.shortcut }}</span>
 							</div>
-							<span class="my-icon my-icon-check" style="margin-left:15px" v-if="item.selected&&!leftSelect"></span>
+							<span class="my-icon icon-check" style="margin-left:15px" v-if="item.selected&&!leftSelect"></span>
 						</div>
 					</div>
 					<div class="my-separator" v-if="item.seprator"></div>

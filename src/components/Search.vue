@@ -6,7 +6,7 @@
 <template>
 	<div @contextmenu.prevent @contextmenu.stop @mousedown.stop @selectstart.stop class="my-search">
 		<div @click="showReplace" class="my-search-left active-click" style="border-radius: 0" tabindex="-1">
-			<span :class="{ 'icon-down1': replaceVisible, 'icon-right': !replaceVisible }" class="iconfont" style="font-size: 14px" title="Toggle Replace mode"></span>
+			<span :class="{ 'icon-chevron-down': replaceVisible, 'icon-chevron-right': !replaceVisible }" class="my-icon" title="Toggle Replace mode"></span>
 		</div>
 		<div style="flex-grow: 1">
 			<div class="my-search-top">
@@ -22,8 +22,8 @@
 						type="text"
 						v-model="text"
 					></textarea>
-					<span :class="{ 'my-active': matchCase }" @click="changeCase" class="my-search-suffix" title="Match Case(Alt+C)">Aa</span>
-					<span :class="{ 'my-active': wholeWord }" @click="changeWhole" class="my-search-suffix iconfont icon-whole-word" title="Match Whole Word(Alt+W)"></span>
+					<span :class="{ 'my-active': matchCase }" @click="changeCase" class="my-search-suffix my-icon icon-case-sensitive" title="Match Case(Alt+C)"></span>
+					<span :class="{ 'my-active': wholeWord }" @click="changeWhole" class="my-search-suffix my-icon icon-whole-word" title="Match Whole Word(Alt+W)"></span>
 				</div>
 				<div v-if="count">
 					<span>{{ now }}</span>
@@ -39,7 +39,7 @@
 				<span
 					:class="{ 'enabled-color': count > 0, 'disabled-color': count == 0 }"
 					@click="replace"
-					class="iconfont icon-replace active-click"
+					class="my-icon icon-replace active-click"
 					style="margin-right: 5px"
 					tabindex="-1"
 					title="Replace(Enter)"
@@ -47,7 +47,7 @@
 				<span
 					:class="{ 'enabled-color': count > 0, 'disabled-color': count == 0 }"
 					@click="replaceAll"
-					class="iconfont icon-replace-all active-click"
+					class="my-icon icon-replace-all active-click"
 					style="margin-right: 5px"
 					tabindex="-1"
 					title="Replace All(Ctrl+Alt+Enter)"
@@ -60,7 +60,7 @@
 				@blur="preFocus = false"
 				@click="searchPrev"
 				@focus="preFocus = true"
-				class="iconfont icon-up active-click"
+				class="my-icon icon-arrow-up active-click"
 				style="margin-right: 5px"
 				tabindex="-1"
 				title="Previous Match(Shift Enter)"
@@ -70,12 +70,12 @@
 				@blur="nextFocus = false"
 				@click="searchNext"
 				@focus="nextFocus = true"
-				class="iconfont icon-down active-click"
+				class="my-icon icon-arrow-down active-click"
 				style="margin-right: 5px"
 				tabindex="-1"
 				title="Next Match(Enter)"
 			></span>
-			<span @click="close" class="iconfont icon-close active-click" title="Close"></span>
+			<span @click="close" class="my-icon icon-chrome-close active-click" title="Close"></span>
 		</div>
 	</div>
 </template>

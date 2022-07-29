@@ -19,7 +19,7 @@
 			<div :style="{ top: -deltaTop + 'px' }" class="my-shortcut-content">
 				<div :class="[item.active?'my-active':'']" :id="item.id" @click="onClickItem(item)" class="my-shortcut-item" v-for="item in renderList">
 					<span class="edit-col">
-						<i @click="onEdit(item)" class="my-icon my-icon-edit"></i>
+						<i @click="onEdit(item)" class="my-icon icon-edit"></i>
 					</span>
 					<span class="command-col">{{item.label}}</span>
 					<span class="key-col">{{item.key}}</span>

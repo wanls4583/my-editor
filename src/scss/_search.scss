@@ -20,7 +20,7 @@
 		box-shadow: 0 2px 8px 2px var(--my-widget-shadow);
 		user-select: none;
 
-		.iconfont {
+		.my-icon {
 			display: flex;
 			align-items: center;
 			justify-content: center;
@@ -66,10 +66,8 @@
 	}
 
 	&-search-suffix {
-		width: 22px;
-		height: 22px;
-		line-height: 22px;
-		text-align: center;
+		width: 26px !important;
+		height: 26px !important;
 		margin-right: 4px;
 		border-radius: 4px;
 		border: 1px solid transparent;
@@ -83,6 +81,7 @@
 			border-color: var(--my-inputOption-activeBorder);
 			background-color: var(--my-inputOption-activeBackground);
 			color: var(--my-inputOption-activeForeground);
+			font-weight: bold;
 		}
 	}
 
@@ -96,6 +95,10 @@
 		align-items: center;
 		justify-content: center;
 		cursor: pointer;
+
+		.my-icon {
+			width: auto;
+		}
 	}
 
 	&-search-right {
@@ -265,7 +268,7 @@
 			margin-right: 0;
 		}
 
-		.iconfont {
+		.my-icon {
 			position: relative;
 			top: 3px;
 			font-size: 14px;
