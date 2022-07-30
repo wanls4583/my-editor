@@ -9,6 +9,7 @@ function lint(text, language) {
         // extend.push('stylelint-config-recommended');
     } else if(language === 'scss' || language === 'less') {
         extend.push('stylelint-config-recommended-scss');
+        rules['no-descending-specificity'] = false;
     }
     return new Promise((resolve) => {
         Stylelint.lint({ code: text, config: { rules: rules, extends: extend }, formatter: 'verbose' }).then(function (e) {
