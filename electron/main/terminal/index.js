@@ -39,6 +39,7 @@ class Terminal {
 			cwd: option.cwd || process.env.HOME,
 			env: process.env,
 		});
+		this.terminals[option.id].setEncoding('utf8');
 		this.terminals[option.id].on('data', data => {
 			this.contents.send('terminal-data', {
 				id: option.id,
