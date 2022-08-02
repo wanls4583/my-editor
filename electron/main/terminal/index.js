@@ -37,7 +37,7 @@ class Terminal {
 			cols: option.cols || 100,
 			rows: option.rows || 10,
 			cwd: option.cwd || process.env.HOME,
-			env: process.env,
+			env: { ...process.env, LANG: "zh_CN.UTF-8" }, // 生产环境LANG可能为空，导致乱码
 		});
 		this.terminals[option.id].setEncoding('utf8');
 		this.terminals[option.id].onData(data => {
