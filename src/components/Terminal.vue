@@ -99,6 +99,7 @@ export default {
 		initEvent() {
 			EventBus.$on('theme-changed', () => {
 				this.terminal.setOption('theme', {
+					cursor: globalData.colors['terminal.foreground'],
 					foreground: globalData.colors['terminal.foreground'],
 					background: globalData.colors['terminal.background'],
 					selection: globalData.colors['terminal.selectionBackground'],
