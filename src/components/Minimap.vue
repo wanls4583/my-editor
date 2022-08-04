@@ -658,6 +658,13 @@ export default {
 			}
 		},
 		clearRenderTask() {
+			this.renderLinesing = false;
+			this.renderSelectedBging = false;
+			this.renderAllSearchdBging = false;
+			this.renderDiffing = false;
+			this.renderAllDiffing = false;
+			this.renderCursoring = false;
+			this.renderAllCursoring = false;
 			globalData.scheduler.removeTask(this.renderLinesTask);
 			globalData.scheduler.removeTask(this.renderSelectedBgTask);
 			globalData.scheduler.removeTask(this.renderAllSearchdBgTask);
