@@ -149,10 +149,18 @@ class Context {
 			} else if (command.afterCursorPosList) {
 				this.addCursorList(command.afterCursorPosList);
 			}
+			if(command.originNowCursorPos) {
+				this.editor.setNowCursorPos({ ...command.originNowCursorPos });
+			} else if(command.afterNowCursorPos) {
+				this.editor.setNowCursorPos({ ...command.afterNowCursorPos });
+			}
 			historyArr.serial = command.serial;
 			historyArr.afterCursorPosList = command.afterCursorPosList;
 			historyArr.originCursorPosList = command._originCursorPosList;
 			historyArr._originCursorPosList = command.originCursorPosList;
+			historyArr.afterNowCursorPos = command.afterNowCursorPos;
+			historyArr.originNowCursorPos = command._originNowCursorPos;
+			historyArr._originNowCursorPos = command.originNowCursorPos;
 			this.editor.history.updateHistory(historyArr);
 		} else {
 			afterCursorPosList = _getCursorList.call(this);
@@ -162,12 +170,9 @@ class Context {
 			historyArr.historyJoinAble = historyJoinAble;
 			this.editor.history.pushHistory(historyArr);
 			this.addCursorList(afterCursorPosList);
-		}
-		if (historyArr.nowCursorPos) {
-			this.editor.setNowCursorPos(historyArr.nowCursorPos);
-			delete historyArr.nowCursorPos;
-		} else if (this.editor.cursor.multiCursorPos.size) { // 历史记录连续操作时，中间过程可能没有光标记录
-			this.editor.setNowCursorPos(this.editor.cursor.multiCursorPos.get(0));
+			if(historyArr.afterNowCursorPos) {
+				this.editor.setNowCursorPos({ ...historyArr.afterNowCursorPos });
+			}
 		}
 		if (this.editor.nowCursorPos) {
 			this.editor.scrollToLine(this.editor.nowCursorPos.line, this.editor.nowCursorPos.column, true);
@@ -226,8 +231,8 @@ class Context {
 				commandObj.ending && (historyObj.ending = commandObj.ending);
 				lineDelta += historyObj.cursorPos.line - historyObj.preCursorPos.line;
 				columnDelta += historyObj.cursorPos.column - historyObj.preCursorPos.column;
-				if (!historyArr.nowCursorPos && Util.comparePos(cursorPos, nowCursorPos) === 0) {
-					historyArr.nowCursorPos = {
+				if (!historyArr.afterNowCursorPos && Util.comparePos(cursorPos, nowCursorPos) === 0) {
+					historyArr.afterNowCursorPos = {
 						...historyObj.cursorPos
 					};
 				}
@@ -246,6 +251,7 @@ class Context {
 			}
 			historyArr.push(historyObj);
 		});
+		historyArr.originNowCursorPos = nowCursorPos;
 		this.editor.searcher.clearSearch();
 		return historyArr;
 	}
@@ -414,10 +420,18 @@ class Context {
 			} else if (command.afterCursorPosList) {
 				this.addCursorList(command.afterCursorPosList);
 			}
+			if(command.originNowCursorPos) {
+				this.editor.setNowCursorPos({ ...command.originNowCursorPos });
+			} else if(command.afterNowCursorPos) {
+				this.editor.setNowCursorPos({ ...command.afterNowCursorPos });
+			}
 			historyArr.serial = command.serial;
 			historyArr.afterCursorPosList = command.afterCursorPosList;
 			historyArr.originCursorPosList = command._originCursorPosList;
 			historyArr._originCursorPosList = command.originCursorPosList;
+			historyArr.afterNowCursorPos = command.afterNowCursorPos;
+			historyArr.originNowCursorPos = command._originNowCursorPos;
+			historyArr._originNowCursorPos = command.originNowCursorPos;
 			this.editor.history.updateHistory(historyArr);
 		} else {
 			if (historyArr.length > 0) {
@@ -431,15 +445,12 @@ class Context {
 				historyArr.historyJoinAble = historyJoinAble;
 				this.editor.history.pushHistory(historyArr);
 				this.addCursorList(afterCursorPosList);
+				if(historyArr.afterNowCursorPos) {
+					this.editor.setNowCursorPos({ ...historyArr.afterNowCursorPos });
+				}
 			} else {
 				this.editor.cursor.setCursorPos(rangeList[0]);
 			}
-		}
-		if (historyArr.nowCursorPos) {
-			this.editor.setNowCursorPos(historyArr.nowCursorPos);
-			delete historyArr.nowCursorPos;
-		} else if (this.editor.cursor.multiCursorPos.size) { // 历史记录连续操作时，中间过程可能没有光标记录
-			this.editor.setNowCursorPos(this.editor.cursor.multiCursorPos.get(0));
 		}
 		if (this.editor.nowCursorPos) {
 			this.editor.scrollToLine(this.editor.nowCursorPos.line, this.editor.nowCursorPos.column, true);
@@ -474,6 +485,7 @@ class Context {
 				_deleteCursorPos.call(this, item);
 			}
 		});
+		historyArr.originNowCursorPos = nowCursorPos;
 		this.editor.searcher.clearSearch();
 		return historyArr;
 
@@ -507,8 +519,8 @@ class Context {
 				columnDelta += historyObj.preCursorPos.column - historyObj.cursorPos.column;
 				prePos = historyObj.cursorPos;
 				historyArr.push(historyObj);
-				if (!historyArr.nowCursorPos && Util.comparePos(cursorPos, nowCursorPos) === 0) {
-					historyArr.nowCursorPos = {
+				if (!historyArr.afterNowCursorPos && Util.comparePos(cursorPos, nowCursorPos) === 0) {
+					historyArr.afterNowCursorPos = {
 						...historyObj.cursorPos
 					};
 				}
@@ -551,10 +563,10 @@ class Context {
 				lineDelta += historyObj.preCursorPos.line - historyObj.cursorPos.line;
 				columnDelta += historyObj.preCursorPos.column - historyObj.cursorPos.column;
 				prePos = historyObj.cursorPos;
-				if (!historyArr.nowCursorPos) {
+				if (!historyArr.afterNowCursorPos) {
 					if (Util.comparePos(nowCursorPos, rangePos.start) === 0 ||
 						Util.comparePos(nowCursorPos, rangePos.end) === 0) {
-						historyArr.nowCursorPos = {
+						historyArr.afterNowCursorPos = {
 							...historyObj.cursorPos
 						};
 					}
