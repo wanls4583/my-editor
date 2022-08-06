@@ -163,13 +163,14 @@ class Context {
 			this.editor.history.pushHistory(historyArr);
 			this.addCursorList(afterCursorPosList);
 		}
-		// 历史记录连续操作时，中间过程可能没有光标记录
-		if (this.editor.cursor.multiCursorPos.size) {
-			let nowCursorPos = this.editor.cursor.multiCursorPos.get(0);
-			this.editor.setNowCursorPos(nowCursorPos);
-			if (command) {
-				this.editor.scrollToLine(nowCursorPos.line, nowCursorPos.column, true);
-			}
+		if (historyArr.nowCursorPos) {
+			this.editor.setNowCursorPos(historyArr.nowCursorPos);
+			delete historyArr.nowCursorPos;
+		} else if (this.editor.cursor.multiCursorPos.size) { // 历史记录连续操作时，中间过程可能没有光标记录
+			this.editor.setNowCursorPos(this.editor.cursor.multiCursorPos.get(0));
+		}
+		if (this.editor.nowCursorPos) {
+			this.editor.scrollToLine(this.editor.nowCursorPos.line, this.editor.nowCursorPos.column, true);
 		}
 		return historyArr;
 
@@ -182,7 +183,9 @@ class Context {
 						column: this.htmls[item.cursorPos.line - 2].tabNum
 					}
 				}
-				return { ...item.cursorPos };
+				return {
+					...item.cursorPos
+				};
 			});
 		}
 	}
@@ -197,6 +200,9 @@ class Context {
 		let texts = text instanceof Array ? text : text.split(/\r*\n/);
 		let lineDelta = 0;
 		let columnDelta = 0;
+		let nowCursorPos = {
+			...this.editor.nowCursorPos
+		};
 		this.editor.cursor.clearCursorPos();
 		if (text === '\n' || text === '\r\n') {
 			texts = ['\n'];
@@ -220,6 +226,11 @@ class Context {
 				commandObj.ending && (historyObj.ending = commandObj.ending);
 				lineDelta += historyObj.cursorPos.line - historyObj.preCursorPos.line;
 				columnDelta += historyObj.cursorPos.column - historyObj.preCursorPos.column;
+				if (!historyArr.nowCursorPos && Util.comparePos(cursorPos, nowCursorPos) === 0) {
+					historyArr.nowCursorPos = {
+						...historyObj.cursorPos
+					};
+				}
 			} else {
 				historyObj = {
 					type: Util.HISTORY_COMMAND.DELETE,
@@ -410,7 +421,11 @@ class Context {
 			this.editor.history.updateHistory(historyArr);
 		} else {
 			if (historyArr.length > 0) {
-				afterCursorPosList = historyArr.map((item) => { return { ...item.cursorPos }; });
+				afterCursorPosList = historyArr.map((item) => {
+					return {
+						...item.cursorPos
+					};
+				});
 				historyArr.originCursorPosList = originCursorPosList;
 				historyArr.afterCursorPosList = afterCursorPosList;
 				historyArr.historyJoinAble = historyJoinAble;
@@ -420,13 +435,14 @@ class Context {
 				this.editor.cursor.setCursorPos(rangeList[0]);
 			}
 		}
-		// 历史记录连续操作时，中间过程可能没有光标记录
-		if (this.editor.cursor.multiCursorPos.size) {
-			let nowCursorPos = this.editor.cursor.multiCursorPos.get(0);
-			this.editor.setNowCursorPos(nowCursorPos);
-			if (command) {
-				this.editor.scrollToLine(nowCursorPos.line, nowCursorPos.column, true);
-			}
+		if (historyArr.nowCursorPos) {
+			this.editor.setNowCursorPos(historyArr.nowCursorPos);
+			delete historyArr.nowCursorPos;
+		} else if (this.editor.cursor.multiCursorPos.size) { // 历史记录连续操作时，中间过程可能没有光标记录
+			this.editor.setNowCursorPos(this.editor.cursor.multiCursorPos.get(0));
+		}
+		if (this.editor.nowCursorPos) {
+			this.editor.scrollToLine(this.editor.nowCursorPos.line, this.editor.nowCursorPos.column, true);
 		}
 		return historyArr;
 	}
@@ -447,6 +463,9 @@ class Context {
 		let prePos = null;
 		let lineDelta = 0;
 		let columnDelta = 0;
+		let nowCursorPos = {
+			...this.editor.nowCursorPos
+		};
 		this.editor.cursor.clearCursorPos();
 		rangeOrCursorList.forEach(item => {
 			if (item.start && item.end) {
@@ -488,13 +507,25 @@ class Context {
 				columnDelta += historyObj.preCursorPos.column - historyObj.cursorPos.column;
 				prePos = historyObj.cursorPos;
 				historyArr.push(historyObj);
+				if (!historyArr.nowCursorPos && Util.comparePos(cursorPos, nowCursorPos) === 0) {
+					historyArr.nowCursorPos = {
+						...historyObj.cursorPos
+					};
+				}
 			}
 		}
 
 		function _deleteRangePos(rangePos) {
-			let start = { ...rangePos.start };
-			let end = { ...rangePos.end };
-			rangePos = { start, end };
+			let start = {
+				...rangePos.start
+			};
+			let end = {
+				...rangePos.end
+			};
+			let pos = {
+				start,
+				end
+			};
 			start.line -= lineDelta;
 			end.line -= lineDelta;
 			if (prePos && start.line === prePos.line) {
@@ -516,10 +547,18 @@ class Context {
 					}
 				}
 			} else {
-				historyObj = this._deleteContent(rangePos, delDirect);
+				historyObj = this._deleteContent(pos, delDirect);
 				lineDelta += historyObj.preCursorPos.line - historyObj.cursorPos.line;
 				columnDelta += historyObj.preCursorPos.column - historyObj.cursorPos.column;
 				prePos = historyObj.cursorPos;
+				if (!historyArr.nowCursorPos) {
+					if (Util.comparePos(nowCursorPos, rangePos.start) === 0 ||
+						Util.comparePos(nowCursorPos, rangePos.end) === 0) {
+						historyArr.nowCursorPos = {
+							...historyObj.cursorPos
+						};
+					}
+				}
 			}
 			historyArr.push(historyObj);
 		}
