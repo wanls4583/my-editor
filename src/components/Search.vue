@@ -155,6 +155,7 @@ export default {
 						wholeWord: this.wholeWord,
 					},
 				});
+				this.searchTimer = null;
 			}, 100);
 		},
 		searchText(option) {
@@ -168,6 +169,7 @@ export default {
 		},
 		searchWord(direct) {
 			let resultObj = null;
+			this.searchTimer && clearTimeout(this.searchTimer);
 			if (this.editor.fSelecter.activedRanges.size === 0) {
 				let searchConfig = this.editor.fSearcher.getSearchConfig();
 				if (searchConfig) {
@@ -236,6 +238,7 @@ export default {
 			}
 			this.editor.fSearcher.clearSearch();
 			this.editor.searchVisible = false;
+			this.count = 0;
 		},
 		focus() {
 			requestAnimationFrame(() => {
