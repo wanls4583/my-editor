@@ -55,6 +55,7 @@ export default class {
                     //记录当前可编辑的活动区域
                     this.editor.selecter.setRange(Object.assign({ active: true }, resultObj.result));
                     this.editor.cursor.setCursorPos(resultObj.result.end);
+					this.selecter.setActive(resultObj.result);
                     _unFoldWithLine.call(this, resultObj.result);
                     this.scrollToResult(resultObj.result);
                 } else {
@@ -188,10 +189,11 @@ export default class {
     }
     // 克隆缓存，当关闭搜索框时候，搜索框的的结果将克隆到searcher
     clone(cacheData) {
-        this.cacheData = cacheData;
         if (cacheData) {
             let index = cacheData.index;
             let result = cacheData.results[index];
+			this.clearSearch();
+	        this.cacheData = cacheData;
             this.selecter.addRange(cacheData.results.map((item, index) => {
                 return {
                     start: item.start,

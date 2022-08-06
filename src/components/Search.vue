@@ -202,24 +202,28 @@ export default {
 			if (!this.count) {
 				return;
 			}
+			this.editor.searcher.clearSearch();
 			this.searchText({ direct: 'next' });
 		},
 		searchPrev() {
 			if (!this.count) {
 				return;
 			}
+			this.editor.searcher.clearSearch();
 			this.searchText({ direct: 'up' });
 		},
 		replace() {
 			if (this.editor.fSelecter.activedRanges.size) {
 				let range = this.editor.fSearcher.getNowRange();
 				this.editor.myContext.replace(this.replaceText, [range]);
+				this.editor.searcher.clearSearch();
 				this.searchText();
 			}
 		},
 		replaceAll() {
 			if (this.editor.fSelecter.ranges.size) {
 				this.editor.myContext.replace(this.replaceText, this.editor.fSelecter.ranges.toArray());
+				this.editor.searcher.clearSearch();
 				this.editor.fSearcher.clearSearch();
 				this.count = 0;
 			}
