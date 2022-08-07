@@ -174,7 +174,7 @@ class Context {
 				this.editor.setNowCursorPos({ ...historyArr.afterNowCursorPos });
 			}
 		}
-		if (this.editor.nowCursorPos) {
+		if (historyArr.afterNowCursorPos) {
 			this.editor.scrollToLine(this.editor.nowCursorPos.line, this.editor.nowCursorPos.column, true);
 		}
 		return historyArr;
@@ -452,7 +452,7 @@ class Context {
 				this.editor.cursor.setCursorPos(rangeList[0]);
 			}
 		}
-		if (this.editor.nowCursorPos) {
+		if (historyArr.afterNowCursorPos) {
 			this.editor.scrollToLine(this.editor.nowCursorPos.line, this.editor.nowCursorPos.column, true);
 		}
 		return historyArr;
