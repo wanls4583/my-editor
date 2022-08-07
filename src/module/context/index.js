@@ -149,18 +149,10 @@ class Context {
 			} else if (command.afterCursorPosList) {
 				this.addCursorList(command.afterCursorPosList);
 			}
-			if(command.originNowCursorPos) {
-				this.editor.setNowCursorPos({ ...command.originNowCursorPos });
-			} else if(command.afterNowCursorPos) {
-				this.editor.setNowCursorPos({ ...command.afterNowCursorPos });
-			}
 			historyArr.serial = command.serial;
 			historyArr.afterCursorPosList = command.afterCursorPosList;
 			historyArr.originCursorPosList = command._originCursorPosList;
 			historyArr._originCursorPosList = command.originCursorPosList;
-			historyArr.afterNowCursorPos = command.afterNowCursorPos;
-			historyArr.originNowCursorPos = command._originNowCursorPos;
-			historyArr._originNowCursorPos = command.originNowCursorPos;
 			this.editor.history.updateHistory(historyArr);
 		} else {
 			afterCursorPosList = _getCursorList.call(this);
@@ -170,11 +162,8 @@ class Context {
 			historyArr.historyJoinAble = historyJoinAble;
 			this.editor.history.pushHistory(historyArr);
 			this.addCursorList(afterCursorPosList);
-			if(historyArr.afterNowCursorPos) {
-				this.editor.setNowCursorPos({ ...historyArr.afterNowCursorPos });
-			}
 		}
-		if (historyArr.afterNowCursorPos) {
+		if(this.editor.cursor.multiCursorPos.size) {
 			this.editor.scrollToLine(this.editor.nowCursorPos.line, this.editor.nowCursorPos.column, true);
 		}
 		return historyArr;
@@ -205,9 +194,6 @@ class Context {
 		let texts = text instanceof Array ? text : text.split(/\r*\n/);
 		let lineDelta = 0;
 		let columnDelta = 0;
-		let nowCursorPos = {
-			...this.editor.nowCursorPos
-		};
 		this.editor.cursor.clearCursorPos();
 		if (text === '\n' || text === '\r\n') {
 			texts = ['\n'];
@@ -231,11 +217,6 @@ class Context {
 				commandObj.ending && (historyObj.ending = commandObj.ending);
 				lineDelta += historyObj.cursorPos.line - historyObj.preCursorPos.line;
 				columnDelta += historyObj.cursorPos.column - historyObj.preCursorPos.column;
-				if (!historyArr.afterNowCursorPos && Util.comparePos(cursorPos, nowCursorPos) === 0) {
-					historyArr.afterNowCursorPos = {
-						...historyObj.cursorPos
-					};
-				}
 			} else {
 				historyObj = {
 					type: Util.HISTORY_COMMAND.DELETE,
@@ -251,7 +232,6 @@ class Context {
 			}
 			historyArr.push(historyObj);
 		});
-		historyArr.originNowCursorPos = nowCursorPos;
 		this.editor.searcher.clearSearch();
 		return historyArr;
 	}
@@ -420,18 +400,10 @@ class Context {
 			} else if (command.afterCursorPosList) {
 				this.addCursorList(command.afterCursorPosList);
 			}
-			if(command.originNowCursorPos) {
-				this.editor.setNowCursorPos({ ...command.originNowCursorPos });
-			} else if(command.afterNowCursorPos) {
-				this.editor.setNowCursorPos({ ...command.afterNowCursorPos });
-			}
 			historyArr.serial = command.serial;
 			historyArr.afterCursorPosList = command.afterCursorPosList;
 			historyArr.originCursorPosList = command._originCursorPosList;
 			historyArr._originCursorPosList = command.originCursorPosList;
-			historyArr.afterNowCursorPos = command.afterNowCursorPos;
-			historyArr.originNowCursorPos = command._originNowCursorPos;
-			historyArr._originNowCursorPos = command.originNowCursorPos;
 			this.editor.history.updateHistory(historyArr);
 		} else {
 			if (historyArr.length > 0) {
@@ -445,14 +417,11 @@ class Context {
 				historyArr.historyJoinAble = historyJoinAble;
 				this.editor.history.pushHistory(historyArr);
 				this.addCursorList(afterCursorPosList);
-				if(historyArr.afterNowCursorPos) {
-					this.editor.setNowCursorPos({ ...historyArr.afterNowCursorPos });
-				}
 			} else {
 				this.editor.cursor.setCursorPos(rangeList[0]);
 			}
 		}
-		if (historyArr.afterNowCursorPos) {
+		if(this.editor.cursor.multiCursorPos.size) {
 			this.editor.scrollToLine(this.editor.nowCursorPos.line, this.editor.nowCursorPos.column, true);
 		}
 		return historyArr;
@@ -474,9 +443,6 @@ class Context {
 		let prePos = null;
 		let lineDelta = 0;
 		let columnDelta = 0;
-		let nowCursorPos = {
-			...this.editor.nowCursorPos
-		};
 		this.editor.cursor.clearCursorPos();
 		rangeOrCursorList.forEach(item => {
 			if (item.start && item.end) {
@@ -485,7 +451,6 @@ class Context {
 				_deleteCursorPos.call(this, item);
 			}
 		});
-		historyArr.originNowCursorPos = nowCursorPos;
 		this.editor.searcher.clearSearch();
 		return historyArr;
 
@@ -519,11 +484,6 @@ class Context {
 				columnDelta += historyObj.preCursorPos.column - historyObj.cursorPos.column;
 				prePos = historyObj.cursorPos;
 				historyArr.push(historyObj);
-				if (!historyArr.afterNowCursorPos && Util.comparePos(cursorPos, nowCursorPos) === 0) {
-					historyArr.afterNowCursorPos = {
-						...historyObj.cursorPos
-					};
-				}
 			}
 		}
 
@@ -563,14 +523,6 @@ class Context {
 				lineDelta += historyObj.preCursorPos.line - historyObj.cursorPos.line;
 				columnDelta += historyObj.preCursorPos.column - historyObj.cursorPos.column;
 				prePos = historyObj.cursorPos;
-				if (!historyArr.afterNowCursorPos) {
-					if (Util.comparePos(nowCursorPos, rangePos.start) === 0 ||
-						Util.comparePos(nowCursorPos, rangePos.end) === 0) {
-						historyArr.afterNowCursorPos = {
-							...historyObj.cursorPos
-						};
-					}
-				}
 			}
 			historyArr.push(historyObj);
 		}
