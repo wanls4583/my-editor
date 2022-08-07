@@ -1442,33 +1442,39 @@ export default {
 			}
 		},
 		scrollToLine(line, column, weackScroll) {
+			let skipScroll = weackScroll;
 			let relLine = this.folder.getRelativeLine(line);
 			let scrollTop = (relLine - 1) * this.charObj.charHight - this.scrollerArea.height / 2;
 			scrollTop = scrollTop > 0 ? scrollTop : 0;
-			if (weackScroll) {
+			if (skipScroll) {
 				let height = relLine * this.charObj.charHight;
 				if (height + this.charObj.charHight > this.scrollTop + this.scrollerArea.height ||
 					height < this.scrollTop + this.charObj.charHight) {
-					weackScroll = false;
+					skipScroll = false;
 				}
 			}
-			if (weackScroll) {
-				return false;
+			if (!skipScroll) {
+				this.setStartLine(scrollTop);
 			}
-			this.setStartLine(scrollTop);
-			if (column !== undefined) {
+			if (typeof column === 'number') {
 				this.renderedCb.push(() => {
 					this.$nextTick(() => {
-						this.scrollToCol(line, column);
+						this.scrollToCol(line, column, weackScroll);
 					});
 				});
 			}
 			return true;
 		},
-		scrollToCol(line, column) {
-			let scrollLeft = this.getStrWidthByLine(line, 0, column) - this.scrollerArea.width / 2;
-			scrollLeft = scrollLeft > 0 ? scrollLeft : 0;
-			this.scrollLeft = scrollLeft;
+		scrollToCol(line, column, weackScroll) {
+			let width = this.getStrWidthByLine(line, 0, column);
+			if(width < this.scrollLeft || width > this.scrollLeft + this.scrollerArea.width) {
+				weackScroll = false;
+			}
+			if(!weackScroll) {
+				let scrollLeft = width - this.scrollerArea.width / 2;
+				scrollLeft = scrollLeft > 0 ? scrollLeft : 0;
+				this.scrollLeft = scrollLeft;
+			}
 		},
 		setData(prop, value) {
 			if (typeof this[prop] === 'function') {
