@@ -1232,7 +1232,7 @@ export default {
 				}
 				left = this.getStrWidthByLine(cursorPos.line, 0, cursorPos.column);
 				// 强制滚动使光标处于可见区域
-				if (this.scrollToCursor && cursorPos === this.nowCursorPos) {
+				if (this.scrollToCursor && Util.comparePos(cursorPos, this.nowCursorPos) === 0) {
 					if (left > this.scrollerArea.width + this.scrollLeft - this.charObj.fullCharWidth) {
 						this.scrollLeft = left + this.charObj.fullCharWidth - this.scrollerArea.width;
 					} else if (left < this.scrollLeft + this.charObj.fullCharWidth) {
