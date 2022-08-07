@@ -7,6 +7,7 @@
 	<div :style="{ height: height + 'px' }" @contextmenu.stop.prevent class="my-title-bar my-width-100">
 		<div class="my-height-100 my-center-between">
 			<div class="menu-bar">
+				<div class="logo-item"><img src="@/assets/image/logo.png" style="height: 60%;"></div>
 				<div @mousedown.stop="showMemu('fileMenuVisible')" class="bar-item my-hover">
 					<span>File</span>
 					<Menu :hoverCheck="true" :menuList="fileMenuList" :styles="{ left: 0, top: _top }" @change="onFileMenuChange" v-if="fileMenuVisible"></Menu>
