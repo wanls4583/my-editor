@@ -134,7 +134,7 @@ class Util {
 		if (typeof end != 'undefined') {
 			str = str.substring(0, end - start);
 		}
-		let charNum = stringWidth(str); //\t将被忽略
+		let charNum = stringWidth(str, {ambiguousIsNarrow: false}); //\t将被忽略
 		let fullCharNum = 0;
 		let tabNum = 0;
 		tabNum = str.match(/\t/g);
