@@ -318,6 +318,7 @@ export default {
 				} else {
 					obj.type = 'dir';
 					obj.open = false;
+					obj.clsoed = false;
 				}
 				results.push(obj);
 			});
@@ -363,15 +364,21 @@ export default {
 			if (this.refreshFolderTimer[item.id]) {
 				clearTimeout(this.refreshFolderTimer[item.id]);
 			}
-			this.refreshFolderTimer[item.id] = setTimeout(() => {
-				if (fs.existsSync(item.path)) {
-					_refresh.call(this);
-				}
-			}, 100);
+			return new Promise((resolve)=>{
+				this.refreshFolderTimer[item.id] = setTimeout(() => {
+					if (fs.existsSync(item.path)) {
+						_refresh.call(this).then(() => {
+							resolve();
+						});
+					} else {
+						resolve();
+					}
+				}, 100);
+			});
 
 			function _refresh() {
 				let children = item.children || [];
-				this.readdir(item).then(() => {
+				return this.readdir(item).then(() => {
 					let idMap = {};
 					children.forEach((item) => {
 						idMap[item.id] = item;
@@ -407,6 +414,25 @@ export default {
 					}
 					this.setTreeHeight();
 					this.setStartLine(this.checkScrollTop(this._scrollTop));
+				});
+			}
+		},
+		refreshRootDir(rootItem) {
+			this.refreshRootTimer = this.refreshRootTimer || {};
+			if (this.refreshRootTimer[rootItem.id]) {
+				clearTimeout(this.refreshRootTimer[rootItem.id]);
+			}
+			this.refreshRootTimer[rootItem.id] = setTimeout(() => {
+				_refresh.call(this, rootItem);
+			}, 200);
+			
+			function _refresh(item) {
+				this.refreshDir(item).then(() => {
+					item.children.forEach((_item) => {
+						if(_item.type === 'dir' && _item.loaded) {
+							_refresh.call(this, _item);
+						}
+					});
 				});
 			}
 		},
@@ -465,6 +491,7 @@ export default {
 			openedFileList.splice(index, endIn - index);
 			this.setTreeHeight();
 			item.open = false;
+			item.closed = true;
 			this.setStartLine(this.checkScrollTop(this.scrollTop));
 		},
 		openFolder(item) {
@@ -489,6 +516,7 @@ export default {
 						.concat(openedFileList.slice(index + 1));
 					globalData.openedFileList = openedFileList;
 					item.open = true;
+					item.closed = false;
 					this.setTreeHeight();
 				}
 				this.setStartLine(this.checkScrollTop(this.scrollTop));
@@ -519,7 +547,7 @@ export default {
 							let dirPath = path.dirname(path.join(item.path, filename));
 							let treeItems = Util.getFileItemByPath(globalData.fileTree, dirPath);
 							treeItems.forEach((treeItem) => {
-								if (treeItem.children.length || treeItem.open) {
+								if (treeItem.open || treeItem.closed) {
 									this.refreshDir(treeItem);
 								}
 							});
@@ -527,6 +555,8 @@ export default {
 						if (filename === '.gitignore') {
 							this.refreshGitIgnore(path.join(item.path, '.gitignore'));
 						}
+					} else {
+						this.refreshRootDir(item);
 					}
 				});
 				this.fileWatchs.push(watcher);
