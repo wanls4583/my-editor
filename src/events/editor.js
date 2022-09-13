@@ -63,7 +63,7 @@ export default class {
 			let tab = Util.getTabById(this.editorList, id);
 			if (tab && !tab.active) {
 				globalData.nowEditorId = id;
-				if (tab.path && !tab.loaded) {
+				if ((tab.path || tab.tempPath) && !tab.loaded) {
 					//tab对应的文件内容还未加载
 					EventBus.$emit('file-open', tab);
 				} else {

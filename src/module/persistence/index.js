@@ -68,7 +68,7 @@ export default class {
 					name: item.name,
 					icon: item.icon,
 					path: item.path,
-					tempPath: (!item.saved && path.join(globalData.cachePath, item.id)) || '',
+					tempPath: path.join(globalData.cachePath, item.id) || '',
 					active: item.active,
 					saved: item.saved,
 					isSetting: item.isSetting,
@@ -120,7 +120,7 @@ export default class {
 	}
 	storeTempData() {
 		globalData.editorList.forEach(item => {
-			if (!item.saved && !item.tempSaved) {
+			if (!item.tempSaved) {
 				Util.writeFileSync(path.join(globalData.cachePath, item.id), contexts[item.id].getAllText());
 				item.tempSaved = true;
 			}

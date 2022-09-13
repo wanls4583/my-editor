@@ -198,9 +198,10 @@ export default class {
 					tab.loaded = true;
 					Util.readFile(filePath).then(data => {
 						if (contexts[tab.id]) { //此时tab可能已经关闭
+							let saved = tab.saved;
 							contexts[tab.id].reload(data);
 							EventBus.$emit('file-opened', filePath);
-							if (!tab.tempPath) {
+							if (!tab.tempPath || saved) {
 								EventBus.$emit('file-saved', tab.path);
 								tab.saved = true;
 							}
