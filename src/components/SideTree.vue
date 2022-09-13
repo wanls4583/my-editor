@@ -253,7 +253,6 @@ export default {
 					}
 					preItem = item;
 				});
-				this._scrollTop = 0; //清除刷新目录时记录的滚动位置
 			});
 		},
 		preLoadFolder() {
@@ -359,7 +358,6 @@ export default {
 			});
 		},
 		refreshDir(item) {
-			this._scrollTop = this._scrollTop || this.scrollTop;
 			this.refreshFolderTimer = this.refreshFolderTimer || {};
 			if (this.refreshFolderTimer[item.id]) {
 				clearTimeout(this.refreshFolderTimer[item.id]);
@@ -401,8 +399,12 @@ export default {
 						return item;
 					});
 					if (item.open) {
-						this.closeFolder(item);
-						this.openFolder(item);
+						this.closeFolder(item, true);
+						this.openFolder(item).then(() => {
+							this.setStartLine(this.checkScrollTop(this.scrollTop));
+						});
+					} else {
+						this.setStartLine(this.checkScrollTop(this.scrollTop));
 					}
 					if (!item.gitRootPath) {
 						this.watchFileStatus(item.children);
@@ -412,8 +414,6 @@ export default {
 						preActiveItem = item;
 						preActiveItem.active = true;
 					}
-					this.setTreeHeight();
-					this.setStartLine(this.checkScrollTop(this._scrollTop));
 				});
 			}
 		},
@@ -479,7 +479,7 @@ export default {
 				}
 			}
 		},
-		closeFolder(item) {
+		closeFolder(item, stopScroll) {
 			if (!item.open) {
 				return;
 			}
@@ -489,10 +489,12 @@ export default {
 				endIn++;
 			}
 			openedFileList.splice(index, endIn - index);
-			this.setTreeHeight();
 			item.open = false;
 			item.closed = true;
-			this.setStartLine(this.checkScrollTop(this.scrollTop));
+			if(!stopScroll) {
+				this.setTreeHeight();
+				this.setStartLine(this.checkScrollTop(this.scrollTop));
+			}
 		},
 		openFolder(item) {
 			return new Promise((resolve, reject) => {
@@ -732,7 +734,7 @@ export default {
 			globalData.nowFileItem = item;
 			if (item.type === 'dir') {
 				if (!item.loaded) {
-					this.openFolder(item).then(() => {
+					return this.openFolder(item).then(() => {
 						if (!item.gitRootPath) {
 							this.watchFileStatus(item.children);
 						}
@@ -743,6 +745,7 @@ export default {
 			} else {
 				EventBus.$emit('file-open', item, false, true);
 			}
+			return Promise.resolve();
 		},
 		onWheel(e) {
 			this.scrollDeltaY = e.deltaY;
