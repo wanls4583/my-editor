@@ -411,7 +411,7 @@ export default class {
 		};
 	}
 	watchFile(filePath) {
-		if (this.fileWatcherMap[filePath]) {
+		if (this.fileWatcherMap[filePath] || !fs.existsSync(filePath)) {
 			return;
 		}
 		this.fileWatcherMap[filePath] = fs.watch(filePath, { recursive: true }, event => {
