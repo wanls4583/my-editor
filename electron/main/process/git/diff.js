@@ -264,7 +264,8 @@ class Differ {
         this.fileCacheMap.size += stagedContent.length;
     }
     getNowHash(filePath) {
-        return spawnSync('git', ['rev-parse', 'HEAD'], { cwd: path.dirname(filePath) }).stdout.toString();
+		let hash = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: path.dirname(filePath) }).stdout;
+        return hash && hash.toString();
     }
     getCacheHash(filePath) {
         let fileIndex = '';
