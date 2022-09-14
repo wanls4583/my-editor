@@ -39,13 +39,9 @@ export default class {
             cursorPosList: historyArr.map((item) => { return item.cursorPos })
         });
         historyArr.serial = serial;
-        historyArr.afterCursorPosList = afterCursorPosList;
+        historyArr.afterCursorPosList = afterCursorPosList || historyArr.map((item) => { return item.cursorPos });
         this.editor.history.pushHistory(historyArr);
-        if(afterCursorPosList) {
-            this.context.addCursorList(afterCursorPosList);
-        } else {
-            this.context.addCursorList(historyArr.map((item) => { return item.cursorPos }));
-        }
+        this.context.addCursorList(historyArr.afterCursorPosList);
     }
     // 文件变动，重写加载文件内容
     reload(text, afterCursorPosList) {
