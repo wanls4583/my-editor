@@ -1460,8 +1460,10 @@ export default {
 				weackScroll = false;
 			}
 			if(!weackScroll) {
+				let maxScrollLeft = this._contentMinWidth - this.scrollerArea.width;
 				let scrollLeft = width - this.scrollerArea.width / 2;
 				scrollLeft = scrollLeft > 0 ? scrollLeft : 0;
+				scrollLeft = scrollLeft > maxScrollLeft ? maxScrollLeft : scrollLeft;
 				this.scrollLeft = scrollLeft;
 			}
 		},
