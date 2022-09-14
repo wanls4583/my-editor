@@ -566,6 +566,14 @@ export default {
 				})
 			);
 			EventBus.$on(
+				'file-removed',
+				(this.initEventBusFn['file-removed'] = (path) => {
+					if (this.tabData.path === path) {
+						this.setDiffObjs(null);
+					}
+				})
+			);
+			EventBus.$on(
 				'editor-format',
 				(this.initEventBusFn['editor-format'] = (id) => {
 					if (id === this.tabData.id) {
@@ -632,6 +640,7 @@ export default {
 			EventBus.$off('render-line', this.initEventBusFn['render-line']);
 			EventBus.$off('file-saved', this.initEventBusFn['file-saved']);
 			EventBus.$off('file-opened', this.initEventBusFn['file-opened']);
+			EventBus.$off('file-removed', this.initEventBusFn['file-removed']);
 			EventBus.$off('editor-format', this.initEventBusFn['editor-format']);
 			EventBus.$off('editor-content-change', this.initEventBusFn['editor-content-change']);
 			EventBus.$off('editor-size-change', this.initEventBusFn['editor-size-change']);

@@ -60,17 +60,6 @@
 				EventBus.$on('editor-changed', (data) => {
 					this.scrollToView();
 				});
-				EventBus.$on('file-renamed', (data) => {
-					for (let i = 0; i < this.editorList.length; i++) {
-						let item = this.editorList[i];
-						if (item.path === data.path) {
-							item.status = 'D';
-							item.statusColor = Util.getFileStatusColor('D');
-							this.$set(this.editorList, i, item);
-							break;
-						}
-					}
-				});
 			},
 			checkStatus() {
 				this.editorList.forEach((tab, index) => {
@@ -79,6 +68,7 @@
 							tab.status = 'D';
 							tab.statusColor = Util.getFileStatusColor('D');
 							this.$set(this.editorList, index, tab);
+							EventBus.$emit('file-removed', tab.path);
 						} else {
 							let status = null;
 							let statusColor = '';
