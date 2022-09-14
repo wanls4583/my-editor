@@ -137,7 +137,6 @@ export default class {
 			}
 		}).then(() => {
 			EventBus.$emit('git-status-stop', tab.path);
-			EventBus.$emit('file-watch-stop', tab.path);
 		});
 
 		function _closeTab(resolve) {
@@ -251,7 +250,6 @@ export default class {
 				tab.active = false;
 				this.editorList.push(tab);
 				if (tab.path) {
-					EventBus.$emit('file-watch-start', tab.path);
 					EventBus.$emit('git-status-start', tab.path);
 				}
 			}

@@ -31,12 +31,6 @@ export default class {
 				option.success && option.success();
 			});
 		});
-		EventBus.$on('file-watch-start', filePath => {
-			this.watchFile(filePath);
-		});
-		EventBus.$on('file-watch-stop', filePath => {
-			this.stopWatchFile(filePath);
-		});
 		EventBus.$on('folder-open', () => {
 			this.openFolder();
 		});
@@ -163,7 +157,6 @@ export default class {
 							this.editorList.empty();
 							this.editorList.push(...editorList);
 							results.forEach(item => {
-								this.watchFile(item.path);
 								EventBus.$emit('git-status-start', item.path);
 							});
 						} else {
@@ -176,7 +169,6 @@ export default class {
 				if (fileObj) {
 					tab = Object.assign({}, fileObj);
 					if (fileObj.path) {
-						this.watchFile(fileObj.path);
 						EventBus.$emit('git-status-start', fileObj.path);
 					}
 				} else {
@@ -410,44 +402,6 @@ export default class {
 			active: false,
 			saved: true,
 		};
-	}
-	watchFile(filePath) {
-		if (this.fileWatcherMap[filePath] || !fs.existsSync(filePath)) {
-			return;
-		}
-		this.fileWatcherMap[filePath] = fs.watch(filePath, { recursive: true }, event => {
-			clearTimeout(this.fileWatcherTimer[filePath]);
-			this.fileWatcherTimer[filePath] = setTimeout(() => {
-				let tab = Util.getTabByPath(this.editorList, filePath);
-				if (event === 'rename') {
-					EventBus.$emit('file-renamed', {
-						path: filePath,
-					});
-					this.stopWatchFile(filePath);
-				} else if (event === 'change') {
-					let stat = fs.statSync(filePath);
-					// 文件改变后与当前打开内容不一致
-					if (tab && tab.saved && tab.mtimeMs !== stat.mtimeMs) {
-						Util.readFile(filePath).then(text => {
-							if (contexts[tab.id].getAllText() !== text.replace(/\r\n/g, '\n')) {
-								contexts[tab.id].reload(text);
-								EventBus.$emit('file-saved', tab.path);
-								tab.active && EventBus.$emit('git-diff', tab.path);
-								tab.saved = true;
-							}
-						});
-					}
-				}
-			}, 15);
-		});
-	}
-	stopWatchFile(filePath) {
-		if (this.fileWatcherMap[filePath]) {
-			this.fileWatcherMap[filePath].close();
-			clearTimeout(this.fileWatcherTimer[filePath]);
-			delete this.fileWatcherMap[filePath];
-			delete this.fileWatcherTimer[filePath];
-		}
 	}
 	getEditorMap() {
 		let editorMap = {};
