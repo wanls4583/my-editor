@@ -676,7 +676,9 @@ class Util {
 		for (let i = 0; i < status.length; i++) {
 			statusMap[status[i]] = true;
 		}
-		if (statusMap['R']) {
+		if (statusMap['U']) {
+			statusColor = 'my-status-conflicted';
+		} else if (statusMap['R']) {
 			statusColor = 'my-status-rename';
 		} else if (statusMap['?']) {
 			statusColor = 'my-status-untracked';
@@ -791,7 +793,8 @@ Util.STATUS_LEVEMAP = {
 	M: 2,
 	D: 3,
 	'?': 4,
-	R: 5
+	R: 5,
+	U: 6
 };
 
 export default Util;
