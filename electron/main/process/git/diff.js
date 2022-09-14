@@ -271,7 +271,7 @@ class Differ {
         let fileIndex = '';
         try {
             fileIndex = spawnSync('git', ['diff-index', 'HEAD', '--cached', filePath], { cwd: path.dirname(filePath) });
-            fileIndex = fileIndex.stdout.toString() || filePath;
+            fileIndex = fileIndex.stdout && fileIndex.stdout.toString() || filePath;
         } catch (e) {
             console.log(e);
         }
