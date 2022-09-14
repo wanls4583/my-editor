@@ -359,22 +359,22 @@
 					clearTimeout(this.refreshRootTimer[rootItem.id]);
 				}
 				this.refreshRootTimer[rootItem.id] = setTimeout(async () => {
-					await _refresh.call(this, rootItem);
+					await _refresh.call(this, rootItem, true);
 					this.setTreeHeight();
 					this.setStartLine(this.checkScrollTop(this.scrollTop));
 				}, 100);
 
-				async function _refresh(item) {
-					await _refreshDir.call(this, item);
+				async function _refresh(item, treeOpen) {
+					await _refreshDir.call(this, item, treeOpen);
 					for (let i = 0; i < item.children.length; i++) {
 						let _item = item.children[i];
 						if (_item.type === 'dir' && (_item.open || _item.closed)) {
-							await _refresh.call(this, _item);
+							await _refresh.call(this, _item, treeOpen && item.open);
 						}
 					}
 				}
 
-				async function _refreshDir(item) {
+				async function _refreshDir(item, treeOpen) {
 					let children = item.children || [];
 					let idMap = {};
 					await this.readdir(item);
@@ -406,7 +406,7 @@
 						preActiveItem = item;
 						preActiveItem.active = true;
 					}
-					if (item.open) {
+					if (item.open && treeOpen) {
 						this.closeFolder(item, true);
 						await this.openFolder(item, true);
 					}
@@ -461,10 +461,12 @@
 				}
 				let index = openedFileList.indexOf(item) + 1;
 				let endIn = index;
-				while (endIn < openedFileList.length && openedFileList[endIn].deep > item.deep) {
-					endIn++;
+				if(index > 0) {
+					while (endIn < openedFileList.length && openedFileList[endIn].deep > item.deep) {
+						endIn++;
+					}
+					openedFileList.splice(index, endIn - index);
 				}
-				openedFileList.splice(index, endIn - index);
 				item.open = false;
 				item.closed = true;
 				if (!stopScroll) {
@@ -488,14 +490,16 @@
 				function _open() {
 					if (!item.open) {
 						let index = openedFileList.indexOf(item);
-						openedFileList = openedFileList
-							.slice(0, index + 1)
-							.concat(this.getRenderList(item.children, item.deep))
-							.concat(openedFileList.slice(index + 1));
-						globalData.openedFileList = openedFileList;
+						if(index > -1) {
+							openedFileList = openedFileList
+								.slice(0, index + 1)
+								.concat(this.getRenderList(item.children, item.deep))
+								.concat(openedFileList.slice(index + 1));
+							globalData.openedFileList = openedFileList;
+						}
 						item.open = true;
 						item.closed = false;
-						if(!stopScroll) {
+						if (!stopScroll) {
 							this.setTreeHeight();
 							this.setStartLine(this.checkScrollTop(this.scrollTop));
 						}
@@ -585,7 +589,6 @@
 			},
 			focusItem(filePath) {
 				clearTimeout(this.focusItemTimer);
-
 				this.focusItemTimer = setTimeout(() => {
 					if (this.initOpendDiring) {
 						this.focusItem(filePath);
