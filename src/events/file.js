@@ -423,7 +423,7 @@ export default class {
 					EventBus.$emit('file-renamed', {
 						path: filePath,
 					});
-					this.fileWatcherMap[filePath].close();
+					this.stopWatchFile(filePath);
 				} else if (event === 'change') {
 					let stat = fs.statSync(filePath);
 					// 文件改变后与当前打开内容不一致

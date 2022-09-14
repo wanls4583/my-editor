@@ -540,14 +540,12 @@ export default {
 			);
 			EventBus.$on(
 				'git-statused',
-				(this.initEventBusFn['git-statused'] = (data) => {
-					if (this.tabData.path === data.path) {
-						let status = null;
-						status = Util.getFileStatus(this.tabData.path);
-						if (this.preStatus !== status.originStatus) {
-							this.active && this.differ.run();
-							this.preStatus = status.originStatus;
-						}
+				(this.initEventBusFn['git-statused'] = () => {
+					let status = null;
+					status = Util.getFileStatus(this.tabData.path);
+					if (this.preStatus !== status.originStatus) {
+						this.active && this.differ.run();
+						this.preStatus = status.originStatus;
 					}
 				})
 			);

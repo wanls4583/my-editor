@@ -63,21 +63,18 @@ export default {
 			EventBus.$on('editor-changed', (data) => {
 				this.scrollToView();
 			});
-			EventBus.$on('git-statused', (data) => {
+			EventBus.$on('git-statused', () => {
 				for (let i = 0; i < this.editorList.length; i++) {
 					let item = this.editorList[i];
 					let status = null;
 					let statusColor = '';
-					if (item.path === data.path) {
-						status = Util.getFileStatus(item.path);
-						statusColor = status.statusColor;
-						status = status.status;
-						if (item.status !== status) {
-							item.status = status;
-							item.statusColor = statusColor;
-							this.$set(this.editorList, i, item);
-						}
-						break;
+					status = Util.getFileStatus(item.path);
+					statusColor = status.statusColor;
+					status = status.status;
+					if (item.status !== status) {
+						item.status = status;
+						item.statusColor = statusColor;
+						this.$set(this.editorList, i, item);
 					}
 				}
 			});
@@ -93,6 +90,7 @@ export default {
 				}
 			});
 		},
+		
 		scrollToView() {
 			_scrollToView.call(this);
 			setTimeout(() => {

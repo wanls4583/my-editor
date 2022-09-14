@@ -146,7 +146,7 @@
 				EventBus.$on('file-paste', (item) => {
 					this.cutPath = '';
 				});
-				EventBus.$on('git-statused', (data) => {
+				EventBus.$on('git-statused', () => {
 					this.render();
 				});
 				EventBus.$on('git-ignored', (data) => {

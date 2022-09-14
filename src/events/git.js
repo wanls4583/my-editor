@@ -61,9 +61,7 @@ export default class {
 		this.statusProcess = child_process.fork(path.join(globalData.dirname, 'main/process/git/status.js'));
 		this.statusProcess.on('message', data => {
 			this.parseStatus(data);
-			data.paths.forEach(path => {
-				EventBus.$emit('git-statused', { path });
-			});
+			EventBus.$emit('git-statused');
 		});
 		this.statusProcess.on('close', () => {
 			this.createStatusProcess();
