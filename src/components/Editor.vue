@@ -531,14 +531,6 @@ export default {
 				})
 			);
 			EventBus.$on(
-				'git-diff',
-				(this.initEventBusFn['git-diff'] = (data) => {
-					if (this.active && data && data.path === this.tabData.path) {
-						this.differ.run();
-					}
-				})
-			);
-			EventBus.$on(
 				'git-statused',
 				(this.initEventBusFn['git-statused'] = () => {
 					let status = null;
@@ -636,7 +628,6 @@ export default {
 			EventBus.$off('convert-to-space', this.initEventBusFn['convert-to-space']);
 			EventBus.$off('close-menu', this.initEventBusFn['close-menu']);
 			EventBus.$off('theme-changed', this.initEventBusFn['theme-changed']);
-			EventBus.$off('git-diff', this.initEventBusFn['git-diff']);
 			EventBus.$off('git-statused', this.initEventBusFn['git-statused']);
 			EventBus.$off('render-line', this.initEventBusFn['render-line']);
 			EventBus.$off('file-saved', this.initEventBusFn['file-saved']);
