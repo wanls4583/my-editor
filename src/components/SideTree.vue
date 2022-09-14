@@ -360,6 +360,7 @@
 				}
 				this.refreshRootTimer[rootItem.id] = setTimeout(async () => {
 					await _refresh.call(this, rootItem);
+					this.setTreeHeight();
 					this.setStartLine(this.checkScrollTop(this.scrollTop));
 				}, 100);
 
@@ -407,7 +408,7 @@
 					}
 					if (item.open) {
 						this.closeFolder(item, true);
-						await this.openFolder(item);
+						await this.openFolder(item, true);
 					}
 				}
 			},
@@ -471,7 +472,7 @@
 					this.setStartLine(this.checkScrollTop(this.scrollTop));
 				}
 			},
-			openFolder(item) {
+			openFolder(item, stopScroll) {
 				return new Promise((resolve, reject) => {
 					if (item.loaded) {
 						_open.call(this);
@@ -494,9 +495,11 @@
 						globalData.openedFileList = openedFileList;
 						item.open = true;
 						item.closed = false;
-						this.setTreeHeight();
+						if(!stopScroll) {
+							this.setTreeHeight();
+							this.setStartLine(this.checkScrollTop(this.scrollTop));
+						}
 					}
-					this.setStartLine(this.checkScrollTop(this.scrollTop));
 				}
 			},
 			watchFileStatus(list) {
