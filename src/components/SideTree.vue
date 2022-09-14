@@ -357,7 +357,7 @@ export default {
 				});
 			});
 		},
-		refreshDir(item) {
+		refreshDir(item, delay) {
 			this.refreshFolderTimer = this.refreshFolderTimer || {};
 			if (this.refreshFolderTimer[item.id]) {
 				clearTimeout(this.refreshFolderTimer[item.id]);
@@ -371,7 +371,7 @@ export default {
 					} else {
 						resolve();
 					}
-				}, 100);
+				}, delay === undefined ? 100 : 0);
 			});
 
 			function _refresh() {
@@ -424,16 +424,16 @@ export default {
 			}
 			this.refreshRootTimer[rootItem.id] = setTimeout(() => {
 				_refresh.call(this, rootItem);
-			}, 200);
+			}, 100);
 			
-			function _refresh(item) {
-				this.refreshDir(item).then(() => {
-					item.children.forEach((_item) => {
-						if(_item.type === 'dir' && _item.loaded) {
-							_refresh.call(this, _item);
-						}
-					});
-				});
+			async function _refresh(item) {
+				await this.refreshDir(item, 0);
+				for(let i = 0; i < item.children.length; i++) {
+					let _item = item.children[i];
+					if(_item.type === 'dir' && (_item.open || _item.closed)) {
+						await _refresh.call(this, _item);
+					}
+				}
 			}
 		},
 		refreshGitIgnore(gitIgnore) {
@@ -546,13 +546,9 @@ export default {
 				let watcher = fs.watch(item.path, { recursive: true }, (event, filename) => {
 					if (filename) {
 						if (event === 'rename') {
-							let dirPath = path.dirname(path.join(item.path, filename));
-							let treeItems = Util.getFileItemByPath(globalData.fileTree, dirPath);
-							treeItems.forEach((treeItem) => {
-								if (treeItem.open || treeItem.closed) {
-									this.refreshDir(treeItem);
-								}
-							});
+							if(filename !== '.git' && !filename.startsWith('.git' + path.sep)) {
+								this.refreshRootDir(item);
+							}
 						}
 						if (filename === '.gitignore') {
 							this.refreshGitIgnore(path.join(item.path, '.gitignore'));
