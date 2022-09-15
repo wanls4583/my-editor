@@ -2,6 +2,7 @@
 	&-side-bar {
 		position: relative;
 		height: 100%;
+		background-color: var(--my-sideBar-background);
 		user-select: none;
 
 		.side-bar-title {

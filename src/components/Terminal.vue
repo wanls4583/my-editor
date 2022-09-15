@@ -49,10 +49,11 @@ export default {
 			fontSize: 16,
 			lineHeight: 1,
 			cursorBlink: true,
+			allowTransparency: true,
 			theme: {
 				cursor: globalData.colors['terminal.foreground'],
 				foreground: globalData.colors['terminal.foreground'],
-				background: globalData.colors['terminal.background'],
+				background: 'rgba(0,0,0,0)',//globalData.colors['terminal.background'],
 				selection: globalData.colors['terminal.selectionBackground'],
 			},
 		});
