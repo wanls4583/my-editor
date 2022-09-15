@@ -49,7 +49,7 @@
 		"panel.border": "#414339",
 		"settings.focusedRowBackground": "#4143395A",
 		"titleBar.activeBackground": "#1e1f1ccc",
-		"statusBar.background": "#414339",
+		"statusBar.background": "#414339cc",
 		"statusBar.noFolderBackground": "#414339",
 		"statusBar.debuggingBackground": "#75715E",
 		"statusBarItem.remoteBackground": "#AC6218",

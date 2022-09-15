@@ -582,7 +582,7 @@ export default class {
 				if (isLight && !isHc) {
 					result.colors['statusBar.background'] = 'rgb(0, 122, 204)';
 				} else {
-					result.colors['statusBar.background'] = transparent;
+					result.colors['statusBar.background'] = result.colors['titleBar.activeBackground'];
 				}
 			}
 			if (!result.colors['statusBar.border']) {
