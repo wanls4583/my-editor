@@ -53,7 +53,7 @@ export default {
 			theme: {
 				cursor: globalData.colors['terminal.foreground'],
 				foreground: globalData.colors['terminal.foreground'],
-				background: 'rgba(0,0,0,0)',//globalData.colors['terminal.background'],
+				background: 'rgba(0,0,0,0)',
 				selection: globalData.colors['terminal.selectionBackground'],
 			},
 		});
@@ -102,7 +102,7 @@ export default {
 				this.terminal.setOption('theme', {
 					cursor: globalData.colors['terminal.foreground'],
 					foreground: globalData.colors['terminal.foreground'],
-					background: globalData.colors['terminal.background'],
+					background: 'rgba(0,0,0,0)',
 					selection: globalData.colors['terminal.selectionBackground'],
 				});
 			});
