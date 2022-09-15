@@ -16,9 +16,12 @@ const settingMap = {
 };
 
 export default class {
-	constructor() { }
+	constructor() {}
 	loadTheme(option) {
-		let result = { tokenColors: [], colors: {} };
+		let result = {
+			tokenColors: [],
+			colors: {}
+		};
 		return _loadTheme.call(this, option.path).then(() => {
 			let css = '';
 			this.setDefaultColor(result, option.type);
@@ -186,7 +189,9 @@ export default class {
 					return true;
 				}
 			}
-			this.loadIconTheme({ value: 'none' });
+			this.loadIconTheme({
+				value: 'none'
+			});
 		}
 	}
 	parseCss(data) {
@@ -386,6 +391,7 @@ export default class {
 			contrastBorder = result.colors['contrastBorder'];
 			contrastActiveBorder = result.colors['contrastActiveBorder'];
 		}
+
 		function _scrollbar() {
 			if (!result.colors['scrollbar.shadow']) {
 				result.colors['scrollbar.shadow'] = transparent;
@@ -732,6 +738,40 @@ export default class {
 					result.colors['terminal.border'] = contrastBorder;
 				}
 			}
+			var ansiColors = [
+				"ansiBrightWhite", "ansiWhite", "ansiBrightBlack",
+				"ansiBlack", "ansiBlue", "ansiBrightBlue",
+				"ansiGreen", "ansiBrightGreen", "ansiCyan",
+				"ansiBrightCyan", "ansiRed", "ansiBrightRed",
+				"ansiMagenta", "ansiBrightMagenta", "ansiYellow",
+				"ansiBrightYellow",
+			];
+			var ansiLighhtColors = [
+				"#d1d5da", "#6a737d", "#959da5",
+				"#24292e", "#0366d6", "#005cc5",
+				"#28a745", "#22863a", "#1b7c83",
+				"#3192aa", "#d73a49", "#cb2431",
+				"#5a32a3", "#5a32a3", "#dbab09",
+				"#b08800",
+			];
+			var ansiDarkColors = [
+				"#fafbfc", "#d1d5da", "#959da5",
+				"#586069", "#2188ff", "#79b8ff",
+				"#34d058", "#85e89d", "#39c5cf",
+				"#56d4dd", "#ea4a5a", "#f97583",
+				"#b392f0", "#b392f0", "#ffea7f",
+				"#ffea7f",
+			];
+			ansiColors.forEach((color, index) => {
+				color = 'terminal.' + color;
+				if (!result.colors[color]) {
+					if (isLight) {
+						result.colors[color] = ansiLighhtColors[index];
+					} else {
+						result.colors[color] = ansiDarkColors[index];
+					}
+				}
+			});
 		}
 		// tab
 		function _tab() {
@@ -979,6 +1019,7 @@ export default class {
 				}
 			}
 		}
+
 		function _minimap() {
 			if (!result.colors['minimap.selectionHighlight']) {
 				result.colors['minimap.selectionHighlight'] = result.colors['editor.selectionBackground'];

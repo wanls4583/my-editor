@@ -50,13 +50,8 @@ export default {
 			lineHeight: 1,
 			cursorBlink: true,
 			allowTransparency: true,
-			theme: {
-				cursor: globalData.colors['terminal.foreground'],
-				foreground: globalData.colors['terminal.foreground'],
-				background: 'rgba(0,0,0,0)',
-				selection: globalData.colors['terminal.selectionBackground'],
-			},
 		});
+		this.setTheme();
 		this.fitAddon = new FitAddon(); //自适应容器大小插件
 		this.searchAddon = new SearchAddon();
 		this.terminal.loadAddon(this.fitAddon);
@@ -99,12 +94,7 @@ export default {
 		},
 		initEvent() {
 			EventBus.$on('theme-changed', () => {
-				this.terminal.setOption('theme', {
-					cursor: globalData.colors['terminal.foreground'],
-					foreground: globalData.colors['terminal.foreground'],
-					background: 'rgba(0,0,0,0)',
-					selection: globalData.colors['terminal.selectionBackground'],
-				});
+				this.setTheme();
 			});
 		},
 		initResizeEvent() {
@@ -153,6 +143,30 @@ export default {
 					}
 				}
 				return true;
+			});
+		},
+		setTheme() {
+			this.terminal.setOption('theme', {
+				cursor: globalData.colors['terminal.foreground'],
+				foreground: globalData.colors['terminal.foreground'],
+				background: 'rgba(0,0,0,0)',
+				selection: globalData.colors['terminal.selectionBackground'],
+				brightWhite: globalData.colors['terminal.ansiBrightWhite'],
+			    bhite: globalData.colors['terminal.ansiWhite'],
+			    brightBlack: globalData.colors['terminal.ansiBrightBlack'],
+			    black: globalData.colors['terminal.ansiBlack'],
+			    blue: globalData.colors['terminal.ansiBlue'],
+			    brightBlue: globalData.colors['terminal.ansiBrightBlue'],
+			    green: globalData.colors['terminal.ansiGreen'],
+			    brightGreen: globalData.colors['terminal.ansiBrightGreen'],
+			    cyan: globalData.colors['terminal.ansiCyan'],
+			    brightCyan: globalData.colors['terminal.ansiBrightCyan'],
+			    red: globalData.colors['terminal.ansiRed'],
+			    brightRed: globalData.colors['terminal.ansiBrightRed'],
+			    magenta: globalData.colors['terminal.ansiMagenta'],
+			    brightMagenta: globalData.colors['terminal.ansiBrightMagenta'],
+			    yellow: globalData.colors['terminal.ansiYellow'],
+			    brightYellow: globalData.colors['terminal.ansiBrightYellow'],
 			});
 		},
 		onContextmenu(e) {
