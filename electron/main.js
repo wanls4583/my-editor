@@ -17,6 +17,40 @@ const wins = {};
 
 let mainWin = null;
 
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+	app.quit();
+} else {
+	app.on('second-instance', (event, commandLine, workingDirectory) => {
+		// 当运行第二个实例时,将会聚焦到myWindow这个窗口
+		if (mainWin) {
+			if (mainWin.isMinimized()) {
+				mainWin.restore();
+			}
+			mainWin.webContents.send('file-open-with', commandLine);
+			mainWin.focus();
+		}
+	})
+}
+
+app.whenReady().then(() => {
+	initProtocol();
+	initEvent();
+	main.initialize();
+	Menu.setApplicationMenu(null); //屏蔽默认快捷键
+	if (process.argv[2] === 'development') {
+		mainWin = createWindow('main', 'http://localhost:8080/', 'remote');
+	} else {
+		mainWin = createWindow('main', 'render/index.html');
+	}
+	mainWin.terminal = new Terminal(mainWin.webContents);
+	mainWin.fileOp = new FileOp(mainWin.webContents);
+	mainWin.show();
+}).catch(err => {
+	console.log(err);
+});
+
 function createWindow(name, url, type, parent) {
 	const win = new BrowserWindow({
 		transparent: true,
@@ -42,23 +76,6 @@ function createWindow(name, url, type, parent) {
 	}
 	return win;
 }
-
-app.whenReady().then(() => {
-	initProtocol();
-	initEvent();
-	main.initialize();
-	Menu.setApplicationMenu(null); //屏蔽默认快捷键
-	if (process.argv[2] === 'development') {
-		mainWin = createWindow('main', 'http://localhost:8080/', 'remote');
-	} else {
-		mainWin = createWindow('main', 'render/index.html');
-	}
-	mainWin.terminal = new Terminal(mainWin.webContents);
-	mainWin.fileOp = new FileOp(mainWin.webContents);
-	mainWin.show();
-}).catch(err => {
-	console.log(err);
-});
 
 function initEvent() {
 	app.on('window-all-closed', function() {

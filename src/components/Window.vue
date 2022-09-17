@@ -67,6 +67,9 @@
 	const fs = window.require('fs');
 	const path = window.require('path');
 	const remote = window.require('@electron/remote');
+	const {
+		ipcRenderer
+	} = window.require('electron');
 	const contexts = Context.contexts;
 
 	export default {
@@ -133,7 +136,7 @@
 			this.persistence.loadShortcutData();
 			//右键打开文件
 			Promise.all([this.persistence.loadFileTree(), this.persistence.loadTabData()]).then(() => {
-				this.initOpenWith();
+				this.initOpenWith(remote.process.argv);
 			});
 			currentWindow.webContents.setZoomLevel(globalData.zoomLevel);
 			currentWindow.on(
@@ -148,6 +151,9 @@
 					this.closeMain = true;
 				})
 			);
+			ipcRenderer.on('file-open-with', (e, argv) => {
+				this.initOpenWith(argv);
+			});
 			window.onbeforeunload = (e) => {
 				if (!this.preCloseDone) {
 					EventBus.$emit('window-close');
@@ -261,12 +267,10 @@
 					this.persistence.storeTempDataById(data.id);
 				});
 			},
-			initOpenWith() {
-				if (remote.process.platform.startsWith('win') &&
-					remote.process.argv[2] !== 'development' &&
-					remote.process.argv.length >= 2) {
+			initOpenWith(argv) {
+				if (remote.process.platform.startsWith('win') && argv[2] !== 'development' && argv.length >= 2) {
 					setTimeout(() => {
-						remote.process.argv.slice(1).forEach((item) => {
+						argv.slice(1).forEach((item) => {
 							if (fs.existsSync(item)) {
 								EventBus.$emit('file-open-with', item);
 							}
