@@ -221,6 +221,17 @@
 					})
 					.on('keyup', (e) => {
 						this.shortcut.onKeyup(e);
+					})
+					.on('dragover', (e) => {
+						e.preventDefault();
+						e.stopPropagation();
+					})
+					.on('drop', (e) => {
+						e.preventDefault();
+						e.stopPropagation();
+						for (const item of e.originalEvent.dataTransfer.files) {
+							EventBus.$emit('file-open-with', item.path);
+						}
 					});
 			},
 			initResizeEvent() {
