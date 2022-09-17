@@ -21,6 +21,9 @@ export default class {
 		EventBus.$on('file-open', (fileObj, choseFile, blur) => {
 			this.openFile(fileObj, choseFile, blur);
 		});
+		EventBus.$on('file-open-with', (filePath) => {
+			this.openFile(this.createTabItem(filePath));
+		});
 		EventBus.$on('file-save', option => {
 			this.saveFile(option.id).then(() => {
 				option.success && option.success();

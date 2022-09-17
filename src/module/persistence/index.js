@@ -50,12 +50,13 @@ export default class {
 	}
 	loadFileTree() {
 		if (fs.existsSync(globalData.fileTreePath)) {
-			Util.loadJsonFile(globalData.fileTreePath).then(data => {
+			return Util.loadJsonFile(globalData.fileTreePath).then(data => {
 				if (data && data.length && data.__proto__.constructor === Array) {
 					EventBus.$emit('file-tree-loaded', data);
 				}
 			});
 		}
+		return Promise.resolve();
 	}
 	storeTabData() {
 		let data = [];
@@ -85,12 +86,13 @@ export default class {
 	}
 	loadTabData() {
 		if (fs.existsSync(globalData.tabPath)) {
-			Util.loadJsonFile(globalData.tabPath).then(data => {
+			return Util.loadJsonFile(globalData.tabPath).then(data => {
 				if (data && data.length && data.__proto__.constructor === Array) {
 					EventBus.$emit('editor-loaded', data);
 				}
 			});
 		}
+		return Promise.resolve();
 	}
 	storeTerminalTabData() {
 		let data = [];
