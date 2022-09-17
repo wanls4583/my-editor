@@ -229,8 +229,9 @@
 					.on('drop', (e) => {
 						e.preventDefault();
 						e.stopPropagation();
-						for (const item of e.originalEvent.dataTransfer.files) {
-							EventBus.$emit('file-open-with', item.path);
+						let files = e.originalEvent.dataTransfer.files;
+						for (let i = 0; i < files.length; i++) {
+							EventBus.$emit('file-open-with', files[i].path, i === files.length - 1);
 						}
 					});
 			},
@@ -281,11 +282,13 @@
 			initOpenWith(argv) {
 				if (remote.process.platform.startsWith('win') && argv[2] !== 'development' && argv.length >= 2) {
 					setTimeout(() => {
-						argv.slice(1).forEach((item) => {
-							if (fs.existsSync(item)) {
-								EventBus.$emit('file-open-with', item);
-							}
+						let files = argv.slice(1);
+						files = files.map((item) => {
+							return fs.existsSync(item);
 						});
+						for (let i = 0; i < files.length; i++) {
+							EventBus.$emit('file-open-with', files[i], i === files.length - 1);
+						}
 					}, 100);
 				}
 			},

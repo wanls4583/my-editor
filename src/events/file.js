@@ -3,7 +3,9 @@ import Context from '@/module/context/index';
 import globalData from '@/data/globalData';
 import Util from '@/common/util';
 
-const { ipcRenderer } = window.require('electron');
+const {
+	ipcRenderer
+} = window.require('electron');
 const remote = window.require('@electron/remote');
 const fs = window.require('fs');
 const path = window.require('path');
@@ -19,10 +21,17 @@ export default class {
 	}
 	init() {
 		EventBus.$on('file-open', (fileObj, choseFile, blur) => {
-			this.openFile(fileObj, choseFile, blur);
+			this.openFile({
+				fileObj,
+				choseFile,
+				blur
+			});
 		});
-		EventBus.$on('file-open-with', (filePath) => {
-			this.openFile(this.createTabItem(filePath));
+		EventBus.$on('file-open-with', (filePath, active) => {
+			this.openFile({
+				fileObj: this.createTabItem(filePath),
+				active: active
+			});
 		});
 		EventBus.$on('file-save', option => {
 			this.saveFile(option.id).then(() => {
@@ -136,7 +145,12 @@ export default class {
 				console.log(err);
 			});
 	}
-	openFile(fileObj, choseFile, blur) {
+	openFile({
+		fileObj,
+		choseFile = false,
+		blur = false,
+		active = true
+	}) {
 		let tab = fileObj && Util.getTabByPath(this.editorList, fileObj.path);
 		if (!tab) {
 			let index = -1;
@@ -180,10 +194,10 @@ export default class {
 				tab.saved = true;
 				tab.active = false;
 				this.editorList.splice(index + 1, 0, tab);
-				_done.call(this);
+				active && _done.call(this);
 			}
 		} else {
-			_done.call(this);
+			active && _done.call(this);
 		}
 
 		function _done() {
@@ -205,7 +219,10 @@ export default class {
 								tab.cursorPos = Object.assign({}, fileObj.range.start);
 							}
 							tab.mtimeMs = fs.statSync(filePath).mtimeMs;
-							EventBus.$emit('editor-change', { id: tab.id, blur });
+							EventBus.$emit('editor-change', {
+								id: tab.id,
+								blur
+							});
 							EventBus.$emit('language-check', tab.id);
 						}
 					});
@@ -214,7 +231,10 @@ export default class {
 				if (fileObj && fileObj.range) {
 					tab.cursorPos = Object.assign({}, fileObj.range.start);
 				}
-				EventBus.$emit('editor-change', { id: tab.id, blur });
+				EventBus.$emit('editor-change', {
+					id: tab.id,
+					blur
+				});
 			}
 		}
 	}
@@ -311,7 +331,9 @@ export default class {
 	}
 	saveWorkspace(saveAs) {
 		let list = globalData.fileTree.map(item => {
-			return { path: item.path };
+			return {
+				path: item.path
+			};
 		});
 		let data = JSON.stringify({
 			folders: list,
