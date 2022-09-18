@@ -187,8 +187,14 @@ export const editorComands = [
 		when: 'editorFocus'
 	},
 	{
+		name: 'Join Line',
+		key: 'Ctrl+J',
+		command: 'joinLine',
+		when: 'editorFocus'
+	},
+	{
 		name: 'Remove Indent',
-		key: 'Shift+Capslock',
+		key: 'Shift+Tab',
 		command: 'removeAnIndent',
 		when: 'editorFocus'
 	},
@@ -447,6 +453,9 @@ export class EditorComand {
 	}
 	removeAnIndent() {
 		this.context.removeAnIndent();
+	}
+	joinLine() {
+		this.context.joinLine();
 	}
 	toggleLineComment() {
 		this.context.toggleLineComment();

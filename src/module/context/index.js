@@ -85,6 +85,9 @@ class Context {
 	replace(texts, ranges) {
 		this.replaceObj.replace(texts, ranges);
 	}
+	joinLine() {
+		this.replaceObj.joinLine();
+	}
 	reload(text, afterCursorPosList) {
 		this.replaceObj.reload(text, afterCursorPosList);
 	}
