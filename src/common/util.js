@@ -511,7 +511,7 @@ class Util {
 			suffix2 = suffix2 && suffix2[0];
 		}
 		if (themType === 'light' || themType === 'contrast light') {
-			iconData = iconData.light;
+			iconData = iconData && iconData.light;
 		}
 		if (iconData) {
 			if (fileType === 'dir') {

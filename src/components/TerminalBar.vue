@@ -18,7 +18,7 @@
 						<span class="bar-text">{{ item.title || item.name }}</span>
 						<div class="bar-icon-wrap">
 							<span @click.stop="onClose(item.id)" class="bar-icon" title="close">
-								<i class="my-icon icon-chrome-close"></i>
+								<i class="bar-close-icon my-icon icon-chrome-close"></i>
 							</span>
 						</div>
 					</div>

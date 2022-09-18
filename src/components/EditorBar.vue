@@ -8,9 +8,9 @@
 		<div class="bar-scroller my-scroll-overlay my-scroll-mini">
 			<div :class="[item.active ? 'my-active' : '']" :title="item.path" @click="onClickItem(item.id)" @contextmenu.prevent.stop="onContextmenu($event, item.id)" class="bar-item my-hover" v-for="item in editorList">
 				<div :class="[item.icon]" class="bar-content">
-					<span :class="[item.statusColor]">
+					<span :class="[item.statusColor]" style="display:flex">
 						<span class="bar-text">{{ item.name }}</span>
-						<span class="bar-status" v-if="item.status!=='!!'">{{item.status}}</span>
+						<span class="bar-status" v-if="item.status&&item.status!=='!!'">{{item.status}}</span>
 					</span>
 					<div class="bar-icon">
 						<span @click.stop="onClose(item.id)" class="bar-close-icon" title="close" v-show="item.saved">
