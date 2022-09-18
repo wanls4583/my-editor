@@ -39,7 +39,7 @@
 		"sideBar.background": "#1e1f1ccc",
 		"menu.background": "#1e1f1ccc",
 		"menu.foreground": "#cccccc",
-		"input.background": "#414339",
+		"input.background": "#878b9133",
 		"inputOption.activeBorder": "#75715E",
 		"focusBorder": "#75715E",
 		"editorWidget.background": "#1e1f1ccc",
