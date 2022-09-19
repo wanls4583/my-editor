@@ -11,7 +11,7 @@
 
 ## 功能特性
 * [x] 使用 Electron + Vue2 + JavaScript 开发
-* [x] 内置多主题
+* [x] 内置多主题，支持半透明主题
 * [x] 支持 git 状态追踪和内容更改
 * [x] 支持多终端
 * [x] 支持小地图
@@ -28,7 +28,13 @@
 ## 下载链接
 [**`Download Realease`**](https://github.com/wanls4583/my-editor/releases/)
 
-![](https://wanls4583.github.io/images/code/my-editor.png)
+theme-monokai
+
+![](https://wanls4583.github.io/images/code/my-editor-1.png)
+
+theme-monokai-tranlucent
+
+![](https://wanls4583.github.io/images/code/my-editor-2.png)
 
 ## 贡献
 欢迎给出一些意见和优化，期待你的 `Pull Request`
