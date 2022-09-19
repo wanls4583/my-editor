@@ -6,6 +6,7 @@
 
 - [**`功能特性`**](#功能特性)
 - [**`编译步骤`**](#编译步骤)
+- [**`主题预览`**](#主题预览)
 - [**`下载链接`**](#下载链接)
 - [**`贡献`**](#贡献)
 
@@ -25,9 +26,7 @@
 3. 进入 my-editor 根目录，运行 npm run build，编译 render 部分
 4. 进入 my-editor/electron 目录，运行 npm run build，编译成可执行文件，最终生成的安装包在 my-editor/electron/dist 目录下
 
-## 下载链接
-[**`Download Realease`**](https://github.com/wanls4583/my-editor/releases/)
-
+## 主题预览
 theme-monokai
 
 ![](https://wanls4583.github.io/images/code/my-editor-1.png)
@@ -35,6 +34,9 @@ theme-monokai
 theme-monokai-tranlucent
 
 ![](https://wanls4583.github.io/images/code/my-editor-2.png)
+
+## 下载链接
+[**`Download Realease`**](https://github.com/wanls4583/my-editor/releases/)
 
 ## 贡献
 欢迎给出一些意见和优化，期待你的 `Pull Request`
