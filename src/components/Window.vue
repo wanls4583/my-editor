@@ -283,7 +283,7 @@
 				if (remote.process.platform.startsWith('win') && argv[2] !== 'development' && argv.length >= 2) {
 					setTimeout(() => {
 						let files = argv.slice(1);
-						files = files.map((item) => {
+						files = files.filter((item) => {
 							return fs.existsSync(item);
 						});
 						for (let i = 0; i < files.length; i++) {
