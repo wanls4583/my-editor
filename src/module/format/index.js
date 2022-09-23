@@ -54,7 +54,11 @@ export default class {
                 language: this.editor.language,
                 options: {
                     indent_size: this.editor.tabSize,
-                    indent_with_tabs: this.editor.indent === 'tab'
+                    indent_with_tabs: this.editor.indent === 'tab',
+					wrap_line_length: 150,
+					html: {
+						wrap_attributes: 'preserve-aligned', //auto,force,force-aligned,force-expand-multiline,aligned-multiple,preserve,preserve-aligned
+					}
                 }
             });
         }
