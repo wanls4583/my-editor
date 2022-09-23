@@ -3,7 +3,7 @@ const JavaScript = require('./javascript');
 
 const regs = {
     javascript: /(?<!\<[^\>]*?['"][^\>]*?)(?<=\<script(?:\s[^\>]*?)?\>)([\s\S]*?)\<\/script\>/g,
-    css: /(?<!\<[^\>]*?['"][^\>]*?)(?<=\<style(?:\s[^\>]*?)?\>)([\s\S]*?)\<\/style\>/g,
+    css: /(?<!\<[^\>]*?['"][^\>]*?)\<style(?:\s[^\>]*?)?\>([\s\S]*?)\<\/style\>/g,
     enter: /\n/g,
     column: /\n([^\n]+)$/,
     comment: /\<\!--[\s\S]*?--\>/g,
@@ -92,6 +92,15 @@ function _lint(text, language) {
         if (!checkInComment(pos, comments)) {
             continue;
         }
+		if(language === 'css') {
+			let cssLang = /^\<style[^\>]*? lang="([a-zA-Z]+?)" [^\>]*?\>/.exec(text.slice(exec.index));
+			if(cssLang && cssLang[1]) {
+				cssLang = cssLang[1].toLowerCase();
+				if(cssLang === 'scss' || cssLang === 'less' || cssLang === 'sass') {
+					language = cssLang;
+				}
+			}
+		}
         let promise = linter(exec[1], language).then((errors) => {
             errors.forEach((item) => {
                 item.line += pos.line - 1;
