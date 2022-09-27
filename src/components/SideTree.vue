@@ -755,7 +755,7 @@
 				this.setStartLine(e);
 			},
 			onContextmenu(e, item) {
-				this.$parent.$refs.sideTreeMenu.show(e, item);
+				EventBus.$emit('open-side-tree-menu', e, item);
 			},
 		},
 	};

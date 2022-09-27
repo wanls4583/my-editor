@@ -8,11 +8,12 @@
 		<div :style="{ width: leftWidth + 'px' }" class="my-left-warp" v-show="sidebarVisible">
 			<!-- 侧边栏 -->
 			<activity-bar ref="activityBar"></activity-bar>
-			<div style="flex-grow:1">
+			<div style="flex-grow:1;overflow:hidden">
 				<side-bar ref="sideBar" v-show="activity === 'files'"></side-bar>
 				<file-content-search v-show="activity === 'search'"></file-content-search>
 			</div>
 			<div @mousedown="onLeftSashBegin" class="my-sash-v" style="position:absolute;right:-4px"></div>
+			<SideTreMenu ref="sideTreeMenu"></SideTreMenu>
 		</div>
 		<div class="my-right-wrap" ref="rightWrap">
 			<!-- tab栏 -->
@@ -47,6 +48,7 @@
 	import TitleBar from './TitleBar';
 	import StatusBar from './StatusBar';
 	import SideBar from './SideBar.vue';
+	import SideTreMenu from './SideTreMenu';
 	import ActivityBar from './ActivityBar.vue';
 	import FileContentSearch from './FileContentSearch.vue';
 	import Dialog from './Dialog.vue';
@@ -86,6 +88,7 @@
 			Terminal,
 			TerminalBar,
 			ShortcutPanel,
+			SideTreMenu
 		},
 		data() {
 			return {

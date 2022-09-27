@@ -12,14 +12,10 @@
 		<div class="my-rename-overlay" v-if="renameVisible">
 			<input :style="inputStyle" @blur="onBlur" @keydown.enter="onConfirm" @keydown.esc="onCancel" class="my-rename-input" ref="input" spellcheck="false" type="text" v-model="newFileNmme" />
 		</div>
-		<SideBarMenu ref="sideBarMenu"></SideBarMenu>
-		<SideTreMenu ref="sideTreeMenu"></SideTreMenu>
 	</div>
 </template>
 <script>
 import SideTree from './SideTree';
-import SideBarMenu from './SideBarMenu';
-import SideTreMenu from './SideTreMenu';
 import globalData from '@/data/globalData';
 import EventBus from '@/event';
 import $ from 'jquery';
@@ -27,8 +23,6 @@ import $ from 'jquery';
 export default {
 	components: {
 		SideTree,
-		SideBarMenu,
-		SideTreMenu,
 	},
 	data() {
 		return {

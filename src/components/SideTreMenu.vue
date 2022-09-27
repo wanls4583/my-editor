@@ -200,6 +200,9 @@ export default {
 			EventBus.$on('shortcut-loaded', () => {
 				this.initShortcut();
 			});
+			EventBus.$on('open-side-tree-menu', (e, item) => {
+				this.show(e, item);
+			});
 		},
 		initShortcut() {
 			_check(this.rootMenu);
