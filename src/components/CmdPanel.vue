@@ -262,6 +262,8 @@ export default {
 						editor.cursor.setCursorPos(this.preCursorPos);
 						editor.focus();
 						this.visible = false;
+						this.preCursorPos = null;
+						this.nowCursorPos = null;
 					}
 				}
 			}
