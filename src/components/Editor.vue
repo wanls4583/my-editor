@@ -1865,6 +1865,7 @@ export default {
 			let offsetTop = this.scrollTop + e.clientY - offset.top;
 			let offsetLeft = this.scrollLeft + e.clientX - offset.left;
 			let line = Math.ceil(offsetTop / this.charObj.charHight) || 1;
+			line = line > this.myContext.htmls.length ? this.myContext.htmls.length : line;
 			let column = this.getColumnByWidth(this.myContext.htmls[line - 1].text, offsetLeft);
 			return { line, column };
 		},
@@ -2062,13 +2063,14 @@ export default {
 			this.scrollDeltaY = e.deltaY;
 			this.scrollDeltaX = e.deltaX;
 			this.wheelTime = Date.now();
+			this.wheelEvent = e;
 			if ((this.scrollDeltaY || this.scrollDeltaX) && !this.wheelTask) {
 				this.wheelTask = globalData.scheduler.addUiTask(() => {
 					if (this.scrollDeltaY) {
 						try {
 							this.setStartLine(this.scrollTop + this.scrollDeltaY);
-							this.checkErrorOver(e);
-							_addRangeByEvent.call(this, e);
+							this.checkErrorOver(this.wheelEvent);
+							_addRangeByEvent.call(this, this.wheelEvent);
 						} catch (e) {
 							console.log(e);
 						}
@@ -2081,8 +2083,8 @@ export default {
 						scrollLeft = scrollLeft < 0 ? 0 : scrollLeft;
 						this.scrollLeft = scrollLeft;
 						this.scrollDeltaX = 0;
-						this.checkErrorOver(e);
-						_addRangeByEvent.call(this, e);
+						this.checkErrorOver(this.wheelEvent);
+						_addRangeByEvent.call(this, this.wheelEvent);
 					} else if (Date.now() - this.wheelTime > 2000) {
 						globalData.scheduler.removeUiTask(this.wheelTask);
 						this.wheelTask = null;
