@@ -238,8 +238,10 @@ export default {
 				let line = parseInt(this.searchText.slice(1));
 				if (line > 0 && line <= editor.maxLine) {
 					this.nowCursorPos = this.nowCursorPos || editor.nowCursorPos;
-					this.scrollTop = this.scrollTop || editor.scrollTop;
-					this.scrollLeft = this.scrollLeft || editor.scrollLeft;
+					if(this.editorScrollTop === undefined) {
+						this.editorScrollTop = this.editorScrollTop || editor.scrollTop;
+						this.editorScrollLeft = this.editorScrollLeft || editor.scrollLeft;
+					}
 					editor.scrollToLine(line);
 					if (this.preCursorPos) {
 						this.preCursorPos = editor.cursor.updateCursorPos(this.preCursorPos, line, 0);
@@ -252,36 +254,44 @@ export default {
 				}
 			}
 		},
+		clearGotoLine() {
+			this.preCursorPos = null;
+			this.nowCursorPos = null;
+			this.editorScrollTop = undefined;
+			this.editorScrollLeft = undefined;
+		},
+		recoveryNowCursor() {
+			let editor = globalData.nowEditorId && globalData.$mainWin.getNowEditor();
+			if (editor) {
+				editor.setStartLine(this.editorScrollTop);
+				editor.scrollLeft = this.editorScrollLeft;
+				editor.cursor.removeCursor(this.preCursorPos);
+				editor.cursor.addCursorPos(this.nowCursorPos);
+				editor.focus();
+			}
+		},
+		confirmGotoLine() {
+			let editor = globalData.nowEditorId && globalData.$mainWin.getNowEditor();
+			let line = parseInt(this.searchText.slice(1));
+			if (editor && line && this.preCursorPos && this.preCursorPos.line === line) {
+				editor.searcher.clearSearch();
+				editor.cursor.setCursorPos(this.preCursorPos);
+				editor.focus();
+				this.visible = false;
+				this.clearGotoLine();
+			}
+		},
 		onEnter() {
 			if (this.isCmdSearch) {
 				if (this.searchText.startsWith(':')) {
-					let editor = globalData.nowEditorId && globalData.$mainWin.getNowEditor();
-					let line = parseInt(this.searchText.slice(1));
-					if (editor && line && this.preCursorPos && this.preCursorPos.line === line) {
-						editor.searcher.clearSearch();
-						editor.cursor.setCursorPos(this.preCursorPos);
-						editor.focus();
-						this.visible = false;
-						this.preCursorPos = null;
-						this.nowCursorPos = null;
-					}
+					this.confirmGotoLine();
 				}
 			}
 		},
 		onCancel() {
 			if (this.nowCursorPos) {
-				let editor = globalData.nowEditorId && globalData.$mainWin.getNowEditor();
-				if (editor) {
-					editor.setStartLine(this.scrollTop);
-					editor.scrollLeft = this.scrollLeft;
-					editor.cursor.removeCursor(this.preCursorPos);
-					editor.cursor.addCursorPos(this.nowCursorPos);
-					editor.focus();
-				}
-				this.preCursorPos = null;
-				this.nowCursorPos = null;
-				this.scrollTop = 0;
-				this.scrollLeft = 0;
+				this.recoveryNowCursor();
+				this.clearGotoLine();
 			}
 			clearTimeout(this.searchFileTimer);
 			globalData.scheduler.removeTask(this.searchFileTask);
