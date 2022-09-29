@@ -278,11 +278,17 @@ class Differ {
         return fileIndex;
     }
     getStagedContent(filePath) {
-        let child = spawn('git', ['show', `:./${path.basename(filePath)}`], { cwd: path.dirname(filePath) });
+        let child = null;
+		//if (process.platform === 'win32') {
+		//	child = spawn('cmd', [`/C chcp 65001>nul && git show :./${path.basename(filePath)}`], { cwd: path.dirname(filePath) });
+		//} else {
+		//	child = spawn('git', ['show', `:./${path.basename(filePath)}`], { cwd: path.dirname(filePath) });
+		//}
+		child = spawn('git', ['show', `:./${path.basename(filePath)}`], { cwd: path.dirname(filePath) });
         return new Promise((resolve, reject) => {
             let result = '';
             child.stdout.on('data', data => {
-                result += data;
+                result += data.toString('utf8');
             });
             child.stderr.on('data', err => {
                 reject();
