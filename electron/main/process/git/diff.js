@@ -286,15 +286,15 @@ class Differ {
 		//}
 		child = spawn('git', ['show', `:./${path.basename(filePath)}`], { cwd: path.dirname(filePath) });
         return new Promise((resolve, reject) => {
-            let result = '';
+            let result = [];
             child.stdout.on('data', data => {
-                result += data.toString('utf8');
+                result.push(data);
             });
             child.stderr.on('data', err => {
                 reject();
             });
             child.on('close', () => {
-                resolve(result);
+                resolve(Buffer.concat(result).toString('utf8'));
             });
         });
     }
