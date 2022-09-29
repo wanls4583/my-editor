@@ -1476,6 +1476,43 @@ export default {
 				this.scrollLeft = scrollLeft;
 			}
 		},
+		addRangeByPos(end) {
+			if (end && Util.comparePos(end, this.mouseStartObj.cursorPos)) {
+				let range = this.selecter.getRangeWithCursorPos(end);
+				//删除重叠选中区域
+				range && this.selecter.removeRange(range);
+				this.cursor.removeCursor(this.mouseStartObj.cursorPos);
+				this.mouseStartObj.cursorPos = this.cursor.addCursorPos({
+					line: end.line,
+					column: end.column,
+				});
+				if (this.mouseStartObj.preRange) {
+					this.selecter.updateRange(this.mouseStartObj.preRange, {
+						start: this.mouseStartObj.start,
+						end: end,
+					});
+				} else {
+					this.mouseStartObj.preRange = this.selecter.addRange({
+						start: this.mouseStartObj.start,
+						end: end,
+						active: true
+					});
+				}
+				// 删除区域范围内的光标
+				this.cursor.removeCursorInRange(this.mouseStartObj.preRange);
+			}
+		},
+		checkErrorOver(e) {
+			cancelAnimationFrame(this.checkErrorOverTimer);
+			this.checkErrorOverTimer = requestAnimationFrame(() => {
+				this.tipContent = '';
+				if (this.errors && this.errors.length) {
+					let $target = $(e.target);
+					let line = $target.parent().attr('data-line');
+					line && this.onErrorMousemove(e, line);
+				}
+			});
+		},
 		setData(prop, value) {
 			if (typeof this[prop] === 'function') {
 				return;
@@ -2004,44 +2041,9 @@ export default {
 		onContentMmove(e) {
 			if (this.mouseStartObj && Date.now() - this.mouseStartObj.time > 100) {
 				let end = this.getPosByEvent(e);
-				if (end && Util.comparePos(end, this.mouseStartObj.cursorPos)) {
-					let range = this.selecter.getRangeWithCursorPos(end);
-					//删除重叠选中区域
-					range && this.selecter.removeRange(range);
-					this.cursor.removeCursor(this.mouseStartObj.cursorPos);
-					this.mouseStartObj.cursorPos = this.cursor.addCursorPos({
-						line: end.line,
-						column: end.column,
-					});
-					if (this.mouseStartObj.preRange) {
-						this.selecter.updateRange(this.mouseStartObj.preRange, {
-							start: this.mouseStartObj.start,
-							end: end,
-						});
-					} else {
-						this.mouseStartObj.preRange = this.selecter.addRange({
-							start: this.mouseStartObj.start,
-							end: end,
-							active: true
-						});
-					}
-					// 删除区域范围内的光标
-					this.cursor.removeCursorInRange(this.mouseStartObj.preRange);
-				}
+				this.addRangeByPos(end);
 			}
-			_checkErrorOver.call(this, e);
-
-			function _checkErrorOver(e) {
-				cancelAnimationFrame(this.checkErrorOverTimer);
-				this.checkErrorOverTimer = requestAnimationFrame(() => {
-					if (this.errors && this.errors.length) {
-						let $target = $(e.target);
-						let line = $target.parent().attr('data-line');
-						this.tipContent = '';
-						line && this.onErrorMousemove(e, line);
-					}
-				});
-			}
+			this.checkErrorOver(e);
 		},
 		onContentMLeave() {
 			this.tipContent = '';
@@ -2128,6 +2130,7 @@ export default {
 					}
 				});
 			}
+			this.checkErrorOver(e);
 		},
 		// 右侧滚动条滚动事件
 		onVBarScroll(e) {
