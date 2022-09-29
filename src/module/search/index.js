@@ -217,8 +217,8 @@ export default class {
         } else if (line <= this.editor.startLine) {
             this.editor.scrollToLine(line, column);
         } else {
-            let left = this.editor.getExactLeft(result.start);
-            let right = result.start.line === result.end.line ? this.editor.getExactLeft(result.end) : left;
+            let left = this.editor.getStrWidthByLine(result.start.line, 0, result.start.column);
+            let right = result.start.line === result.end.line ? this.editor.getStrWidthByLine(result.end.line, 0, result.start.column) : left;
             // 强制滚动使光标处于可见区域
             if (this.editor.scrollToCursor) {
                 if (right > this.editor.scrollerArea.width + this.editor.scrollLeft) {

@@ -1476,7 +1476,8 @@ export default {
 				this.scrollLeft = scrollLeft;
 			}
 		},
-		addRangeByPos(end) {
+		addRangeByEvent(e) {
+			let end = this.getPosByEvent(e);
 			if (end && Util.comparePos(end, this.mouseStartObj.cursorPos)) {
 				let range = this.selecter.getRangeWithCursorPos(end);
 				//删除重叠选中区域
@@ -1507,9 +1508,7 @@ export default {
 			this.checkErrorOverTimer = requestAnimationFrame(() => {
 				this.tipContent = '';
 				if (this.errors && this.errors.length) {
-					let $target = $(e.target);
-					let line = $target.parent().attr('data-line');
-					line && this.onErrorMousemove(e, line);
+					this.onErrorMousemove(e);
 				}
 			});
 		},
@@ -1861,57 +1860,13 @@ export default {
 		},
 		// 根据鼠标事件对象获取行列坐标
 		getPosByEvent(e) {
-			let $target = $(e.target);
-			let line = ($target.attr('data-line') || $target.parent().attr('data-line')) - 0;
-			let column = $target.attr('data-column');
-			let endColumn = $target.attr('data-end');
-			if (!line) {
-				if (e.target === this.$refs.content || e.target.parentNode === this.$refs.content) {
-					line = this.myContext.htmls.length;
-				} else {
-					//移动到了区域外
-					return null;
-				}
-			}
-			let lineObj = this.myContext.htmls[line - 1];
-			let tokens = lineObj.fgTokens || lineObj.tokens;
-			if (!column) {
-				column = lineObj.text.length;
-			} else {
-				column = column - 0;
-				endColumn = endColumn - 0;
-				column += this.getColumnByWidth(lineObj.text.slice(column, endColumn), e.offsetX);
-			}
-			return {
-				line: line,
-				column: column,
-			};
-		},
-		// 获取光标真实位置
-		getExactLeft(cursorPos) {
-			let lineObj = this.myContext.htmls[cursorPos.line - 1];
-			let spans = document.getElementById(this._lineId(cursorPos.line));
-			let startIndex = 0;
-			let span = null;
-			let left = 0;
-			let right = 0;
-			spans = (spans && spans.querySelector('div.my-code').children) || [];
-			right = spans.length - 1;
-			while (left < right) {
-				let mid = Math.ceil(left + right);
-				let column = spans[mid].getAttribute('data-column');
-				if (column > cursorPos.column) {
-					right = mid - 1;
-				} else {
-					left = mid;
-				}
-			}
-			span = spans[left];
-			if (!span) {
-				return 0;
-			}
-			startIndex = span.getAttribute('data-column');
-			return span.offsetLeft + this.getStrWidth(lineObj.text.slice(startIndex, cursorPos.column));
+			let $contentWrap = $(this.$refs.contentWrap);
+			let offset = $contentWrap.offset();
+			let offsetTop = this.scrollTop + e.clientY - offset.top;
+			let offsetLeft = this.scrollLeft + e.clientX - offset.left;
+			let line = Math.ceil(offsetTop / this.charObj.charHight) || 1;
+			let column = this.getColumnByWidth(this.myContext.htmls[line - 1].text, offsetLeft);
+			return { line, column };
 		},
 		getPrevDiff(diffRanges, line) {
 			if (!diffRanges) {
@@ -2007,9 +1962,10 @@ export default {
 			// this.searcher.clearSearch(true);
 			this.focus();
 		},
-		onErrorMousemove(e, line) {
-			let errors = document.getElementById(`${this._lineId(line)}`).querySelectorAll('span.my-token-error') || [];
-			let left = e.clientX - $(this.$refs.content).offset().left;
+		onErrorMousemove(e) {
+			let pos = this.getPosByEvent(e);
+			let errors = document.getElementById(`${this._lineId(pos.line)}`).querySelectorAll('span.my-token-error') || [];
+			let left = this.getStrWidthByLine(pos.line, 0, pos.column);
 			for (let i = 0; i < errors.length; i++) {
 				let error = errors[i];
 				let width = error.clientWidth;
@@ -2040,8 +1996,7 @@ export default {
 		},
 		onContentMmove(e) {
 			if (this.mouseStartObj && Date.now() - this.mouseStartObj.time > 100) {
-				let end = this.getPosByEvent(e);
-				this.addRangeByPos(end);
+				this.addRangeByEvent(e);
 			}
 			this.checkErrorOver(e);
 		},
@@ -2112,6 +2067,8 @@ export default {
 					if (this.scrollDeltaY) {
 						try {
 							this.setStartLine(this.scrollTop + this.scrollDeltaY);
+							this.checkErrorOver(e);
+							_addRangeByEvent.call(this, e);
 						} catch (e) {
 							console.log(e);
 						}
@@ -2124,13 +2081,20 @@ export default {
 						scrollLeft = scrollLeft < 0 ? 0 : scrollLeft;
 						this.scrollLeft = scrollLeft;
 						this.scrollDeltaX = 0;
+						this.checkErrorOver(e);
+						_addRangeByEvent.call(this, e);
 					} else if (Date.now() - this.wheelTime > 2000) {
 						globalData.scheduler.removeUiTask(this.wheelTask);
 						this.wheelTask = null;
 					}
 				});
 			}
-			this.checkErrorOver(e);
+			
+			function _addRangeByEvent(e) {
+				if (this.mouseStartObj && Date.now() - this.mouseStartObj.time > 100) {
+					this.addRangeByEvent(e);
+				}
+			}
 		},
 		// 右侧滚动条滚动事件
 		onVBarScroll(e) {
