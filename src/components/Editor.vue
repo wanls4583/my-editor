@@ -1865,6 +1865,7 @@ export default {
 			let offsetTop = this.scrollTop + e.clientY - offset.top;
 			let offsetLeft = this.scrollLeft + e.clientX - offset.left;
 			let line = Math.ceil(offsetTop / this.charObj.charHight) || 1;
+			line = this.folder.getRealLine(line);
 			line = line > this.myContext.htmls.length ? this.myContext.htmls.length : line;
 			let column = this.getColumnByWidth(this.myContext.htmls[line - 1].text, offsetLeft);
 			return { line, column };
