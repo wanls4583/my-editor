@@ -2,7 +2,7 @@ const Css = require('./css');
 const JavaScript = require('./javascript');
 
 const regs = {
-    javascript: /(?<!\<[^\>]*?['"][^\>]*?)(?<=\<script(?:\s[^\>]*?)?\>)([\s\S]*?)\<\/script\>/g,
+    javascript: /(?<!\<[^\>]*?['"][^\>]*?)\<script(?:\s[^\>]*?)?\>([\s\S]*?)\<\/script\>/g,
     css: /(?<!\<[^\>]*?['"][^\>]*?)\<style(?:\s[^\>]*?)?\>([\s\S]*?)\<\/style\>/g,
     enter: /\n/g,
     column: /\n([^\n]+)$/,
@@ -98,6 +98,15 @@ function _lint(text, language) {
 				cssLang = cssLang[1].toLowerCase();
 				if(cssLang === 'scss' || cssLang === 'less' || cssLang === 'sass') {
 					language = cssLang;
+				}
+			}
+		}
+		if(language === 'javascript') {
+			let type = /^\<script[^\>]*? type="([a-zA-Z]+?)" [^\>]*?\>/.exec(text.slice(exec.index));
+			if(type && type[1]) {
+				type = type[1].toLowerCase();
+				if(type !== 'text/javascript') {
+					continue;
 				}
 			}
 		}
