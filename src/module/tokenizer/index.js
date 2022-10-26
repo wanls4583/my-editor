@@ -564,13 +564,10 @@ export default class {
 		return result;
 	}
 	clearScopeMap() {
-		this.scopeMap = {};
-		for (let scopeName in globalData.grammars) {
-			if (scopeName === this.scopeName) {
-				globalData.grammars[scopeName].scopeIdMap = this.scopeMap;
-			} else {
-				globalData.grammars[scopeName].scopeIdMap = {};
-			}
+		if (globalData.grammars[this.scopeName]) {
+			this.scopeMap = globalData.grammars[this.scopeName].scopeIdMap;
+		} else {
+			this.scopeMap = {};	
 		}
 	}
 }

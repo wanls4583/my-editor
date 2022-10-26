@@ -32,6 +32,9 @@ export default class {
 				type: option.type,
 				path: option.path
 			};
+			for (let scopeName in globalData.grammars) {
+				globalData.grammars[scopeName].scopeIdMap = {};
+			}
 			EventBus.$emit('theme-changed', option.value);
 		});
 
